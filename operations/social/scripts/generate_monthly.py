@@ -244,15 +244,17 @@ def github_account(path: str, token: str) -> Optional[Dict]:
     return response.json()
 
 
-def coauthor(user_id: str, login: str, token: str) -> Optional[Dict]:
+def coauthor(user_id: str, login: str, token: str, by_bot: bool) -> Optional[Dict]:
     """The person behind a noreply co-author trailer, or None. Agent-written trailers sometimes
     pair a login with someone else's id, so the id counts only if it belongs to that login, or
-    to a renamed account whose old login is gone. Bots get credit as PR authors only, so a
-    trailer naming an app's own bot (by its id, with or without "[bot]") is skipped. Lines
-    without an id cannot be tied to one account; organisations, placeholders and deleted
-    accounts get no credit."""
+    to a renamed account whose old login is gone. A trailer without an id counts only on a PR
+    a bot opened for someone, which names them by their current login; on a person's own PR
+    it is a local git setting and can belong to a stranger. Bots get credit as PR authors only,
+    so a trailer naming an app's own bot (by its id, with or without "[bot]") is skipped;
+    organisations, placeholders and deleted accounts get no credit."""
     if not user_id:
-        return None
+        person = github_account(f"users/{login}", token) if by_bot else None
+        return person if person and person.get("type") == "User" else None
     by_id = github_account(f"user/{user_id}", token)
     if by_id and by_id.get("type") == "Bot" and by_id["login"].lower().removesuffix("[bot]") == login.lower():
         return None
@@ -281,7 +283,7 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
             accounts[author["databaseId"]] = (login, author.get("avatarUrl"), author.get("url"))
         message = (pr.get("mergeCommit") or {}).get("message") or ""
         for user_id, login in NOREPLY_COAUTHOR.findall(message):
-            person = coauthor(user_id, login, token)
+            person = coauthor(user_id, login, token, by_bot=author.get("__typename") == "Bot")
             if person:
                 accounts.setdefault(person["id"], (person["login"], person.get("avatar_url"), person.get("html_url")))
         for user_id, (login, avatar_url, url) in accounts.items():

@@ -393,10 +393,13 @@ class GistEnrichmentTest(unittest.TestCase):
             "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
             "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
             "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
+            "users/Tolerable": user(2303, "Tolerable"),           # named by login on a bot's PR
+            "users/thomash": user(1145, "ThomasH"),               # a stranger who has that login
         }
         prs = [
             {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
-             "mergeCommit": {"message": "fix: one"}},
+             # On a person's own PR a trailer without an id is a local git setting: not trusted.
+             "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
             {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
                         "url": "https://github.com/apps/pollinations-ai"},
              "mergeCommit": {"message": (
@@ -404,7 +407,7 @@ class GistEnrichmentTest(unittest.TestCase):
                  "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
                  "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
                  "Co-authored-by: Claude <noreply@anthropic.com>\n"
-                 "Co-authored-by: Thomas <thomash@users.noreply.github.com>\n"
+                 "Co-authored-by: Tolerable <Tolerable@users.noreply.github.com>\n"  # the bot's submitter
                  "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
                  "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
                  "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
@@ -417,11 +420,11 @@ class GistEnrichmentTest(unittest.TestCase):
         ]
         with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
             ranked = rank_contributors(prs, "test")
-        # No credit: the line without an id (thomash), the placeholder account (sharktide's 909)
-        # and the app's own bot as a co-author (bots count as PR authors only).
+        # No credit: thomash (an id-less line on a person's own PR), the placeholder account
+        # (sharktide's 909) and the app's own bot as a co-author (bots count as PR authors only).
         self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
                          [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
-                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1)])
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])
         self.assertEqual(ranked[1]["avatar_url"], "av12345")
         self.assertEqual(ranked[4]["url"], "gh/TechMitten")
         self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")

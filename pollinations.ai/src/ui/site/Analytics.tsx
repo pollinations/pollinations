@@ -45,6 +45,9 @@ function tagEnterLink(event: Event) {
         "a[href]",
     );
     if (!link?.hostname?.endsWith("enter.pollinations.ai")) return;
+    // Enter still sees referrer_host=pollinations.ai: the site's
+    // Referrer-Policy sends only the origin. noopener stays.
+    link.relList.remove("noreferrer");
     const { referrer_host, ...tags } = SOURCE;
     const url = new URL(link.href);
     for (const [key, value] of Object.entries({

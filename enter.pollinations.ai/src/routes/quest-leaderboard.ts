@@ -25,11 +25,10 @@ import { BYOP_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
 // rewards, which pay for other people using what you built.
 const EXCLUDED_QUEST_IDS = [...BYOP_QUEST_IDS, ...BYOM_QUEST_IDS];
 
-// Admins don't compete: the admin user IDs, or "admin" in the comma-separated
-// Better Auth role, as isAdminUser in auth.ts reads it.
+// Admins don't compete (see isAdminUser in auth.ts).
 const NOT_ADMIN = and(
     notInArray(schema.user.id, ADMIN_USER_IDS),
-    sql`instr(',' || replace(coalesce(${schema.user.role}, ''), ' ', '') || ',', ',admin,') = 0`,
+    sql`coalesce(${schema.user.role}, '') not like '%admin%'`,
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";

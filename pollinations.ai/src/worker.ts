@@ -48,6 +48,20 @@ export default {
             return Response.redirect("https://gen.pollinations.ai/docs", 301);
         }
 
+        // Old image links (pollinations.ai/p/<prompt>, /prompt/<prompt>) still
+        // arrive from sites that embed them. Netlify redirected them to the
+        // image API until the move to Workers; keep sending them there.
+        const legacyImage = url.pathname.match(/^\/(?:p|prompt)\/(.+)$/);
+        if (
+            legacyImage &&
+            (request.method === "GET" || request.method === "HEAD")
+        ) {
+            return Response.redirect(
+                `https://image.pollinations.ai/prompt/${legacyImage[1]}${url.search}`,
+                301,
+            );
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
 

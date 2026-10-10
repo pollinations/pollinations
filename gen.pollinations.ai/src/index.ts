@@ -96,6 +96,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Start here
 
+- [Agent instructions (AGENTS.md)](${origin}/AGENTS.md): Setup, endpoints, auth, and tooling in one file for coding agents.
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
@@ -121,6 +122,69 @@ function llmsTxt(c: Context<Env>): Response {
             },
         },
     );
+}
+
+function agentsMd(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    const lines = [
+        "# Pollinations AI",
+        "",
+        "> AI agent instructions for using the Pollinations API. For full documentation, see [llms.txt](" + origin + "/llms.txt).",
+        "",
+        "## Quick start",
+        "",
+        "1. **Get an API key**: Create one at https://enter.pollinations.ai/keys (GitHub login required).",
+        "2. **Make your first call**: Send a request to the OpenAI-compatible endpoint.",
+        "",
+        "```bash",
+        "curl -X POST " + origin + "/v1/chat/completions \\",
+        "  -H \"Authorization: Bearer ${API_KEY_PLACEHOLDER}\" \\",
+        "  -H \"Content-Type: application/json\" \\",
+        "  -d '{\"model\":\"openai/gpt-5.4-nano\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}'",
+        "```",
+        "",
+        "3. **List available models**: GET " + origin + "/v1/models",
+        "",
+        "## Key endpoints",
+        "",
+        "| Endpoint | Description |",
+        "|----------|-------------|",
+        "| `POST /v1/chat/completions` | Text generation (OpenAI-compatible) |",
+        "| `GET /v1/models` | List available models |",
+        "| `GET /image/{prompt}` | Image generation (keyless) |",
+        "| `POST /v1/images/generations` | Image generation (authenticated) |",
+        "| `GET /text/{prompt}` | Simple text generation |",
+        "| `GET /video/{prompt}` | Video generation |",
+        "| `GET /audio/{text}` | Text-to-speech |",
+        "",
+        "## Authentication",
+        "",
+        "- **Secret key** (`sk_`): Server-side use, full access. Send as `Authorization: Bearer sk_...`",
+        "- **Publishable key** (`pk_`): Client-safe, rate-limited. Send as `?key=pk_...`",
+        "- **Keyless**: Some endpoints work without a key (rate-limited).",
+        "",
+        "## Agent tools",
+        "",
+        "- **Polli CLI**: `npm install -g @pollinations/cli` — full CLI with auth, generation, and account management.",
+        "- **Agent Skills**: Discover at `" + origin + "/.well-known/agent-skills/index.json`",
+        "- **MCP Server**: Connect at `" + origin + "/mcp` — tools for text, image, audio, and video generation.",
+        "- **API Catalog**: RFC 9727 linkset at `" + origin + "/.well-known/api-catalog`",
+        "",
+        "## Tips",
+        "",
+        "- Use `openai/gpt-5.4-nano` for fast, cheap text generation.",
+        "- Use `flux` for high-quality image generation.",
+        "- Use `veo` or `seedance` for video generation.",
+        "- Check your balance at https://enter.pollinations.ai/pollen",
+        "- Full API reference: " + origin + "/openapi.json",
+        "",
+    ];
+    return new Response(lines.join("\n"), {
+        headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "public, max-age=3600",
+        },
+    });
 }
 
 async function fetchEnter(c: Context<Env>, url: URL): Promise<Response> {
@@ -154,6 +218,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
     .get("/llms.txt", (c) => llmsTxt(c))
+    .get("/AGENTS.md", (c) => agentsMd(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
     .get("/", (c) => c.html(docsLandingHtml(c)))

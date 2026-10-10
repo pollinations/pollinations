@@ -1,0 +1,26 @@
+{
+    "status": "blocked_pending_provider_confirmation",
+    "runtime_change": false,
+    "currency": "USD",
+    "price_multiplier": 1,
+    "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
+    "model": "microsoft/mai-transcribe-2-streaming",
+    "feature_pr": "https://github.com/pollinations/pollinations/pull/16802",
+    "current_price": {
+        "per_audio_hour": 0.54
+    },
+    "next_price": null,
+    "merge_on": "2027-01-01",
+    "merge_date_confirmed": false,
+    "unknowns": [
+        "Post-introductory rate",
+        "Provider cutoff timezone and exact effective instant"
+    ],
+    "sources": [
+        "https://microsoft.ai/models/mai-transcribe-2-streaming/"
+    ],
+    "required_changes": [
+        "Replace introductory Azure audio-hour rate with confirmed successor rate",
+        "Verify serving deployment billing and retain paidOnly"
+    ]
+}

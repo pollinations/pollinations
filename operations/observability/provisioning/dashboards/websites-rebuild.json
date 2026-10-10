@@ -47,7 +47,7 @@
         "type": "grafana-clickhouse-datasource",
         "uid": "PAD1A0A25CD30D456"
       },
-      "description": "How many arrivals each site gets per day. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the 8 pollinations.ai pages and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "description": "How many arrivals each site gets per day. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -168,7 +168,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Which pages arrivals land on, per site, with the mobile share. pollinations.ai includes www; Enter's / is Enter's root, not the website home. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the 8 pollinations.ai pages and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "description": "Which pages arrivals land on, per site, with the mobile share. pollinations.ai includes www; Enter's / is Enter's root, not the website home. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -340,7 +340,7 @@
         "type": "datasource",
         "uid": "-- Dashboard --"
       },
-      "description": "Which countries arrivals come from (ISO country code), per site, with the mobile share. Automation that claims a real browser stays in: a desktop-only country spike is usually that. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the 8 pollinations.ai pages and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
+      "description": "Which countries arrivals come from (ISO country code), per site, with the mobile share. Automation that claims a real browser stays in: a desktop-only country spike is usually that. Arrivals are Cloudflare's visits metric: a sampled estimate of page loads that arrive from another site or are typed in, not every page load (revalidated 304 loads and in-app navigation are never counted). Cloudflare page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored. Latest fetch per UTC day, HTML status 200, browsers only (verified bots and Unknown, curl, wget, headless Chrome and *Bot user agents excluded).",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -843,7 +843,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  source,\n  nullIf(countIf(event = 'website_page_viewed'), 0) AS website_views,\n  countIf(event = 'page_viewed') AS enter_views,\n  countIf(first_touch) AS people,\n  countIf(first_touch AND signed_up) AS signups,\n  countIf(first_touch AND signed_up AND via_website) AS signups_via_website\nFROM (\n  SELECT\n    event,\n    -- Campaign tag (or ?ref=) first, else the referring host. Agent links\n    -- sometimes carry markdown leftovers after the tag: cut at ) ] , or space.\n    multiIf(\n      utm_source != '', replaceRegexpOne(utm_source, '[)\\\\],\\\\s].*$', ''),\n      referrer_host != '', referrer_host,\n      'direct'\n    ) AS source,\n    referrer_host IN ('pollinations.ai', 'www.pollinations.ai') AS via_website,\n    -- First touch: the earliest signed-in Enter view of each person in the range.\n    user_id != ''\n      AND event = 'page_viewed'\n      AND row_number() OVER (PARTITION BY user_id, event ORDER BY timestamp) = 1 AS first_touch,\n    max(event = 'signup_completed') OVER (PARTITION BY user_id) AS signed_up\n  FROM product_event\n  WHERE environment = 'production'\n    AND event IN ('page_viewed', 'website_page_viewed', 'signup_completed')\n    AND $__timeFilter(timestamp)\n)\nWHERE event != 'signup_completed'\nGROUP BY source\nORDER BY people DESC, enter_views DESC\nLIMIT 50",
+          "rawSql": "-- Keep the top 40 sources of each site, so website-heavy sources stay visible.\nSELECT source, website_views, enter_views, people, signups, signups_via_website\nFROM (\n  SELECT\n    *,\n    row_number() OVER (ORDER BY people DESC, enter_views DESC) AS enter_rank,\n    row_number() OVER (ORDER BY ifNull(website_views, 0) DESC) AS website_rank\n  FROM (\n    SELECT\n      source,\n      nullIf(countIf(event = 'website_page_viewed'), 0) AS website_views,\n      countIf(event = 'page_viewed') AS enter_views,\n      countIf(first_touch) AS people,\n      countIf(first_touch AND signed_up) AS signups,\n      countIf(first_touch AND signed_up AND via_website) AS signups_via_website\n    FROM (\n      SELECT\n        event,\n        -- Campaign tag (or ?ref=) first, else the referring host. Agent links\n        -- sometimes carry markdown leftovers after the tag: cut at ) ] , or space.\n        multiIf(\n          utm_source != '', replaceRegexpOne(utm_source, '[)\\\\],\\\\s].*$', ''),\n          referrer_host != '', referrer_host,\n          'direct'\n        ) AS source,\n        referrer_host IN ('pollinations.ai', 'www.pollinations.ai') AS via_website,\n        -- First touch: the earliest signed-in Enter view of each person in the range.\n        user_id != ''\n          AND event = 'page_viewed'\n          AND row_number() OVER (PARTITION BY user_id, event ORDER BY timestamp) = 1 AS first_touch,\n        max(event = 'signup_completed') OVER (PARTITION BY user_id) AS signed_up\n      FROM product_event\n      WHERE environment = 'production'\n        AND event IN ('page_viewed', 'website_page_viewed', 'signup_completed')\n        AND $__timeFilter(timestamp)\n    )\n    WHERE event != 'signup_completed'\n    GROUP BY source\n  )\n)\nWHERE enter_rank <= 40 OR (website_rank <= 40 AND website_views > 0)\nORDER BY people DESC, enter_views DESC",
           "refId": "A"
         }
       ],
@@ -914,7 +914,7 @@
           },
           "format": 1,
           "range": true,
-          "rawSql": "SELECT\n  funnel,\n  concat(step, ' (', toString(round(100 * n / nullIf(max(n) OVER (PARTITION BY funnel), 0))), '%)') AS stage,\n  n AS count\nFROM (\n  SELECT\n    -- Browser sign-in: plain counts, a retry counts again (auth_flow_funnel).\n    countIf(event = 'sign_in_started') AS started,\n    countIf(event = 'sign_in_returned') AS returned,\n    countIf(event = 'sign_in_completed') AS completed,\n    countIf(event = 'signup_completed') AS signups,\n    -- CLI device sign-in: one count per device row, so a retried stage is not double counted.\n    uniqIf(flow_id, event = 'device_code_issued') AS codes,\n    uniqIf(flow_id, event = 'device_approved') AS approved,\n    uniqIf(flow_id, event = 'device_token_issued') AS tokens,\n    -- Purchase: distinct signed-in people.\n    uniqIf(user_id, event = 'page_viewed' AND user_id != '' AND page IN ('/pollen', '/top-up', '/_dashboard/pollen')) AS viewed_pollen,\n    uniqIf(user_id, event = 'checkout_started') AS checkout,\n    uniqIf(\n      user_id,\n      event = 'checkout_started'\n      AND user_id IN (\n        SELECT user_id\n        FROM stripe_event\n        WHERE livemode = 1\n          AND payment_status = 'paid'\n          AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n          AND $__timeFilter(timestamp)\n      )\n    ) AS paid\n  FROM product_event\n  WHERE environment = 'production'\n    AND $__timeFilter(timestamp)\n    AND event IN (\n      'sign_in_started', 'sign_in_returned', 'sign_in_completed', 'signup_completed',\n      'device_code_issued', 'device_approved', 'device_token_issued',\n      'page_viewed', 'checkout_started'\n    )\n)\nARRAY JOIN\n  ['sign_in', 'sign_in', 'sign_in', 'sign_in', 'cli', 'cli', 'cli', 'purchase', 'purchase', 'purchase'] AS funnel,\n  ['1 · Sent to GitHub', '2 · Back from GitHub', '3 · Signed in', '4 · New account',\n   '1 · Code shown in CLI', '2 · Approved in browser', '3 · Token collected',\n   '1 · Viewed Pollen or top-up page', '2 · Started checkout', '3 · Paid'] AS step,\n  [started, returned, completed, signups, codes, approved, tokens, viewed_pollen, checkout, paid] AS n\nORDER BY funnel, step",
+          "rawSql": "SELECT\n  funnel,\n  concat(step, ' (', ifNull(toString(round(100 * n / nullIf(first_value(n) OVER (PARTITION BY funnel ORDER BY step), 0))), '0'), '%)') AS stage,\n  n AS count\nFROM (\n  SELECT\n    -- Browser sign-in: plain counts, a retry counts again (auth_flow_funnel).\n    countIf(event = 'sign_in_started') AS started,\n    countIf(event = 'sign_in_returned') AS returned,\n    countIf(event = 'sign_in_completed') AS completed,\n    countIf(event = 'signup_completed') AS signups,\n    -- CLI device sign-in: one count per device row, so a retried stage is not double counted.\n    uniqIf(flow_id, event = 'device_code_issued') AS codes,\n    uniqIf(flow_id, event = 'device_approved') AS approved,\n    uniqIf(flow_id, event = 'device_token_issued') AS tokens,\n    -- Purchase: distinct signed-in people.\n    uniqIf(user_id, event = 'page_viewed' AND user_id != '' AND page IN ('/pollen', '/top-up', '/_dashboard/pollen')) AS viewed_pollen,\n    uniqIf(user_id, event = 'checkout_started') AS checkout,\n    uniqIf(\n      user_id,\n      event = 'checkout_started'\n      AND user_id IN (\n        SELECT user_id\n        FROM stripe_event\n        WHERE livemode = 1\n          AND payment_status = 'paid'\n          AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded')\n          AND $__timeFilter(timestamp)\n      )\n    ) AS paid\n  FROM product_event\n  WHERE environment = 'production'\n    AND $__timeFilter(timestamp)\n    AND event IN (\n      'sign_in_started', 'sign_in_returned', 'sign_in_completed', 'signup_completed',\n      'device_code_issued', 'device_approved', 'device_token_issued',\n      'page_viewed', 'checkout_started'\n    )\n)\nARRAY JOIN\n  ['sign_in', 'sign_in', 'sign_in', 'sign_in', 'cli', 'cli', 'cli', 'purchase', 'purchase', 'purchase'] AS funnel,\n  ['1 · Sent to GitHub', '2 · Back from GitHub', '3 · Signed in', '4 · New account',\n   '1 · Code shown in CLI', '2 · Approved in browser', '3 · Token collected',\n   '1 · Viewed Pollen or top-up page', '2 · Started checkout', '3 · Paid'] AS step,\n  [started, returned, completed, signups, codes, approved, tokens, viewed_pollen, checkout, paid] AS n\nORDER BY funnel, step",
           "refId": "A"
         }
       ],
@@ -1647,16 +1647,24 @@
       "type": "table"
     },
     {
-      "datasource": {
-        "type": "grafana-clickhouse-datasource",
-        "uid": "PAD1A0A25CD30D456"
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
       },
-      "description": "Reader-facing scope and source note.",
+      "id": 103,
+      "panels": [],
+      "title": "About this data",
+      "type": "row"
+    },
+    {
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 65
+        "y": 66
       },
       "id": 13,
       "options": {
@@ -1665,7 +1673,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "### Sources and limits\n\n- **Default range:** the last 30 complete UTC days; yesterday is the latest day\n- **Cloudflare arrivals** `cloudflare_traffic_raw` page_views, from 29 Aug 2026: Cloudflare's visits metric, a sampled estimate of loads arriving from another site or typed in, not page loads; browsers only. page_views stores only our own page routes (the 8 pollinations.ai pages and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored\n- **First-party** `product_event`: starts 18–19 Sep 2026, so until 19 Oct the default range holds fewer than 30 days of it. pollinations.ai page views (`website_page_viewed`) appear only after #16991 ships and website deploys resume. No cookie or browser id, so signed-out activity is views, not people\n- **Attribution shifts on two dates:** when Enter deploys #16991, landing utm tags survive Enter's redirects; when website v2 deploys, links to Enter carry the visitor's source\n- **Google** `search_console_raw`: Pacific-time days, published 3–4 days late\n- **Not here:** registrations and balances (Users & Balances), revenue and costs (Economics)",
+        "content": "### Sources and limits\n\n- **Default range:** the last 30 complete UTC days; yesterday is the latest day\n- **Cloudflare arrivals** `cloudflare_traffic_raw` page_views, from 29 Aug 2026: Cloudflare's visits metric, a sampled estimate of loads arriving from another site or typed in, not page loads; browsers only. page_views stores only our own page routes (the pollinations.ai page routes and Enter's routes), which on pollinations.ai is only about 10% of browser HTML loads; other paths, such as old prompt URLs, are not stored\n- **First-party** `product_event`: starts 18–19 Sep 2026, so until 19 Oct the default range holds fewer than 30 days of it. pollinations.ai page views (`website_page_viewed`) appear only after #16991 ships and website deploys resume. No cookie or browser id, so signed-out activity is views, not people\n- **Attribution shifts on two dates:** when Enter deploys #16991, landing utm tags survive Enter's redirects; when website v2 deploys, links to Enter carry the visitor's source\n- **Google** `search_console_raw`: Pacific-time days, published 3–4 days late\n- **Not here:** registrations and balances (Users & Balances), revenue and costs (Economics)",
         "mode": "markdown"
       },
       "title": "Data coverage",

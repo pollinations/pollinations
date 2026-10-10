@@ -45,8 +45,10 @@ type Feature = {
     icon: ComponentType<IconProps>;
     /** Live detail shown between the header and the body. */
     detail?: ComponentType;
-    /** Models-card colours, for the publish cards. */
-    tint?: { background: string; color: string };
+    /** The icon's colour, from the Models cards. */
+    color: string;
+    /** A Models-card background, for the publish cards. */
+    tint?: string;
 };
 
 /** The phrase a skimming reader should catch in a card's copy. */
@@ -79,6 +81,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: RobotIcon,
+        color: "var(--polli-color-modality-audio)",
     },
     {
         title: "Hosted MCP tools",
@@ -95,6 +98,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: McpIcon,
+        color: "var(--polli-color-modality-video)",
         detail: McpServers,
     },
     {
@@ -118,6 +122,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: TerminalIcon,
+        color: "var(--polli-color-modality-text)",
     },
     {
         title: "Users pay",
@@ -134,6 +139,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: WalletIcon,
+        color: "var(--polli-color-paid-deep)",
     },
     {
         title: "Media storage",
@@ -150,6 +156,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: CloudUploadIcon,
+        color: "var(--polli-color-modality-image)",
     },
     {
         title: "Safety checks",
@@ -168,6 +175,7 @@ const BUILD_FEATURES: Feature[] = [
             },
         ],
         icon: LockIcon,
+        color: "var(--polli-color-modality-embedding)",
     },
 ];
 
@@ -196,10 +204,8 @@ const PUBLISH_FEATURES: Feature[] = [
         ),
         links: [{ label: "Submit your app", href: LINKS.githubSubmitApp }],
         icon: AppIcon,
-        tint: {
-            background: modalityBgVar("video"),
-            color: modalityTextColor("video"),
-        },
+        color: modalityTextColor("video"),
+        tint: modalityBgVar("video"),
     },
     {
         title: "Publish a model",
@@ -216,10 +222,8 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: BeakerIcon,
-        tint: {
-            background: modalityBgVar("text"),
-            color: modalityTextColor("text"),
-        },
+        color: modalityTextColor("text"),
+        tint: modalityBgVar("text"),
     },
     {
         title: "Publish an agent",
@@ -235,10 +239,8 @@ const PUBLISH_FEATURES: Feature[] = [
             },
         ],
         icon: RobotIcon,
-        tint: {
-            background: modalityBgVar("audio"),
-            color: modalityTextColor("audio"),
-        },
+        color: modalityTextColor("audio"),
+        tint: modalityBgVar("audio"),
     },
 ];
 
@@ -257,7 +259,7 @@ function FeatureCard({
             className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
             <div className="flex items-center gap-3">
-                <IconTile icon={feature.icon} />
+                <IconTile icon={feature.icon} color={feature.color} />
                 <div className="flex min-w-0 flex-col gap-1">
                     <Heading as="h3" size="card">
                         {feature.title}
@@ -448,7 +450,7 @@ function PublishCard({ feature }: { feature: Feature }) {
     return (
         <LinkCard
             href={link.href}
-            tint={feature.tint?.background}
+            tint={feature.tint}
             showIcon={false}
             surfaceClassName="gap-3 p-5 sm:p-6"
         >
@@ -457,7 +459,7 @@ function PublishCard({ feature }: { feature: Feature }) {
                 <Icon
                     aria-hidden="true"
                     className="size-10 shrink-0"
-                    style={{ color: feature.tint?.color }}
+                    style={{ color: feature.color }}
                 />
                 <span className="flex items-center gap-1 text-right text-sm font-semibold text-theme-text-soft">
                     {link.label}

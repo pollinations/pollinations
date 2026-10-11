@@ -1,0 +1,36 @@
+{
+  "pr_number": 17020,
+  "title": "chore: delete nine tinybird endpoints nothing calls",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17020",
+  "merged_at": "2026-10-11T01:54:35Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Removed nine unused Tinybird endpoint pipes: auth_flow_funnel, checkout_outcomes, d1_user_public, kpi_signup_funnel, kpi_tier_distribution, kpi_total_users, model_revenue, product_analytics_daily, and traffic_sources. No underlying data is deleted; the Websites dashboard covers the relevant funnels with its own SQL, and tinybird_read still reads d1_user directly for the Users & Balances and BYOP panels. Updated the Websites dashboard configuration and added a Tinybird deployment prerequisite: deploy from a clean origin/main, match resource changes in the deployment check to merged PRs, and confirm deleted resources have no caller on origin/production before a production deployment.",
+    "keywords": [
+      "Tinybird",
+      "observability",
+      "endpoints",
+      "Websites dashboard",
+      "deployment"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17020.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli tidies nine unused paper pipes beside a lime green (#ecf874) CRT dashboard while code-plants grow nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and stays small within the scene. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T01:55:40.180693+00:00",
+  "area": "Data & insights",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "d39064fc42d75037e31e8fe262cbb37a83b7af9f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

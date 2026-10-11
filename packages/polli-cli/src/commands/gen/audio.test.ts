@@ -194,4 +194,28 @@ describe("gen audio output", () => {
         ).rejects.toMatchObject({ code: "commander.unknownOption" });
         expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it("only shows voices the default model accepts in examples without --model", () => {
+        // The API default audio model is openai/tts-1, which rejects any
+        // other voice with a 400.
+        const ttsVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
+        let help = "";
+        const command = createAudioCommand().configureOutput({
+            writeOut: (text) => {
+                help += text;
+            },
+        });
+        command.outputHelp();
+
+        const examples = help
+            .split("\n")
+            .filter((line) => line.includes("polli gen audio"));
+        expect(examples.length).toBeGreaterThan(0);
+        for (const line of examples) {
+            const voice = line.match(/--voice (\S+)/)?.[1];
+            if (voice && !line.includes("--model")) {
+                expect(ttsVoices).toContain(voice);
+            }
+        }
+    });
 });

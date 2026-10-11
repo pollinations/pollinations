@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assess, research, sourceText } from "./researcher.mjs";
+import {
+    assess,
+    officialCatalog,
+    research,
+    sourceText,
+} from "./researcher.mjs";
 
 const model = {
     name: "publisher/example-v1",
@@ -55,11 +60,17 @@ function assessRoute(candidate, source = evidence(text)) {
         [model],
     );
 }
-function mustNotRecommend(candidate, source) {
+function mustNotRecommend(candidate, source, expectedValidation) {
     let result;
     try {
         result = assessRoute(candidate, source);
-    } catch {
+    } catch (error) {
+        assert.ok(
+            expectedValidation,
+            "Unexpected exception during evidence assessment",
+        );
+        assert.ok(error instanceof assert.AssertionError);
+        assert.match(error.message, expectedValidation);
         return;
     }
     assert.equal(
@@ -69,12 +80,7 @@ function mustNotRecommend(candidate, source) {
     );
 }
 function mustNotDocument(candidate, source) {
-    let result;
-    try {
-        result = assessRoute(candidate, source);
-    } catch {
-        return;
-    }
+    const result = assessRoute(candidate, source);
     assert.equal(
         result.routes[0].verification,
         "unverified",
@@ -86,6 +92,32 @@ test("valid complete primary evidence remains accepted", () => {
     const result = assessRoute(route());
     assert.equal(result.routes[0].verification, "documented");
     assert.equal(result.recommendation.provider, "azure");
+});
+
+test("malformed official identities cannot enter the backfill inventory", () => {
+    for (const row of [
+        { community: false },
+        { name: " ", community: false },
+        { ...model, aliases: [null] },
+    ]) {
+        assert.throws(() => officialCatalog([row]), /official model identity/);
+    }
+});
+
+test("unsupported numeric prices are exported as unknown", () => {
+    const result = assessRoute(
+        route({
+            pricing: {
+                currency: "USD",
+                unit: "1M_tokens",
+                input: 7,
+                output: 8,
+            },
+        }),
+    );
+    assert.equal(result.routes[0].verification, "unverified");
+    assert.equal(result.routes[0].pricing.input, null);
+    assert.equal(result.routes[0].pricing.output, null);
 });
 
 test("different checkpoint cannot be asserted equivalent to the requested official model", () => {
@@ -183,11 +215,16 @@ test("community-hosted alternative cannot nominate itself as a primary provider"
             providerWebsite: "https://github.com/sample",
         }),
         evidence(text, "https://github.com/sample/pricing"),
+        /^Community platform is not a primary provider source$/,
     );
 });
 
 test("insecure provider identity cannot be accepted as official HTTPS provenance", () => {
-    mustNotRecommend(route({ providerWebsite: "http://azure.com" }));
+    mustNotRecommend(
+        route({ providerWebsite: "http://azure.com" }),
+        undefined,
+        /^Provider HTTPS provenance required$/,
+    );
 });
 
 test("discovery cannot replace required Hugging Face and Replit modes with arbitrary modes", () => {
@@ -289,21 +326,80 @@ test("empty queries cannot satisfy preferred-provider and challenge coverage in 
 });
 
 test("malformed tool messages fail closed and preserve accumulated evidence", async () => {
+    const questions = [
+        "Which model is available?",
+        "What is the current price?",
+        "What contradicts the offer?",
+    ];
+    const calls = [
+        [
+            "research",
+            {
+                action: "plan",
+                questions,
+                routes: [],
+                discoveries: [],
+                gaps: [],
+            },
+        ],
+        [
+            "search",
+            {
+                scope: "azure",
+                engine: "exa",
+                mode: "web",
+                purpose: "challenge",
+                query: "example-v1 azure availability",
+            },
+        ],
+    ];
+    let index = 0;
+    let searches = 0;
     await assert.rejects(
         research(
             { model },
             {
-                infer: async () => ({
-                    role: "assistant",
-                    tool_calls: [{ id: "malformed" }],
-                }),
+                infer: async () => {
+                    if (index === calls.length)
+                        return {
+                            role: "assistant",
+                            tool_calls: [{ id: "malformed" }],
+                        };
+                    const [name, args] = calls[index++];
+                    return {
+                        role: "assistant",
+                        tool_calls: [
+                            {
+                                id: `c${index}`,
+                                type: "function",
+                                function: {
+                                    name,
+                                    arguments: JSON.stringify(args),
+                                },
+                            },
+                        ],
+                    };
+                },
+                search: async () => {
+                    searches++;
+                    return "No matching offer in the current catalog";
+                },
             },
             [model],
-            1,
+            3,
         ),
         (error) => {
-            assert.ok(error.evidence);
-            assert.deepEqual(error.evidence.sources, []);
+            assert.ok(error instanceof TypeError);
+            assert.equal(searches, 1);
+            assert.deepEqual(error.evidence.plans[0].questions, questions);
+            assert.deepEqual(error.evidence.searches, [
+                {
+                    scope: "azure",
+                    queries: [
+                        "web:exa:challenge:example-v1 azure availability",
+                    ],
+                },
+            ]);
             return true;
         },
     );

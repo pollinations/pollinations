@@ -115,6 +115,74 @@ test("exact versions and every model's lead survive irrelevant triage and the re
     assert.ok(result.gaps.some((gap) => gap.includes("sixteen-lead")));
 });
 
+test("scope rotation preserves Bedrock and alternatives among preferred-provider-heavy leads", async () => {
+    const f = fixture([]);
+    const hosts = [
+        "learn.microsoft.com",
+        "fireworks.ai",
+        "aws.amazon.com",
+        "alternative.example.org",
+    ];
+    const counts = [12, 12, 4, 4];
+    let search = 0;
+    f.services.search = async () => {
+        const index = search++;
+        return JSON.stringify({
+            results: Array.from({ length: counts[index] }, (_, lead) => ({
+                url: `https://${hosts[index]}/catalog/${lead}`,
+                text: "Alpha-v3 exact checkpoint",
+            })),
+        });
+    };
+    const result = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3" }] },
+        f.services,
+    );
+    assert.equal(result.leads.length, 16);
+    assert.equal(result.leads.length + result.unselectedLeads.length, 32);
+    assert.equal(f.reads.length, 16);
+    assert.deepEqual(
+        result.leads.slice(0, 4).map(({ scopes }) => scopes[0]),
+        ["azure", "fireworks", "bedrock", "alternatives"],
+    );
+    assert.deepEqual(
+        result.leads.slice(4, 8).map(({ scopes }) => scopes[0]),
+        ["azure", "fireworks", "bedrock", "alternatives"],
+    );
+    for (const host of hosts)
+        assert.ok(f.reads.some(({ url }) => new URL(url).hostname === host));
+});
+
+test("an exact checkpoint in the safe URL receives only its literal model focus", async () => {
+    const alpha = "https://fireworks.ai/models/maker/Alpha-v3";
+    const f = fixture([
+        { url: alpha, title: "Model details", text: "Available for inference" },
+        {
+            url: "https://learn.microsoft.com/beta",
+            text: "Beta-v2 exact checkpoint",
+        },
+        {
+            url: "https://example.org/models/Alpha-v3.1",
+            text: "Another release",
+        },
+    ]);
+    const result = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3" }, { name: "maker/Beta-v2" }] },
+        f.services,
+    );
+    assert.deepEqual(result.leads.find(({ url }) => url === alpha).models, [
+        "maker/Alpha-v3",
+    ]);
+    assert.deepEqual(
+        f.reads.filter(({ url }) => url === alpha).map(({ focus }) => focus),
+        ["Alpha-v3"],
+    );
+    assert.deepEqual(
+        result.leads.find(({ url }) => url.includes("Alpha-v3.1")).models,
+        [],
+    );
+});
+
 test("parser preserves actual excerpts and rejects unsafe URLs without inventing any", () => {
     const raw =
         "Title: Actual title\nURL: https://example.org/actual\nText: literal snippet\nwith newline\nTitle: Unsafe\nURL: https://user:password@example.org/private\nText: secret";

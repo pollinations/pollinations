@@ -220,6 +220,11 @@ function network(
         const context = JSON.parse(payload.messages[1].content);
         assert.equal(context.preparation.searches.length, 4);
         assert.equal(context.preparation.sources.length, 1);
+        assert.equal(
+            context.savedSources,
+            undefined,
+            "Prepared sources must not be repeated in saved context",
+        );
         const source = context.preparation.sources[0];
         assert.equal(source.method, "scrapling-http");
         assert.equal(source.pageDigest, hash(text));

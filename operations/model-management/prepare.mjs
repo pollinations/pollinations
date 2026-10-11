@@ -212,7 +212,10 @@ export async function prepareResearch(task, services) {
                         ...lead,
                         id: `lead-${candidates.size + 1}`,
                         models: names.filter((name) =>
-                            mentions(`${lead.title}\n${lead.text}`, name),
+                            mentions(
+                                `${lead.title}\n${lead.text}\n${lead.url}`,
+                                name,
+                            ),
                         ),
                         scopes: [],
                         queryModels: [],
@@ -221,7 +224,10 @@ export async function prepareResearch(task, services) {
                 } else {
                     // Keep the first exact excerpt, but retain identities observed in later search snippets.
                     for (const name of names.filter((name) =>
-                        mentions(`${lead.title}\n${lead.text}`, name),
+                        mentions(
+                            `${lead.title}\n${lead.text}\n${lead.url}`,
+                            name,
+                        ),
                     )) {
                         if (!saved.models.includes(name))
                             saved.models.push(name);
@@ -270,7 +276,20 @@ export async function prepareResearch(task, services) {
                     `${name}: no usable exact-checkpoint or preferred-provider catalog lead returned`,
                 );
         }
-        for (const lead of ranked) if (selected.size < 16) selected.add(lead);
+        // Preserve each search scope before preferred providers fill the bounded pass.
+        const scopeLeads = [...scopes.keys()].map((scope) =>
+            ranked.filter((lead) => lead.scopes.includes(scope)),
+        );
+        for (const rows of scopeLeads) {
+            if (rows.length && !rows.some((lead) => selected.has(lead)))
+                selected.add(rows[0]);
+        }
+        while (selected.size < Math.min(16, ranked.length)) {
+            for (const rows of scopeLeads) {
+                const lead = rows.find((item) => !selected.has(item));
+                if (lead && selected.size < 16) selected.add(lead);
+            }
+        }
         leads.push(...selected);
         unselectedLeadIds.push(
             ...ranked

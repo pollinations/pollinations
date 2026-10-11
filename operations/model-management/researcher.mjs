@@ -592,14 +592,10 @@ export function assess(
                         (claim) =>
                             claim.kind === "price" &&
                             modelBound(claim) &&
-                            (route.pricing.unit === "1M_tokens"
-                                ? /(?:1\s*M|million|1,000,000)\s*(?:input\s+|output\s+)?tokens/i.test(
-                                      claim.quote,
-                                  )
-                                : new RegExp(
-                                      `per\\s+(?:one\\s+|1\\s+)?${escaped(route.pricing.unit)}\\b`,
-                                      "i",
-                                  ).test(claim.quote)) &&
+                            (route.pricing.unit !== "1M_tokens" ||
+                                /(?:1\s*M|million|1,000,000)\s*(?:input\s+|output\s+)?tokens/i.test(
+                                    claim.quote,
+                                )) &&
                             [
                                 ...claim.quote.matchAll(
                                     /(?:USD\s*|\$)(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![\d.])/gi,
@@ -613,8 +609,53 @@ export function assess(
                                     )
                                 )
                                     return false;
-                                if (route.pricing.unit !== "1M_tokens")
-                                    return true;
+                                if (route.pricing.unit !== "1M_tokens") {
+                                    const prefix = claim.quote.slice(
+                                        0,
+                                        match.index,
+                                    );
+                                    const suffix = claim.quote.slice(
+                                        match.index + match[0].length,
+                                    );
+                                    const currency =
+                                        prefix.match(
+                                            /\b([A-Z]{3})\)?\s*$/,
+                                        )?.[1];
+                                    if (
+                                        (currency &&
+                                            currency !== "USD" &&
+                                            Intl.supportedValuesOf(
+                                                "currency",
+                                            ).includes(currency)) ||
+                                        /\b(?:HK|NZ|AU|CA|SG|NT|A|C|S|R)$/.test(
+                                            prefix,
+                                        )
+                                    )
+                                        return false;
+                                    const unit =
+                                        route.pricing.unit === "second"
+                                            ? "(?:second|sec)"
+                                            : route.pricing.unit === "image"
+                                              ? "(?:output\\s+)?image"
+                                              : escaped(route.pricing.unit);
+                                    const workload = new RegExp(
+                                        `^\\s*(?:USD\\s+|\\(USD\\)\\s*)?(?:/\\s*|per\\s+(?:one\\s+|1\\s+)?)${unit}\\b(?!\\s*(?:/|[-_]\\w|per\\s+|(?:input\\s+|output\\s+)?tokens?\\b))`,
+                                        "i",
+                                    ).exec(suffix);
+                                    if (!workload) return false;
+                                    const trailingCurrency = suffix
+                                        .slice(workload[0].length)
+                                        .match(
+                                            /^\s*\(?([A-Z]{3})\)?(?:\s|[.,;:]|$)/,
+                                        )?.[1];
+                                    return !(
+                                        trailingCurrency &&
+                                        trailingCurrency !== "USD" &&
+                                        Intl.supportedValuesOf(
+                                            "currency",
+                                        ).includes(trailingCurrency)
+                                    );
+                                }
                                 const before = claim.quote.slice(
                                     Math.max(0, match.index - 24),
                                     match.index,

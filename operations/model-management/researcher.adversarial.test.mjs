@@ -215,6 +215,152 @@ test("million-token quote cannot document per-request pricing", () => {
     );
 });
 
+function assessUnitPrice(quote, input, unit = "image", overrides = {}) {
+    const candidate = route({
+        provider: "replicate",
+        providerWebsite: "https://replicate.com",
+        pricing: { currency: "USD", unit, input, output: null },
+        ...overrides,
+    });
+    candidate.claims.find((claim) => claim.kind === "price").quote = quote;
+    const imageModel = { ...model, category: "image" };
+    return assess(
+        { routes: [candidate], discoveries: [], gaps: [] },
+        [
+            evidence(
+                `example-v1 available now; text and tools. ${quote}`,
+                "https://replicate.com/publisher/example-v1",
+            ),
+        ],
+        scopes,
+        imageModel,
+        [imageModel],
+    );
+}
+
+test("adjacent provider price notation preserves the canonical per-unit amount", () => {
+    for (const [quote, input, unit] of [
+        ["Costs $0.06/image.", 0.06, "image"],
+        ["Costs $0.10/image.", 0.1, "image"],
+        ["Costs $0.03/image.", 0.03, "image"],
+        ["Costs USD 0.06 per output image.", 0.06, "image"],
+        ["Costs $0.06 (USD) per image.", 0.06, "image"],
+        ["Costs $0.06 USD per image.", 0.06, "image"],
+        ["Costs all $0.06/image.", 0.06, "image"],
+        ["Costs $0.06/image, for standard quality.", 0.06, "image"],
+        ["Costs $0.06 per image - standard quality only.", 0.06, "image"],
+        ["Costs $0.06 per one image.", 0.06, "image"],
+        ["Costs $0.06 per 1 image.", 0.06, "image"],
+        ["Costs $0.06/second.", 0.06, "second"],
+        ["Costs $0.06/sec.", 0.06, "second"],
+        ["Costs $0.06 per second.", 0.06, "second"],
+        ["Costs $0.06 per minute.", 0.06, "minute"],
+        ["Costs $0.06 per request.", 0.06, "request"],
+    ]) {
+        const result = assessUnitPrice(quote, input, unit);
+        assert.equal(result.routes[0].pricing.input, input, quote);
+        assert.equal(result.routes[0].pricing.unit, unit, quote);
+        assert.equal(result.routes[0].verification, "documented", quote);
+        assert.equal(result.routes[0].runtimeVerified, false);
+    }
+});
+
+test("mixed-unit quotes bind each amount to its adjacent unit", () => {
+    for (const quote of [
+        "Costs $0.06/image; $0.10/second.",
+        "Costs $0.06 per image; $0.10 per second.",
+        "Costs $0.06 per output image; $0.10/sec.",
+        "Costs $0.06 (USD) per image; $0.10 USD per second.",
+    ]) {
+        for (const [input, unit, supported] of [
+            [0.06, "image", true],
+            [0.1, "second", true],
+            [0.1, "image", false],
+            [0.06, "second", false],
+        ]) {
+            const result = assessUnitPrice(quote, input, unit);
+            assert.equal(
+                result.routes[0].pricing.input,
+                supported ? input : null,
+            );
+            assert.equal(
+                result.routes[0].verification,
+                supported ? "documented" : "unverified",
+            );
+        }
+    }
+});
+
+test("per-unit prices still reject unsupported numbers, units, currencies and checkpoints", () => {
+    for (const [quote, input, unit] of [
+        ["Costs $0.0601/image.", 0.06, "image"],
+        ["Costs $0.06/image.", 0.1, "image"],
+        ["Costs $0.06/second.", 0.06, "image"],
+        ["Costs EUR 0.06/image.", 0.06, "image"],
+        ["Costs CAD $0.06/image.", 0.06, "image"],
+        ["Costs $0.06; another offer is per image.", 0.06, "image"],
+        ["example-v2 costs $0.06/image.", 0.06, "image"],
+    ]) {
+        const result = assessUnitPrice(quote, input, unit);
+        assert.equal(result.routes[0].pricing.input, null, quote);
+        assert.equal(result.routes[0].verification, "unverified", quote);
+        assert.equal(result.recommendation, null, quote);
+    }
+});
+
+test("compound workloads and adjacent foreign currencies cannot document a flat USD image price", () => {
+    for (const quote of [
+        "Costs $0.06/image/second.",
+        "Costs $0.06 per image-minute.",
+        "Costs $0.06 per image_second.",
+        "Costs $0.06 per image per second.",
+        "Costs $0.06 per image per month.",
+        "Costs $0.06 per image token.",
+        "Costs $0.06 per image tokens.",
+        "Costs $0.06 per image input token.",
+        "Costs $0.06 per image output tokens.",
+        "Costs $0.06/image-token.",
+        "Costs NZD $0.06/image.",
+        "Costs (NZD) $0.06/image.",
+        "Costs HK$0.06/image.",
+        "Costs NZ$0.06/image.",
+        "Costs $0.06 NZD per image.",
+        "Costs $0.06 (NZD) per image.",
+        "Costs $0.06/image NZD.",
+        "Costs $0.06/image (NZD).",
+    ]) {
+        const result = assessUnitPrice(quote, 0.06);
+        assert.equal(result.routes[0].pricing.input, null, quote);
+        assert.equal(result.routes[0].verification, "unverified", quote);
+        assert.equal(result.recommendation, null, quote);
+    }
+});
+
+test("recovered slash price cannot promote a route without capabilities evidence", () => {
+    const complete = assessUnitPrice("Costs $0.06/image.", 0.06);
+    assert.equal(complete.routes[0].verification, "documented");
+    assert.equal(complete.recommendation?.provider, "replicate");
+    for (const overrides of [
+        { capabilitiesMatch: null },
+        {
+            claims: route().claims.filter(
+                (claim) => claim.kind !== "capabilities",
+            ),
+        },
+    ]) {
+        const result = assessUnitPrice(
+            "Costs $0.06/image.",
+            0.06,
+            "image",
+            overrides,
+        );
+        assert.equal(result.routes[0].pricing.input, 0.06);
+        assert.equal(result.routes[0].verification, "unverified");
+        assert.equal(result.routes[0].runtimeVerified, false);
+        assert.equal(result.recommendation, null);
+    }
+});
+
 test("explicitly obsolete offer must not recommend a current route", () => {
     mustNotRecommend(
         route(),

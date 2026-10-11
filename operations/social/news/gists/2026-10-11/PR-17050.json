@@ -1,0 +1,36 @@
+{
+  "pr_number": 17050,
+  "title": "fix: stop storing visitor data in legacy cache workers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17050",
+  "merged_at": "2026-10-11T11:25:21Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The legacy image cache now writes only originalUrl, cachedAt and method to R2 custom metadata, removing visitor and request details that nothing reads. The legacy text cache disables Workers Logs so invocation logs no longer retain request URLs, which can contain prompts and query parameters.",
+    "keywords": [
+      "privacy",
+      "image cache",
+      "text cache",
+      "R2 metadata",
+      "Workers Logs"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17050.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli tidies three small metadata cards beside a lime green (#ecf874) cache while a friendly CRT robot closes an oversized logbook; pixel flowers grow around the shelves. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny archivist's visor, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T17:35:55.630858+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "3b6991a1b6c229b74cd8696dd263beccad6c387a",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

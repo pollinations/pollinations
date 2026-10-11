@@ -5,11 +5,12 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { expect, test, vi } from "vitest";
-import worker, { generateCacheKey } from "../src/index.js";
+import worker from "../src/index.js";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
 import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
+import { alarmOf, call, capturedHeaders, nextIp, storedAt } from "./helpers.js";
 
 // The fixed gen responses are in vitest.config.js
 const NOTICE = JSON.parse(vm404).deprecation_notice;
@@ -18,49 +19,6 @@ const SSE_UNTIL_DONE =
     'data: {"choices":[{"delta":{"content":"o"}}],"model":"gpt-oss-20b"}\n\n' +
     'data: {"choices":[{"delta":{"content":"k"}}],"model":"gpt-oss-20b"}\n\n' +
     "data: [DONE]\n\n";
-
-let lastIp = 0;
-const nextIp = () => `198.51.100.${++lastIp}`;
-
-/** Calls the Worker as the edge would, reads the body, then waits for its background work */
-async function call(
-    path,
-    { ip = nextIp(), method, headers, body, testEnv = env } = {},
-) {
-    const ctx = createExecutionContext();
-    const request = new Request(`https://text.pollinations.ai${path}`, {
-        method,
-        body,
-        headers: { "cf-connecting-ip": ip, ...headers },
-    });
-    const response = await worker.fetch(request, testEnv, ctx);
-    const text = await response.text();
-    await waitOnExecutionContext(ctx);
-    return { response, text };
-}
-
-/** A capture's headers, without the ones the edge adds */
-function capturedHeaders(raw) {
-    const edge = ["date", "cf-ray", "cf-cache-status", "server"];
-    const lines = raw.trim().split(/\r?\n/).slice(1);
-    const pairs = lines.map((line) => {
-        const at = line.indexOf(":");
-        return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
-    });
-    return new Map(pairs.filter(([name]) => !edge.includes(name)));
-}
-
-const storedAt = async (path, method = "GET") =>
-    env.TEXT_BUCKET.head(
-        await generateCacheKey(
-            new Request(`https://text.pollinations.ai${path}`, { method }),
-        ),
-    );
-
-const alarmOf = (ip) =>
-    runInDurableObject(env.IP_SLOT.getByName(ip), (_slot, state) =>
-        state.storage.getAlarm(),
-    );
 
 /** The IP_SLOT alarm of an IP whose last generation ended: within the interval */
 const released = async (ip) => {

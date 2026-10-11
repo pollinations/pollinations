@@ -1,13 +1,6 @@
-import {
-    createExecutionContext,
-    env,
-    fetchMock,
-    runInDurableObject,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
-import worker, { generateCacheKey } from "../src/index.js";
 import browserBody from "./fixtures/text.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import jsonChallenge from "./fixtures/text.pollinations.ai-get-json.challenge?raw";
@@ -15,6 +8,13 @@ import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
 import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
+import {
+    alarmOf,
+    call as callWorker,
+    capturedHeaders,
+    nextIp,
+    storedAt,
+} from "./helpers.js";
 
 // Live 402 captures from the VM (2026-10-11) and the paths they were taken on
 const CAPTURED_JSON =
@@ -102,9 +102,6 @@ afterEach(() => {
     events.length = 0;
 });
 
-let lastIp = 0;
-const nextIp = () => `203.0.113.${++lastIp}`;
-
 // gen through the fixed responses in vitest.config.js, recorded in events
 const testEnv = {
     ...env,
@@ -115,41 +112,7 @@ const testEnv = {
         },
     },
 };
-
-/** Calls the Worker as the edge would, reads the body, then waits for its background work */
-async function call(
-    path,
-    {
-        ip,
-        host = "text.pollinations.ai",
-        method,
-        headers,
-        body,
-        app = worker,
-    } = {},
-) {
-    const ctx = createExecutionContext();
-    const request = new Request(`https://${host}${path}`, {
-        method,
-        body,
-        headers: { "cf-connecting-ip": ip, ...headers },
-    });
-    const response = await app.fetch(request, testEnv, ctx);
-    const text = await response.text();
-    await waitOnExecutionContext(ctx);
-    return { response, text };
-}
-
-/** A capture's headers, without the ones the edge adds */
-function capturedHeaders(raw) {
-    const edge = ["date", "cf-ray", "cf-cache-status", "server"];
-    const lines = raw.trim().split(/\r?\n/).slice(1);
-    const pairs = lines.map((line) => {
-        const at = line.indexOf(":");
-        return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
-    });
-    return new Map(pairs.filter(([name]) => !edge.includes(name)));
-}
+const call = (path, options) => callWorker(path, { testEnv, ...options });
 
 /** An IP whose free generation is running, as IpSlot stores it */
 async function limitedIp() {
@@ -159,18 +122,6 @@ async function limitedIp() {
     );
     return ip;
 }
-
-const alarmOf = (ip) =>
-    runInDurableObject(env.IP_SLOT.getByName(ip), (_slot, state) =>
-        state.storage.getAlarm(),
-    );
-
-const storedAt = async (path) =>
-    env.TEXT_BUCKET.head(
-        await generateCacheKey(
-            new Request(`https://text.pollinations.ai${path}`),
-        ),
-    );
 
 /** A PAYMENT-SIGNATURE for a challenge; the stub facilitator accepts any signature */
 function paymentFor(paymentRequired) {

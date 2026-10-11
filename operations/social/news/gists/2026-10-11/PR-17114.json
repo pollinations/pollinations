@@ -1,0 +1,36 @@
+{
+  "pr_number": 17114,
+  "title": "ci: post merged master PRs through the news pipeline",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17114",
+  "merged_at": "2026-10-11T19:01:27Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Added `master` to the `pull_request_target` branches in `news-create-pr-gist.yml`, so merged PRs for the legacy text and image APIs can enter the same news-gist and Discord-post workflow as PRs into `main`. The trigger lives on `main` because `pull_request_target` uses the default branch’s workflow file regardless of a PR’s base branch. The scripts look up PRs by number, and manual runs succeeded for five `master` PRs.",
+    "keywords": [
+      "CI",
+      "news pipeline",
+      "master",
+      "pull_request_target",
+      "Discord"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17114.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli wears a tiny mail carrier hat and carries a code-flower from a path marked `master` toward a retro news terminal, beside a curious CRT monitor robot and flowering vines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T19:02:34.253514+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "d3713d3bddbe98a7a91c1e6b3563c7018f3dcb9c",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

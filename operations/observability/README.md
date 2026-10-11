@@ -19,7 +19,9 @@ The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
 account and routes them to one named Grafana container. The container sleeps
 after 10 minutes without requests, so the first open after that waits for
 Grafana to cold-start. It then starts from a fresh disk, so dashboards must stay
-provisioned from git and Grafana user preferences reset.
+provisioned from git and Grafana user preferences reset. Grafana Live is off
+(`GF_LIVE_MAX_CONNECTIONS=0`), so an open tab holds no WebSocket and no longer
+keeps the container awake.
 
 ## Quick Start
 
@@ -86,7 +88,7 @@ blocked. Do not expose the container's port directly to the internet.
 The Worker also requires its own `POLLINATIONS_AUTH_SESSION_SECRET`. Provisioning
 it requires separate approval. Deploy Enter's updated callback registration first,
 then the app through GitHub Actions. Verify admin/non-admin access, forged-header
-rejection, iframe/WebSocket loading and independent logout before production.
+rejection, iframe loading and independent logout before production.
 
 For the local preview, run Grafana on `127.0.0.1:4001` with
 `root_url=http://localhost:4000/grafana/` and `serve_from_sub_path=true`, using the

@@ -64,7 +64,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: model-research-${{ github.run_id }}
+          name: model-research-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/model-research/
           if-no-files-found: error
           retention-days: 14
@@ -74,6 +74,15 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
         run: node operations/model-management/researcher.mjs publish
+      - name: Save parent publication receipt and uncertain writes
+        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-research-publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/model-research/parent-*.json
+          if-no-files-found: ignore
+          retention-days: 14

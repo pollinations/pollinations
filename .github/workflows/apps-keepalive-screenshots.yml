@@ -3,6 +3,10 @@ name: Models / Research pre-merge E2E
 on:
   workflow_dispatch:
     inputs:
+      evidence_run:
+        description: 'Validation only: reuse completed live research from this run ID.'
+        type: string
+        default: ''
       models:
         description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
         type: string
@@ -35,6 +39,7 @@ jobs:
     permissions:
       contents: read
       issues: write
+      actions: read
     steps:
       - uses: actions/checkout@v5
         with:
@@ -51,7 +56,16 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
+      - name: Load saved live research for publisher validation
+        if: inputs.evidence_run != ''
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.evidence_run }}
+          name: model-research-${{ inputs.evidence_run }}-1
+          path: ${{ runner.temp }}/model-research
       - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
+        if: inputs.evidence_run == ''
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           MODELS: ${{ inputs.models }}

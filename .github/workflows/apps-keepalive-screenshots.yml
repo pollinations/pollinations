@@ -1,42 +1,12 @@
-name: Models / Research pre-merge E2E
-
+name: Models / Research billing audit
 on:
   workflow_dispatch:
-    inputs:
-      models:
-        description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
-        type: string
-        default: ''
-      max_pollen:
-        description: 'Hard Pollen cap for measured usage plus uncertain reservations (0 < budget <= 10).'
-        type: string
-        default: '10'
-      publish_issue:
-        description: 'Create the parent research issue. Disable for a smoke test.'
-        type: boolean
-        default: true
-      use_perplexity:
-        description: 'Opt in to paid Perplexity search as a second opinion; Exa remains the default.'
-        type: boolean
-        default: false
-
 permissions:
-  actions: read
   contents: read
-
-concurrency:
-  group: model-research
-  cancel-in-progress: false
-
 jobs:
-  researcher:
+  audit:
     if: github.ref == 'refs/heads/codex/model-researcher-e2e'
     runs-on: ubuntu-latest
-    timeout-minutes: 360
-    permissions:
-      actions: read
-      contents: read
-      issues: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -44,110 +14,12 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install local Scrapling fetcher
-        run: python -m pip install 'scrapling[fetchers]==0.4.15'
-      - name: Validate researcher
-        env:
-          RUN_LIVE_FETCH: '1'
-        run: node --test operations/model-management/*.test.mjs
-      - name: Find previous completed main research evidence
-        id: previous
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/models-research.yml/runs?branch=main&status=completed&per_page=20" \
-            --jq ".workflow_runs | map(select(.head_branch == \"main\" and .status == \"completed\" and .id != $GITHUB_RUN_ID)) | sort_by(.created_at) | reverse | .[0].id // empty")
-          if [ -z "$run_id" ]; then
-            echo "No prior completed main run; performing first backfill."
-            exit 0
-          fi
-          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
-            --jq ".artifacts | map(select(.expired == false and (.name | startswith(\"model-research-$run_id-\")))) | sort_by(.created_at) | reverse | .[0].id // empty")
-          if [ -n "$artifact_id" ]; then
-            echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
-            echo "artifact_id=$artifact_id" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Previous research artifact unavailable; researching current inventory."
-          fi
-      - name: Restore previous evidence for free source refresh
-        id: restore
-        if: steps.previous.outputs.artifact_id != ''
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          artifact-ids: ${{ steps.previous.outputs.artifact_id }}
-          run-id: ${{ steps.previous.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/model-research-previous
-          merge-multiple: true
-      - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
+      - name: Read stopped research total only
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          MODELS: ${{ inputs.models }}
-          MAX_POLLEN: ${{ inputs.max_pollen }}
-          USE_PERPLEXITY: ${{ inputs.use_perplexity }}
-          RESEARCH_OUT: ${{ runner.temp }}/model-research
-          PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
-        run: node operations/model-management/researcher.mjs
-      - name: Save findings and partial evidence
-        id: evidence
-        if: always()
-        uses: actions/upload-artifact@v4
+          RESEARCH_OUT: ${{ runner.temp }}/model-billing-audit
+        run: node temp/audit-research-billing.mjs
+      - uses: actions/upload-artifact@v4
         with:
-          name: model-research-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/model-research/
-          if-no-files-found: error
-          retention-days: 14
-      - name: Publish parent issue for manual verification handoff
-        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-          RESEARCH_OUT: ${{ runner.temp }}/model-research
-          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
-        run: node operations/model-management/researcher.mjs publish
-      - name: Save parent publication receipt and uncertain writes
-        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: model-research-publication-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/model-research/parent-*.json
-          if-no-files-found: ignore
-          retention-days: 14
-
-      - name: Audit the full official catalog result and cost
-        if: always() && steps.evidence.outcome == 'success'
-        env:
-          RESEARCH_OUT: ${{ runner.temp }}/model-research
-          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
-        run: |
-          node --input-type=module <<'JS'
-          import assert from 'node:assert/strict';
-          import {readFile} from 'node:fs/promises';
-          import {createHash} from 'node:crypto';
-          import {budgetUsed,parentIssue} from './operations/model-management/researcher.mjs';
-          const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
-          const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
-          assert.ok(catalog.every(m=>m.community===false));
-          assert.equal(r.selectedCount,r.officialCount);
-          assert.deepEqual(r.models.map(m=>m.name).sort(),catalog.map(m=>m.name).sort());
-          assert.ok(r.maxPollen<=10 && budgetUsed(r)<=r.maxPollen);
-          assert.equal(r.budgetUsedPollen,budgetUsed(r));
-          const ready=r.models.filter(m=>m.status==='researched');
-          assert.ok(ready.every(m=>['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s))));
-          assert.ok(ready.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
-          const sources=[...(r.sources??[]),...r.models.flatMap(m=>m.sources??[])];
-          assert.ok(sources.filter(s=>s.status==='fetched').every(s=>s.digest===createHash('sha256').update(s.text).digest('hex')));
-          console.log(JSON.stringify({status:r.status,official:r.officialCount,researched:ready.length,blocked:r.models.filter(m=>m.status==='blocked').length,calls:r.calls.length,budgetUsedPollen:r.budgetUsedPollen,historicalQuotes:r.reservedPollen,sources:sources.length}));
-          assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
-          assert.ok(r.calls.every(c=>c.status==='received'));
-          const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
-          assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
-          JS
+          name: model-billing-audit
+          path: ${{ runner.temp }}/model-billing-audit/

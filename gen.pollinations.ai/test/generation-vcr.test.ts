@@ -1550,6 +1550,9 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.responsesDirect.state.requests[0]).toMatchObject({
         body: {
             model: "gpt-5.6-luna",
+            // Azure gets a stream so its headers arrive before Cloudflare's
+            // ~125 s cutoff; the caller still receives JSON.
+            stream: true,
             store: false,
             input: [
                 {

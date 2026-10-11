@@ -262,12 +262,18 @@ describe("gen worker routing", () => {
         await expect(response.text()).resolves.toContain("Disallow: /api/");
     });
 
-    it("serves an agent index with reachable plain-text CLI and API guides", async () => {
+    it("serves agent indexes with reachable plain-text CLI and API guides", async () => {
         const index = await fetchWorker("/llms.txt");
         expect(index.status).toBe(200);
         expect(index.headers.get("Content-Type")).toContain("text/plain");
         expect(index.headers.get("X-Robots-Tag")).toBeNull();
         const body = await index.text();
+        const docsIndex = await fetchWorker("/docs/llms.txt");
+        expect(docsIndex.status).toBe(200);
+        expect(docsIndex.headers.get("Content-Type")).toContain("text/plain");
+        expect(docsIndex.headers.get("X-Robots-Tag")).toBeNull();
+        await expect(docsIndex.text()).resolves.toBe(body);
+
         expect(body).toContain("/docs/polli-skill.md");
         expect(body).toContain("/docs/polli-tasks.md");
         expect(body).toContain("/docs/llm.txt");

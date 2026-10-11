@@ -2,7 +2,8 @@ name: Deploy / Legacy Cloudflare caches
 
 # Deploys the legacy text and image cache Workers (text/image.pollinations.ai
 # and text/image.myceli.ai) when their code changes on master. A manual run
-# redeploys master, or puts an earlier Worker version back at 100% (rollback).
+# redeploys master, or puts an earlier Worker version back at 100% (rollback):
+#   gh workflow run deploy-legacy-caches.yml --ref master -f worker=<text|image> -f version=<version-id>
 on:
   push:
     branches:
@@ -27,9 +28,12 @@ on:
         required: false
         default: ''
 
+# Queue every run: each push deploys only the Workers its own diff touched,
+# so a replaced pending run would leave a change undeployed.
 concurrency:
   group: pollinations-legacy-cache-deploy
   cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read

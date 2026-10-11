@@ -1,0 +1,40 @@
+{
+  "pr_number": 17035,
+  "title": "Add Text Comparison to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17035",
+  "merged_at": "2026-10-11T05:19:24Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added Text Comparison (Comart) to the learn app catalog. The static app uses a single index.html file and has an Arabic right-to-left interface with a client-side Pollinations.ai BYOP OAuth 2.1 PKCE login flow.",
+    "keywords": [
+      "Text Comparison",
+      "Comart",
+      "app catalog",
+      "Arabic",
+      "RTL",
+      "BYOP",
+      "PKCE"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17035.jpg",
+    "prompt": "In a cozy pixel art reading nook, Polli wears tiny reading glasses and studies two text panels beside a lime green (#ecf874) retro monitor, with code-plants growing on the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized or elongated, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream and pastel background."
+  },
+  "generated_at": "2026-10-11T05:20:49.182150+00:00",
+  "app_name": "Text Comparison",
+  "app_url": "https://mahmoudpov373-star.github.io/Comart",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "23df2615962b88e7bdc7e27375e1d83149adba0f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

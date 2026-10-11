@@ -460,6 +460,7 @@ operations/social/prompts/
     linkedin.md                # LinkedIn voice + image adaptation
     instagram.md               # Instagram voice + image adaptation
     discord.md                 # Discord voice + image adaptation
+    reddit.md                  # Reddit voice, unused; kept for a future Reddit agent
 
   gist.md                      # Tier 1: Analyze PR → gist JSON + image prompt
   daily.md                     # Tier 2: Cluster gists into 3-5 narrative arcs + highlights

@@ -405,4 +405,26 @@ describe("ImageParamsSchema", () => {
         });
         expect(result.success).toBe(false);
     });
+
+    it.each([
+        "microsoft/mai-image-2.6",
+        "microsoft/mai-image-2.6-flash",
+        "x-ai/grok-imagine-image",
+        "x-ai/grok-imagine-image-quality",
+    ] as const)("enforces single reference image limit on %s", (model) => {
+        const singleImage = ImageParamsSchema.safeParse({
+            model,
+            image: ["https://example.com/one.png"],
+        });
+        expect(singleImage.success).toBe(true);
+
+        const multiImage = ImageParamsSchema.safeParse({
+            model,
+            image: [
+                "https://example.com/one.png",
+                "https://example.com/two.png",
+            ],
+        });
+        expect(multiImage.success).toBe(false);
+    });
 });

@@ -37,6 +37,12 @@ export async function callXaiImageAPI(
         });
     }
 
+    if (safeParams.image && safeParams.image.length > 1) {
+        throw UpstreamError.fromProvider(400, {
+            message: `${safeParams.model || modelId} supports at most 1 reference image.`,
+        });
+    }
+
     const referenceImage = safeParams.image?.[0];
     const isEditMode = !!referenceImage;
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;

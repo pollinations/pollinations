@@ -94,4 +94,26 @@ describe("xaiModel usage accounting", () => {
             completionImageTokens: 1,
         });
     });
+
+    it("rejects multiple reference images before calling xAI", async () => {
+        syncImageEnv({ XAI_API_KEY: "xai-test-key" } as CloudflareBindings, [
+            "XAI_API_KEY",
+        ]);
+        const requests: XaiRequest[] = [];
+        const fetchSpy = mockXaiFetch(requests);
+
+        await expect(
+            callXaiImageAPI("test prompt", {
+                ...baseParams,
+                image: [
+                    "https://example.com/a.png",
+                    "https://example.com/b.png",
+                ],
+            }),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("at most 1 reference image"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 });

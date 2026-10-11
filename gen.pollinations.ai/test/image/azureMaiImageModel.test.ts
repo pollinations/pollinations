@@ -234,6 +234,28 @@ describe("callAzureMaiImage", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it("rejects multiple reference images before calling Azure", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callAzureMaiImage(
+                "an edit",
+                {
+                    ...baseParams,
+                    image: [
+                        "https://example.com/a.png",
+                        "https://example.com/b.png",
+                    ],
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("at most 1 reference image"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("maps Azure content safety rejections to a content policy error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(

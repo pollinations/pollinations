@@ -159,6 +159,17 @@ export const ImageParamsSchema = z
             });
         }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        if (
+            definition.maxReferenceImages !== undefined &&
+            data.image &&
+            data.image.length > definition.maxReferenceImages
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message: `${data.model} supports at most ${definition.maxReferenceImages} reference image${definition.maxReferenceImages === 1 ? "" : "s"}.`,
+            });
+        }
         const references = [
             {
                 field: "reference_images" as const,

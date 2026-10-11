@@ -1,0 +1,36 @@
+{
+  "pr_number": 17109,
+  "title": "chore: delete the legacy image semantic cache and stop storing urls",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17109",
+  "merged_at": "2026-10-11T17:20:42Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Removed the disabled Vectorize semantic cache, its bindings, setup scripts, documentation, and tests from the legacy image cache Worker. Cached images now retain only cachedAt and method in R2 metadata, not the request URL. DELETE /delete/prompt/* no longer returns the always-false vectorDeleted field. The image cache tests now run offline with vitest; a new CI job runs them on backend-tests triggers, avoiding the existing change-detection job that skips the older backend test jobs. The test R2 bucket was renamed to pollinations-images-legacy-test, and the README now directs deployments through GitHub Actions. Image responses and cache keys are unchanged.",
+    "keywords": [
+      "image cache",
+      "R2 metadata",
+      "Vectorize",
+      "CI",
+      "offline tests"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17109.jpg",
+    "prompt": "In a cozy garden shed, Polli wears a tiny tool belt and tidies an old stack of vector-index papers while a chunky CRT-headed robot labels an R2 storage box 'cachedAt' and 'method'; code-plants grow beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, mint and lavender, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T17:42:56.971015+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "eae320008b393cc18888598bd6c7646a361049a0",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

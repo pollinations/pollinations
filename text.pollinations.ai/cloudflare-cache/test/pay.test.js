@@ -29,7 +29,19 @@ const BROWSER = {
     "user-agent":
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
 };
-const JSON_BODY = { "content-type": "application/json" };
+/** A JSON POST as clients send it, with its Content-Length */
+const jsonPost = (body) => {
+    const text = JSON.stringify(body);
+    return {
+        method: "POST",
+        headers: {
+            ...CURL,
+            "content-type": "application/json",
+            "content-length": String(text.length),
+        },
+        body: text,
+    };
+};
 
 // A stub facilitator: fetchMock answers /supported, /verify and /settle
 const FACILITATOR = "https://x402.weft.network";
@@ -246,9 +258,7 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
 test("POST /openai gets the VM's challenge", async () => {
     const { response, text } = await call("/openai", {
         ip: await limitedIp(),
-        method: "POST",
-        headers: { ...CURL, ...JSON_BODY },
-        body: JSON.stringify({ messages: [{ role: "user", content: "hi" }] }),
+        ...jsonPost({ messages: [{ role: "user", content: "hi" }] }),
     });
 
     expect(response.status).toBe(402);
@@ -407,11 +417,10 @@ test("a paid generation leaves the IP's slot as it was", async () => {
 });
 
 test("a paid POST /openai stays private, no-store", async () => {
-    const paid = await payFor("/openai", {
-        method: "POST",
-        headers: { ...CURL, ...JSON_BODY },
-        body: JSON.stringify({ messages: [{ role: "user", content: "paid" }] }),
-    });
+    const paid = await payFor(
+        "/openai",
+        jsonPost({ messages: [{ role: "user", content: "paid" }] }),
+    );
 
     expect(paid.response.status).toBe(200);
     expect(paid.response.headers.get("cache-control")).toBe(

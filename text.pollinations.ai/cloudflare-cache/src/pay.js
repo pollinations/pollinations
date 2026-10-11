@@ -70,13 +70,11 @@ function paywallApp(env) {
  */
 export async function pay(request, env, ctx, generate) {
     app ??= paywallApp(env);
-    const headers = new Headers(request.headers);
-    headers.delete("content-length");
     const { pathname } = new URL(request.url);
     const paid = app.fetch(
         new Request(RESOURCE_ORIGIN + pathname, {
             method: request.method,
-            headers,
+            headers: request.headers,
         }),
         { generate },
     );

@@ -1,0 +1,148 @@
+{
+  "date": "2026-10-10",
+  "period_start": "2026-10-10",
+  "period_end": "2026-10-10",
+  "title": "Play brings image, video, and audio into one place",
+  "summary": "Play got a new home, PDFs and video got better model support, and agents got catalogs instead of having to guess where the API lives.\n\nThe team added a new Play page with shared controls for image, video, and audio generation. Inputs stay in shareable URLs, and the page provides uploads, previews, downloads, and copyable API URLs for the requests it makes. The website also gained clearer stats and app listings, expandable model descriptions, a more consistent Play layout, and restored redirects for old image links.\n\nA Quest contribution added base64 PDF input for Claude on Bedrock and GPT on Azure/OpenAI, including GPT models that use the Responses API. Another corrected Nova 2 Lite video input so clips reach the model; unsupported video formats and audio now receive explicit errors. Related media-fetch errors now say “media” rather than “image.”\n\nQuest contributors added a public AI Catalog and MCP server cards, plus an RFC 9727 API catalog pointing agents to the OpenAPI description and documentation. The API docs sidebar was tidied, and the generated API reference was refreshed.",
+  "pr_count": 25,
+  "prs": [
+    {
+      "number": 16213,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16847,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16862,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16898,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16904,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16908,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16923,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16925,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16935,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16941,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16948,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16950,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16951,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16953,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16958,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16961,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16962,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16963,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16966,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16967,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16971,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16982,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 16985,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 17002,
+      "date": "2026-10-10"
+    },
+    {
+      "number": 17008,
+      "date": "2026-10-10"
+    }
+  ],
+  "generated_at": "2026-10-11T06:29:49.985515+00:00",
+  "highlights": [
+    {
+      "emoji": "🎨",
+      "title": "A new Play page",
+      "text": "Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        16213,
+        16985
+      ]
+    },
+    {
+      "emoji": "💡",
+      "title": "PDFs for Claude and GPT",
+      "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16898
+      ]
+    },
+    {
+      "emoji": "🤖",
+      "title": "Catalogs for agent discovery",
+      "text": "Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16862,
+        16908
+      ]
+    },
+    {
+      "emoji": "📱",
+      "title": "Furniture ideas from a photo",
+      "text": "Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).",
+      "prs": [
+        16948
+      ],
+      "app": true
+    }
+  ]
+}

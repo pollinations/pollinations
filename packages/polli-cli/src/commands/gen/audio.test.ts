@@ -182,6 +182,36 @@ describe("gen audio output", () => {
             rmSync(folder, { recursive: true });
         }
     });
+
+    it.each([
+        [["--duration", "30"], "--duration"],
+        [["--instrumental"], "--instrumental"],
+        [
+            ["--duration", "30", "--instrumental"],
+            "--duration or --instrumental",
+        ],
+    ])("rejects timestamp options that only apply to music (%j)", async (args, message) => {
+        Object.defineProperty(process.stdin, "isTTY", {
+            configurable: true,
+            value: true,
+        });
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+        const errors: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            errors.push(String(value));
+            return true;
+        });
+
+        await expect(
+            createAudioCommand().parseAsync(["hi", "--timestamps", ...args], {
+                from: "user",
+            }),
+        ).rejects.toMatchObject({ code: 1 });
+        expect(errors.join("")).toContain(message);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it("rejects --speed instead of sending a parameter the API ignores", async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal("fetch", fetchMock);

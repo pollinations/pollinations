@@ -95,7 +95,7 @@ export function createAudioCommand() {
         .option("--play", "Play the audio after saving (platform player)")
         .option(
             "--timestamps",
-            "Also save character-level timing as JSON next to the audio",
+            "Save speech character timings as JSON (not for music options)",
         )
         .action(async (textArg, opts) => {
             const isHuman = getOutputMode() === "human";
@@ -104,6 +104,17 @@ export function createAudioCommand() {
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
+                );
+                throw new ExitSignal(1);
+            }
+
+            const timestampIncompatible = [
+                opts.duration !== undefined && "--duration",
+                opts.instrumental && "--instrumental",
+            ].filter(Boolean);
+            if (opts.timestamps && timestampIncompatible.length > 0) {
+                printError(
+                    `--timestamps can't be combined with ${timestampIncompatible.join(" or ")}; timestamp output is available for speech only.`,
                 );
                 throw new ExitSignal(1);
             }

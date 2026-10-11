@@ -33,7 +33,9 @@ export function ResourceCardHeader({
                     </p>
                 )}
             </div>
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-1">{actions}</div>
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-1">
+                {actions}
+            </div>
         </div>
     );
 }

@@ -1,0 +1,37 @@
+{
+  "pr_number": 17117,
+  "title": "ci: add rollback and secret sync to the manual legacy deploy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17117",
+  "merged_at": "2026-10-11T18:37:09Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The manual legacy Cloudflare cache deploy workflow now accepts `worker=both/text/image` to target the text and image Workers. A validated version ID can roll back one Worker with `wrangler versions deploy <id>@100% -y`. A separate `sync_secrets` option pushes `GEN_API_KEY` and `WEFT_SELLER_API_KEY` from `LEGACY_*` GitHub secrets using `wrangler secret bulk`, printing secret names but not values. Secret sync is restricted to runs from `production`, targets one Worker per run, and cannot be combined with a version rollback. Runs from branches other than `main` or `production` now fail explicitly. With `worker=both`, text and image test and deploy in independent parallel jobs with fail-fast disabled, so an image test failure no longer blocks the text deploy. Cloudflare credentials are limited to steps that call Wrangler, and workflow concurrency uses `queue: max`. The workflow remains manual, with no push trigger.",
+    "keywords": [
+      "CI",
+      "Cloudflare Workers",
+      "legacy caches",
+      "rollback",
+      "secret sync",
+      "deployment"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17117.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli operates two small CRT terminals marked TEXT and IMAGE, with a rewind lever beside one and sealed key jars beside the other; lime green (#ecf874) code-plants grow around the desks against a soft pastel gradient background. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, wears a tiny tool belt, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T18:38:25.625431+00:00",
+  "area": "CI & releases",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "67fd66547857bff3191362d3fbb3233a667de5f6",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

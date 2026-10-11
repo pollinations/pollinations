@@ -62,7 +62,9 @@ describe("prepareMessages", () => {
     });
 
     it("throws ValidationError when messages is empty or not an array", async () => {
-        const { ValidationError } = await import("@shared/http/validation-error.ts");
+        const { ValidationError } = await import(
+            "@shared/http/validation-error.ts"
+        );
         expect(() => prepareMessages([])).toThrow(ValidationError);
         expect(() => prepareMessages("not-an-array")).toThrow(ValidationError);
     });

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       days:
-        description: "Complete UTC days to fetch (1-7 for all datasets, up to 30 for page_views or page_referrers)"
+        description: "Complete UTC days to fetch (1-7 for all or host_views, up to 30 for page_views, up to 89 for page_referrers)"
         default: "1"
       dataset:
         description: "Dataset to fetch: all, or one to backfill without appending the others again"

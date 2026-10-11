@@ -34,9 +34,12 @@
  *
  * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dataset all] [--dry-run]
  *
- * --days fetches the last N complete UTC days (1–30, for a missed run or a
- * backfill). --dataset fetches one dataset only, so a backfill of a new
- * dataset does not append the others again.
+ * --days fetches the last N complete UTC days, for a missed run or a backfill:
+ * up to 7 for all datasets or host_views (a day of everything takes ~2 min),
+ * 30 for page_views and 89 for page_referrers. The zone serves about 90 days:
+ * full detail for ~34 days, then sampled about 10x. --dataset fetches one
+ * dataset only, so a backfill of a new dataset does not append the others
+ * again.
  *
  * Env vars:
  *   CLOUDFLARE_API_TOKEN  Required — Analytics read on the pollinations.ai zone
@@ -49,7 +52,7 @@ const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
-const MAX_DAYS = 30;
+const MAX_DAYS = { all: 7, host_views: 7, page_views: 30, page_referrers: 89 };
 const MAX_RETRIES = 3;
 // Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~60.
 const QUERY_INTERVAL_MS = 1100;
@@ -234,27 +237,28 @@ async function* fromApi(days, dataset) {
             const body = await complete(PAGE_VIEWS_QUERY, pages);
             yield { dataset: "page_views", date, host: "", body };
         }
+        if (wanted("host_views")) {
+            const hosts = groupsOf(
+                await complete(HOSTS_QUERY, {
+                    ...real,
+                    clientRequestHTTPHost_like: "%pollinations.ai",
+                }),
+            ).map((g) => g.dimensions.clientRequestHTTPHost);
+            for (const host of hosts) {
+                const body = await hostViews({
+                    ...real,
+                    clientRequestHTTPHost: host,
+                });
+                yield { dataset: "host_views", date, host, body };
+            }
+        }
+        // Last, so a failure in the newest dataset cannot block the others.
         if (wanted("page_referrers")) {
             const body = await complete(PAGE_REFERRERS_QUERY, {
                 ...pages,
                 AND: BARE_REFERRER_HOST,
             });
             yield { dataset: "page_referrers", date, host: "", body };
-        }
-        if (!wanted("host_views")) continue;
-
-        const hosts = groupsOf(
-            await complete(HOSTS_QUERY, {
-                ...real,
-                clientRequestHTTPHost_like: "%pollinations.ai",
-            }),
-        ).map((g) => g.dimensions.clientRequestHTTPHost);
-        for (const host of hosts) {
-            const body = await hostViews({
-                ...real,
-                clientRequestHTTPHost: host,
-            });
-            yield { dataset: "host_views", date, host, body };
         }
     }
 }
@@ -287,14 +291,15 @@ async function main() {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
     const days = Number(args.days);
-    if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
-        throw new Error(
-            `--days must be a whole number from 1 to ${MAX_DAYS}, got ${args.days}`,
-        );
-    }
     if (args.dataset !== "all" && !DATASETS.includes(args.dataset)) {
         throw new Error(
             `--dataset must be all or one of ${DATASETS.join(", ")}, got ${args.dataset}`,
+        );
+    }
+    const maxDays = MAX_DAYS[args.dataset];
+    if (!Number.isInteger(days) || days < 1 || days > maxDays) {
+        throw new Error(
+            `--days must be a whole number from 1 to ${maxDays} for ${args.dataset}, got ${args.days}`,
         );
     }
 

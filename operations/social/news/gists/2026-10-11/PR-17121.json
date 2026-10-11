@@ -1,0 +1,37 @@
+{
+  "pr_number": 17121,
+  "title": "feat: add the ip slot durable object to the legacy text cache (unused)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17121",
+  "merged_at": "2026-10-11T21:25:37Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added an unused per-IP free-generation slot to the legacy text cache Worker, in preparation for moving the legacy text and image APIs off the OVH VM. The SQLite-backed IpSlot Durable Object preserves the VM rule: while a free generation runs or waits, another text stream gets 429 “Queue full” and a non-stream text or image request gets 402. After it ends, a stream can wait out the remaining 30-second or 45-second interval; non-stream requests still get 402 until the interval ends. Holds expire after 5 minutes if release never arrives, and an alarm cleans up storage unless a new booking arrived. Per-isolate booking memoization lets busy non-stream requests return `pay` without a Durable Object call. Added the `IP_SLOT` binding and SQLite migration, changed the compatibility date to `2025-11-01`, and moved tests from Node to vitest in workerd so they can load `cloudflare:workers`; 25 tests pass, including 9 for IpSlot. As the text cache’s first Durable Object migration, this makes pre-migration versions unavailable as rollback targets.",
+    "keywords": [
+      "legacy API",
+      "text cache",
+      "per-IP limits",
+      "Durable Objects",
+      "Cloudflare Workers",
+      "migration"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17121.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli watches a tiny lime green (#ecf874) clockwork slot beside a retro text-cache terminal, with two code-plants growing nearby; she wears a little caretaker’s tool belt. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T21:27:20.378796+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "450c3684149918f8f84b3436a7d4a2d4207623c2",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "failed"
+  }
+}

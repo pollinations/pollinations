@@ -1,0 +1,37 @@
+{
+  "pr_number": 17065,
+  "title": "chore: upgrade observability grafana to 13.2.3",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17065",
+  "merged_at": "2026-10-11T13:11:02Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Upgraded Observability Grafana from 11.4.0 to 13.2.3-slim while keeping the ClickHouse plugin at 4.22.1. Disabled automatic plugin preinstallation: Grafana 13 otherwise downloads about 18 plugins on a fresh-disk boot, taking 25–69 seconds at half a vCPU against the Worker's 60-second wait; measured boots with preinstallation disabled took 8–13 seconds. Added hideLogo to the kiosk URL to remove Grafana 13's footer. Pinned colours for series that Grafana 13 would otherwise display alike, and changed model-mix charts to a colour-blind palette with grey for Other. Documented Classic dashboard JSON exports because Grafana 13's default V2 format breaks file provisioning. Docker checks with production data found matching results for all 35 panel queries, rendered all 6 dashboards in a kiosk iframe behind an auth proxy without console errors, and returned 200 for a fresh Editor after a cold boot.",
+    "keywords": [
+      "observability",
+      "Grafana",
+      "ClickHouse",
+      "dashboards",
+      "cold start",
+      "Docker"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17065.jpg",
+    "prompt": "In a cozy pixel-art observability garden, Polli tends six tiny dashboard screens glowing lime green (#ecf874) while a chunky CRT monitor robot checks a small boot timer beside a pot of code-flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small-to-medium in the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T13:12:18.979922+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "902498e85fd629ecf548b1d66b9d402cdbef225b",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

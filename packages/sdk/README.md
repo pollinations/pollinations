@@ -537,10 +537,13 @@ See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`,
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations/sdk';
+import { getTextModels, getImageModels, getVideoModels, getAudioModels, getEmbeddingModels } from '@pollinations/sdk';
 
 const textModels = await getTextModels();
 const imageModels = await getImageModels();
+const videoModels = await getVideoModels();
+const audioModels = await getAudioModels();
+const embeddingModels = await getEmbeddingModels();
 
 console.log(textModels.map(m => m.name));
 ```
@@ -628,6 +631,9 @@ import type {
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |
+| `getVideoModels()` | List video models |
+| `getAudioModels()` | List audio models |
+| `getEmbeddingModels()` | List embedding models |
 | `getModels()` | List all models |
 | `configure({ apiKey })` | Set global config |
 

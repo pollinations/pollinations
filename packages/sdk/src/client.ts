@@ -1144,6 +1144,45 @@ export class Pollinations {
     }
 
     /**
+     * Get available video models
+     *
+     * @example
+     * ```ts
+     * const models = await pollinations.videoModels();
+     * console.log(models.map(m => m.name));
+     * ```
+     */
+    async videoModels(): Promise<ModelInfo[]> {
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/video/models`);
+    }
+
+    /**
+     * Get available audio models
+     *
+     * @example
+     * ```ts
+     * const models = await pollinations.audioModels();
+     * console.log(models.map(m => m.name));
+     * ```
+     */
+    async audioModels(): Promise<ModelInfo[]> {
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/audio/models`);
+    }
+
+    /**
+     * Get available embedding models
+     *
+     * @example
+     * ```ts
+     * const models = await pollinations.embeddingModels();
+     * console.log(models.map(m => m.name));
+     * ```
+     */
+    async embeddingModels(): Promise<ModelInfo[]> {
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/embeddings/models`);
+    }
+
+    /**
      * Get all available models
      *
      * @example

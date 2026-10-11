@@ -5,12 +5,7 @@ declare namespace Cloudflare {
 	interface Env {
 		ORIGIN_HOST: "image-origin.pollinations.ai";
 		DEBUG_ANALYTICS: false;
-		SEMANTIC_CACHE_ENABLED: true;
-		SEMANTIC_THRESHOLD_SHORT: 0.95;
-		SEMANTIC_THRESHOLD_LONG: 0.995;
 		IMAGE_BUCKET: R2Bucket;
-		VECTORIZE_INDEX: Vectorize;
-		AI: Ai;
 	}
 }
 interface CloudflareBindings extends Cloudflare.Env {}

@@ -12,7 +12,6 @@ import {
 } from "../src/attribution.ts";
 import { CACHE_VERSION, generateCacheKey } from "../src/cache-utils.ts";
 import { exactCache } from "../src/middleware/exact-cache.ts";
-import { getVersionedSemanticBucket } from "../src/middleware/semantic-cache.ts";
 import { originHeaders } from "../src/util.ts";
 
 describe("endpoint branding", () => {
@@ -40,12 +39,6 @@ describe("endpoint branding", () => {
 
         expect(first).toBe(reordered);
         expect(first.startsWith(`${CACHE_VERSION}-`)).toBe(true);
-    });
-
-    it("versions semantic cache buckets so old unbranded images are bypassed", () => {
-        expect(getVersionedSemanticBucket("1024x1024_nologofalse")).toBe(
-            `${CACHE_VERSION}-1024x1024_nologofalse`,
-        );
     });
 });
 
@@ -106,6 +99,24 @@ describe("exact cache", () => {
         expect(await response.text()).toBe("jpeg");
         expect(generated()).toBe(1);
         expect((await env.IMAGE_BUCKET.head(key))?.size).toBe(4);
+    });
+
+    it("stores only the cache time and method with an image", async () => {
+        const url =
+            "https://image.pollinations.ai/prompt/private-prompt?token=x";
+        const { app } = generatingApp();
+        const ctx = createExecutionContext();
+
+        await app.request(url, {}, env, ctx);
+        await waitOnExecutionContext(ctx);
+
+        const stored = await env.IMAGE_BUCKET.head(
+            generateCacheKey(new URL(url)),
+        );
+        expect(Object.keys(stored?.customMetadata ?? {}).sort()).toEqual([
+            "cachedAt",
+            "method",
+        ]);
     });
 
     it("does not store a HEAD response", async () => {

@@ -4,10 +4,9 @@
     "description": "Cloudflare R2 caching solution for Pollinations image service",
     "type": "module",
     "scripts": {
-        "test": "vitest",
+        "test": "vitest run",
         "deploy": "wrangler deploy",
-        "deploy:env": "bash ./deploy.sh",
-        "dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
+        "dev": "wrangler dev --port 8787",
         "dev:simple": "wrangler dev",
         "logs": "wrangler tail",
         "cf-typegen": "wrangler types --env-interface CloudflareBindings"

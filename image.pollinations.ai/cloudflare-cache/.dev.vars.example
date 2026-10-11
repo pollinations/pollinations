@@ -1,5 +1,4 @@
 # Example of .dev.vars file for local development
-# The deploy.sh script will create this file automatically from your .env file
 
 # Turnstile Configuration
 TURNSTILE_SECRET_KEY=your-turnstile-secret-key-here

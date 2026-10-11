@@ -4,8 +4,7 @@
  */
 
 import type { Context } from "hono";
-import { createSimpleHash, removeUndefined } from "./util.js";
-import { createVectorizeStore } from "./vector-store.js";
+import { removeUndefined } from "./util.js";
 
 type Env = {
     Bindings: Cloudflare.Env;
@@ -143,7 +142,6 @@ export async function cacheResponse(
         const metadata = {
             httpMetadata: removeUndefined(httpMetadata),
             customMetadata: {
-                originalUrl: (c.req.url || "").substring(0, 2048),
                 cachedAt: new Date().toISOString(),
                 method: c.req.method || "GET",
             },
@@ -160,48 +158,27 @@ export async function cacheResponse(
 }
 
 /**
- * Delete a cached image from R2 and Vectorize
+ * Delete a cached image from R2
  * @param {string} cacheKey - The cache key to delete
  * @param {Cloudflare.Env} env - The environment bindings
- * @returns {Promise<{r2Deleted: boolean, vectorDeleted: boolean}>} - Deletion results
+ * @returns {Promise<boolean>} - Whether an object was deleted
  */
 export async function deleteCacheEntry(
     cacheKey: string,
     env: Cloudflare.Env,
-): Promise<{ r2Deleted: boolean; vectorDeleted: boolean }> {
-    let r2Deleted = false;
-    let vectorDeleted = false;
-
-    // Delete from R2
-    // Note: R2 delete() returns void and doesn't throw if key doesn't exist
-    // We first check if the object exists to provide accurate feedback
+): Promise<boolean> {
+    // R2 delete() returns void and doesn't throw if the key doesn't exist,
+    // so check first to report whether something was deleted
     try {
         const existingObject = await env.IMAGE_BUCKET.head(cacheKey);
         if (existingObject) {
             await env.IMAGE_BUCKET.delete(cacheKey);
             console.log("[DELETE] Deleted from R2:", cacheKey);
-            r2Deleted = true;
-        } else {
-            console.log("[DELETE] Object not found in R2:", cacheKey);
+            return true;
         }
+        console.log("[DELETE] Object not found in R2:", cacheKey);
     } catch (error) {
         console.error("[DELETE] Error deleting from R2:", error);
     }
-
-    // Delete from Vectorize
-    // Note: Vectorize deletes are asynchronous and may take a few seconds to propagate
-    try {
-        const vectorStore = createVectorizeStore(env.VECTORIZE_INDEX);
-        const vectorId = await createSimpleHash(cacheKey);
-        vectorDeleted = await vectorStore.deleteById(vectorId);
-        if (vectorDeleted) {
-            console.log("[DELETE] Deleted from Vectorize:", vectorId);
-        } else {
-            console.log("[DELETE] Vector not found or delete failed:", vectorId);
-        }
-    } catch (error) {
-        console.error("[DELETE] Error deleting from Vectorize:", error);
-    }
-
-    return { r2Deleted, vectorDeleted };
+    return false;
 }

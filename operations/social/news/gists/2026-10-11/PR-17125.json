@@ -1,0 +1,37 @@
+{
+  "pr_number": 17125,
+  "title": "feat: sync Polli updates from production",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/17125",
+  "merged_at": "2026-10-11T20:40:33Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Polli switches to GPT-6.1-Sol and queues follow-up messages. It can reply to requests separately or together with clear user mentions, and can acknowledge messages or respond with one or more emoji reactions through its existing reply flow. Mixed-user batches remain read-only, with each requester's permissions isolated. The update also refreshes Polli's conversational style, lookup recovery, and guidance on the official and community model catalogs.",
+    "keywords": [
+      "Polli",
+      "Discord",
+      "GPT-6.1-Sol",
+      "replies",
+      "reactions",
+      "permissions"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17125.jpg",
+    "prompt": "In a cozy garden hackerspace, Polli sorts little pixel chat bubbles into separate and combined reply trays beside a glowing lime green (#ecf874) CRT, with emoji tokens and code-plants on the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny headphones and stays small within the scene. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T20:41:48.379703+00:00",
+  "area": "Internal automation",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "404135d0e92e0bec0ab7ee761f1dd3034360a07a",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

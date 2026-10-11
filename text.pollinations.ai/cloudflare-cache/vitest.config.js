@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
 // wrangler.toml's Data rule for *.webp, for the tests: the pool cannot load a
-// Data module from outside this folder (shared/assets/weft-paywall.webp)
+// Data module from outside this folder (shared/assets/weft-paywall.webp). The
+// module id has no ".webp" in it, or the pool hands it to that rule anyway.
+const AS_ARRAY_BUFFER = "-webp-as-array-buffer.js";
 const webpAsArrayBuffer = {
     name: "webp-as-array-buffer",
     enforce: "pre",
@@ -11,12 +13,11 @@ const webpAsArrayBuffer = {
         const resolved = await this.resolve(source, importer, {
             skipSelf: true,
         });
-        // The query keeps the pool from handing the file to its Data rule
-        return `${resolved.id}?array-buffer`;
+        return resolved.id.replace(/\.webp$/, AS_ARRAY_BUFFER);
     },
     load(id) {
-        if (!id.endsWith(".webp?array-buffer")) return;
-        const file = id.replace("?array-buffer", "");
+        if (!id.endsWith(AS_ARRAY_BUFFER)) return;
+        const file = id.replace(AS_ARRAY_BUFFER, ".webp");
         const base64 = readFileSync(file).toString("base64");
         return `export default Uint8Array.from(atob("${base64}"), (c) => c.charCodeAt(0)).buffer;`;
     },

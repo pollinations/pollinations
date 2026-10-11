@@ -554,63 +554,40 @@ function textResponse(completion) {
 
 /**
  * sendAsOpenAIStream with stopAfterSseDone: gen's SSE up to "data: [DONE]",
- * then a blank line and the end. Cancelling it cancels gen's stream.
+ * then a blank line and the end. The pipe from gen settles when the stream
+ * completes, fails or is cancelled by the client, which also cancels gen.
  */
 function sse(body, ended) {
-    const reader = body.getReader();
     // Bytes not yet sent: "data: [DONE]" may start in them
     let pending = new Uint8Array(0);
-    let reading = false;
-    let cancelled = false;
-    const finish = (controller, bytes) => {
-        if (bytes.byteLength) controller.enqueue(bytes);
-        controller.close();
-        ended();
-    };
-    const stream = new ReadableStream({
-        async pull(controller) {
-            try {
-                reading = true;
-                const { done, value } = await reader.read();
-                reading = false;
-                if (cancelled) return reader.cancel();
-                if (done) return finish(controller, pending);
-                const bytes = new Uint8Array(
-                    pending.byteLength + value.byteLength,
-                );
-                bytes.set(pending);
-                bytes.set(value, pending.byteLength);
-                const at = indexOf(bytes, SSE_DONE);
-                if (at !== -1) {
-                    const end = at + SSE_DONE.byteLength;
-                    const last = new Uint8Array(end + 2);
-                    last.set(bytes.subarray(0, end));
-                    last.set([10, 10], end);
-                    finish(controller, last);
-                    return reader.cancel();
-                }
-                const keep = Math.min(
-                    bytes.byteLength,
-                    SSE_DONE.byteLength - 1,
-                );
-                if (bytes.byteLength > keep) {
-                    controller.enqueue(bytes.slice(0, bytes.byteLength - keep));
-                }
-                pending = bytes.slice(bytes.byteLength - keep);
-            } catch (error) {
-                ended();
-                if (!cancelled) controller.error(error);
+    const cut = new TransformStream({
+        transform(chunk, controller) {
+            const bytes = new Uint8Array(pending.byteLength + chunk.byteLength);
+            bytes.set(pending);
+            bytes.set(chunk, pending.byteLength);
+            const at = indexOf(bytes, SSE_DONE);
+            if (at !== -1) {
+                const end = at + SSE_DONE.byteLength;
+                const last = new Uint8Array(end + 2);
+                last.set(bytes.subarray(0, end));
+                last.set([10, 10], end);
+                controller.enqueue(last);
+                return controller.terminate();
             }
+            const keep = Math.min(bytes.byteLength, SSE_DONE.byteLength - 1);
+            if (bytes.byteLength > keep) {
+                controller.enqueue(bytes.slice(0, bytes.byteLength - keep));
+            }
+            pending = bytes.slice(bytes.byteLength - keep);
         },
-        cancel() {
-            cancelled = true;
-            ended();
-            // workerd reports an unhandled rejection when a stream is cancelled
-            // during a read, so a read in progress cancels gen once it returns
-            if (!reading) return reader.cancel();
+        flush(controller) {
+            if (pending.byteLength) controller.enqueue(pending);
         },
     });
-    return new Response(stream, {
+    body.pipeTo(cut.writable)
+        .catch(() => {})
+        .finally(ended);
+    return new Response(cut.readable, {
         headers: {
             ...CORS,
             "X-Powered-By": "Express",

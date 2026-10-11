@@ -880,6 +880,36 @@ test("NomNom verification rejects endorsement-only research and preserves eviden
     );
 });
 
+test("parent issue prioritizes useful provider leads over a long unresolved inventory", () => {
+    const artifactUrl =
+        "https://github.com/pollinations/pollinations/actions/runs/123/artifacts/456";
+    const report = {
+        startedAt: "2026-10-11T00:00:00Z",
+        status: "complete",
+        selectedCount: 221,
+        officialCount: 221,
+        discovery: { status: "researched", discoveries: [] },
+        models: Array.from({ length: 221 }, (_, i) => ({
+            name: `publisher/unresolved-${i}`,
+            status: "researched",
+            routes: [],
+            recommendation: null,
+        })),
+    };
+    report.models[220] = {
+        name: "publisher/useful-model",
+        status: "researched",
+        routes: [],
+        recommendation: { provider: "azure" },
+    };
+    const issue = parentIssue(report, artifactUrl);
+    assert.match(issue.body, /useful-model → azure/);
+    assert.match(issue.body, /Unresolved providers: 220 models/);
+    assert.doesNotMatch(issue.body, /unresolved-\d/);
+    assert.ok(issue.body.length < 350);
+    assert.ok(issue.body.split("\n").every((line) => line.startsWith("- ")));
+});
+
 test("parent issue gives concise model/provider findings, documented prices and verification reminder", () => {
     const artifactUrl =
         "https://github.com/pollinations/pollinations/actions/runs/123/artifacts/456";

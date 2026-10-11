@@ -29,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: model-research
+  group: model-research-${{ inputs.audit_only && 'billing' || 'validation' }}
   cancel-in-progress: false
 
 jobs:

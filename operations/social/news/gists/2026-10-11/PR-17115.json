@@ -1,0 +1,37 @@
+{
+  "pr_number": 17115,
+  "title": "feat: add the pollinations-large sandbox template (4 vCPU, 8 GB)",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17115",
+  "merged_at": "2026-10-11T18:15:48Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added an opt-in `pollinations-large` sandbox template, created with `polli sandbox create pollinations-large`, with 4 vCPU and 8 GB RAM. The default `pollinations` template remains 2 vCPU and 2 GB; the larger option gives memory-heavy workloads, including the full gen test suite, room beyond the default sandbox's 2 GB limit. Both templates use the same Dockerfile image, with the large template built using `--cpu-count 4 --memory-mb 8192`. Gen logs polli in for both templates by exact template name, and billing follows each sandbox's actual size. Docs list launch prices of about 0.033 Pollen/hour for `pollinations` and 0.083 Pollen/hour for `pollinations-large`. CLI help, README, and skill documentation name the new template; `@pollinations/cli` was bumped to 0.1.41.",
+    "keywords": [
+      "sandboxes",
+      "polli CLI",
+      "pollinations-large",
+      "E2B",
+      "memory",
+      "Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17115.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli stands beside two flower-framed sandbox workbenches, gently helping the larger one grow enough room for a stack of test files; a lime green (#ecf874) terminal glows nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, is small-to-medium sized and never dominates the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and mint-to-peach accents and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-10-11T18:16:52.575875+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "42c3b985c46dfb99bbd60f016ed4513691049e87",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

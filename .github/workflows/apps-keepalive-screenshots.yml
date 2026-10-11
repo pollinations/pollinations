@@ -14,7 +14,7 @@ on:
       max_pollen:
         description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '0.3'
+        default: '0.26'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
@@ -65,7 +65,7 @@ jobs:
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           assert.equal(process.env.MODELS,'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b');
-          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.3);
+          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.26);
           JS
       - name: Restore the stopped full-catalog validation evidence
         id: previous
@@ -139,8 +139,8 @@ jobs:
           assert.equal(r.researchMode,'compact');
           assert.deepEqual(r.models.map(m=>m.name).sort(),['cohere/embed-v4.0','google/gemini-embedding-2','openai/text-embedding-3-large','openai/text-embedding-3-small','qwen/qwen3-embedding-8b'].sort());
           assert.equal(r.discovery.status,'skipped');
-          assert.ok(r.maxPollen<=0.3 && budgetUsed(r)<=r.maxPollen);
-          assert.ok(2.5+6.8821505+0.2714467+0.00004882962+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
+          assert.ok(r.maxPollen<=0.26 && budgetUsed(r)<=r.maxPollen);
+          assert.ok(2.5+6.8821505+0.2714467+0.00004882962+0.0835327243+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
           assert.ok(r.billing && !r.billingGap, 'Billed usage must be checked');
           assert.equal(r.budgetUsedPollen,budgetUsed(r));
           const ready=r.models.filter(m=>m.status==='researched');

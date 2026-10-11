@@ -51,7 +51,7 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
-      - name: Research official catalog and market
+      - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           MODELS: ${{ inputs.models }}

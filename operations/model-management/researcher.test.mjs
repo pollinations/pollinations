@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
     assess,
+    main,
     officialCatalog,
     parentIssue,
     publicAddress,
@@ -81,6 +85,7 @@ test("exactly three option-based tools; no implementation or agent handoff", () 
         "gemini-search",
     ]);
     assert.deepEqual(TOOLS[2].function.parameters.properties.action.enum, [
+        "plan",
         "compare",
         "verify",
         "submit",
@@ -335,10 +340,39 @@ test("real tool-loop code enforces coverage before accepting a report", async ()
             "research",
             { action: "submit", routes: [], discoveries: [], gaps: [] },
         ],
+        [
+            "research",
+            {
+                action: "plan",
+                questions: [
+                    "Which exact versions are available?",
+                    "What is the full workload cost?",
+                    "What evidence contradicts each offer?",
+                ],
+                routes: [],
+                discoveries: [],
+                gaps: [],
+            },
+        ],
         ...["azure", "fireworks", "bedrock", "alternatives"].map((scope) => [
             "search",
-            { scope, engine: "exa", mode: "web", query: `example-v1 ${scope}` },
+            {
+                scope,
+                engine: "exa",
+                mode: "web",
+                purpose: scope === "alternatives" ? "challenge" : "explore",
+                query: `example-v1 ${scope}`,
+            },
         ]),
+        [
+            "research",
+            {
+                action: "verify",
+                routes: [],
+                discoveries: [],
+                gaps: ["No verified offers"],
+            },
+        ],
         [
             "research",
             {
@@ -380,7 +414,185 @@ test("real tool-loop code enforces coverage before accepting a report", async ()
     );
     assert.equal(result.searches.length, 4);
     assert.equal(result.recommendation, null);
-    assert.equal(index, 6);
+    assert.equal(result.plans.length, 1);
+    assert.equal(index, 8);
+});
+
+test("paid Perplexity requires explicit opt-in", async () => {
+    for (const enabled of [false, true]) {
+        await assert.rejects(
+            research(
+                { model },
+                {
+                    infer: async (messages, tools) => {
+                        assert.deepEqual(
+                            tools[0].function.parameters.properties.engine.enum,
+                            enabled ? ["exa", "perplexity"] : ["exa"],
+                        );
+                        assert.ok(
+                            JSON.parse(messages[1].content).currentUtcDate,
+                        );
+                        throw new Error("Stopped before any paid operation");
+                    },
+                },
+                [model, { name: "perplexity", paid_only: true }],
+                1,
+                enabled,
+            ),
+            /Stopped before any paid operation/,
+        );
+    }
+});
+
+test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token allowance", async (t) => {
+    const payloads = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        if (url.includes("/models?"))
+            return Response.json([
+                model,
+                {
+                    name: "openai/gpt-6.1-sol",
+                    community: false,
+                    paid_only: false,
+                    pricing: {
+                        promptTextTokens: "0.000002",
+                        completionTextTokens: "0.00001",
+                    },
+                },
+            ]);
+        if (url.endsWith("/mcp"))
+            return Response.json({
+                data: [
+                    {
+                        id: "exa",
+                        pricing: {
+                            rates: [
+                                { kind: "search_request", price: 0.007 },
+                                { kind: "page", price: 0.001 },
+                            ],
+                        },
+                    },
+                ],
+            });
+        assert.ok(url.endsWith("/v1/chat/completions"));
+        payloads.push(JSON.parse(options.body));
+        return Response.json({
+            usage: { total_tokens: 1 },
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: "No evidence gathered",
+                    },
+                },
+            ],
+        });
+    });
+    const oldExitCode = process.exitCode;
+    try {
+        const report = await main({
+            POLLINATIONS_API_KEY: "test-only",
+            MODELS: model.name,
+            MAX_POLLEN: "1",
+            RESEARCH_OUT: await mkdtemp(join(tmpdir(), "model-research-test-")),
+        });
+        assert.equal(payloads.length, 2);
+        for (const payload of payloads) {
+            assert.equal(payload.model, "openai/gpt-6.1-sol");
+            assert.equal(payload.reasoning_effort, "medium");
+            assert.equal(payload.max_tokens, 12000);
+            assert.equal(payload.temperature, undefined);
+            assert.match(
+                JSON.parse(payload.messages[1].content).operatingPolicy,
+                /Research the exact route/,
+            );
+        }
+        assert.deepEqual(report.inference, {
+            model: "openai/gpt-6.1-sol",
+            reasoningEffort: "medium",
+        });
+        assert.ok(report.calls.every((call) => call.reserved >= 0.12));
+        assert.match(report.guidance.digest, /^[a-f0-9]{64}$/);
+    } finally {
+        process.exitCode = oldExitCode;
+    }
+});
+
+test("NomNom verification rejects endorsement-only research and preserves evidence", async () => {
+    const calls = [
+        [
+            "research",
+            {
+                action: "plan",
+                questions: [
+                    "Which exact versions are available?",
+                    "What is the full workload cost?",
+                    "What evidence contradicts each offer?",
+                ],
+                routes: [],
+                discoveries: [],
+                gaps: [],
+            },
+        ],
+        ...["azure", "fireworks", "bedrock", "alternatives"].map((scope) => [
+            "search",
+            {
+                scope,
+                engine: "exa",
+                mode: "web",
+                purpose: "explore",
+                query: `example-v1 ${scope}`,
+            },
+        ]),
+        [
+            "research",
+            { action: "verify", routes: [], discoveries: [], gaps: [] },
+        ],
+        [
+            "research",
+            { action: "submit", routes: [], discoveries: [], gaps: [] },
+        ],
+    ];
+    let index = 0;
+    await assert.rejects(
+        research(
+            { model },
+            {
+                infer: async (messages) => {
+                    if (index === 6)
+                        assert.match(
+                            messages.at(-1).content,
+                            /counter-evidence/,
+                        );
+                    const [name, args] = calls[index++];
+                    return {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: `call-${index}`,
+                                type: "function",
+                                function: {
+                                    name,
+                                    arguments: JSON.stringify(args),
+                                },
+                            },
+                        ],
+                    };
+                },
+                search: async () =>
+                    "No exact public model found; access remains unknown",
+            },
+            [model],
+            calls.length,
+        ),
+        (error) => {
+            assert.match(error.message, /turn budget/);
+            assert.equal(error.evidence.plans.length, 1);
+            assert.equal(error.evidence.searches.length, 4);
+            return true;
+        },
+    );
 });
 
 test("parent issue is concise, includes partial coverage and manual handoff, never claims probes", () => {

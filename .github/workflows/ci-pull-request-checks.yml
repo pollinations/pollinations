@@ -23,7 +23,7 @@ jobs:
       - name: Check for researcher changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- operations/model-management .github/workflows/models-research.yml .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- operations/model-management .claude/skills/model-management .github/workflows/models-research.yml .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v5

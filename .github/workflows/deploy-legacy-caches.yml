@@ -57,12 +57,14 @@ jobs:
           if [ "$SYNC_SECRETS" = true ] && [ "$REF" != refs/heads/production ]; then
             fail "sync_secrets runs only from production: production secrets are never synchronized from another branch."
           fi
+          # Each secret approval covers one Worker.
+          [ "$SYNC_SECRETS" != true ] || [ "$WORKER" != both ] || fail "Sync one Worker per run: choose worker=text or worker=image."
           if [ -n "$VERSION" ]; then
             [ "$WORKER" != both ] || fail "A version id belongs to one Worker: choose worker=text or worker=image."
             [[ "$VERSION" =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] || fail "version must be a Worker version id (a lowercase UUID)."
-            # A version keeps the secret values it was created with, so a
-            # rollback after a sync would serve the old values again.
-            [ "$SYNC_SECRETS" != true ] || fail "Run sync_secrets and version separately: the rolled-back version keeps its own secret values."
+            # Cloudflare refuses (10220) to deploy a version created before a
+            # later secret change, so never combine the two in one run.
+            [ "$SYNC_SECRETS" != true ] || fail "Run sync_secrets and version separately."
           fi
 
   deploy:
@@ -91,8 +93,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: ${{ matrix.worker }}.pollinations.ai/cloudflare-cache/package-lock.json
 
       - name: Install dependencies
         run: npm ci

@@ -12,7 +12,8 @@ export const MAX_HOLD_MS = 5 * 60_000;
  * - t - now > intervalMs: a generation holds the IP (running, or waiting to
  *   start) until its release(), or until t
  * - otherwise, while t > now: the last generation ended and the next may start at t
- *   (a hold in its final intervalMs reads the same way, which is harmless)
+ *   (so does a hold in its final intervalMs, reached only by a generation
+ *   running longer than MAX_HOLD_MS - intervalMs)
  * The alarm fires when the IP frees, and deleteAll() leaves nothing stored for
  * idle IPs. Keep this class unchanged once deployed: during a gradual
  * deployment each object may run either Worker version.
@@ -22,7 +23,7 @@ export class IpSlot extends DurableObject {
      * @param {number} intervalMs time between the starts of two free generations
      * @param {boolean} canWait whether the caller can wait for the next slot (text streams)
      * @returns {Promise<{action: "go" | "wait" | "full" | "pay", waitMs: number, until: number, holdUntil?: number}>}
-     *   No free generation can start before `until`. After a go or wait, pass
+     *   After a go or wait, no free generation can start before `until`; pass
      *   the result to release() once the generation ends.
      */
     async take(intervalMs, canWait) {
@@ -73,8 +74,9 @@ export class IpSlot extends DurableObject {
 }
 
 const MAX_REMEMBERED_IPS = 10_000;
-// Per isolate: IP -> the `until` of its latest take(). A booking's until never
-// moves, so a non-stream request before it gets "pay" without an RPC.
+// Per isolate: IP -> the `until` of its latest go or wait. No release() brings
+// that forward, so a non-stream request before it gets "pay" without an RPC.
+// A pay answer's until is not kept: it can be a hold's end, which release() can.
 const busyUntilByIp = new Map();
 
 /**
@@ -87,7 +89,9 @@ export async function takeSlot(namespace, ip, intervalMs, canWait) {
     }
 
     const slot = await namespace.getByName(ip).take(intervalMs, canWait);
-    if (busyUntilByIp.size >= MAX_REMEMBERED_IPS) busyUntilByIp.clear();
-    busyUntilByIp.set(ip, slot.until);
+    if (slot.action === "go" || slot.action === "wait") {
+        if (busyUntilByIp.size >= MAX_REMEMBERED_IPS) busyUntilByIp.clear();
+        busyUntilByIp.set(ip, slot.until);
+    }
     return slot;
 }

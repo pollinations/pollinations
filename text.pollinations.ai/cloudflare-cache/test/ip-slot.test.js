@@ -145,3 +145,18 @@ test("takeSlot answers a busy non-stream request without calling the object", as
     expect((await takeSlot(namespace, ip, INTERVAL, true)).action).toBe("full");
     expect(calls).toBe(2);
 });
+
+test("takeSlot forgets a hold's end once its generation is released", async () => {
+    const ip = "198.51.100.9";
+    const stub = env.IP_SLOT.getByName(ip);
+    // In its last interval, a hold answers pay until its 5-minute end
+    const running = await runningSince(stub, MAX_HOLD_MS - INTERVAL / 2);
+
+    expect((await takeSlot(env.IP_SLOT, ip, INTERVAL, false)).action).toBe(
+        "pay",
+    );
+    await stub.release(running);
+    expect((await takeSlot(env.IP_SLOT, ip, INTERVAL, false)).action).toBe(
+        "go",
+    );
+});

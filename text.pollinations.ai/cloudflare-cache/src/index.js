@@ -193,6 +193,12 @@ const worker = {
                 return await proxyRequest(request, env);
             }
 
+            // A HEAD response has no body. HEAD shares the GET cache key, so
+            // storing it would serve an empty body to every later GET.
+            if (request.method === "HEAD") {
+                return await proxyRequest(request, env);
+            }
+
             log("cache", "Cache miss, proxying to origin...");
             // Store the request body if present (for POST/PUT requests)
             const hasRequestBody = await storeRequestBody(env, request, key);
@@ -352,34 +358,8 @@ const worker = {
                 },
             });
 
-            // Handle HEAD requests (no body) vs other requests
-            if (request.method === "HEAD" || !originResp.body) {
-                // HEAD requests have no body, but we should still cache the headers
-                log("cache", "📝 Caching HEAD request response (headers only)");
-
-                // Cache the response metadata without body
-                try {
-                    const metadata = prepareMetadata(
-                        request,
-                        url,
-                        originResp,
-                        0, // No content size for HEAD
-                        false, // Not streaming
-                        hasRequestBody,
-                    );
-
-                    // Store empty body with metadata for HEAD requests
-                    ctx.waitUntil(
-                        env.TEXT_BUCKET.put(key, new ArrayBuffer(0), {
-                            customMetadata: metadata,
-                        }),
-                    );
-
-                    log("cache", "✅ HEAD response cached successfully");
-                } catch (err) {
-                    log("error", `❌ HEAD caching failed: ${err.message}`);
-                }
-
+            // A response without a body has nothing to cache.
+            if (!originResp.body) {
                 return new Response(null, {
                     status: originResp.status,
                     statusText: originResp.statusText,
@@ -613,12 +593,14 @@ export function prepareForwardedHeaders(requestHeaders, url) {
 /**
  * Get a cached response from R2
  */
-async function getCachedResponse(env, key) {
+export async function getCachedResponse(env, key) {
     try {
         // Get the cached object from R2
         const cachedObject = await env.TEXT_BUCKET.get(key);
 
-        if (!cachedObject) {
+        // HEAD misses used to store empty objects; treat them as misses so
+        // the next GET replaces them with the real response.
+        if (!cachedObject || cachedObject.size === 0) {
             return null;
         }
 

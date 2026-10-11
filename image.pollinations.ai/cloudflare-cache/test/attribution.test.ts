@@ -1,3 +1,9 @@
+import {
+    createExecutionContext,
+    env,
+    waitOnExecutionContext,
+} from "cloudflare:test";
+import { Hono } from "hono";
 import { proxy } from "hono/proxy";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -5,6 +11,7 @@ import {
     addAttributionHeaders,
 } from "../src/attribution.ts";
 import { CACHE_VERSION, generateCacheKey } from "../src/cache-utils.ts";
+import { exactCache } from "../src/middleware/exact-cache.ts";
 import { getVersionedSemanticBucket } from "../src/middleware/semantic-cache.ts";
 import { originHeaders } from "../src/util.ts";
 
@@ -69,5 +76,48 @@ describe("origin request", () => {
         expect(sent?.headers.get("x-forwarded-host")).toBe(
             "image.pollinations.ai",
         );
+    });
+});
+
+describe("exact cache", () => {
+    const generatingApp = () => {
+        let generated = 0;
+        const app = new Hono<{ Bindings: Cloudflare.Env }>();
+        app.all("/prompt/:prompt", exactCache, (c) => {
+            generated++;
+            return c.body(c.req.method === "HEAD" ? null : "jpeg", 200, {
+                "content-type": "image/jpeg",
+            });
+        });
+        return { app, generated: () => generated };
+    };
+
+    it("regenerates instead of serving an empty cached image", async () => {
+        const url = "https://image.pollinations.ai/prompt/empty-hit";
+        const key = generateCacheKey(new URL(url));
+        await env.IMAGE_BUCKET.put(key, new ArrayBuffer(0));
+        const { app, generated } = generatingApp();
+        const ctx = createExecutionContext();
+
+        const response = await app.request(url, {}, env, ctx);
+        await waitOnExecutionContext(ctx);
+
+        expect(response.headers.get("x-cache")).toBe("MISS");
+        expect(await response.text()).toBe("jpeg");
+        expect(generated()).toBe(1);
+        expect((await env.IMAGE_BUCKET.head(key))?.size).toBe(4);
+    });
+
+    it("does not store a HEAD response", async () => {
+        const url = "https://image.pollinations.ai/prompt/head-miss";
+        const { app } = generatingApp();
+        const ctx = createExecutionContext();
+
+        await app.request(url, { method: "HEAD" }, env, ctx);
+        await waitOnExecutionContext(ctx);
+
+        expect(
+            await env.IMAGE_BUCKET.head(generateCacheKey(new URL(url))),
+        ).toBeNull();
     });
 });

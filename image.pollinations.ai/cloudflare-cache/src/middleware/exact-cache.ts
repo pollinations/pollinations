@@ -22,7 +22,9 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
 
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
-        if (cachedImage) {
+        // HEAD misses used to store empty objects; treat them as misses so
+        // the next GET replaces them with the real image.
+        if (cachedImage && cachedImage.size > 0) {
             console.log("[EXACT] Cache hit");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
@@ -47,8 +49,10 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     // - Content-type is not an image
     // - Already a cache hit (semantic)
     // - X-Error-Type header is present (error images should not be cached)
+    // - It is a HEAD request (no body to store)
     if (
         c.res?.ok &&
+        c.req.method !== "HEAD" &&
         !c.req.header("payment-signature") &&
         !c.req.header("x-payment") &&
         c.res.headers.get("content-type")?.includes("image/") &&

@@ -38,7 +38,10 @@ export class IpSlot extends DurableObject {
     }
 
     async alarm() {
-        await this.ctx.storage.deleteAll();
+        // A take() that landed after this alarm came due set a new one: keep it
+        if ((await this.ctx.storage.getAlarm()) === null) {
+            await this.ctx.storage.deleteAll();
+        }
     }
 }
 

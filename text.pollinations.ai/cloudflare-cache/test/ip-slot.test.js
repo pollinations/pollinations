@@ -60,7 +60,7 @@ test("a stream waits for the next slot and a second waiter finds it full", async
     expect((await storageOf(stub)).alarm).toBe(waiter.until);
 });
 
-test("an overdue slot goes again and its stale alarm keeps the new reservation", async () => {
+test("an expired booking goes again and replaces its alarm", async () => {
     const stub = env.IP_SLOT.getByName("198.51.100.4");
     const slot = await runInDurableObject(stub, async (ipSlot, state) => {
         await state.storage.setAlarm(Date.now() - 1);
@@ -70,6 +70,20 @@ test("an overdue slot goes again and its stale alarm keeps the new reservation",
     expect(slot.action).toBe("go");
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect((await storageOf(stub)).alarm).toBe(slot.until);
+});
+
+test("an alarm that runs after a new booking leaves it alone", async () => {
+    // A take() can land after the runtime starts an alarm and before alarm()
+    // runs; alarm() then sees the new booking and must not wipe the object
+    const stub = env.IP_SLOT.getByName("198.51.100.7");
+    const marker = await runInDurableObject(stub, async (ipSlot, state) => {
+        await ipSlot.take(INTERVAL, false);
+        await state.storage.put("marker", 1);
+        await ipSlot.alarm();
+        return state.storage.get("marker");
+    });
+
+    expect(marker).toBe(1);
 });
 
 test("the alarm frees the slot and leaves nothing stored", async () => {

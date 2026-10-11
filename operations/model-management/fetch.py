@@ -148,4 +148,4 @@ def main():
 
 
 if __name__ == "__main__":
-    print(json.dumps(main(), ensure_ascii=False))
+    print(json.dumps(main()))

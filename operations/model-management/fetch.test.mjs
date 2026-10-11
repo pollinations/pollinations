@@ -7,7 +7,11 @@ const adapter = fileURLToPath(new URL("./fetch.py", import.meta.url));
 const python = process.env.PYTHON ?? "python";
 
 function run(request) {
-    const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot };
+    const env = {
+        PATH: process.env.PATH,
+        SystemRoot: process.env.SystemRoot,
+        PYTHONIOENCODING: "ascii",
+    };
     if (process.env.PYTHONPATH) env.PYTHONPATH = process.env.PYTHONPATH;
     const result = spawnSync(python, [adapter], {
         input: JSON.stringify(request),
@@ -46,6 +50,16 @@ test("refuses dynamic mode until browser subrequests can be IP-validated", () =>
     assert.equal(result.status, "unavailable");
     assert.equal(result.method, "scrapling-dynamic");
     assert.match(result.error, /subrequests/);
+});
+
+test("JSON transport preserves Unicode even with an ASCII-only stdout", () => {
+    const result = run({
+        url: "https://127.0.0.1/🪴",
+        mode: "http",
+        maxCharacters: 100,
+    });
+    assert.equal(result.status, "unavailable");
+    assert.equal(result.url, "https://127.0.0.1/🪴");
 });
 
 test(

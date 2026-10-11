@@ -682,7 +682,10 @@ export async function research(
                 messages.push({
                     role: "tool",
                     tool_call_id: call.id,
-                    content: JSON.stringify(output).slice(0, 24000),
+                    content: JSON.stringify(output).slice(
+                        0,
+                        call.function.name === "search" ? 8000 : 24000,
+                    ),
                 });
             }
         }

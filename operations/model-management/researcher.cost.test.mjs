@@ -147,6 +147,7 @@ test("main checks billing before and after paid work and stops on failure or the
             join(tmpdir(), "research-billing-integration-"),
         );
         const report = await main({
+            RESEARCH_MODE: "interactive",
             POLLINATIONS_API_KEY: "test-key",
             MODELS: "publisher/test-v1",
             MAX_POLLEN: "1",
@@ -173,6 +174,7 @@ test("main checks billing before and after paid work and stops on failure or the
             join(tmpdir(), "research-billing-after-payment-"),
         );
         const report = await main({
+            RESEARCH_MODE: "interactive",
             POLLINATIONS_API_KEY: "test-key",
             MODELS: "publisher/test-v1",
             MAX_POLLEN: "1",
@@ -273,6 +275,7 @@ test("budget above ten Pollen is rejected before any network or output write", a
     });
     await assert.rejects(
         main({
+            RESEARCH_MODE: "interactive",
             POLLINATIONS_API_KEY: "test-key",
             MAX_POLLEN: "10.01",
             RESEARCH_OUT: out,
@@ -352,6 +355,7 @@ test("real main settles cache-aware usage within one invocation budget", async (
         });
     });
     const report = await main({
+        RESEARCH_MODE: "interactive",
         POLLINATIONS_API_KEY: "test-key",
         MAX_POLLEN: "1",
         MODELS: "",
@@ -415,6 +419,7 @@ test("invalid component prices are rejected before any paid inference", async (t
         rates = { ...pricing, [field]: rate };
         const out = await mkdtemp(join(tmpdir(), "research-cost-"));
         const report = await main({
+            RESEARCH_MODE: "interactive",
             POLLINATIONS_API_KEY: "test-key",
             MAX_POLLEN: "1",
             MODELS: "",
@@ -501,6 +506,7 @@ test("the next quote exceeding the remaining budget stops before payment and pre
         });
     });
     const report = await main({
+        RESEARCH_MODE: "interactive",
         POLLINATIONS_API_KEY: "test-key",
         MAX_POLLEN: "0.12",
         MODELS: "",

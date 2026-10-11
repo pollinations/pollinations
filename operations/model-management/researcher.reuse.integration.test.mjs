@@ -33,6 +33,7 @@ test("main reuses valid rows from a partial artifact through free HTTP and resea
     });
     const root = await mkdtemp(join(tmpdir(), "research-reuse-integration-"));
     const envFor = (name) => ({
+        RESEARCH_MODE: "interactive",
         POLLINATIONS_API_KEY: "test-runtime-key",
         MODELS: model.name,
         MAX_POLLEN: "1",

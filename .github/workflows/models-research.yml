@@ -10,7 +10,7 @@ on:
       max_pollen:
         description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '10'
+        default: '4'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean

@@ -768,6 +768,7 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
     try {
         const report = await main({
             POLLINATIONS_API_KEY: "test-only",
+            RESEARCH_MODE: "interactive",
             MODELS: model.name,
             MAX_POLLEN: "1",
             RESEARCH_OUT: await mkdtemp(join(tmpdir(), "model-research-test-")),

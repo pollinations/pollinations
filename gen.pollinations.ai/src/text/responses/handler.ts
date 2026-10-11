@@ -48,10 +48,8 @@ import {
     responsesTargetFromConfig,
 } from "./client.js";
 import {
-    isForeignEncryptedReasoning,
     ResponsesInvalidRequestError,
     validateDirectResponsesRequest,
-    withoutReasoningItems,
 } from "./request.js";
 import { applySafetyToResponseRequest } from "./safety.js";
 import { requireResponsesStreamUsage } from "./stream.js";
@@ -230,18 +228,11 @@ async function handleDirectResponse(
                     c,
                     attempt,
                 );
-                const send = (body: CreateResponseRequest) =>
-                    callDirectResponses(
-                        buffered ? { ...body, stream: false } : body,
-                        responsesClient.target,
-                        responsesClient.fetcher,
-                    );
-                // Replayed reasoning from another provider account (after a
-                // fallback or a model switch): answer without it.
-                const result = await send(request).catch((error: unknown) => {
-                    if (!isForeignEncryptedReasoning(error)) throw error;
-                    return send(withoutReasoningItems(request));
-                });
+                const result = await callDirectResponses(
+                    buffered ? { ...request, stream: false } : request,
+                    responsesClient.target,
+                    responsesClient.fetcher,
+                );
                 if (request.stream && !buffered) {
                     assertStreamContentType(
                         c,

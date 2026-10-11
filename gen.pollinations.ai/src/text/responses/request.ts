@@ -50,29 +50,6 @@ export function validateDirectResponsesRequest(
     }
 }
 
-/**
- * Encrypted reasoning only decrypts at the provider account that issued it, so
- * a replay after a fallback or a model switch fails with this code.
- */
-export function isForeignEncryptedReasoning(error: unknown): boolean {
-    const details = (error as { details?: { error?: { code?: unknown } } })
-        ?.details;
-    return details?.error?.code === "invalid_encrypted_content";
-}
-
-/** The request without replayed reasoning, as Chat providers receive it. */
-export function withoutReasoningItems(
-    request: CreateResponseRequest,
-): CreateResponseRequest {
-    if (!Array.isArray(request.input)) return request;
-    return {
-        ...request,
-        input: request.input.filter(
-            (item) => !isPlainObject(item) || item.type !== "reasoning",
-        ),
-    };
-}
-
 export function buildDirectResponsesRequestBody(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,

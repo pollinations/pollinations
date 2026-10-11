@@ -117,7 +117,6 @@ function createGenerationMocks() {
         failStream: boolean;
         wrongStreamContentType: boolean;
         terminalTypeInEventOnly: boolean;
-        rejectEncryptedReasoning: boolean;
     } = {
         requests: [],
         omitUsage: false,
@@ -125,7 +124,6 @@ function createGenerationMocks() {
         failStream: false,
         wrongStreamContentType: false,
         terminalTypeInEventOnly: false,
-        rejectEncryptedReasoning: false,
     };
     const deepInfraState: { requests: Record<string, unknown>[] } = {
         requests: [],
@@ -147,21 +145,6 @@ function createGenerationMocks() {
             return Response.json(
                 { error: { message: "responses provider unavailable" } },
                 { status: responsesState.failStatus },
-            );
-        }
-        if (
-            responsesState.rejectEncryptedReasoning &&
-            JSON.stringify(body.input).includes('"encrypted_content":"')
-        ) {
-            return Response.json(
-                {
-                    error: {
-                        message: "Encrypted content could not be decrypted",
-                        type: "invalid_request_error",
-                        code: "invalid_encrypted_content",
-                    },
-                },
-                { status: 400 },
             );
         }
         const perplexity = body.model === "perplexity/sonar";
@@ -320,7 +303,6 @@ function createGenerationMocks() {
                 responsesState.failStream = false;
                 responsesState.wrongStreamContentType = false;
                 responsesState.terminalTypeInEventOnly = false;
-                responsesState.rejectEncryptedReasoning = false;
             },
         },
         imageBackend: {
@@ -1834,17 +1816,11 @@ const codexSecondTurn = {
     ],
 };
 
-test.for([
-    ["replays encrypted reasoning", false, 1],
-    ["drops reasoning the provider cannot decrypt", true, 2],
-] as const)("direct Responses Codex turn %s and bills once", async ([
-    _name,
-    rejectEncryptedReasoning,
-    upstreamCalls,
-], { paidApiKey, mocks }) => {
+test("direct Responses passes a Codex turn's encrypted reasoning through and bills once", async ({
+    paidApiKey,
+    mocks,
+}) => {
     await mocks.enable("tinybird", "responsesDirect");
-    mocks.responsesDirect.state.rejectEncryptedReasoning =
-        rejectEncryptedReasoning;
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1859,19 +1835,13 @@ test.for([
     await wait();
 
     const requests = mocks.responsesDirect.state.requests;
-    expect(requests).toHaveLength(upstreamCalls);
+    expect(requests).toHaveLength(1);
     expect(requests[0].body).toMatchObject({
         model: "gpt-6-astra",
         include: ["reasoning.encrypted_content"],
         input: codexSecondTurn.input,
     });
-    for (const { body } of requests) {
-        expect(body).not.toHaveProperty("client_metadata");
-    }
-    const last = requests[upstreamCalls - 1].body;
-    expect(JSON.stringify(last.input).includes('"type":"reasoning"')).toBe(
-        !rejectEncryptedReasoning,
-    );
+    expect(requests[0].body).not.toHaveProperty("client_metadata");
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelUsed: "openai/gpt-6-astra",

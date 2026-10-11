@@ -87,7 +87,10 @@ export const docsCommand = new Command("docs")
                 if (isJson) {
                     printResult({ endpoint: endpoint ?? null, content });
                 } else {
-                    process.stdout.write(styleMarkdown(content));
+                    const output = process.stdout.isTTY
+                        ? styleMarkdown(content)
+                        : content;
+                    process.stdout.write(output);
                     process.stdout.write("\n");
                 }
             } catch (err) {

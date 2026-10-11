@@ -2,10 +2,16 @@ import { afterEach, expect, it, vi } from "vitest";
 import { setOutputMode } from "../lib/output.js";
 import { docsCommand } from "./docs.js";
 
+const originalStdoutTTY = process.stdout.isTTY;
+
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     setOutputMode("human");
+    Object.defineProperty(process.stdout, "isTTY", {
+        configurable: true,
+        value: originalStdoutTTY,
+    });
 });
 
 it.each([
@@ -84,3 +90,28 @@ it.each([
 
     expect(JSON.parse(String(write.mock.calls[0][0])).content).toBe(section);
 });
+
+it("preserves raw markdown when stdout is not a TTY", async () => {
+    const rawMarkdown =
+        '## API\nUse `response_format: "url"` in your request.\n';
+    vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(new Response(rawMarkdown)),
+    );
+    const writes: string[] = [];
+    vi.spyOn(process.stdout, "write").mockImplementation((str) => {
+        writes.push(String(str));
+        return true;
+    });
+    Object.defineProperty(process.stdout, "isTTY", {
+        configurable: true,
+        value: false,
+    });
+    setOutputMode("human");
+
+    await docsCommand.parseAsync([], { from: "user" });
+
+    expect(writes.join("")).toBe(`${rawMarkdown}\n`);
+    expect(writes.join("")).toContain('`response_format: "url"`');
+});
+

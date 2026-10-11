@@ -331,6 +331,10 @@ test("the VM's other routes: redirect, models, crossdomain, feed and preflight",
     expect(preflight.response.headers.get("access-control-allow-headers")).toBe(
         "content-type,x-custom",
     );
+    // cors() set it for Safari
+    expect(preflight.response.headers.get("content-length")).toBe("0");
+    // Preflights take the cache path and its split, as before
+    expect(preflight.response.headers.get("x-legacy-path")).toBe("worker");
 });
 
 /** Express's finalhandler page, as the VM's production process sent it */
@@ -549,18 +553,22 @@ test("a HEAD miss is not stored, so the next GET returns the full text", async (
     expect(hit.text).toBe("ok");
 });
 
-test("ADAPTER_SHARE 0 sends cache misses to the VM", async () => {
+test("ADAPTER_SHARE 0 sends cache misses and preflights to the VM", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(
         async () =>
             new Response("from the vm", {
                 headers: { "content-length": "11" },
             }),
     );
+    const testEnv = { ...env, ADAPTER_SHARE: "0" };
 
-    const { response, text } = await call("/to%20the%20vm", {
-        testEnv: { ...env, ADAPTER_SHARE: "0" },
-    });
+    for (const method of ["GET", "OPTIONS"]) {
+        const { response, text } = await call("/to%20the%20vm", {
+            method,
+            testEnv,
+        });
 
-    expect(text).toBe("from the vm");
-    expect(response.headers.get("x-legacy-path")).toBe("vm");
+        expect(text, method).toBe("from the vm");
+        expect(response.headers.get("x-legacy-path"), method).toBe("vm");
+    }
 });

@@ -95,10 +95,9 @@ const worker = {
                 return turnstileResponse; // Return 403 if verification failed
             }
 
-            // Preflights, the GET root redirect (POST / is cached) and the
-            // listed paths are answered fresh by origin(), never from R2
+            // The GET root redirect (POST / is cached) and the listed paths
+            // are answered fresh by origin(), never from R2
             if (
-                request.method === "OPTIONS" ||
                 (url.pathname === "/" && request.method === "GET") ||
                 NON_CACHE_PATHS.includes(url.pathname)
             ) {

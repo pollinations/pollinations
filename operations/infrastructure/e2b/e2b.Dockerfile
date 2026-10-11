@@ -5,6 +5,7 @@
 # harnesses (polli-harnesses.sh). Rebuild with the E2B team key:
 #   E2B_API_KEY=... npx -y @e2b/cli@2.20.0 template create pollinations \
 #     --path operations/infrastructure/e2b --cpu-count 2 --memory-mb 2048
+# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192.
 FROM e2bdev/base
 
 USER root

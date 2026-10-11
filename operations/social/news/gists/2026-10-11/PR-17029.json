@@ -1,0 +1,36 @@
+{
+  "pr_number": 17029,
+  "title": "fix: cache finished KPI weeks for a week",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17029",
+  "merged_at": "2026-10-11T11:14:53Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The internal KPI dashboard now caches weekly Tinybird pipe results for seven days starting one day after a week ends, allowing late events to land. The current and just-ended weeks retain their 30-minute cache. Cold loads are expected to drop from about 97 Tinybird calls and 105 seconds to 13 calls and 15 seconds; weekly reads are expected to fall by roughly 4.4 TB. Retention queries remain the largest cost at about 10 GB and 9 seconds per load. Traffic-classification changes now require a TINYBIRD_CACHE_VERSION bump, and a test covers the Monday boundary.",
+    "keywords": [
+      "KPI dashboard",
+      "Tinybird",
+      "weekly cache",
+      "performance",
+      "retention"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17029.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli tends seven lime green (#ecf874) calendar-shaped code-plants beside a glowing KPI monitor, while a little Monday clock marks the boundary. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses, stays small-to-medium within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-10-11T11:16:38.673462+00:00",
+  "area": "Data & insights",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "ea4700950ad133f48bed5275ebc110ac8b6ce440",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

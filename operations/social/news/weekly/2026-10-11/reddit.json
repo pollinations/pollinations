@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-10-11",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:31:24.709063+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly recap: new models and fewer API detours",
+  "text": "Oct 4–10: 227 PRs selected for this recap, not the total merge count. A few threads worth pulling on:\n\n- **Models:** Additions span FLUX.3 Image, Seedream 5.0 Flash, Nano Banana 2.1, Claude Haiku 5.5, Mistral Large 4, Grok Imagine Video 1.5 Lite, Eleven v4 speech, and MAI voice and transcription. The catalog gained [search and capability filters](https://github.com/pollinations/pollinations/pull/16246); routing and fallback changes give several existing models another provider path.\n\n- **Agents and APIs:** [Chat text models were added to `/v1/responses`](https://github.com/pollinations/pollinations/pull/16811). [Gemini tool-call handling](https://github.com/pollinations/pollinations/pull/16864) now preserves parallel calls and streams arguments incrementally. Growing agent sessions got better prompt-cache reuse, and document/PDF handling expanded across Messages and model routes.\n\n- **Media:** The [rebuilt Play page](https://github.com/pollinations/pollinations/pull/16213) puts image, video, and audio generation together with uploads, previews, and request-shaped API URLs. Video reference media landed in the SDK; large generation request bodies no longer have to fit the former 32 MiB coordinator RPC limit.\n\n- **Developer tools:** Community text endpoints can return a completed answer even when the client expects a stream ([#16732](https://github.com/pollinations/pollinations/pull/16732)). CLI chat follow-ups retain context, SDK raw text calls retain options, and uploads retain filenames.\n\nThe [repo](https://github.com/pollinations/pollinations) has the individual PRs. If you maintain a Responses or media client, the compatibility edges are probably the most useful part of this batch."
+}

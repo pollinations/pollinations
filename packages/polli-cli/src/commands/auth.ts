@@ -1,5 +1,5 @@
 import { Command, Option } from "commander";
-import { gen } from "../lib/api.js";
+import { ApiError, gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
@@ -108,15 +108,36 @@ async function readStdinToken(): Promise<string> {
     return text.trim();
 }
 
+async function verifyKey(key: string): Promise<void> {
+    try {
+        const info = await gen<{ valid: boolean }>("/account/key", {
+            apiKey: key,
+        });
+        if (!info.valid) {
+            printError("Invalid API key. The key was rejected by Pollinations.");
+            throw new ExitSignal(1);
+        }
+    } catch (error) {
+        if (error instanceof ExitSignal) throw error;
+        if (error instanceof ApiError && error.status === 401) {
+            printError("Invalid API key. The key was rejected by Pollinations.");
+            throw new ExitSignal(1);
+        }
+        printError(
+            `Could not verify key: ${error instanceof Error ? error.message : error}`,
+        );
+        throw new ExitSignal(1);
+    }
+}
+
 async function authenticateWithKey(key: string): Promise<void> {
+    await verifyKey(key);
     storeKey(key);
     printSuccess("Authenticated. Key stored.");
 
     const label = await fetchProfileLabel(key);
     if (label) {
         printSuccess(label);
-    } else {
-        printInfo("Key stored but could not verify. It may still be valid.");
     }
     printInfo(flavor.login);
 }

@@ -36,3 +36,121 @@ describe("auth status", () => {
         });
     });
 });
+
+describe("auth login", () => {
+    it("rejects an invalid token with 401 and does not store it", async () => {
+        const stderr: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            stderr.push(String(chunk));
+            return true;
+        });
+        vi.stubGlobal("fetch", async (url: string) => {
+            if (url.includes("/account/key")) {
+                return new Response("Unauthorized", {
+                    status: 401,
+                    statusText: "Unauthorized",
+                });
+            }
+            return Response.json({});
+        });
+
+        await expect(
+            authCommand.parseAsync(
+                ["login", "--token", "sk_invalid_test_key"],
+                { from: "user" },
+            ),
+        ).rejects.toThrow("exit 1");
+
+        expect(stderr.join("")).toContain("Invalid API key");
+    });
+
+    it("rejects a token when /account/key returns valid: false", async () => {
+        const stderr: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            stderr.push(String(chunk));
+            return true;
+        });
+        vi.stubGlobal("fetch", async (url: string) => {
+            if (url.includes("/account/key")) {
+                return Response.json({ valid: false });
+            }
+            return Response.json({});
+        });
+
+        await expect(
+            authCommand.parseAsync(
+                ["login", "--token", "sk_invalid_test_key"],
+                { from: "user" },
+            ),
+        ).rejects.toThrow("exit 1");
+
+        expect(stderr.join("")).toContain("Invalid API key");
+    });
+
+    it("stores the key when verification succeeds", async () => {
+        const stderr: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            stderr.push(String(chunk));
+            return true;
+        });
+        vi.stubGlobal("fetch", async (url: string) => {
+            if (url.includes("/account/key")) {
+                return Response.json({ valid: true });
+            }
+            if (url.includes("/account/profile")) {
+                return Response.json({ githubUsername: "testuser" });
+            }
+            return Response.json({});
+        });
+
+        await authCommand.parseAsync(
+            ["login", "--token", "sk_valid_test_key"],
+            { from: "user" },
+        );
+
+        expect(stderr.join("")).toContain("Authenticated. Key stored.");
+        expect(stderr.join("")).toContain("Logged in as testuser");
+    });
+
+    it("rejects an invalid token piped via --with-token and leaves credentials unchanged", async () => {
+        const stderr: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            stderr.push(String(chunk));
+            return true;
+        });
+        const { Readable } = await import("node:stream");
+        const originalStdin = process.stdin;
+        Object.defineProperty(process, "stdin", {
+            configurable: true,
+            value: Readable.from([Buffer.from("sk_invalid_pipe\n")]),
+        });
+        Object.defineProperty(process.stdin, "isTTY", {
+            configurable: true,
+            value: false,
+        });
+
+        vi.stubGlobal("fetch", async (url: string) => {
+            if (url.includes("/account/key")) {
+                return new Response("Unauthorized", {
+                    status: 401,
+                    statusText: "Unauthorized",
+                });
+            }
+            return Response.json({});
+        });
+
+        try {
+            await expect(
+                authCommand.parseAsync(["login", "--with-token"], {
+                    from: "user",
+                }),
+            ).rejects.toThrow("exit 1");
+            expect(stderr.join("")).toContain("Invalid API key");
+        } finally {
+            Object.defineProperty(process, "stdin", {
+                configurable: true,
+                value: originalStdin,
+            });
+        }
+    });
+});

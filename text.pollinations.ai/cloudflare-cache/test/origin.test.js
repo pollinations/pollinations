@@ -278,11 +278,32 @@ test("the VM's other routes: redirect, models, crossdomain, feed and preflight",
     expect(root.text).toBe(
         "Moved Permanently. Redirecting to https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
     );
-    const browser = await call("/", { headers: { accept: "text/html" } });
-    expect(browser.text).toBe(`<p>${root.text}</p>`);
-    expect(browser.response.headers.get("content-type")).toBe(
-        "text/html; charset=utf-8",
-    );
+    // res.redirect negotiates text/plain, text/html or an empty body
+    const html = `<p>${root.text}</p>`;
+    for (const [accept, type, body] of [
+        ["text/html", "text/html", html],
+        ["text/html,application/xhtml+xml,*/*;q=0.8", "text/html", html],
+        ["text/plain, text/html", "text/plain", root.text],
+        ["text/html;q=0.5, */*", "text/plain", root.text],
+        ["application/json, text/*;q=0.2", "text/plain", root.text],
+        ["*/plain", "text/plain", root.text],
+        ["TEXT/HTML", "text/html", html],
+        ["application/json", null, ""],
+        ["text/html;q=0, text/plain;q=0", null, ""],
+        ["text/html;level=1", null, ""],
+        ["*", null, ""],
+    ]) {
+        const { response, text } = await call("/", { headers: { accept } });
+        expect(response.status, accept).toBe(301);
+        expect(text, accept).toBe(body);
+        expect(response.headers.get("content-type"), accept).toBe(
+            type && `${type}; charset=utf-8`,
+        );
+        expect(response.headers.get("content-length"), accept).toBe(
+            String(body.length),
+        );
+        expect(response.headers.get("vary"), accept).toBe("Accept");
+    }
 
     const models = await call("/models");
     expect(models.text).toBe(vmModels);

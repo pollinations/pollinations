@@ -269,18 +269,55 @@ function preflight(request) {
     return new Response(null, { status: 204, headers });
 }
 
-/** Express's res.redirect(301): a text or HTML body by Accept */
+/**
+ * req.accepts(["text", "html"]) as negotiator ranks them: text/plain,
+ * text/html, or undefined when Accept allows neither
+ */
+function redirectType(accept) {
+    if (accept === null) return "text/plain";
+    const ranges = accept.split(",").map((range, o) => {
+        const [name, ...params] = range.split(";").map((part) => part.trim());
+        const at = params.findIndex((param) => /^q=/i.test(param));
+        return {
+            name: name.toLowerCase(),
+            q: at === -1 ? 1 : Number.parseFloat(params[at].slice(2)),
+            // a media type parameter before q never matches a bare type
+            params: at === -1 ? params.length : at,
+            o,
+        };
+    });
+    // Per type, the most specific range wins, then the highest q
+    const ranked = ["text/plain", "text/html"].flatMap((type, i) => {
+        const [main, sub] = type.split("/");
+        const matches = ranges.flatMap((range) => {
+            const [rangeMain, rangeSub] = range.name.split("/");
+            if (range.params || !rangeSub) return [];
+            if (rangeMain !== main && rangeMain !== "*") return [];
+            if (rangeSub !== sub && rangeSub !== "*") return [];
+            const s = (rangeMain === main ? 4 : 0) + (rangeSub === sub ? 2 : 0);
+            return [{ ...range, s }];
+        });
+        matches.sort((a, b) => b.s - a.s || b.q - a.q || b.o - a.o);
+        return matches[0]?.q > 0 ? [{ type, i, ...matches[0] }] : [];
+    });
+    ranked.sort((a, b) => b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i);
+    return ranked[0]?.type;
+}
+
+/** Express's res.redirect(301): a text, HTML or empty body by Accept */
 function redirect(request) {
-    const html = (request.headers.get("accept") ?? "").includes("text/html");
+    const type = redirectType(request.headers.get("accept"));
     const message = `Moved Permanently. Redirecting to ${DOCS_URL}`;
-    const body = html ? `<p>${message}</p>` : message;
-    return new Response(body, {
+    const bodies = { "text/plain": message, "text/html": `<p>${message}</p>` };
+    const body = bodies[type] ?? "";
+    // A string body, even empty, would get the runtime's text/plain type
+    return new Response(body || null, {
         status: 301,
         headers: {
             ...CORS,
             Location: DOCS_URL,
             Vary: "Accept",
-            "Content-Type": `text/${html ? "html" : "plain"}; charset=utf-8`,
+            ...(type && { "Content-Type": `${type}; charset=utf-8` }),
             "Content-Length": String(body.length),
         },
     });

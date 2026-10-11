@@ -772,7 +772,7 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
             MAX_POLLEN: "1",
             RESEARCH_OUT: await mkdtemp(join(tmpdir(), "model-research-test-")),
         });
-        assert.equal(payloads.length, 2);
+        assert.equal(payloads.length, 1);
         for (const payload of payloads) {
             assert.equal(payload.model, "openai/gpt-6.1-sol");
             assert.equal(payload.reasoning_effort, "medium");

@@ -866,6 +866,7 @@ export async function research(
     const actions = [];
     let audited = null;
     let candidate = null;
+    let deliveredThrough = messages.length;
     const evidence = () => ({
         plans,
         actions,
@@ -905,7 +906,7 @@ export async function research(
                       ? "Verify the compact exact candidate now, with only supported routes/discoveries and concise explicit gaps. Reserve the final turn for action=submit,auditDigest only; do not repeat the report."
                       : "Finish within these turns. Once coverage and primary-source leads exist, prioritize verification and submission. Reserve the final two turns for verifying the exact report and submitting it. Limit discovery to eight serious leads; unresolved questions are explicit gaps.",
             };
-            for (const previous of messages.slice(2, -3)) {
+            for (const previous of messages.slice(2, deliveredThrough)) {
                 if (previous.role === "assistant") {
                     previous.content = null;
                     for (const call of previous.tool_calls ?? []) {
@@ -966,6 +967,7 @@ export async function research(
                       ? { maxTokens: 1000 }
                       : undefined,
             );
+            deliveredThrough = messages.length;
             assert.ok(
                 message.tool_calls?.length,
                 "Researcher returned no tool action",
@@ -979,6 +981,30 @@ export async function research(
                     ...(args.action ? { action: args.action } : {}),
                 };
                 actions.push(action);
+                if (
+                    call.function.name === "fetch" &&
+                    (!["auto", "exa", "http", "saved"].includes(args.mode) ||
+                        !(
+                            args.focus === undefined ||
+                            (typeof args.focus === "string" &&
+                                args.focus.trim().length > 0 &&
+                                args.focus.length <= 200 &&
+                                ["auto", "http", "saved"].includes(args.mode))
+                        ))
+                ) {
+                    action.status = "rejected";
+                    action.reason =
+                        "Fetch requires auto/exa/http/saved mode; focus requires a nonempty model name and http/auto/saved mode";
+                    messages.push({
+                        role: "tool",
+                        tool_call_id: call.id,
+                        content: JSON.stringify({
+                            status: action.status,
+                            reason: action.reason,
+                        }),
+                    });
+                    continue;
+                }
                 const signature = `${call.function.name}:${JSON.stringify(args)}`;
                 if (
                     seen.has(signature) &&
@@ -1263,14 +1289,6 @@ export async function research(
                         };
                     }
                 } else if (call.function.name === "fetch") {
-                    assert.ok(
-                        args.focus === undefined ||
-                            (typeof args.focus === "string" &&
-                                args.focus.trim().length > 0 &&
-                                args.focus.length <= 200 &&
-                                ["auto", "http", "saved"].includes(args.mode)),
-                        "Focus requires a nonempty model name and http/auto/saved mode",
-                    );
                     if (args.mode === "saved") {
                         const saved = sources.find(
                             (source) =>
@@ -1521,6 +1539,9 @@ export async function main(env = process.env) {
         catalogDigest: hash(JSON.stringify(inventory)),
         officialCount: inventory.length,
         selectedCount: selected.length,
+        requestedModels: requested.length
+            ? selected.map(({ name }) => name)
+            : [],
         inference: { model: inference.name, reasoningEffort: "medium" },
         guidance: {
             skill: ".claude/skills/model-management/SKILL.md",
@@ -1573,7 +1594,8 @@ export async function main(env = process.env) {
         });
         receipt.requestId = result.headers.get("x-request-id");
         receipt.http = result.status;
-        if (!result.ok) receipt.status = "failed";
+        if (!result.ok && result.status !== 408 && result.status < 500)
+            receipt.status = "failed";
         assert.ok(result.ok, `Pollinations HTTP ${result.status}`);
         const raw = await result.text();
         return raw;
@@ -1848,13 +1870,19 @@ export async function main(env = process.env) {
         await save();
         console.log(`${target.name ?? "discovery"}: ${target.status}`);
     };
-    await run(report.discovery, {
-        task: "Deep discovery: trending and underrated models and niche providers. Search distinct Reddit communities, Hugging Face, Replit and broader developer platforms; fetch serious primary-source leads. First exclude official duplicates.",
-        officialNames: inventory.map(({ name, aliases }) => ({
-            name,
-            aliases,
-        })),
-    });
+    if (requested.length) {
+        report.discovery.status = "skipped";
+        report.discovery.gaps = [
+            "Market discovery excluded by explicit model selection",
+        ];
+    } else
+        await run(report.discovery, {
+            task: "Deep discovery: trending and underrated models and niche providers. Search distinct Reddit communities, Hugging Face, Replit and broader developer platforms; fetch serious primary-source leads. First exclude official duplicates.",
+            officialNames: inventory.map(({ name, aliases }) => ({
+                name,
+                aliases,
+            })),
+        });
     let previous = null;
     if (env.PREVIOUS_RESEARCH) {
         try {
@@ -1924,6 +1952,7 @@ export async function main(env = process.env) {
                 status: group.status,
                 searches: searched.get(target.name) ?? [],
                 plans: group.plans ?? [],
+                actions: group.actions ?? [],
                 sourceIds: (group.sources ?? []).map(({ id }) => id),
                 researchedAt: new Date().toISOString(),
             });
@@ -1934,7 +1963,8 @@ export async function main(env = process.env) {
     report.completedAt = new Date().toISOString();
     report.status =
         !report.billingGap &&
-        report.discovery.status === "researched" &&
+        (report.discovery.status === "researched" ||
+            (requested.length > 0 && report.discovery.status === "skipped")) &&
         report.models.every((row) => row.status === "researched")
             ? "complete"
             : "partial";
@@ -1991,7 +2021,22 @@ export function parentIssue(report, artifactUrl) {
     if (report.status === "complete")
         assert.ok(
             report.models.length === report.selectedCount &&
-                report.discovery?.status === "researched" &&
+                (report.discovery?.status === "researched" ||
+                    (Array.isArray(report.requestedModels) &&
+                        report.requestedModels.length > 0 &&
+                        report.requestedModels.length ===
+                            report.selectedCount &&
+                        new Set(report.requestedModels).size ===
+                            report.selectedCount &&
+                        report.requestedModels.every(
+                            (name) =>
+                                typeof name === "string" &&
+                                name.trim().length > 0 &&
+                                report.models.some(
+                                    (model) => model.name === name,
+                                ),
+                        ) &&
+                        report.discovery?.status === "skipped")) &&
                 report.models.every((model) => model.status === "researched"),
             "Incomplete selected research cannot claim complete",
         );

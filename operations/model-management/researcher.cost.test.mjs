@@ -354,7 +354,7 @@ test("real main settles cache-aware usage within one invocation budget", async (
     const report = await main({
         POLLINATIONS_API_KEY: "test-key",
         MAX_POLLEN: "1",
-        MODELS: "publisher/test-v1",
+        MODELS: "",
         RESEARCH_OUT: out,
     });
     assert.equal(paid, 2);
@@ -417,7 +417,7 @@ test("invalid component prices are rejected before any paid inference", async (t
         const report = await main({
             POLLINATIONS_API_KEY: "test-key",
             MAX_POLLEN: "1",
-            MODELS: "publisher/test-v1",
+            MODELS: "",
             RESEARCH_OUT: out,
         });
         assert.equal(report.calls.length, 0);
@@ -503,7 +503,7 @@ test("the next quote exceeding the remaining budget stops before payment and pre
     const report = await main({
         POLLINATIONS_API_KEY: "test-key",
         MAX_POLLEN: "0.12",
-        MODELS: "publisher/test-v1",
+        MODELS: "",
         RESEARCH_OUT: out,
     });
     assert.equal(

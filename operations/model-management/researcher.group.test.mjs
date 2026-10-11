@@ -113,15 +113,23 @@ test("a second verified report replaces the first digest and binds submission to
 
 async function run(
     steps,
-    { selected = models, sharedSources = [], task = { models: selected } } = {},
+    {
+        selected = models,
+        sharedSources = [],
+        task = { models: selected },
+        serviceOverrides = {},
+    } = {},
 ) {
     let turns = 0;
     const searches = [];
     const responses = [];
     const inferenceOptions = [];
+    const inferenceMessages = [];
     const services = {
         sharedSources,
         infer: async (messages, _tools, options) => {
+            assert.equal(_tools.length, 3);
+            inferenceMessages.push(structuredClone(messages));
             inferenceOptions.push(options);
             const step = steps[turns++];
             assert.ok(step, "Unexpected extra inference");
@@ -141,6 +149,7 @@ async function run(
             searches.push(query);
             return "No verified primary-source evidence; availability remains unknown.";
         },
+        ...serviceOverrides,
     };
     try {
         return {
@@ -149,11 +158,216 @@ async function run(
             searches,
             responses,
             inferenceOptions,
+            inferenceMessages,
         };
     } catch (error) {
-        return { error, turns, searches, responses, inferenceOptions };
+        return {
+            error,
+            turns,
+            searches,
+            responses,
+            inferenceOptions,
+            inferenceMessages,
+        };
     }
 }
+
+test("batched search, fetch and saved results reach inference fully before archival", async () => {
+    const selected = models.slice(0, 4);
+    const texts = selected.map(
+        ({ name }) =>
+            `${"prefix ".repeat(90)}EXACT CHECKPOINT ${name} pricing beyond character 500`,
+    );
+    const leads = scopes.map(
+        (scope) =>
+            `${"lead ".repeat(120)}EXACT ${scope} primary model leads beyond character 500`,
+    );
+    let searches = 0;
+    let fetches = 0;
+    const fetchCalls = (mode) =>
+        selected.map(({ name }, index) =>
+            call("fetch", {
+                url: `https://1.1.1.1/model-${index}`,
+                mode,
+                focus: name,
+            }),
+        );
+    const observed = await run(
+        [
+            [call("research", plan)],
+            scopes.map((scope) => call("search", search(scope, selected))),
+            fetchCalls("http"),
+            fetchCalls("saved"),
+            [call("research", { action: "verify", ...report(selected) })],
+            (messages) => [
+                call("research", {
+                    action: "submit",
+                    auditDigest: latest(messages).auditDigest,
+                }),
+            ],
+        ],
+        {
+            selected,
+            serviceOverrides: {
+                search: async () => leads[searches++],
+                fetch: async () => ({
+                    text: texts[fetches++],
+                    method: "scrapling-http",
+                }),
+            },
+        },
+    );
+    assert.ifError(observed.error);
+    assert.equal(observed.turns, 6);
+    assert.equal(searches, 4);
+    assert.equal(fetches, 4);
+    const payloads = (turn) =>
+        observed.inferenceMessages[turn]
+            .filter(({ role }) => role === "tool")
+            .map(({ content }) => JSON.parse(content));
+    assert.deepEqual(
+        payloads(2)
+            .filter(({ results }) => results)
+            .map(({ results }) => results),
+        leads,
+    );
+    assert.deepEqual(
+        payloads(3)
+            .filter(({ text }) => text)
+            .map(({ text }) => text),
+        texts,
+    );
+    assert.equal(
+        payloads(3).filter(({ note }) => note?.startsWith("Search leads"))
+            .length,
+        4,
+    );
+    assert.deepEqual(
+        payloads(4)
+            .filter(({ text }) => text)
+            .map(({ text }) => text),
+        texts,
+    );
+    assert.equal(
+        payloads(4).filter(({ archived, excerpt }) => archived && excerpt)
+            .length,
+        4,
+    );
+    assert.equal(payloads(5).filter(({ text }) => text).length, 0);
+    assert.equal(
+        payloads(5).filter(({ archived, excerpt }) => archived && excerpt)
+            .length,
+        8,
+    );
+});
+
+test("malformed focused fetches reject without service calls and corrections fit six turns", async () => {
+    for (const bad of [
+        { focus: [] },
+        { focus: "" },
+        { focus: " ", mode: "http" },
+        { focus: "x".repeat(201) },
+        { focus: models[0].name, mode: "exa" },
+        { mode: "invalid" },
+    ]) {
+        let fetches = 0;
+        const url = "https://1.1.1.1/model";
+        const observed = await run(
+            [
+                [call("research", plan)],
+                [call("fetch", { url, mode: "http", ...bad })],
+                (messages) => {
+                    assert.equal(latest(messages).status, "rejected");
+                    assert.equal(fetches, 0);
+                    return scopes.map((scope) => call("search", search(scope)));
+                },
+                [call("fetch", { url, mode: "http", focus: models[0].name })],
+                (messages) => {
+                    assert.equal(latest(messages).status, "fetched");
+                    return [
+                        call("research", { action: "verify", ...report() }),
+                    ];
+                },
+                (messages) => [
+                    call("research", {
+                        action: "submit",
+                        auditDigest: latest(messages).auditDigest,
+                    }),
+                ],
+            ],
+            {
+                serviceOverrides: {
+                    fetch: async () => {
+                        fetches++;
+                        return {
+                            text: "Exact official checkpoint with primary availability and pricing evidence.",
+                            method: "scrapling-http",
+                        };
+                    },
+                },
+            },
+        );
+        assert.ifError(observed.error);
+        assert.equal(observed.turns, 6);
+        assert.equal(fetches, 1);
+        assert.equal(
+            observed.result.actions.find(({ tool }) => tool === "fetch").status,
+            "rejected",
+        );
+    }
+});
+
+test("repeated malformed fetch cannot bypass validation through a shared cached source", async () => {
+    const source = {
+        id: "s1",
+        url: "https://1.1.1.1/model",
+        status: "fetched",
+        focus: models[0].name,
+        text: "Exact successful saved primary checkpoint and pricing evidence.",
+    };
+    const invalid = call("fetch", {
+        url: source.url,
+        mode: "invalid",
+        focus: source.focus,
+    });
+    const observed = await run(
+        [
+            [call("research", plan)],
+            [invalid],
+            [invalid],
+            (messages) => {
+                assert.equal(latest(messages).status, "rejected");
+                return [
+                    call("fetch", {
+                        url: source.url,
+                        mode: "saved",
+                        focus: source.focus,
+                    }),
+                ];
+            },
+            (messages) => {
+                assert.equal(latest(messages).text, source.text);
+                return scopes.map((scope) => call("search", search(scope)));
+            },
+            [call("research", { action: "verify", ...report() })],
+        ],
+        {
+            sharedSources: [source],
+            serviceOverrides: {
+                fetch: async () => {
+                    assert.fail("Invalid or saved calls cannot invoke fetch");
+                },
+            },
+        },
+    );
+    assert.match(observed.error.message, /turn budget/);
+    assert.deepEqual(
+        observed.error.evidence.actions
+            .filter(({ tool }) => tool === "fetch")
+            .map(({ status }) => status),
+        ["rejected", "rejected", "cached"],
+    );
+});
 
 test("single and discovery reports verify then submit the exact audited candidate by digest", async () => {
     for (const discovery of [false, true]) {

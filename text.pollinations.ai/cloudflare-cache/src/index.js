@@ -324,19 +324,24 @@ const worker = {
                 }),
             });
         } catch (err) {
-            log("error", `❌ Worker error: ${err.message}`);
-            if (err.stack) log("error", `Stack: ${err.stack}`);
-
-            return new Response(`Worker error: ${err.message}`, {
-                status: 500,
-                headers: {
-                    "Content-Type": "text/plain",
-                    "X-Error": err.message,
-                },
-            });
+            return workerError(err);
         }
     },
 };
+
+/** The Worker's 500 for an exception */
+function workerError(err) {
+    log("error", `❌ Worker error: ${err.message}`);
+    if (err.stack) log("error", `Stack: ${err.stack}`);
+
+    return new Response(`Worker error: ${err.message}`, {
+        status: 500,
+        headers: {
+            "Content-Type": "text/plain",
+            "X-Error": err.message,
+        },
+    });
+}
 
 export default {
     async fetch(request, env, ctx) {
@@ -346,15 +351,21 @@ export default {
 
 /**
  * Sends a cache miss to origin() for ADAPTER_SHARE percent of requests and to
- * the VM otherwise, and labels the response with the path it took.
+ * the VM otherwise, and labels the response, exceptions included, with the
+ * path it took.
  */
 async function missToOrigin(request, env, ctx) {
     const path =
         Math.random() * 100 < Number(env.ADAPTER_SHARE ?? 0) ? "worker" : "vm";
-    const response =
-        path === "worker"
-            ? await origin(request, env, ctx)
-            : await proxyRequest(request, env);
+    let response;
+    try {
+        response =
+            path === "worker"
+                ? await origin(request, env, ctx)
+                : await proxyRequest(request, env);
+    } catch (err) {
+        response = workerError(err);
+    }
     const headers = new Headers(response.headers);
     headers.set("X-Legacy-Path", path);
     return new Response(response.body, {

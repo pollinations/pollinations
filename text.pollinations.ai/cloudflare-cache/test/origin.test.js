@@ -653,3 +653,20 @@ test("ADAPTER_SHARE 0 sends every generating path to the VM", async () => {
         );
     }
 });
+
+test("an exception on either miss path is the Worker's 500, labelled with the path", async () => {
+    // A string `messages` with a system prompt throws in parameter parsing
+    const inWorker = await call("/thrown?system=hi&messages=abc");
+    expect(inWorker.response.status).toBe(500);
+    expect(inWorker.text).toMatch(/^Worker error: /);
+    expect(inWorker.response.headers.get("x-legacy-path")).toBe("worker");
+
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("tunnel down"));
+    const onVm = await call("/tunnel%20down", {
+        testEnv: { ...env, ADAPTER_SHARE: "0" },
+    });
+    expect(onVm.response.status).toBe(500);
+    expect(onVm.text).toBe("Worker error: tunnel down");
+    expect(onVm.response.headers.get("x-error")).toBe("tunnel down");
+    expect(onVm.response.headers.get("x-legacy-path")).toBe("vm");
+});

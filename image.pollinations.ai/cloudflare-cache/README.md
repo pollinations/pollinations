@@ -13,27 +13,11 @@ The worker uses `wrangler.toml` for configuration and environment variables for 
    CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
    ```
 
-2. Deploy the worker:
-   ```bash
-   cd cloudflare-cache
-   npx wrangler login  # First time only, opens browser for authentication
-   npx wrangler deploy
-   ```
-
-   Alternatively, you can use the deployment script which will:
-   - Load your environment variables from .env
-   - Create the R2 bucket if it doesn't exist
-   - Create .dev.vars file for local development
-   - Deploy the worker
-
-   ```bash
-   cd cloudflare-cache
-   ./deploy.sh
-   ```
+2. Deploy the worker by running the "Deploy / Legacy Cloudflare caches" GitHub Actions workflow. Never deploy to production from a local machine.
 
 ### Local Development
 
-For local development, you need a `.dev.vars` file which will be automatically created by the `deploy.sh` script, or you can create it manually:
+For local development, you need a `.dev.vars` file:
 
 ```bash
 # Create .dev.vars file manually

@@ -9,8 +9,6 @@ import {
 } from "./cache-utils.ts";
 import type { Env } from "./env";
 import { exactCache } from "./middleware/exact-cache";
-import { parseImageParams } from "./middleware/parse-image-params.ts";
-import { semanticCache } from "./middleware/semantic-cache.ts";
 import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
 import { turnstileVerification } from "./middleware/turnstile.ts";
 import { originHeaders } from "./util.ts";
@@ -49,15 +47,13 @@ app.delete("/delete/prompt/:prompt", async (c) => {
         deleteCacheEntry(cacheKey, c.env),
         deleteCacheEntry(legacyCacheKey, c.env),
     ]);
-    const r2Deleted = current.r2Deleted || legacy.r2Deleted;
-    const vectorDeleted = current.vectorDeleted || legacy.vectorDeleted;
+    const r2Deleted = current || legacy;
 
-    if (r2Deleted || vectorDeleted) {
+    if (r2Deleted) {
         return c.json({
             success: true,
             cacheKey,
             r2Deleted,
-            vectorDeleted,
         });
     } else {
         return c.json({
@@ -65,7 +61,6 @@ app.delete("/delete/prompt/:prompt", async (c) => {
             cacheKey,
             message: "Cache entry not found or already deleted",
             r2Deleted,
-            vectorDeleted,
         }, 404);
     }
 });
@@ -75,9 +70,7 @@ app.all(
     "/prompt/:prompt",
     setConnectingIp,
     turnstileVerification,
-    parseImageParams,
     exactCache,
-    semanticCache,
     async (c) => {
         const clientIP = c.get("connectingIp");
         const targetUrl = new URL(c.req.url);

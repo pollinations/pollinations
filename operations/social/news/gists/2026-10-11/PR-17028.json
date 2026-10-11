@@ -1,0 +1,36 @@
+{
+  "pr_number": 17028,
+  "title": "fix: serve app_top_weekly from an hourly Tinybird snapshot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17028",
+  "merged_at": "2026-10-11T03:35:56Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The seven-day app ranking is now computed hourly into the Tinybird `app_top_weekly_snapshot` table. `app_top_weekly`, which the Hello and Apps pages call from the browser, reads the snapshot instead of scanning about 0.69 GB of `generation_event_v2` on every request. Rankings can be up to an hour old; the SQL, attribution rules, columns, limit, and caller interface are unchanged. The public stats documentation was updated to describe the snapshot.",
+    "keywords": [
+      "app ranking",
+      "Tinybird",
+      "snapshot",
+      "public stats",
+      "query efficiency"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17028.jpg",
+    "prompt": "In a cozy garden of code-plants, a small retro monitor shows a weekly app leaderboard while Polli checks an hourly snapshot clock; lime green (#ecf874) glows prominently against a warm cream and pastel gradient background. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny watchmaker’s cap; she is small within the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T03:37:02.232543+00:00",
+  "area": "App catalog & showcase",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "d8af97cee1152c26def62c12e6c10d8d93902a92",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

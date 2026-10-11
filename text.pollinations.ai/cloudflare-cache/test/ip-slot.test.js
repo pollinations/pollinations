@@ -1,8 +1,4 @@
-import {
-    env,
-    runDurableObjectAlarm,
-    runInDurableObject,
-} from "cloudflare:test";
+import { env, runInDurableObject } from "cloudflare:test";
 import { expect, test } from "vitest";
 import { takeSlot } from "../../../shared/ip-slot.js";
 
@@ -90,9 +86,16 @@ test("the alarm frees the slot and leaves nothing stored", async () => {
     const untouched = await storageOf(env.IP_SLOT.getByName("198.51.100.50"));
     const stub = env.IP_SLOT.getByName("198.51.100.5");
     await stub.take(INTERVAL, false);
+    // Let the runtime fire the alarm, shortened from the interval.
+    // runDurableObjectAlarm() deletes the alarm before calling alarm(), which
+    // hides what deleteAll() leaves behind when the alarm really fires
+    await runInDurableObject(stub, (_slot, state) =>
+        state.storage.setAlarm(Date.now() + 200),
+    );
 
-    expect(await runDurableObjectAlarm(stub)).toBe(true);
-    expect(await storageOf(stub)).toEqual(untouched);
+    await expect
+        .poll(() => storageOf(stub), { timeout: 5000 })
+        .toEqual(untouched);
     expect((await stub.take(INTERVAL, false)).action).toBe("go");
 });
 

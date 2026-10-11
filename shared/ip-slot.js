@@ -40,6 +40,9 @@ export class IpSlot extends DurableObject {
     async alarm() {
         // A take() that landed after this alarm came due set a new one: keep it
         if ((await this.ctx.storage.getAlarm()) === null) {
+            // Before compat date 2026-02-24, deleteAll() alone keeps the firing
+            // alarm's metadata table, an 8 KB database per IP that never goes
+            await this.ctx.storage.deleteAlarm();
             await this.ctx.storage.deleteAll();
         }
     }

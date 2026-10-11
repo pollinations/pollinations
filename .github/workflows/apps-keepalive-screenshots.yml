@@ -8,17 +8,17 @@ on:
         type: boolean
         default: false
       models:
-        description: 'Retry the five blocked embedding models only.'
+        description: 'Compare compact research on the same five embedding models.'
         type: string
         default: 'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b'
       max_pollen:
         description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '0.6'
+        default: '0.3'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
-        default: true
+        default: false
       use_perplexity:
         description: 'Use Perplexity only if its current pricing has no unbounded adjustments.'
         type: boolean
@@ -57,7 +57,7 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
-      - name: Validate the remaining retry allowance before paid work
+      - name: Validate the remaining canary allowance before paid work
         env:
           MODELS: ${{ inputs.models }}
           MAX_POLLEN: ${{ inputs.max_pollen }}
@@ -65,7 +65,7 @@ jobs:
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           assert.equal(process.env.MODELS,'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b');
-          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.6);
+          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.3);
           JS
       - name: Restore the stopped full-catalog validation evidence
         id: previous
@@ -121,7 +121,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Audit the five-model retry result and combined cost
+      - name: Audit the compact five-model comparison and combined cost
         if: always() && steps.evidence.outcome == 'success'
         env:
           RESEARCH_OUT: ${{ runner.temp }}/model-research
@@ -136,10 +136,11 @@ jobs:
           const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
           assert.ok(catalog.every(m=>m.community===false));
           assert.equal(r.selectedCount,5);
+          assert.equal(r.researchMode,'compact');
           assert.deepEqual(r.models.map(m=>m.name).sort(),['cohere/embed-v4.0','google/gemini-embedding-2','openai/text-embedding-3-large','openai/text-embedding-3-small','qwen/qwen3-embedding-8b'].sort());
           assert.equal(r.discovery.status,'skipped');
-          assert.ok(r.maxPollen<=0.6 && budgetUsed(r)<=r.maxPollen);
-          assert.ok(2.5+6.8821505+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
+          assert.ok(r.maxPollen<=0.3 && budgetUsed(r)<=r.maxPollen);
+          assert.ok(2.5+6.8821505+0.2714467+0.00004882962+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
           assert.ok(r.billing && !r.billingGap, 'Billed usage must be checked');
           assert.equal(r.budgetUsedPollen,budgetUsed(r));
           const ready=r.models.filter(m=>m.status==='researched');
@@ -147,9 +148,13 @@ jobs:
           assert.ok(ready.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
           const sources=[...(r.sources??[]),...r.models.flatMap(m=>m.sources??[])];
           assert.ok(sources.filter(s=>s.status==='fetched').every(s=>s.digest===createHash('sha256').update(s.text).digest('hex')));
-          console.log(JSON.stringify({status:r.status,official:r.officialCount,researched:ready.length,blocked:r.models.filter(m=>m.status==='blocked').length,calls:r.calls.length,budgetUsedPollen:r.budgetUsedPollen,historicalQuotes:r.reservedPollen,sources:sources.length}));
+          console.log(JSON.stringify({status:r.status,official:r.officialCount,researched:ready.length,blocked:r.models.filter(m=>m.status==='blocked').length,calls:r.calls.length,budgetUsedPollen:r.budgetUsedPollen,historicalQuotes:r.reservedPollen,quality:r.quality,callCounts:Object.fromEntries([...new Set(r.calls.map(c=>c.kind))].map(k=>[k,r.calls.filter(c=>c.kind===k).length])),sources:sources.length}));
           assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
           assert.ok(r.calls.every(c=>c.status==='received'));
+          assert.ok(r.calls.some(c=>c.kind==='inference:typesafe/jev-1.13'));
+          assert.ok(r.calls.filter(c=>c.kind==='inference:openai/gpt-6.1-sol').length<6);
+          assert.ok(r.quality.postedPriceRoutes>=1, 'Cheaper research must recover at least one supported price quote');
+          assert.ok(budgetUsed(r)<0.2714467, 'Canary must beat prior same-model cost');
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS

@@ -333,32 +333,89 @@ test("the VM's other routes: redirect, models, crossdomain, feed and preflight",
     );
 });
 
-test("bad requests get 400s and unknown routes a 404, as JSON", async () => {
-    const messages = await call("/", {
+/** Express's finalhandler page, as the VM's production process sent it */
+const errorPage = (message) =>
+    `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${message}</pre>\n</body>\n</html>\n`;
+
+test("an invalid messages array gets the route's JSON 400", async () => {
+    const { response, text } = await call("/", {
         method: "POST",
         headers: JSON_BODY,
         body: JSON.stringify({ messages: "hi" }),
     });
-    expect(messages.response.status).toBe(400);
-    expect(messages.text).toBe('{"error":"Invalid messages array"}');
+    expect(response.status).toBe(400);
+    expect(text).toBe('{"error":"Invalid messages array"}');
+});
 
-    const json = await call("/", {
-        method: "POST",
-        headers: JSON_BODY,
-        body: "{bad",
-    });
-    expect(json.response.status).toBe(400);
-    expect(JSON.parse(json.text).status).toBe(400);
+test("bad bodies, malformed % and unknown routes get Express's HTML error page", async () => {
+    const cases = [
+        // body-parser ran before cors(): no CORS headers
+        [
+            { method: "POST", headers: JSON_BODY, body: "{bad" },
+            "/",
+            400,
+            "Bad Request",
+            false,
+        ],
+        [
+            { method: "POST", headers: JSON_BODY, body: " " },
+            "/",
+            400,
+            "Bad Request",
+            false,
+        ],
+        [
+            { method: "POST", headers: JSON_BODY, body: "1" },
+            "/",
+            400,
+            "Bad Request",
+            false,
+        ],
+        [
+            // body-parser's "20mb" limit
+            { method: "POST", headers: JSON_BODY, body: " ".repeat(20971521) },
+            "/",
+            413,
+            "Payload Too Large",
+            false,
+        ],
+        // The router's errors came after cors()
+        [{}, "/%E0%A4%A", 400, "Bad Request", true],
+        [{ method: "POST" }, "/openai%E0%A4%A", 400, "Bad Request", true],
+        [{ method: "PUT" }, "/nothing", 404, "Cannot PUT /nothing", true],
+        [
+            { method: "DELETE" },
+            "/it's%",
+            404,
+            "Cannot DELETE /it&#39;s%25",
+            true,
+        ],
+    ];
+    for (const [options, path, status, message, cors] of cases) {
+        const gen = recordingGen();
+        const { response, text } = await call(path, {
+            ...options,
+            testEnv: gen.testEnv,
+        });
+        const label = `${options.method ?? "GET"} ${path} ${options.body?.slice(0, 9) ?? ""}`;
 
-    const percent = await call("/%E0%A4%A");
-    expect(percent.response.status).toBe(400);
-    expect(JSON.parse(percent.text).error).toBe(
-        "Failed to decode param '%E0%A4%A'",
-    );
-
-    const put = await call("/nothing", { method: "PUT" });
-    expect(put.response.status).toBe(404);
-    expect(JSON.parse(put.text).error).toBe("Cannot PUT /nothing");
+        expect(response.status, label).toBe(status);
+        expect(text, label).toBe(errorPage(message));
+        expect(Object.fromEntries(response.headers), label).toEqual({
+            ...(cors && {
+                "access-control-allow-origin": "*",
+                "access-control-expose-headers":
+                    "Payment-Required,Payment-Response",
+            }),
+            "content-length": String(text.length),
+            "content-security-policy": "default-src 'none'",
+            "content-type": "text/html; charset=utf-8",
+            "x-content-type-options": "nosniff",
+            "x-legacy-path": "worker",
+            "x-powered-by": "Express",
+        });
+        expect(gen.bodies, label).toHaveLength(0);
+    }
 });
 
 test("a blocked /24 gets an empty 403 without CORS, but cache hits are still served", async () => {

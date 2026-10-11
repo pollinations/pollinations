@@ -106,6 +106,42 @@ const errorResponse = (status, message, cacheControl, details) =>
         cacheControl,
     );
 
+const HTML_ESCAPES = {
+    '"': "&quot;",
+    "&": "&amp;",
+    "'": "&#39;",
+    "<": "&lt;",
+    ">": "&gt;",
+};
+const escapeHtml = (text) =>
+    text.replace(/["&'<>]/g, (char) => HTML_ESCAPES[char]);
+// encodeurl 1.0.2, which finalhandler applies to the path it shows
+const encodeUrl = (url) =>
+    url.replace(
+        /(?:[^\x21\x25\x26-\x3B\x3D\x3F-\x5B\x5D\x5F\x61-\x7A\x7E]|%(?:[^0-9A-Fa-f]|[0-9A-Fa-f][^0-9A-Fa-f]|$))+/g,
+        encodeURI,
+    );
+
+/**
+ * Express's finalhandler page in production: body-parser's errors came
+ * before cors(), the router's after it
+ */
+function errorPage(status, message, cors) {
+    const body = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${escapeHtml(message)}</pre>\n</body>\n</html>\n`;
+    return new Response(body, {
+        status,
+        headers: {
+            ...(cors && CORS),
+            "X-Powered-By": "Express",
+            "Content-Security-Policy": "default-src 'none'",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Type": "text/html; charset=utf-8",
+            // The message is ASCII: status phrases, the method and an encoded path
+            "Content-Length": String(body.length),
+        },
+    });
+}
+
 // One JSON line per adapter failure, without URL, prompt, IP or headers
 const logFailure = (route, details) =>
     console.error(JSON.stringify({ adapter: "text", route, ...details }));
@@ -149,7 +185,7 @@ export async function origin(request, env, ctx) {
         try {
             prompt = decodeURIComponent(param);
         } catch {
-            return errorResponse(400, `Failed to decode param '${param}'`);
+            return errorPage(400, "Bad Request", true);
         }
         return generate(prompt, format, route);
     };
@@ -199,7 +235,7 @@ export async function origin(request, env, ctx) {
         const format = method === "GET" ? "text" : "openai";
         return generateFromPath(url.pathname.slice(1), format, `${method} /*`);
     }
-    return errorResponse(404, `Cannot ${method} ${url.pathname}`);
+    return errorPage(404, `Cannot ${method} ${encodeUrl(url.pathname)}`, true);
 }
 
 /** The request line and header lines, as the VM received them over HTTP/1.1 */
@@ -215,22 +251,20 @@ function headSize(request, { pathname, search }) {
 async function readBody(request) {
     const type = request.headers.get("content-type") ?? "";
     if (!/^application\/json\s*(;|$)/i.test(type) || !request.body) return {};
-    const tooLarge = () => errorResponse(413, "request entity too large");
+    const tooLarge = () => errorPage(413, "Payload Too Large", false);
     if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) {
         return tooLarge();
     }
     const bytes = new Uint8Array(await request.arrayBuffer());
     if (bytes.byteLength > MAX_BODY_BYTES) return tooLarge();
     const text = new TextDecoder().decode(bytes);
-    if (!text.trim()) return {};
+    if (!text) return {};
     try {
         const parsed = JSON.parse(text);
         // body-parser's strict mode accepts only objects and arrays
         if (parsed !== null && typeof parsed === "object") return parsed;
-        return errorResponse(400, "Unexpected token in JSON at position 0");
-    } catch (error) {
-        return errorResponse(400, error.message);
-    }
+    } catch {}
+    return errorPage(400, "Bad Request", false);
 }
 
 /** cors() answering a preflight */

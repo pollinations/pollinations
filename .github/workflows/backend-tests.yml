@@ -68,8 +68,6 @@ jobs:
         run: npm test
 
   image-cache-tests:
-    needs: determine-tests
-    if: needs.determine-tests.outputs.image-changed == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

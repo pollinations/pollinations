@@ -105,7 +105,7 @@ describe.each(["human", "json"] as const)("sandbox create (%s)", (mode) => {
             expect(stdout).toContain("id: created123");
             expect(stdout).toContain("ssh: ssh created123.polli");
             expect(stderr).toContain(
-                "Sandbox created123 created. It pauses after 10 minutes",
+                "Sandbox created123 created. It pauses after 10 minutes without an ssh session; `--timeout 0` keeps it running.",
             );
         }
         expect(command.fetch).toHaveBeenCalledTimes(1);

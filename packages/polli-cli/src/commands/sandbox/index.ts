@@ -90,7 +90,7 @@ export const sandboxCommand = new Command("sandbox")
                         printSuccess(
                             timeout
                                 ? `Sandbox ${sandboxID} created. It ${runsUntil(timeout, Date.now() + timeout * 1000)}.`
-                                : `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session.`,
+                                : `Sandbox ${sandboxID} created. It pauses after ${LEASE_SECONDS / 60} minutes without an ssh session; \`--timeout 0\` keeps it running.`,
                         );
                         printResult({
                             id: sandboxID,

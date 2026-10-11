@@ -1,0 +1,37 @@
+{
+  "pr_number": 17022,
+  "title": "feat: record website referrers in the cloudflare traffic sync",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17022",
+  "merged_at": "2026-10-11T01:56:47Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The daily Cloudflare traffic sync now records `page_referrers`: aggregate counts for pollinations.ai page routes by referring hostname, status and browser. It stores `clientRefererHost`, never referrer paths or queries, in the existing raw table; the dataset is estimated at about 1,200 groups and 330 KB per day, below the 10,000-group limit. Referrers are fetched after the other datasets for each requested day, so a referrer failure cannot prevent those datasets from being fetched. The script and manual workflow now accept `--dataset` and dataset-specific `--days` limits: 7 for all or `host_views`, 30 for `page_views`, and 89 for `page_referrers`, allowing a single dataset to be backfilled without reappending the others. A new Websites dashboard panel shows visits by referrer host and site, counting browsers only, excluding verified bots and using the latest fetch for each day; it shows No data when no referrer data is available. A 30-day panel load reads about 10 MB. Cloudflare retains roughly 90 days for this zone, with full detail for about 34 days and roughly 10× sampling beyond that; an 89-day `page_referrers` backfill is available through a manual run. On Enter, `github.com` and `accounts.google.com` referrers can include people returning from sign-in.",
+    "keywords": [
+      "Cloudflare",
+      "referrers",
+      "Tinybird",
+      "traffic sync",
+      "Websites dashboard",
+      "backfill"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17022.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli studies a retro monitor showing little flower-marked website routes receiving trails of visitors from labeled hostname signposts, with a lime green (#ecf874) glow and soft pastel gradients. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and remains small beside the monitor. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T01:58:05.480214+00:00",
+  "area": "Data & insights",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "aa848ecfe6e6eb44f2fe9b60ac31cc912bde552d",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

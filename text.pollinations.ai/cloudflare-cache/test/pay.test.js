@@ -334,6 +334,33 @@ test("a payment header is ignored while the slot is free, and on a cache hit", a
     expect(events).not.toContain("/verify");
 });
 
+test("without every WEFT_* value the paywall is off: rate-limited requests queue as on the VM", async () => {
+    const off = { ...testEnv, WEFT_SELLER_API_KEY: undefined };
+
+    const held = await call("/weft%20off", {
+        ip: await limitedIp(),
+        headers: CURL,
+        testEnv: off,
+    });
+    expect(held.response.status).toBe(429);
+    expect(JSON.parse(held.text).error).toMatch(/^Queue full for IP: /);
+
+    // The last free generation started 29.8 s ago and has ended
+    const ip = nextIp();
+    await runInDurableObject(env.IP_SLOT.getByName(ip), (_slot, state) =>
+        state.storage.setAlarm(Date.now() + 200),
+    );
+    const waited = await call("/weft%20off%20waits", {
+        ip,
+        headers: CURL,
+        testEnv: off,
+    });
+    expect(waited.response.status).toBe(200);
+    expect(waited.text).toBe("ok");
+    expect(waited.response.headers.get("payment-required")).toBeNull();
+    expect(events).toEqual(["gen"]);
+});
+
 test("a paid GET verifies, generates, then settles; it is private and never stored", async () => {
     const paid = await payFor("/paid%20get", { headers: CURL });
 

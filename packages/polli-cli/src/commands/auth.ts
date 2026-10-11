@@ -1,5 +1,5 @@
 import { Command, Option } from "commander";
-import { gen } from "../lib/api.js";
+import { ApiError, gen } from "../lib/api.js";
 import {
     clearCredentials,
     ENTER_URL,
@@ -30,6 +30,10 @@ interface ProfileResponse {
 interface BalanceResponse {
     balance?: number;
     accountBalance?: { total: number };
+}
+
+interface KeyInfoResponse {
+    valid: boolean;
 }
 
 interface DeviceCodeResponse {
@@ -109,6 +113,25 @@ async function readStdinToken(): Promise<string> {
 }
 
 async function authenticateWithKey(key: string): Promise<void> {
+    try {
+        const info = await gen<KeyInfoResponse>("/account/key", {
+            apiKey: key,
+        });
+        if (info.valid !== true) {
+            printError("Invalid API key. Nothing was saved.");
+            throw new ExitSignal(1);
+        }
+    } catch (error) {
+        if (error instanceof ExitSignal) throw error;
+        const invalid = error instanceof ApiError && error.status === 401;
+        printError(
+            invalid
+                ? "Invalid API key. Nothing was saved."
+                : `Could not verify API key. Nothing was saved: ${error instanceof Error ? error.message : "unknown error"}`,
+        );
+        throw new ExitSignal(1);
+    }
+
     storeKey(key);
     printSuccess("Authenticated. Key stored.");
 
@@ -116,7 +139,7 @@ async function authenticateWithKey(key: string): Promise<void> {
     if (label) {
         printSuccess(label);
     } else {
-        printInfo("Key stored but could not verify. It may still be valid.");
+        printInfo("Key verified, but profile details are unavailable.");
     }
     printInfo(flavor.login);
 }

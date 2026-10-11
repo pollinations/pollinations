@@ -114,13 +114,17 @@ async function verifyKey(key: string): Promise<void> {
             apiKey: key,
         });
         if (!info.valid) {
-            printError("Invalid API key. The key was rejected by Pollinations.");
+            printError(
+                "Invalid API key. The key was rejected by Pollinations.",
+            );
             throw new ExitSignal(1);
         }
     } catch (error) {
         if (error instanceof ExitSignal) throw error;
         if (error instanceof ApiError && error.status === 401) {
-            printError("Invalid API key. The key was rejected by Pollinations.");
+            printError(
+                "Invalid API key. The key was rejected by Pollinations.",
+            );
             throw new ExitSignal(1);
         }
         printError(

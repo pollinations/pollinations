@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-10-11",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:31:24.709063+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 01 — Oct 4–10\n227 selected merged PRs: more models, a common API doorway, and fewer ways for uploads to get weird.\n\n→ MODELS\nAdded FLUX.3 Image, Seedream 5.0 Flash, Claude Haiku 5.5, Mistral Large 4, Grok Imagine Video 1.5 Lite, Eleven v4 and MAI voice and transcription. Catalog search and filters make the list less of a guessing game.\n\n→ APIS & AGENTS\nChat text models gained /v1/responses support. Parallel Gemini tool calls are preserved, tool arguments stream incrementally, and document and PDF handling expanded.\n\n→ MEDIA\nThe rebuilt Play page brings image, video and audio generation together. Large request bodies can stream past the former 32 MiB coordinator limit. Video aspect ratios and upload filenames got attention too; computers have opinions about both.\n\n→ DEV TOOLS\nPolli CLI retains follow-up context. Community text endpoints no longer need upstream SSE to serve streaming clients. Pi Workbench joined the app directory.\n\nCode and PRs: https://github.com/pollinations/pollinations\nContributions welcome.\n\n#OpenSource #AI #DevTools #BuildInPublic"
+}

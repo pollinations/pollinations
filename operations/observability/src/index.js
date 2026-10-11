@@ -60,6 +60,9 @@ export class ObservabilityGrafana extends Container {
         // The 60s role cache fills before dashboards are provisioned on boot,
         // denying every Editor the current dashboards for the first minute.
         GF_RBAC_PERMISSION_CACHE: "false",
+        // Each open tab would hold a Live WebSocket and keep the container
+        // awake. The dashboards refresh hourly and stream nothing.
+        GF_LIVE_MAX_CONNECTIONS: "0",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),

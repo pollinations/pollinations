@@ -4,8 +4,16 @@ import { findModelById } from "./model-selection";
 
 it("preserves Flux as the default and resolves saved aliases without catalog-order dependence", () => {
     const models: ModelInfo[] = [
-        { name: "tongyi-mai/z-image-turbo", aliases: ["zimage"] },
-        { name: "black-forest-labs/flux.1-schnell", aliases: ["flux"] },
+        {
+            name: "tongyi-mai/z-image-turbo",
+            aliases: ["zimage"],
+            paid_only: false,
+        },
+        {
+            name: "black-forest-labs/flux.1-schnell",
+            aliases: ["flux"],
+            paid_only: false,
+        },
     ];
     expect(findModelById(models, "flux")).toBe(models[1]);
     expect(findModelById(models, "black-forest-labs/flux.1-schnell")).toBe(

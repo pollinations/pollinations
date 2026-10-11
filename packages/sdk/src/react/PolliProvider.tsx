@@ -262,6 +262,7 @@ export function PolliProvider({
         hydrationStarted.current = true;
 
         void (async () => {
+            setApiKey(storage.getItem(storageKey));
             const result = consumeOAuthCallback(
                 window.location,
                 storage,
@@ -292,10 +293,7 @@ export function PolliProvider({
                 storage.removeItem(returnPathStorageKey);
             }
 
-            if (!result.code) {
-                setApiKey(storage.getItem(storageKey));
-                return;
-            }
+            if (!result.code) return;
 
             const verifier = storage.getItem(verifierStorageKey);
             const redirectUrl = currentRedirectUrl();

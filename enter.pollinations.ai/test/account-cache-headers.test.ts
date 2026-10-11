@@ -2,16 +2,16 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { test } from "./fixtures.ts";
 
-const authHeaders = (sessionToken: string) => ({
-    Cookie: `better-auth.session_token=${sessionToken}`,
+const authHeaders = (accountToken: string) => ({
+    Authorization: `Bearer ${accountToken}`,
 });
 
 test("account responses send private no-store cache headers", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const profile = await SELF.fetch(
         "http://localhost:3000/api/account/profile",
-        { headers: authHeaders(sessionToken) },
+        { headers: authHeaders(accountToken) },
     );
     expect(profile.status).toBe(200);
     expect(profile.headers.get("Cache-Control")).toBe(
@@ -24,7 +24,7 @@ test("account responses send private no-store cache headers", async ({
     const agents = await SELF.fetch(
         "http://localhost:3000/api/account/agents",
         {
-            headers: authHeaders(sessionToken),
+            headers: authHeaders(accountToken),
         },
     );
     expect(agents.status).toBe(200);

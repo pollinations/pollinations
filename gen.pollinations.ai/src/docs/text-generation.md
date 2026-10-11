@@ -13,7 +13,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 ### Responses API
 
-Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/responses`. This includes configured built-in providers, community text models with an exact Responses URL, external endpoint agents with an exact Responses URL, and managed prompt agents.
+Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.
 
 ```bash
 curl https://gen.pollinations.ai/v1/responses \
@@ -30,7 +30,9 @@ The endpoint is deliberately stateless. `store` must be `false`; `previous_respo
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
-Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts both too: Responses requests run through its Chat Completions URL. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+On models served through Chat Completions, Responses supports text and image input, function tools and their outputs, `tool_choice`, `text.format` (JSON object and JSON schema), `reasoning.effort`, and streaming. Provider reasoning returns as `reasoning` items with `reasoning_text` content. `max_tool_calls`, `truncation: "auto"`, `top_logprobs`, logprob includes and hosted tools return HTTP 400. Streams end with `data: [DONE]` after the terminal event; a provider error or missing usage ends the stream with `error` and `response.failed`.
 
 Managed prompt agents run configured MCP tools on the server. Send previous response items back to continue a conversation; completed tools are not run again.
 
@@ -77,13 +79,15 @@ const message = await client.messages.create({
 });
 ```
 
-Requests run as Chat Completions requests: balance checks, key permissions, rate limits, caching and billing are the same. Streaming, tools, images, system prompts and stop sequences depend on the selected model's capabilities; see [`/text/models`](/text/models). `cache_control` uses the same provider support as Chat Completions (see Prompt caching below); custom cache TTLs are not supported. `thinking` sets `reasoning_effort` (`output_config.effort` for adaptive thinking), and provider reasoning returns as `thinking` blocks. Usage reports `input_tokens`, `output_tokens`, `cache_read_input_tokens` and `cache_creation_input_tokens`; a response without provider usage fails, and a stream ends with an `error` event. Errors use Anthropic's error shape. `/v1/messages/count_tokens`, batches, files, server tools and `x-api-key` authentication are not supported.
+Requests run as Chat Completions requests: balance checks, key permissions, rate limits, caching and billing are the same. Streaming, tools, images, PDF documents (base64 `document` blocks, sent as Chat `file` parts), system prompts and stop sequences depend on the selected model's capabilities; see [`/text/models`](/text/models). `cache_control` uses the same provider support as Chat Completions (see Prompt caching below); custom cache TTLs are not supported. `thinking` sets `reasoning_effort` (`output_config.effort` for adaptive thinking), and provider reasoning returns as `thinking` blocks. Usage reports `input_tokens`, `output_tokens`, `cache_read_input_tokens` and `cache_creation_input_tokens`; a response without provider usage fails, and a stream ends with an `error` event. Errors use Anthropic's error shape. `/v1/messages/count_tokens`, batches, files, server tools and `x-api-key` authentication are not supported.
 
 Claude Code sends `cache_control` automatically. Fireworks-hosted models that reject this field cannot currently be used with Claude Code; see [the compatibility issue](https://github.com/pollinations/pollinations/issues/15682).
 
 ### Media models in conversations
 
 Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
+
+Base64 PDFs go in a Chat `file` part: `file.file_data` as a `data:application/pdf;base64,...` URI, or raw base64 with `file.mime_type: "application/pdf"`. Claude models on Bedrock, OpenAI models on Azure/OpenAI (including those served through the Responses API) and Gemini models read them; an optional `file.filename` (or `file.file_name`) is passed to OpenAI as the filename. Models without `image` under `input_modalities` return HTTP 400 for file parts, except on OpenRouter, which parses PDFs to text for any model. A `/v1/messages` base64 `document` block takes the same path.
 
 Text models with `video` under `input_modalities` (for example `inclusionai/ling-3.0-flash-vl`) accept `video_url` parts the same way they accept `image_url`: a public `https://` URL or a `data:video/...;base64,...` data URI (Gemini models also accept YouTube and `gs://` URLs). Video usage is metered from the provider's reported `video_tokens` detail and billed against the model's video prompt rate.
 

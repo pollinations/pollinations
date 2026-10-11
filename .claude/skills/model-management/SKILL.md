@@ -74,17 +74,16 @@ State plainly: `This adds/changes the public API: ...` Then ask for explicit con
 
 ### Secrets are a separate approval
 
-Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, dedicated-PR requirement, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
+Model approval never authorizes adding, rotating, synchronizing, deploying, revoking, or otherwise mutating a credential. Follow the exact approval wording, execution order, verification, and rollback rules in `AGENTS.md`. Do not duplicate or weaken that process here.
 
 ## Workflow
 
 ### 1. Reconcile current state
 
 - Resolve aliases to the canonical registry entry.
-- Before any canonical rename, count production and staging API keys whose
-  `permissions.models` contains the old canonical ID. Verify the deployed
-  authorization code resolves stored aliases; registry aliases alone cannot
-  protect keys while an old exact-string reader is still running.
+- API keys store model categories, not model IDs, so a rename never touches
+  them. A model that changes category changes which restricted keys reach it;
+  state that in the PR.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`
@@ -103,6 +102,22 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - Probe the exact deployment and request shape Pollinations will use.
 - For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
+
+For direct Novita discovery, use the supported
+[model catalog](https://docs.novita.ai/api-reference/model-apis-llm-list-models)
+and [account quotas](https://docs.novita.ai/api-reference/quota-list) with an
+existing authorized key. Quota queries require `modal=llm`; query `RPM` and
+`TPM` separately with `productType=Public Endpoint` and the exact model as
+`quotaObject`, then check the returned identity. The OpenAI-compatible base is
+`https://api.novita.ai/openai/v1`; probe the exact upstream model using
+[Chat Completions](https://docs.novita.ai/api-reference/model-apis-llm-create-chat-completion).
+Request `stream_options.include_usage` for streaming and prove terminal usage,
+cache/reasoning billing, capabilities and burst capacity through local Gen
+before routing traffic. Gateway availability does not prove direct access or
+independent capacity: OpenRouter/Vercel routes backed by Novita can share the
+same upstream pool. Keep direct provider attribution and charges distinct from
+gateway-billed traffic; use the Economics Novita connector guide for supported
+billing sources. Preserve the existing public contract and fallback mechanism.
 
 ### 3. Confirm the contract
 
@@ -178,32 +193,14 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Treat aliases as identity-only: resolve to the canonical model, then discard the requested alias for behavior. Never infer parameters from alias spelling such as `-high`, `-search`, `-reasoning`, or `-1080p`; only explicit request parameters and canonical defaults apply. Keep a separate canonical model if the old behavior must remain.
 - Use the resolved registry entry for canonical model identity in generic handlers. Never maintain handler-level lists of model IDs for response, tracking, billing, or routing behavior.
 - Canonicalize all stale stored aliases found by the same registry-wide audit in
-  one D1 migration PR. Replace old IDs, preserve unrelated permission fields
-  and array order, deduplicate old/new pairs, prove idempotence, and verify all
+  one D1 migration PR. Replace old IDs, preserve unrelated fields and array
+  order, deduplicate old/new pairs, prove idempotence, and verify all
   audited old-ID counts are zero after deployment.
 - Keep every migration statement within D1's per-query CPU limit: one statement
   per alias, and prefilter with `instr()` inside `CASE` so JSON functions never
   run on non-matching rows. A single whole-table JSON scan fails with error
   7429 at production scale (~150k apikey rows).
-- API-key create and update paths must store recognized aliases as canonical
-  IDs, while preserving unknown and community IDs, so migrations do not need to
-  repair newly written aliases again.
-- Before promoting a canonical rename or its migration, deploy and verify
-  alias-aware permission checks against the old registry, which must already
-  recognize every future canonical ID as an alias. Cover generation, catalogs,
-  realtime, fallback filtering and readback. Merging this prerequisite is not
-  sufficient: verify it is live before the migration can run.
-- For #13076, production migration is gated by the repository variable
-  `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true`. Set it only after live
-  old/new-ID restricted-key checks pass on the compatibility deployment.
-  The post-deploy cleanup runs after both workers succeed; for a deployment
-  retry use `service=all` with `finalize_canonical_permissions=true`.
-- Keep request-time permission normalization permanently and use the existing
-  registry resolver, preserving unknown/community IDs and empty allowlists.
-  Writes and migrations still store canonical IDs. After both workers deploy,
-  repeat the bounded permission cleanup to catch old Enter writes made after
-  the migration; verify no audited old IDs remain. Do not rewrite historical
-  analytics using today's mutable aliases.
+- Do not rewrite historical analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
 - New models, including new versions and checkpoints, must have no aliases.
 - Preserve existing alias targets until removal.
@@ -220,6 +217,10 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
+- Adding or removing a registry `provider` changes the public
+  [Service Providers](../../../pollinations.ai/public/legal/SUBPROCESSORS.md)
+  page. Update its model-provider line in the same PR;
+  `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
 
 ### 5. Verify end to end
 
@@ -239,6 +240,29 @@ Before publishing:
 - Review the complete diff for unrelated changes and dead code.
 - Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
+
+#### Scheduled merges and holds
+
+- Apply the repository's `MERGE-HOLD` label and keep the PR draft whenever a model change must wait for a date, provider confirmation, or another unresolved prerequisite. Do not enable auto-merge while held.
+- Start every held model PR title with `🕒 YYYY-MM-DD | <type>: <change>` using the earliest planned merge date. If that date is unconfirmed, use `🕒 DATE TBD | <type>: <change>`. Never put the clock/date only at the end or infer a date from an older model's promotion.
+- Put the earliest merge date, provider source, exact cutoff/timezone (or explicitly unknown), hold reason, and release conditions at the top of the description. Distinguish the merge date from the production effective date; a date alone does not authorize merging or deployment.
+- Verify successor prices for the exact model and each serving route. Mark unconfirmed rates as unconfirmed; do not present an older model's rates or a free placeholder as verified future pricing.
+- Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
+- Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
+
+The PR description must include a user-visible change table for each affected model, using its public model ID:
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+
+- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
+- Announce a retirement only once it is decided (no other provider will keep the model): merge a PR whose table has a `RETIRE` row with the future date and timezone in `Effective`, e.g. `2026-11-02 00:00 UTC`. News shows it as upcoming until the removal PR merges. To postpone, merge a new `RETIRE` row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
+- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
+- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
+- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
+- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
+- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
 
 ## Completion gate
 

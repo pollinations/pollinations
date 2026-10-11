@@ -27,12 +27,15 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
+import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
-import { modelStatusRoutes } from "./routes/model-status.ts";
+import { modelStatsRoutes, modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
 import { stemSeparationRoutes } from "./routes/stem-separation.ts";
+import { wellKnownRoutes } from "./routes/well-known.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -84,6 +87,42 @@ function robotsTxt(): Response {
     );
 }
 
+function llmsTxt(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    return new Response(
+        `# Pollinations
+
+> Generate text, images, audio, video, 3D, and embeddings through the Pollinations API, CLI, or MCP server. API calls use a Pollinations key.
+
+## Start here
+
+- [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
+- [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
+- [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
+- [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
+- [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
+- [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
+- [Interactive API docs](${origin}/docs): Browse endpoints and examples in a browser.
+- [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
+- [Live model catalog](${origin}/models): Current model IDs and capabilities.
+- [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
+- [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Account
+
+- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
+`,
+        {
+            headers: {
+                "Content-Type": "text/plain; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        },
+    );
+}
+
 async function fetchEnter(c: Context<Env>, url: URL): Promise<Response> {
     const response = await c.env.ENTER.fetch(rewriteRequest(c.req.raw, url));
     return noIndex(response);
@@ -114,7 +153,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
+    .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
+    .route("/.well-known", wellKnownRoutes)
     .get("/", (c) => c.html(docsLandingHtml(c)))
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
@@ -129,8 +170,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         url.pathname = `/api${stripTrailingSlash(url.pathname)}`;
         return fetchEnter(c, url);
     })
-    // Only the read-only quest catalog is part of the public gen API. Dashboard
-    // quest actions (/check, /rewards, /claim) stay on enter's session API.
+    // The read-only quest catalog. Per-account quest rewards live under
+    // /account/quests.
     .all("/quests/catalog", (c) => {
         if (c.req.method !== "GET" && c.req.method !== "HEAD") {
             return notFound();
@@ -151,6 +192,11 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
+    // SEP-2127 Server Cards stay public: mcpRoutes' auth middleware matches
+    // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
+    // still runs first because the cards are mounted after it.
+    .route("/", mcpCardRoutes)
+    .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.
@@ -159,6 +205,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
+    .route("/", modelStatsRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

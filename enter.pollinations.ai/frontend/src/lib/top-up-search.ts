@@ -1,8 +1,26 @@
 import { isPollenPackKey, type PollenPackKey } from "@shared/pollen-packs.ts";
 import { parseAppUrl } from "./return-to-app.tsx";
 
+/**
+ * Stripe's return after hosted Checkout or a redirect-based method:
+ * stripe_success=true&session_id=cs_…, read so the page can confirm the
+ * credit instead of trusting the flag.
+ */
+export function checkoutReturnSearch(search: Record<string, unknown>): {
+    session_id?: string;
+} {
+    const success =
+        search.stripe_success === true || search.stripe_success === "true";
+    return success &&
+        typeof search.session_id === "string" &&
+        /^cs_\w+$/.test(search.session_id)
+        ? { session_id: search.session_id }
+        : {};
+}
+
 type TopUpSearch = {
     pack?: PollenPackKey;
+    session_id?: string;
     redirect?: string;
     stripe_success?: boolean;
     stripe_canceled?: boolean;
@@ -30,5 +48,6 @@ export function validateTopUpSearch(
             search.stripe_canceled === true ||
             search.stripe_canceled === "true" ||
             undefined,
+        ...checkoutReturnSearch(search),
     };
 }

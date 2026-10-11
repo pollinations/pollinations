@@ -10,7 +10,9 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
-Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
+New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
+
+Catalog fields are defined in `operations/app-management/app.js`; categories and platforms in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
@@ -75,6 +77,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Coding Principles — Simplicity & Radical YAGNI (CRITICAL)
 
+- For coding and code reviews, read and use the repo-wide [Ponytail skill](.agents/skills/ponytail/SKILL.md) to look for the smallest correct solution. Its brevity advice does not override explicit requests or this repository's safety, testing, and design-decision requirements.
 - Code is debt: implement only what's needed now. Prefer deleting or reusing code over adding it; avoid speculative abstractions, configuration, and helpers.
 - Use plain data and small functions. No classes or inheritance; compose functions and keep side effects at the edges where practical.
 - Prefer declarative tables, configuration, and data transformations when they make behavior clearer. Keep control flow easy to follow; fewer lines do not justify clever or dense code.
@@ -99,7 +102,6 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
 - Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
-- Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.
 
@@ -160,6 +162,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ### Commands & Files
 
+- Maintain project skills in `.claude/skills/`. Expose them to Codex through
+  relative directory links in `.agents/skills/`; keep command adapters as
+  pointers to their maintained instructions, never copied workflows.
+
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.
@@ -167,6 +173,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Search targeted paths.
 - Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
+- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish to npm from `main` only when their `version` changes; CI skips a version already on npm. A PR that changes what one of them ships bumps that version (prereleases take the next number on the same tag, e.g. `5.1.0-alpha.8`), including the package's own `package-lock.json` where it has one. SDK changes also get a `CHANGELOG.md` entry.
 
 ## Testing
 
@@ -187,6 +194,13 @@ npx vitest run test/file.test.ts
 - Test keys: `enter.pollinations.ai/.testingtokens` contains `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
+
+## Data-processing documentation maintenance
+
+- Maintain `pollinations.ai/public/legal/SUBPROCESSORS.md`, the Privacy Policy, and the internal draft `operations/legal/DATA_PROCESSING_ADDENDUM.md` when model, fallback, GPU host, region, infrastructure, hosted-tool, logging, caching, retention, training-use, or supplier changes affect personal-data processing. Update them in the same change; an unchanged public model name does not exempt a provider or location change. Keep the draft outside website assets and navigation until its commitments can be supported and an effective agreement is approved.
+- Verify the live route and all intermediaries/fallbacks, contracted legal entity, processing countries, data categories, retention/training settings, written processing terms, and transfer safeguards from operational and contractual evidence. Model publishers, supplier headquarters, and endpoint hostnames are not sufficient evidence. Mark unknowns explicitly; do not invent compliance or publish draft entries as approved.
+- Check the Terms, Privacy Policy, and any applicable customer agreement's notice and objection requirements before a sub-processor addition/replacement or material processing change takes effect. A provider-list edit alone is not customer notice. If an incident requires an urgent change, record and escalate the notice/contract impact to the maintainer; do not silently certify the new arrangement.
+- Keep legal documents as the single source of truth, update their version dates and links when applicable, and obtain legal/operator review before introducing or changing contractual commitments. Pricing-only edits and read-only health checks need no legal edit when processing is unchanged.
 
 ## Models & API Changes
 
@@ -247,9 +261,9 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 - Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
 - Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
-## GitHub Labels
+## GitHub Project Manager
 
-A bot labels every new issue and PR using the rules in `operations/github/project-manager.md`. Workflow labels (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST` on issues, `VOTING`) drive automation; don't repurpose them. Don't create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

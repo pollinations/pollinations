@@ -8,6 +8,7 @@ import {
 } from "../harnesses/fs.js";
 import { hermesHome } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
+import { piAgentDir } from "../harnesses/pi.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -251,7 +252,7 @@ const yamlClient = (adapter: {
         if (doc.contents === null) doc.contents = doc.createNode({}) as never;
         if (
             !isMap(doc.contents) ||
-            (doc.has(table) && !isMap(doc.get(table)))
+            (doc.get(table) != null && !isMap(doc.get(table)))
         ) {
             throw new Error(
                 `${path}: expected YAML mappings for config and ${table}`,
@@ -263,6 +264,8 @@ const yamlClient = (adapter: {
         if (JSON.stringify(entries) === JSON.stringify(before)) {
             return { installed: ownedEntryNames(entries), removed };
         }
+        // A bare `mcp_servers:` has no mapping to write into yet.
+        if (doc.get(table) == null) doc.set(table, doc.createNode({}));
         for (const name of Object.keys(before)) {
             if (!(name in entries)) doc.deleteIn([table, name]);
         }
@@ -471,6 +474,36 @@ const jsonClients: McpClientAdapter[] = [
         file: (ctx) => join(hermesHome(ctx), "config.yaml"),
         table: "mcp_servers",
     }),
+    {
+        ...jsonClient({
+            id: "pi",
+            label: "Pi",
+            description: "Pi native MCP (0.99+, ~/.pi/agent/mcp.json)",
+            target: {
+                file: (ctx) => join(piAgentDir(ctx), "mcp.json"),
+                table: "mcpServers",
+                entry: urlEntry,
+                notes: () => ["Run /reload in Pi, or start a new session."],
+            },
+        }),
+        preflight: (ctx) => {
+            const result = spawnSync("pi", ["--version"], {
+                env: ctx.env,
+                encoding: "utf8",
+                timeout: 5000,
+            });
+            const version = result.stdout?.trim().match(/^(\d+)\.(\d+)\.\d+/);
+            if (
+                result.status !== 0 ||
+                !version ||
+                (Number(version[1]) === 0 && Number(version[2]) < 99)
+            ) {
+                throw new Error(
+                    "Pi 0.99+ is required for native MCP. Install or upgrade: npm install -g --ignore-scripts @earendil-works/pi-coding-agent@latest",
+                );
+            }
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -599,6 +632,9 @@ const jsonTableIds =
             : Object.keys((config[table] ?? {}) as JsonObject);
     };
 
+const claudeConfigFile = (ctx: McpContext) =>
+    join(ctx.env.CLAUDE_CONFIG_DIR || ctx.home, ".claude.json");
+
 const codexConfigToml = (ctx: McpContext) =>
     join(ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"), "config.toml");
 
@@ -653,18 +689,11 @@ const cliClients: McpClientAdapter[] = [
                 serverId,
             ],
             installHint: "Install it from https://claude.com/claude-code.",
-            installedIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-            ),
-            configuredIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-                false,
-            ),
+            installedIds: jsonTableIds(claudeConfigFile, "mcpServers"),
+            configuredIds: jsonTableIds(claudeConfigFile, "mcpServers", false),
             recoverKey: (ctx) =>
                 recoverKeyFromTable(
-                    readJsonObject(join(ctx.home, ".claude.json")).mcpServers,
+                    readJsonObject(claudeConfigFile(ctx)).mcpServers,
                 ),
         },
     }),
@@ -830,6 +859,7 @@ const PRIORITY = [
     "zed",
     "warp",
     "hermes",
+    "pi",
 ];
 
 const byId = new Map(

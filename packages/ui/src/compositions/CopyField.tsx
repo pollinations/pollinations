@@ -9,7 +9,7 @@ export type CopyFieldProps = Pick<
 > & {
     /** Accessible name, e.g. "Copy secret key". */
     label: string;
-    /** What to show; defaults to the value itself (lists pass a truncated form). */
+    /** What to show; defaults to a string value or the label for lazy values. */
     display?: ReactNode;
     className?: string;
 };
@@ -44,7 +44,10 @@ export function CopyField({
             {(copied) => (
                 <>
                     <span className="polli:min-w-0 polli:flex-1 polli:select-all polli:break-all">
-                        {copied ? "Copied" : (display ?? String(value))}
+                        {copied
+                            ? "Copied"
+                            : (display ??
+                              (typeof value === "string" ? value : label))}
                     </span>
                     <span
                         aria-hidden="true"

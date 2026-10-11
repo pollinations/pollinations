@@ -162,8 +162,6 @@ function createCommunityEndpoint(
         paidOnly: false,
         perUserRpm: null,
         fallbacks: [],
-        hiddenAt: null,
-        hiddenReason: null,
         ...communityEndpointPrices({
             promptTextPrice: 0.0001,
             completionTextPrice: 0.0002,
@@ -2838,6 +2836,7 @@ describe("tracking observability", () => {
             {
                 id: crypto.randomUUID(),
                 modelId: `${publisher}/test-model`,
+                paidOnly: false,
                 bearerTokenCiphertext: await encryptSecret(
                     "test-upstream-key",
                     env.BETTER_AUTH_SECRET,
@@ -2860,6 +2859,7 @@ describe("tracking observability", () => {
                 inputModalities: ["text"],
                 perUserRpm: null,
                 fallbacks: [],
+                paidOnly: false,
                 bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
                 prices: communityEndpointPrices(endpoint),
             }),
@@ -2924,8 +2924,8 @@ describe("tracking observability", () => {
         const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
             bindings.GENERATION_COORDINATOR,
         );
-        const startAndWait = vi.fn(async (job) => {
-            await getByName("recovery-test").startAndWait(job);
+        const startAndWait = vi.fn(async (job, body) => {
+            await getByName("recovery-test").startAndWait(job, body);
             throw new Error(
                 "RPC connection lost after cache write and settlement",
             );

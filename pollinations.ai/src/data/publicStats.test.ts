@@ -4,7 +4,6 @@ import {
     byopRequests24h,
     compareAppUsage,
     type DirectoryApp,
-    describeModelKinds,
     isBuzz,
     selectWeeklyApps,
     type WeeklyAppUsage,
@@ -102,6 +101,7 @@ describe("weekly featured apps", () => {
             name,
             web_url,
             github_username: "owner",
+            language: "en",
             byop: "",
             requests_24h: null,
         }) as DirectoryApp;
@@ -145,6 +145,21 @@ describe("weekly featured apps", () => {
         ).toEqual(["Low usage", "No description"]);
     });
 
+    it("features English listings only, bilingual ones included", () => {
+        const catalog = [
+            { ...app("English"), language: "en-US" },
+            { ...app("Bilingual"), language: "zh-TW,en" },
+            { ...app("French"), language: "fr" },
+            { ...app("Untagged"), language: "" },
+        ];
+        expect(
+            selectWeeklyApps(
+                catalog,
+                catalog.map((item) => usage(item)),
+            ).map((item) => item.name),
+        ).toEqual(["English", "Bilingual"]);
+    });
+
     it("caps at eight distinct apps and never fills missing entries from unranked apps", () => {
         const catalog = Array.from({ length: 12 }, (_, i) => app(`App${i}`));
         expect(
@@ -165,14 +180,35 @@ describe("weekly featured apps", () => {
         ).toEqual([]);
     });
 
-    it("requests eight weekly apps, shares the catalog, and retries failed rankings", async () => {
+    it("lists only English apps as newest", async () => {
+        vi.resetModules();
+        const { loadNewestApps } = await import("./publicStats");
+        const dated = (name: string, language: string, approved_date: string) =>
+            ({ ...app(name), language, approved_date }) as DirectoryApp;
+        const catalog = [
+            dated("Old", "en", "2026-01-01"),
+            dated("Japanese", "ja", "2026-03-01"),
+            dated("New", "en-US", "2026-02-01"),
+            dated("Untagged", "", "2026-04-01"),
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ data: catalog })),
+        );
+        expect((await loadNewestApps()).map((item) => item.name)).toEqual([
+            "New",
+            "Old",
+        ]);
+    });
+
+    it("requests a wider weekly ranking, shares the catalog, and retries failed rankings", async () => {
         vi.resetModules();
         const { loadWeeklyApps } = await import("./publicStats");
         const item = app("App");
         let available = false;
         const fetchMock = vi.fn(async (url: string) => {
             if (url.includes("app_top_weekly")) {
-                expect(new URL(url).searchParams.get("limit")).toBe("8");
+                expect(new URL(url).searchParams.get("limit")).toBe("50");
                 return available
                     ? Response.json({ data: [usage(item)] })
                     : new Response("Unavailable", { status: 503 });
@@ -230,10 +266,67 @@ describe("platform stats", () => {
         );
 
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            community: 2,
-            models: 5,
+            // Community agents count as agents, not community models.
+            community: 1,
             agents: 1,
-            byCategory: { text: 3, image: 3 },
+            // Kinds count official models only; agents are not a kind.
+            kinds: { text: 2, image: 2 },
+        });
+    });
+
+    it("picks the two newest general-purpose models per category and for the community", async () => {
+        vi.resetModules();
+        const { loadPlatformStats } = await import("./publicStats");
+        const catalog = [
+            {
+                name: "old",
+                title: "Old",
+                category: "image",
+                publisher: "A",
+                added_date: 1,
+            },
+            {
+                name: "new",
+                title: "New",
+                category: "image",
+                publisher: "B",
+                added_date: 3,
+            },
+            {
+                name: "new-turbo",
+                title: "New Turbo",
+                category: "image",
+                publisher: "B",
+                added_date: 2,
+            },
+            {
+                name: "owner/newer",
+                category: "image",
+                community: true,
+                added_date: 4,
+            },
+            {
+                name: "codex",
+                category: "text",
+                is_specialized: true,
+                added_date: 5,
+            },
+            { name: "chat", category: "text", publisher: "C", added_date: 2 },
+        ];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json(catalog)),
+        );
+
+        await expect(loadPlatformStats()).resolves.toMatchObject({
+            // Community models form their own group. Specialized models and
+            // a second model from the same publisher are left out; untitled
+            // models fall back to their name.
+            newest: {
+                image: ["New", "Old"],
+                text: ["chat"],
+                community: ["owner/newer"],
+            },
         });
     });
 
@@ -261,7 +354,6 @@ describe("platform stats", () => {
         await expect(loadPlatformStats()).rejects.toThrow("models: 503");
         catalogAvailable = true;
         await expect(loadPlatformStats()).resolves.toMatchObject({
-            models: 1,
             agents: 1,
         });
         expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -291,33 +383,33 @@ describe("platform stats", () => {
         });
         vi.stubGlobal("fetch", fetchMock);
         await expect(loadPlatformStats()).resolves.toEqual({
-            models: 0,
             agents: 0,
             community: 0,
-            byCategory: {},
+            kinds: {},
+            newest: {},
         });
         await loadPlatformStats();
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });
 
-describe("model kinds", () => {
-    it("lists every catalog category, largest first, with readable labels", () => {
-        expect(
-            describeModelKinds({
-                "3d": 3,
-                audio: 27,
-                embedding: 6,
-                image: 58,
-                realtime: 4,
-                text: 190,
-                video: 19,
-            }),
-        ).toBe("Text, image, audio, video, embeddings, realtime and 3D");
-    });
+describe("requests in the last hour", () => {
+    it("sums each model's rollup row once, not its retried route attempts", async () => {
+        vi.resetModules();
+        const { loadRequestsLastHour } = await import("./publicStats");
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        { model: "a", is_rollup: 1, total_requests: 10 },
+                        { model: "a", is_rollup: 0, total_requests: 12 },
+                        { model: "b", is_rollup: 1, total_requests: 5 },
+                    ],
+                }),
+            ),
+        );
 
-    it("skips uncategorised entries and handles a single or empty catalog", () => {
-        expect(describeModelKinds({ other: 9, text: 1 })).toBe("Text");
-        expect(describeModelKinds({})).toBeNull();
+        await expect(loadRequestsLastHour()).resolves.toBe(15);
     });
 });

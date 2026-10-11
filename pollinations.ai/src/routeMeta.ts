@@ -2,14 +2,14 @@ type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {
-        title: "Pollinations.ai — Models. Agents. Tools. One wallet.",
+        title: "Pollinations.ai — Open infrastructure for AI-natives. Models. Agents. Tools. One API.",
         description:
-            "One API for official and community models, agents and hosted tools. Pay with Pollen credits, or let users bring theirs. Publish your own models and agents; earn from your models and apps.",
+            "The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps.",
     },
     "/play": {
         title: "Play | pollinations.ai",
         description:
-            "Chat with agents or generate images, video and audio in your browser using your own Pollen.",
+            "Chat with agents or generate images, video and audio in your browser using your own pollen.",
     },
     "/apps": {
         title: "Apps | pollinations.ai",
@@ -19,7 +19,7 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/community": {
         title: "Community | pollinations.ai",
         description:
-            "Contribute to Pollinations, vote on ideas and explore monthly and daily build updates.",
+            "Contribute to Pollinations, vote on ideas and meet the builders.",
     },
     "/terms": {
         title: "Terms | pollinations.ai",
@@ -28,6 +28,10 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/privacy": {
         title: "Privacy | pollinations.ai",
         description: "Privacy policy for pollinations.ai",
+    },
+    "/subprocessors": {
+        title: "Service Providers | pollinations.ai",
+        description: "Pollinations.ai service providers",
     },
     "/refunds": {
         title: "Refunds | pollinations.ai",
@@ -39,6 +43,17 @@ export const NOT_FOUND_META: RouteMeta = {
     title: "Page not found | pollinations.ai",
     description: "The requested page could not be found.",
 };
+
+// The known page a URL path shows, or undefined for the 404 page. The router
+// matches paths in any case and with a trailing slash, so this must too.
+export function knownPage(pathname: string): string | undefined {
+    const path = (
+        pathname !== "/" && pathname.endsWith("/")
+            ? pathname.slice(0, -1)
+            : pathname
+    ).toLowerCase();
+    return path in ROUTE_META ? path : undefined;
+}
 
 export function routeHead(path?: string) {
     const known = path ? ROUTE_META[path] : undefined;

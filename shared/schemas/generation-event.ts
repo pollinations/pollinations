@@ -10,7 +10,7 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
-export type TinybirdEventType = EventType | "mcp.call";
+export type TinybirdEventType = EventType | "mcp.call" | "sandbox.lease";
 
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
@@ -50,6 +50,9 @@ export type TinybirdEvent = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
+    polliClientVersion?: string;
 
     // Meter
     selectedMeterId?: string;

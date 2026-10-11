@@ -1,0 +1,52 @@
+name: News / Build index
+
+# Rebuilds operations/social/news/index.json on the news branch: the feed Enter's
+# /news page and the README read. Runs after every PR gist and every daily summary.
+on:
+  workflow_run:
+    workflows: ['News / Create PR gist', 'News / Generate social summary']
+    types: [completed]
+  schedule:
+    - cron: '30 6 * * *' # Daily rebuild so dated entries roll out of the window
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# One writer at a time. A queued run rebuilds from the latest records, so
+# replacing an older pending run loses nothing.
+concurrency:
+  group: news-index
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Checkout news records
+        uses: actions/checkout@v5
+        with:
+          ref: news
+          path: news
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            operations/social/news/gists/**/*.json
+            operations/social/news/daily/*/summary.json
+            /operations/social/news/index.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Build and publish index
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python operations/social/scripts/build_news_index.py --news-dir news/operations/social/news --publish

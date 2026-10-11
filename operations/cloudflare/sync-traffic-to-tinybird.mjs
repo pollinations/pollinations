@@ -46,8 +46,8 @@ const MAX_RETRIES = 3;
 // Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~47.
 const QUERY_INTERVAL_MS = 1100;
 
-// Page routes of pollinations.ai/src/App.tsx and of the enter page list in
-// shared/product-analytics.ts.
+// Page routes of the website and Enter page lists in
+// shared/product-analytics.ts, plus the website's /docs redirect.
 const PAGES = {
     "pollinations.ai": [
         "/",
@@ -58,6 +58,7 @@ const PAGES = {
         "/terms",
         "/privacy",
         "/refunds",
+        "/subprocessors",
     ],
     "enter.pollinations.ai": [
         "/",

@@ -1,0 +1,15 @@
+DESCRIPTION >
+    Public model statistics computed once per hour by public_model_stats_refresh.
+
+SCHEMA >
+    `model` LowCardinality(String) `json:$.model`,
+    `request_count` UInt64 `json:$.request_count`,
+    `success_count` UInt64 `json:$.success_count`,
+    `priced_success_count` UInt64 `json:$.priced_success_count`,
+    `user_count` UInt64 `json:$.user_count`,
+    `avg_cost_usd` Float64 `json:$.avg_cost_usd`,
+    `avg_response_ms` Float64 `json:$.avg_response_ms`,
+    `error_count` UInt64 `json:$.error_count`
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY model

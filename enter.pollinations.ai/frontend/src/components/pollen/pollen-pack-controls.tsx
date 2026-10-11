@@ -1,113 +1,65 @@
-import { cn, Slider } from "@pollinations/ui";
+import { cn } from "@pollinations/ui";
 import {
+    calculateServiceFeeCents,
     formatPollenPackValue,
-    POLLEN_PACKS,
+    formatUsdCents,
     type PollenPack,
 } from "@shared/pollen-packs.ts";
-import type { CSSProperties, FC, ReactNode } from "react";
+import type { FC } from "react";
 
-const pollenPackSliderStyle = {
-    "--polli-slider-fill": "var(--polli-color-paid-soft)",
-    "--polli-slider-track": "var(--polli-color-paid-pale)",
-    "--polli-slider-thumb-border": "var(--polli-color-paid-deep)",
-} as CSSProperties;
-
-type PollenPackSliderProps = {
-    value: number;
-    onChange: (value: number) => void;
-    packs?: ReadonlyArray<PollenPack>;
-    label?: string;
-    disabled?: boolean;
-};
-
-/** Pack slider with its stops underneath; the chosen stop is highlighted in
- * place with its unit below it. Prices live with the action that charges
- * them, not on the slider. */
-export const PollenPackSlider: FC<PollenPackSliderProps> = ({
-    value,
-    onChange,
-    packs = POLLEN_PACKS,
-    label = "Select amount",
-    disabled = false,
-}) => {
-    const selectedIndex = Math.max(
-        0,
-        packs.findIndex((pack) => pack.amountUsd === value),
-    );
-    const selectedPack = packs[selectedIndex] ?? packs[0];
-    const lastIndex = Math.max(0, packs.length - 1);
-    const progressPercent =
-        lastIndex > 0 ? (selectedIndex / lastIndex) * 100 : 100;
-
-    return (
-        <div>
-            <div className="flex h-8 items-center">
-                <Slider
-                    min={0}
-                    max={lastIndex}
-                    step={1}
-                    value={selectedIndex}
-                    onChange={(event) => {
-                        const pack = packs[Number(event.currentTarget.value)];
-                        if (pack) onChange(pack.amountUsd);
-                    }}
-                    disabled={disabled}
-                    aria-label={label}
-                    aria-valuetext={
-                        selectedPack
-                            ? `${formatPollenPackValue(selectedPack.amountUsd)} pollen`
-                            : undefined
-                    }
-                    progress={progressPercent}
-                    style={pollenPackSliderStyle}
-                />
-            </div>
-            <div
-                aria-hidden="true"
-                className="relative mx-[11px] mt-1.5 h-9 text-sm font-bold tracking-tight text-theme-text-muted tabular-nums"
-            >
-                {packs.map((pack, index) => (
-                    <span
-                        key={pack.amountUsd}
-                        style={{
-                            left:
-                                lastIndex > 0
-                                    ? `${(index / lastIndex) * 100}%`
-                                    : "0%",
-                        }}
-                        className={cn(
-                            "absolute top-0 whitespace-nowrap transition-colors",
-                            index === 0
-                                ? "-ml-[11px] text-left"
-                                : lastIndex > 0 && index === lastIndex
-                                  ? "ml-[11px] -translate-x-full text-right"
-                                  : "-translate-x-1/2 text-center",
-                            index === selectedIndex && "text-paid-deep",
-                        )}
-                    >
-                        {formatPollenPackValue(pack.amountUsd)}
-                        {index === selectedIndex && (
-                            <span className="block text-xs font-medium leading-4">
-                                pollen
-                            </span>
-                        )}
-                    </span>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-/** A pack slider with its action (Buy, Save) in a fixed-width column on the
- * right, so every pack slider in the top-up block has the same width and its
- * action sits in the same place. Stacks on phones, action below. */
-export const PackSliderRow: FC<{ slider: ReactNode; action: ReactNode }> = ({
-    slider,
-    action,
+/** Choosing a pack only selects it; the action button decides what happens. */
+export const PollenPackButtons: FC<{
+    packs: readonly PollenPack[];
+    selectedAmount?: number;
+    onSelect: (pack: PollenPack) => void;
+    describe?: (pollen: string, price: string) => string;
+}> = ({
+    packs,
+    selectedAmount,
+    onSelect,
+    describe = (pollen, price) => `Select ${pollen} Pollen for ${price}`,
 }) => (
-    <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_14rem] sm:items-start sm:gap-x-6">
-        {/* pt lines the slider track up with the centre of the action */}
-        <div className="min-w-0 sm:pt-2">{slider}</div>
-        <div className="flex">{action}</div>
+    <div
+        className={cn(
+            "grid grid-cols-3 gap-2",
+            packs.length === 5 ? "sm:grid-cols-5" : "sm:grid-cols-6",
+        )}
+    >
+        {packs.map((pack) => {
+            const pollen = formatPollenPackValue(pack.amountUsd);
+            const price = formatUsdCents(
+                pack.amountUsd * 100 +
+                    calculateServiceFeeCents(pack.amountUsd * 100),
+            );
+            const selected = pack.amountUsd === selectedAmount;
+            return (
+                <button
+                    key={pack.packKey}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => onSelect(pack)}
+                    aria-label={describe(pollen, price)}
+                    // A value, not an action: never a border. Idle it is a
+                    // quiet grey (a tint of the text colour, so it shows in
+                    // both modes). Two yellows only: hover is the pale 30%
+                    // of a resting outlined button, chosen is the full
+                    // accent and stays so on hover. The ring shows keyboard
+                    // focus only.
+                    className={cn(
+                        "flex cursor-pointer flex-col items-center rounded-xl px-2 pt-3 pb-2.5 tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-text-soft",
+                        selected
+                            ? "bg-theme-bg-active text-theme-text-strong"
+                            : "bg-theme-text-strong/[0.06] text-theme-text-base hover:bg-theme-bg-active/30",
+                    )}
+                >
+                    <span className="text-2xl font-bold leading-none tracking-tight">
+                        {pollen}
+                    </span>
+                    {/* Faded, not grey: readable on both fills. */}
+                    <span className="mt-1 text-xs opacity-70">pollen</span>
+                    <span className="mt-2 text-sm font-semibold">{price}</span>
+                </button>
+            );
+        })}
     </div>
 );

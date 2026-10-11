@@ -11,6 +11,17 @@ describe("TabButton", () => {
         );
         expect(html).toContain('aria-label="Choose model"');
     });
+    test("draws the icon before the label, hidden from assistive tech", () => {
+        const html = renderToStaticMarkup(
+            <TabButton active={false} icon={<svg data-testid="icon" />}>
+                Newest
+            </TabButton>,
+        );
+
+        expect(html.indexOf("icon")).toBeLessThan(html.indexOf("Newest"));
+        expect(html).toContain('aria-hidden="true"');
+    });
+
     test("keeps neutral selected and unselected states distinct", () => {
         const active = renderToStaticMarkup(
             <TabButton active intent="neutral">
@@ -27,6 +38,16 @@ describe("TabButton", () => {
         expect(active).toContain("polli:text-theme-text-strong");
         expect(inactive).toContain("polli:bg-theme-bg-subtle");
         expect(inactive).toContain("polli:text-theme-text-base");
+    });
+
+    test("marks a partly selected toggle as mixed with its own tint", () => {
+        const mixed = renderToStaticMarkup(
+            <TabButton active="mixed">Partial</TabButton>,
+        );
+
+        expect(mixed).toContain('aria-pressed="mixed"');
+        expect(mixed).toContain("polli:bg-theme-bg-active/45");
+        expect(mixed).not.toContain("polli:bg-theme-bg-subtle");
     });
 
     test("fills only the selected green tab with the Quest colours", () => {

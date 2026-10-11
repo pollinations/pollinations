@@ -24,6 +24,7 @@ from typing import Dict, List, Optional
 from collections import defaultdict
 
 from common import (
+    gist_context,
     LINKEDIN_MAX_CHARS,
     build_canonical_summary,
     build_linkedin_post_text,
@@ -157,21 +158,11 @@ def generate_digest(gists: List[Dict], week_start: str, week_end: str,
     by_date = defaultdict(list)
     for g in gists:
         date = g.get("merged_at", "")[:10] or "unknown"
-        ai = g.get("gist", {})
-        by_date[date].append({
-            "pr_number": g.get("pr_number"),
-            "title": g.get("title"),
-            "author": g.get("author"),
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "summary": ai.get("summary"),
-            "impact": ai.get("impact"),
-            "keywords": ai.get("keywords"),
-        })
+        by_date[date].append(gist_context(g))
 
-    gist_context = []
+    gist_sections = []
     for date in sorted(by_date.keys()):
-        gist_context.append(json.dumps({
+        gist_sections.append(json.dumps({
             "date": date,
             "pr_count": len(by_date[date]),
             "prs": by_date[date],
@@ -182,7 +173,7 @@ Total PRs: {len(gists)}
 Days with PRs: {len(by_date)}
 
 PR gists by date:
-{chr(10).join(gist_context)}"""
+{chr(10).join(gist_sections)}"""
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -260,13 +251,13 @@ def generate_discord_post(
     """Generate weekly discord.json (special: uses date_str substitution in format)."""
     voice = load_prompt("tone/discord")
     pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
+    arcs = json.dumps(digest.get("arcs", []), indent=2)
     pr_count = digest.get("pr_count", 0)
 
     fmt = load_format("discord").replace("{date_str}", publish_date)
-    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
+    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nSelected updates with factual detail:\n{arcs}"
     if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+        task += f"\nPRs selected for this recap: {pr_count}. This is not the total number of merges."
     task += "\n\n" + fmt + _weekly_image_context()
 
     response = call_pollinations_api(voice, task, token, temperature=0.7)

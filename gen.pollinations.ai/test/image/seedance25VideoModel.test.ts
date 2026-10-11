@@ -28,7 +28,7 @@ const baseParams: ImageParams = {
     image: IMAGE_URLS,
     transparent: false,
     reasoning: "balanced",
-    audio: true,
+    audio: undefined, // Omitted by the caller: Seedance keeps its audio on.
     duration: 4,
     aspectRatio: "4:3",
 };

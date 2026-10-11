@@ -4,8 +4,11 @@ import { kpiRoutes } from "../worker/kpi.ts";
 afterEach(() => vi.unstubAllGlobals());
 
 it.each([
-    200, 404,
-])("handles agent/MCP pipe status %s without inventing zeros", async (status) => {
+    ["agent-mcp-usage", "weekly_agent_mcp_usage", 200],
+    ["agent-mcp-usage", "weekly_agent_mcp_usage", 404],
+    ["official-apps", "weekly_official_app_usage", 200],
+    ["official-apps", "weekly_official_app_usage", 404],
+])("handles %s pipe %s status %s without inventing zeros", async (route, pipe, status) => {
     vi.stubGlobal("caches", {
         open: async () => ({
             match: async () => undefined,
@@ -24,7 +27,7 @@ it.each([
     );
     vi.stubGlobal("fetch", upstream);
     const result = await kpiRoutes.request(
-        "https://kpi.test/agent-mcp-usage?weeks_back=0",
+        `https://kpi.test/${route}?weeks_back=0`,
         {},
         {
             TINYBIRD_INGEST_URL: "https://tinybird.test/v0/events",
@@ -33,7 +36,7 @@ it.each([
     );
     expect(upstream).toHaveBeenCalledTimes(1);
     expect(upstream.mock.calls[0][0]).toContain(
-        "/v0/pipes/weekly_agent_mcp_usage.json?start_date=",
+        `/v0/pipes/${pipe}.json?start_date=`,
     );
     expect(result.status).toBe(status === 200 ? 200 : 503);
     expect((await result.json()).data).toEqual(status === 200 ? [row] : []);

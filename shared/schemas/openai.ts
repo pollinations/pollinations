@@ -136,6 +136,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         file_id: z.string().optional(),
         file_name: z.string().optional(),
         file_url: z.string().optional(),
+        filename: z.string().optional(),
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
@@ -213,6 +214,7 @@ const ChatCompletionMessageToolCallSchema = z.object({
     function: z.object({
         name: z.string(),
         arguments: z.string(),
+        thought_signature: z.string().optional(),
     }),
 });
 
@@ -742,6 +744,11 @@ export const OpenAIModelSchema = z
         aliases: z.array(z.string()),
         category: z.enum(MODEL_CATEGORIES),
         community: z.boolean(),
+        tags: z
+            .array(z.object({ name: z.string() }))
+            .describe(
+                "Filter tags in Open WebUI's model tag format: the model category, plus `community` for community models and `agent` for agents.",
+            ),
         title: z.string(),
         description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
@@ -749,6 +756,11 @@ export const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional(),
         base_model: z.string().optional(),
+        paid_only: z
+            .boolean()
+            .describe(
+                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+            ),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
@@ -759,6 +771,12 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),

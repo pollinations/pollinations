@@ -288,6 +288,10 @@ def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
         # Sort lists so reordering aliases/modalities/capabilities doesn't
         # trigger false "changed" entries.
         result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
+    # Snapshots taken before the catalog always sent paid_only omit it for
+    # models that were never paid-only; missing meant false. Remove once the
+    # stored snapshot has been taken from a catalog that always sends it.
+    result.setdefault("paid_only", False)
     return result
 
 

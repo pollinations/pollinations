@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 export type StoredR2Object = {
     body: Uint8Array;
     httpMetadata?: R2HTTPMetadata;

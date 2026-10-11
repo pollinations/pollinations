@@ -182,6 +182,19 @@ export default defineConfig(async ({ mode }) => {
                                         components: {},
                                     });
                                 }
+                                // Answers key creation with the request it
+                                // got, so tests see what gen sent.
+                                if (url.pathname === "/api/account/keys") {
+                                    return Response.json({
+                                        key: JSON.stringify({
+                                            authorization:
+                                                request.headers.get(
+                                                    "authorization",
+                                                ),
+                                            body: await request.json(),
+                                        }),
+                                    });
+                                }
                                 return new Response("enter test stub");
                             },
                             POLLINATIONS_MCP: async (request: Request) => {

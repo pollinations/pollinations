@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hono/standard-validator": "^0.2.2",
+    "busboy": "^1.6.0",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.6.0",
     "hono-openapi": "^1.2.0",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.10",
     "@cloudflare/workers-types": "^4.20260111.0",
+    "@types/busboy": "^1.5.4",
     "typescript": "^5.6.0",
     "vitest": "^3.2.4",
     "wrangler": "^4.58.0"

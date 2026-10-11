@@ -2,6 +2,8 @@ name = "pollinations-text-cache"
 main = "src/index.js"
 # Same date as gen and enter: the vitest pool runtime has no newer one
 compatibility_date = "2025-11-01"
+# The Weft SDK uses Buffer
+compatibility_flags = ["nodejs_compat"]
 # Only the custom domains below serve this Worker
 workers_dev = false
 preview_urls = false
@@ -22,6 +24,11 @@ custom_domain = true
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-legacy"
 
+# Text generation, billed to the GEN_API_KEY bridge key
+[[services]]
+binding = "GEN"
+service = "pollinations-gen-production"
+
 # One free-generation slot per client IP (shared/ip-slot.js)
 [[durable_objects.bindings]]
 name = "IP_SLOT"
@@ -31,12 +38,24 @@ class_name = "IpSlot"
 tag = "v1"
 new_sqlite_classes = ["IpSlot"]
 
-# Environment variables
+# The paywall art (shared/assets/weft-paywall.webp) is imported as bytes
+[[rules]]
+type = "Data"
+globs = ["**/*.webp"]
+fallthrough = true
+
 [vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
-#ORIGIN_HOST ="http://163.172.149.24:16385"
-# Enable debug logging (set to "true" to enable, "false" to disable)
-DEBUG = "cache:*"
+# Percent of cache misses served by src/origin.js; the rest go to the VM
+ADAPTER_SHARE = "10"
+# x402 paywall, as on the VM; WEFT_SELLER_API_KEY is a secret. Without all
+# four values the paywall is off and rate-limited requests wait instead
+WEFT_PAY_TO = "0xF04da999947454410d2Dec7eE01cD13f7FaD6fbE"
+WEFT_NETWORK = "eip155:8453"
+WEFT_FACILITATOR_URL = "https://x402.weft.network"
+
+[secrets]
+required = ["GEN_API_KEY"]
 
 # Increase limits for long-running operations
 # This requires a paid Workers Unbound plan
@@ -54,9 +73,25 @@ invocation_logs = false
 [env.test]
 routes = [] # keep the production custom domains out of this environment
 
+[env.test.vars]
+ORIGIN_HOST = "origin.invalid" # the tests never reach the VM
+ADAPTER_SHARE = "100"
+WEFT_PAY_TO = "0xF04da999947454410d2Dec7eE01cD13f7FaD6fbE"
+WEFT_NETWORK = "eip155:8453"
+WEFT_FACILITATOR_URL = "https://x402.weft.network"
+
+# Local runs load only this key from .dev.vars.test; vitest.config.js binds test values
+[env.test.secrets]
+required = ["GEN_API_KEY"]
+
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-legacy-test"
+
+# Local gen's dev name; the tests replace it with fixed responses
+[[env.test.services]]
+binding = "GEN"
+service = "pollinations-gen"
 
 [[env.test.durable_objects.bindings]]
 name = "IP_SLOT"

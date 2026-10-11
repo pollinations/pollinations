@@ -1984,9 +1984,14 @@ export function parentIssue(report, artifactUrl) {
     const lines = [
         `- Checked: ${count}/${report.selectedCount} official models${report.status === "partial" ? " (partial)" : ""}.`,
     ];
-    if (researched.length)
+    const proposals = researched.filter((model) => model.recommendation);
+    if (proposals.length)
         lines.push(
-            `- Models: ${list(researched.map((model) => `${clean(model.name)} → ${model.recommendation ? clean(model.recommendation.provider) : "provider unresolved"}`))}.`,
+            `- Models: ${list(proposals.map((model) => `${clean(model.name)} → ${clean(model.recommendation.provider)}`))}.`,
+        );
+    if (researched.length > proposals.length)
+        lines.push(
+            `- Unresolved providers: ${researched.length - proposals.length} models; details in evidence.`,
         );
     for (const [kind, label] of [
         ["model", "New models"],

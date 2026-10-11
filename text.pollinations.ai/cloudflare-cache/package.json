@@ -20,10 +20,6 @@
     "author": "Pollinations",
     "license": "MIT",
     "devDependencies": {
-        "wrangler": "^4.15.0"
-    },
-    "dependencies": {
-        "fast-json-stable-stringify": "^2.1.0",
-        "node-fetch": "^2.7.0"
+        "wrangler": "^4.147.0"
     }
 }

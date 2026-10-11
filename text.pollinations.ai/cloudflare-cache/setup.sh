@@ -32,16 +32,5 @@ npm install
 echo -e "${GREEN}Deploying worker...${NC}"
 npm run deploy
 
-# Add custom domain to the worker
-WORKER_NAME="pollinations-text-cache"
-CUSTOM_DOMAIN="text.pollinations.ai"
-echo -e "${GREEN}Adding custom domain: ${CUSTOM_DOMAIN} to worker: ${WORKER_NAME}...${NC}"
-echo -e "${YELLOW}Note: You'll need to manually add the custom domain in the Cloudflare dashboard.${NC}"
-echo -e "${YELLOW}Go to Workers & Pages > pollinations-text-cache > Triggers > Custom Domains > Add Custom Domain${NC}"
-echo -e "${YELLOW}Enter: ${CUSTOM_DOMAIN}${NC}"
-
 echo -e "${GREEN}Setup complete!${NC}"
-echo -e "${GREEN}Your Cloudflare R2 + CDN cache for text service is now deployed.${NC}"
-echo -e "${YELLOW}Important: Make sure to update your DNS settings in the Cloudflare dashboard:${NC}"
-echo -e "${YELLOW}1. Add a custom domain to your worker: ${CUSTOM_DOMAIN}${NC}"
-echo -e "${YELLOW}2. Change the CNAME record for 'text' to point to 'pollinations-text-cache.thomash-efd.workers.dev' instead of the Cloudflare Tunnel.${NC}"
+echo -e "${GREEN}The custom domains text.myceli.ai and text.pollinations.ai come from wrangler.toml.${NC}"

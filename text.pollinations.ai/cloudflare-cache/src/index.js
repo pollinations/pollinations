@@ -384,7 +384,7 @@ async function proxyRequest(request, env) {
 /**
  * Generate a cache key for the request
  */
-async function generateCacheKey(request) {
+export async function generateCacheKey(request) {
     // Authentication parameters to exclude from cache key
     const AUTH_PARAMS = ["token", "referrer", "referer", "nofeed", "no-cache"];
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 17026,
+  "title": "chore: remove dead observability secrets",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17026",
+  "merged_at": "2026-10-11T02:05:23Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Removed TINYBIRD_LEGACY_READ_TOKEN and DISCORD_WEBHOOK_URL from the observability Worker upload list. Removed those entries plus CLOUDFLARE_TUNNEL_TOKEN and GF_ADMIN_USER from the encrypted secret inventory; Grafana’s `admin` setting remains in `wrangler.toml`. Updated the observability docs and deployment secret tests. The upload script now writes only the three retained secrets, and the deployment secret tests pass.",
+    "keywords": [
+      "observability",
+      "secrets",
+      "Worker",
+      "Grafana",
+      "deployment"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17026.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and tidies old labeled key tags beside a CRT terminal glowing lime green (#ecf874), while code-plants grow in pastel pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T02:06:30.097764+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "8e9f325b3d9f4bd8b779dc54b6ff5667ac34b5b3",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

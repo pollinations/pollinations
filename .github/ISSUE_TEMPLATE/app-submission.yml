@@ -66,7 +66,7 @@ body:
     id: screenshot
     attributes:
       label: Screenshot
-      description: "The app's real screen, not a logo or banner. Upload an image, or when editing the issue link a raw.githubusercontent.com repository image. PNG, JPEG, or WebP, at most 5 MB, 16:9 landscape, at least 1280×720. Keep the key content in the top half; the catalog crops from the top. Mobile apps: place the phone screen on a 16:9 canvas."
+      description: "The app's real screen, not a logo or banner. Upload an image, or when editing the issue link a raw.githubusercontent.com repository image. Use a 16:9 landscape image, ideally 1920×1080; minimum 1280×720. PNG, JPEG, or WebP, at most 5 MB. Keep the key content in the top half; the catalog crops from the top. Mobile apps: place the phone screen on a 16:9 canvas."
     validations:
       required: true
       accept: ".png,.jpg,.jpeg,.webp"

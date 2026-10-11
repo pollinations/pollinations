@@ -126,6 +126,90 @@ print(json.dumps([fetch._read_http("https://example.com", limit, focus) for limi
     assert.ok(narrow.text.includes("GPT-Model-Example"));
 });
 
+test("run-local page cache reuses full pages safely and fresh runs detect changes beyond excerpts", () => {
+    const result = spawnSync(
+        python,
+        [
+            "-c",
+            `
+import hashlib, importlib.util, io, json, os, sys, tempfile, types
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
+fetch = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(fetch)
+fetch.socket.getaddrinfo = lambda host, *args, **kwargs: [(None, None, None, None, (host if host in {"127.0.0.1", "localhost"} else "1.1.1.1", 443))]
+count = 0
+text = "prefix " * 3000 + "model-one details " * 30 + "model-two details " * 30 + "end " * 5000 + "tail"
+class Session:
+    def __init__(self): self._curl_session = types.SimpleNamespace()
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def get(self, *args, **kwargs):
+        global count
+        assert self._curl_session.curl_options[2] == fetch.MAX_RESPONSE_BYTES
+        assert self._curl_session.trust_env is False
+        assert kwargs == {"follow_redirects": False, "timeout": 20, "retries": 0}
+        count += 1
+        return types.SimpleNamespace(status=200, headers={}, html_content="<p>" + text + "</p>")
+sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2))
+sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
+url = "https://example.com/catalog"
+with tempfile.TemporaryDirectory() as root:
+    os.environ["FETCH_CACHE_DIR"] = str(Path(root) / "first-run")
+    first = fetch._read_http(url, 100, "model-one")
+    second = fetch._read_http(url, 100, "model-two")
+    assert count == 1
+    assert first["cached"] is False and second["cached"] is True
+    assert first["focusMatched"] and second["focusMatched"]
+    assert "model-one" in first["text"] and "model-two" in second["text"]
+    assert first["pageDigest"] == second["pageDigest"] == hashlib.sha256(text.encode()).hexdigest()
+    assert first["fetchedAt"] == second["fetchedAt"] and first["fetchedAt"].endswith("Z")
+    assert first["extractionVersion"] == 1
+    path = next(Path(os.environ["FETCH_CACHE_DIR"]).glob("*.json"))
+    assert path.name == hashlib.sha256(url.encode()).hexdigest() + ".json"
+    valid = json.loads(path.read_text(encoding="utf-8"))
+    for changes in [{"text": "altered"}, {"extractionVersion": 2}, {"requestedUrl": "https://other.example/"}, {"url": "https://127.0.0.1/"}, {"fetchedAt": "invalidZ"}, {"text": "x" * (fetch.MAX_RESPONSE_BYTES + 1)}]:
+        path.write_text(json.dumps({**valid, **changes}), encoding="utf-8")
+        sys.stdin = io.StringIO(json.dumps({"url": url, "focus": "model-one"}))
+        failed = fetch.main()
+        assert failed["status"] == "unavailable" and failed["error"] == "cached page failed validation"
+        assert root not in json.dumps(failed)
+    path.write_text("{" , encoding="utf-8")
+    sys.stdin = io.StringIO(json.dumps({"url": url}))
+    assert fetch.main()["error"] == "cached page failed validation"
+    assert count == 1
+    path.write_text(json.dumps(valid), encoding="utf-8")
+    # A cache hit still resolves the original host before reading cached content.
+    fetch.socket.getaddrinfo = lambda *args, **kwargs: [(None, None, None, None, ("127.0.0.1", 443))]
+    sys.stdin = io.StringIO(json.dumps({"url": url}))
+    assert "public IP" in fetch.main()["error"]
+    fetch.socket.getaddrinfo = lambda *args, **kwargs: [(None, None, None, None, ("1.1.1.1", 443))]
+    for unsafe in ["http://example.com", "https://user:pass@example.com", "https://example.com/?api_key=secret"]:
+        sys.stdin = io.StringIO(json.dumps({"url": unsafe}))
+        failed = fetch.main()
+        assert failed["status"] == "unavailable"
+        assert "secret" not in json.dumps(failed) and "user:pass" not in json.dumps(failed)
+    os.environ["FETCH_CACHE_DIR"] = str(Path(root) / "next-run")
+    text += "changed beyond excerpt"
+    refreshed = fetch._read_http(url, 100, "model-one")
+    assert count == 2 and refreshed["cached"] is False
+    assert refreshed["text"] == first["text"]
+    assert refreshed["pageDigest"] != first["pageDigest"]
+    os.environ["FETCH_CACHE_DIR"] = str(Path(root) / "oversized-run")
+    text = "x" * (fetch.MAX_RESPONSE_BYTES + 1)
+    oversized = fetch._read_http(url, 100)
+    assert oversized["status"] == "unavailable" and "fetch limit" in oversized["error"]
+    assert not Path(os.environ["FETCH_CACHE_DIR"]).exists()
+print(json.dumps({"passed": True}))
+`,
+            adapter,
+        ],
+        { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).passed, true);
+});
+
 test(
     "fetches an official public page when Scrapling is installed",
     { skip: process.env.RUN_LIVE_FETCH !== "1" },

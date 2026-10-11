@@ -477,9 +477,17 @@ test("real tool-loop code enforces coverage before accepting a report", async ()
                     ["exa"],
                 );
                 if (index === 1)
-                    assert.match(messages.at(-1).content, /rejected/);
+                    assert.match(
+                        messages.findLast((message) => message.role === "tool")
+                            .content,
+                        /rejected/,
+                    );
                 if (index === 7)
-                    assert.match(messages.at(-1).content, /Already attempted/);
+                    assert.match(
+                        messages.findLast((message) => message.role === "tool")
+                            .content,
+                        /Already attempted/,
+                    );
                 const [name, args] = calls[index++];
                 return {
                     role: "assistant",
@@ -541,7 +549,11 @@ test("focused fetch passes the model name and saved rereads select its exact exc
             {
                 infer: async (messages) => {
                     if (index === 4) {
-                        const saved = JSON.parse(messages.at(-1).content);
+                        const saved = JSON.parse(
+                            messages.findLast(
+                                (message) => message.role === "tool",
+                            ).content,
+                        );
                         assert.equal(saved.text, excerpt);
                         assert.equal(saved.focus, focus);
                         assert.equal(saved.excerptStart, 21000);
@@ -667,7 +679,11 @@ test("research archives page bodies but rereads exact evidence without network c
                     }
                     if (index === 6)
                         assert.equal(
-                            JSON.parse(messages.at(-1).content).text,
+                            JSON.parse(
+                                messages.findLast(
+                                    (message) => message.role === "tool",
+                                ).content,
+                            ).text,
                             text,
                         );
                     const [name, args] = calls[index++];
@@ -760,7 +776,10 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
         for (const payload of payloads) {
             assert.equal(payload.model, "openai/gpt-6.1-sol");
             assert.equal(payload.reasoning_effort, "medium");
-            assert.equal(payload.max_tokens, 12000);
+            assert.equal(
+                payload.max_tokens,
+                JSON.parse(payload.messages[1].content).models ? 2000 : 6000,
+            );
             assert.equal(payload.temperature, undefined);
             assert.match(
                 payload.messages[0].content,
@@ -775,7 +794,7 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
             model: "openai/gpt-6.1-sol",
             reasoningEffort: "medium",
         });
-        assert.ok(report.calls.every((call) => call.reserved >= 0.12));
+        assert.ok(report.calls.every((call) => call.reserved >= 0.02));
         assert.match(report.guidance.digest, /^[a-f0-9]{64}$/);
     } finally {
         process.exitCode = oldExitCode;
@@ -825,7 +844,9 @@ test("NomNom verification rejects endorsement-only research and preserves eviden
                 infer: async (messages) => {
                     if (index === 6)
                         assert.match(
-                            messages.at(-1).content,
+                            messages.findLast(
+                                (message) => message.role === "tool",
+                            ).content,
                             /counter-evidence/,
                         );
                     const [name, args] = calls[index++];

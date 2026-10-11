@@ -7,6 +7,8 @@ export const MODEL_CATEGORIES = [
     "realtime",
     "text",
     "embedding",
+    "decision",
+    "decisions",
     "agent",
     "mcp",
 ] as const;
@@ -43,8 +45,12 @@ function includes<T extends string>(
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
-    const category = includes(MODEL_CATEGORIES, search.category)
-        ? search.category
+    const rawCategory =
+        typeof search.category === "string" ? search.category : undefined;
+    const normalizedCategory =
+        rawCategory === "decisions" ? "decision" : rawCategory;
+    const category = includes(MODEL_CATEGORIES, normalizedCategory)
+        ? normalizedCategory
         : "all";
     const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
     const query = typeof search.q === "string" ? search.q.trim() : "";

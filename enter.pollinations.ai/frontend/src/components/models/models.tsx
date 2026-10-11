@@ -35,6 +35,7 @@ import {
     MODEL_FILTER_LABELS,
     ModelFilterTokens,
 } from "./model-filter-tokens.tsx";
+import { isDecisionModel } from "./model-info.ts";
 import {
     ensureModelQueryDefaults,
     getExplicitModelQuerySource,
@@ -73,6 +74,7 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
+    "decision",
 ];
 
 type PrimaryTab = "models" | "agent" | "mcp";
@@ -109,6 +111,8 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    decision: "decision",
+    decisions: "decision",
     agent: "agent",
     mcp: "MCP server",
 };
@@ -125,6 +129,8 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        decision: [],
+        decisions: [],
         agent: [],
         mcp: [],
     };
@@ -134,7 +140,13 @@ function categorizeModels(
             categorized.agent.push(model);
         } else {
             categorized.all.push(model);
-            categorized[model.type].push(model);
+            if (isDecisionModel(model)) {
+                categorized.decision.push(model);
+                categorized.decisions.push(model);
+            }
+            if (categorized[model.type]) {
+                categorized[model.type].push(model);
+            }
         }
     }
     return categorized;
@@ -490,268 +502,273 @@ export const Models: FC = () => {
     };
 
     return (
-        <>
-            <Section
-                title={
-                    activePrimaryTab === "agent"
-                        ? "Agents"
-                        : activePrimaryTab === "mcp"
-                          ? "MCP"
-                          : "Models"
-                }
-                actionClassName="ml-auto"
-                action={
-                    activePrimaryTab === "models" && (
-                        <InlineLink
-                            href="https://model-monitor.pollinations.ai"
-                            size="sm"
-                            className="inline-flex items-center gap-1.5 whitespace-nowrap"
-                        >
-                            <ModelHealthIcon />
-                            Model health
-                        </InlineLink>
-                    )
-                }
-            >
-                <div className="flex flex-col items-start gap-3">
-                    <fieldset
-                        className="flex min-w-0 flex-wrap gap-1.5"
-                        aria-label="Catalog type"
+        <Section
+            title={
+                activePrimaryTab === "agent"
+                    ? "Agents"
+                    : activePrimaryTab === "mcp"
+                      ? "MCP"
+                      : "Models"
+            }
+            actionClassName="ml-auto"
+            action={
+                activePrimaryTab === "models" && (
+                    <InlineLink
+                        href="https://model-monitor.pollinations.ai"
+                        size="sm"
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap"
                     >
-                        {PRIMARY_TABS.map(({ value, label, Icon }) => (
-                            <TabButton
-                                key={value}
-                                active={activePrimaryTab === value}
+                        <ModelHealthIcon />
+                        Model health
+                    </InlineLink>
+                )
+            }
+        >
+            <div className="flex flex-col items-start gap-3">
+                <fieldset
+                    className="flex min-w-0 flex-wrap gap-1.5"
+                    aria-label="Catalog type"
+                >
+                    {PRIMARY_TABS.map(({ value, label, Icon }) => (
+                        <TabButton
+                            key={value}
+                            active={activePrimaryTab === value}
+                            onClick={() =>
+                                setActiveTab(value === "models" ? "all" : value)
+                            }
+                            ariaLabel={label}
+                        >
+                            <span className="inline-flex items-center gap-1.5">
+                                <Icon className="h-4 w-4" aria-hidden="true" />
+                                {label}
+                            </span>
+                        </TabButton>
+                    ))}
+                </fieldset>
+                {activePrimaryTab === "models" && (
+                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                            {MODEL_SECTION_ORDER.filter(
+                                (section) =>
+                                    section === "all" ||
+                                    modelSections[section].length > 0,
+                            ).map((section) => (
+                                <TabButton
+                                    key={section}
+                                    active={
+                                        activeTab === section ||
+                                        (section === "decision" &&
+                                            activeTab === "decisions")
+                                    }
+                                    onClick={() => setActiveTab(section)}
+                                    ariaLabel={sectionLabels[section]}
+                                >
+                                    {sectionLabels[section]}
+                                </TabButton>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                    <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
+                        <div>
+                            <EditableCombobox
+                                value={visibleSearch}
+                                options={searchOptions}
+                                onChange={setVisibleSearch}
+                                open={searchOpen}
+                                onOpenChange={setSearchOpen}
                                 onClick={() =>
-                                    setActiveTab(
-                                        value === "models" ? "all" : value,
-                                    )
+                                    setPendingRemovalIndex(undefined)
                                 }
-                                ariaLabel={label}
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <Icon
-                                        className="h-4 w-4"
-                                        aria-hidden="true"
+                                onKeyDown={handleSearchKeyDown}
+                                onBlur={() => {
+                                    const normalizedSearch =
+                                        draftFilter && !draftFilter.value
+                                            ? getCancelledDraftSearch()
+                                            : search.trim();
+                                    setDraftFilter(undefined);
+                                    setEditingFilterToken(undefined);
+                                    setSearch(normalizedSearch);
+                                    pushSearch(normalizedSearch);
+                                }}
+                                placeholder={
+                                    renderedDraftFilter
+                                        ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
+                                        : `Search ${searchTarget}…`
+                                }
+                                aria-label={`Search ${searchTarget}`}
+                                autoComplete="off"
+                                contentClassName="catalog-search-panel"
+                                startContent={
+                                    <ModelFilterTokens
+                                        tokens={renderedFilterTokens}
+                                        draft={renderedDraftFilter}
+                                        pendingRemovalIndex={
+                                            pendingRemovalIndex
+                                        }
+                                        onEdit={editFilter}
+                                        onChange={(token, value) => {
+                                            setSearch(
+                                                replaceModelQueryFilterToken(
+                                                    getCancelledDraftSearch(),
+                                                    token.index,
+                                                    `${token.filter.key}:${value}`,
+                                                ),
+                                            );
+                                            setDraftFilter(undefined);
+                                            setEditingFilterToken(undefined);
+                                            setPendingRemovalIndex(undefined);
+                                            setSearchOpen(false);
+                                        }}
                                     />
-                                    {label}
-                                </span>
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                    {activePrimaryTab === "models" && (
-                        <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                            <div className="flex flex-wrap gap-1.5">
-                                {MODEL_SECTION_ORDER.filter(
-                                    (section) =>
-                                        section === "all" ||
-                                        modelSections[section].length > 0,
-                                ).map((section) => (
-                                    <TabButton
-                                        key={section}
-                                        active={activeTab === section}
-                                        onClick={() => setActiveTab(section)}
-                                        ariaLabel={sectionLabels[section]}
-                                    >
-                                        {sectionLabels[section]}
-                                    </TabButton>
-                                ))}
-                            </div>
+                                }
+                            />
+                        </div>
+                    </div>
+                    {activeTab !== "mcp" && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <ModelSortMenu
+                                value={activeSort}
+                                onChange={setActiveSort}
+                            />
                         </div>
                     )}
-                    <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
-                            <div>
-                                <EditableCombobox
-                                    value={visibleSearch}
-                                    options={searchOptions}
-                                    onChange={setVisibleSearch}
-                                    open={searchOpen}
-                                    onOpenChange={setSearchOpen}
-                                    onClick={() =>
-                                        setPendingRemovalIndex(undefined)
-                                    }
-                                    onKeyDown={handleSearchKeyDown}
-                                    onBlur={() => {
-                                        const normalizedSearch =
-                                            draftFilter && !draftFilter.value
-                                                ? getCancelledDraftSearch()
-                                                : search.trim();
-                                        setDraftFilter(undefined);
-                                        setEditingFilterToken(undefined);
-                                        setSearch(normalizedSearch);
-                                        pushSearch(normalizedSearch);
-                                    }}
-                                    placeholder={
-                                        renderedDraftFilter
-                                            ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
-                                            : `Search ${searchTarget}…`
-                                    }
-                                    aria-label={`Search ${searchTarget}`}
-                                    autoComplete="off"
-                                    contentClassName="catalog-search-panel"
-                                    startContent={
-                                        <ModelFilterTokens
-                                            tokens={renderedFilterTokens}
-                                            draft={renderedDraftFilter}
-                                            pendingRemovalIndex={
-                                                pendingRemovalIndex
-                                            }
-                                            onEdit={editFilter}
-                                            onChange={(token, value) => {
-                                                setSearch(
-                                                    replaceModelQueryFilterToken(
-                                                        getCancelledDraftSearch(),
-                                                        token.index,
-                                                        `${token.filter.key}:${value}`,
-                                                    ),
-                                                );
-                                                setDraftFilter(undefined);
-                                                setEditingFilterToken(
-                                                    undefined,
-                                                );
-                                                setPendingRemovalIndex(
-                                                    undefined,
-                                                );
-                                                setSearchOpen(false);
-                                            }}
-                                        />
-                                    }
-                                />
-                            </div>
-                        </div>
-                        {activeTab !== "mcp" && (
-                            <div className="flex flex-wrap items-center gap-2">
-                                <ModelSortMenu
-                                    value={activeSort}
-                                    onChange={setActiveSort}
-                                />
-                            </div>
-                        )}
-                    </div>
                 </div>
-                {(activePrimaryTab === "agent" ||
-                    (activePrimaryTab === "models" &&
-                        explicitModelSource !== "official")) && (
-                    <Alert
-                        intent="advisory"
-                        title="Community privacy"
-                        className="polli:bg-transparent"
-                    >
-                        Independent providers and configured fallbacks process
-                        requests under their own policies.{" "}
-                        <strong className="font-semibold text-theme-text-strong">
-                            Avoid sensitive data.
-                        </strong>{" "}
-                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                            <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
-                                Privacy filter
-                            </InlineLink>
-                            <span aria-hidden="true">·</span>
-                            <InlineLink href="https://pollinations.ai/privacy">
-                                Privacy Policy
-                            </InlineLink>
-                        </span>
-                    </Alert>
-                )}
-                {activeTab === "mcp" ? (
-                    <McpServerList query={query} />
-                ) : (
-                    <SectionContent loading={catalogLoading}>
-                        {catalogError ? (
-                            <LoadError
-                                onRetry={() => {
-                                    setCatalogLoading(true);
-                                    void loadModelCatalog();
-                                }}
-                            >
-                                {catalogError}
-                            </LoadError>
-                        ) : query && sectionModels[activeTab].length === 0 ? (
-                            <p className="py-8 text-center text-sm text-theme-text-muted">
-                                No {searchTarget.toLowerCase()} match{" "}
-                                {visibleSearch.trim()
-                                    ? `“${visibleSearch.trim()}”`
-                                    : "the selected filters"}
-                                .
-                            </p>
-                        ) : (
-                            <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                                <UnifiedModelTable
-                                    listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
-                                    allModels={sectionModels.all}
-                                    imageModels={sectionModels.image}
-                                    videoModels={sectionModels.video}
-                                    model3dModels={sectionModels["3d"]}
-                                    audioModels={sectionModels.audio}
-                                    realtimeModels={sectionModels.realtime}
-                                    textModels={sectionModels.text}
-                                    embeddingModels={sectionModels.embedding}
-                                    agentModels={sectionModels.agent}
-                                    activeTab={activeTab}
-                                />
-                            </div>
-                        )}
-                    </SectionContent>
-                )}
-                {activeTab !== "mcp" && (
-                    <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
-                        {activeTab === "agent" && (
-                            <p className="flex items-start gap-1.5">
-                                <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>
-                                    <strong>agent pricing</strong> — listed
-                                    rates are for the agent&apos;s base model
-                                    running its saved instructions.
-                                </span>
-                            </p>
-                        )}
+            </div>
+            {(activePrimaryTab === "agent" ||
+                (activePrimaryTab === "models" &&
+                    explicitModelSource !== "official")) && (
+                <Alert
+                    intent="advisory"
+                    title="Community privacy"
+                    className="polli:bg-transparent"
+                >
+                    Independent providers and configured fallbacks process
+                    requests under their own policies.{" "}
+                    <strong className="font-semibold text-theme-text-strong">
+                        Avoid sensitive data.
+                    </strong>{" "}
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                        <InlineLink href="https://gen.pollinations.ai/docs#tag/Safety">
+                            Privacy filter
+                        </InlineLink>
+                        <span aria-hidden="true">·</span>
+                        <InlineLink href="https://pollinations.ai/privacy">
+                            Privacy Policy
+                        </InlineLink>
+                    </span>
+                </Alert>
+            )}
+            {activeTab === "mcp" ? (
+                <McpServerList query={query} />
+            ) : (
+                <SectionContent loading={catalogLoading}>
+                    {catalogError ? (
+                        <LoadError
+                            onRetry={() => {
+                                setCatalogLoading(true);
+                                void loadModelCatalog();
+                            }}
+                        >
+                            {catalogError}
+                        </LoadError>
+                    ) : query && sectionModels[activeTab].length === 0 ? (
+                        <p className="py-8 text-center text-sm text-theme-text-muted">
+                            No {searchTarget.toLowerCase()} match{" "}
+                            {visibleSearch.trim()
+                                ? `“${visibleSearch.trim()}”`
+                                : "the selected filters"}
+                            .
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                            <UnifiedModelTable
+                                listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
+                                allModels={sectionModels.all}
+                                imageModels={sectionModels.image}
+                                videoModels={sectionModels.video}
+                                model3dModels={sectionModels["3d"]}
+                                audioModels={sectionModels.audio}
+                                realtimeModels={sectionModels.realtime}
+                                textModels={sectionModels.text}
+                                embeddingModels={sectionModels.embedding}
+                                decisionModels={sectionModels.decision}
+                                agentModels={sectionModels.agent}
+                                activeTab={activeTab}
+                            />
+                        </div>
+                    )}
+                </SectionContent>
+            )}
+            {activeTab !== "mcp" && (
+                <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
+                    {activeTab === "agent" && (
+                        <p className="flex items-start gap-1.5">
+                            <BotIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>agent pricing</strong> — listed rates
+                                are for the agent&apos;s base model running its
+                                saved instructions.
+                            </span>
+                        </p>
+                    )}
+                    {(activeTab === "decision" ||
+                        activeTab === "decisions") && (
                         <p className="flex items-start gap-1.5">
                             <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/gen</strong> — flat rate per image or
-                                audio generation.
+                                <strong>/alpha/decisions</strong> — typed
+                                choices, scores, and probabilities with
+                                calibrated confidence.
                             </span>
                         </p>
-                        <p className="flex items-start gap-1.5">
-                            <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/K · /M</strong> — rates per thousand or
-                                million tokens.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/sec</strong> — per second of video or
-                                audio.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/MP · /image</strong> — per megapixel,
-                                or per reference image.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>/K chars · /K bytes</strong> — speech
-                                priced per thousand characters or UTF-8 bytes of
-                                input text.
-                            </span>
-                        </p>
-                        <p className="flex items-start gap-1.5">
-                            <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                            <span>
-                                <strong>requests /$1</strong> — estimated from
-                                the median observed cost over the last 7 days.
-                            </span>
-                        </p>
-                    </div>
-                )}
-            </Section>
-        </>
+                    )}
+                    <p className="flex items-start gap-1.5">
+                        <SparklesIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/gen</strong> — flat rate per image or audio
+                            generation.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/K · /M</strong> — rates per thousand or
+                            million tokens.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/sec</strong> — per second of video or
+                            audio.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/MP · /image</strong> — per megapixel, or
+                            per reference image.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>/K chars · /K bytes</strong> — speech priced
+                            per thousand characters or UTF-8 bytes of input
+                            text.
+                        </span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                        <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            <strong>requests /$1</strong> — estimated from the
+                            median observed cost over the last 7 days.
+                        </span>
+                    </p>
+                </div>
+            )}
+        </Section>
     );
 };

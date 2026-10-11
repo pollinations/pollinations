@@ -1,6 +1,10 @@
 import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { isModelReliable } from "@shared/model-health.ts";
-import { getModelCapabilities, getModelDisplayName } from "./model-info.ts";
+import {
+    getModelCapabilities,
+    getModelDisplayName,
+    isDecisionModel,
+} from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
 
 export type ModelAccess = "paid" | "quest" | "free";
@@ -268,7 +272,10 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
         case "id":
             return models.map((model) => model.name.toLowerCase());
         case "type":
-            return models.map((model) => (model.agent ? "agent" : model.type));
+            return [
+                ...models.map((model) => (model.agent ? "agent" : model.type)),
+                ...(models.some(isDecisionModel) ? ["decision"] : []),
+            ];
         case "capability":
             return models
                 .flatMap(getSearchableCapabilities)
@@ -333,6 +340,9 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
                     false)
             );
         case "type":
+            if (filter.value === "decision" || filter.value === "decisions") {
+                return isDecisionModel(model);
+            }
             return (model.agent ? "agent" : model.type) === filter.value;
         case "capability":
             return getSearchableCapabilities(model).includes(

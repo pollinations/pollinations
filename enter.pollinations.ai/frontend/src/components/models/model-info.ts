@@ -180,3 +180,45 @@ export const isPaidOnly = (model: ModelPrice): boolean =>
  * Check if a model is marked as alpha (experimental, potentially unstable)
  */
 export const isAlpha = (model: ModelPrice): boolean => model.alpha === true;
+
+const KNOWN_DECISION_MODELS = new Set([
+    "typesafe/jev-1.13",
+    "typesafe/jev",
+    "jev",
+    "respan/span-01-lite",
+    "jaredpalmer/kev-4b",
+    "liquid/d1",
+    "openai/gpt-6-luna-decisions",
+]);
+
+/**
+ * Check if a model is a typed decision model (supports /alpha/decisions)
+ */
+export const isDecisionModel = (model: {
+    name?: string;
+    aliases?: string[];
+    supportedEndpoints?: string[];
+    supported_endpoints?: string[];
+}): boolean => {
+    const endpoints = model.supportedEndpoints ?? model.supported_endpoints;
+    if (
+        endpoints?.some(
+            (endpoint) =>
+                endpoint === "/alpha/decisions" ||
+                endpoint.includes("decisions"),
+        )
+    ) {
+        return true;
+    }
+    const name = model.name ?? "";
+    if (KNOWN_DECISION_MODELS.has(name) || name.endsWith("-decisions")) {
+        return true;
+    }
+    return Boolean(
+        model.aliases?.some(
+            (alias) =>
+                KNOWN_DECISION_MODELS.has(alias) ||
+                alias.endsWith("-decisions"),
+        ),
+    );
+};

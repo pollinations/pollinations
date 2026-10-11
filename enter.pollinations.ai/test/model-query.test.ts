@@ -341,6 +341,24 @@ describe("matchesModelQuery", () => {
         expect(matches(model({ type: "image" }), "type:image")).toBe(true);
     });
 
+    it("matches decision models for type:decision and type:decisions", () => {
+        const decisionModel = model({
+            name: "typesafe/jev-1.13",
+            type: "text",
+            supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        });
+        const plainTextModel = model({
+            name: "openai/gpt-5-mini",
+            type: "text",
+            supportedEndpoints: ["/v1/chat/completions"],
+        });
+
+        expect(matches(decisionModel, "type:decision")).toBe(true);
+        expect(matches(decisionModel, "type:decisions")).toBe(true);
+        expect(matches(plainTextModel, "type:decision")).toBe(false);
+        expect(matches(plainTextModel, "type:decisions")).toBe(false);
+    });
+
     it("matches raw and displayed capabilities with hyphen aliases", () => {
         const candidate = model({
             agent: true,

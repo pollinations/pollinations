@@ -15,11 +15,15 @@ describe("model search", () => {
             "video",
             "audio",
             "embedding",
+            "decision",
             "agent",
             "mcp",
         ] as const) {
             expect(validateModelSearch({ category }).category).toBe(category);
         }
+        expect(validateModelSearch({ category: "decisions" }).category).toBe(
+            "decision",
+        );
         expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
             q: undefined,

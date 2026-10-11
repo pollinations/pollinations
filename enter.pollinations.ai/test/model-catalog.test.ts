@@ -3,6 +3,7 @@ import {
     getModelPricesFromCatalog,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
+import { isDecisionModel } from "@frontend/components/models/model-info.ts";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../frontend/src/config.ts", () => ({
@@ -243,4 +244,20 @@ it("does not label provider-cost-only pricing as free", () => {
     expect(paid.prices).toEqual([]);
     expect(paid.priceAdjustments).toEqual([adjustment]);
     expect(free.free).toBe(true);
+});
+
+it("identifies decision models by endpoint, id, or alias", () => {
+    expect(
+        isDecisionModel({
+            name: "custom/evaluator",
+            supportedEndpoints: ["/alpha/decisions"],
+        }),
+    ).toBe(true);
+    expect(isDecisionModel({ name: "typesafe/jev-1.13" })).toBe(true);
+    expect(isDecisionModel({ name: "jev" })).toBe(true);
+    expect(isDecisionModel({ name: "respan/span-01-lite" })).toBe(true);
+    expect(isDecisionModel({ name: "jaredpalmer/kev-4b" })).toBe(true);
+    expect(isDecisionModel({ name: "liquid/d1" })).toBe(true);
+    expect(isDecisionModel({ name: "openai/gpt-6-luna-decisions" })).toBe(true);
+    expect(isDecisionModel({ name: "openai/gpt-5-mini" })).toBe(false);
 });

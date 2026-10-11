@@ -405,4 +405,40 @@ describe("ImageParamsSchema", () => {
         });
         expect(result.success).toBe(false);
     });
+
+    it("accepts default dimensions and explicit 1024x1024 for lightning-image-turbo", () => {
+        const defaultResult = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+        });
+        expect(defaultResult.success).toBe(true);
+        if (defaultResult.success) {
+            expect(defaultResult.data.width).toBe(1024);
+            expect(defaultResult.data.height).toBe(1024);
+            expect(defaultResult.data.dimensionsExplicit).toBe(false);
+        }
+
+        const explicit1024 = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            width: 1024,
+            height: 1024,
+        });
+        expect(explicit1024.success).toBe(true);
+        if (explicit1024.success) {
+            expect(explicit1024.data.dimensionsExplicit).toBe(true);
+        }
+    });
+
+    it.each([
+        [{ width: 768, height: 1024 }],
+        [{ width: 1024, height: 768 }],
+        [{ width: 1536, height: 1536 }],
+        [{ width: 512 }],
+        [{ height: 512 }],
+    ])("rejects non-1024 dimensions on lightning-image-turbo (%j)", (dims) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            ...dims,
+        });
+        expect(result.success).toBe(false);
+    });
 });

@@ -158,6 +158,18 @@ export const ImageParamsSchema = z
                     "Transparent backgrounds are not supported by gpt-image-2.",
             });
         }
+        if (data.model === "inferenceport-ai/lightning-image-turbo") {
+            if (
+                (data.width !== undefined && data.width !== 1024) ||
+                (data.height !== undefined && data.height !== 1024)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "inferenceport-ai/lightning-image-turbo only supports 1024x1024 output.",
+                });
+            }
+        }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
         const references = [
             {

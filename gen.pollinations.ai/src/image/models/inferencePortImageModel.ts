@@ -61,6 +61,15 @@ export async function callInferencePortImage(
         });
     }
 
+    if (
+        safeParams.dimensionsExplicit &&
+        (safeParams.width !== 1024 || safeParams.height !== 1024)
+    ) {
+        throw UpstreamError.fromProvider(400, {
+            message: `${safeParams.model} only supports 1024x1024 output.`,
+        });
+    }
+
     const apiKey = getImageEnv("INFERENCEPORT_API_KEY");
     if (!apiKey) {
         throw new Error(

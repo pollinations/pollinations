@@ -53,6 +53,10 @@ const GIB_SECOND = 0.0000045;
 const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
+// Templates the dashboard offers: the template sets the size.
+const TEMPLATES = ["pollinations", "claude", "codex", "opencode", "amp"].map(
+    (id) => ({ id, cpuCount: 2, memoryMB: 2048 }),
+);
 // Gen logs polli in inside this template, which has polli and the coding
 // harnesses, with a key of the sandbox's own.
 const LOGGED_IN_TEMPLATE = "pollinations";
@@ -554,6 +558,17 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 }
                 return response;
             },
+        )
+        // What a dashboard shows before a create: the limits and the price
+        // per second, as callers pay it.
+        .get("/pricing", (c) =>
+            c.json({
+                maxRunning: MAX_RUNNING_PER_USER,
+                maxRunSeconds: MAX_RUN_MS / 1000,
+                vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
+                gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
+                templates: TEMPLATES,
+            }),
         )
         // Everything else (templates, snapshots, forks, volumes, secrets,
         // webhooks, ...) stays closed until someone reviews how it is billed.

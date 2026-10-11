@@ -428,6 +428,51 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
 });
 
+test("a dashboard session shows the limits, then creates and manages its own sandboxes", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId: owner.userId,
+    });
+
+    const pricing = await call(token, "/pricing");
+    expect(pricing.status).toBe(200);
+    const { vcpuSecond, gibSecond, ...limits } = await pricing.json<{
+        vcpuSecond: number;
+        gibSecond: number;
+        maxRunning: number;
+        maxRunSeconds: number;
+        templates: { id: string }[];
+    }>();
+    expect(limits).toMatchObject({ maxRunning: 3, maxRunSeconds: 86_400 });
+    expect(limits.templates.map((t) => t.id)).toContain("pollinations");
+    // The same price the create is charged: 2 vCPU, 512 MiB for 300 s.
+    expect(300 * (2 * vcpuSecond + 0.5 * gibSecond)).toBeCloseTo(LEASE_300S, 8);
+
+    const created = await createSandbox(token);
+    expect(created.status).toBe(201);
+    const { sandboxID } = await created.json<{ sandboxID: string }>();
+    const listed = await call(token, "/v2/sandboxes");
+    expect((await listed.json<Sandbox[]>()).map((s) => s.sandboxID)).toEqual([
+        sandboxID,
+    ]);
+    expect((await post(token, `/sandboxes/${sandboxID}/pause`)).status).toBe(
+        204,
+    );
+    expect(e2b.sandboxes[0].state).toBe("paused");
+    expect(
+        (await post(token, `/sandboxes/${sandboxID}/connect`, { timeout: 600 }))
+            .status,
+    ).toBe(201);
+    expect(e2b.sandboxes[0].state).toBe("running");
+    expect(
+        (await call(token, `/sandboxes/${sandboxID}`, { method: "DELETE" }))
+            .status,
+    ).toBe(204);
+    expect(e2b.sandboxes).toEqual([]);
+});
+
 const keeps = () => drizzle(env.DB).select().from(sandboxKeep);
 
 test("a timeout past E2B's 24-hour run keeps the sandbox, paying an hour at a time", async () => {

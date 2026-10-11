@@ -39,6 +39,23 @@ export function forgetSessionToken(): void {
     session = null;
 }
 
+/** Calls gen with the dashboard's session token, for routes outside the account API. */
+export async function genFetch(
+    path: string,
+    init: { method?: string; body?: unknown } = {},
+): Promise<Response> {
+    return fetch(`${config.genBaseUrl}${path}`, {
+        method: init.method,
+        headers: {
+            Authorization: `Bearer ${await sessionToken()}`,
+            ...(init.body !== undefined && {
+                "Content-Type": "application/json",
+            }),
+        },
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+}
+
 /**
  * The public account API on gen.pollinations.ai, called with a short-lived
  * token minted from the dashboard session. Apps and agents call the same

@@ -287,6 +287,68 @@ jobs:
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
 
+  local-dev:
+    name: Start Enter and gen without secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      POLLINATIONS_TOKEN_LOCAL: sk_local_dev_check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for local dev setup changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- package.json package-lock.json \
+            enter.pollinations.ai/package.json enter.pollinations.ai/vite.config.ts \
+            enter.pollinations.ai/wrangler.toml enter.pollinations.ai/scripts \
+            enter.pollinations.ai/.dev.vars.example enter.pollinations.ai/drizzle \
+            gen.pollinations.ai/package.json gen.pollinations.ai/vite.config.ts \
+            gen.pollinations.ai/wrangler.toml gen.pollinations.ai/scripts \
+            gen.pollinations.ai/.dev.vars.example .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.changes.outputs.changed == 'true'
+        run: npm ci
+
+      # The README steps, with no SOPS key on the runner.
+      - name: Start Enter and gen like a contributor
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          npm run migrate:development --workspace pollinations-enter
+          npm run seed:local --workspace pollinations-gen
+          npm run dev --workspace pollinations-enter > /tmp/enter.log 2>&1 &
+          npm run dev --workspace pollinations-gen > /tmp/gen.log 2>&1 &
+          for _ in $(seq 120); do
+            curl -so /dev/null localhost:3000 && curl -so /dev/null localhost:8788 && break
+            sleep 2
+          done
+
+      # gen's /account/key reaches Enter through the ENTER binding and reads
+      # the seeded key from the D1 both services share.
+      - name: Request Enter and gen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          curl -fsS localhost:3000/api/auth/ok
+          curl -fsS localhost:8788/account/key -H "Authorization: Bearer $POLLINATIONS_TOKEN_LOCAL"
+
+      - name: Show dev server logs
+        if: failure() && steps.changes.outputs.changed == 'true'
+        run: tail -n 80 /tmp/enter.log /tmp/gen.log
+
   website:
     name: Build pollinations.ai
     runs-on: ubuntu-latest

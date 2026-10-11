@@ -1,0 +1,42 @@
+$ cd /home/user/pollinations/packages/mcp && node --test test/textService.test.js
+✔ generateText accepts assistant tool calls with null content for tool-use continuation (4.606187ms)
+✖ generateText returns requested token log probabilities (29.004894ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.677073
+
+✖ failing tests:
+
+test at test/textService.test.js:32:1
+✖ generateText returns requested token log probabilities (29.004894ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - {
+  -   content: [
+  -     {
+  -       logprob: -0.1,
+  -       token: 'Hi',
+  -       top_logprobs: []
+  -     }
+  -   ]
+  - }
+  
+      at TestContext.<anonymous> (file:///home/user/pollinations/packages/mcp/test/textService.test.js:55:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { content: [ [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+exit 1

@@ -1,0 +1,14 @@
+{
+  "number": 17082,
+  "kind": "pr",
+  "start": "2026-10-11 20:51:03",
+  "base": "404135d0e92e0bec0ab7ee761f1dd3034360a07a",
+  "outcome": "changes-requested",
+  "next": "workup",
+  "reworks": 1,
+  "end": "2026-10-11 20:58:41",
+  "cost_by_role": {
+    "claude": 1.0758994,
+    "codex": 0.7222985000000001
+  }
+}

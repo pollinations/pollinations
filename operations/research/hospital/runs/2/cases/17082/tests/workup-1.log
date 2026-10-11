@@ -1,0 +1,13 @@
+$ cd /home/user/pollinations/packages/polli-cli && npx vitest run src/commands/keys.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations/packages/polli-cli
+
+ ✓ src/commands/keys.test.ts (11 tests) 38ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  20:54:01
+   Duration  820ms (transform 451ms, setup 0ms, collect 483ms, tests 38ms, environment 0ms, prepare 111ms)
+
+
+exit 0

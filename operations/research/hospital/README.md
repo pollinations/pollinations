@@ -53,12 +53,27 @@ Three cases, all escalated, none discharged. See `runs/1/REPORT.md`.
 - `polli usage --key <name>` matches only the first key with that name. Many
   sandboxes create `polli-harness-claude-code`, so count costs by key ID.
 
+## Run 2 (2026-10-11)
+
+Iteration 2 harness, three cases: one discharged, one with changes requested,
+one escalated. See `runs/2/REPORT.md`.
+
+| Case | Kind | Outcome | Pollen |
+|---|---|---|---:|
+| #17082 | PR review | changes requested: adds back a removed 365-day cap; the PR and the workup misdiagnose the bug | 1.80 |
+| #16959 | bug | workup killed at the 600 s stage limit, before printing its note | 3.72 |
+| #16717 | PR review | discharged, with red/green run-test logs from both the fellow and the reviewer | 3.69 |
+
+- Cost: about 9.41 Pollen. Claude roles 7.18, Codex 2.13, box time about 0.10.
+- Server key budgets were the hard stop. No request was refused, but the Claude
+  key ended with 0.12 left.
+
 ## Next questions
 
-- Does merging triage and plan into one workup stage bring a small case under
-  budget without losing the independent plan review?
-- Can a per-key Pollen budget replace the driver's polling as the hard stop?
-- Does a case get through implement, red/green review and discharge with raw
-  test logs as evidence?
-- Would a maintainer merge what comes out, or is a hospital review mainly
-  useful as a plan check on contributor PRs?
+- Is about 3.7 Pollen per discharged one-line PR worth it, compared with one
+  independent review pass?
+- Should the driver keep a killed stage's partial notes (stream-json), or ask
+  for a wrap-up before killing?
+- Should free static checks (version bump, duplicate PR) run before any model?
+- Is the #17082 review worth posting on the PR? Run 2 was a dry run, so
+  nothing was posted.

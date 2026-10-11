@@ -3,18 +3,14 @@ name: Models / Research pre-merge E2E
 on:
   workflow_dispatch:
     inputs:
-      evidence_run:
-        description: 'Validation only: reuse completed live research from this run ID.'
-        type: string
-        default: ''
       models:
         description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
         type: string
         default: ''
       max_pollen:
-        description: 'Maximum reserved Pollen for inference and search (0 < budget <= 50).'
+        description: 'Hard Pollen cap for measured usage plus uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '15'
+        default: '10'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
@@ -25,6 +21,7 @@ on:
         default: false
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -37,9 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
+      actions: read
       contents: read
       issues: write
-      actions: read
     steps:
       - uses: actions/checkout@v5
         with:
@@ -56,22 +53,46 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
-      - name: Load saved live research for publisher validation
-        if: inputs.evidence_run != ''
+      - name: Find previous completed main research evidence
+        id: previous
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/models-research.yml/runs?branch=main&status=completed&per_page=20" \
+            --jq ".workflow_runs | map(select(.head_branch == \"main\" and .status == \"completed\" and .id != $GITHUB_RUN_ID)) | sort_by(.created_at) | reverse | .[0].id // empty")
+          if [ -z "$run_id" ]; then
+            echo "No prior completed main run; performing first backfill."
+            exit 0
+          fi
+          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
+            --jq ".artifacts | map(select(.expired == false and (.name | startswith(\"model-research-$run_id-\")))) | sort_by(.created_at) | reverse | .[0].id // empty")
+          if [ -n "$artifact_id" ]; then
+            echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+            echo "artifact_id=$artifact_id" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Previous research artifact unavailable; researching current inventory."
+          fi
+      - name: Restore previous evidence for free source refresh
+        id: restore
+        if: steps.previous.outputs.artifact_id != ''
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
+          artifact-ids: ${{ steps.previous.outputs.artifact_id }}
+          run-id: ${{ steps.previous.outputs.run_id }}
           github-token: ${{ github.token }}
-          run-id: ${{ inputs.evidence_run }}
-          name: model-research-${{ inputs.evidence_run }}-1
-          path: ${{ runner.temp }}/model-research
+          path: ${{ runner.temp }}/model-research-previous
+          merge-multiple: true
       - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
-        if: inputs.evidence_run == ''
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           MODELS: ${{ inputs.models }}
           MAX_POLLEN: ${{ inputs.max_pollen }}
           USE_PERPLEXITY: ${{ inputs.use_perplexity }}
           RESEARCH_OUT: ${{ runner.temp }}/model-research
+          PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: node operations/model-management/researcher.mjs
       - name: Save findings and partial evidence
         id: evidence
@@ -83,7 +104,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish parent issue for manual verification handoff
-        id: parent
         if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -102,20 +122,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Reconcile the same parent a second time
-        if: always() && inputs.publish_issue && steps.parent.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-          RESEARCH_OUT: ${{ runner.temp }}/model-research
-          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
-        run: |
-          cp "$RESEARCH_OUT/parent-issue.json" "$RUNNER_TEMP/first-parent.json"
-          node operations/model-management/researcher.mjs publish
-          cmp "$RUNNER_TEMP/first-parent.json" "$RESEARCH_OUT/parent-issue.json"
-      - name: Verify complete saved live results
+      - name: Audit the full official catalog result and cost
         if: always() && steps.evidence.outcome == 'success'
         env:
           RESEARCH_OUT: ${{ runner.temp }}/model-research
@@ -125,17 +132,22 @@ jobs:
           import assert from 'node:assert/strict';
           import {readFile} from 'node:fs/promises';
           import {createHash} from 'node:crypto';
-          import {parentIssue} from './operations/model-management/researcher.mjs';
+          import {budgetUsed,parentIssue} from './operations/model-management/researcher.mjs';
           const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
-          assert.equal(r.status,'complete');
-          assert.equal(r.selectedCount,2);
-          assert.ok(r.reservedPollen<=r.maxPollen);
-          assert.ok(r.calls.every(c=>c.status==='received'));
-          assert.ok(r.models.every(m=>m.status==='researched' && ['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s))));
-          assert.ok(r.models.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
-          const sources=[...r.discovery.sources,...r.models.flatMap(m=>m.sources)];
+          const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
+          assert.ok(catalog.every(m=>m.community===false));
+          assert.equal(r.selectedCount,r.officialCount);
+          assert.deepEqual(r.models.map(m=>m.name).sort(),catalog.map(m=>m.name).sort());
+          assert.ok(r.maxPollen<=10 && budgetUsed(r)<=r.maxPollen);
+          assert.equal(r.budgetUsedPollen,budgetUsed(r));
+          const ready=r.models.filter(m=>m.status==='researched');
+          assert.ok(ready.every(m=>['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s))));
+          assert.ok(ready.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
+          const sources=[...(r.sources??[]),...r.models.flatMap(m=>m.sources??[])];
           assert.ok(sources.filter(s=>s.status==='fetched').every(s=>s.digest===createHash('sha256').update(s.text).digest('hex')));
+          console.log(JSON.stringify({status:r.status,official:r.officialCount,researched:ready.length,blocked:r.models.filter(m=>m.status==='blocked').length,calls:r.calls.length,budgetUsedPollen:r.budgetUsedPollen,historicalQuotes:r.reservedPollen,sources:sources.length}));
+          assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
+          assert.ok(r.calls.every(c=>c.status==='received'));
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
-          console.log(JSON.stringify({status:r.status,selected:r.models.map(m=>m.name),calls:r.calls.length,reservedPollen:r.reservedPollen,sources:sources.length,focused:sources.filter(s=>s.focusMatched===true).length}));
           JS

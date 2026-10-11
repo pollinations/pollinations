@@ -82,7 +82,7 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
 
 test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens, clamped parameters", async () => {
     const get = await call(
-        "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&seed=4.7&json=true&model=openai&voice=nova",
+        "/gen:echo?temperature=9&top_p=-1&presence_penalty=5&frequency_penalty=-9&seed=4.7&json=true&model=openai&voice=nova",
     );
     const echo = JSON.parse(get.text);
 
@@ -102,6 +102,7 @@ test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens
         temperature: 3,
         top_p: 0,
         presence_penalty: 2,
+        frequency_penalty: -2,
         response_format: { type: "json_object" },
         stream: false,
         max_tokens: 1500,
@@ -127,6 +128,14 @@ test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens
         { role: "user", content: "gen:echo" },
     ]);
     expect(body.max_tokens).toBe(1500);
+
+    // "/openai*" without messages: the rest of the path is the user message
+    const openai = await call("/openaigen:echo", { method: "POST" });
+    const { content } = JSON.parse(openai.text).choices[0].message;
+    expect(JSON.parse(content).body.messages.at(-1)).toEqual({
+        role: "user",
+        content: "gen:echo",
+    });
 });
 
 test("POST /openai and /v1/chat/completions answer OpenAI JSON with a pllns_ id", async () => {

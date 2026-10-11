@@ -70,6 +70,16 @@ TB_TOKEN="$(security find-generic-password -a "$USER" -s tinybird-staging-deploy
 export TB_HOST TB_TOKEN
 ```
 
+## Step 0: Deploy From a Clean origin/main
+
+A deployment makes the workspace match the local folder, so deploy only from a clean checkout of `origin/main`. A `--check` on a feature branch is fine for validating a PR.
+
+```bash
+git fetch origin && test -z "$(git status --porcelain)" && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+```
+
+Then run Step 1 and read its change table: every `new` and `deleted` resource must map to a merged PR. If one does not, stop and find out why before deploying.
+
 ## Step 1: Validate (Dry Run)
 
 Always validate before deploying. This is safe to run against staging.
@@ -139,11 +149,11 @@ For prod verification, swap `staging.vars.json` to `prod.vars.json` and do not u
 
 1. Create `.pipe` file in `endpoints/`
 2. Validate against staging
-3. Deploy to staging, verify, then prod only when requested
+3. After merge, deploy to staging from `origin/main` (Step 0), verify, then prod only when requested
 
 ## Modify Existing Pipe
 
-Same as above: edit, validate staging, deploy staging, verify, then prod only when requested.
+Same as above: edit, validate staging, merge, deploy staging from `origin/main`, verify, then prod only when requested.
 
 ## View Pipe in UI
 

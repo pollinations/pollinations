@@ -991,6 +991,56 @@ Security: Results are filtered to channels the caller can read, including messag
 
 
 # =============================================================================
+# DISCORD REACTION TOOL - Attach reactions to any message
+# =============================================================================
+
+DISCORD_REACT_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "discord_react",
+        "description": """Attach or remove emoji reactions on any Discord message.
+
+Supports:
+- Reacting to messages by message_id (snowflake ID) or Discord message URL (e.g. https://discord.com/channels/123/456/789).
+- If message_id is omitted or 'current', attaches the reaction to the current/triggering message.
+- Any emoji: standard Unicode emojis (👍, 🐝, ❤️, 🚀), custom guild emojis by name (:bee: or bee), or custom format (<:name:123>).
+- Single emoji or multiple emojis (list or space/comma-separated string).
+- Actions: 'add' (default, attach reaction) or 'remove' (remove bot's reaction).
+
+Permissions:
+- Operates in any channel or thread the caller and bot have access to.""",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "message_id": {
+                    "type": "string",
+                    "description": "Discord message snowflake ID, message URL/jump link, or omit/'current' for current message.",
+                },
+                "emoji": {
+                    "type": "string",
+                    "description": "Emoji to attach (Unicode e.g. '🐝', '👍', or custom emoji name/shortcode like ':bee:' or '<:bee:123>'). Can also be multiple emojis.",
+                },
+                "emojis": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional list of emojis to attach in sequence.",
+                },
+                "channel_id": {
+                    "type": "string",
+                    "description": "Channel snowflake ID, <#channel> mention, or channel name. Optional if message link is provided or message is in current channel.",
+                },
+                "action": {
+                    "type": "string",
+                    "enum": ["add", "remove"],
+                    "description": "Action to perform: 'add' (default) to attach reaction, 'remove' to remove bot's reaction.",
+                },
+            },
+        },
+    },
+}
+
+
+# =============================================================================
 # DATA VISUALIZATION TOOL - Gemini native code_execution
 # =============================================================================
 

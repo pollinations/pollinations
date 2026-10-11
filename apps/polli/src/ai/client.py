@@ -228,9 +228,10 @@ class PollinationsClient:
             parent_channel_id = location_context.get("parent_channel_id")
             channel_id = location_context.get("channel_id")
             thread_id = location_context.get("thread_id")
+            message_id = location_context.get("message_id")
             if all(
                 value is None or (type(value) is int and value > 0)
-                for value in (source_channel_id, parent_channel_id, channel_id, thread_id)
+                for value in (source_channel_id, parent_channel_id, channel_id, thread_id, message_id)
             ):
                 location_lines = ["## DISCORD LOCATION (trusted system metadata)"]
                 if source_channel_id is not None:
@@ -241,6 +242,8 @@ class PollinationsClient:
                     location_lines.append(f"Current response channel ID: {channel_id}")
                 if thread_id is not None:
                     location_lines.append(f"Current thread ID: {thread_id}")
+                if message_id is not None:
+                    location_lines.append(f"Current message ID: {message_id}")
                 if len(location_lines) > 1:
                     messages.append({"role": "system", "content": "\n".join(location_lines)})
         if thread_history:

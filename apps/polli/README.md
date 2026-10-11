@@ -82,6 +82,7 @@ Tool availability is both **configuration-dependent** and **caller-dependent**. 
 | Read-only custom GitHub API request | Available | Available | Available | Not available |
 | Code search and repository exploration | When a backend is enabled | When a backend is enabled | When a backend is enabled | When a backend is enabled |
 | Discord search | Caller-visible channels | Caller-visible channels | Caller-visible channels | Public scope; no member/role lookup or private threads |
+| Discord message reactions | Caller-visible channels | Caller-visible channels | Caller-visible channels | Not available |
 | Web search and scraping | Available | Available | Available | Available |
 | Visual rendering | Available | Available | Available | Not available |
 | Issue subscriptions | Available | Available | Available | Not available |

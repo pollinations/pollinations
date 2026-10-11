@@ -533,6 +533,13 @@ class PolliBot(commands.Bot):
         pollinations_client.register_tool_handler("discord_search", tool_discord_search)
         logger.info("Registered discord_search tool handler")
 
+        # Register discord_react handler (attach reactions to any message)
+        from .discord.reactions import tool_discord_react
+
+        pollinations_client.register_tool_handler("discord_react", tool_discord_react)
+        pollinations_client.register_tool_handler("discord_reaction", tool_discord_react)
+        logger.info("Registered discord_react tool handler")
+
         # Initialize and start the issue notifier
         self.issue_notifier = init_notifier(self)
         await self.issue_notifier.start()
@@ -1122,6 +1129,7 @@ async def handle_inline_polli_mention(message: discord.Message):
         "guild_id": message.guild.id if message.guild else None,
         "user_role_ids": ([r.id for r in message.author.roles] if isinstance(message.author, discord.Member) else []),
         "message_url": message.jump_url,
+        "message_id": getattr(message, "id", None),
         "discord_channel": message.channel,
         "discord_thread_id": None,
         "discord_bot": bot,
@@ -1324,6 +1332,7 @@ async def _process_message(
         "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message
         "message_url": source_message.jump_url if source_message else None,
+        "message_id": getattr(source_message, "id", None) if source_message else None,
         "discord_channel": channel,
         "discord_thread_id": session.thread_id,
         "discord_bot": bot,

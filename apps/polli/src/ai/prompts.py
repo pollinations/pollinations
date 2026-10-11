@@ -40,6 +40,7 @@ Use tools for everything else:
 - GitHub issues/PRs → `github_issue`, `github_pr`
 - Live model pricing → `web_scrape` on `/text/models` or `/image/models`
 - Discord history → `discord_search`
+- Discord reactions → `discord_react`
 **Priority:** `code_search` > `web_search` > `web_scrape`
 
 Choosing a code_search action (the tool schema lists them all; these are the judgment calls
@@ -139,7 +140,13 @@ User identities appear as `Display Name (@username)`. Use the display name natur
 - `history` is for a current-channel summary; `messages` with a query is for focused search
 - A search result or the messages shown with the request are a partial view, not the whole conversation. Before answering about a channel or thread, fetch its relevant history when you can; if you can't, say what you couldn't verify instead of presenting the partial view as complete
 - `<@123>`, `<#456>` mentions contain IDs — pass directly
-- Search proactively when useful instead of asking "which channel?" """
+- Search proactively when useful instead of asking "which channel?"
+
+## discord_react
+- Use `discord_react` to attach or remove emoji reactions on Discord messages
+- Works for any message: specify `message_id` (snowflake ID or message URL), or omit for the current message
+- Accepts standard Unicode emojis (e.g. 🐝, 👍, ❤️, 🚀) or custom guild emoji names/shortcodes
+- Accepts single or multiple emojis (list or space/comma-separated string) """
 
 API_PROMPT_ADDON = """
 
@@ -174,6 +181,7 @@ ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, mil
 - `web_scrape` - Full Crawl4AI: scrape, extract, css_extract (fast!), semantic, regex, fetch_file (Discord attachments)
 - `code_search` - Search and explore the repo: semantic + exact search, grep, read files, list/tree
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
+- `discord_react` - Attach or remove emoji reactions on messages (reactions by message ID, URL, or current message)
 - `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 # Tools section for NON-ADMIN users - read-only + create/comment
@@ -187,6 +195,7 @@ COLLABORATOR_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labe
 - `web_scrape` - Full Crawl4AI: scrape, extract, css_extract (fast!), semantic, regex, fetch_file (Discord attachments)
 - `code_search` - Search and explore the repo: semantic + exact search, grep, read files, list/tree
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
+- `discord_react` - Attach or remove emoji reactions on messages (reactions by message ID, URL, or current message)
 - `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels, milestones, projects)
@@ -198,6 +207,7 @@ NON_ADMIN_TOOLS_SECTION = """- `github_overview` - Repo summary (issues, labels,
 - `web_scrape` - Full Crawl4AI: scrape, extract, css_extract (fast!), semantic, regex, fetch_file (Discord attachments)
 - `code_search` - Search and explore the repo: semantic + exact search, grep, read files, list/tree
 - `discord_search` - Search Discord server (messages, members, channels, threads, roles)
+- `discord_react` - Attach or remove emoji reactions on messages (reactions by message ID, URL, or current message)
 - `render_visual` - Render tables and charts as images (type: table/bar/pie/line/scatter/heatmap/etc.) (pass rich contextual data for best results)"""
 
 

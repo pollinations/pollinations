@@ -3,6 +3,7 @@
 from ..utils.regex import re
 from .tools import (
     CODE_SEARCH_TOOL,
+    DISCORD_REACT_TOOL,
     DISCORD_SEARCH_TOOL,
     RENDER_VISUAL_TOOL,
     WEB_SCRAPE_TOOL,
@@ -24,6 +25,7 @@ def get_tools_with_embeddings(base_tools: list, code_search_enabled: bool) -> li
     tools.append(WEB_SEARCH_TOOL)
     tools.append(WEB_SCRAPE_TOOL)
     tools.append(DISCORD_SEARCH_TOOL)
+    tools.append(DISCORD_REACT_TOOL)
     tools.append(RENDER_VISUAL_TOOL)
 
     if code_search_enabled:
@@ -185,6 +187,8 @@ API_RESTRICTED_ACTIONS = {
 
 # Tools entirely excluded from API mode
 API_EXCLUDED_TOOLS = {
+    "discord_react",
+    "discord_reaction",
     "github_custom",
     "subscribe_issue",
     "unsubscribe_issue",
@@ -262,6 +266,10 @@ TOOL_KEYWORDS = {
         r"architecture|pipeline|state\s*machine|topology)\b",
         re.IGNORECASE,
     ),
+    "discord_react": re.compile(
+        r"\b(react|reaction|reactions|emoji|emojis|upvote|thumbs|reacting|reacted)\b",
+        re.IGNORECASE,
+    ),
     # NOTE: web_search and code_search are NOT filtered by keywords
     # AI decides when to use them based on context - they're always available
 }
@@ -274,6 +282,7 @@ DEFAULT_TOOLS = {
     "web_search",
     "web_scrape",
     "discord_search",
+    "discord_react",
     "render_visual",
     "github_overview",
     "github_issue",
@@ -317,7 +326,7 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
             matched_tools.add("github_pr")
 
     # Always include these tools - AI decides when to use them
-    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search", "render_visual"}
+    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search", "discord_react", "render_visual"}
 
     # Filter tools list
     filtered = [

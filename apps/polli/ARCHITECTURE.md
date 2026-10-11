@@ -59,6 +59,7 @@ flowchart TB
             WEB_SEARCH["WEB_SEARCH_TOOL"]
             WEB_SCRAPE["WEB_SCRAPE_TOOL"]
             DISCORD_SEARCH_TOOL["DISCORD_SEARCH_TOOL"]
+            DISCORD_REACT_TOOL["DISCORD_REACT_TOOL"]
             WEB_TOOL["WEB_TOOL (nomnom)"]
         end
 

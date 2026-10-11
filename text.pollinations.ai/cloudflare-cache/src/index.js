@@ -1,6 +1,9 @@
 // No imports needed for Web Crypto API
 import { checkTurnstile } from "../../../shared/turnstile.js";
 
+// Durable Object classes must be exported by the Worker's main module
+export { IpSlot } from "../../../shared/ip-slot.js";
+
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";
 

@@ -21,6 +21,15 @@ custom_domain = true
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-legacy"
 
+# One free-generation slot per client IP (shared/ip-slot.js)
+[[durable_objects.bindings]]
+name = "IP_SLOT"
+class_name = "IpSlot"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["IpSlot"]
+
 # Environment variables
 [vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
@@ -40,10 +49,14 @@ enabled = false      # turns Workers Logs off completely
 [observability.logs]
 invocation_logs = false
 
-# Local tests only (vitest), never deployed
+# Local tests only (vitest), never deployed. Migrations are inherited.
 [env.test]
 routes = [] # keep the production custom domains out of this environment
 
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-legacy-test"
+
+[[env.test.durable_objects.bindings]]
+name = "IP_SLOT"
+class_name = "IpSlot"

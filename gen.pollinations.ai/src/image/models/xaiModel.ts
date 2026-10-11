@@ -22,14 +22,18 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
  * called out in xAI's docs as a divergence from the OpenAI SDK). The
  * `image` field is a single ImageUrl object: `{url, detail}`, not an array
  * — verified empirically against the live endpoint (array form returns
- * 422). Only the first reference image is forwarded; additional entries
- * in `safeParams.image` are ignored.
+ * 422).
  */
 export async function callXaiImageAPI(
     prompt: string,
     safeParams: ImageParams,
     modelId: string = "grok-imagine-image",
 ): Promise<ImageGenerationResult> {
+    if (safeParams.image.length > 1) {
+        throw UpstreamError.fromProvider(400, {
+            message: `${safeParams.model} supports only one reference image.`,
+        });
+    }
     const apiKey = getImageEnv("XAI_API_KEY");
     if (!apiKey) {
         throw UpstreamError.fromProvider(500, {

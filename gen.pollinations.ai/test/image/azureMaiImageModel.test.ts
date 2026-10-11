@@ -200,6 +200,25 @@ describe("callAzureMaiImage", () => {
         });
     });
 
+    it("rejects extra reference images before contacting Azure", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callAzureMaiImage(
+                "combine these references",
+                {
+                    ...baseParams,
+                    image: [INPUT_IMAGE_URL, "https://example.com/second.png"],
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("only one reference image"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it.each([
         [1000, 1000, "multiples of 16px"],
     ])("rejects %ix%i generation dimensions before calling Azure", async (width, height, fragment) => {

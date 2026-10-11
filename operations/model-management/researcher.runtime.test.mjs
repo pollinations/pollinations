@@ -4,7 +4,13 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { main, parentIssue, publish } from "./researcher.mjs";
+import {
+    budgetUsed,
+    main,
+    parentIssue,
+    publish,
+    reserve,
+} from "./researcher.mjs";
 
 const inference = {
     name: "openai/gpt-6.1-sol",
@@ -163,6 +169,80 @@ test("budget exhaustion happens before the first paid provider request", async (
     assert.equal(report.status, "partial");
 });
 
+test("settled inference releases unused quotes without changing historical reservations", () => {
+    const report = { maxPollen: 1, reservedPollen: 0, calls: [] };
+    const first = reserve(report, 0.8, "inference:test");
+    first.accountedPollen = 0.1;
+    first.status = "received";
+    assert.equal(budgetUsed(report), 0.1);
+    reserve(report, 0.8, "inference:test");
+    assert.equal(report.reservedPollen, 1.6);
+    assert.equal(report.budgetUsedPollen, 0.9);
+    assert.throws(() => reserve(report, 0.05, "search"), /uncertain/);
+});
+
+test("uncertain, failed, fixed-price, and invalid settlements retain their full quote", () => {
+    for (const [status, kind, accountedPollen] of [
+        ["pending", "inference:test", 0.01],
+        ["failed", "inference:test", 0.01],
+        ["received", "web_search_exa", 0.01],
+        ["received", "inference:test", undefined],
+        ["received", "inference:test", NaN],
+        ["received", "inference:test", Infinity],
+        ["received", "inference:test", -0.1],
+        ["received", "inference:test", 0.6],
+        ["received", "inference:test", "0.01"],
+    ]) {
+        assert.equal(
+            budgetUsed({
+                calls: [{ status, kind, accountedPollen, reserved: 0.5 }],
+            }),
+            0.5,
+        );
+    }
+    assert.throws(
+        () => budgetUsed({ calls: [{ reserved: NaN }] }),
+        /reservation/,
+    );
+});
+
+test("main uses settled usage to admit a subsequent inference despite cumulative quotes", async (t) => {
+    const out = await output(t);
+    let paid = 0;
+    t.mock.method(globalThis, "fetch", async (url) => {
+        const free = catalog(url);
+        if (free) return free;
+        paid++;
+        return noAction();
+    });
+    const report = await main({ ...envFor(out), MAX_POLLEN: "0.12" });
+    assert.equal(paid, 2);
+    assert.ok(report.reservedPollen > report.maxPollen);
+    assert.equal(report.budgetUsedPollen, 2 * (10 * 0.000002 + 5 * 0.00001));
+    assert.ok(report.budgetUsedPollen <= report.maxPollen);
+});
+
+test("GitHub paid research reruns fail before network or output writes", async (t) => {
+    const out = await output(t);
+    let requests = 0;
+    t.mock.method(globalThis, "fetch", async () => {
+        requests++;
+        throw new Error("Unexpected network request");
+    });
+    await assert.rejects(
+        main({
+            ...envFor(out),
+            GITHUB_ACTIONS: "true",
+            GITHUB_RUN_ATTEMPT: "2",
+        }),
+        /reruns/,
+    );
+    assert.equal(requests, 0);
+    await assert.rejects(readFile(join(out, "research.json")), {
+        code: "ENOENT",
+    });
+});
+
 test("main persists researched evidence and publisher consumes the exact partial artifact", async (t) => {
     const out = await output(t);
     const action = (entries) => ({
@@ -205,11 +285,30 @@ test("main persists researched evidence and publisher consumes the exact partial
                     mode: "web",
                     purpose: scope === "alternatives" ? "challenge" : "explore",
                     query: `runtime-v1 ${scope} availability`,
+                    models: [model.name],
                 },
             ]),
         ),
-        action([["research", { action: "verify", ...candidate }]]),
-        action([["research", { action: "submit", ...candidate }]]),
+        action([
+            [
+                "research",
+                {
+                    action: "verify",
+                    ...candidate,
+                    models: [{ name: model.name, ...candidate }],
+                },
+            ],
+        ]),
+        action([
+            [
+                "research",
+                {
+                    action: "submit",
+                    ...candidate,
+                    models: [{ name: model.name, ...candidate }],
+                },
+            ],
+        ]),
     ];
     let modelTurns = 0,
         searches = 0,
@@ -243,7 +342,7 @@ test("main persists researched evidence and publisher consumes the exact partial
         }
         const payload = JSON.parse(options.body);
         assert.equal(payload.model, inference.name);
-        if (!JSON.parse(payload.messages[1].content).model) return noAction();
+        if (!JSON.parse(payload.messages[1].content).models) return noAction();
         const message = turns[modelTurns++];
         assert.ok(message, "Model must complete in four inference turns");
         return Response.json({
@@ -272,7 +371,7 @@ test("main persists researched evidence and publisher consumes the exact partial
         report.reservedPollen,
         report.calls.reduce((sum, receipt) => sum + receipt.reserved, 0),
     );
-    assert.ok(report.reservedPollen <= report.maxPollen);
+    assert.ok(report.budgetUsedPollen <= report.maxPollen);
     assert.deepEqual(
         JSON.parse(await readFile(join(out, "official-catalog.json"), "utf8")),
         inventory,

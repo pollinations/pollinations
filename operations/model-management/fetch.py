@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Read one public HTTPS page for the isolated model-management researcher."""
 
+import hashlib
 import ipaddress
 import json
+import os
 import re
 import socket
 import sys
 from html.parser import HTMLParser
+from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import parse_qsl, urljoin, urlsplit, urlunsplit
 
 
@@ -103,11 +107,52 @@ def _page_html(page):
     return body if isinstance(body, str) else ""
 
 
+def _excerpt(page, max_characters, focus, cached):
+    text = page["text"]
+    start = 0
+    metadata = {}
+    if focus is not None:
+        match = re.search(re.escape(focus), text, re.IGNORECASE)
+        if match:
+            context = min(2_000, max(0, max_characters - len(match.group())))
+            start = max(0, match.start() - context)
+        metadata = {"excerptStart": start, "totalCharacters": len(text), "focusMatched": match is not None}
+    return {
+        "status": "fetched", "url": page["url"], "method": "scrapling-http",
+        "text": text[start:start + max_characters],
+        "pageDigest": page["pageDigest"], "extractionVersion": page["extractionVersion"],
+        "fetchedAt": page["fetchedAt"], "cached": cached, **metadata,
+    }
+
+
 def _read_http(url, max_characters, focus=None):
+    current = _validate_url(url)
+    requested = current
+    cache_dir = os.environ.get("FETCH_CACHE_DIR")
+    cache_path = Path(cache_dir) / (hashlib.sha256(requested.encode("utf-8")).hexdigest() + ".json") if cache_dir else None
+    if cache_path and cache_path.exists():
+        try:
+            with cache_path.open("rb") as handle:
+                content = handle.read(MAX_RESPONSE_BYTES * 6 + 8_193)
+            if len(content) > MAX_RESPONSE_BYTES * 6 + 8_192:
+                raise ValueError("oversized cache entry")
+            page = json.loads(content)
+            text = page["text"]
+            if (page["requestedUrl"] != requested or type(page["extractionVersion"]) is not int
+                    or page["extractionVersion"] != 1 or not isinstance(text, str) or not text.strip()
+                    or len(text.encode("utf-8")) > MAX_RESPONSE_BYTES
+                    or page["pageDigest"] != hashlib.sha256(text.encode("utf-8")).hexdigest()
+                    or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")):
+                raise ValueError("invalid cache entry")
+            datetime.fromisoformat(page["fetchedAt"].replace("Z", "+00:00"))
+            page["url"] = _validate_url(page["url"])
+        except Exception as error:
+            raise ValidationError("cached page failed validation") from error
+        return _excerpt(page, max_characters, focus, True)
+
     from curl_cffi import CurlOpt
     from scrapling.fetchers import FetcherSession
 
-    current = _validate_url(url)
     for _ in range(MAX_REDIRECTS + 1):
         host = urlsplit(current).hostname
         addresses = _public_addresses(host)
@@ -136,21 +181,18 @@ def _read_http(url, max_characters, focus=None):
         text = parser.text()
         if not text.strip():
             return _result(current, "scrapling-http", "upstream returned no readable content")
-        start = 0
-        metadata = {}
-        if focus is not None:
-            match = re.search(re.escape(focus), text, re.IGNORECASE)
-            if match:
-                context = min(2_000, max(0, max_characters - len(match.group())))
-                start = max(0, match.start() - context)
-            metadata = {"excerptStart": start, "totalCharacters": len(text), "focusMatched": match is not None}
-        return {
-            "status": "fetched",
-            "url": current,
-            "method": "scrapling-http",
-            "text": text[start:start + max_characters],
-            **metadata,
+        if len(text.encode("utf-8")) > MAX_RESPONSE_BYTES:
+            return _result(current, "scrapling-http", "extracted content exceeded the fetch limit")
+        page = {
+            "requestedUrl": requested, "url": current, "text": text,
+            "pageDigest": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "extractionVersion": 1,
+            "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
+        if cache_path:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(json.dumps(page, ensure_ascii=False), encoding="utf-8")
+        return _excerpt(page, max_characters, focus, False)
     return _result(current, "scrapling-http", "too many redirects")
 
 

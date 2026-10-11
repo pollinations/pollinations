@@ -8,9 +8,9 @@ on:
         type: string
         default: ''
       max_pollen:
-        description: 'Maximum reserved Pollen for inference and search (0 < budget <= 50).'
+        description: 'Hard Pollen cap for measured usage plus uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '15'
+        default: '10'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
@@ -21,6 +21,7 @@ on:
         default: false
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -33,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
+      actions: read
       contents: read
       issues: write
     steps:
@@ -51,6 +53,38 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
+      - name: Find previous completed main research evidence
+        id: previous
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/models-research.yml/runs?branch=main&status=completed&per_page=20" \
+            --jq ".workflow_runs | map(select(.head_branch == \"main\" and .status == \"completed\" and .id != $GITHUB_RUN_ID)) | sort_by(.created_at) | reverse | .[0].id // empty")
+          if [ -z "$run_id" ]; then
+            echo "No prior completed main run; performing first backfill."
+            exit 0
+          fi
+          artifact_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/artifacts" \
+            --jq ".artifacts | map(select(.expired == false and (.name | startswith(\"model-research-$run_id-\")))) | sort_by(.created_at) | reverse | .[0].id // empty")
+          if [ -n "$artifact_id" ]; then
+            echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+            echo "artifact_id=$artifact_id" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Previous research artifact unavailable; researching current inventory."
+          fi
+      - name: Restore previous evidence for free source refresh
+        id: restore
+        if: steps.previous.outputs.artifact_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.previous.outputs.artifact_id }}
+          run-id: ${{ steps.previous.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/model-research-previous
+          merge-multiple: true
       - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
@@ -58,6 +92,7 @@ jobs:
           MAX_POLLEN: ${{ inputs.max_pollen }}
           USE_PERPLEXITY: ${{ inputs.use_perplexity }}
           RESEARCH_OUT: ${{ runner.temp }}/model-research
+          PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: node operations/model-management/researcher.mjs
       - name: Save findings and partial evidence
         id: evidence

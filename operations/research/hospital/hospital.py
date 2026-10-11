@@ -3,7 +3,7 @@
 import argparse, datetime as dt, fcntl, json, os, pathlib, re, shlex, signal, subprocess, sys, time
 ROOT = pathlib.Path(__file__).resolve().parent
 REPO = pathlib.Path.home() / 'pollinations'
-TERMINAL = {'discharged', 'escalated', 'circuit-broken'}
+TERMINAL = {'discharged', 'escalated', 'circuit-broken', 'changes-requested'}
 STAGES = ['workup', 'plan-review', 'implement', 'review', 'discharge']
 ROLES = {'implement': 'fellow', 'plan-review': 'review-attending', 'review': 'review-attending'}
 POLL = 10
@@ -61,7 +61,7 @@ def missing_evidence(folder, stage):
     if stage == 'review' and not (0 in codes and any(codes)): return 'no red and green run-test logs'
 
 def verdict(body):
-    found = re.findall(r'^\W*VERDICT:\s*(APPROVE|REWORK|ESCALATE)\b', body, re.M)
+    found = re.findall(r'^\W*VERDICT:\s*(APPROVE|REWORK|ESCALATE|CHANGES)\b', body, re.M)
     return found[-1] if found else None
 
 def role_cmd(role, prompt, output):
@@ -129,7 +129,7 @@ def main():
     role = ROLES.get(a.action, a.action)
     prompt = f'''You are running exactly one hospital stage: {a.action}. Read {ROOT}/PROTOCOL.md, {ROOT}/roles/{role}.md, {folder}/CHART.md, {folder}/source.json, and {ROOT}/PRECEDENTS.md. Repo: {REPO}. Base commit: {s['base']}. Kind: {s['kind']}. Cached GitHub data: {ROOT}/cache/ (a PR's diff is pr-<number>.diff). Test logs so far: {folder}/tests/.
 Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Its logs are the only test evidence the driver and discharge accept.
-Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites. Work only in the current hospital branch. Do not modify hospital records; print your note as final output. Keep it under 700 words, with concrete evidence and a final standalone line VERDICT: APPROVE, VERDICT: REWORK, or VERDICT: ESCALATE. You have a small billed budget; be focused. No user questions: unresolved blockers get I-PASS. Do not commit; driver preserves work. For PR case, implementation means applying the cached PR diff after approved plan, not inventing a different fix.'''
+Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites. Work only in the current hospital branch. Do not modify hospital records; print your note as final output. Keep it under 700 words, with concrete evidence and a final standalone line VERDICT: APPROVE, VERDICT: REWORK, or VERDICT: ESCALATE. In a PR case, VERDICT: CHANGES ends the case when the PR's own diff must change before merge; REWORK is only for the hospital's plan or implementation. You have a small billed budget; be focused. No user questions: unresolved blockers get I-PASS. Do not commit; driver preserves work. For PR case, implementation means applying the cached PR diff after approved plan, not inventing a different fix.'''
     attempt = len(list(folder.glob(f'{a.action}-*.log'))) + 1
     log = folder/f'{a.action}-{attempt}.log'
     output = folder/f'{a.action}-{attempt}.md'
@@ -162,6 +162,9 @@ Do not spawn agents or call another model. No external writes, secrets, live API
     v = verdict(body)
     if v == 'ESCALATE':
         close(folder,s,'escalated',body,keys); return
+    if v == 'CHANGES' and s['kind'] == 'pr':
+        # The hospital never rewrites a contributor's diff: blockers in it go back to the PR author.
+        close(folder,s,'changes-requested',body,keys); return
     if v == 'REWORK':
         s['reworks'] += 1
         if s['reworks'] >= 2:

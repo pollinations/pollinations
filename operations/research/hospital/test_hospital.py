@@ -21,7 +21,7 @@ if stage == 'implement':
     pathlib.Path('fix.txt').write_text('fixed\\n')
     if mode != 'untested': test(0)
 if stage == 'review': test(1); test(0)
-note = f'{stage} note\\n**VERDICT: APPROVE**\\n'
+note = f'{stage} note\\n**VERDICT: ' + ('CHANGES' if stage == mode else 'APPROVE') + '**\\n'
 pathlib.Path(output).write_text(note)
 print(note)
 '''
@@ -98,6 +98,15 @@ with tempfile.TemporaryDirectory() as t:
     expect_exit('Case count stop', lambda: drive(tmp, root, repo, [], 'admit', '8', '--kind', 'bug'))
     spent = [dict(timestamp='2026-10-11 18:05:00', api_key_id='id-codex', cost_usd=10)]
     expect_exit('Trial cost stop', lambda: drive(tmp, root, repo, spent, 'admit', '8', '--kind', 'bug'))
+
+with tempfile.TemporaryDirectory() as t:
+    tmp = pathlib.Path(t)
+    root, repo = fixture(tmp)
+    # Blockers in a contributor's diff end a PR case: the hospital may not rewrite it.
+    drive(tmp, root, repo, [], 'admit', '7', '--kind', 'pr')
+    drive(tmp, root, repo, [], 'workup', '7')
+    drive(tmp, root, repo, [], 'plan-review', '7', mode='plan-review')
+    assert state(root)['outcome'] == 'changes-requested'
 
 with tempfile.TemporaryDirectory() as t:
     tmp = pathlib.Path(t)

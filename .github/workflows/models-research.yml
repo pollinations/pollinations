@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       models:
-        description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
+        description: 'Official IDs or aliases, comma separated. Empty = full catalog plus market discovery; selected IDs = scoped backfill.'
         type: string
         default: ''
       max_pollen:

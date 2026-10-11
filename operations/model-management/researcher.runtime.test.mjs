@@ -169,6 +169,108 @@ test("budget exhaustion happens before the first paid provider request", async (
     assert.equal(report.status, "partial");
 });
 
+test("explicit model selection spends inference only on its group; full catalog retains discovery", async (t) => {
+    const exit = process.exitCode;
+    for (const selection of [model.name, "runtime", ""]) {
+        const out = await output(t);
+        const tasks = [];
+        t.mock.method(globalThis, "fetch", async (url, options) => {
+            const free = catalog(url);
+            if (free) return free;
+            tasks.push(
+                JSON.parse(JSON.parse(options.body).messages[1].content),
+            );
+            return noAction();
+        });
+        const report = await main({ ...envFor(out), MODELS: selection });
+        assert.equal(
+            tasks.some(({ task }) => task.startsWith("Deep discovery")),
+            !selection,
+        );
+        assert.deepEqual(
+            tasks
+                .filter(({ models }) => models)
+                .flatMap(({ models }) => models.map(({ name }) => name))
+                .sort(),
+            (selection
+                ? [model.name]
+                : inventory.map(({ name }) => name)
+            ).sort(),
+        );
+        assert.equal(
+            report.discovery.status,
+            selection ? "skipped" : "blocked",
+        );
+        assert.deepEqual(report.requestedModels, selection ? [model.name] : []);
+        assert.deepEqual(report.models[0].actions, []);
+        t.mock.restoreAll();
+    }
+    t.after(() => {
+        process.exitCode = exit;
+    });
+});
+
+test("uncertain HTTP failures retain quotes and stop later groups; definite 4xx remain failed", async (t) => {
+    const exit = process.exitCode;
+    const selected = Array.from({ length: 9 }, (_, index) => ({
+        ...model,
+        name: `publisher/http-${index}`,
+        aliases: [],
+    }));
+    for (const status of [408, 502, 503, 400]) {
+        const out = await output(t);
+        let paid = 0;
+        t.mock.method(globalThis, "fetch", async (url) => {
+            if (url.includes("/models?"))
+                return Response.json([...selected, inference]);
+            const free = catalog(url);
+            if (free) return free;
+            paid++;
+            return new Response("HTTP failure", { status });
+        });
+        const report = await main({
+            ...envFor(out),
+            MODELS: selected.map(({ name }) => name).join(","),
+        });
+        assert.equal(paid, status === 400 ? 2 : 1);
+        assert.equal(
+            report.calls[0].status,
+            status === 400 ? "failed" : "pending",
+        );
+        assert.equal(report.calls[0].http, status);
+        assert.ok(report.calls.every(({ reserved }) => reserved > 0));
+        assert.ok(report.budgetUsedPollen > 0);
+        assert.equal(report.budgetUsedPollen, report.reservedPollen);
+        assert.ok(report.models.every(({ status }) => status === "blocked"));
+        t.mock.restoreAll();
+    }
+    t.after(() => {
+        process.exitCode = exit;
+    });
+});
+
+test("skipped discovery can complete only the exact canonical selected model set", () => {
+    const report = {
+        ...partial(),
+        status: "complete",
+        requestedModels: [model.name],
+        discovery: { status: "skipped" },
+    };
+    assert.doesNotThrow(() => parentIssue(report, artifact));
+    for (const requestedModels of [
+        "x",
+        { length: 1 },
+        [""],
+        ["unrelated"],
+        [model.name, model.name],
+        [],
+    ])
+        assert.throws(
+            () => parentIssue({ ...report, requestedModels }, artifact),
+            /Incomplete selected research/,
+        );
+});
+
 test("settled inference releases unused quotes without changing historical reservations", () => {
     const report = { maxPollen: 1, reservedPollen: 0, calls: [] };
     const first = reserve(report, 0.8, "inference:test");
@@ -213,7 +315,41 @@ test("main uses settled usage to admit a subsequent inference despite cumulative
         const free = catalog(url);
         if (free) return free;
         paid++;
-        return noAction();
+        if (paid !== 1) return noAction();
+        return Response.json({
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        tool_calls: [
+                            {
+                                id: "plan",
+                                type: "function",
+                                function: {
+                                    name: "research",
+                                    arguments: JSON.stringify({
+                                        action: "plan",
+                                        questions: [
+                                            "Which exact version?",
+                                            "What full pricing?",
+                                            "Which source contradicts it?",
+                                        ],
+                                        routes: [],
+                                        discoveries: [],
+                                        gaps: [],
+                                    }),
+                                },
+                            },
+                        ],
+                    },
+                },
+            ],
+        });
     });
     const report = await main({ ...envFor(out), MAX_POLLEN: "0.12" });
     assert.equal(paid, 2);
@@ -243,7 +379,7 @@ test("GitHub paid research reruns fail before network or output writes", async (
     });
 });
 
-test("main persists researched evidence and publisher consumes the exact partial artifact", async (t) => {
+test("main persists selected-scope complete evidence and publisher consumes the exact artifact", async (t) => {
     const out = await output(t);
     const action = (entries) => ({
         role: "assistant",
@@ -355,13 +491,37 @@ test("main persists researched evidence and publisher consumes the exact partial
         });
     });
     const report = await main({ ...envFor(out), GITHUB_SHA: "c".repeat(40) });
-    assert.equal(report.status, "partial");
+    assert.equal(report.status, "complete");
     assert.equal(report.models[0].status, "researched");
     assert.equal(report.models[0].searches.length, 4);
+    assert.deepEqual(
+        report.models[0].actions.map(({ turn, tool, action, status }) => ({
+            turn,
+            tool,
+            action,
+            status,
+        })),
+        [
+            { turn: 1, tool: "research", action: "plan", status: "planned" },
+            ...Array.from({ length: 4 }, () => ({
+                turn: 2,
+                tool: "search",
+                action: undefined,
+                status: "completed",
+            })),
+            { turn: 3, tool: "research", action: "verify", status: "audited" },
+            {
+                turn: 4,
+                tool: "research",
+                action: "submit",
+                status: "submitted",
+            },
+        ],
+    );
     assert.equal(report.models[0].recommendation, null);
     assert.equal(modelTurns, 4);
     assert.equal(searches, 4);
-    assert.equal(report.calls.length, 9);
+    assert.equal(report.calls.length, 8);
     for (const receipt of report.calls) {
         if (receipt.kind.startsWith("inference:"))
             assert.equal(receipt.accountedPollen, 10 * 0.000002 + 5 * 0.00001);
@@ -377,7 +537,7 @@ test("main persists researched evidence and publisher consumes the exact partial
         inventory,
     );
     const receipt = await publish(issueEnv(out));
-    assert.match(issuedBody, /partial/);
+    assert.equal(issuedBody.includes("(partial)"), false);
     assert.match(issuedBody, /1\/1/);
     assert.equal(issuedBody.match(/\]\((https:[^)]+)\)/)?.[1], artifact);
     const savedReport = JSON.parse(
@@ -522,7 +682,7 @@ test("main preserves fetched Exa text under its returned source URL in partial e
             choices: [{ message }],
         });
     });
-    const report = await main(envFor(out));
+    const report = await main({ ...envFor(out), MODELS: "" });
     assert.equal(fetches, 1);
     assert.deepEqual(fetchedRequest.params.arguments.urls, [requestedUrl]);
     assert.equal(report.status, "partial");
@@ -566,7 +726,7 @@ for (const usage of [
             1,
             "Unverifiable usage must not permit the next paid task",
         );
-        assert.match(report.discovery.reason, /usage/i);
+        assert.match(report.models[0].reason, /usage/i);
         assert.notEqual(report.calls[0].status, "received");
     });
 

@@ -11,15 +11,21 @@ const MAX_WEEKS_BACK = 20;
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
 const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
-// Part of the cache key, not the request. A pipe that gains a column keeps
-// serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
-// not clear the cache — bump this in the same commit as the pipe change.
+// A finished week's numbers do not change, and re-scanning it cost ~1 GB per
+// pipe on every cold load. A week counts as finished one day after it ends, so
+// late events have landed.
+const FINISHED_WEEK_CACHE_TTL = 7 * 86400;
+// Part of the cache key, not the request. A changed pipe, or a change to the
+// traffic classification in generation_events_classified, keeps serving old
+// results for up to FINISHED_WEEK_CACHE_TTL because a Worker redeploy does not
+// clear the cache — bump this in the same commit as the change.
 const TINYBIRD_CACHE_VERSION = "8";
 
 async function fetchTinybird(
     env: Env["Bindings"],
     pipe: string,
     params: Record<string, string | number> = {},
+    ttl = TINYBIRD_CACHE_TTL,
 ): Promise<{
     data: unknown[];
     error?: string;
@@ -51,7 +57,7 @@ async function fetchTinybird(
                 // Cache successful responses at the edge
                 const cacheResponse = new Response(JSON.stringify(json), {
                     headers: {
-                        "Cache-Control": `public, max-age=${TINYBIRD_CACHE_TTL}`,
+                        "Cache-Control": `public, max-age=${ttl}`,
                     },
                 });
                 await cache.put(cacheKey, cacheResponse);
@@ -128,9 +134,13 @@ async function fetchTinybirdByWeek(
     const errors: string[] = [];
 
     for (const monday of mondays) {
-        const result = await fetchTinybird(env, pipe, {
-            start_date: monday,
-        });
+        const finished = Date.parse(monday) + 8 * 86400_000 <= Date.now();
+        const result = await fetchTinybird(
+            env,
+            pipe,
+            { start_date: monday },
+            finished ? FINISHED_WEEK_CACHE_TTL : TINYBIRD_CACHE_TTL,
+        );
         if (result.error) {
             errors.push(`${monday}: ${result.error}`);
         }

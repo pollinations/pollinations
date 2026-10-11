@@ -126,6 +126,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 content={tooltipContent}
                 align={tooltipAlign}
                 clampToViewport={tooltipClampToViewport}
+                displayContents
                 tapEnabled={false}
                 className={
                     disabled

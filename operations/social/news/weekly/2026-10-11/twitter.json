@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "weekly",
+  "date": "2026-10-11",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:31:24.709063+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/twitter.jpg"
+    }
+  ],
+  "text": "this week: added /v1/responses for Chat text models, preserved parallel Gemini tool calls, and rebuilt Play for image/video/audio with shareable inputs + API URLs. model search and filters landed too. fewer detours, same number of tabs."
+}

@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateCacheKey } from "../src/index.js";
 
+const README_BODY =
+    '{"model": "openai", "messages": [{"role": "user", "content": "Hello"}]}';
+
 // X-Cache-Key headers of live HITs, recorded on 2026-10-11. Existing R2
 // entries are only reachable while these keys stay the same.
 const LIVE_KEYS = [
@@ -45,10 +48,25 @@ const LIVE_KEYS = [
         "https://text.pollinations.ai/What%20is%20AI?json=true",
         "0056ccbae221c9da635f8877b2af311dce924c3261347c173ddc627b7cfe8cf2",
     ],
+    // The README's POST example (the JSON body is part of the key)
+    [
+        "POST",
+        "https://text.pollinations.ai/openai",
+        "9db684646f7906e5e245272d22423ba8c1dedf17bfcfadfa92c8966d7b74c95d",
+        README_BODY,
+    ],
+    [
+        "POST",
+        "https://text.pollinations.ai/",
+        "4ff36ad0fd41e3fa9174f316bace16ab7af66597df229f3ce0f3f98807cb050d",
+        README_BODY,
+    ],
 ];
 
-for (const [method, url, key] of LIVE_KEYS) {
+for (const [method, url, key, body] of LIVE_KEYS) {
     test(`${method} ${url} keeps its live cache key`, async () => {
-        assert.equal(await generateCacheKey(new Request(url, { method })), key);
+        const headers = body && { "content-type": "application/json" };
+        const request = new Request(url, { method, body, headers });
+        assert.equal(await generateCacheKey(request), key);
     });
 }

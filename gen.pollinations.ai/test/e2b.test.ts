@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
@@ -367,6 +368,18 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     expect((await createSandbox(owner.key)).status).toBe(429);
     expect(e2b.sandboxes).toHaveLength(3);
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
+});
+
+test("the account owner's session token runs sandboxes without a key scope", async () => {
+    stubE2b();
+    const { userId } = await createTestApiKey({ user: { tierBalance: 10 } });
+    const token = await signSessionToken({
+        secret: env.BETTER_AUTH_SECRET,
+        userId,
+    });
+
+    expect((await call(token, "/v2/sandboxes")).status).toBe(200);
+    expect((await createSandbox(token)).status).toBe(201);
 });
 
 test("the pollinations template comes logged in with a key from enter's key API", async () => {

@@ -1,3 +1,4 @@
+import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import { extractApiKey } from "@shared/auth/api-key.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
@@ -314,7 +315,7 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     }
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
-    if (!apiKey?.permissions?.account?.includes("machines")) {
+    if (!hasAccountPermission(apiKey, "machines")) {
         throw new HTTPException(403, {
             message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
         });

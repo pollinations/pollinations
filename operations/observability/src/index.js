@@ -60,19 +60,22 @@ export class ObservabilityGrafana extends Container {
         // The 60s role cache fills before dashboards are provisioned on boot,
         // denying every Editor the current dashboards for the first minute.
         GF_RBAC_PERMISSION_CACHE: "false",
+        // Each open tab would hold a Live WebSocket and keep the container
+        // awake. The dashboards refresh hourly and stream nothing.
+        GF_LIVE_MAX_CONNECTIONS: "0",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),
-        TINYBIRD_LEGACY_READ_TOKEN: requiredSecret(
-            "TINYBIRD_LEGACY_READ_TOKEN",
-        ),
-        DISCORD_WEBHOOK_URL: requiredSecret("DISCORD_WEBHOOK_URL"),
     };
 }
 
 async function grafanaFetch(request, env) {
     const container = env.OBSERVABILITY_GRAFANA.getByName(CONTAINER_NAME);
-    await container.startAndWaitForPorts();
+    // The container sleeps when idle, so a request may wait for Grafana to
+    // boot from a fresh disk; the SDK's default 20 s port wait is too short.
+    await container.startAndWaitForPorts({
+        cancellationOptions: { portReadyTimeoutMS: 60_000 },
+    });
     // The SDK uses HTTP for the private hop. Let the browser follow redirects;
     // following Grafana's public HTTPS redirects inside the container fails.
     return container.fetch(new Request(request, { redirect: "manual" }));
@@ -112,21 +115,5 @@ export default {
             return response;
         });
         return app.fetch(request, env);
-    },
-
-    async scheduled(_controller, env, ctx) {
-        ctx.waitUntil(
-            grafanaFetch(new Request(HEALTH_URL), env)
-                .then((response) => {
-                    if (!response.ok) {
-                        console.warn(
-                            `Grafana health check returned ${response.status}`,
-                        );
-                    }
-                })
-                .catch((error) => {
-                    console.error("Grafana health check failed", error);
-                }),
-        );
     },
 };

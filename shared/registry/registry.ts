@@ -141,6 +141,8 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
+    /** Complete provider charge, including tools, when token details cannot reproduce it. */
+    resolveTotalCost?: (output: unknown) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -197,11 +199,6 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
-    // When this model or route stops being served (ms epoch), set only when
-    // known: a provider's published retirement, or our own decision to retire
-    // it. Exact cutoff when the provider gives one, else the start of the day.
-    // Fallback routes never inherit it.
-    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
@@ -252,6 +249,8 @@ export type ModelDefinition = {
     supportsStructuredOutput?: boolean;
     /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
     supportsJsonMode?: boolean;
+    /** False when the upstream has no SSE; Gen buffers `stream: true` calls. */
+    supportsStreaming?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -482,9 +481,19 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    // Opt-in provider totals include search; adjustments remain an informational breakdown.
+    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+
     return {
-        cost,
-        price,
+        cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
+        price:
+            reportedCost === undefined
+                ? price
+                : {
+                      totalPrice: roundPollenLedgerAmount(
+                          reportedCost * svc.priceMultiplier,
+                      ),
+                  },
         adjustments,
         priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
         costVariant,

@@ -12,6 +12,7 @@ import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { mediaToBedrock } from "./transforms/mediaToBedrock.ts";
 import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
     omitParameters,
@@ -78,6 +79,8 @@ interface ModelDefinition {
     useResponsesApi?: boolean;
     /** Route typed decisions directly through TypeSafe System One. */
     useSystemOneApi?: boolean;
+    /** Search before formatting JSON on Gemini 2.5 through Vercel. */
+    useVercelSearchFormatting?: boolean;
 }
 
 function usesGrokReasoning(options: TransformOptions): boolean {
@@ -386,6 +389,16 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "stepfun/step-5-preview",
+        config: portkeyConfig["stepfun/step-5-preview"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "stepfun/step-5-preview:vercel",
+        config: portkeyConfig["stepfun/step-5-preview:vercel"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "mistralai/mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
@@ -514,6 +527,17 @@ const models: ModelDefinition[] = [
         transform: claudeManualThinking,
     },
     {
+        name: "anthropic/claude-haiku-5.5",
+        config: portkeyConfig["anthropic/claude-haiku-5.5"],
+        // Sampling parameters are rejected on this model.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-haiku-5.5:vercel",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
+        transform: omitClaudeSampling,
+    },
+    {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
         transform: pipe(claudeAdaptiveThinking, preferTemperature),
@@ -633,6 +657,31 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-2.5-flash-lite:search:vercel",
+        useVercelSearchFormatting: true,
+        config: portkeyConfig["google/gemini-2.5-flash-lite:search:vercel"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            mediaToVercelFiles,
+            addDefaultTools([
+                {
+                    type: "vercel:exa_search",
+                    config: { type: "instant", num_results: 5 },
+                },
+            ]),
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    tool_choice: options.tools?.length
+                        ? (options.tool_choice ?? "required")
+                        : options.tool_choice,
+                },
+            }),
+            createGeminiThinkingTransform("v2.5", "gateway"),
+        ),
+    },
+    {
         name: "google/gemini-3.5-flash-lite",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
@@ -672,12 +721,17 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemini-2.5-flash-lite:search"],
         transform: pipe(
             sanitizeToolSchemas,
-            addDefaultTools([
-                {
-                    type: "openrouter:web_search",
-                    parameters: { engine: "exa", max_results: 5 },
+            (messages, options) => ({
+                messages,
+                options: {
+                    ...options,
+                    plugins:
+                        options.tools?.length === 0 ||
+                        options.tool_choice === "none"
+                            ? []
+                            : [{ id: "web", engine: "exa", max_results: 5 }],
                 },
-            ]),
+            }),
             createGeminiThinkingTransform("v2.5", "gateway"),
         ),
     },
@@ -704,6 +758,16 @@ const models: ModelDefinition[] = [
     {
         name: "liquid/d1:vercel",
         config: portkeyConfig["liquid/d1:vercel"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna-decisions",
+        config: portkeyConfig["gpt-6-luna-decisions"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "openai/gpt-6-luna-decisions:openrouter",
+        config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
         useSystemOneApi: true,
     },
     {
@@ -756,6 +820,11 @@ const models: ModelDefinition[] = [
     {
         name: "moonshotai/kimi-k3",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "moonshotai/kimi-k3:deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
@@ -852,6 +921,7 @@ const models: ModelDefinition[] = [
     {
         name: "amazon/nova-2-lite-v1",
         config: portkeyConfig["nova-2-lite"],
+        transform: mediaToBedrock,
     },
     {
         name: "z-ai/glm-5.2",
@@ -941,6 +1011,14 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
     },
     {
+        name: "nex-agi/nex-n2.5-mini",
+        config: portkeyConfig["nex-agi/nex-n2.5-mini"],
+    },
+    {
+        name: "nex-agi/nex-n2.5-pro",
+        config: portkeyConfig["nex-agi/nex-n2.5-pro"],
+    },
+    {
         name: "inclusionai/ling-3.0-flash-vl",
         config: portkeyConfig["inclusionai/ling-3.0-flash-vl"],
     },
@@ -951,6 +1029,11 @@ const models: ModelDefinition[] = [
     {
         name: "minimax/minimax-m3",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
+        transform: fireworksThinkingWithoutCacheControl,
+    },
+    {
+        name: "minimax/minimax-m3:deepinfra",
+        config: portkeyConfig["MiniMaxAI/MiniMax-M3"],
         transform: fireworksThinkingWithoutCacheControl,
     },
     {
@@ -993,6 +1076,14 @@ const models: ModelDefinition[] = [
         name: "meta/llama-4-scout:openrouter:novita-bf16",
         config: portkeyConfig["llama-scout-openrouter-novita"],
         transform: stripReasoning,
+    },
+    {
+        name: "mistralai/mistral-large-4",
+        config: portkeyConfig["mistral-large-4"],
+    },
+    {
+        name: "mistralai/mistral-large-4:vercel",
+        config: portkeyConfig["mistral-large-4-vercel"],
     },
     {
         name: "mistralai/mistral-large-3",

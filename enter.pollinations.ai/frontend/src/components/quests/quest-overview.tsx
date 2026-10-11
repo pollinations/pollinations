@@ -30,7 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
@@ -205,7 +205,7 @@ async function loadQuestData(): Promise<QuestData> {
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            apiClient.quests.rewards.$get(),
+            accountClient.quests.rewards.$get(),
             apiClient.quests.standings.$get(),
         ]);
     if (!catalogResponse.ok) {
@@ -662,7 +662,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -700,7 +700,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },

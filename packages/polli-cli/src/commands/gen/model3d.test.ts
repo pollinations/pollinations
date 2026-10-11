@@ -79,6 +79,22 @@ describe("gen 3d output", () => {
         }
     });
 
+    it("creates a missing --output folder", async () => {
+        const { folder, meta } = await run(
+            ["a fox", "--output", "out/nested/fox.glb"],
+            "model/gltf-binary",
+        );
+        try {
+            expect(meta.path).toBe("out/nested/fox.glb");
+            expect([
+                ...readFileSync(join(folder, "out/nested/fox.glb")),
+            ]).toEqual([1, 2, 3]);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
     it("forwards model, resolution, seed, and repeated --image", async () => {
         const { request } = await run(
             [

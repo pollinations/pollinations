@@ -1,6 +1,17 @@
 name = "pollinations-text-cache"
 main = "src/index.js"
-compatibility_date = "2023-05-18"
+compatibility_date = "2026-09-01"
+
+# Custom domains, set up as in gen: myceli.ai first, pollinations.ai on top
+[[routes]]
+pattern = "text.myceli.ai"
+zone_name = "myceli.ai"
+custom_domain = true
+
+[[routes]]
+pattern = "text.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
 
 # R2 bucket for text storage
 [[r2_buckets]]

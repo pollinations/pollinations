@@ -72,13 +72,15 @@ export TB_HOST TB_TOKEN
 
 ## Step 0: Deploy From a Clean origin/main
 
-A deployment makes the workspace match the local folder, so deploy only from a clean checkout of `origin/main`. A `--check` on a feature branch is fine for validating a PR.
+A deployment makes the workspace match the local folder, so deploy only from a clean checkout of `origin/main`. A `--check` on a feature branch is fine for validating a PR. To test an unmerged PR end to end, staging may run a feature branch that is rebased on current `origin/main` and whose check table shows only that PR's changes; redeploy staging from `origin/main` after the merge.
 
 ```bash
 git fetch origin && test -z "$(git status --porcelain)" && test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 ```
 
 Then run Step 1 and read its change table: every `new` and `deleted` resource must map to a merged PR. If one does not, stop and find out why before deploying.
+
+For production, also check every `deleted` row against the code production runs, which lags `main`: `git grep -w <name> origin/production` must find no caller, or the production deploy waits until `main` is promoted. New resources can go first.
 
 ## Step 1: Validate (Dry Run)
 

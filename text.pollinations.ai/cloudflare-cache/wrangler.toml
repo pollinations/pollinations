@@ -74,7 +74,7 @@ invocation_logs = false
 routes = [] # keep the production custom domains out of this environment
 
 [env.test.vars]
-ORIGIN_HOST = "origin.invalid" # the tests never reach the VM
+ORIGIN_HOST = "origin.invalid" # tests that take the VM path stub its fetch
 ADAPTER_SHARE = "100"
 WEFT_PAY_TO = "0xF04da999947454410d2Dec7eE01cD13f7FaD6fbE"
 WEFT_NETWORK = "eip155:8453"

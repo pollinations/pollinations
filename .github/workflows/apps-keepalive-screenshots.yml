@@ -1,12 +1,42 @@
-name: Models / Research billing audit
+name: Models / Research pre-merge E2E
+
 on:
   workflow_dispatch:
+    inputs:
+      models:
+        description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
+        type: string
+        default: ''
+      max_pollen:
+        description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
+        type: string
+        default: '10'
+      publish_issue:
+        description: 'Create the parent research issue. Disable for a smoke test.'
+        type: boolean
+        default: true
+      use_perplexity:
+        description: 'Use Perplexity only if its current pricing has no unbounded adjustments.'
+        type: boolean
+        default: false
+
 permissions:
+  actions: read
   contents: read
+
+concurrency:
+  group: model-research
+  cancel-in-progress: false
+
 jobs:
-  audit:
+  researcher:
     if: github.ref == 'refs/heads/codex/model-researcher-e2e'
     runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      actions: read
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v5
         with:
@@ -14,12 +44,98 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - name: Read stopped research total only
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install local Scrapling fetcher
+        run: python -m pip install 'scrapling[fetchers]==0.4.15'
+      - name: Validate researcher
+        env:
+          RUN_LIVE_FETCH: '1'
+        run: node --test operations/model-management/*.test.mjs
+      - name: Restore the stopped full-catalog validation evidence
+        id: previous
+        run: |
+          echo 'run_id=38168073053' >> "$GITHUB_OUTPUT"
+          echo 'artifact_id=11714070389' >> "$GITHUB_OUTPUT"
+      - name: Restore previous evidence for free source refresh
+        id: restore
+        if: steps.previous.outputs.artifact_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.previous.outputs.artifact_id }}
+          run-id: ${{ steps.previous.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/model-research-previous
+          merge-multiple: true
+      - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
-          RESEARCH_OUT: ${{ runner.temp }}/model-billing-audit
-        run: node temp/audit-research-billing.mjs
-      - uses: actions/upload-artifact@v4
+          MODELS: ${{ inputs.models }}
+          MAX_POLLEN: ${{ inputs.max_pollen }}
+          USE_PERPLEXITY: ${{ inputs.use_perplexity }}
+          CHECK_BILLING: 'true'
+          RESEARCH_OUT: ${{ runner.temp }}/model-research
+          PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
+        run: node operations/model-management/researcher.mjs
+      - name: Save findings and partial evidence
+        id: evidence
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: model-billing-audit
-          path: ${{ runner.temp }}/model-billing-audit/
+          name: model-research-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/model-research/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish parent issue for manual verification handoff
+        if: always() && !cancelled() && inputs.publish_issue && steps.evidence.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          RESEARCH_OUT: ${{ runner.temp }}/model-research
+          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
+        run: node operations/model-management/researcher.mjs publish
+      - name: Save parent publication receipt and uncertain writes
+        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-research-publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/model-research/parent-*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Audit the full official catalog result and cost
+        if: always() && steps.evidence.outcome == 'success'
+        env:
+          RESEARCH_OUT: ${{ runner.temp }}/model-research
+          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {readFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          import {budgetUsed,parentIssue} from './operations/model-management/researcher.mjs';
+          const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
+          const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
+          assert.ok(catalog.every(m=>m.community===false));
+          assert.equal(r.selectedCount,r.officialCount);
+          assert.deepEqual(r.models.map(m=>m.name).sort(),catalog.map(m=>m.name).sort());
+          assert.ok(r.maxPollen<=7.5 && budgetUsed(r)<=r.maxPollen);
+          assert.ok(2.5+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
+          assert.ok(r.billing && !r.billingGap, 'Billed usage must be checked');
+          assert.equal(r.budgetUsedPollen,budgetUsed(r));
+          const ready=r.models.filter(m=>m.status==='researched');
+          assert.ok(ready.every(m=>['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s))));
+          assert.ok(ready.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
+          const sources=[...(r.sources??[]),...r.models.flatMap(m=>m.sources??[])];
+          assert.ok(sources.filter(s=>s.status==='fetched').every(s=>s.digest===createHash('sha256').update(s.text).digest('hex')));
+          console.log(JSON.stringify({status:r.status,official:r.officialCount,researched:ready.length,blocked:r.models.filter(m=>m.status==='blocked').length,calls:r.calls.length,budgetUsedPollen:r.budgetUsedPollen,historicalQuotes:r.reservedPollen,sources:sources.length}));
+          assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
+          assert.ok(r.calls.every(c=>c.status==='received'));
+          const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
+          assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
+          JS
+

@@ -64,7 +64,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: model-research-${{ github.run_id }}
+          name: model-research-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/model-research/
           if-no-files-found: error
           retention-days: 14
@@ -75,15 +75,26 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
         run: node operations/model-management/researcher.mjs publish
+      - name: Save parent publication receipt and uncertain writes
+        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-research-publication-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/model-research/parent-*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Reconcile the same parent a second time
         if: always() && inputs.publish_issue && steps.parent.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
         run: |
@@ -94,16 +105,23 @@ jobs:
         if: always() && steps.evidence.outcome == 'success'
         env:
           RESEARCH_OUT: ${{ runner.temp }}/model-research
+          RESEARCH_ARTIFACT_URL: ${{ steps.evidence.outputs.artifact-url }}
         run: |
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           import {readFile} from 'node:fs/promises';
-          const r=JSON.parse(await readFile(`${process.env.RESEARCH_OUT}/research.json`,'utf8'));
+          import {createHash} from 'node:crypto';
+          import {parentIssue} from './operations/model-management/researcher.mjs';
+          const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
           assert.equal(r.status,'complete');
           assert.equal(r.selectedCount,2);
           assert.ok(r.reservedPollen<=r.maxPollen);
           assert.ok(r.calls.every(c=>c.status==='received'));
           assert.ok(r.models.every(m=>m.status==='researched' && ['azure','fireworks','bedrock','alternatives'].every(s=>m.searches.some(q=>q.scope===s))));
           assert.ok(r.models.flatMap(m=>m.routes).every(x=>x.runtimeVerified===false && x.creditEligibility==='unknown' && x.cashCost===null));
-          console.log(JSON.stringify({status:r.status,selected:r.models.map(m=>m.name),calls:r.calls.length,reservedPollen:r.reservedPollen,sources:r.discovery.sources.length+r.models.reduce((n,m)=>n+m.sources.length,0)}));
+          const sources=[...r.discovery.sources,...r.models.flatMap(m=>m.sources)];
+          assert.ok(sources.filter(s=>s.status==='fetched').every(s=>s.digest===createHash('sha256').update(s.text).digest('hex')));
+          const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
+          assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
+          console.log(JSON.stringify({status:r.status,selected:r.models.map(m=>m.name),calls:r.calls.length,reservedPollen:r.reservedPollen,sources:sources.length,focused:sources.filter(s=>s.focusMatched===true).length}));
           JS

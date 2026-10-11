@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test, vi } from "vitest";
 import worker from "../src/index.js";
 
-test("a cache miss stores only the response, without the request URL", async (t) => {
+test("a cache miss stores only the response, without the request URL", async () => {
     const puts = [];
     const env = {
         ORIGIN_HOST: "origin.test",
@@ -12,9 +12,7 @@ test("a cache miss stores only the response, without the request URL", async (t)
                 puts.push({ key, metadata: options?.customMetadata ?? {} }),
         },
     };
-    t.mock.method(
-        globalThis,
-        "fetch",
+    vi.spyOn(globalThis, "fetch").mockImplementation(
         async () =>
             new Response("hello", {
                 headers: {

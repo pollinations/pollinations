@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test } from "vitest";
 import { prepareForwardedHeaders } from "../src/index.js";
 
 test("drops a client-sent cloudfront-viewer-address so callers cannot pick their IP", () => {

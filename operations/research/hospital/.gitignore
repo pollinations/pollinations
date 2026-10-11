@@ -1,5 +1,7 @@
 .lock
 __pycache__/
 cache/
+cases/
+run.json
 usage-*.json
 DONE

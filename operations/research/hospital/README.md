@@ -9,9 +9,15 @@ runs one stage at a time. It is a dry run: nothing is posted to GitHub.
 ## Layout
 
 - `hospital.py`: the driver. `python hospital.py admit N --kind bug|feature|pr`,
-  then one stage per call. `test_hospital.py` holds the offline checks.
-- `roles/`: triage, fellow (plan, then implement), review-attending (finds
-  faults and proves red/green), discharge (audits the record only).
+  then one stage per call: workup, plan-review, implement, review, discharge.
+  Roles run tests through `hospital.py run-test -- <command>`, which keeps the
+  raw output and exit code under the case's `tests/`.
+- `run.json` (local, gitignored): `start`, `keys` (key ID → role label),
+  `case_limit`, `trial_limit`, `max_cases`.
+- `test_hospital.py`: offline checks, including a full case run with a stub
+  model. Run it before any paid run.
+- `roles/`: workup (admit and plan), fellow (implement), review-attending
+  (finds faults and proves red/green), discharge (audits the record only).
 - `PROTOCOL.md`: shared rules. `PRECEDENTS.md`: human decisions only.
   `chart-template.md`: the chart each case starts from.
 - `BRIEF.md`: the original task as given to the orchestrator.

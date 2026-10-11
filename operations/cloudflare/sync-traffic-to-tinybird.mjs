@@ -11,6 +11,12 @@
  *
  *   page_views  one response per day: HTML pages of pollinations.ai, www and
  *               enter by page, status, country, device, browser
+ *   page_referrers
+ *               one response per day: the same pages by page, referring host,
+ *               status, browser. Only the referrer's hostname
+ *               (clientRefererHost, with any port) is requested, never its
+ *               path or query. A malformed Referer can leave query text in
+ *               that host; those few requests (0–5 a day) are left out.
  *   host_views  one response per host and day: all requests to that host by
  *               status, content type, country, device, browser, without the
  *               path. A host with more groups than one query returns is
@@ -43,7 +49,7 @@ const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
 const MAX_DAYS = 7;
 const MAX_RETRIES = 3;
-// Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~47.
+// Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~60.
 const QUERY_INTERVAL_MS = 1100;
 
 // Page routes of the website and Enter page lists in
@@ -100,6 +106,15 @@ const groupsQuery = (
 const PAGE_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost clientRequestPath edgeResponseStatus clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
+// About 1,200 groups a day (Oct 2026), well under LIMIT, so it needs no split.
+const PAGE_REFERRERS_QUERY = groupsQuery(
+    "date clientRequestHTTPHost clientRequestPath clientRefererHost edgeResponseStatus userAgentBrowser verifiedBotCategory",
+);
+// Leaves out referrer hosts with a character no bare host (with port) has,
+// such as the query text a malformed Referer leaves there.
+const BARE_REFERRER_HOST = ["?", "#", "@", "/", "=", "&", " "].map((c) => ({
+    clientRefererHost_notlike: `%${c}%`,
+}));
 const HOST_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost edgeResponseStatus edgeResponseContentTypeName clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
@@ -202,15 +217,26 @@ async function hostViews(filter) {
 async function* fromApi(days) {
     for (const date of lastDays(days)) {
         const real = { date, requestSource: "eyeball" };
-        const pageViews = await complete(PAGE_VIEWS_QUERY, {
+        const pages = {
             ...real,
             edgeResponseContentTypeName: "html",
             OR: Object.entries(PAGES).map(([host, paths]) => ({
                 clientRequestHTTPHost: host,
                 clientRequestPath_in: paths,
             })),
-        });
+        };
+        const pageViews = await complete(PAGE_VIEWS_QUERY, pages);
         yield { dataset: "page_views", date, host: "", body: pageViews };
+        const pageReferrers = await complete(PAGE_REFERRERS_QUERY, {
+            ...pages,
+            AND: BARE_REFERRER_HOST,
+        });
+        yield {
+            dataset: "page_referrers",
+            date,
+            host: "",
+            body: pageReferrers,
+        };
 
         const hosts = groupsOf(
             await complete(HOSTS_QUERY, {

@@ -337,8 +337,8 @@ jobs:
             sleep 2
           done
 
-      # gen's /account/key reaches Enter through the ENTER binding and reads
-      # the seeded key from the D1 both services share.
+      # gen's /account/key reaches Enter through the ENTER binding, and Enter
+      # finds the key seed:local wrote to its local D1.
       - name: Request Enter and gen
         if: steps.changes.outputs.changed == 'true'
         run: |

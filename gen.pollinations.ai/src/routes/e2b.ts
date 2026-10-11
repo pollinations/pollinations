@@ -53,9 +53,10 @@ const GIB_SECOND = 0.0000045;
 const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
-// Gen logs polli in inside this template, which has polli and the coding
-// harnesses, with a key of the sandbox's own.
-const LOGGED_IN_TEMPLATE = "pollinations";
+// Gen logs polli in inside these templates, one image with polli and the
+// coding harnesses in two sizes, with a key of the sandbox's own. Exact names
+// only: E2B resolves them to our team's templates.
+const LOGGED_IN_TEMPLATES = ["pollinations", "pollinations-large"];
 // What `polli auth login` asks for.
 const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
 // E2B takes a timeout as 32-bit seconds.
@@ -478,7 +479,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 throw error;
             }
             await charge(c, bill, startTime);
-            if (body.templateID === LOGGED_IN_TEMPLATE) {
+            if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
                 try {
                     await logIn(c, created);
                 } catch (error) {

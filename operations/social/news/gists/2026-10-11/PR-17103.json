@@ -1,0 +1,37 @@
+{
+  "pr_number": 17103,
+  "title": "fix: stop serving empty cached responses from the legacy caches",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17103",
+  "merged_at": "2026-10-11T17:06:56Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The legacy image and text caches now treat zero-byte R2 objects as misses, so a subsequent GET can replace an empty cached response without bucket cleanup. HEAD responses are no longer stored in either cache: text HEAD misses go directly to the origin, while the image cache skips storing HEAD responses. A text HEAD miss no longer includes X-Cache: MISS or X-Cache-Key headers. Regression tests cover both caches.",
+    "keywords": [
+      "legacy cache",
+      "image API",
+      "text API",
+      "HEAD requests",
+      "R2",
+      "empty responses"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17103.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli wears a tiny repair cap and helps a chunky CRT robot replace an empty cache jar with one holding a little pixel picture, while code-plants grow beside lime green (#ecf874) shelves. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominating the scene, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T17:39:15.329544+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "c5aca1e1daf31e9f3ea7dc180f7d8ccf7aabd9c7",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

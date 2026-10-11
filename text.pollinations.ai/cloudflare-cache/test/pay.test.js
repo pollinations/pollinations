@@ -3,7 +3,6 @@ import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
 import browserBody from "./fixtures/text.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
-import jsonChallenge from "./fixtures/text.pollinations.ai-get-json.challenge?raw";
 import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
@@ -176,13 +175,12 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
         expect(headers["x-legacy-path"]).toBe("worker");
         delete headers["x-legacy-path"];
         expect(headers).toEqual(vm);
+        // The challenge names the VM's origin host and path, without the query
+        const challenge = JSON.parse(atob(headers["payment-required"]));
+        expect(challenge.resource.url).toBe(
+            `https://text-origin.pollinations.ai${CAPTURED_JSON}`,
+        );
     }
-    // The challenge names the VM's origin host and path, without the query
-    const challenge = JSON.parse(atob(vm["payment-required"]));
-    expect(challenge).toEqual(JSON.parse(jsonChallenge));
-    expect(challenge.resource.url).toBe(
-        `https://text-origin.pollinations.ai${CAPTURED_JSON}`,
-    );
 });
 
 test("the facilitator sees the VM's seller identity, once per isolate", async () => {
@@ -323,6 +321,7 @@ test("a payment header is ignored while the slot is free, and on a cache hit", a
     });
     expect(free.response.status).toBe(200);
     expect(free.text).toBe("ok");
+    expect(free.response.headers.get("x-legacy-path")).toBe("worker");
     expect(await storedAt("/free%20with%20a%20payment")).toBeNull();
 
     await call("/cached%20before%20a%20payment", { ip: nextIp() });

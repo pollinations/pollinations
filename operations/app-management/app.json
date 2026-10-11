@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "📚",
+    "name": "Text Comparison",
+    "url": "https://mahmoudpov373-star.github.io/Comart",
+    "description": "App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi",
+    "language": "ar",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "mahmoudpov373-star",
+    "githubUserId": "317350385",
+    "repositoryUrl": "https://github.com/mahmoudpov373-star/Comart",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17019",
+    "approvedDate": "2026-10-11",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/19762615-904b-4442-b0ad-40ac88a0cc6b"
+  },
+  {
     "emoji": "🖼️",
     "name": "InkBloom",
     "url": "https://coloring-project1.ismailbanouigu.workers.dev",

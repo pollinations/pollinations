@@ -23,8 +23,10 @@ const AUTHORIZATION_SERVER = "https://enter.pollinations.ai";
 function authorizationServerFor(origin: string): string {
     // Mirror the serving host so staging advertises staging, like api-catalog.
     const url = new URL(origin);
-    if (url.hostname.startsWith("gen.")) {
-        url.hostname = `enter.${url.hostname.slice("gen.".length)}`;
+    // Handles both "gen." and staged hosts like "staging.gen.".
+    const mirrored = url.hostname.replace(/(^|\.)gen\./, "$1enter.");
+    if (mirrored !== url.hostname) {
+        url.hostname = mirrored;
         return url.origin;
     }
     return AUTHORIZATION_SERVER;

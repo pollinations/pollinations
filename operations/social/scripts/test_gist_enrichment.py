@@ -611,12 +611,11 @@ class PostsTest(unittest.TestCase):
                 self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
                 if calls:
                     self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
-        # An overwrite replaces the date's models.md section rather than adding a second one.
-        changelog = self.news / NEWS_REL_DIR / "models/models.md"
-        saved = changelog.read_text()
+        # A sent model post is never replaced; a week without changes can be taken again.
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
-            self.new("models", "2026-10-14", overwrite=True)
-        self.assertEqual(changelog.read_text(), saved)
+            with self.assertRaisesRegex(SystemExit, "already posted"):
+                self.new("models", "2026-10-14", overwrite=True)
+            self.assertEqual(self.new("models", "2026-10-28", overwrite=True)[0], [])
 
     def test_model_baseline_is_never_silently_rebuilt(self):
         self.put("models/models.md", "# Pollinations Model Changelog\n")

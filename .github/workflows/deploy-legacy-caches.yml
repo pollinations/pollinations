@@ -1,0 +1,143 @@
+name: Deploy / Legacy Cloudflare caches
+
+# Deploys the legacy text and image cache Workers (text/image.pollinations.ai
+# and text/image.myceli.ai) when their code changes on master. A manual run
+# redeploys master, or puts an earlier Worker version back at 100% (rollback).
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'text.pollinations.ai/cloudflare-cache/**'
+      - 'image.pollinations.ai/cloudflare-cache/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-legacy-caches.yml'
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Which legacy cache Worker to deploy'
+        type: choice
+        options:
+          - both
+          - text
+          - image
+        default: both
+      version:
+        description: 'Rollback only: Worker version id to put back at 100% (pick text or image)'
+        required: false
+        default: ''
+
+concurrency:
+  group: pollinations-legacy-cache-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      text: ${{ github.event_name == 'workflow_dispatch' && (inputs.worker == 'both' || inputs.worker == 'text') || steps.filter.outputs.text == 'true' }}
+      image: ${{ github.event_name == 'workflow_dispatch' && (inputs.worker == 'both' || inputs.worker == 'image') || steps.filter.outputs.image == 'true' }}
+    steps:
+      - name: Check rollback input
+        if: github.event_name == 'workflow_dispatch' && inputs.version != ''
+        env:
+          WORKER: ${{ inputs.worker }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          [ "$WORKER" != both ] || { echo "A rollback version belongs to one Worker: pick text or image."; exit 1; }
+          [[ "$VERSION" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] || { echo "Not a Worker version id: $VERSION"; exit 1; }
+
+      - name: Checkout code
+        if: github.event_name == 'push'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed Workers
+        id: filter
+        if: github.event_name == 'push'
+        uses: dorny/paths-filter@v4
+        with:
+          # Compare against the push's `before` SHA, not the default branch.
+          base: ${{ github.ref }}
+          filters: |
+            text:
+              - 'text.pollinations.ai/cloudflare-cache/**'
+              - 'shared/**'
+              - '.github/workflows/deploy-legacy-caches.yml'
+            image:
+              - 'image.pollinations.ai/cloudflare-cache/**'
+              - 'shared/**'
+              - '.github/workflows/deploy-legacy-caches.yml'
+
+  deploy-text:
+    needs: changes
+    if: needs.changes.outputs.text == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+      VERSION: ${{ inputs.version }}
+    defaults:
+      run:
+        working-directory: text.pollinations.ai/cloudflare-cache
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: text.pollinations.ai/cloudflare-cache/package-lock.json
+
+      - run: npm ci
+
+      - name: Test
+        if: env.VERSION == ''
+        run: npm test
+
+      - name: Deploy
+        if: env.VERSION == ''
+        run: npm run deploy
+
+      - name: Roll back
+        if: env.VERSION != ''
+        run: npx wrangler versions deploy "$VERSION@100%" -y
+
+  deploy-image:
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+      VERSION: ${{ inputs.version }}
+    defaults:
+      run:
+        working-directory: image.pollinations.ai/cloudflare-cache
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: image.pollinations.ai/cloudflare-cache/package-lock.json
+
+      - run: npm ci
+
+      - name: Test
+        if: env.VERSION == ''
+        run: npm test
+
+      - name: Deploy
+        if: env.VERSION == ''
+        run: npm run deploy
+
+      - name: Roll back
+        if: env.VERSION != ''
+        run: npx wrangler versions deploy "$VERSION@100%" -y

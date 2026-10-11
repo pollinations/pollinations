@@ -1,0 +1,36 @@
+{
+  "pr_number": 17031,
+  "title": "fix: build KPI retention cohorts from each user's first request",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17031",
+  "merged_at": "2026-10-11T10:56:22Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Fixed the KPI weekly retention table to group users by their first regular request, using `user_first_activity_mv` for the last eight finished UTC weeks instead of their first request within the reporting window. Weeks that have not ended now return null and display as “—”; W1 no longer counts the unfinished current week. Requests rejected for insufficient Pollen (402) still count, and the caption now says so. Restricting the activity scan to cohort users reduced the query from 10.4 GB and 7.8 s to 4.5 GB and about 2.8 s; the previous query had hit the 20 s timeout. For the 2026-08-10 cohort, the corrected count is 2,799 users with 16.4% W1 retention, versus 2,122 and 77% before. Production-data checks matched first-request dates for all 26,354 users and independently recomputed W1–W4 counts. Output columns and the `/retention` 30-minute cache are unchanged.",
+    "keywords": [
+      "retention",
+      "KPI",
+      "cohorts",
+      "Tinybird",
+      "query performance"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17031.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli studies a CRT retention table whose future weeks are marked with little dashes, while eight lime green (#ecf874) flower pots represent finished weekly cohorts. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny analyst glasses, and shares the frame with the table and flowers, never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T10:57:40.619989+00:00",
+  "area": "Data & insights",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "1b188de18ae2e3d1d568685c04d6565111d7d50a",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

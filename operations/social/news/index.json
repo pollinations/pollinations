@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-11T01:39:18.129443+00:00",
+  "generated_at": "2026-10-11T06:34:12.693240+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7534,6 +7534,45 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-10",
+      "emoji": "🎨",
+      "title": "A new Play page",
+      "text": "Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).",
+      "prs": [
+        16213,
+        16985
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "emoji": "💡",
+      "title": "PDFs for Claude and GPT",
+      "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16898
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "emoji": "🤖",
+      "title": "Catalogs for agent discovery",
+      "text": "Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).",
+      "prs": [
+        16862,
+        16908
+      ]
+    },
+    {
+      "date": "2026-10-10",
+      "emoji": "📱",
+      "title": "Furniture ideas from a photo",
+      "text": "Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).",
+      "prs": [
+        16948
+      ],
+      "app": true
+    },
     {
       "date": "2026-10-09",
       "emoji": "🎵",

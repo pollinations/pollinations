@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-10T22:19:33.008971+00:00",
+  "generated_at": "2026-10-11T01:39:18.129443+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -8878,49 +8878,6 @@
       "text": "Use AI to visualize how fashion items might fit your personal style before buying. [Try it](https://ziban.pages.dev).",
       "prs": [
         14733
-      ],
-      "app": true,
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-10",
-      "emoji": "🎨",
-      "title": "Illustrated stories with StoryCraft",
-      "text": "Make multi-chapter stories with generated scene illustrations in StoryCraft AI. [Try it](https://khushalkks.github.io/pollinations).",
-      "prs": [
-        14669
-      ],
-      "app": true,
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-10",
-      "emoji": "🎯",
-      "title": "YouTube transcripts, reworked",
-      "text": "MrPaloma’s YouTube Transcription AI turns video transcripts into structured summaries, English translations, and generated concept covers. [Try it](https://www.mrpaloma.com/trascrivere-video-youtube-pollinations).",
-      "prs": [
-        14694
-      ],
-      "app": true,
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-10",
-      "emoji": "🔗",
-      "title": "Pollinations meets Bloom CLI",
-      "text": "Use `polli harness bloom on|status|off` for reversible Pollinations setup in Bloom CLI. [See the CLI package](https://www.npmjs.com/package/@pollinations/cli).",
-      "prs": [
-        14670
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-10",
-      "emoji": "🎨",
-      "title": "Fashion images for Pinterest",
-      "text": "Men’s Fashion Pins uses `gpt-image-2` to create Pinterest images for men’s fashion. [Try it](https://fashionpins4u.blogspot.com/p/mens-fashion-pins.html).",
-      "prs": [
-        14677
       ],
       "app": true,
       "kind": "product"

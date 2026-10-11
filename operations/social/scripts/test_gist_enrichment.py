@@ -1,4 +1,6 @@
+import base64
 import copy
+import hashlib
 import json
 import os
 import re
@@ -6,10 +8,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).parent))
+import deliver
 import generate_daily
 import generate_models_news
 import generate_monthly
@@ -644,6 +651,227 @@ class PostsTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "not a checkout"):
                 posts.write("daily", "2026-10-06", self.root, self.work)
         self.assertEqual(delivery.read_text(), '{"daily-x": "done"}')
+
+
+def reply(status, body=None):
+    return SimpleNamespace(status_code=status, json=lambda: body or {}, text="", headers={})
+
+
+class DeliverTest(unittest.TestCase):
+    """deliver.py against the news branch as GitHub's contents API keeps it, and fake channels."""
+
+    def setUp(self):
+        self.store, self.faults, self.calls, self.broken = {}, [], [], {}
+        self.reddit = True
+        env = {"GITHUB_TOKEN": "test", "BUFFER_ACCESS_TOKEN": "test", "DISCORD_MODELS_ROLE_ID": "42",
+               "DISCORD_WEEKLY_WEBHOOK_URL": "https://discord.test/weekly",
+               "DISCORD_MODELS_WEBHOOK_URL": "https://discord.test/models"}
+        for patcher in (
+            patch.dict(os.environ, env),
+            patch.dict(deliver.START, {"daily": "2026-10-01", "weekly": "2026-10-01", "models": "2026-10-01"}),
+            patch.dict(deliver.BUFFER_CHANNELS, {"twitter": "x", "linkedin": "li", "instagram": "ig"}),
+            patch("deliver.github", self.github),
+            patch("deliver.requests.post", self.post),
+            patch("deliver.requests.head", return_value=reply(200)),
+            patch("deliver.requests.get", return_value=SimpleNamespace(
+                status_code=200, headers={"content-type": "image/jpeg"}, content=b"jpeg")),
+            patch("deliver.reddit_settings", return_value=("host", "user", "key")),
+            patch("deliver.deploy_reddit_post", self.deploy),
+            patch("time.sleep"),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def github(self, method, path, params=None, json=None):
+        """A stale sha gets 409 and a create over an existing file 422, as on GitHub."""
+        current = self.store.get(path)
+        if method == "GET":
+            if current is None:
+                return reply(404)
+            return reply(200, {"content": base64.b64encode(current).decode(),
+                               "sha": hashlib.sha1(current).hexdigest()})
+        fault = self.faults.pop(0) if self.faults else None
+        if fault == "409":
+            return reply(409)
+        if current is not None and json.get("sha") != hashlib.sha1(current).hexdigest():
+            return reply(409 if "sha" in json else 422)
+        self.store[path] = base64.b64decode(json["content"])
+        return reply(502 if fault == "502" else 201)
+
+    def post(self, url, json=None, files=None, timeout=None, headers=None):
+        self.calls.append((url, json, files))
+        trouble = self.broken.pop(url, None)
+        if isinstance(trouble, Exception):
+            raise trouble
+        if trouble:
+            return reply(*trouble)
+        if url == deliver.BUFFER_URL:
+            due = json["variables"]["input"]["dueAt"]
+            return reply(200, {"data": {"createPost": {"__typename": "PostActionSuccess",
+                                                       "post": {"id": f"b{len(self.calls)}", "dueAt": due}}}})
+        return reply(200, {"id": f"m{len(self.calls)}"})
+
+    def deploy(self, post, host, user, key):
+        self.calls.append(("reddit", post, None))
+        if isinstance(self.reddit, Exception):
+            raise self.reddit
+        return self.reddit
+
+    def save(self, job, date, posts, summary=True):
+        folder = f"{deliver.JOB_DIRS[job]}/{date}"
+        if summary:
+            self.store[f"{folder}/summary.json"] = b"{}"
+        for name, post in posts.items():
+            self.store[f"{folder}/{name}"] = json.dumps(post).encode()
+
+    def record(self, job, date):
+        content = self.store.get(f"{deliver.JOB_DIRS[job]}/{date}/delivery.json")
+        return {post: entry["state"] for post, entry in json.loads(content).items()} if content else {}
+
+    def sent(self, target):
+        return [call for call in self.calls if call[0] == target]
+
+    def weekly(self, date="2026-10-11"):
+        pictures = [{"url": f"https://raw.githubusercontent.com/pollinations/pollinations/news/{n}.jpg"} for n in range(3)]
+        picture = pictures[0]
+        self.save("weekly", date, {
+            "twitter.json": {"text": "Shipped.", "images": [picture]},
+            "linkedin.json": {"text": "A week of work.", "images": [picture]},
+            "instagram.json": {"text": "Cozy.", "images": pictures},
+            "discord.json": {"text": "Hi <@&1424461167883194418>", "images": [picture]},
+            "reddit.json": {"title": "Week", "text": "Body", "images": [picture]},
+        })
+
+    def test_each_post_goes_out_once_as_today(self):
+        self.weekly()
+        for _ in range(2):
+            deliver.run("schedule", "weekly", "2026-10-11")
+            deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual(self.record("weekly", "2026-10-11"), {
+            "twitter.json": "done", "linkedin.json": "done", "instagram.json": "done",
+            "discord.json": "done", "reddit.json": "started"})
+        buffer = [call[1] for call in self.sent(deliver.BUFFER_URL)]
+        self.assertEqual(len(buffer), 3)
+        # Buffer only schedules, at today's slots; nothing is posted right away.
+        for request in buffer:
+            self.assertEqual(request["query"], deliver.CREATE_POST)
+            self.assertEqual((request["variables"]["input"]["mode"],
+                              request["variables"]["input"]["schedulingType"]), ("customScheduled", "automatic"))
+        x, linkedin, instagram = (request["variables"]["input"] for request in buffer)
+        self.assertEqual((len(x["assets"]), len(instagram["assets"])), (1, 3))
+        self.assertEqual(instagram["metadata"], {"instagram": {"type": "post", "shouldShareToFeed": True}})
+        self.assertNotIn("metadata", linkedin)
+        # The weekly Discord post carries its picture and, as today, pings nobody.
+        (_, payload, files), = self.sent("https://discord.test/weekly?wait=true")
+        self.assertIsNone(payload)
+        self.assertEqual(json.loads(files["payload_json"][1]), {"content": "Hi <@&1424461167883194418>"})
+        self.assertEqual(len(self.sent("reddit")), 1)
+        # A rerun whose checks would fail doesn't report the posts that went out.
+        with patch("deliver.reddit_settings", side_effect=ValueError("no settings")):
+            deliver.run("send", "weekly", "2026-10-11")
+
+    def test_slots_are_todays(self):
+        def slot(channel, *when):
+            return deliver.next_slot(channel, datetime(2026, 10, *when, tzinfo=UTC))
+        self.assertEqual(slot("twitter", 12, 6, 30), "2026-10-12T15:00:00Z")    # Monday's daily
+        self.assertEqual(slot("twitter", 11, 6, 30), "2026-10-12T15:00:00Z")    # Sunday's weekly X → Monday
+        self.assertEqual(slot("twitter", 12, 14, 55), "2026-10-13T15:00:00Z")   # 10 minutes ahead at least
+        self.assertEqual(slot("linkedin", 11, 6, 30), "2026-10-11T18:00:00Z")
+        self.assertEqual(slot("instagram", 11, 17, 55), "2026-10-18T18:00:00Z")
+
+    def test_text_limits_are_todays(self):
+        # As today, a post whose pictures don't load is scheduled anyway.
+        deliver.requests.head.return_value = reply(404)
+        self.save("weekly", "2026-10-11", {
+            "twitter.json": {"text": "x" * 281, "images": [{"url": "https://raw.githubusercontent.com/p.jpg"}]},
+            "linkedin.json": {"text": "y" * 1249},
+            "instagram.json": {"text": "z" * 2201},
+        })
+        with self.assertRaisesRegex(SystemExit, "linkedin.json"):
+            deliver.run("schedule", "weekly", "2026-10-11")
+        texts = [call[1]["variables"]["input"]["text"] for call in self.sent(deliver.BUFFER_URL)]
+        self.assertEqual(texts, ["x" * 277 + "...", "z" * 2197 + "..."])
+        self.assertNotIn("linkedin.json", self.record("weekly", "2026-10-11"))
+
+    def test_an_unclear_send_waits_for_a_person_and_the_rest_goes_out(self):
+        self.weekly()
+        self.broken[deliver.BUFFER_URL] = requests.ReadTimeout()
+        self.broken["https://discord.test/weekly?wait=true"] = (503,)
+        self.reddit = OSError("connection dropped after the deploy command")
+        for command in ("schedule", "send"):
+            for _ in range(2):
+                with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                    deliver.run(command, "weekly", "2026-10-11")
+        self.assertEqual(self.record("weekly", "2026-10-11"), {
+            "twitter.json": "attempt", "linkedin.json": "done", "instagram.json": "done",
+            "discord.json": "attempt", "reddit.json": "attempt"})
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("reddit"))), (3, 1))
+        # A person found the X post and the Discord message missing: one is done, one goes again.
+        deliver.mark("weekly", "2026-10-11", "twitter.json", "done")
+        deliver.mark("weekly", "2026-10-11", "discord.json", "failed")
+        deliver.mark("weekly", "2026-10-11", "reddit.json", "done")
+        deliver.run("schedule", "weekly", "2026-10-11")
+        deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("https://discord.test/weekly?wait=true"))), (3, 2))
+        self.assertEqual(self.record("weekly", "2026-10-11")["discord.json"], "done")
+
+    def test_a_clean_failure_is_sent_again_and_false_conflicts_resolve(self):
+        self.save("daily", "2026-10-11", {"twitter.json": {"text": "Shipped."},
+                                          "reddit.json": {"title": "Day", "text": "Body"}})
+        self.broken[deliver.BUFFER_URL] = (401, {"errors": [{"extensions": {"code": "UNAUTHENTICATED"}}]})
+        self.reddit = False
+        for command in ("schedule", "send"):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deliver.run(command, "daily", "2026-10-11")
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "failed", "reddit.json": "failed"})
+        # A commit landing in the same instant gives a false 409; a 502 can hide a write that landed.
+        self.reddit = True
+        self.faults = ["409", None, None, "502"]
+        deliver.run("schedule", "daily", "2026-10-11")
+        deliver.run("send", "daily", "2026-10-11")
+        deliver.run("send", "daily", "2026-10-11")
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "done", "reddit.json": "started"})
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("reddit"))), (2, 2))
+
+    def test_only_saved_dates_from_the_start_date_are_delivered(self):
+        self.save("daily", "2026-10-10", {"twitter.json": {"text": "Saturday"}})        # never delivered
+        self.save("daily", "2026-10-09", {"twitter.json": {"text": "Friday"}}, summary=False)
+        self.save("daily", "2026-10-08", {"twitter.json": {"text": "Thursday"}})        # reddit.json missing
+        for date in ("2026-10-10", "2026-10-09"):
+            deliver.run("send", "daily", date)
+            deliver.run("schedule", "daily", date)
+        with self.assertRaisesRegex(SystemExit, "reddit.json"):
+            deliver.run("send", "daily", "2026-10-08")
+        self.assertEqual(self.calls, [])
+        for start, date in ((None, "2026-10-08"), ("2026-10-09", "2026-10-08")):
+            with patch.dict(deliver.START, {"daily": start}), self.assertRaisesRegex(SystemExit, "start date"):
+                deliver.run("schedule", "daily", date)
+
+    def test_model_post_is_sent_once_from_work_and_never_saved_with_another_text(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        work = Path(directory.name)
+        raw = {"job": "models", "date": "2026-10-14", "previous_date": "2026-10-07", "generated_at": "now",
+               "outputs": {"model-post": {"discord_text": "<@&MODEL_ROLE_ID> " + "a " * 1000}}}
+        (work / "raw.json").write_text(json.dumps(raw))
+        for _ in range(2):
+            deliver.run("send", "models", "2026-10-14", work)
+        (_, payload, _), = self.sent("https://discord.test/models?wait=true")
+        self.assertEqual(payload["allowed_mentions"], {"parse": ["roles"]})
+        self.assertEqual(payload["content"], deliver.safe_truncate(("<@&42> " + "a " * 1000).strip(), 1900))
+        # A person who marks it done keeps it tied to the text that went out.
+        deliver.mark("models", "2026-10-14", "discord.json", "done")
+        deliver.run("send", "models", "2026-10-14", work)
+        raw["outputs"]["model-post"]["discord_text"] = "<@&MODEL_ROLE_ID> other"
+        (work / "raw.json").write_text(json.dumps(raw))
+        with self.assertRaisesRegex(SystemExit, "this WORK's text"):
+            deliver.run("send", "models", "2026-10-14", work)
+        # A week without changes has nothing to send, and save then keeps the snapshot.
+        raw["outputs"] = {}
+        (work / "raw.json").write_text(json.dumps({**raw, "date": "2026-10-21"}))
+        deliver.run("send", "models", "2026-10-21", work)
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.record("models", "2026-10-21"), {})
 
 
 if __name__ == "__main__":

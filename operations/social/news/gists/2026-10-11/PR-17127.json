@@ -1,0 +1,36 @@
+{
+  "pr_number": 17127,
+  "title": "feat(news): posts.py writes and saves the scheduled posts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17127",
+  "merged_at": "2026-10-11T21:42:39Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Added `posts.py` with a `write` step that makes model and image calls into a work folder and a `save` step that writes the existing post file formats to a `news` checkout. Moved shared input and file builders into `common.py` and added per-post prompt files containing the text sent by the current generators. Comparison tests check that `posts.py` produces the same calls, image prompts, and saved bytes as the old generators. It reads only the `news` checkout, requires `--overwrite` for an already saved date, never replaces a saved model post, and rejects replies missing required fields. Nothing calls `posts.py` yet; the old generators continue unchanged.",
+    "keywords": [
+      "news pipeline",
+      "scheduled posts",
+      "post generation",
+      "prompts",
+      "tests"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17127.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli sorts tiny scheduled-post cards between a glowing work-folder basket and a `news` checkout shelf, with code-plants growing beside them. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny editor's visor and stays small within the scene, rendered in a cozy pixel art, 8-bit aesthetic with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, and retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T21:44:01.810911+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "7b5602d9e08d41e6e8cb68560babddfea2993e13",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

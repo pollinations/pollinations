@@ -1,40 +1,64 @@
 import { DurableObject } from "cloudflare:workers";
 
+// Ends a hold whose release() never arrives, e.g. when an isolate stops mid-stream
+export const MAX_HOLD_MS = 5 * 60_000;
+
 /**
- * One free generation slot per client IP (one SQLite-backed object per IP).
+ * One free generation per client IP at a time, started at least intervalMs
+ * after the previous one, as in the VM's per-IP queue. One SQLite-backed
+ * object per IP.
  *
- * The scheduled alarm time is the only state: the slot is busy until then.
- * The alarm fires when the slot frees, and deleteAll() leaves nothing stored
- * for idle IPs. Keep this class unchanged once deployed: during a gradual
+ * The scheduled alarm time t is the only state:
+ * - t - now > intervalMs: a generation holds the IP (running, or waiting to
+ *   start) until its release(), or until t
+ * - otherwise, while t > now: the last generation ended and the next may start at t
+ *   (a hold in its final intervalMs reads the same way, which is harmless)
+ * The alarm fires when the IP frees, and deleteAll() leaves nothing stored for
+ * idle IPs. Keep this class unchanged once deployed: during a gradual
  * deployment each object may run either Worker version.
  */
 export class IpSlot extends DurableObject {
     /**
      * @param {number} intervalMs time between the starts of two free generations
      * @param {boolean} canWait whether the caller can wait for the next slot (text streams)
-     * @returns {Promise<{action: "go" | "wait" | "full" | "pay", waitMs: number, until: number}>}
+     * @returns {Promise<{action: "go" | "wait" | "full" | "pay", waitMs: number, until: number, holdUntil?: number}>}
+     *   No free generation can start before `until`. After a go or wait, pass
+     *   the result to release() once the generation ends.
      */
     async take(intervalMs, canWait) {
         const now = Date.now();
-        const busyUntil = (await this.ctx.storage.getAlarm()) ?? 0;
+        const t = (await this.ctx.storage.getAlarm()) ?? 0;
 
-        if (busyUntil <= now) {
-            await this.ctx.storage.setAlarm(now + intervalMs);
-            return { action: "go", waitMs: 0, until: now + intervalMs };
+        if (t - now > intervalMs) {
+            const until = t - MAX_HOLD_MS + intervalMs;
+            return { action: canWait ? "full" : "pay", waitMs: 0, until };
         }
-        if (!canWait) {
-            return { action: "pay", waitMs: 0, until: busyUntil };
+        if (t > now && !canWait) {
+            return { action: "pay", waitMs: 0, until: t };
         }
-        // More than one interval away means a waiter already holds the next slot.
-        if (busyUntil - now > intervalMs) {
-            return { action: "full", waitMs: 0, until: busyUntil };
-        }
-        await this.ctx.storage.setAlarm(busyUntil + intervalMs);
+        const start = Math.max(t, now);
+        await this.ctx.storage.setAlarm(start + MAX_HOLD_MS);
         return {
-            action: "wait",
-            waitMs: busyUntil - now,
-            until: busyUntil + intervalMs,
+            action: start > now ? "wait" : "go",
+            waitMs: start - now,
+            until: start + intervalMs,
+            holdUntil: start + MAX_HOLD_MS,
         };
+    }
+
+    /**
+     * Ends the hold of a booking from take(): the next free generation may
+     * start at its `until`, or at once if that has passed.
+     */
+    async release({ holdUntil, until }) {
+        // An expired hold may already have been replaced by a newer booking
+        if ((await this.ctx.storage.getAlarm()) !== holdUntil) return;
+        if (until > Date.now()) {
+            await this.ctx.storage.setAlarm(until);
+        } else {
+            await this.ctx.storage.deleteAlarm();
+            await this.ctx.storage.deleteAll();
+        }
     }
 
     async alarm() {
@@ -49,8 +73,8 @@ export class IpSlot extends DurableObject {
 }
 
 const MAX_REMEMBERED_IPS = 10_000;
-// Per isolate: IP -> time its slot is busy until. That time only moves later
-// until it passes, so a non-stream request before it gets "pay" without an RPC.
+// Per isolate: IP -> the `until` of its latest take(). A booking's until never
+// moves, so a non-stream request before it gets "pay" without an RPC.
 const busyUntilByIp = new Map();
 
 /**

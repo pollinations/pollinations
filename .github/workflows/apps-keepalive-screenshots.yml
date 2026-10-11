@@ -8,13 +8,13 @@ on:
         type: boolean
         default: false
       models:
-        description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
+        description: 'Retry the five blocked embedding models only.'
         type: string
-        default: ''
+        default: 'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b'
       max_pollen:
         description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '10'
+        default: '0.6'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
@@ -57,11 +57,21 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
+      - name: Validate the remaining retry allowance before paid work
+        env:
+          MODELS: ${{ inputs.models }}
+          MAX_POLLEN: ${{ inputs.max_pollen }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          assert.equal(process.env.MODELS,'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b');
+          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.6);
+          JS
       - name: Restore the stopped full-catalog validation evidence
         id: previous
         run: |
-          echo 'run_id=38168073053' >> "$GITHUB_OUTPUT"
-          echo 'artifact_id=11714070389' >> "$GITHUB_OUTPUT"
+          echo 'run_id=38170877192' >> "$GITHUB_OUTPUT"
+          echo 'artifact_id=11714874876' >> "$GITHUB_OUTPUT"
       - name: Restore previous evidence for free source refresh
         id: restore
         if: steps.previous.outputs.artifact_id != ''
@@ -111,7 +121,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Audit the full official catalog result and cost
+      - name: Audit the five-model retry result and combined cost
         if: always() && steps.evidence.outcome == 'success'
         env:
           RESEARCH_OUT: ${{ runner.temp }}/model-research
@@ -125,10 +135,11 @@ jobs:
           const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
           const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
           assert.ok(catalog.every(m=>m.community===false));
-          assert.equal(r.selectedCount,r.officialCount);
-          assert.deepEqual(r.models.map(m=>m.name).sort(),catalog.map(m=>m.name).sort());
-          assert.ok(r.maxPollen<=7.5 && budgetUsed(r)<=r.maxPollen);
-          assert.ok(2.5+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
+          assert.equal(r.selectedCount,5);
+          assert.deepEqual(r.models.map(m=>m.name).sort(),['cohere/embed-v4.0','google/gemini-embedding-2','openai/text-embedding-3-large','openai/text-embedding-3-small','qwen/qwen3-embedding-8b'].sort());
+          assert.equal(r.discovery.status,'skipped');
+          assert.ok(r.maxPollen<=0.6 && budgetUsed(r)<=r.maxPollen);
+          assert.ok(2.5+6.8821505+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
           assert.ok(r.billing && !r.billingGap, 'Billed usage must be checked');
           assert.equal(r.budgetUsedPollen,budgetUsed(r));
           const ready=r.models.filter(m=>m.status==='researched');

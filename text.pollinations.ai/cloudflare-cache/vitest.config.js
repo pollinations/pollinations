@@ -1,4 +1,26 @@
+import { readFileSync } from "node:fs";
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
+
+// wrangler.toml's Data rule for *.webp, for the tests: the pool cannot load a
+// Data module from outside this folder (shared/assets/weft-paywall.webp)
+const webpAsArrayBuffer = {
+    name: "webp-as-array-buffer",
+    enforce: "pre",
+    async resolveId(source, importer) {
+        if (!source.endsWith(".webp")) return;
+        const resolved = await this.resolve(source, importer, {
+            skipSelf: true,
+        });
+        // The query keeps the pool from handing the file to its Data rule
+        return `${resolved.id}?array-buffer`;
+    },
+    load(id) {
+        if (!id.endsWith(".webp?array-buffer")) return;
+        const file = id.replace("?array-buffer", "");
+        const base64 = readFileSync(file).toString("base64");
+        return `export default Uint8Array.from(atob("${base64}"), (c) => c.charCodeAt(0)).buffer;`;
+    },
+};
 
 const COMPLETION = {
     id: "chatcmpl-test",
@@ -73,6 +95,7 @@ async function gen(req, res) {
 
 // Tests run in workerd with the [env.test] bindings from wrangler.toml
 export default defineWorkersConfig({
+    plugins: [webpAsArrayBuffer],
     test: {
         restoreMocks: true,
         poolOptions: {

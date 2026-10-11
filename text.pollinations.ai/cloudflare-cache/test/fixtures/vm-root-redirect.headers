@@ -1,0 +1,13 @@
+HTTP/2 301 
+date: Sun, 11 Oct 2026 21:43:57 GMT
+content-type: text/plain; charset=utf-8
+content-length: 101
+location: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
+cf-ray: a4910b18dd56607a-TXL
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+server: cloudflare
+vary: Accept
+access-control-expose-headers: Payment-Required,Payment-Response
+x-powered-by: Express
+

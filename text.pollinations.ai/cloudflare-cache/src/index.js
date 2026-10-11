@@ -15,18 +15,9 @@ const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
 /**
  * Prepare metadata for caching
  */
-function prepareMetadata(
-    request,
-    url,
-    response,
-    contentSize,
-    isStreaming,
-    hasRequestBody = false,
-) {
+function prepareMetadata(request, response, contentSize, isStreaming) {
     // Create metadata object with core response properties
     const metadata = {
-        // Original URL information
-        originalUrl: url.toString(),
         cachedAt: new Date().toISOString(),
         isStreaming: isStreaming.toString(),
         responseSize: contentSize.toString(),
@@ -38,53 +29,12 @@ function prepareMetadata(
         status: response.status.toString(),
         statusText: response.statusText,
 
-        // Request body reference
-        hasRequestBody: hasRequestBody.toString(),
-
         // Store only essential response headers (not all headers as JSON)
         response_server: response.headers.get("server") || "",
         response_date: response.headers.get("date") || "",
     };
 
     return metadata;
-}
-
-/**
- * Store request body separately if it exists
- * This follows the thin proxy design principle by keeping the implementation simple
- */
-async function storeRequestBody(env, request, key) {
-    // Only process POST/PUT requests that might have a body
-    if (
-        (request.method !== "POST" && request.method !== "PUT") ||
-        !request.body
-    ) {
-        return false;
-    }
-
-    try {
-        const clonedRequest = request.clone();
-        const bodyText = await clonedRequest.text();
-
-        // Only store if there's actual content
-        if (!bodyText || bodyText.length === 0) {
-            return false;
-        }
-
-        // Use a predictable key pattern
-        const requestKey = `${key}-request`;
-
-        // Store the request body as-is
-        await env.TEXT_BUCKET.put(requestKey, bodyText);
-        log(
-            "cache",
-            `Stored request body separately (${bodyText.length} bytes) with key: ${requestKey}`,
-        );
-        return true;
-    } catch (err) {
-        log("error", `Failed to cache request body: ${err.message}`);
-        return false;
-    }
 }
 
 const ATTRIBUTION_HEADERS = {
@@ -200,8 +150,6 @@ const worker = {
             }
 
             log("cache", "Cache miss, proxying to origin...");
-            // Store the request body if present (for POST/PUT requests)
-            const hasRequestBody = await storeRequestBody(env, request, key);
 
             // Forward the request to the origin server
             const originResp = await proxyRequest(request, env);
@@ -236,11 +184,9 @@ const worker = {
                     // Prepare metadata with request body reference
                     const metadata = prepareMetadata(
                         request,
-                        url,
                         originResp,
                         content.byteLength,
                         false,
-                        hasRequestBody,
                     );
 
                     // Store the response in R2 with metadata
@@ -315,11 +261,9 @@ const worker = {
                                 // Prepare metadata with request body reference
                                 const metadata = prepareMetadata(
                                     request,
-                                    url,
                                     originResp,
                                     totalSize,
                                     true,
-                                    hasRequestBody,
                                 );
 
                                 log(
@@ -424,11 +368,6 @@ async function proxyRequest(request, env) {
 
     // Prepare forwarded headers
     const headers = prepareForwardedHeaders(request.headers, url);
-
-    const loggedHeaders = new Headers(headers);
-    loggedHeaders.delete("payment-signature");
-    loggedHeaders.delete("x-payment");
-    log("headers", "Request headers:", Object.fromEntries(loggedHeaders));
 
     // Create origin request
     const originRequest = new Request(originUrl.toString(), {
@@ -609,19 +548,9 @@ export async function getCachedResponse(env, key) {
             size: cachedObject.size,
             uploaded: cachedObject.uploaded,
             metadata: cachedObject.customMetadata,
-            hasRequestBody:
-                cachedObject.customMetadata?.hasRequestBody === "true",
         });
 
         const metadata = cachedObject.customMetadata || {};
-
-        // Optionally log if there's an associated request body
-        if (metadata.hasRequestBody === "true") {
-            log(
-                "cache",
-                `Associated request body available at: ${key}-request`,
-            );
-        }
 
         // Prepare headers based on metadata
         const cacheHeaders = {
@@ -673,102 +602,5 @@ export async function getCachedResponse(env, key) {
         log("error", `Error getting cached response: ${err.message}`);
         if (err.stack) log("error", `Stack: ${err.stack}`);
         return null;
-    }
-}
-
-/**
- * Get a cached request body from R2
- */
-async function getCachedRequest(env, key) {
-    try {
-        const requestKey = `${key}-request`;
-        const cachedRequest = await env.TEXT_BUCKET.get(requestKey);
-
-        if (!cachedRequest) {
-            log("cache", `No cached request found for key: ${requestKey}`);
-            return null;
-        }
-
-        const requestBody = await cachedRequest.text();
-        log(
-            "cache",
-            `Retrieved cached request body: ${requestKey} (${requestBody.length} bytes)`,
-        );
-
-        return {
-            body: requestBody,
-            uploaded: cachedRequest.uploaded,
-            size: cachedRequest.size,
-        };
-    } catch (err) {
-        log("error", `Error getting cached request: ${err.message}`);
-        return null;
-    }
-}
-
-/**
- * Get both cached request and response as a pair
- */
-async function getCachedRequestResponsePair(env, key) {
-    try {
-        // Get both in parallel for efficiency
-        const [response, request] = await Promise.all([
-            getCachedResponse(env, key),
-            getCachedRequest(env, key),
-        ]);
-
-        return {
-            request,
-            response,
-            key,
-        };
-    } catch (err) {
-        log("error", `Error getting cached pair: ${err.message}`);
-        return null;
-    }
-}
-
-/**
- * List all cached request-response pairs (for debugging/analytics)
- * Note: This is a simple implementation - for production, consider pagination
- */
-async function listCachedPairs(env, limit = 100) {
-    try {
-        const list = await env.TEXT_BUCKET.list({ limit });
-
-        // Group by base key (without -request suffix)
-        const pairs = new Map();
-
-        for (const object of list.objects) {
-            const key = object.key;
-            const baseKey = key.endsWith("-request") ? key.slice(0, -8) : key;
-
-            if (!pairs.has(baseKey)) {
-                pairs.set(baseKey, { response: null, request: null });
-            }
-
-            if (key.endsWith("-request")) {
-                pairs.get(baseKey).request = {
-                    key,
-                    size: object.size,
-                    uploaded: object.uploaded,
-                };
-            } else {
-                pairs.get(baseKey).response = {
-                    key,
-                    size: object.size,
-                    uploaded: object.uploaded,
-                    metadata: object.customMetadata,
-                };
-            }
-        }
-
-        return Array.from(pairs.entries()).map(([baseKey, pair]) => ({
-            key: baseKey,
-            ...pair,
-        }));
-    } catch (err) {
-        log("error", `Error listing cached pairs: ${err.message}`);
-        return [];
     }
 }

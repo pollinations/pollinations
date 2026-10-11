@@ -44,6 +44,29 @@ jobs:
       - name: Run tests
         run: npm test
 
+  text-cache-tests:
+    needs: determine-tests
+    if: needs.determine-tests.outputs.text-changed == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: text.pollinations.ai/cloudflare-cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: text.pollinations.ai/cloudflare-cache/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
   image-backend-tests:
     needs: determine-tests
     if: needs.determine-tests.outputs.image-changed == 'true'

@@ -32,9 +32,9 @@ describe("legacy image links", () => {
         [
             "GET",
             "/p/a%20red%20apple?width=512&seed=3",
-            "https://image.pollinations.ai/prompt/a%20red%20apple?width=512&seed=3",
+            "https://gen.pollinations.ai/image/a%20red%20apple?width=512&seed=3",
         ],
-        ["HEAD", "/prompt/cat", "https://image.pollinations.ai/prompt/cat"],
+        ["HEAD", "/prompt/cat", "https://gen.pollinations.ai/image/cat"],
     ])("redirects %s %s to the image API", async (method, path, target) => {
         const fetchAsset = vi.fn();
         const response = await worker.fetch(

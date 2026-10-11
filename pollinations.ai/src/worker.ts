@@ -57,7 +57,7 @@ export default {
             (request.method === "GET" || request.method === "HEAD")
         ) {
             return Response.redirect(
-                `https://image.pollinations.ai/prompt/${legacyImage[1]}${url.search}`,
+                `https://gen.pollinations.ai/image/${legacyImage[1]}${url.search}`,
                 301,
             );
         }

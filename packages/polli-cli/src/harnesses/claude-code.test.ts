@@ -9,6 +9,7 @@ import {
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
+import * as childProcess from "node:child_process";
 import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HarnessContext } from "./types.js";
@@ -23,7 +24,21 @@ const mocks = vi.hoisted(() => ({
     ]),
     keyUsageCount: vi.fn(async () => 4),
     waitForKeyUsageIncrease: vi.fn(async () => 5),
+    spawnSync: vi.fn(),
 }));
+
+vi.mock("node:child_process", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("node:child_process")>();
+    return {
+        ...actual,
+        spawnSync: (file: string, args: string[], options: any) => {
+            if (mocks.spawnSync.getMockImplementation()) {
+                return mocks.spawnSync(file, args, options);
+            }
+            return actual.spawnSync(file, args, options);
+        },
+    };
+});
 
 vi.mock("./keys.js", () => ({
     resolveHarnessKey: mocks.resolveHarnessKey,
@@ -85,6 +100,7 @@ console.log("pong");
 beforeEach(() => {
     mocks.resolveHarnessKey.mockClear();
     mocks.waitForKeyUsageIncrease.mockClear();
+    mocks.spawnSync.mockReset();
     home = mkdtempSync(join(tmpdir(), "polli-claude-harness-"));
     ctx = { home, env: {} };
     installFakeClaude();
@@ -182,5 +198,63 @@ describe("Claude Code harness", () => {
         expect(await claudeCode.off(ctx)).toMatchObject({
             outcome: "unchanged",
         });
+    });
+
+    it("launches the detected Windows shim during smoke test", async () => {
+        const bin = join(home, "win-bin");
+        mkdirSync(bin, { recursive: true });
+        const shim = join(bin, "claude.cmd");
+        writeFileSync(shim, "@echo off\r\necho pong\r\n");
+        chmodSync(shim, 0o755);
+
+        const winCtx: HarnessContext = {
+            home,
+            env: {
+                ...process.env,
+                HOME: home,
+                PATH: bin,
+                PATHEXT: ".cmd;.bat;.exe",
+            },
+        };
+
+        const originalPlatform = process.platform;
+        Object.defineProperty(process, "platform", {
+            configurable: true,
+            value: "win32",
+        });
+
+        mocks.spawnSync.mockReturnValue({
+            status: 0,
+            stdout: "pong\n",
+            stderr: "",
+            output: ["", "pong\n", ""],
+            pid: 1234,
+            signal: null,
+        } as ReturnType<typeof childProcess.spawnSync>);
+
+        try {
+            const result = await claudeCode.on(winCtx, {});
+            expect(result).toMatchObject({
+                configured: true,
+                smokeVerified: true,
+            });
+            expect(mocks.spawnSync).toHaveBeenCalledWith(
+                shim,
+                expect.arrayContaining([
+                    "-p",
+                    "--settings",
+                    settingsFile(),
+                ]),
+                expect.objectContaining({
+                    shell: true,
+                }),
+            );
+        } finally {
+            mocks.spawnSync.mockReset();
+            Object.defineProperty(process, "platform", {
+                configurable: true,
+                value: originalPlatform,
+            });
+        }
     });
 });

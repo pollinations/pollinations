@@ -6,6 +6,7 @@ import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    resolveCommand,
     writeTextAtomic,
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
@@ -66,8 +67,9 @@ const status = (ctx: HarnessContext): HarnessResult => {
 
 // Runs Claude Code itself with the written settings, so ready means it works.
 const smokeTest = (ctx: HarnessContext) => {
+    const executable = resolveCommand("claude", ctx.env) ?? "claude";
     const run = spawnSync(
-        "claude",
+        executable,
         [
             "-p",
             "--settings",
@@ -82,6 +84,7 @@ const smokeTest = (ctx: HarnessContext) => {
             encoding: "utf-8",
             timeout: 180_000,
             windowsHide: true,
+            shell: process.platform === "win32",
         },
     );
     if (run.error) throw run.error;

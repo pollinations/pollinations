@@ -30,12 +30,12 @@ const isExecutable = (path: string) => {
     }
 };
 
-/** Whether a command can be launched from PATH or a known fallback location. */
-export const commandExists = (
+/** Resolve the path of a command that can be launched from PATH or a known fallback location. */
+export const resolveCommand = (
     command: string,
     env: NodeJS.ProcessEnv,
     fallbacks: string[] = [],
-) => {
+): string | null => {
     const extensions =
         process.platform === "win32"
             ? (env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD").split(";")
@@ -46,8 +46,15 @@ export const commandExists = (
         .flatMap((dir) =>
             extensions.map((extension) => join(dir, `${command}${extension}`)),
         );
-    return [...candidates, ...fallbacks].some(isExecutable);
+    return [...candidates, ...fallbacks].find(isExecutable) ?? null;
 };
+
+/** Whether a command can be launched from PATH or a known fallback location. */
+export const commandExists = (
+    command: string,
+    env: NodeJS.ProcessEnv,
+    fallbacks: string[] = [],
+) => resolveCommand(command, env, fallbacks) !== null;
 
 export const readTextIfExists = (path: string): string | null =>
     existsSync(path) ? readFileSync(path, "utf-8") : null;

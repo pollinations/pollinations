@@ -372,6 +372,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.base_model && {
             base_model: entry.info.base_model,
         }),
+        paid_only: entry.info.paid_only,
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
         supported_parameters: entry.info.supported_parameters,

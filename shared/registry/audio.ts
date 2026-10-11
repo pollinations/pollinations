@@ -312,6 +312,24 @@ export const AUDIO_VOICES = [
 // on a model that is not paid-only.
 export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
+    "microsoft/mai-transcribe-2": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Promotional $0.10/hour; standard $0.36/hour, expiry unpublished.
+        // https://microsoft.ai/models/mai-transcribe-2/
+        cost: { promptAudioSeconds: 0.1 / 3600 },
+        title: "MAI Transcribe 2",
+        description:
+            "Multilingual file transcription with automatic language detection and timed segments",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     "elevenlabs/eleven-v4": {
         aliases: [],
         provider: "elevenlabs",
@@ -363,7 +381,7 @@ const AUDIO_BASE_SERVICES = {
         ],
     },
     "elevenlabs/eleven-v3": {
-        aliases: ["tts", "text-to-speech", "eleven", "elevenlabs"],
+        aliases: ["text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
         publisher: "ElevenLabs",
         category: "audio",
@@ -764,7 +782,8 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        aliases: ["tts-1"],
+        // The bare "tts" alias points at the free default speech model.
+        aliases: ["tts-1", "tts"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",

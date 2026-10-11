@@ -1,6 +1,12 @@
 import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
+    "microsoft/mai-transcribe-2": {
+        "microsoft/mai-transcribe-2:vercel": {
+            provider: "vercel",
+            cost: { promptAudioSeconds: 0.1 / 3600 },
+        },
+    },
     "microsoft/mai-voice-2.1": {
         "microsoft/mai-voice-2.1:vercel": {
             provider: "vercel",

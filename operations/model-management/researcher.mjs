@@ -6,6 +6,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { isIP } from "node:net";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { inferenceQuote } from "./pricing.mjs";
 
 const API = "https://gen.pollinations.ai";
 export const PREFERENCE = ["azure", "fireworks", "bedrock"];
@@ -18,7 +19,7 @@ const json = (value) =>
     JSON.parse(value.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, ""));
 
 export function budgetUsed(report) {
-    return report.calls.reduce((total, call) => {
+    const settledCost = (call) => {
         assert.ok(
             Number.isFinite(call.reserved) && call.reserved >= 0,
             "Invalid paid operation reservation",
@@ -29,8 +30,24 @@ export function budgetUsed(report) {
             Number.isFinite(call.accountedPollen) &&
             call.accountedPollen >= 0 &&
             call.accountedPollen <= call.reserved;
-        return total + (settled ? call.accountedPollen : call.reserved);
-    }, 0);
+        return settled ? call.accountedPollen : call.reserved;
+    };
+    const billed = report.billing?.pollen ?? 0;
+    assert.ok(Number.isFinite(billed) && billed >= 0, "Invalid billed usage");
+    const count = report.billing?.callCount ?? 0;
+    assert.ok(
+        Number.isSafeInteger(count) &&
+            count >= 0 &&
+            count <= report.calls.length,
+        "Invalid billing snapshot boundary",
+    );
+    const prior = report.calls
+        .slice(0, count)
+        .reduce((sum, call) => sum + settledCost(call), 0);
+    const later = report.calls
+        .slice(count)
+        .reduce((sum, call) => sum + settledCost(call), 0);
+    return Math.max(prior, billed) + later;
 }
 
 export function inferenceCost(usage, pricing) {
@@ -84,6 +101,10 @@ export function inferenceCost(usage, pricing) {
 
 export function reserve(report, cost, kind) {
     assert.ok(Number.isFinite(cost) && cost > 0, "Missing finite tool quote");
+    assert.ok(
+        !report.billingGap,
+        "Billed usage unavailable; no further spending",
+    );
     if (budgetUsed(report) + cost > report.maxPollen)
         throw new Error("Pollen budget exhausted");
     assert.ok(
@@ -617,11 +638,17 @@ export function assess(
             );
         const availability =
             has("availability") &&
-            !claims.some((claim) =>
-                negative.test(
-                    sources.find((source) => source.id === claim.sourceId).text,
-                ),
-            );
+            !claims.some((claim) => {
+                const sections = sources
+                    .find((source) => source.id === claim.sourceId)
+                    .text.split(/[\r\n]+|(?<=[.!?;])\s+/);
+                return sections.some(
+                    (section) =>
+                        negative.test(section) &&
+                        (mentions(section, route.upstreamModel) ||
+                            /^this (?:model|offer)\b/i.test(section.trim())),
+                );
+            });
         const documented =
             identity &&
             availability &&
@@ -665,7 +692,9 @@ export function assess(
         ),
     );
     const unit =
-        model?.category === "text" ? "1M_tokens" : eligible[0]?.pricing.unit;
+        model?.category === "text"
+            ? "1M_tokens"
+            : (preferred[0]?.pricing.unit ?? eligible[0]?.pricing.unit);
     const others = eligible
         .filter(
             (route) =>
@@ -721,7 +750,9 @@ export function assess(
                   comparisonWorkload:
                       unit === "1M_tokens"
                           ? "1M input + 1M output tokens"
-                          : `1 ${unit}`,
+                          : unit && unit !== "unknown"
+                            ? `1 ${unit}`
+                            : "unknown",
               }
             : null,
     };
@@ -735,10 +766,8 @@ export async function research(
     usePerplexity = false,
 ) {
     const tools = structuredClone(TOOLS);
-    if (task.models) {
-        tools[0].function.parameters.required.push("models");
-        tools[2].function.parameters.required = ["action"];
-    }
+    tools[2].function.parameters.required = ["action"];
+    if (task.models) tools[0].function.parameters.required.push("models");
     tools[0].function.parameters.properties.engine.enum = [
         "exa",
         ...["perplexity", "gemini-search"].filter((engine) =>
@@ -804,10 +833,12 @@ export async function research(
         },
     ];
     const plans = [];
+    const actions = [];
     let audited = null;
     let candidate = null;
     const evidence = () => ({
         plans,
+        actions,
         searches: [...scopes].map(([scope, queries]) => ({
             scope,
             queries: [...queries],
@@ -837,25 +868,28 @@ export async function research(
                     (source) => source.status === "fetched",
                 ).length,
                 searchedScopes: [...scopes.keys()],
-                instruction:
-                    "Finish within these turns. Once coverage and primary-source leads exist, prioritize verification and submission. Reserve the final two turns for verifying the exact report and submitting it. Limit discovery to eight serious leads; unresolved questions are explicit gaps.",
+                auditDigest: audited,
+                instruction: audited
+                    ? "Submit action=submit,auditDigest only in its own tool turn now; do not repeat the report."
+                    : maxTurns - turn <= 2
+                      ? "Verify the compact exact candidate now, with only supported routes/discoveries and concise explicit gaps. Reserve the final turn for action=submit,auditDigest only; do not repeat the report."
+                      : "Finish within these turns. Once coverage and primary-source leads exist, prioritize verification and submission. Reserve the final two turns for verifying the exact report and submitting it. Limit discovery to eight serious leads; unresolved questions are explicit gaps.",
             };
             for (const previous of messages.slice(2, -3)) {
                 if (previous.role === "assistant") {
                     previous.content = null;
-                    if (task.models)
-                        for (const call of previous.tool_calls ?? []) {
-                            if (
-                                call.function.name === "research" &&
-                                /compare|verify/.test(
-                                    JSON.parse(call.function.arguments).action,
-                                )
+                    for (const call of previous.tool_calls ?? []) {
+                        if (
+                            call.function.name === "research" &&
+                            /compare|verify/.test(
+                                JSON.parse(call.function.arguments).action,
                             )
-                                call.function.arguments = JSON.stringify({
-                                    action: "archived",
-                                    note: "Report audited; saved evidence remains available.",
-                                });
-                        }
+                        )
+                            call.function.arguments = JSON.stringify({
+                                action: "archived",
+                                note: "Report audited; saved evidence remains available.",
+                            });
+                    }
                     continue;
                 }
                 if (previous.role !== "tool") continue;
@@ -873,7 +907,11 @@ export async function research(
                         archived: true,
                         note: "Search leads were read; fetch primary sources for exact evidence.",
                     });
-                } else if (task.models && payload.models) {
+                } else if (
+                    payload.models ||
+                    payload.routes ||
+                    payload.discoveries
+                ) {
                     previous.content = JSON.stringify({
                         status: payload.status ?? "audited",
                         note: "Prior candidate archived; submit the verified report exactly.",
@@ -894,7 +932,9 @@ export async function research(
                                 ? 2000
                                 : 6000,
                       }
-                    : undefined,
+                    : audited
+                      ? { maxTokens: 1000 }
+                      : undefined,
             );
             assert.ok(
                 message.tool_calls?.length,
@@ -903,6 +943,12 @@ export async function research(
             messages.push(message);
             for (const call of message.tool_calls) {
                 const args = json(call.function.arguments);
+                const action = {
+                    turn: turn + 1,
+                    tool: call.function.name,
+                    ...(args.action ? { action: args.action } : {}),
+                };
+                actions.push(action);
                 const signature = `${call.function.name}:${JSON.stringify(args)}`;
                 if (
                     seen.has(signature) &&
@@ -919,6 +965,9 @@ export async function research(
                               )
                             : null;
                     if (cached) used.add(cached.id);
+                    action.status = cached ? "cached" : "rejected";
+                    if (!cached)
+                        action.reason = "Already attempted this network action";
                     messages.push({
                         role: "tool",
                         tool_call_id: call.id,
@@ -968,11 +1017,7 @@ export async function research(
                                 plans.length,
                                 "Begin with research(action=plan)",
                             );
-                            if (
-                                task.models &&
-                                args.action === "submit" &&
-                                args.auditDigest
-                            ) {
+                            if (args.action === "submit" && args.auditDigest) {
                                 assert.ok(
                                     Object.keys(args).every((key) =>
                                         ["action", "auditDigest"].includes(key),
@@ -988,16 +1033,23 @@ export async function research(
                                     1,
                                     "Submit must be its own tool turn",
                                 );
-                                return {
-                                    ...assessGroup(
-                                        candidate,
-                                        sources,
-                                        coverage,
-                                        task.models,
-                                        inventory,
-                                    ),
-                                    ...evidence(),
-                                };
+                                const submitted = task.models
+                                    ? assessGroup(
+                                          candidate,
+                                          sources,
+                                          coverage,
+                                          task.models,
+                                          inventory,
+                                      )
+                                    : assess(
+                                          candidate,
+                                          sources,
+                                          scopes,
+                                          task.model,
+                                          inventory,
+                                      );
+                                action.status = "submitted";
+                                return { ...submitted, ...evidence() };
                             }
                             if (args.action === "verify")
                                 assert.ok(
@@ -1052,29 +1104,37 @@ export async function research(
                                       scopes,
                                       task.model,
                                       inventory,
-                                      args.action === "submit",
+                                      args.action !== "compare",
                                   );
                             if (args.action === "verify") {
                                 audited = reportDigest;
                                 candidate = structuredClone(args);
-                                if (task.models)
-                                    output = {
-                                        status: "audited",
-                                        auditDigest: audited,
-                                        models: output.models.map(
-                                            ({
-                                                name,
-                                                recommendation,
-                                                gaps,
-                                            }) => ({
-                                                name,
-                                                recommendation,
-                                                gaps,
-                                            }),
-                                        ),
-                                        instruction:
-                                            "Submit action=submit,auditDigest only in its own turn; no repeated report.",
-                                    };
+                                output = {
+                                    status: "audited",
+                                    auditDigest: audited,
+                                    ...(task.models
+                                        ? {
+                                              models: output.models.map(
+                                                  ({
+                                                      name,
+                                                      recommendation,
+                                                      gaps,
+                                                  }) => ({
+                                                      name,
+                                                      recommendation,
+                                                      gaps,
+                                                  }),
+                                              ),
+                                          }
+                                        : {
+                                              recommendation:
+                                                  output.recommendation,
+                                              discoveries: output.discoveries,
+                                              gaps: output.gaps,
+                                          }),
+                                    instruction:
+                                        "Submit action=submit,auditDigest only in its own turn; no repeated report.",
+                                };
                             }
                             if (args.action === "submit") {
                                 assert.equal(
@@ -1082,6 +1142,7 @@ export async function research(
                                     1,
                                     "Submit must be its own tool turn",
                                 );
+                                action.status = "submitted";
                                 return { ...output, ...evidence() };
                             }
                         }
@@ -1188,6 +1249,10 @@ export async function research(
                                 source.focus === args.focus,
                         );
                         if (saved) used.add(saved.id);
+                        action.status = saved ? "cached" : "unavailable";
+                        if (!saved)
+                            action.reason =
+                                "No saved successful source for this URL";
                         messages.push({
                             role: "tool",
                             tool_call_id: call.id,
@@ -1284,6 +1349,9 @@ export async function research(
                               truncated: output.length > 8000,
                           }
                         : output;
+                action.status = toolOutput.status ?? "completed";
+                if (toolOutput.reason)
+                    action.reason = toolOutput.reason.slice(0, 300);
                 messages.push({
                     role: "tool",
                     tool_call_id: call.id,
@@ -1293,6 +1361,10 @@ export async function research(
         }
         throw new Error("Research turn budget exhausted");
     } catch (error) {
+        if (actions.length && !actions.at(-1).status) {
+            actions.at(-1).status = "failed";
+            actions.at(-1).reason = error.message.slice(0, 300);
+        }
         error.evidence = evidence();
         throw error;
     }
@@ -1469,6 +1541,7 @@ export async function main(env = process.env) {
             body: JSON.stringify(payload),
             signal: AbortSignal.timeout(120000),
         });
+        receipt.requestId = result.headers.get("x-request-id");
         receipt.http = result.status;
         if (!result.ok) receipt.status = "failed";
         assert.ok(result.ok, `Pollinations HTTP ${result.status}`);
@@ -1520,34 +1593,15 @@ export async function main(env = process.env) {
                 maxTokens <= 6000,
             "Invalid inference output limit",
         );
-        inferenceCost(
-            {
-                prompt_tokens: 1,
-                completion_tokens: 0,
-                total_tokens: 1,
-                prompt_tokens_details: { cached_tokens: 1 },
-            },
-            model.pricing,
-        );
-        const inputRate = Math.max(
-                Number(model.pricing.promptTextTokens),
-                Number(
-                    model.pricing.promptCacheWriteTokens ??
-                        model.pricing.promptTextTokens,
-                ),
-            ),
-            outputRate = Number(model.pricing.completionTextTokens);
-        assert.ok(
-            Number.isFinite(inputRate) && Number.isFinite(outputRate),
-            "Inference token prices unknown",
-        );
+        const promptUpperBound =
+            Buffer.byteLength(JSON.stringify({ messages, tools })) + 4096;
+        const quote = inferenceQuote(model, promptUpperBound, maxTokens);
         const receipt = reserve(
             report,
-            (Buffer.byteLength(JSON.stringify({ messages, tools })) + 4096) *
-                inputRate +
-                maxTokens * outputRate,
+            quote.reserved,
             `inference:${model.name}`,
         );
+        receipt.promptUpperBound = promptUpperBound;
         const data = JSON.parse(
             await post(
                 "/v1/chat/completions",
@@ -1586,10 +1640,11 @@ export async function main(env = process.env) {
                 usage.total_tokens > 0 &&
                 usage.total_tokens ===
                     usage.prompt_tokens + usage.completion_tokens &&
-                usage.completion_tokens <= maxTokens,
+                usage.completion_tokens <= maxTokens &&
+                usage.prompt_tokens <= promptUpperBound,
             "Inference usage invalid or missing",
         );
-        receipt.accountedPollen = inferenceCost(usage, model.pricing);
+        receipt.accountedPollen = inferenceCost(usage, quote.pricing);
         assert.ok(
             receipt.accountedPollen <= receipt.reserved,
             "Inference usage exceeded reserved quote; no further spending",
@@ -1718,6 +1773,25 @@ export async function main(env = process.env) {
             };
         },
     };
+    const reconcile = async () => {
+        if (env.CHECK_BILLING !== "true" || report.billingGap) return;
+        try {
+            const { readBilledUsage } = await import("./billing.mjs");
+            const callCount = report.calls.length;
+            report.billing = {
+                ...(await readBilledUsage(
+                    env.POLLINATIONS_API_KEY,
+                    report.startedAt,
+                )),
+                callCount,
+            };
+        } catch {
+            report.billingGap =
+                "Billed usage unavailable; preserving reservations and stopping paid work";
+        }
+        await save();
+    };
+    await reconcile();
     const run = async (target, task) => {
         target.status = "running";
         await save();
@@ -1740,6 +1814,7 @@ export async function main(env = process.env) {
                 .replaceAll(env.POLLINATIONS_API_KEY, "[redacted]")
                 .slice(0, 300);
         }
+        await reconcile();
         await save();
         console.log(`${target.name ?? "discovery"}: ${target.status}`);
     };
@@ -1786,6 +1861,7 @@ export async function main(env = process.env) {
             report.models.find((row) => row.name === name),
         );
         if (
+            report.billingGap ||
             budgetUsed(report) >= budget ||
             (report.deadlineAt &&
                 Date.now() >= Date.parse(report.deadlineAt)) ||
@@ -1800,7 +1876,7 @@ export async function main(env = process.env) {
         }
         const group = { name: models.map(({ name }) => name).join(", ") };
         await run(group, {
-            task: "Shared catalog/pricing research for these official models. Batch one query naming the covered models per preferred provider and alternatives (challenge). Fetch current primary evidence once, reuse saved sections. Verify each exact model separately; unknowns stay explicit. Finish in six turns: plan; batch search; batch fetch; follow essential gaps; verify; submit digest.",
+            task: "Shared catalog/pricing research for these official models. Batch one query naming the covered models per preferred provider and alternatives (challenge). Fetch primary publisher/provider model and pricing pages for EVERY model, using focus and saved sections; do not spend all fetches on the easiest model. When batch search misses a model, target its exact checkpoint in alternatives. Preserve complete workload prices and conditions; a price for one resolution is not a universal price. Verify each exact model separately; unknowns name the attempted source and remaining gap. Finish in six turns: plan; batch search; batch fetch; follow essential gaps; verify; submit digest.",
             models,
             discoveryLeads: report.discovery.discoveries ?? [],
         });
@@ -1827,6 +1903,7 @@ export async function main(env = process.env) {
     }
     report.completedAt = new Date().toISOString();
     report.status =
+        !report.billingGap &&
         report.discovery.status === "researched" &&
         report.models.every((row) => row.status === "researched")
             ? "complete"

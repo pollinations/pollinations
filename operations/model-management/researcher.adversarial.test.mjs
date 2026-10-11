@@ -151,6 +151,24 @@ test("provider page explicitly denying availability cannot prove availability", 
     );
 });
 
+test("unrelated negative catalog text cannot veto a documented model", () => {
+    const result = assessRoute(
+        route(),
+        evidence(`${text}\nlegacy-v0 is not available.`),
+    );
+    assert.equal(result.routes[0].availabilitySupported, true);
+    assert.equal(result.routes[0].verification, "documented");
+});
+
+test("a model-specific retirement outside the cited quote still vetoes availability", () => {
+    for (const note of [
+        "example-v1 is not available.",
+        "example-v1\nThis offer was retired.",
+        "example-v1\nLifecycle\nThis offer was retired.",
+    ])
+        mustNotRecommend(route(), evidence(`${text}\n${note}`));
+});
+
 test("another checkpoint's prices and capabilities cannot document this route", () => {
     const source = evidence(
         "example-v1 available now. example-v2 supports text and tools. example-v2: Input $2.00, output $4.00 per 1M tokens.",

@@ -101,6 +101,124 @@ function fixture() {
 }
 const options = (fetch) => ({ guidanceDigest, inventory: [model], fetch });
 
+function unresolvedFixture() {
+    const value = fixture();
+    value.row.routes = [];
+    value.row.discoveries = [];
+    value.row.recommendation = null;
+    value.row.gaps = [
+        "Exact route and workload prices remain unknown; catalog access was incomplete.",
+    ];
+    value.row.searches[3].queries.push(
+        "web:exa:challenge:example-v1 unsupported routes",
+    );
+    return value;
+}
+
+test("fresh unresolved rows reuse unchanged fetched evidence without implying a recommendation", async () => {
+    const { previous, row, source, refreshed } = unresolvedFixture();
+    const second = { ...source, id: "s2", url: "https://fireworks.ai/other" };
+    row.sources.push(second, { id: "failed", status: "failed" });
+    const calls = [];
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async (url) => {
+            calls.push(url);
+            return { ...refreshed, url };
+        }),
+    );
+    assert.deepEqual(calls, [source.url, second.url]);
+    assert.equal(result.reusedUnresolved, true);
+    assert.equal(result.researchedAt, row.researchedAt);
+    assert.equal(result.recommendation, null);
+    assert.deepEqual(result.routes, []);
+    assert.deepEqual(result.discoveries, []);
+    assert.deepEqual(result.gaps, row.gaps);
+    assert.equal(result.sources.length, 2);
+});
+
+test("unresolved original research expires after 24 hours despite fresh refresh dates", async () => {
+    const { previous, row, refreshed } = unresolvedFixture();
+    row.researchedAt = new Date(Date.now() - 86400000 + 60000).toISOString();
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async () => refreshed),
+    );
+    assert.equal(result.reusedUnresolved, true);
+    previous.models = [result];
+    result.researchedAt = new Date(Date.now() - 86400000 - 1).toISOString();
+    let calls = 0;
+    assert.equal(
+        await reuseModel(
+            previous,
+            model,
+            options(async () => {
+                calls++;
+                return refreshed;
+            }),
+        ),
+        null,
+    );
+    assert.equal(calls, 0);
+});
+
+test("unresolved rows need gaps, no recommendation, fetched sources, and complete challenge coverage", async () => {
+    for (const change of [
+        { gaps: [] },
+        { gaps: [""] },
+        { recommendation: { provider: "fabricated" } },
+        { sources: [] },
+        { sources: [{ id: "failed", status: "failed" }] },
+        { searches: fixture().row.searches },
+        {
+            searches: unresolvedFixture().row.searches.filter(
+                ({ scope }) => scope !== "azure",
+            ),
+        },
+    ]) {
+        const { previous, row } = unresolvedFixture();
+        Object.assign(row, change);
+        let calls = 0;
+        assert.equal(
+            await reuseModel(
+                previous,
+                model,
+                options(async () => {
+                    calls++;
+                }),
+            ),
+            null,
+        );
+        assert.equal(calls, 0);
+    }
+});
+
+test("unresolved reuse resolves shared source IDs and keeps full-page refresh gates", async () => {
+    const { previous, row, source, refreshed } = unresolvedFixture();
+    delete row.sources;
+    row.sourceIds = [source.id];
+    previous.sources = [source];
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async () => refreshed),
+    );
+    assert.equal(result.reusedUnresolved, true);
+    assert.equal(
+        await reuseModel(
+            previous,
+            model,
+            options(async () => ({
+                ...refreshed,
+                pageDigest: hash("changed page"),
+            })),
+        ),
+        null,
+    );
+});
+
 test("unchanged whole-page evidence refreshes through HTTP only and preserves research/search dates", async () => {
     const { previous, row, refreshed } = fixture();
     const calls = [];

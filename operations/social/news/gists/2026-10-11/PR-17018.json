@@ -1,0 +1,36 @@
+{
+  "pr_number": 17018,
+  "title": "chore: turn off grafana live in observability",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17018",
+  "merged_at": "2026-10-11T01:37:19Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Set GF_LIVE_MAX_CONNECTIONS=0 on the Grafana container. In Grafana 11.4, this disables the frontend’s Live connection, so open dashboard tabs no longer hold a WebSocket that prevents the container from reaching its 10-minute sleep timer; the frontend also avoids connection retries and “connection lost” banners. Provisioned dashboards do not use Live or streaming: their ClickHouse stat, table, timeseries, and text panels refresh hourly. The observability README now explains the setting and removes WebSocket from the rollout checklist.",
+    "keywords": [
+      "Grafana",
+      "observability",
+      "WebSocket",
+      "dashboards",
+      "container sleep"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17018.jpg",
+    "prompt": "In a cozy pixel-art observability room, Polli wears tiny technician glasses and watches a Grafana dashboard on a CRT monitor settle beside a sleeping server, with lime green (#ecf874) code-plants growing nearby. Polli is a small cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T01:38:29.424868+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "4d513a562c766372cb7ca4f3c6d8d42e7e60eec7",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

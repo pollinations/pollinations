@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     fail,
     getOutputMode,
@@ -38,7 +39,7 @@ export const earningsCommand = new Command("earnings")
     .option("--days <n>", "Rolling window in days", "30")
     .action(async (opts) => {
         const key = requireKey();
-        const days = opts.days;
+        const days = numberOption("--days", opts.days, 1, 365, true);
 
         try {
             const data = await gen<EarningsResponse>(

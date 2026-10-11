@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { type EarningsRow, totalPollenEarned } from "./earnings.js";
+
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+});
 
 const row = (overrides: Partial<EarningsRow> = {}): EarningsRow => ({
     date: "",
@@ -27,5 +32,43 @@ describe("totalPollenEarned", () => {
 
     it("returns 0 for an empty rollup", () => {
         expect(totalPollenEarned([])).toBe(0);
+    });
+});
+
+describe("earningsCommand --days validation", () => {
+    it("requests valid days parameter", async () => {
+        const { setKeyOverride } = await import("../lib/config.js");
+        setKeyOverride("sk_test");
+        const fetch = vi.fn(async () =>
+            Response.json({
+                daily: [],
+                perEntity: [],
+            }),
+        );
+        vi.stubGlobal("fetch", fetch);
+        const { earningsCommand } = await import("./earnings.js");
+
+        await earningsCommand.parseAsync(["--days", "14"], { from: "user" });
+        expect(fetch).toHaveBeenCalledOnce();
+        const calledUrl = fetch.mock.calls[0][0] as string;
+        expect(calledUrl).toContain("/account/earnings?days=14");
+    });
+
+    it.each([
+        "0",
+        "-1",
+        "abc",
+        "1.5",
+        "366",
+    ])("rejects invalid days value %s", async (invalidDays) => {
+        const { setKeyOverride } = await import("../lib/config.js");
+        setKeyOverride("sk_test");
+        const { earningsCommand } = await import("./earnings.js");
+
+        await expect(
+            earningsCommand.parseAsync(["--days", invalidDays], {
+                from: "user",
+            }),
+        ).rejects.toThrow();
     });
 });

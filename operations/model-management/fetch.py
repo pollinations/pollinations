@@ -3,6 +3,7 @@
 
 import ipaddress
 import json
+import re
 import socket
 import sys
 from html.parser import HTMLParser
@@ -102,7 +103,7 @@ def _page_html(page):
     return body if isinstance(body, str) else ""
 
 
-def _read_http(url, max_characters):
+def _read_http(url, max_characters, focus=None):
     from curl_cffi import CurlOpt
     from scrapling.fetchers import FetcherSession
 
@@ -132,14 +133,23 @@ def _read_http(url, max_characters):
         parser = _TextParser()
         parser.feed(content)
         parser.close()
-        text = parser.text()[:max_characters]
+        text = parser.text()
         if not text.strip():
             return _result(current, "scrapling-http", "upstream returned no readable content")
+        start = 0
+        metadata = {}
+        if focus is not None:
+            match = re.search(re.escape(focus), text, re.IGNORECASE)
+            if match:
+                context = min(2_000, max(0, max_characters - len(match.group())))
+                start = max(0, match.start() - context)
+            metadata = {"excerptStart": start, "totalCharacters": len(text), "focusMatched": match is not None}
         return {
             "status": "fetched",
             "url": current,
             "method": "scrapling-http",
-            "text": text,
+            "text": text[start:start + max_characters],
+            **metadata,
         }
     return _result(current, "scrapling-http", "too many redirects")
 
@@ -152,6 +162,9 @@ def main():
         url = request.get("url")
         mode = request.get("mode", "http")
         max_characters = request.get("maxCharacters", MAX_CHARACTERS)
+        focus = request.get("focus")
+        if "focus" in request and (not isinstance(focus, str) or not focus.strip() or len(focus) > 200):
+            raise ValidationError("focus must be a nonempty string of at most 200 characters")
         if mode not in {"http", "dynamic"}:
             raise ValidationError("mode must be http or dynamic")
         if not isinstance(max_characters, int) or isinstance(max_characters, bool) or not 1 <= max_characters <= MAX_CHARACTERS:
@@ -160,7 +173,7 @@ def main():
         if mode == "dynamic":
             # Scrapling's DynamicFetcher has no documented per-request DNS/IP policy hook.
             return _result(url, "scrapling-dynamic", "dynamic mode is unavailable because browser subrequests cannot be safely validated")
-        return _read_http(url, max_characters)
+        return _read_http(url, max_characters, focus)
     except ValidationError as error:
         return _result(_safe_url(locals().get("url", "")), "scrapling-http", str(error))
     except Exception:

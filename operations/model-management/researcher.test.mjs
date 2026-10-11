@@ -507,6 +507,97 @@ test("real tool-loop code enforces coverage before accepting a report", async ()
     assert.equal(searches, 4);
 });
 
+test("focused fetch passes the model name and saved rereads select its exact excerpt", async () => {
+    const url = "https://1.1.1.1/provider-models";
+    const focus = model.name;
+    const prefix = "Provider catalog introduction. ".repeat(4);
+    const excerpt =
+        `Exact ${focus} row with pricing and model details. `.repeat(4);
+    const calls = [
+        [
+            "research",
+            {
+                action: "plan",
+                questions: [
+                    "Which exact versions are available?",
+                    "What is the full workload cost?",
+                    "What evidence contradicts each offer?",
+                ],
+                routes: [],
+                discoveries: [],
+                gaps: [],
+            },
+        ],
+        ["fetch", { url, mode: "http" }],
+        ["fetch", { url, mode: "auto", focus }],
+        ["fetch", { url, mode: "saved", focus }],
+        ["fetch", { url, mode: "saved" }],
+    ];
+    let index = 0;
+    const fetched = [];
+    await assert.rejects(
+        research(
+            { model },
+            {
+                infer: async (messages) => {
+                    if (index === 4) {
+                        const saved = JSON.parse(messages.at(-1).content);
+                        assert.equal(saved.text, excerpt);
+                        assert.equal(saved.focus, focus);
+                        assert.equal(saved.excerptStart, 21000);
+                        assert.equal(saved.totalCharacters, 45000);
+                        assert.equal(saved.focusMatched, true);
+                    }
+                    const [name, args] = calls[index++];
+                    return {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: `call-${index}`,
+                                type: "function",
+                                function: {
+                                    name,
+                                    arguments: JSON.stringify(args),
+                                },
+                            },
+                        ],
+                    };
+                },
+                fetch: async (requestedUrl, mode, requestedFocus) => {
+                    fetched.push([requestedUrl, mode, requestedFocus]);
+                    return requestedFocus === undefined
+                        ? { text: prefix, method: "scrapling-http" }
+                        : {
+                              text: excerpt,
+                              method: "scrapling-http",
+                              excerptStart: 21000,
+                              totalCharacters: 45000,
+                              focusMatched: true,
+                          };
+                },
+            },
+            [model],
+            calls.length,
+        ),
+        (error) => {
+            assert.match(error.message, /turn budget/);
+            assert.deepEqual(fetched, [
+                [url, "http", undefined],
+                [url, "auto", focus],
+            ]);
+            assert.equal(error.evidence.sources.length, 2);
+            assert.equal(error.evidence.sources[0].text, prefix);
+            assert.equal(error.evidence.sources[1].text, excerpt);
+            assert.equal(error.evidence.sources[1].focus, focus);
+            assert.equal(error.evidence.sources[1].excerptStart, 21000);
+            assert.equal(error.evidence.sources[1].totalCharacters, 45000);
+            assert.equal(error.evidence.sources[1].focusMatched, true);
+            return true;
+        },
+    );
+});
+
 test("paid Perplexity requires explicit opt-in", async () => {
     for (const enabled of [false, true]) {
         await assert.rejects(
@@ -768,23 +859,62 @@ test("NomNom verification rejects endorsement-only research and preserves eviden
     );
 });
 
-test("parent issue is concise, includes partial coverage and manual handoff, never claims probes", () => {
+test("parent issue gives concise model/provider findings, documented prices and verification reminder", () => {
+    const artifactUrl =
+        "https://github.com/pollinations/pollinations/actions/runs/123/artifacts/456";
     const issue = parentIssue(
         {
             startedAt: "2026-10-11T00:00:00Z",
             status: "partial",
             officialCount: 221,
             selectedCount: 221,
-            models: [{ name: model.name, status: "researched" }],
-            discovery: {},
+            models: [
+                {
+                    name: model.name,
+                    status: "researched",
+                    recommendation: { provider: "azure" },
+                    routes: [
+                        {
+                            ...route("azure", "a", "learn.microsoft.com", 2, 4),
+                            verification: "documented",
+                        },
+                        {
+                            ...route(
+                                "unverified-provider",
+                                "u",
+                                "unverified.example",
+                                999,
+                                999,
+                            ),
+                            verification: "unverified",
+                        },
+                    ],
+                },
+            ],
+            discovery: {
+                discoveries: [
+                    { kind: "model", name: "publisher/new-model" },
+                    { kind: "provider", name: "new-provider" },
+                ],
+            },
             catalogDigest: "abc",
             sha: "sha",
         },
-        "https://github.com/pollinations/pollinations/actions/runs/123/artifacts/456",
+        artifactUrl,
     );
     assert.match(issue.body, /1\/221/);
-    assert.match(issue.body, /maintainer adds/);
-    assert.match(issue.body, /does not trigger/);
+    assert.match(issue.body, /publisher\/example-v1 → azure/);
+    assert.match(issue.body, /New models: publisher\/new-model/);
+    assert.match(issue.body, /New providers: new-provider/);
+    assert.match(issue.body, /azure: \$2 input, \$4 output per 1M_tokens/);
+    assert.match(issue.body, /Verify: account credits and live routes/);
+    assert.ok(issue.body.includes(`[Evidence](${artifactUrl})`));
+    assert.doesNotMatch(
+        issue.body,
+        /999|unverified-provider|digest|\bsha\b|maintainer|trigger|handoff/i,
+    );
+    assert.ok(issue.body.split("\n").every((line) => line.startsWith("- ")));
+    assert.ok(issue.body.length < 650);
     assert.throws(
         () => parentIssue({ models: [], discovery: {} }, "invalid"),
         /No completed/,

@@ -280,8 +280,13 @@ test("main persists researched evidence and publisher consumes the exact partial
     assert.match(issuedBody, /partial/);
     assert.match(issuedBody, /1\/1/);
     assert.equal(issuedBody.match(/\]\((https:[^)]+)\)/)?.[1], artifact);
-    assert.ok(issuedBody.includes(report.catalogDigest));
-    assert.ok(issuedBody.includes(report.sha));
+    const savedReport = JSON.parse(
+        await readFile(join(out, "research.json"), "utf8"),
+    );
+    assert.equal(savedReport.catalogDigest, report.catalogDigest);
+    assert.equal(savedReport.sha, report.sha);
+    assert.equal(issuedBody.includes(report.catalogDigest), false);
+    assert.equal(issuedBody.includes(report.sha), false);
     assert.equal(writes, 1);
     assert.equal(receipt.number, 789);
 });
@@ -559,6 +564,301 @@ test("ambiguous duplicate parents are rejected before a write", async (t) => {
     await assert.rejects(publish(issueEnv(out)), /duplicate|ambiguous/i);
     assert.equal(writes, 0);
 });
+
+test("publisher reuses its persisted parent receipt when issue lists lag", async (t) => {
+    const out = await output(t, partial());
+    const created = {
+        number: 789,
+        html_url: "https://github.com/pollinations/pollinations/issues/789",
+        body: marker,
+    };
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const method = options.method ?? "GET";
+        requests.push({ url, method });
+        if (method === "GET")
+            return Response.json(url.endsWith("/789") ? created : []);
+        return Response.json(created);
+    });
+    const first = await publish(issueEnv(out));
+    const second = await publish(issueEnv(out));
+    assert.deepEqual(second, first);
+    assert.equal(requests.filter(({ method }) => method === "POST").length, 1);
+    const patches = requests.filter(({ method }) => method === "PATCH");
+    assert.equal(patches.length, 1);
+    assert.ok(patches[0].url.endsWith("/789"));
+    assert.ok(
+        requests.some(
+            ({ url, method }) => method === "GET" && url.endsWith("/789"),
+        ),
+    );
+    assert.deepEqual(
+        JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+        first,
+    );
+});
+
+for (const failure of ["disconnect", "malformed receipt"])
+    test(`publisher retains pending intent after POST ${failure} and refuses a second POST`, async (t) => {
+        const out = await output(t, partial());
+        const publicationPath = join(out, "parent-publication.json");
+        let writes = 0,
+            publicationBeforePost;
+        t.mock.method(globalThis, "fetch", async (_, options) => {
+            if (!options.method) return Response.json([]);
+            writes++;
+            publicationBeforePost = JSON.parse(
+                await readFile(publicationPath, "utf8"),
+            );
+            if (failure === "disconnect")
+                throw new Error("Publication connection interrupted");
+            return Response.json({ number: 789 });
+        });
+        await assert.rejects(
+            publish(issueEnv(out)),
+            failure === "disconnect" ? /connection interrupted/ : /receipt/,
+        );
+        const pending = { runId: "123", status: "pending", number: null };
+        assert.deepEqual(publicationBeforePost, pending);
+        assert.deepEqual(
+            JSON.parse(await readFile(publicationPath, "utf8")),
+            pending,
+        );
+        assert.equal(writes, 1);
+        await assert.rejects(readFile(join(out, "parent-issue.json")), {
+            code: "ENOENT",
+        });
+        await assert.rejects(
+            publish(issueEnv(out)),
+            /publication uncertain|no new issue/i,
+        );
+        assert.equal(
+            writes,
+            1,
+            "Uncertain publication must never create a second parent",
+        );
+        assert.deepEqual(
+            JSON.parse(await readFile(publicationPath, "utf8")),
+            pending,
+        );
+    });
+
+test("publisher retry with fresh output and no original parent refuses to POST", async (t) => {
+    const out = await output(t, partial());
+    const methods = [];
+    t.mock.method(globalThis, "fetch", async (_, options) => {
+        methods.push(options.method ?? "GET");
+        return Response.json(
+            options.method
+                ? {
+                      number: 789,
+                      html_url:
+                          "https://github.com/pollinations/pollinations/issues/789",
+                  }
+                : [],
+        );
+    });
+    await assert.rejects(
+        publish({ ...issueEnv(out), GITHUB_RUN_ATTEMPT: "2" }),
+        /publication uncertain|no new issue/i,
+    );
+    assert.deepEqual(methods, ["GET"]);
+    await assert.rejects(readFile(join(out, "parent-publication.json")), {
+        code: "ENOENT",
+    });
+    await assert.rejects(readFile(join(out, "parent-issue.json")), {
+        code: "ENOENT",
+    });
+});
+
+test(
+    "concurrent publishers exclusively claim fresh publication intent before POST",
+    { timeout: 5000 },
+    async (t) => {
+        const out = await output(t, partial());
+        let reads = 0,
+            posts = 0,
+            release;
+        const bothListed = new Promise((resolve) => {
+            release = resolve;
+        });
+        const created = {
+            number: 789,
+            html_url: "https://github.com/pollinations/pollinations/issues/789",
+        };
+        t.mock.method(globalThis, "fetch", async (_, options) => {
+            if (!options.method) {
+                reads++;
+                if (reads === 2) release();
+                await bothListed;
+                return Response.json([]);
+            }
+            posts++;
+            return Response.json(created);
+        });
+        const results = await Promise.allSettled([
+            publish(issueEnv(out)),
+            publish(issueEnv(out)),
+        ]);
+        assert.equal(
+            reads,
+            2,
+            "Both publishers must pass the missing-receipt checks and list barrier",
+        );
+        assert.equal(posts, 1);
+        const success = results.filter(({ status }) => status === "fulfilled");
+        const failures = results.filter(({ status }) => status === "rejected");
+        assert.equal(success.length, 1);
+        assert.equal(failures.length, 1);
+        assert.equal(failures[0].reason.code, "EEXIST");
+        const receipt = { number: 789, url: created.html_url, runId: "123" };
+        assert.deepEqual(success[0].value, receipt);
+        assert.deepEqual(
+            JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+            receipt,
+        );
+        assert.deepEqual(
+            JSON.parse(
+                await readFile(join(out, "parent-publication.json"), "utf8"),
+            ),
+            { ...receipt, status: "received" },
+        );
+    },
+);
+
+for (const recovery of ["workflow retry", "pending publication"])
+    test(`publisher ${recovery} reconciles an old marker beyond the first page`, async (t) => {
+        const out = await output(t, partial());
+        if (recovery === "pending publication")
+            await writeFile(
+                join(out, "parent-publication.json"),
+                JSON.stringify({
+                    runId: "123",
+                    status: "pending",
+                    number: null,
+                }),
+            );
+        const requests = [];
+        const existing = {
+            number: 789,
+            html_url: "https://github.com/pollinations/pollinations/issues/789",
+            body: marker,
+            created_at: "2026-10-09T00:00:00Z",
+        };
+        t.mock.method(globalThis, "fetch", async (url, options) => {
+            const method = options.method ?? "GET";
+            requests.push({ url, method, body: options.body });
+            if (url.endsWith("page=1"))
+                return Response.json(
+                    Array.from({ length: 100 }, (_, index) => ({
+                        number: 1000 + index,
+                        body: "Unrelated old issue",
+                        created_at: "2026-10-10T00:00:00Z",
+                    })),
+                );
+            if (url.endsWith("page=2")) return Response.json([existing]);
+            return Response.json(existing);
+        });
+        const receipt = await publish({
+            ...issueEnv(out),
+            GITHUB_RUN_ATTEMPT: recovery === "workflow retry" ? "2" : "1",
+        });
+        assert.deepEqual(
+            requests.map(({ method }) => method),
+            ["GET", "GET", "PATCH"],
+        );
+        assert.ok(requests[1].url.endsWith("page=2"));
+        assert.ok(requests[2].url.endsWith("/789"));
+        assert.ok(JSON.parse(requests[2].body).body.includes(marker));
+        assert.deepEqual(receipt, {
+            number: 789,
+            url: existing.html_url,
+            runId: "123",
+        });
+        assert.deepEqual(
+            JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+            receipt,
+        );
+        assert.deepEqual(
+            JSON.parse(
+                await readFile(join(out, "parent-publication.json"), "utf8"),
+            ),
+            { ...receipt, status: "received" },
+        );
+    });
+
+test("publisher refuses to replace a persisted parent that is no longer accessible", async (t) => {
+    const out = await output(t, partial());
+    const receipt = {
+        number: 789,
+        url: "https://github.com/pollinations/pollinations/issues/789",
+        runId: "123",
+    };
+    await writeFile(join(out, "parent-issue.json"), JSON.stringify(receipt));
+    const writes = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        if (options.method) {
+            writes.push(options.method);
+            return Response.json({
+                number: 790,
+                html_url:
+                    "https://github.com/pollinations/pollinations/issues/790",
+            });
+        }
+        return url.endsWith("/789")
+            ? new Response("Not found", { status: 404 })
+            : Response.json([]);
+    });
+    await assert.rejects(
+        publish(issueEnv(out)),
+        /404|receipt|parent|reconcile/i,
+    );
+    assert.deepEqual(writes, []);
+    assert.deepEqual(
+        JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+        receipt,
+    );
+});
+
+for (const receipt of [
+    {
+        number: 789,
+        url: "https://github.com/pollinations/pollinations/issues/789",
+        runId: "other-run",
+    },
+    { number: 789, url: "https://example.com/issues/789", runId: "123" },
+    {
+        number: 789,
+        url: "https://github.com/pollinations/pollinations/issues/790",
+        runId: "123",
+    },
+])
+    test(`publisher rejects malformed persisted receipts: ${JSON.stringify(receipt)}`, async (t) => {
+        const out = await output(t, partial());
+        await writeFile(
+            join(out, "parent-issue.json"),
+            JSON.stringify(receipt),
+        );
+        let requests = 0;
+        t.mock.method(globalThis, "fetch", async (_, options) => {
+            requests++;
+            return Response.json(
+                options.method
+                    ? {
+                          number: 789,
+                          html_url:
+                              "https://github.com/pollinations/pollinations/issues/789",
+                      }
+                    : [],
+            );
+        });
+        await assert.rejects(publish(issueEnv(out)), /receipt|run|URL|parent/i);
+        assert.equal(requests, 0);
+        assert.deepEqual(
+            JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+            receipt,
+        );
+    });
 
 for (const result of [
     {},

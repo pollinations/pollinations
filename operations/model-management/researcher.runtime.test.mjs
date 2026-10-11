@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -121,19 +122,20 @@ test("main preserves uncertain paid receipts when an output directory is reused"
 test("a disconnected paid request is persisted and prevents all later paid calls", async (t) => {
     const out = await output(t);
     let paid = 0;
+    let savedBeforeDisconnect;
     t.mock.method(globalThis, "fetch", async (url) => {
         const free = catalog(url);
         if (free) return free;
         paid++;
-        const saved = JSON.parse(
+        savedBeforeDisconnect = JSON.parse(
             await readFile(join(out, "research.json"), "utf8"),
         );
-        assert.equal(saved.calls.at(-1).status, "pending");
-        assert.ok(saved.reservedPollen > 0);
         throw new Error("Connection interrupted");
     });
     const report = await main(envFor(out));
     assert.equal(paid, 1);
+    assert.equal(savedBeforeDisconnect.calls.at(-1).status, "pending");
+    assert.ok(savedBeforeDisconnect.reservedPollen > 0);
     assert.equal(report.status, "partial");
     assert.equal(report.calls[0].status, "pending");
     assert.equal(report.models[0].status, "blocked");
@@ -211,13 +213,12 @@ test("main persists researched evidence and publisher consumes the exact partial
     let modelTurns = 0,
         searches = 0,
         writes = 0;
+    let issuedBody;
     t.mock.method(globalThis, "fetch", async (url, options) => {
         if (url.startsWith("https://api.github.com/")) {
             if (!options.method) return Response.json([]);
             writes++;
-            const body = JSON.parse(options.body).body;
-            assert.match(body, /partial/);
-            assert.match(body, /1\/1/);
+            issuedBody = JSON.parse(options.body).body;
             return Response.json({
                 number: 789,
                 html_url:
@@ -253,7 +254,7 @@ test("main persists researched evidence and publisher consumes the exact partial
             choices: [{ message }],
         });
     });
-    const report = await main(envFor(out));
+    const report = await main({ ...envFor(out), GITHUB_SHA: "c".repeat(40) });
     assert.equal(report.status, "partial");
     assert.equal(report.models[0].status, "researched");
     assert.equal(report.models[0].searches.length, 4);
@@ -261,14 +262,182 @@ test("main persists researched evidence and publisher consumes the exact partial
     assert.equal(modelTurns, 4);
     assert.equal(searches, 4);
     assert.equal(report.calls.length, 9);
+    for (const receipt of report.calls) {
+        if (receipt.kind.startsWith("inference:"))
+            assert.equal(receipt.accountedPollen, 10 * 0.000002 + 5 * 0.00001);
+        else assert.equal(receipt.reserved, 0.007);
+    }
+    assert.equal(
+        report.reservedPollen,
+        report.calls.reduce((sum, receipt) => sum + receipt.reserved, 0),
+    );
     assert.ok(report.reservedPollen <= report.maxPollen);
     assert.deepEqual(
         JSON.parse(await readFile(join(out, "official-catalog.json"), "utf8")),
         inventory,
     );
     const receipt = await publish(issueEnv(out));
+    assert.match(issuedBody, /partial/);
+    assert.match(issuedBody, /1\/1/);
+    assert.equal(issuedBody.match(/\]\((https:[^)]+)\)/)?.[1], artifact);
+    assert.ok(issuedBody.includes(report.catalogDigest));
+    assert.ok(issuedBody.includes(report.sha));
     assert.equal(writes, 1);
     assert.equal(receipt.number, 789);
+});
+
+test("main selects every official modality and excludes community models before budget blocking", async (t) => {
+    const out = await output(t);
+    const official = [
+        inference,
+        ...[
+            "text",
+            "image",
+            "video",
+            "audio",
+            "embedding",
+            "ocr",
+            "svg",
+            "3d",
+        ].map((category) => ({
+            ...model,
+            name: `publisher/${category}-v1`,
+            category,
+        })),
+    ];
+    const community = {
+        ...model,
+        name: "community/user/model",
+        community: true,
+    };
+    let paid = 0;
+    t.mock.method(globalThis, "fetch", async (url) => {
+        if (url.includes("/models?"))
+            return Response.json([...official, community]);
+        const free = catalog(url);
+        if (free) return free;
+        paid++;
+        return noAction();
+    });
+    const report = await main({
+        ...envFor(out),
+        MODELS: "",
+        MAX_POLLEN: "0.001",
+    });
+    assert.equal(paid, 0);
+    assert.equal(report.officialCount, official.length);
+    assert.equal(report.selectedCount, official.length);
+    assert.deepEqual(
+        report.models.map(({ name, category }) => ({ name, category })),
+        official.map(({ name, category }) => ({ name, category })),
+    );
+    assert.ok(report.models.every(({ status }) => status === "blocked"));
+    assert.equal(report.discovery.status, "blocked");
+    assert.equal(report.status, "partial");
+    assert.equal(report.reservedPollen, 0);
+    assert.deepEqual(
+        JSON.parse(await readFile(join(out, "official-catalog.json"), "utf8")),
+        official,
+    );
+    assert.equal(
+        report.catalogDigest,
+        createHash("sha256").update(JSON.stringify(official)).digest("hex"),
+    );
+});
+
+test("main preserves fetched Exa text under its returned source URL in partial evidence", async (t) => {
+    const out = await output(t);
+    const requestedUrl = "https://1.1.1.1/provider-model";
+    const returnedUrl = "https://8.8.8.8/actual-model";
+    const text =
+        "Actual primary page describes exact provider model identity and pricing evidence.";
+    let turns = 0,
+        fetches = 0,
+        fetchedRequest;
+    const action = (name, args) => ({
+        role: "assistant",
+        content: null,
+        tool_calls: [
+            {
+                id: `source-${turns}`,
+                type: "function",
+                function: { name, arguments: JSON.stringify(args) },
+            },
+        ],
+    });
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const free = catalog(url);
+        if (free) return free;
+        if (url.endsWith("/mcp/exa")) {
+            fetches++;
+            fetchedRequest = JSON.parse(options.body);
+            return Response.json({
+                result: {
+                    content: [
+                        {
+                            type: "text",
+                            text: JSON.stringify({
+                                results: [{ url: returnedUrl, text }],
+                            }),
+                        },
+                    ],
+                },
+            });
+        }
+        const context = JSON.parse(
+            JSON.parse(options.body).messages[1].content,
+        );
+        if (context.model) return noAction();
+        turns++;
+        const message =
+            turns === 1
+                ? action("research", {
+                      action: "plan",
+                      questions: [
+                          "Which exact model version is offered?",
+                          "What is the complete workload pricing?",
+                          "Which evidence contradicts provider availability?",
+                      ],
+                      routes: [],
+                      discoveries: [],
+                      gaps: [],
+                  })
+                : turns === 2
+                  ? action("fetch", { url: requestedUrl, mode: "exa" })
+                  : {
+                        role: "assistant",
+                        content: "Interrupted before final submission",
+                    };
+        return Response.json({
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+            choices: [{ message }],
+        });
+    });
+    const report = await main(envFor(out));
+    assert.equal(fetches, 1);
+    assert.deepEqual(fetchedRequest.params.arguments.urls, [requestedUrl]);
+    assert.equal(report.status, "partial");
+    assert.equal(report.discovery.status, "blocked");
+    assert.equal(report.discovery.sources.length, 1);
+    const source = report.discovery.sources[0];
+    assert.equal(source.url, returnedUrl);
+    assert.notEqual(source.url, requestedUrl);
+    assert.equal(source.text, text);
+    assert.equal(source.status, "fetched");
+    assert.equal(source.method, "pollinations-exa");
+    assert.equal(
+        source.digest,
+        createHash("sha256").update(text).digest("hex"),
+    );
+    assert.deepEqual(
+        JSON.parse(await readFile(join(out, "research.json"), "utf8")).discovery
+            .sources,
+        report.discovery.sources,
+    );
 });
 
 for (const usage of [
@@ -463,7 +632,10 @@ test("parent issue accepts only the exact workflow run or its artifact URL", () 
                 ),
             /URL|evidence|artifact/i,
         );
-    assert.ok(parentIssue(report, artifact).body.includes(artifact));
+    assert.equal(
+        parentIssue(report, artifact).body.match(/\]\((https:[^)]+)\)/)?.[1],
+        artifact,
+    );
 });
 
 test("workflow keeps manual main-only launch, read-only checkout, evidence and scoped publishing", async () => {

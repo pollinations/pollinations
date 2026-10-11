@@ -48,6 +48,22 @@ export function officialCatalog(rows) {
     );
     const official = rows.filter((row) => row.community === false);
     assert.ok(
+        official.every(
+            (row) =>
+                typeof row.name === "string" &&
+                row.name.trim().length > 0 &&
+                row.name.length <= 200 &&
+                (row.aliases === undefined ||
+                    (Array.isArray(row.aliases) &&
+                        row.aliases.every(
+                            (alias) =>
+                                typeof alias === "string" &&
+                                alias.trim().length > 0,
+                        ))),
+        ),
+        "Invalid official model identity",
+    );
+    assert.ok(
         official.length &&
             new Set(official.map((row) => row.name)).size === official.length,
         "Invalid official inventory",
@@ -446,9 +462,16 @@ export function assess(
                             }),
                     ),
             );
+        const availability =
+            has("availability") &&
+            !claims.some((claim) =>
+                negative.test(
+                    sources.find((source) => source.id === claim.sourceId).text,
+                ),
+            );
         const documented =
             identity &&
-            has("availability") &&
+            availability &&
             has("capabilities") &&
             price &&
             route.exactMatch &&
@@ -456,19 +479,17 @@ export function assess(
             route.capabilitiesMatch;
         return {
             ...route,
+            pricing: {
+                ...route.pricing,
+                input: price ? route.pricing.input : null,
+                output: price ? route.pricing.output : null,
+            },
             creditEligibility: "unknown",
             verification: documented ? "documented" : "unverified",
             runtimeVerified: false,
             cashCost: null,
             identitySupported: identity,
-            availabilitySupported:
-                has("availability") &&
-                !claims.some((claim) =>
-                    negative.test(
-                        sources.find((source) => source.id === claim.sourceId)
-                            .text,
-                    ),
-                ),
+            availabilitySupported: availability,
             claims: claims.map((claim) => ({
                 ...claim,
                 quoteHash: hash(claim.quote),

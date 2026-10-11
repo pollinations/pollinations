@@ -5,9 +5,9 @@ import { assess } from "./researcher.mjs";
 const hash = (text) => createHash("sha256").update(text).digest("hex");
 const digest = (value) =>
     typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
-const recent = (value) => {
+const recent = (value, maxAge = 30 * 86400000) => {
     const age = Date.now() - Date.parse(value);
-    return Number.isFinite(age) && age >= 0 && age <= 30 * 86400000;
+    return Number.isFinite(age) && age >= 0 && age <= maxAge;
 };
 
 export async function reuseModel(
@@ -32,6 +32,18 @@ export async function reuseModel(
                 Array.isArray(old.discoveries) &&
                 Array.isArray(old.gaps),
         );
+        const unresolved =
+            old.routes.length === 0 && old.discoveries.length === 0;
+        if (unresolved) {
+            assert.ok(
+                old.recommendation == null &&
+                    old.gaps.length &&
+                    old.gaps.every(
+                        (gap) => typeof gap === "string" && gap.trim(),
+                    ) &&
+                    recent(old.researchedAt, 86400000),
+            );
+        }
         assert.ok(Array.isArray(old.searches));
         const scopes = new Map();
         for (const { scope, queries } of old.searches) {
@@ -45,6 +57,14 @@ export async function reuseModel(
             );
             scopes.set(scope, new Set(queries));
         }
+        if (unresolved)
+            assert.ok(
+                [...scopes.values()].some((queries) =>
+                    [...queries].some(
+                        (query) => query.split(":")[2] === "challenge",
+                    ),
+                ),
+            );
         const referenced = new Set([
             ...old.routes.flatMap((route) =>
                 route.claims.map((claim) => claim.sourceId),
@@ -52,7 +72,7 @@ export async function reuseModel(
             ...old.discoveries.flatMap((item) => item.sourceIds),
         ]);
         assert.ok(
-            referenced.size &&
+            (unresolved || referenced.size) &&
                 [...referenced].every(
                     (id) => typeof id === "string" && id.length,
                 ),
@@ -67,12 +87,17 @@ export async function reuseModel(
             new Set(available.map((source) => source.id)).size,
             available.length,
         );
-        const originals = [...referenced].map((id) =>
-            available.find((source) => source.id === id),
-        );
+        const originals = unresolved
+            ? available.filter((source) => source.status === "fetched")
+            : [...referenced].map((id) =>
+                  available.find((source) => source.id === id),
+              );
+        if (unresolved) assert.ok(originals.length && originals.length <= 50);
         for (const source of originals) {
             assert.ok(
                 source?.status === "fetched" &&
+                    typeof source.id === "string" &&
+                    source.id.length &&
                     source.extractionVersion === 1 &&
                     digest(source.pageDigest),
             );
@@ -171,6 +196,7 @@ export async function reuseModel(
             ...assessed,
             sources,
             reused: true,
+            ...(unresolved ? { reusedUnresolved: true } : {}),
             refreshedAt: new Date().toISOString(),
         };
     } catch {

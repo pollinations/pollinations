@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+    assess,
     assessGroup,
     modelContract,
     modelGroups,
@@ -110,7 +111,10 @@ test("a second verified report replaces the first digest and binds submission to
     assert.equal(submitted.gaps.includes(first.models[0].gaps[0]), false);
 });
 
-async function run(steps, { selected = models, sharedSources = [] } = {}) {
+async function run(
+    steps,
+    { selected = models, sharedSources = [], task = { models: selected } } = {},
+) {
     let turns = 0;
     const searches = [];
     const responses = [];
@@ -140,12 +144,7 @@ async function run(steps, { selected = models, sharedSources = [] } = {}) {
     };
     try {
         return {
-            result: await research(
-                { models: selected },
-                services,
-                selected,
-                steps.length,
-            ),
+            result: await research(task, services, selected, steps.length),
             turns,
             searches,
             responses,
@@ -155,6 +154,165 @@ async function run(steps, { selected = models, sharedSources = [] } = {}) {
         return { error, turns, searches, responses, inferenceOptions };
     }
 }
+
+test("single and discovery reports verify then submit the exact audited candidate by digest", async () => {
+    for (const discovery of [false, true]) {
+        const selected = models.slice(0, 1);
+        const candidate = {
+            routes: [],
+            discoveries: discovery
+                ? [
+                      {
+                          kind: "provider",
+                          name: "New provider",
+                          reason: "Fetched primary catalog lead; pricing unknown",
+                          sourceIds: ["s1"],
+                      },
+                  ]
+                : [],
+            gaps: ["Exact routes and pricing remain unknown"],
+        };
+        const searches = discovery
+            ? ["web", "reddit", "huggingface", "replit"].map((mode) =>
+                  call("search", {
+                      ...search("discovery", selected),
+                      mode,
+                  }),
+              )
+            : scopes.map((scope) => call("search", search(scope, selected)));
+        const sharedSources = [
+            {
+                id: "s1",
+                status: "fetched",
+                method: "scrapling-http",
+                url: "https://example.com/catalog",
+                text: "New provider catalog fetched with exact primary-source details; pricing remains unknown.",
+            },
+        ];
+        const observed = await run(
+            [
+                [call("research", plan)],
+                [
+                    ...searches,
+                    call("fetch", { url: sharedSources[0].url, mode: "saved" }),
+                ],
+                (messages) => {
+                    assert.match(
+                        JSON.parse(messages.at(-1).content).runtime.instruction,
+                        /Verify the compact exact candidate/,
+                    );
+                    return [
+                        call("research", { action: "verify", ...candidate }),
+                    ];
+                },
+                (messages) => {
+                    const audit = latest(messages);
+                    assert.equal(audit.status, "audited");
+                    assert.match(audit.auditDigest, /^[a-f0-9]{64}$/);
+                    assert.deepEqual(audit.gaps, candidate.gaps);
+                    assert.match(
+                        JSON.parse(messages.at(-1).content).runtime.instruction,
+                        /Submit action=submit,auditDigest only/,
+                    );
+                    return [
+                        call("research", {
+                            action: "submit",
+                            auditDigest: audit.auditDigest,
+                        }),
+                    ];
+                },
+            ],
+            {
+                selected,
+                sharedSources,
+                task: discovery ? {} : { model: selected[0] },
+            },
+        );
+        assert.ifError(observed.error);
+        assert.equal(observed.turns, 4);
+        assert.deepEqual(observed.result.discoveries, candidate.discoveries);
+        assert.deepEqual(observed.result.gaps, candidate.gaps);
+        assert.equal(observed.result.recommendation, null);
+        assert.equal(observed.inferenceOptions.at(-1).maxTokens, 1000);
+        assert.equal(observed.result.actions.at(-1).status, "submitted");
+        assert.deepEqual(
+            observed.result.sources.map(({ id }) => id),
+            ["s1"],
+        );
+    }
+});
+
+test("failed single and discovery audits retain concise action reasons after turn exhaustion", async () => {
+    for (const task of [{ model: models[0] }, {}]) {
+        const observed = await run(
+            [
+                [call("research", plan)],
+                [call("search", search(task.model ? "azure" : "discovery"))],
+                [
+                    call("research", {
+                        action: "verify",
+                        routes: [],
+                        discoveries: [],
+                        gaps: ["Coverage unknown"],
+                    }),
+                ],
+            ],
+            { task },
+        );
+        assert.match(observed.error.message, /turn budget exhausted/);
+        assert.deepEqual(observed.error.evidence.actions.at(-1), {
+            turn: 3,
+            tool: "research",
+            action: "verify",
+            status: "rejected",
+            reason: task.model
+                ? "Required search coverage missing"
+                : "Discovery needs four distinct platform modes",
+        });
+        assert.equal(observed.error.evidence.actions.length, 3);
+    }
+});
+
+test("preferred non-text routes with unknown prices report a known unit or unknown workload", () => {
+    for (const unit of ["image", "unknown"]) {
+        const candidate = {
+            provider: "azure",
+            providerWebsite: "https://azure.com",
+            upstreamModel: "image-v1",
+            exactMatch: true,
+            available: true,
+            capabilitiesMatch: null,
+            creditEligibility: "unknown",
+            pricing: { currency: "USD", unit, input: null, output: null },
+            claims: ["identity", "availability"].map((kind) => ({
+                kind,
+                sourceId: "s1",
+                quote: "image-v1 available now",
+            })),
+        };
+        const result = assess(
+            { routes: [candidate], discoveries: [], gaps: [] },
+            [
+                {
+                    id: "s1",
+                    status: "fetched",
+                    url: "https://learn.microsoft.com/catalog",
+                    text: "image-v1 available now with image generation capabilities; pricing unknown.",
+                },
+            ],
+            new Map(scopes.map((scope) => [scope, new Set([scope])])),
+            { name: "publisher/image-v1", category: "image" },
+            [],
+        );
+        assert.equal(result.recommendation.provider, "azure");
+        assert.equal(
+            result.recommendation.comparisonWorkload,
+            unit === "image" ? "1 image" : "unknown",
+        );
+        assert.equal(result.routes[0].verification, "unverified");
+        assert.equal(result.routes[0].pricing.input, null);
+    }
+});
 
 test("group inference reserves larger output only for verification and uses a small digest submit", async () => {
     const observed = await run([

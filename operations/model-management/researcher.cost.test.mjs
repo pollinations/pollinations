@@ -3,7 +3,7 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { budgetUsed, inferenceCost, main } from "./researcher.mjs";
+import { budgetUsed, inferenceCost, main, reserve } from "./researcher.mjs";
 
 const pricing = {
     promptTextTokens: 0.002,
@@ -17,6 +17,183 @@ const usage = {
     total_tokens: 105,
     prompt_tokens_details: { cached_tokens: 20, cache_write_tokens: 30 },
 };
+
+test("billed snapshots cannot absorb reservations made after their call boundary", () => {
+    const report = {
+        maxPollen: 10,
+        reservedPollen: 4,
+        billing: { pollen: 8, callCount: 1 },
+        calls: [
+            {
+                kind: "inference:test",
+                status: "received",
+                reserved: 4,
+                accountedPollen: 4,
+            },
+        ],
+    };
+    const call = reserve(report, 2, "inference:test");
+    assert.equal(budgetUsed(report), 10);
+    call.status = "received";
+    call.accountedPollen = 2;
+    assert.throws(
+        () => reserve(report, 1, "inference:test"),
+        /budget exhausted/,
+    );
+    assert.equal(report.calls.length, 2);
+    report.billing = { pollen: 10, callCount: 2 };
+    assert.equal(budgetUsed(report), 10);
+});
+
+test("unbound or malformed billing snapshots cannot release uncertain costs", () => {
+    const report = {
+        billing: { pollen: 8 },
+        calls: [{ kind: "web_fetch_exa", status: "failed", reserved: 4 }],
+    };
+    assert.equal(budgetUsed(report), 12);
+    for (const callCount of [-1, 2, 0.5])
+        assert.throws(
+            () => budgetUsed({ ...report, billing: { pollen: 8, callCount } }),
+            /snapshot boundary/,
+        );
+});
+
+test("main checks billing before and after paid work and stops on failure or the cap", async (t) => {
+    const exitCode = process.exitCode;
+    t.after(() => {
+        process.exitCode = exitCode;
+    });
+    let failBilling = true,
+        paid = 0,
+        usageReads = 0,
+        payOnce = false,
+        failAfterPayment = false;
+    t.mock.method(globalThis, "fetch", async (requestUrl) => {
+        const url = String(requestUrl);
+        if (url.includes("/models?"))
+            return Response.json([
+                {
+                    name: "openai/gpt-6.1-sol",
+                    community: false,
+                    paid_only: false,
+                    category: "text",
+                    pricing: {
+                        promptTextTokens: 0.000002,
+                        completionTextTokens: 0.00001,
+                    },
+                },
+                {
+                    name: "publisher/test-v1",
+                    community: false,
+                    category: "text",
+                },
+            ]);
+        if (url.endsWith("/mcp"))
+            return Response.json({
+                data: [
+                    {
+                        id: "exa",
+                        pricing: {
+                            rates: [
+                                { kind: "search_request", price: 0.007 },
+                                { kind: "page", price: 0.001 },
+                            ],
+                        },
+                    },
+                ],
+            });
+        if (String(url).includes("/account/key/usage")) {
+            usageReads++;
+            if (failBilling || (failAfterPayment && paid))
+                return new Response("Unavailable", { status: 503 });
+            return Response.json({
+                count: 1,
+                usage: [
+                    {
+                        timestamp: new Date(
+                            Math.floor(Date.now() / 1000) * 1000,
+                        )
+                            .toISOString()
+                            .slice(0, 19)
+                            .replace("T", " "),
+                        cursor_event_id: "event",
+                        cost_usd: payOnce && paid === 0 ? 0 : 1,
+                    },
+                ],
+            });
+        }
+        paid++;
+        if (payOnce && paid === 1)
+            return Response.json({
+                usage: {
+                    prompt_tokens: 10,
+                    completion_tokens: 5,
+                    total_tokens: 15,
+                },
+                choices: [
+                    {
+                        message: {
+                            role: "assistant",
+                            content: "No tool action",
+                        },
+                    },
+                ],
+            });
+        throw new Error("Billing stop must prevent this paid call");
+    });
+    for (const unavailable of [true, false]) {
+        failBilling = unavailable;
+        const out = await mkdtemp(
+            join(tmpdir(), "research-billing-integration-"),
+        );
+        const report = await main({
+            POLLINATIONS_API_KEY: "test-key",
+            MODELS: "publisher/test-v1",
+            MAX_POLLEN: "1",
+            CHECK_BILLING: "true",
+            RESEARCH_OUT: out,
+        });
+        assert.equal(report.status, "partial");
+        assert.equal(report.calls.length, 0);
+        if (unavailable) assert.match(report.billingGap, /unavailable/);
+        else {
+            assert.equal(report.billing.pollen, 1);
+            assert.equal(report.billing.callCount, 0);
+            assert.equal(budgetUsed(report), 1);
+        }
+    }
+    assert.equal(paid, 0);
+    assert.ok(usageReads >= 2);
+    for (const unavailable of [false, true]) {
+        payOnce = true;
+        failBilling = false;
+        failAfterPayment = unavailable;
+        paid = 0;
+        const out = await mkdtemp(
+            join(tmpdir(), "research-billing-after-payment-"),
+        );
+        const report = await main({
+            POLLINATIONS_API_KEY: "test-key",
+            MODELS: "publisher/test-v1",
+            MAX_POLLEN: "1",
+            CHECK_BILLING: "true",
+            RESEARCH_OUT: out,
+        });
+        assert.equal(
+            paid,
+            1,
+            "The post-research billing check must stop the next task",
+        );
+        assert.equal(report.calls.length, 1);
+        assert.equal(report.calls[0].status, "received");
+        assert.ok(report.calls[0].accountedPollen > 0);
+        if (unavailable) assert.match(report.billingGap, /unavailable/);
+        else {
+            assert.equal(report.billing.callCount, 1);
+            assert.equal(budgetUsed(report), 1);
+        }
+    }
+});
 
 test("inference cost accounts uncached, cache read, cache write, and output tokens once", () => {
     assert.equal(

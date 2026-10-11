@@ -8,7 +8,7 @@ on:
         type: string
         default: ''
       max_pollen:
-        description: 'Hard Pollen cap for measured usage plus uncertain reservations (0 < budget <= 10).'
+        description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
         default: '10'
       publish_issue:
@@ -16,7 +16,7 @@ on:
         type: boolean
         default: true
       use_perplexity:
-        description: 'Opt in to paid Perplexity search as a second opinion; Exa remains the default.'
+        description: 'Use Perplexity only if its current pricing has no unbounded adjustments.'
         type: boolean
         default: false
 
@@ -91,6 +91,7 @@ jobs:
           MODELS: ${{ inputs.models }}
           MAX_POLLEN: ${{ inputs.max_pollen }}
           USE_PERPLEXITY: ${{ inputs.use_perplexity }}
+          CHECK_BILLING: 'true'
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: node operations/model-management/researcher.mjs
@@ -104,7 +105,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish parent issue for manual verification handoff
-        if: always() && inputs.publish_issue && steps.evidence.outcome == 'success'
+        if: always() && !cancelled() && inputs.publish_issue && steps.evidence.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}

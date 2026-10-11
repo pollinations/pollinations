@@ -3,6 +3,10 @@ name: Models / Research pre-merge E2E
 on:
   workflow_dispatch:
     inputs:
+      audit_only:
+        description: 'Read aggregate current test spend only; no paid calls.'
+        type: boolean
+        default: false
       models:
         description: 'Official canonical IDs or aliases, comma separated. Empty = full backfill.'
         type: string
@@ -30,7 +34,7 @@ concurrency:
 
 jobs:
   researcher:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e'
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && !inputs.audit_only
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -137,5 +141,24 @@ jobs:
           assert.ok(r.calls.every(c=>c.status==='received'));
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
+          JS
+  billing-audit:
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.audit_only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Read aggregate validation spend only
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readBilledUsage} from './operations/model-management/billing.mjs';
+          const audit=await readBilledUsage(process.env.POLLINATIONS_API_KEY,'2026-10-11T20:07:50Z');
+          console.log(JSON.stringify(audit));
           JS
 

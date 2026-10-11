@@ -45,8 +45,6 @@ jobs:
         run: npm test
 
   text-cache-tests:
-    needs: determine-tests
-    if: needs.determine-tests.outputs.text-changed == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:

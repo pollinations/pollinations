@@ -98,6 +98,13 @@ export function createAudioCommand() {
             "Also save character-level timing as JSON next to the audio",
         )
         .action(async (textArg, opts) => {
+            if (opts.timestamps && (opts.duration || opts.instrumental)) {
+                printError(
+                    "--timestamps cannot be combined with --duration or --instrumental (timestamps are only available for speech models)",
+                );
+                throw new ExitSignal(1);
+            }
+
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin());

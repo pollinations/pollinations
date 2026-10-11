@@ -1,0 +1,44 @@
+{
+  "pr_number": 17123,
+  "title": "fix: Codex reasoning replay on /v1/responses, and Azure calls past 125 s",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17123",
+  "merged_at": "2026-10-11T21:21:15Z",
+  "labels": [
+    "API",
+    "BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Gen’s /v1/responses route now accepts Codex 0.162 requests with store: false, client_metadata, include: [\"reasoning.encrypted_content\"], and replayed reasoning items. It accepts but does not forward client_metadata; it passes encrypted-content requests and replayed reasoning to direct Responses upstreams, while Chat-adapted models continue to skip reasoning items. Stored-state item_reference remains unsupported, and encrypted reasoning is account-bound, so Azure and OpenAI cannot decrypt each other’s items. Azure Responses targets now stream upstream even for non-streaming client requests; gen reads the terminal event and returns JSON. This addresses Azure calls cut off after roughly 125 seconds: a staging gpt-6.1-sol request completed on Azure in 170 seconds and was billed once. Direct Chat Completions routes, including Grok on Azure, and image calls still have the cutoff. In the cited seven-day sample, 32 of 47,414 requests fell back: 14 from Azure token rate limits, nine from the cutoff, and nine from Azure 500/520 errors. Luna’s Azure limit was raised to 15M TPM on 10-06 at 01:06 UTC; gpt-6-sol remained at 1M TPM.",
+    "keywords": [
+      "Codex",
+      "Responses API",
+      "reasoning replay",
+      "Azure",
+      "streaming",
+      "timeout"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17123.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny coding glasses and watches a retro terminal pass little reasoning-note sprites between two flower-framed screens, while a CRT-headed robot patiently carries a long answer back to a waiting JSON page. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized or elongated, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T21:22:59.757529+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "7a9d02fefb7300797f541a609239b26724d4d83a",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  },
+  "announcement_evidence": {
+    "before_ref": "7a9d02fefb7300797f541a609239b26724d4d83a^1",
+    "after_ref": "7a9d02fefb7300797f541a609239b26724d4d83a"
+  }
+}

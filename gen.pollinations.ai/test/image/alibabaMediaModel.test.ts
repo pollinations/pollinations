@@ -236,4 +236,122 @@ describe("Alibaba media adapters", () => {
             ),
         ).toBe(model === "wan2.7-image" ? null : "enable");
     });
+
+    it.each([
+        ["wan2.7-image", ["size", "n", "seed", "watermark", "thinking_mode"]],
+        [
+            "qwen-image-3.0-pro",
+            ["size", "n", "seed", "watermark", "prompt_extend"],
+        ],
+    ] as const)("keeps the %s request body shape", async (model, keys) => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        task_id: "job",
+                        task_status: "SUCCEEDED",
+                        choices: [
+                            { message: { content: [{ image: outputUrl }] } },
+                        ],
+                    },
+                    usage: {
+                        image_count: 1,
+                        output_image_count: 1,
+                        input_image_count: 0,
+                    },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response("image", {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+        await callAlibabaImage("Draw", params, model);
+        const request = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+        expect(Object.keys(request.parameters)).toEqual(keys);
+        expect(request.parameters).toMatchObject({
+            n: 1,
+            seed: 42,
+            watermark: false,
+        });
+        expect(request.parameters.size).toMatch(/^\d+\*\d+$/);
+    });
+    it("sends Qwen Image 2.1 Turbo to the synchronous text-to-image endpoint and bills each image", async () => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        task_id: "job",
+                        task_status: "SUCCEEDED",
+                        choices: [
+                            { message: { content: [{ image: outputUrl }] } },
+                        ],
+                    },
+                    usage: { image_count: 1 },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response("image", {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+        const turbo: ImageParams = {
+            ...params,
+            model: "qwen/qwen-image-2.1-turbo",
+        };
+        const result = await callAlibabaImage(
+            "A lighthouse at dusk",
+            turbo,
+            "qwen-image-2.1-turbo",
+        );
+        expect(fetch.mock.calls[0][0]).toBe(
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        );
+        expect(
+            new Headers(fetch.mock.calls[0][1]?.headers).get(
+                "X-DashScope-Async",
+            ),
+        ).toBeNull();
+        expect(JSON.parse(fetch.mock.calls[0][1]?.body as string)).toEqual({
+            model: "qwen-image-2.1-turbo",
+            input: {
+                messages: [
+                    {
+                        role: "user",
+                        content: [{ text: "A lighthouse at dusk" }],
+                    },
+                ],
+            },
+            parameters: { prompt_extend: false },
+        });
+        expect(result.trackingData?.usage).toEqual({
+            completionImageTokens: 1,
+        });
+        const definition = IMAGE_SERVICES["qwen/qwen-image-2.1-turbo"];
+        const billed = calculateUsageBilling({
+            model: turbo.model,
+            usage: result.trackingData?.usage ?? {},
+            servedBy: definition,
+            quotedBy: definition,
+        });
+        expect(billed.price.totalPrice).toBeCloseTo(0.016);
+    });
+
+    it("rejects reference images on Qwen Image 2.1 Turbo before calling Alibaba", async () => {
+        const fetch = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAlibabaImage(
+                "Edit",
+                {
+                    ...params,
+                    model: "qwen/qwen-image-2.1-turbo",
+                    image: ["data:image/png;base64,AQID"],
+                },
+                "qwen-image-2.1-turbo",
+            ),
+        ).rejects.toThrow("qwen-image-2.1-turbo does not accept image input");
+        expect(fetch).not.toHaveBeenCalled();
+    });
 });

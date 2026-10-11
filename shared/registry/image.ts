@@ -1368,6 +1368,23 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "qwen/qwen-image-2.1-turbo": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-10-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore (International): $0.016 per image, per the Model Studio console.
+        cost: {
+            completionImageTokens: 0.016, // per image
+        },
+        title: "Qwen Image 2.1 Turbo",
+        description: "Low-cost text-to-image generation",
+        inputModalities: ["text"],
+        outputModalities: ["image"],
+    },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "alibaba",

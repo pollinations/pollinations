@@ -128,11 +128,9 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
     saved = f"snapshots/{date}.json" if job == "models" else f"{date}/summary.json"
     if (news / JOB_DIRS[job] / saved).exists() and not overwrite:
         sys.exit(f"{job} {date} is already saved; pass --overwrite to replace it")
-    # A model post is saved once Discord has it, so its files stay what was sent.
+    # A saved model post is never replaced, even with --overwrite.
     if job == "models" and (news / MODELS_NEWS_DIR / date / "discord.json").exists():
-        sys.exit(
-            f"models {date} was already posted; a sent model post is never replaced"
-        )
+        sys.exit(f"models {date} has a saved model post; it is never replaced")
 
 
 def ask(post: dict, system: str, user: str, token: str) -> dict:

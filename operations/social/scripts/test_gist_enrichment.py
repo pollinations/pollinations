@@ -611,9 +611,9 @@ class PostsTest(unittest.TestCase):
                 self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
                 if calls:
                     self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
-        # A sent model post is never replaced; a week without changes can be taken again.
+        # A saved model post is never replaced; a week without changes can be taken again.
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
-            with self.assertRaisesRegex(SystemExit, "already posted"):
+            with self.assertRaisesRegex(SystemExit, "has a saved model post"):
                 self.new("models", "2026-10-14", overwrite=True)
             self.assertEqual(self.new("models", "2026-10-28", overwrite=True)[0], [])
 

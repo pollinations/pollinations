@@ -561,7 +561,6 @@ async function generate(env, job, cacheControl, ended) {
 
 /** genericOpenAIClient and handleRequest: gen's JSON with a pllns_ id */
 function completionOf(data) {
-    data.id ||= "genericopenai";
     data.object ||= "chat.completion";
     const completion = { ...data, choices: [data.choices?.[0] || {}] };
     const id = crypto.getRandomValues(new Uint8Array(16));

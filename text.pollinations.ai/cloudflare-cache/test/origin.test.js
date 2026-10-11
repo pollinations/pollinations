@@ -627,7 +627,7 @@ test("a HEAD miss is not stored, so the next GET returns the full text", async (
     expect(hit.text).toBe("ok");
 });
 
-test("ADAPTER_SHARE 0 sends cache misses and preflights to the VM", async () => {
+test("ADAPTER_SHARE 0 sends every generating path to the VM", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(
         async () =>
             new Response("from the vm", {
@@ -636,13 +636,20 @@ test("ADAPTER_SHARE 0 sends cache misses and preflights to the VM", async () => 
     );
     const testEnv = { ...env, ADAPTER_SHARE: "0" };
 
-    for (const method of ["GET", "OPTIONS"]) {
-        const { response, text } = await call("/to%20the%20vm", {
-            method,
-            testEnv,
-        });
+    for (const [path, options, stored] of [
+        ["/to%20the%20vm", {}, true],
+        ["/preflight%20to%20the%20vm", { method: "OPTIONS" }, true],
+        // POST /openai/models generates on the VM ("/openai*"), uncached
+        ["/openai/models", { method: "POST", headers: JSON_BODY, body: "{}" }],
+        ["/paid%20on%20the%20vm", { headers: { "payment-signature": "x" } }],
+    ]) {
+        const { response, text } = await call(path, { ...options, testEnv });
+        const label = `${options.method ?? "GET"} ${path}`;
 
-        expect(text, method).toBe("from the vm");
-        expect(response.headers.get("x-legacy-path"), method).toBe("vm");
+        expect(text, label).toBe("from the vm");
+        expect(response.headers.get("x-legacy-path"), label).toBe("vm");
+        expect((await storedAt(path, options.method)) !== null, label).toBe(
+            Boolean(stored),
+        );
     }
 });

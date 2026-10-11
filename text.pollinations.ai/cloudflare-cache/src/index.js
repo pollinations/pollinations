@@ -95,13 +95,19 @@ const worker = {
                 return turnstileResponse; // Return 403 if verification failed
             }
 
-            // The GET root redirect (POST / is cached) and the listed paths
-            // are answered fresh by origin(), never from R2
+            // The GET root redirect (POST / is cached) and the listed paths'
+            // static GET and HEAD answers come fresh from origin(), never R2
+            const read = request.method === "GET" || request.method === "HEAD";
             if (
                 (url.pathname === "/" && request.method === "GET") ||
-                NON_CACHE_PATHS.includes(url.pathname)
+                (read && NON_CACHE_PATHS.includes(url.pathname))
             ) {
                 return await origin(request, env, ctx);
+            }
+            // Other methods there are uncached too, but can generate
+            // (POST /openai/models), so they follow the split
+            if (NON_CACHE_PATHS.includes(url.pathname)) {
+                return await missToOrigin(request, env, ctx);
             }
 
             // Generate a cache key for the request

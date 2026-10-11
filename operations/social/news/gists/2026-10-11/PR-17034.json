@@ -1,0 +1,38 @@
+{
+  "pr_number": 17034,
+  "title": "Add InkBloom to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17034",
+  "merged_at": "2026-10-11T05:15:23Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added InkBloom to the image app catalog and README. InkBloom turns photos or text prompts into printable coloring pages; its text-to-coloring generation uses Pollinations.",
+    "keywords": [
+      "InkBloom",
+      "coloring pages",
+      "image apps",
+      "text-to-image",
+      "community"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17034.jpg",
+    "prompt": "In a cozy pixel art workspace, Polli wears a tiny painter’s beret and watches a photo and a text prompt become printable flower coloring pages, with lime green (#ecf874) pots and soft pastel gradients around the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-11T05:16:26.375005+00:00",
+  "app_name": "InkBloom",
+  "app_url": "https://coloring-project1.ismailbanouigu.workers.dev",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "25a9aec51277509e437b3191ee5b0a390fd6f0ca",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

@@ -512,6 +512,53 @@ test("the IP is released when the response completes, fails or is cancelled", as
     expect(await released(cancelled)).toBe(true);
 });
 
+test("a stream frees the IP once gen answers, and a client that leaves cancels gen", async () => {
+    const ip = nextIp();
+    let cancelled = false;
+    // gen's stream, recording whether origin() cancels it
+    const testEnv = {
+        ...env,
+        GEN: {
+            fetch: async (url, init) => {
+                const response = await env.GEN.fetch(url, init);
+                const reader = response.body.getReader();
+                const body = new ReadableStream({
+                    async pull(controller) {
+                        const { done, value } = await reader.read();
+                        if (done) controller.close();
+                        else controller.enqueue(value);
+                    },
+                    cancel(reason) {
+                        cancelled = true;
+                        return reader.cancel(reason);
+                    },
+                });
+                return new Response(body, response);
+            },
+        },
+    };
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://text.pollinations.ai/gen:long?stream=true", {
+            headers: { "cf-connecting-ip": ip },
+        }),
+        testEnv,
+        ctx,
+    );
+
+    const reader = response.body.getReader();
+    await reader.read();
+    try {
+        // The VM's queue job ended when the stream started; gen:long sends
+        // its next chunk only after a second
+        await expect.poll(() => released(ip), { timeout: 500 }).toBe(true);
+    } finally {
+        await reader.cancel();
+    }
+    await expect.poll(() => cancelled, { timeout: 500 }).toBe(true);
+    await waitOnExecutionContext(ctx);
+});
+
 test("a limiter failure is answered as a free request, booking and releasing nothing", async () => {
     const gen = recordingGen();
     const calls = [];

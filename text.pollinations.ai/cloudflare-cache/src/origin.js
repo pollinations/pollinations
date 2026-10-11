@@ -444,7 +444,7 @@ async function generation(
         return pay(request, env, ctx, unpaid);
     }
 
-    // go or wait: free the IP when the response ends, even if the client
+    // go or wait: free the IP when the generation ends, even if the client
     // disconnects, as the VM's queue did
     let ended;
     const release = new Promise((resolve) => {
@@ -467,10 +467,11 @@ async function generation(
 
 /**
  * handleRequest: checks the model, calls gen and formats its answer. Never
- * throws; calls ended() once the response is complete.
+ * throws; calls ended() once the answer is built, or for a stream once gen
+ * starts answering: the VM's queue job ended there, as sendAsOpenAIStream
+ * returned right after piping gen's stream.
  */
 async function generate(env, job, cacheControl, ended) {
-    let streaming = false;
     try {
         if (!MODELS.has(job.model)) {
             return await errorResponse(
@@ -515,10 +516,7 @@ async function generate(env, job, cacheControl, ended) {
                       details,
                   ));
         }
-        if (job.stream) {
-            streaming = true;
-            return sse(response.body, ended);
-        }
+        if (job.stream) return sse(response.body);
         const completion = completionOf(await response.json());
         return await (job.format === "openai"
             ? openAiResponse(completion, cacheControl)
@@ -531,7 +529,7 @@ async function generate(env, job, cacheControl, ended) {
             cacheControl,
         );
     } finally {
-        if (!streaming) ended();
+        ended();
     }
 }
 
@@ -605,10 +603,9 @@ function textResponse(completion) {
 
 /**
  * sendAsOpenAIStream with stopAfterSseDone: gen's SSE up to "data: [DONE]",
- * then a blank line and the end. The pipe from gen settles when the stream
- * completes, fails or is cancelled by the client, which also cancels gen.
+ * then a blank line and the end. A client that cancels also cancels gen.
  */
-function sse(body, ended) {
+function sse(body) {
     // Bytes not yet sent: "data: [DONE]" may start in them
     let pending = new Uint8Array(0);
     const cut = new TransformStream({
@@ -635,9 +632,7 @@ function sse(body, ended) {
             if (pending.byteLength) controller.enqueue(pending);
         },
     });
-    body.pipeTo(cut.writable)
-        .catch(() => {})
-        .finally(ended);
+    body.pipeTo(cut.writable).catch(() => {});
     return new Response(cut.readable, {
         headers: {
             ...CORS,

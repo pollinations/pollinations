@@ -59,7 +59,8 @@ const send = (res, status, body) => {
 /**
  * Fixed gen responses for POST /v1/chat/completions, picked by the last
  * message: "gen:<status>" answers that error, "gen:empty" an empty content,
- * "gen:echo" the request it got, "gen:slow" waits 300 ms. Streams get SSE.
+ * "gen:echo" the request it got, "gen:slow" waits 300 ms. Streams get SSE,
+ * one chunk a second for "gen:long".
  */
 async function gen(req, res) {
     let raw = "";
@@ -76,9 +77,10 @@ async function gen(req, res) {
     if (prompt === "gen:slow") await new Promise((r) => setTimeout(r, 300));
     if (body.stream) {
         res.writeHead(200, { "Content-Type": "text/event-stream" });
+        const pause = prompt === "gen:long" ? 1000 : 5;
         for (const chunk of SSE_CHUNKS) {
             res.write(chunk);
-            await new Promise((r) => setTimeout(r, 5));
+            await new Promise((r) => setTimeout(r, pause));
         }
         return res.end();
     }

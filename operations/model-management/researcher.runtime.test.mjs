@@ -23,6 +23,7 @@ const inventory = [model, inference];
 const artifact =
     "https://github.com/pollinations/pollinations/actions/runs/123/artifacts/456";
 const marker = "<!-- model-research-run:123 -->";
+const publisherAuthor = { login: "github-actions[bot]", type: "Bot" };
 const envFor = (out) => ({
     POLLINATIONS_API_KEY: "test-runtime-key",
     MODELS: model.name,
@@ -518,12 +519,14 @@ test("publisher paginates reconciliation and updates an existing parent without 
                 {
                     number: 800,
                     body: marker,
+                    user: publisherAuthor,
                     pull_request: {},
                     created_at: "2026-10-11T01:30:00Z",
                 },
                 {
                     number: 789,
                     body: marker,
+                    user: publisherAuthor,
                     created_at: "2026-10-11T01:00:00Z",
                 },
             ]);
@@ -557,6 +560,7 @@ test("ambiguous duplicate parents are rejected before a write", async (t) => {
             [789, 790].map((number) => ({
                 number,
                 body: marker,
+                user: publisherAuthor,
                 created_at: "2026-10-11T01:00:00Z",
             })),
         );
@@ -571,6 +575,7 @@ test("publisher reuses its persisted parent receipt when issue lists lag", async
         number: 789,
         html_url: "https://github.com/pollinations/pollinations/issues/789",
         body: marker,
+        user: publisherAuthor,
     };
     const requests = [];
     t.mock.method(globalThis, "fetch", async (url, options) => {
@@ -596,6 +601,65 @@ test("publisher reuses its persisted parent receipt when issue lists lag", async
         JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
         first,
     );
+});
+
+test("publisher ignores a human-authored issue that copies its run marker", async (t) => {
+    const out = await output(t, partial());
+    const forged = {
+        number: 777,
+        body: marker,
+        user: { login: "community-user", type: "User" },
+        created_at: "2026-10-11T01:00:00Z",
+    };
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        requests.push({ url, method: options.method ?? "GET" });
+        if (!options.method) return Response.json([forged]);
+        return Response.json({
+            number: 789,
+            html_url: "https://github.com/pollinations/pollinations/issues/789",
+            user: publisherAuthor,
+        });
+    });
+    const receipt = await publish(issueEnv(out));
+    assert.deepEqual(
+        requests.map(({ method }) => method),
+        ["GET", "POST"],
+    );
+    assert.ok(requests.every(({ url }) => !url.endsWith("/777")));
+    assert.equal(receipt.number, 789);
+});
+
+test("publisher rejects a saved parent resolving to a human-authored copied marker", async (t) => {
+    const out = await output(t, partial());
+    const receipt = {
+        number: 777,
+        url: "https://github.com/pollinations/pollinations/issues/777",
+        runId: "123",
+    };
+    await writeFile(join(out, "parent-issue.json"), JSON.stringify(receipt));
+    const requests = [];
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        requests.push({ url, method: options.method ?? "GET" });
+        return Response.json({
+            number: 777,
+            body: marker,
+            user: { login: "community-user", type: "User" },
+        });
+    });
+    await assert.rejects(publish(issueEnv(out)), /identity|author|parent/i);
+    assert.deepEqual(
+        requests.map(({ method }) => method),
+        ["GET"],
+    );
+    assert.ok(requests[0].url.endsWith("/777"));
+    assert.deepEqual(
+        JSON.parse(await readFile(join(out, "parent-issue.json"), "utf8")),
+        receipt,
+    );
+    await assert.rejects(readFile(join(out, "parent-publication.json")), {
+        code: "ENOENT",
+    });
 });
 
 for (const failure of ["disconnect", "malformed receipt"])
@@ -743,6 +807,7 @@ for (const recovery of ["workflow retry", "pending publication"])
             number: 789,
             html_url: "https://github.com/pollinations/pollinations/issues/789",
             body: marker,
+            user: publisherAuthor,
             created_at: "2026-10-09T00:00:00Z",
         };
         t.mock.method(globalThis, "fetch", async (url, options) => {

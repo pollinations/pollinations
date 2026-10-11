@@ -10,6 +10,8 @@ const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
 const FREE_INTERVAL_MS = 30_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 const MAX_TOKENS = 1500;
+// Node's default --max-http-header-size on the VM
+const MAX_HEAD_BYTES = 16 * 1024;
 // openai-fast and its registry aliases; gen serves them all as gpt-oss
 const MODELS = new Set([
     "openai-fast",
@@ -113,6 +115,11 @@ const logFailure = (route, details) =>
  * uncached paths.
  */
 export async function origin(request, env, ctx) {
+    const url = new URL(request.url);
+    // Node answered an empty 431 before Express ran
+    if (headSize(request, url) > MAX_HEAD_BYTES) {
+        return new Response(null, { status: 431 });
+    }
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
     // The VM's blocklist ran first and answered an empty 403 without CORS
     if (BLOCKED_PREFIXES.has(ip.split(".").slice(0, 3).join("."))) {
@@ -125,7 +132,6 @@ export async function origin(request, env, ctx) {
     const body = await readBody(request);
     if (body instanceof Response) return body;
 
-    const url = new URL(request.url);
     const { method } = request;
     const read = method === "GET" || method === "HEAD";
     // Express routes ignore case and one trailing slash
@@ -194,6 +200,15 @@ export async function origin(request, env, ctx) {
         return generateFromPath(url.pathname.slice(1), format, `${method} /*`);
     }
     return errorResponse(404, `Cannot ${method} ${url.pathname}`);
+}
+
+/** The request line and header lines, as the VM received them over HTTP/1.1 */
+function headSize(request, { pathname, search }) {
+    let size = `${request.method} ${pathname}${search} HTTP/1.1\r\n`.length;
+    for (const [name, value] of request.headers) {
+        size += `${name}: ${value}\r\n`.length;
+    }
+    return size;
 }
 
 /** body-parser's json(): a JSON body becomes an object, anything else {} */

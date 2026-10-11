@@ -374,6 +374,25 @@ test("a blocked /24 gets an empty 403 without CORS, but cache hits are still ser
     expect(miss.response.headers.get("access-control-allow-origin")).toBeNull();
 });
 
+test("a request line plus headers over 16 KB gets Node's empty 431, but a stored answer is still served", async () => {
+    const filler = { "x-filler": "a".repeat(17_000) };
+    await call("/long%20headers");
+    const hit = await call("/long%20headers", { headers: filler });
+    expect(hit.response.headers.get("x-cache")).toBe("HIT");
+
+    const gen = recordingGen();
+    const miss = await call("/long%20headers%20miss", {
+        headers: filler,
+        testEnv: gen.testEnv,
+    });
+
+    expect(miss.response.status).toBe(431);
+    expect(miss.text).toBe("");
+    expect(miss.response.headers.get("x-powered-by")).toBeNull();
+    expect(gen.bodies).toHaveLength(0);
+    expect(await storedAt("/long%20headers%20miss")).toBeNull();
+});
+
 test("while a free generation runs, a stream from the same IP gets the VM's 429", async () => {
     const ip = nextIp();
     const running = call("/gen:slow", { ip });

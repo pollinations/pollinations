@@ -181,28 +181,29 @@ export function splitKeyArgs(argv: string[], command = "usage"): UsageKeyArgs {
     return { authKey, filterKeys };
 }
 
-export const usageCommand = new Command("usage")
-    .description(
-        "Show pollen balance (default), usage history, or daily summary",
-    )
-    .option("--limit <n>", "Number of records", "20")
-    .option("--history", "Show individual request history")
-    .option("--daily", "Show daily summary instead of individual requests")
-    .option(
-        "--model <id>",
-        "Filter by model id (repeatable)",
-        collect,
-        [] as string[],
-    )
-    .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
-    .option("--csv", "Print the raw CSV export")
-    .addHelpText(
-        "after",
-        chalk.dim(
-            '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.',
-        ),
-    )
-    .action(async (opts) => {
+export function createUsageCommand() {
+    return new Command("usage")
+        .description(
+            "Show pollen balance (default), usage history, or daily summary",
+        )
+        .option("--limit <n>", "Number of records", "20")
+        .option("--history", "Show individual request history")
+        .option("--daily", "Show daily summary instead of individual requests")
+        .option(
+            "--model <id>",
+            "Filter by model id (repeatable)",
+            collect,
+            [] as string[],
+        )
+        .option("--days <n>", "Rolling window in days (--daily defaults to 7)")
+        .option("--csv", "Print the raw CSV export")
+        .addHelpText(
+            "after",
+            chalk.dim(
+                '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.',
+            ),
+        )
+        .action(async (opts, cmd) => {
         // Fix up the auth override before requireKey(): commander routes a
         // post-subcommand `--key` into the global option (and the preAction
         // hook), so restore the intended auth key here.
@@ -234,6 +235,17 @@ export const usageCommand = new Command("usage")
         if (opts.daily && opts.csv && models.length > 0) {
             printError(
                 "--model can't filter the raw --daily --csv export (the endpoint has no models param)",
+            );
+            throw new ExitSignal(1);
+        }
+
+        if (
+            opts.daily &&
+            opts.csv &&
+            cmd.getOptionValueSource("limit") === "cli"
+        ) {
+            printError(
+                "--limit can't filter the raw --daily --csv export (the endpoint has no limit param)",
             );
             throw new ExitSignal(1);
         }
@@ -325,7 +337,15 @@ export const usageCommand = new Command("usage")
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows = filterDailyRows(data.usage, keyIds, models);
+                let rows = filterDailyRows(data.usage, keyIds, models);
+                if (cmd.getOptionValueSource("limit") === "cli") {
+                    const limit = Number(opts.limit);
+                    if (!Number.isFinite(limit) || limit < 0) {
+                        printError("--limit must be a non-negative number");
+                        throw new ExitSignal(1);
+                    }
+                    rows = rows.slice(0, limit);
+                }
                 // JSON keeps the API records: numeric cost_usd, no rounding.
                 if (getOutputMode() !== "human") {
                     printResult(rows);
@@ -378,3 +398,7 @@ export const usageCommand = new Command("usage")
             fail("Failed to fetch usage", err);
         }
     });
+}
+
+export const usageCommand = createUsageCommand();
+

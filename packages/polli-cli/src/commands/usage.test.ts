@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import {
+    createUsageCommand,
     filterDailyRows,
     isKeyId,
     resolveKeyIds,
@@ -234,9 +235,11 @@ describe("usage command output", () => {
         balance: 0.123456,
         accountBalance: { total: 0.123456 },
     };
+    let lastStderr: string[] = [];
 
     async function run(args: string[], mode: "human" | "json" = "json") {
         urls = [];
+        lastStderr = [];
         process.argv = ["node", "polli", "--key", "sk_test", "usage", ...args];
         setOutputMode(mode);
         const writes: string[] = [];
@@ -244,7 +247,10 @@ describe("usage command output", () => {
             writes.push(String(chunk));
             return true;
         });
-        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+            lastStderr.push(String(chunk));
+            return true;
+        });
         vi.stubGlobal("fetch", async (url: string) => {
             urls.push(url);
             if (url.includes("format=csv")) return new Response("a,b\n1,2\n");
@@ -254,7 +260,7 @@ describe("usage command output", () => {
                 return Response.json({ usage: [record], count: 1 });
             return Response.json(balanceBody);
         });
-        await usageCommand.parseAsync(args, { from: "user" });
+        await createUsageCommand().parseAsync(args, { from: "user" });
         return writes.join("");
     }
 
@@ -272,6 +278,32 @@ describe("usage command output", () => {
         expect(urls[0]).toContain("/account/usage/daily?days=7");
         await run(["--daily", "--days", "30"]);
         expect(urls[0]).toContain("/account/usage/daily?days=30");
+    });
+
+    it("applies --limit to daily rows when supplied via CLI", async () => {
+        const allOut = await run(["--daily"]);
+        expect(JSON.parse(allOut)).toHaveLength(2);
+
+        const limitedOut = await run(["--daily", "--limit", "1"]);
+        expect(JSON.parse(limitedOut)).toEqual([dailyRows[0]]);
+    });
+
+    it("rejects --daily --csv with an explicit --limit", async () => {
+        await expect(run(["--daily", "--csv", "--limit", "2"])).rejects.toThrow(
+            ExitSignal,
+        );
+        expect(lastStderr.join("")).toContain(
+            "--limit can't filter the raw --daily --csv export",
+        );
+    });
+
+    it("rejects negative --limit in daily mode", async () => {
+        await expect(run(["--daily", "--limit", "-1"])).rejects.toThrow(
+            ExitSignal,
+        );
+        expect(lastStderr.join("")).toContain(
+            "--limit must be a non-negative number",
+        );
     });
 
     it("keeps the rounded human table and raw CSV/balance output", async () => {

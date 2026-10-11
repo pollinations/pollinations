@@ -117,6 +117,7 @@ function createGenerationMocks() {
         failStream: boolean;
         wrongStreamContentType: boolean;
         terminalTypeInEventOnly: boolean;
+        rejectEncryptedReasoning: boolean;
     } = {
         requests: [],
         omitUsage: false,
@@ -124,6 +125,7 @@ function createGenerationMocks() {
         failStream: false,
         wrongStreamContentType: false,
         terminalTypeInEventOnly: false,
+        rejectEncryptedReasoning: false,
     };
     const deepInfraState: { requests: Record<string, unknown>[] } = {
         requests: [],
@@ -145,6 +147,21 @@ function createGenerationMocks() {
             return Response.json(
                 { error: { message: "responses provider unavailable" } },
                 { status: responsesState.failStatus },
+            );
+        }
+        if (
+            responsesState.rejectEncryptedReasoning &&
+            JSON.stringify(body.input).includes('"encrypted_content":"')
+        ) {
+            return Response.json(
+                {
+                    error: {
+                        message: "Encrypted content could not be decrypted",
+                        type: "invalid_request_error",
+                        code: "invalid_encrypted_content",
+                    },
+                },
+                { status: 400 },
             );
         }
         const perplexity = body.model === "perplexity/sonar";
@@ -303,6 +320,7 @@ function createGenerationMocks() {
                 responsesState.failStream = false;
                 responsesState.wrongStreamContentType = false;
                 responsesState.terminalTypeInEventOnly = false;
+                responsesState.rejectEncryptedReasoning = false;
             },
         },
         imageBackend: {
@@ -1786,6 +1804,77 @@ test("direct Responses JSON preserves protocol and bills once", async ({
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
         tokenCountCompletionText: 4,
+        tokenCountCompletionReasoning: 3,
+        isBilledUsage: true,
+    });
+});
+
+// What Codex sends on its second turn: session metadata, encrypted reasoning
+// requested, and the first turn's reasoning item replayed.
+const codexSecondTurn = {
+    model: "openai/gpt-6-astra",
+    stream: true,
+    store: false,
+    include: ["reasoning.encrypted_content"],
+    client_metadata: { session_id: "codex-session" },
+    input: [
+        { role: "user", content: [{ type: "input_text", text: "first" }] },
+        {
+            type: "reasoning",
+            id: "rs_1",
+            summary: [],
+            encrypted_content: "opaque-reasoning",
+        },
+        {
+            type: "message",
+            role: "assistant",
+            content: [{ type: "output_text", text: "answer" }],
+        },
+        { role: "user", content: [{ type: "input_text", text: "second" }] },
+    ],
+};
+
+test.for([
+    ["replays encrypted reasoning", false, 1],
+    ["drops reasoning the provider cannot decrypt", true, 2],
+] as const)("direct Responses Codex turn %s and bills once", async ([
+    _name,
+    rejectEncryptedReasoning,
+    upstreamCalls,
+], { paidApiKey, mocks }) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    mocks.responsesDirect.state.rejectEncryptedReasoning =
+        rejectEncryptedReasoning;
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify(codexSecondTurn),
+    });
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toContain('"type":"response.completed"');
+    await wait();
+
+    const requests = mocks.responsesDirect.state.requests;
+    expect(requests).toHaveLength(upstreamCalls);
+    expect(requests[0].body).toMatchObject({
+        model: "gpt-6-astra",
+        include: ["reasoning.encrypted_content"],
+        input: codexSecondTurn.input,
+    });
+    for (const { body } of requests) {
+        expect(body).not.toHaveProperty("client_metadata");
+    }
+    const last = requests[upstreamCalls - 1].body;
+    expect(JSON.stringify(last.input).includes('"type":"reasoning"')).toBe(
+        !rejectEncryptedReasoning,
+    );
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "openai/gpt-6-astra",
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
     });

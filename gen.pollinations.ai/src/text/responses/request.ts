@@ -40,14 +40,37 @@ export function validateDirectResponsesRequest(
         }
         if (!value || typeof value !== "object") continue;
         const item = value as Record<string, unknown>;
-        if ("encrypted_content" in item || item.type === "item_reference") {
+        if (item.type === "item_reference") {
             throw new ResponsesInvalidRequestError(
-                "Encrypted or reusable response state is not supported by the stateless Responses endpoint",
+                "Stored response items are not supported by the stateless Responses endpoint",
                 "input",
             );
         }
         pending.push(...Object.values(item));
     }
+}
+
+/**
+ * Encrypted reasoning only decrypts at the provider account that issued it, so
+ * a replay after a fallback or a model switch fails with this code.
+ */
+export function isForeignEncryptedReasoning(error: unknown): boolean {
+    const details = (error as { details?: { error?: { code?: unknown } } })
+        ?.details;
+    return details?.error?.code === "invalid_encrypted_content";
+}
+
+/** The request without replayed reasoning, as Chat providers receive it. */
+export function withoutReasoningItems(
+    request: CreateResponseRequest,
+): CreateResponseRequest {
+    if (!Array.isArray(request.input)) return request;
+    return {
+        ...request,
+        input: request.input.filter(
+            (item) => !isPlainObject(item) || item.type !== "reasoning",
+        ),
+    };
 }
 
 export function buildDirectResponsesRequestBody(
@@ -61,6 +84,7 @@ export function buildDirectResponsesRequestBody(
         store: false,
     };
     delete body.safe;
+    delete body.client_metadata;
 
     const toolChoice = body.tool_choice;
     if (

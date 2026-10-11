@@ -71,7 +71,8 @@ const STUB_REPLIES = {
 let replies = { ...STUB_REPLIES };
 // Facilitator paths and "gen", in the order they were called
 const events = [];
-const supportedHeaders = [];
+// Request headers per facilitator path, across the whole file
+const facilitatorHeaders = { "/supported": [], "/verify": [], "/settle": [] };
 
 beforeAll(() => {
     fetchMock.activate();
@@ -86,9 +87,7 @@ beforeAll(() => {
             .intercept({ path, method })
             .reply((options) => {
                 events.push(path);
-                if (path === "/supported") {
-                    supportedHeaders.push(new Headers(options.headers));
-                }
+                facilitatorHeaders[path].push(new Headers(options.headers));
                 return replies[path]();
             });
         // A slow /supported lets concurrent first requests share its sync
@@ -189,8 +188,8 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
 test("the facilitator sees the VM's seller identity, once per isolate", async () => {
     await call("/identity", { ip: await limitedIp(), headers: CURL });
 
-    expect(supportedHeaders).toHaveLength(1);
-    const [headers] = supportedHeaders;
+    expect(facilitatorHeaders["/supported"]).toHaveLength(1);
+    const [headers] = facilitatorHeaders["/supported"];
     expect(headers.get("authorization")).toBe("Bearer test-seller-key");
     expect(headers.get("user-agent")).toBe("weft-sdk-express/0.27.1");
     const declared = JSON.stringify({
@@ -349,6 +348,12 @@ test("a paid GET verifies, generates, then settles; it is private and never stor
     );
     expect(paid.response.headers.get("x-powered-by")).toBe("Pollinations.AI");
     expect(await storedAt("/paid%20get")).toBeNull();
+    // The seller identity on the payment calls too
+    for (const path of ["/verify", "/settle"]) {
+        const headers = facilitatorHeaders[path].at(-1);
+        expect(headers.get("user-agent"), path).toBe("weft-sdk-express/0.27.1");
+        expect(headers.get("x-api-key"), path).toBe("test-seller-key");
+    }
 });
 
 test("a paid generation leaves the IP's slot as it was", async () => {

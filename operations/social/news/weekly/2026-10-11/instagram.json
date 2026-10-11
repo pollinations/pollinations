@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-10-11",
+  "period_start": "2026-10-04",
+  "period_end": "2026-10-10",
+  "generated_at": "2026-10-11T06:31:24.709063+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-10-11/images/instagram-3.jpg"
+    }
+  ],
+  "text": "This week’s garden got crowded. We added text, image, video, speech, and transcription models, then made the catalog easier to search. Chat text models gained a route through /v1/responses; tool calls, documents, and PDFs got attention too. Play now puts image, video, and audio making in one place. Smaller fixes kept filenames, chat context, and SDK options from wandering off. There are new Quests and community apps to browse as well. The code and the garden are at github.com/pollinations 🌱\n\n#pollinations #opensource #aitools #pixelart #creativecoding #indiedev #aiapi #buildinpublic",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

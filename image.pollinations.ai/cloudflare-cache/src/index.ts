@@ -13,6 +13,7 @@ import { parseImageParams } from "./middleware/parse-image-params.ts";
 import { semanticCache } from "./middleware/semantic-cache.ts";
 import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
 import { turnstileVerification } from "./middleware/turnstile.ts";
+import { originHeaders } from "./util.ts";
 
 const app = new Hono<Env>();
 
@@ -85,13 +86,7 @@ app.all(
         console.debug("[PROXY] Forwarding to origin:", targetUrl.toString());
         const response = await proxy(targetUrl, {
             ...c.req,
-            headers: {
-                ...c.req.header(),
-                "x-forwarded-for": clientIP,
-                "x-forwarded-host": c.req.header("host"),
-                "x-real-ip": clientIP,
-                "cf-connecting-ip": clientIP,
-            },
+            headers: originHeaders(c.req.header(), clientIP),
         });
         response.headers.set("X-Cache", "MISS");
         return response;
@@ -118,13 +113,7 @@ app.all("*", setConnectingIp, async (c) => {
     console.debug("[PROXY] Forwarding to origin:", url.toString());
     return proxy(url, {
         ...c.req,
-        headers: {
-            ...c.req.header(),
-            "x-forwarded-for": clientIP,
-            "x-forwarded-host": c.req.header("host"),
-            "x-real-ip": clientIP,
-            "cf-connecting-ip": clientIP,
-        },
+        headers: originHeaders(c.req.header(), clientIP),
     });
 });
 

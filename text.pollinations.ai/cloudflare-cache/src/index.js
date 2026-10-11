@@ -589,8 +589,11 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 /**
  * Prepare forwarded headers for proxying the request
  */
-function prepareForwardedHeaders(requestHeaders, url) {
+export function prepareForwardedHeaders(requestHeaders, url) {
     const headers = new Headers(requestHeaders);
+    // No CloudFront fronts this host, and the origin's per-IP limit trusts this
+    // header first, so a client-sent value would let callers pick their own IP.
+    headers.delete("cloudfront-viewer-address");
 
     // Add standard forwarded headers (but NOT X-Forwarded-Host to avoid referrer confusion)
     headers.set("X-Forwarded-Proto", url.protocol.replace(":", ""));

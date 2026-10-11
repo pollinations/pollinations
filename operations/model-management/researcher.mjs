@@ -617,16 +617,18 @@ export function assess(
                                     const suffix = claim.quote.slice(
                                         match.index + match[0].length,
                                     );
-                                    const currency =
-                                        prefix.match(
-                                            /\b([A-Z]{3})\)?\s*$/,
-                                        )?.[1];
                                     if (
-                                        (currency &&
-                                            currency !== "USD" &&
-                                            Intl.supportedValuesOf(
-                                                "currency",
-                                            ).includes(currency)) ||
+                                        [
+                                            ...claim.quote.matchAll(
+                                                /\b[A-Z]{3}\b/g,
+                                            ),
+                                        ].some(
+                                            ([currency]) =>
+                                                currency !== "USD" &&
+                                                Intl.supportedValuesOf(
+                                                    "currency",
+                                                ).includes(currency),
+                                        ) ||
                                         /\b(?:HK|NZ|AU|CA|SG|NT|A|C|S|R)$/.test(
                                             prefix,
                                         )
@@ -638,23 +640,10 @@ export function assess(
                                             : route.pricing.unit === "image"
                                               ? "(?:output\\s+)?image"
                                               : escaped(route.pricing.unit);
-                                    const workload = new RegExp(
+                                    return new RegExp(
                                         `^\\s*(?:USD\\s+|\\(USD\\)\\s*)?(?:/\\s*|per\\s+(?:one\\s+|1\\s+)?)${unit}\\b(?!\\s*(?:/|[-_]\\w|per\\s+|(?:input\\s+|output\\s+)?tokens?\\b))`,
                                         "i",
-                                    ).exec(suffix);
-                                    if (!workload) return false;
-                                    const trailingCurrency = suffix
-                                        .slice(workload[0].length)
-                                        .match(
-                                            /^\s*\(?([A-Z]{3})\)?(?:\s|[.,;:]|$)/,
-                                        )?.[1];
-                                    return !(
-                                        trailingCurrency &&
-                                        trailingCurrency !== "USD" &&
-                                        Intl.supportedValuesOf(
-                                            "currency",
-                                        ).includes(trailingCurrency)
-                                    );
+                                    ).test(suffix);
                                 }
                                 const before = claim.quote.slice(
                                     Math.max(0, match.index - 24),

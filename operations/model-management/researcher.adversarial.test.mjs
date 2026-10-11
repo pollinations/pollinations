@@ -322,11 +322,13 @@ test("compound workloads and adjacent foreign currencies cannot document a flat 
         "Costs $0.06/image-token.",
         "Costs NZD $0.06/image.",
         "Costs (NZD) $0.06/image.",
+        "Costs (NZD): $0.06/image.",
         "Costs HK$0.06/image.",
         "Costs NZ$0.06/image.",
         "Costs $0.06 NZD per image.",
         "Costs $0.06 (NZD) per image.",
         "Costs $0.06/image NZD.",
+        "Costs $0.06/image, NZD.",
         "Costs $0.06/image (NZD).",
     ]) {
         const result = assessUnitPrice(quote, 0.06);

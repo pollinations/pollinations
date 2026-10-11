@@ -134,6 +134,35 @@ export function tokensOut(r: UsageRecord): number {
 
 const collect = (value: string, previous: string[]) => previous.concat(value);
 
+/** Records requested by `--history` when no explicit `--limit` is supplied. */
+const DEFAULT_LIMIT = 20;
+
+/**
+ * Resolve an explicitly supplied `--limit`.
+ *
+ * `--limit` declares a commander default of `"20"`, so `opts.limit` is always
+ * populated and cannot tell an explicit flag from the default. Reading argv
+ * keeps that distinction: `undefined` means "no explicit limit", which lets
+ * `--daily` print every row by default while honouring `--limit` when the user
+ * asks for it (#16947).
+ *
+ * Accepts `--limit 2`, `--limit=2` and rejects non-positive integers.
+ */
+export function resolveLimit(argv: string[]): number | undefined {
+    let raw: string | undefined;
+    for (let i = 0; i < argv.length; i += 1) {
+        const arg = argv[i];
+        if (arg === "--limit") raw = argv[i + 1];
+        else if (arg.startsWith("--limit=")) raw = arg.slice("--limit=".length);
+    }
+    if (raw === undefined) return undefined;
+    const value = Number(raw);
+    if (!Number.isInteger(value) || value < 1) {
+        fail("--limit must be a positive integer");
+    }
+    return value;
+}
+
 const looksLikeSecret = (value: string) =>
     value.startsWith("sk_") || value.startsWith("pk_");
 
@@ -211,6 +240,11 @@ export const usageCommand = new Command("usage")
         const key = requireKey();
 
         const models: string[] = opts.model;
+
+        // --limit carries a commander default of "20", so presence in argv is
+        // what distinguishes an explicit request from the default. Resolve it
+        // once, before the --daily and --history branches (#16947).
+        const limit = resolveLimit(process.argv);
 
         // Filters only apply to the two views; error instead of silently
         // printing the balance.
@@ -325,7 +359,11 @@ export const usageCommand = new Command("usage")
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows = filterDailyRows(data.usage, keyIds, models);
+                let rows = filterDailyRows(data.usage, keyIds, models);
+                // --limit also applies here: the flag is documented on the
+                // command and users pass it with --daily, so honour it after
+                // filtering instead of printing every row (#16947).
+                if (limit !== undefined) rows = rows.slice(0, limit);
                 // JSON keeps the API records: numeric cost_usd, no rounding.
                 if (getOutputMode() !== "human") {
                     printResult(rows);
@@ -347,7 +385,7 @@ export const usageCommand = new Command("usage")
                 return;
             }
 
-            params.set("limit", opts.limit);
+            params.set("limit", String(limit ?? DEFAULT_LIMIT));
             if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
             if (models.length > 0) params.set("models", models.join(","));
             if (opts.csv) params.set("format", "csv");

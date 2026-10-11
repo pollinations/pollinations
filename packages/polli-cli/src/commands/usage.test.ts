@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import {
     filterDailyRows,
     isKeyId,
     resolveKeyIds,
+    resolveLimit,
     splitKeyArgs,
     tokensIn,
     tokensOut,
@@ -195,6 +196,43 @@ describe("token totals", () => {
     });
 });
 
+describe("resolveLimit", () => {
+    it("returns undefined when --limit is absent", () => {
+        expect(resolveLimit(["node", "polli", "usage", "--daily"])).toBe(
+            undefined,
+        );
+    });
+
+    it("reads --limit and --limit=value", () => {
+        expect(resolveLimit(["node", "polli", "usage", "--limit", "2"])).toBe(
+            2,
+        );
+        expect(resolveLimit(["node", "polli", "usage", "--limit=5"])).toBe(5);
+    });
+
+    it("takes the last occurrence when repeated", () => {
+        expect(
+            resolveLimit([
+                "node",
+                "polli",
+                "usage",
+                "--limit",
+                "2",
+                "--limit",
+                "3",
+            ]),
+        ).toBe(3);
+    });
+
+    it("rejects non-positive and non-integer values", () => {
+        for (const bad of ["0", "-1", "2.5", "abc", ""]) {
+            expect(() =>
+                resolveLimit(["node", "polli", "usage", "--limit", bad]),
+            ).toThrow(ExitSignal);
+        }
+    });
+});
+
 describe("usage command output", () => {
     const originalArgv = process.argv;
     const record = {
@@ -239,6 +277,16 @@ describe("usage command output", () => {
         urls = [];
         process.argv = ["node", "polli", "--key", "sk_test", "usage", ...args];
         setOutputMode(mode);
+        // The command is a module singleton and commander accumulates option
+        // state across parseAsync calls, so a flag set by an earlier test (for
+        // example --daily or --days) would leak into this run. Reset every
+        // option the command declares to its post-construction value.
+        usageCommand.setOptionValue("daily", false);
+        usageCommand.setOptionValue("history", false);
+        usageCommand.setOptionValue("days", undefined);
+        usageCommand.setOptionValue("csv", false);
+        usageCommand.setOptionValue("model", []);
+        usageCommand.setOptionValue("limit", "20");
         const writes: string[] = [];
         vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
             writes.push(String(chunk));
@@ -272,6 +320,21 @@ describe("usage command output", () => {
         expect(urls[0]).toContain("/account/usage/daily?days=7");
         await run(["--daily", "--days", "30"]);
         expect(urls[0]).toContain("/account/usage/daily?days=30");
+    });
+
+    it("truncates daily rows to --limit instead of ignoring it (#16947)", async () => {
+        expect(JSON.parse(await run(["--daily", "--limit", "1"]))).toEqual([
+            daily,
+        ]);
+        // Without an explicit --limit, every daily row is still printed.
+        expect(JSON.parse(await run(["--daily"]))).toHaveLength(2);
+    });
+
+    it("still sends the default limit to the history endpoint", async () => {
+        await run(["--history"]);
+        expect(urls[0]).toContain("limit=20");
+        await run(["--history", "--limit", "5"]);
+        expect(urls[0]).toContain("limit=5");
     });
 
     it("keeps the rounded human table and raw CSV/balance output", async () => {

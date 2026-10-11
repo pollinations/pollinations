@@ -32,9 +32,11 @@
  * Reruns append the same day and host again: consumers must select the latest
  * fetched_at per (dataset, date, host) before aggregating.
  *
- * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
+ * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dataset all] [--dry-run]
  *
- * --days fetches the last N complete UTC days (1–7, for a missed run).
+ * --days fetches the last N complete UTC days (1–30, for a missed run or a
+ * backfill). --dataset fetches one dataset only, so a backfill of a new
+ * dataset does not append the others again.
  *
  * Env vars:
  *   CLOUDFLARE_API_TOKEN  Required — Analytics read on the pollinations.ai zone
@@ -47,7 +49,7 @@ const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
-const MAX_DAYS = 7;
+const MAX_DAYS = 30;
 const MAX_RETRIES = 3;
 // Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~60.
 const QUERY_INTERVAL_MS = 1100;
@@ -119,10 +121,12 @@ const HOST_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost edgeResponseStatus edgeResponseContentTypeName clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
 const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
+const DATASETS = ["page_views", "page_referrers", "host_views"];
 
 const { values: args } = parseArgs({
     options: {
         days: { type: "string", default: "1" },
+        dataset: { type: "string", default: "all" },
         "dry-run": { type: "boolean", default: false },
     },
 });
@@ -214,7 +218,8 @@ async function hostViews(filter) {
     });
 }
 
-async function* fromApi(days) {
+async function* fromApi(days, dataset) {
+    const wanted = (name) => dataset === "all" || dataset === name;
     for (const date of lastDays(days)) {
         const real = { date, requestSource: "eyeball" };
         const pages = {
@@ -225,18 +230,18 @@ async function* fromApi(days) {
                 clientRequestPath_in: paths,
             })),
         };
-        const pageViews = await complete(PAGE_VIEWS_QUERY, pages);
-        yield { dataset: "page_views", date, host: "", body: pageViews };
-        const pageReferrers = await complete(PAGE_REFERRERS_QUERY, {
-            ...pages,
-            AND: BARE_REFERRER_HOST,
-        });
-        yield {
-            dataset: "page_referrers",
-            date,
-            host: "",
-            body: pageReferrers,
-        };
+        if (wanted("page_views")) {
+            const body = await complete(PAGE_VIEWS_QUERY, pages);
+            yield { dataset: "page_views", date, host: "", body };
+        }
+        if (wanted("page_referrers")) {
+            const body = await complete(PAGE_REFERRERS_QUERY, {
+                ...pages,
+                AND: BARE_REFERRER_HOST,
+            });
+            yield { dataset: "page_referrers", date, host: "", body };
+        }
+        if (!wanted("host_views")) continue;
 
         const hosts = groupsOf(
             await complete(HOSTS_QUERY, {
@@ -287,10 +292,15 @@ async function main() {
             `--days must be a whole number from 1 to ${MAX_DAYS}, got ${args.days}`,
         );
     }
+    if (args.dataset !== "all" && !DATASETS.includes(args.dataset)) {
+        throw new Error(
+            `--dataset must be all or one of ${DATASETS.join(", ")}, got ${args.dataset}`,
+        );
+    }
 
     const fetched_at = toDateTime(new Date());
     let count = 0;
-    for await (const row of fromApi(days)) {
+    for await (const row of fromApi(days, args.dataset)) {
         console.log(
             `${row.date} ${row.dataset} ${row.host}: ${groupsOf(row.body).length} groups, ${row.body.length} bytes`,
         );

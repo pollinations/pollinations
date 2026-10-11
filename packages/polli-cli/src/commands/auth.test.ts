@@ -83,10 +83,9 @@ describe("auth login with a key", () => {
         );
         vi.stubGlobal("fetch", fetch);
 
-        await authCommand.parseAsync(
-            ["login", "--token", "sk_verified"],
-            { from: "user" },
-        );
+        await authCommand.parseAsync(["login", "--token", "sk_verified"], {
+            from: "user",
+        });
 
         expect(fetch.mock.calls[0]?.[0]).toContain("/account/key");
         expect(saveCredentials).toHaveBeenCalledWith({

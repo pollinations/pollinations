@@ -168,6 +168,31 @@ describe("callInferencePortImage", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it.each([
+        [768, 1024],
+        [1024, 768],
+        [1536, 1536],
+    ])("rejects explicit %ix%i output before calling upstream", async (width, height) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callInferencePortImage(
+                "a poster",
+                {
+                    ...baseParams,
+                    width,
+                    height,
+                    dimensionsExplicit: true,
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("only 1024x1024"),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("fails clearly when upstream returns no image", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json({ data: [] }),

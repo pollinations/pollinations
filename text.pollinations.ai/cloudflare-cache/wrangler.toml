@@ -39,3 +39,11 @@ enabled = false      # turns Workers Logs off completely
 
 [observability.logs]
 invocation_logs = false
+
+# Local tests only (vitest), never deployed
+[env.test]
+routes = [] # keep the production custom domains out of this environment
+
+[[env.test.r2_buckets]]
+binding = "TEXT_BUCKET"
+bucket_name = "pollinations-text-legacy-test"

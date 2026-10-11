@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { test, vi } from "vitest";
 import worker, { getCachedResponse } from "../src/index.js";
 
 test("treats an empty cached object as a miss", async () => {
@@ -17,7 +17,7 @@ test("treats an empty cached object as a miss", async () => {
     assert.equal(await getCachedResponse(env, "key"), null);
 });
 
-test("does not store a HEAD response under the GET key", async (t) => {
+test("does not store a HEAD response under the GET key", async () => {
     const puts = [];
     const env = {
         ORIGIN_HOST: "origin.test",
@@ -26,9 +26,7 @@ test("does not store a HEAD response under the GET key", async (t) => {
             put: async (key) => puts.push(key),
         },
     };
-    t.mock.method(
-        globalThis,
-        "fetch",
+    vi.spyOn(globalThis, "fetch").mockImplementation(
         async () =>
             new Response(null, {
                 headers: {

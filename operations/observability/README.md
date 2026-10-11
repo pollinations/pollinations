@@ -19,7 +19,9 @@ The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
 account and routes them to one named Grafana container. The container sleeps
 after 10 minutes without requests, so the first open after that waits for
 Grafana to cold-start. It then starts from a fresh disk, so dashboards must stay
-provisioned from git and Grafana user preferences reset.
+provisioned from git and Grafana user preferences reset. Grafana Live is off
+(`GF_LIVE_MAX_CONNECTIONS=0`), so an open tab holds no WebSocket and no longer
+keeps the container awake.
 
 ## Quick Start
 
@@ -61,8 +63,6 @@ The public OAuth client ID is configured in `wrangler.toml`.
 | `GF_ADMIN_PASSWORD` | Grafana bootstrap admin password (interactive login disabled) |
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
 
-`DISCORD_WEBHOOK_URL` and `TINYBIRD_LEGACY_READ_TOKEN` are still uploaded but unused until their removal is approved.
-
 Observability uses the same Pollinations OAuth client/session implementation and
 shared sign-in page as KPI and Economics. Its callback is
 `https://observability.pollinations.ai/auth/callback`. The trusted internal
@@ -86,7 +86,7 @@ blocked. Do not expose the container's port directly to the internet.
 The Worker also requires its own `POLLINATIONS_AUTH_SESSION_SECRET`. Provisioning
 it requires separate approval. Deploy Enter's updated callback registration first,
 then the app through GitHub Actions. Verify admin/non-admin access, forged-header
-rejection, iframe/WebSocket loading and independent logout before production.
+rejection, iframe loading and independent logout before production.
 
 For the local preview, run Grafana on `127.0.0.1:4001` with
 `root_url=http://localhost:4000/grafana/` and `serve_from_sub_path=true`, using the

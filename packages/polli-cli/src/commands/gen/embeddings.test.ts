@@ -74,6 +74,30 @@ describe("gen embeddings", () => {
         }
     });
 
+    it("preserves whitespace in piped input lines", async () => {
+        const { requests } = prepare(false);
+        const { Readable } = await import("node:stream");
+        const originalStdin = process.stdin;
+        Object.defineProperty(process, "stdin", {
+            configurable: true,
+            value: Readable.from([
+                Buffer.from("  indented code\ntrailing spaces  \n"),
+            ]),
+        });
+        try {
+            await createEmbeddingsCommand().parseAsync([], { from: "user" });
+            expect(requests[0].input).toEqual([
+                "  indented code",
+                "trailing spaces  ",
+            ]);
+        } finally {
+            Object.defineProperty(process, "stdin", {
+                configurable: true,
+                value: originalStdin,
+            });
+        }
+    });
+
     it("forwards --model, --dimensions, --task-type and --input-type", async () => {
         const { requests } = prepare(false);
         await createEmbeddingsCommand().parseAsync(

@@ -31,3 +31,10 @@ it("reads optional stdin to EOF once data starts within the wait", async () => {
     setTimeout(() => stdin.end("context"), 50);
     await expect(text).resolves.toBe("some context");
 });
+
+it("preserves stream whitespace when trim is disabled", async () => {
+    const stdin = openStdin();
+    const text = readStdin({ trim: false });
+    stdin.end("  leading and trailing  \n");
+    await expect(text).resolves.toBe("  leading and trailing  \n");
+});

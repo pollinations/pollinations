@@ -194,7 +194,11 @@ export const callSelfHostedServer = async (
     poolType: ServerType = "zimage",
 ): Promise<ImageGenerationResult> => {
     try {
-        if (safeParams.transparent) {
+        if (
+            safeParams.transparent &&
+            (safeParams.model === "tongyi-mai/z-image-turbo" ||
+                safeParams.model === "tongyi-mai/z-image-turbo:fal")
+        ) {
             throw UpstreamError.fromProvider(400, {
                 message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
             });

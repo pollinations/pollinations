@@ -240,6 +240,12 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
         details: { error: { message: "gen answered 503" } },
     });
 
+    // node-fetch's statusText: the reason phrase of any status gen passes on
+    const unprocessable = await call("/gen:422");
+    expect(JSON.parse(unprocessable.text).error).toBe(
+        "422 Unprocessable Entity",
+    );
+
     // The VM's cache stored a gen 400 like any status below 401
     const rejected = await call("/gen:400");
     expect(rejected.response.status).toBe(400);

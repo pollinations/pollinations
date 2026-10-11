@@ -38,20 +38,6 @@ const CROSSDOMAIN = `<?xml version="1.0" encoding="UTF-8"?>
 <cross-domain-policy>
   <allow-access-from domain="*" secure="false"/>
 </cross-domain-policy>`;
-// node-fetch's statusText on the VM was the edge's standard reason phrase
-const STATUS_TEXT = {
-    400: "Bad Request",
-    401: "Unauthorized",
-    402: "Payment Required",
-    403: "Forbidden",
-    404: "Not Found",
-    413: "Payload Too Large",
-    429: "Too Many Requests",
-    500: "Internal Server Error",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-    504: "Gateway Timeout",
-};
 const JSON_TYPE = "application/json; charset=utf-8";
 const TEXT_TYPE = "text/plain; charset=utf-8";
 const IMMUTABLE = "public, max-age=31536000, immutable";
@@ -504,7 +490,10 @@ async function generate(env, job, cacheControl, ended) {
                 details = JSON.parse(text);
             } catch {}
             logFailure(job.route, { error: "gen", status: response.status });
-            const message = `${response.status} ${STATUS_TEXT[response.status] ?? ""}`;
+            // node-fetch's statusText on the VM: the standard reason phrase.
+            // Loaded here so that cold starts serving cache hits skip it.
+            const { STATUS_CODES } = await import("node:http");
+            const message = `${response.status} ${STATUS_CODES[response.status] ?? ""}`;
             // A failed stream lost gen's status and details on the VM, and a
             // stored 4xx would be served to every later request
             return await (job.stream

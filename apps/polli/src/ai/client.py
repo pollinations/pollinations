@@ -197,12 +197,7 @@ class PollinationsClient:
         raw_messages: list[dict] | None = None,
     ) -> dict:
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
-        system_content = get_tool_system_prompt(
-            is_admin=is_admin,
-            is_collaborator=is_collaborator,
-            mode=mode,
-            caller_tools=(api_params or {}).get("tools"),
-        )
+        system_content = get_tool_system_prompt(is_admin=is_admin, is_collaborator=is_collaborator, mode=mode)
         if is_admin:
             system_content += "\n\n## ADMIN MODE\nUser is admin. All tools available. Confirm before destructive ops (merge, delete, lock, close PR, bulk edits, etc.) - use judgment."
         elif is_collaborator:
@@ -381,11 +376,7 @@ class PollinationsClient:
 
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
         client_tools = list((api_params or {}).get("tools") or [])
-        task_mode = mode == "api" and any(tool.get("function", {}).get("name") == "model_task" for tool in client_tools)
-        api_params = {**(api_params or {}), "_task_mode": task_mode}
-        if task_mode:
-            all_tools = []
-        elif mode == "api":
+        if mode == "api":
             all_tools = filter_api_tools(all_tools)
         else:
             all_tools = filter_admin_actions_from_tools(all_tools, is_admin, is_collaborator)
@@ -480,15 +471,6 @@ class PollinationsClient:
                 for tool_call in tool_calls
                 if tool_call.get("function", {}).get("name", "").split(":")[-1] in client_tool_names
             ]
-            if task_mode and not caller_tool_calls:
-                return {
-                    "response": "Task blocked: the model requested an unavailable tool.",
-                    "tool_calls": [],
-                    "tool_results": [],
-                    "content_blocks": all_content_blocks,
-                    "usage": total_usage,
-                    "error": True,
-                }
             if caller_tool_calls:
                 return {
                     "response": response.get("content", ""),
@@ -767,10 +749,7 @@ class PollinationsClient:
         if explicit_seed is not None:
             payload["seed"] = explicit_seed
         for key, value in (api_params or {}).items():
-            if (
-                key not in {"model", "_explicit_model", "_task_mode", "seed", "stream", "stream_options"}
-                and value is not None
-            ):
+            if key not in {"model", "_explicit_model", "seed", "stream", "stream_options"} and value is not None:
                 payload[key] = value
         if tools:
             payload["tools"] = tools
@@ -897,9 +876,8 @@ class PollinationsClient:
 
         requested_model = (api_params or {}).get("model", config.ai.model)
         explicit_model = bool((api_params or {}).get("_explicit_model"))
-        max_attempts = 1 if mode == "api" and (api_params or {}).get("_task_mode") else MAX_RETRIES
         current_model = requested_model
-        for attempt in range(max_attempts):
+        for attempt in range(MAX_RETRIES):
             payload = {
                 "model": current_model,
                 "messages": messages,
@@ -908,7 +886,7 @@ class PollinationsClient:
             # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
             if api_params:
                 for k, v in api_params.items():
-                    if k not in {"model", "_explicit_model", "_task_mode"} and v is not None:
+                    if k not in {"model", "_explicit_model"} and v is not None:
                         payload[k] = v
 
             if tools:
@@ -917,7 +895,7 @@ class PollinationsClient:
 
             try:
                 session = await self.get_session()
-                logger.debug(f"API attempt {attempt + 1}/{max_attempts}")
+                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES}")
 
                 async with session.post(
                     url,
@@ -950,8 +928,7 @@ class PollinationsClient:
                             break
                         # Other errors: switch to fallback model on next attempt
                         if (
-                            max_attempts > 1
-                            and not explicit_model
+                            not explicit_model
                             and config.ai.fallback_model
                             and current_model != config.ai.fallback_model
                         ):
@@ -972,12 +949,12 @@ class PollinationsClient:
                 logger.warning("API error (attempt %s, exception=%s)", attempt + 1, type(exc).__name__)
 
             # Wait before retry (except on last attempt)
-            if attempt < max_attempts - 1:
+            if attempt < MAX_RETRIES - 1:
                 logger.info(f"Retrying in {RETRY_DELAY}s...")
                 await asyncio.sleep(RETRY_DELAY)
 
         # All retries failed
-        logger.error("All %s API attempts failed. Last error category: %s", max_attempts, last_error)
+        logger.error("All %s API attempts failed. Last error category: %s", MAX_RETRIES, last_error)
         return None
 
     def get_topic_summary_fast(self, message: str) -> str:

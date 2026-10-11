@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-11T06:34:12.693240+00:00",
+  "generated_at": "2026-10-11T21:41:22.007531+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7531,6 +7531,27 @@
       "date": "2026-10-10",
       "pr": 16982,
       "url": "https://github.com/pollinations/pollinations/pull/16982"
+    },
+    {
+      "id": "pr-17130:POST /v1/responses",
+      "endpoint": "POST /v1/responses",
+      "summary": "Create Response",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:client_metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-11",
+      "pr": 17130,
+      "url": "https://github.com/pollinations/pollinations/pull/17130"
     }
   ],
   "highlights": [

@@ -204,159 +204,200 @@ export function createUsageCommand() {
             ),
         )
         .action(async (opts, cmd) => {
-        // Fix up the auth override before requireKey(): commander routes a
-        // post-subcommand `--key` into the global option (and the preAction
-        // hook), so restore the intended auth key here.
-        const { authKey, filterKeys } = splitKeyArgs(process.argv);
-        setKeyOverride(authKey);
-        const key = requireKey();
+            // Fix up the auth override before requireKey(): commander routes a
+            // post-subcommand `--key` into the global option (and the preAction
+            // hook), so restore the intended auth key here.
+            const { authKey, filterKeys } = splitKeyArgs(process.argv);
+            setKeyOverride(authKey);
+            const key = requireKey();
 
-        const models: string[] = opts.model;
+            const models: string[] = opts.model;
 
-        // Filters only apply to the two views; error instead of silently
-        // printing the balance.
-        if (
-            !opts.history &&
-            !opts.daily &&
-            (filterKeys.length > 0 ||
-                models.length > 0 ||
-                opts.days !== undefined ||
-                opts.csv)
-        ) {
-            printError(
-                "--key, --model, --days and --csv require --history or --daily",
-            );
-            throw new ExitSignal(1);
-        }
-
-        // The daily endpoint has no `models` param, and a raw CSV export
-        // can't be filtered client-side - refuse instead of printing an
-        // unfiltered export.
-        if (opts.daily && opts.csv && models.length > 0) {
-            printError(
-                "--model can't filter the raw --daily --csv export (the endpoint has no models param)",
-            );
-            throw new ExitSignal(1);
-        }
-
-        if (
-            opts.daily &&
-            opts.csv &&
-            cmd.getOptionValueSource("limit") === "cli"
-        ) {
-            printError(
-                "--limit can't filter the raw --daily --csv export (the endpoint has no limit param)",
-            );
-            throw new ExitSignal(1);
-        }
-
-        // Default: show balance (unless --history or --daily)
-        if (!opts.history && !opts.daily) {
-            try {
-                const data = await gen<BalanceResponse>("/account/balance", {
-                    apiKey: key,
-                });
-                // `balance` is a budgeted key's remaining budget, not the
-                // wallet; the wallet is in `accountBalance` (needs
-                // account:usage). Same rule as `polli auth status`.
-                const wallet = data.accountBalance?.total;
-                const keyBudget =
-                    data.balance !== wallet ? data.balance : undefined;
-                if (getOutputMode() !== "human") {
-                    printResult({
-                        pollen: wallet ?? "unknown",
-                        key_budget: keyBudget,
-                    });
-                    return;
-                }
-                const colorize = (bal?: number) => {
-                    if (bal === undefined) return undefined;
-                    let color = chalk.green;
-                    if (bal <= 0) color = chalk.red;
-                    else if (bal < 1) color = chalk.yellow;
-                    return color(String(bal));
-                };
-                printResult({
-                    pollen: colorize(wallet) ?? "unknown",
-                    key_budget: colorize(keyBudget),
-                });
-                return;
-            } catch (err) {
+            // Filters only apply to the two views; error instead of silently
+            // printing the balance.
+            if (
+                !opts.history &&
+                !opts.daily &&
+                (filterKeys.length > 0 ||
+                    models.length > 0 ||
+                    opts.days !== undefined ||
+                    opts.csv)
+            ) {
                 printError(
-                    `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,
+                    "--key, --model, --days and --csv require --history or --daily",
                 );
                 throw new ExitSignal(1);
             }
-        }
 
-        let keyIds: string[] = [];
-        if (filterKeys.length > 0) {
-            const ids = filterKeys.filter(isKeyId);
-            const names = filterKeys.filter((v) => !isKeyId(v));
-            keyIds = ids;
-            if (names.length > 0) {
+            // The daily endpoint has no `models` param, and a raw CSV export
+            // can't be filtered client-side - refuse instead of printing an
+            // unfiltered export.
+            if (opts.daily && opts.csv && models.length > 0) {
+                printError(
+                    "--model can't filter the raw --daily --csv export (the endpoint has no models param)",
+                );
+                throw new ExitSignal(1);
+            }
+
+            if (
+                opts.daily &&
+                opts.csv &&
+                cmd.getOptionValueSource("limit") === "cli"
+            ) {
+                printError(
+                    "--limit can't filter the raw --daily --csv export (the endpoint has no limit param)",
+                );
+                throw new ExitSignal(1);
+            }
+
+            // Default: show balance (unless --history or --daily)
+            if (!opts.history && !opts.daily) {
                 try {
-                    const res = await gen<{ data: UsageKeyInfo[] }>(
-                        "/account/keys",
-                        { apiKey: key },
+                    const data = await gen<BalanceResponse>(
+                        "/account/balance",
+                        {
+                            apiKey: key,
+                        },
                     );
-                    keyIds = [...ids, ...resolveKeyIds(res.data ?? [], names)];
+                    // `balance` is a budgeted key's remaining budget, not the
+                    // wallet; the wallet is in `accountBalance` (needs
+                    // account:usage). Same rule as `polli auth status`.
+                    const wallet = data.accountBalance?.total;
+                    const keyBudget =
+                        data.balance !== wallet ? data.balance : undefined;
+                    if (getOutputMode() !== "human") {
+                        printResult({
+                            pollen: wallet ?? "unknown",
+                            key_budget: keyBudget,
+                        });
+                        return;
+                    }
+                    const colorize = (bal?: number) => {
+                        if (bal === undefined) return undefined;
+                        let color = chalk.green;
+                        if (bal <= 0) color = chalk.red;
+                        else if (bal < 1) color = chalk.yellow;
+                        return color(String(bal));
+                    };
+                    printResult({
+                        pollen: colorize(wallet) ?? "unknown",
+                        key_budget: colorize(keyBudget),
+                    });
+                    return;
                 } catch (err) {
                     printError(
-                        err instanceof Error
-                            ? err.message
-                            : "Failed to resolve keys",
+                        `Failed to fetch balance: ${err instanceof Error ? err.message : "unknown"}`,
                     );
                     throw new ExitSignal(1);
                 }
             }
-        }
 
-        const params = new URLSearchParams();
-        // The daily endpoint's 90-day default times out on heavy accounts
-        // (#16560), so --daily asks for a week unless --days is given.
-        const days = opts.days ?? (opts.daily ? "7" : undefined);
-        if (days !== undefined) params.set("days", days);
+            let keyIds: string[] = [];
+            if (filterKeys.length > 0) {
+                const ids = filterKeys.filter(isKeyId);
+                const names = filterKeys.filter((v) => !isKeyId(v));
+                keyIds = ids;
+                if (names.length > 0) {
+                    try {
+                        const res = await gen<{ data: UsageKeyInfo[] }>(
+                            "/account/keys",
+                            { apiKey: key },
+                        );
+                        keyIds = [
+                            ...ids,
+                            ...resolveKeyIds(res.data ?? [], names),
+                        ];
+                    } catch (err) {
+                        printError(
+                            err instanceof Error
+                                ? err.message
+                                : "Failed to resolve keys",
+                        );
+                        throw new ExitSignal(1);
+                    }
+                }
+            }
 
-        try {
-            if (opts.daily) {
-                // The daily schema has no `models` param and currently 500s
-                // on `api_key_ids` (endpoint bug, reported in the PR), so
-                // both filters run client-side for the JSON/table view.
-                if (opts.csv) {
-                    // Raw exports can't be filtered client-side - pass the
-                    // filters to the server (works once the endpoint is fixed).
-                    params.set("format", "csv");
-                    if (keyIds.length > 0)
-                        params.set("api_key_ids", keyIds.join(","));
+            const params = new URLSearchParams();
+            // The daily endpoint's 90-day default times out on heavy accounts
+            // (#16560), so --daily asks for a week unless --days is given.
+            const days = opts.days ?? (opts.daily ? "7" : undefined);
+            if (days !== undefined) params.set("days", days);
+
+            try {
+                if (opts.daily) {
+                    // The daily schema has no `models` param and currently 500s
+                    // on `api_key_ids` (endpoint bug, reported in the PR), so
+                    // both filters run client-side for the JSON/table view.
+                    if (opts.csv) {
+                        // Raw exports can't be filtered client-side - pass the
+                        // filters to the server (works once the endpoint is fixed).
+                        params.set("format", "csv");
+                        if (keyIds.length > 0)
+                            params.set("api_key_ids", keyIds.join(","));
+                        const path = `/account/usage/daily?${params}`;
+                        process.stdout.write(
+                            await genText(path, { apiKey: key }),
+                        );
+                        return;
+                    }
                     const path = `/account/usage/daily?${params}`;
+                    const data = await gen<DailyUsageResponse>(path, {
+                        apiKey: key,
+                    });
+                    let rows = filterDailyRows(data.usage, keyIds, models);
+                    if (cmd.getOptionValueSource("limit") === "cli") {
+                        const limit = Number(opts.limit);
+                        if (!Number.isFinite(limit) || limit < 0) {
+                            printError("--limit must be a non-negative number");
+                            throw new ExitSignal(1);
+                        }
+                        rows = rows.slice(0, limit);
+                    }
+                    // JSON keeps the API records: numeric cost_usd, no rounding.
+                    if (getOutputMode() !== "human") {
+                        printResult(rows);
+                        return;
+                    }
+                    printTable(
+                        rows.map((r) => ({
+                            date: r.date,
+                            key: r.api_key ?? "-",
+                            model: r.model,
+                            requests: r.requests,
+                            cost:
+                                r.cost_usd != null
+                                    ? `$${r.cost_usd.toFixed(4)}`
+                                    : "-",
+                            source: r.meter_source,
+                        })),
+                    );
+                    return;
+                }
+
+                params.set("limit", opts.limit);
+                if (keyIds.length > 0)
+                    params.set("api_key_ids", keyIds.join(","));
+                if (models.length > 0) params.set("models", models.join(","));
+                if (opts.csv) params.set("format", "csv");
+                const path = `/account/usage?${params}`;
+                if (opts.csv) {
                     process.stdout.write(await genText(path, { apiKey: key }));
                     return;
                 }
-                const path = `/account/usage/daily?${params}`;
-                const data = await gen<DailyUsageResponse>(path, {
-                    apiKey: key,
-                });
-                let rows = filterDailyRows(data.usage, keyIds, models);
-                if (cmd.getOptionValueSource("limit") === "cli") {
-                    const limit = Number(opts.limit);
-                    if (!Number.isFinite(limit) || limit < 0) {
-                        printError("--limit must be a non-negative number");
-                        throw new ExitSignal(1);
-                    }
-                    rows = rows.slice(0, limit);
-                }
-                // JSON keeps the API records: numeric cost_usd, no rounding.
+                const data = await gen<UsageResponse>(path, { apiKey: key });
                 if (getOutputMode() !== "human") {
-                    printResult(rows);
+                    printResult(data.usage);
                     return;
                 }
                 printTable(
-                    rows.map((r) => ({
-                        date: r.date,
-                        key: r.api_key ?? "-",
+                    data.usage.map((r) => ({
+                        time: r.timestamp,
+                        type: r.type,
                         model: r.model,
-                        requests: r.requests,
+                        key: r.api_key ?? "-",
+                        tokens_in: tokensIn(r),
+                        tokens_out: tokensOut(r),
                         cost:
                             r.cost_usd != null
                                 ? `$${r.cost_usd.toFixed(4)}`
@@ -364,41 +405,10 @@ export function createUsageCommand() {
                         source: r.meter_source,
                     })),
                 );
-                return;
+            } catch (err) {
+                fail("Failed to fetch usage", err);
             }
-
-            params.set("limit", opts.limit);
-            if (keyIds.length > 0) params.set("api_key_ids", keyIds.join(","));
-            if (models.length > 0) params.set("models", models.join(","));
-            if (opts.csv) params.set("format", "csv");
-            const path = `/account/usage?${params}`;
-            if (opts.csv) {
-                process.stdout.write(await genText(path, { apiKey: key }));
-                return;
-            }
-            const data = await gen<UsageResponse>(path, { apiKey: key });
-            if (getOutputMode() !== "human") {
-                printResult(data.usage);
-                return;
-            }
-            printTable(
-                data.usage.map((r) => ({
-                    time: r.timestamp,
-                    type: r.type,
-                    model: r.model,
-                    key: r.api_key ?? "-",
-                    tokens_in: tokensIn(r),
-                    tokens_out: tokensOut(r),
-                    cost:
-                        r.cost_usd != null ? `$${r.cost_usd.toFixed(4)}` : "-",
-                    source: r.meter_source,
-                })),
-            );
-        } catch (err) {
-            fail("Failed to fetch usage", err);
-        }
-    });
+        });
 }
 
 export const usageCommand = createUsageCommand();
-

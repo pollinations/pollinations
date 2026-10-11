@@ -10,7 +10,6 @@ import {
     tokensIn,
     tokensOut,
     type UsageKeyInfo,
-    usageCommand,
 } from "./usage.js";
 
 const keys: UsageKeyInfo[] = [

@@ -31,14 +31,12 @@ function normalizeMessageName(name: unknown, role: string): string | undefined {
  * discarding provider-specific message fields.
  */
 export function prepareMessages(messages: unknown): ChatMessage[] {
-    if (!Array.isArray(messages) || messages.length === 0) {
-        const result = messagesSchema.safeParse({ messages });
-        if (!result.success) {
-            throw new ValidationError(result.error, "json");
-        }
+    const result = messagesSchema.safeParse({ messages });
+    if (!result.success) {
+        throw new ValidationError(result.error, "json");
     }
 
-    return messages.map((raw) => {
+    return (messages as unknown[]).map((raw) => {
         const message = raw as ChatMessage;
         const role = message.role || "user";
         const hasToolContext = Boolean(message.tool_calls) || role === "tool";

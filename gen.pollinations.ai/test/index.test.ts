@@ -262,6 +262,24 @@ describe("gen worker routing", () => {
         await expect(response.text()).resolves.toContain("Disallow: /api/");
     });
 
+    it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {
+        const response = await fetchWorker("/llms-full.txt");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/plain");
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body.startsWith("# Pollinations\n")).toBe(true);
+        expect(body).toContain(
+            await (await fetchWorker("/docs/llm.txt")).text(),
+        );
+        expect(body).toContain("\n## Polli CLI Skill\n");
+        expect(body).toContain("\n## Polli CLI Tasks\n");
+        expect(body).not.toContain("allowed-tools:");
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/llms-full.txt");
+    });
+
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {
         const index = await fetchWorker("/llms.txt");
         expect(index.status).toBe(200);

@@ -26,7 +26,11 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
-import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
+import {
+    buildMergedOpenApiSpec,
+    createDocsRoutes,
+    LLMS_FULL_TEXT,
+} from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
@@ -96,6 +100,7 @@ function llmsTxt(c: Context<Env>): Response {
 
 ## Start here
 
+- [Full docs in one file](${origin}/llms-full.txt): The API guide, CLI skill, and task recipes in a single request.
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
@@ -154,6 +159,11 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", logger)
     .get("/robots.txt", () => robotsTxt())
     .get("/llms.txt", (c) => llmsTxt(c))
+    .get("/llms-full.txt", (c) =>
+        c.text(LLMS_FULL_TEXT, 200, {
+            "Cache-Control": "public, max-age=3600",
+        }),
+    )
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
     .get("/", (c) => c.html(docsLandingHtml(c)))

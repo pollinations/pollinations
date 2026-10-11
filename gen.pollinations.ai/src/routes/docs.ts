@@ -360,6 +360,16 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     sandboxes: SANDBOXES_SECTION,
 };
 
+// llms-full.txt (https://llmstxt.org): the llms.txt companion that inlines the
+// docs so an agent gets them in one request instead of following the index.
+export const LLMS_FULL_TEXT = [
+    "# Pollinations",
+    "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
+    LLM_DOC_TEXT,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
+].join("\n\n");
+
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "connect-user-wallets",

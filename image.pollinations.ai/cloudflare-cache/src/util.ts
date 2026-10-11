@@ -14,6 +14,26 @@ export function removeUndefined<T extends object>(obj: T): Defined<T> {
 }
 
 /**
+ * Headers for the origin request: the caller's headers plus the client IP
+ * Cloudflare saw. cloudfront-viewer-address is dropped (undefined removes it in
+ * hono/proxy): no CloudFront fronts this host, and the origin's per-IP limit
+ * trusts it first, so a client-sent value would let callers pick their own IP.
+ */
+export function originHeaders(
+    headers: Record<string, string>,
+    clientIP: string,
+): Record<string, string | undefined> {
+    return {
+        ...headers,
+        "cloudfront-viewer-address": undefined,
+        "x-forwarded-for": clientIP,
+        "x-forwarded-host": headers.host,
+        "x-real-ip": clientIP,
+        "cf-connecting-ip": clientIP,
+    };
+}
+
+/**
  * Helper function to set HTTP metadata headers from R2 object
  * @param {Context} c - Hono context object
  * @param {Object} httpMetadata - R2 object httpMetadata

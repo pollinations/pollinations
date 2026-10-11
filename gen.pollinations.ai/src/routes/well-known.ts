@@ -102,4 +102,20 @@ export const wellKnownRoutes = new Hono<Env>()
                 ],
             }),
         );
+    })
+    .get("/oauth-protected-resource", (c) => {
+        // RFC 9728: tells an agent that hits a 401 here which authorization
+        // server issues keys. enter hosts the RFC 8414 metadata.
+        const origin = getPublicOrigin(c);
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.json({
+            resource: origin,
+            authorization_servers: [
+                origin
+                    .replace("//gen.", "//enter.")
+                    .replace("//staging.gen.", "//staging.enter."),
+            ],
+            bearer_methods_supported: ["header"],
+            resource_documentation: `${origin}/docs/llm.txt`,
+        });
     });

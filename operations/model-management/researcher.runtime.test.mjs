@@ -31,6 +31,7 @@ const artifact =
 const marker = "<!-- model-research-run:123 -->";
 const publisherAuthor = { login: "github-actions[bot]", type: "Bot" };
 const envFor = (out) => ({
+    RESEARCH_MODE: "interactive",
     POLLINATIONS_API_KEY: "test-runtime-key",
     MODELS: model.name,
     MAX_POLLEN: "1",

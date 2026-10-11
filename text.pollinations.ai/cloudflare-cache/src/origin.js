@@ -372,10 +372,10 @@ async function generation(
     try {
         slot = await takeSlot(env.IP_SLOT, ip, FREE_INTERVAL_MS, canWait);
     } catch (error) {
+        // The VM's in-memory queue could not fail: answer as a free request
+        // that books and releases nothing
         logFailure(route, { error: "ip_slot", type: error.name });
-        return json({ error: "rate_limiter_unavailable" }, 503, undefined, {
-            "Retry-After": "5",
-        });
+        return generate(env, job, undefined, () => {});
     }
 
     if (slot.action === "full") {

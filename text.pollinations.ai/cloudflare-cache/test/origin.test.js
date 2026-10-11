@@ -432,13 +432,16 @@ test("the IP is released when the response completes, fails or is cancelled", as
     expect(await released(cancelled)).toBe(true);
 });
 
-test("a limiter failure answers 503 without calling gen", async () => {
+test("a limiter failure is answered as a free request, booking and releasing nothing", async () => {
     const gen = recordingGen();
+    const calls = [];
     const failing = {
         getByName: () => ({
             take: async () => {
+                calls.push("take");
                 throw new Error("IpSlot RPC failed");
             },
+            release: async () => calls.push("release"),
         }),
     };
 
@@ -446,10 +449,13 @@ test("a limiter failure answers 503 without calling gen", async () => {
         testEnv: { ...gen.testEnv, IP_SLOT: failing },
     });
 
-    expect(response.status).toBe(503);
-    expect(response.headers.get("retry-after")).toBe("5");
-    expect(JSON.parse(text)).toEqual({ error: "rate_limiter_unavailable" });
-    expect(gen.bodies).toHaveLength(0);
+    expect(response.status).toBe(200);
+    expect(text).toBe("ok");
+    expect(response.headers.get("cache-control")).toBe(
+        "public, max-age=31536000, immutable",
+    );
+    expect(gen.bodies).toHaveLength(1);
+    expect(calls).toEqual(["take"]);
 });
 
 test("a HEAD miss is not stored, so the next GET returns the full text", async () => {

@@ -221,23 +221,28 @@ async function hostViews(filter) {
     });
 }
 
+// Our own HTML page loads on one UTC day, from real visitors.
+function pageLoads(date) {
+    return {
+        date,
+        requestSource: "eyeball",
+        edgeResponseContentTypeName: "html",
+        OR: Object.entries(PAGES).map(([host, paths]) => ({
+            clientRequestHTTPHost: host,
+            clientRequestPath_in: paths,
+        })),
+    };
+}
+
 async function* fromApi(days, dataset) {
     const wanted = (name) => dataset === "all" || dataset === name;
     for (const date of lastDays(days)) {
-        const real = { date, requestSource: "eyeball" };
-        const pages = {
-            ...real,
-            edgeResponseContentTypeName: "html",
-            OR: Object.entries(PAGES).map(([host, paths]) => ({
-                clientRequestHTTPHost: host,
-                clientRequestPath_in: paths,
-            })),
-        };
         if (wanted("page_views")) {
-            const body = await complete(PAGE_VIEWS_QUERY, pages);
+            const body = await complete(PAGE_VIEWS_QUERY, pageLoads(date));
             yield { dataset: "page_views", date, host: "", body };
         }
         if (wanted("host_views")) {
+            const real = { date, requestSource: "eyeball" };
             const hosts = groupsOf(
                 await complete(HOSTS_QUERY, {
                     ...real,
@@ -252,14 +257,16 @@ async function* fromApi(days, dataset) {
                 yield { dataset: "host_views", date, host, body };
             }
         }
-        // Last, so a failure in the newest dataset cannot block the others.
-        if (wanted("page_referrers")) {
-            const body = await complete(PAGE_REFERRERS_QUERY, {
-                ...pages,
-                AND: BARE_REFERRER_HOST,
-            });
-            yield { dataset: "page_referrers", date, host: "", body };
-        }
+    }
+    // After every day of the established datasets, so a failure in the newest
+    // one cannot cost any of their days.
+    if (!wanted("page_referrers")) return;
+    for (const date of lastDays(days)) {
+        const body = await complete(PAGE_REFERRERS_QUERY, {
+            ...pageLoads(date),
+            AND: BARE_REFERRER_HOST,
+        });
+        yield { dataset: "page_referrers", date, host: "", body };
     }
 }
 

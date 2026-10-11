@@ -11,7 +11,7 @@ import worker, { generateCacheKey } from "../src/index.js";
 import browserBody from "./fixtures/text.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
-import jsonChallenge from "./fixtures/text.pollinations.ai-get-json.raw.json?raw";
+import jsonChallenge from "./fixtures/text.pollinations.ai-get-json.challenge?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
 import vm404 from "./fixtures/vm-unknown-model-404.body?raw";

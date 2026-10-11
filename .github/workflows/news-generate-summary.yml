@@ -136,12 +136,12 @@ jobs:
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python operations/social/scripts/publish_weekly.py
 
-      # ── Monthly: website archive only ──────────────────────────────
-      - name: Refresh news branch for monthly digest
+      # ── Monthly: website page (build diary) ────────────────────────
+      - name: Refresh news branch for monthly page
         if: steps.mode.outputs.monthly == 'true'
         run: git fetch origin news && git checkout origin/news -- operations/social/news/
 
-      - name: Generate monthly build diary
+      - name: Generate monthly page
         if: steps.mode.outputs.monthly == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}

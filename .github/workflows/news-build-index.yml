@@ -1,7 +1,8 @@
 name: News / Build index
 
 # Rebuilds operations/social/news/index.json on the news branch: the feed Enter's
-# /news page and the README read. Runs after every PR gist and every daily summary.
+# /news page, the README and the website's build diary read. Runs after every PR
+# gist and every summary run.
 on:
   workflow_run:
     workflows: ['News / Create PR gist', 'News / Generate social summary']
@@ -36,6 +37,8 @@ jobs:
           sparse-checkout: |
             operations/social/news/gists/**/*.json
             operations/social/news/daily/*/summary.json
+            operations/social/news/monthly/*/contributors.json
+            operations/social/news/monthly/*/website.json
             /operations/social/news/index.json
 
       - name: Set up Python

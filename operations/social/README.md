@@ -1,6 +1,6 @@
 # Social Media Pipeline
 
-Automated social media posting for pollinations.ai — 3-tier event-centric architecture.
+Automated social media posting for pollinations.ai — 4-tier event-centric architecture. Tier 4 writes the monthly page of the website's build diary.
 
 See [PIPELINE.md](PIPELINE.md) for the full design document (architecture, data flow, error handling, schemas, cost estimates, migration plan).
 
@@ -42,6 +42,6 @@ Defined in [`buffer-schedule.yml`](buffer-schedule.yml).
 
 ## Legacy
 
-The old per-platform standalone scripts and workflows have been removed. The 3-tier pipeline above replaces all of them.
+The old per-platform standalone scripts and workflows have been removed. The 4-tier pipeline above replaces all of them.
 
 The old Devvit-based Reddit pipeline has been removed. Reddit now posts via SSH deployment to a VPS in `publish_daily.py` and `publish_weekly.py`.

@@ -7,13 +7,19 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).parent))
-from common import filter_daily_gists, generate_platform_post, validate_gist
+from common import filter_daily_gists, generate_image, generate_platform_post, normalize_platform_post, validate_gist
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
 from generate_daily import build_daily_summary_artifact, generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
+from generate_monthly import (
+    MOMENTS, NO_CAST, RESIDENTS, community_size, count_cast, draw_checked, generate_website_post, github_account,
+    rank_contributors, read_previous_page, residents,
+)
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
 from model_announcements import announced_retirements, model_changes, pr_comparison_refs
@@ -138,6 +144,7 @@ class GistEnrichmentTest(unittest.TestCase):
         for module, generate in (
             ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
             ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
+            ("generate_monthly", lambda g: generate_monthly_digest([g], "2026-10", "test")),
             ("publish_realtime", lambda g: generate_snippet(g, "test")),
         ):
             with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:
@@ -369,9 +376,171 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertIn("PRs selected for this recap: 1", task)
             self.assertNotIn("Total PRs merged:", task)
         with patch("generate_monthly.call_pollinations_api", return_value='{"arcs": []}') as api:
-            generate_monthly_digest([{"date": "2026-10-01", "summary": "One selected update", "pr_count": 1}], "2026-10", "test")
-        self.assertIn("PRs selected for daily recaps: 1", api.call_args.args[1])
-        self.assertNotIn("Merged PRs:", api.call_args.args[1])
+            generate_monthly_digest([{"pr_number": 1, "merged_at": "2026-10-01T09:00:00Z",
+                                      "gist": {"summary": "One selected update"}}], "2026-10", "test")
+        self.assertIn("PRs selected for this recap: 1", api.call_args.args[1])
+        self.assertIn("One selected update", api.call_args.args[1])
+
+    def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        user = lambda user_id, login, kind="User", created="2020-01-01T00:00:00Z": {
+            "id": user_id, "login": login, "type": kind, "created_at": created,
+            "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        github = {
+            "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
+            "user/1": user(1, "voodoohop"),
+            "user/555": user(555, "art-otakus", "Organization"),  # an agent guessed someone else's id...
+            "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
+            "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
+            "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+            "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
+            "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
+            "users/Tolerable": user(2303, "Tolerable"),           # an app submitter named by login only
+            "users/pixArt": user(4040, "pixArt", created="2026-08-17T00:00:00Z"),  # the name taken later
+            "users/voodoohop": user(1, "voodoohop"),
+            "users/thomash": user(1145, "ThomasH"),               # a stranger: thomash is Thomas's git alias
+        }
+        prs = [
+            {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             # Thomas's own git alias: credits voodoohop, who already has this PR, not the stranger.
+             "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
+            {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+                        "url": "https://github.com/apps/pollinations-ai"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             "mergeCommit": {"message": (
+                 "Co-authored-by: Pix <pixArt@users.noreply.github.com>\n"
+                 "Add app\n\n"
+                 "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
+                 "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
+                 "Co-authored-by: Claude <noreply@anthropic.com>\n"
+                 "Co-authored-by: Tolerable <Tolerable@users.noreply.github.com>\n"  # the bot's submitter
+                 "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
+                 "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
+                 "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
+                 "Co-authored-by: MentatBot <160+MentatBot@users.noreply.github.com>\n"
+             )}},
+            # The same account under an earlier login still counts once, by its id.
+            {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
+            {"author": None, "mergeCommit": None},
+        ]
+        with patch("generate_monthly.github_account", side_effect=lambda path, _token: github.get(path)):
+            ranked = rank_contributors(prs, "test")
+        # No credit: pixArt (the account did not exist yet), the placeholder account (sharktide's
+        # 909) and the app's own bot as a co-author (bots count as PR authors only).
+        self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "av12345")
+        self.assertEqual(ranked[4]["url"], "gh/TechMitten")
+        self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
+
+        # A rate limit or outage stops the count; only a 404 means the account is gone.
+        with patch("generate_monthly.github_api_request") as api:
+            api.return_value.status_code = 403
+            with self.assertRaises(RuntimeError):
+                github_account("user/403-test", "test")
+            api.return_value.status_code = 404
+            self.assertIsNone(github_account("user/404-test", "test"))
+
+    def test_monthly_story_follows_the_latest_page(self):
+        page = lambda month, story: normalize_platform_post(
+            platform="website", scope="monthly", date=f"{month}-28", period_start=f"{month}-01",
+            period_end=f"{month}-28", generated_at="now",
+            raw_post={"title": "T", "summary": "S", "story": story, "image": {"url": f"https://x/{month}.jpg"}})
+        with tempfile.TemporaryDirectory() as root:
+            for month, story in (("2026-07", "A greenhouse frame stands."), ("2026-09", "The greenhouse glows.")):
+                (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
+                (Path(root) / f"operations/social/news/monthly/{month}/website.json").write_text(json.dumps(page(month, story)))
+            self.assertIsNone(read_previous_page("2026-07", root))
+            self.assertEqual(read_previous_page("2026-09", root)["metadata"]["story"], "A greenhouse frame stands.")
+            previous = read_previous_page("2026-10", root)
+        self.assertEqual(previous["metadata"]["story"], "The greenhouse glows.")
+
+        digest = {"pr_count": 1, "arcs": [{"headline": "Apps", "summary": "A new Apps directory."}]}
+        for previous_page, expected in ((previous, "The greenhouse glows."), (None, "this cover is page one")):
+            with patch("common.call_pollinations_api", return_value='{"title": "T"}') as api:
+                generate_website_post(digest, "test", previous_page, "The cosmic cat moves in this month.")
+            task = api.call_args.args[1]
+            self.assertIn("## Monthly Story", task)
+            self.assertIn(expected, task)
+            self.assertIn("The cosmic cat moves in this month.", task)
+
+        # A creature's look is attached after the character sheet.
+        with patch("common.requests.get", side_effect=requests.ConnectionError) as get, patch("common.time.sleep"):
+            generate_image("A garden", "test", references=["https://x/cosmic-cat.png"])
+            self.assertEqual(get.call_args.kwargs["params"]["image"].split("|")[1], "https://x/cosmic-cat.png")
+
+    def test_monthly_cast_starts_with_polli_and_grows_one_at_a_time_with_the_community(self):
+        # Page one is Polli alone, however big the community already is.
+        self.assertEqual(residents([], 5000), ["polli"])
+        self.assertEqual(residents(["polli"], 24), ["polli"])
+        self.assertEqual(residents(["polli"], 5000), ["polli", "robot"])
+        self.assertEqual(residents(["polli", "robot"], 50), ["polli", "robot", "nomnom"])
+        # Residents stay, and the cast never grows past the table.
+        self.assertEqual(residents(list(RESIDENTS), 99999), list(RESIDENTS))
+        page = normalize_platform_post(
+            platform="website", scope="monthly", date="d", period_start="p", period_end="e", generated_at="g",
+            raw_post={"story": "The robot moved in.", "residents": ["polli", "robot"]})
+        self.assertEqual(page["metadata"]["residents"], ["polli", "robot"])
+
+        # The community counts each person once since page one, later months left out.
+        with tempfile.TemporaryDirectory() as root:
+            for month, ids in (("2025-01", [1, 2]), ("2025-02", [2, 3]), ("2025-04", [9])):
+                (Path(root) / f"operations/social/news/monthly/{month}").mkdir(parents=True)
+                (Path(root) / f"operations/social/news/monthly/{month}/contributors.json").write_text(
+                    json.dumps({"contributors": [{"id": user_id} for user_id in ids]}))
+            self.assertEqual(community_size("2025-03", [{"id": 3}, {"id": 4}], root), 4)
+        # Every calendar month has its moment, looked up by the target month's "MM".
+        self.assertEqual(sorted(MOMENTS), [f"{number:02d}" for number in range(1, 13)])
+
+    def test_monthly_cover_is_redrawn_until_each_character_appears_once(self):
+        one_of_each = {**NO_CAST, "bees": 1, "monitor_robots": 1, "nomnom": 1}
+        two_bees = {**one_of_each, "bees": 2}
+        limits = {**one_of_each}
+        with patch("generate_monthly.generate_image", side_effect=[(b"first", None), (b"second", None)]) as draw, \
+             patch("generate_monthly.count_cast", side_effect=[two_bees, one_of_each]):
+            self.assertEqual(draw_checked("A garden", "test", [], limits), b"second")
+        self.assertEqual(draw.call_count, 2)
+        with patch("generate_monthly.generate_image", return_value=(b"cover", None)) as draw, \
+             patch("generate_monthly.count_cast", return_value={**one_of_each, "humans": 1}):
+            self.assertIsNone(draw_checked("A garden", "test", [], limits))
+        self.assertEqual(draw.call_count, 3)
+
+        # The cover goes to the vision model as an image; each listed character counts once.
+        listed = {"characters": [{"kind": "bee"}, {"kind": "bee"}, {"kind": "monitor_robot"},
+                                 {"kind": "axolotl"}, {"kind": "other"}]}
+        with patch("generate_monthly.call_pollinations_api", return_value=json.dumps(listed)) as vision:
+            self.assertEqual(count_cast(b"one", "test"),
+                             {**NO_CAST, "bees": 2, "monitor_robots": 1, "axolotls": 1})
+        self.assertIn("data:image/jpeg;base64,b25l", json.dumps(vision.call_args.args[1]))  # base64 of b"one"
+        self.assertEqual(vision.call_args.kwargs["model"], "google/gemini-3.8-flash")
+
+    def test_index_lists_months_with_their_pages_and_top_contributors_of_twelve_months(self):
+        with tempfile.TemporaryDirectory() as directory:
+            news = Path(directory)
+            for number in range(1, 14):
+                month = f"{2025 + (number - 1) // 12}-{(number - 1) % 12 + 1:02d}"
+                (news / f"monthly/{month}").mkdir(parents=True)
+                (news / f"monthly/{month}/contributors.json").write_text(json.dumps({
+                    "month": month, "merged_prs": number,
+                    # Account 7 renamed itself in month 13; its months still add up under the new login.
+                    "contributors": [{"id": 1 if number == 1 else 7, "login": "early" if number == 1 else
+                                      ("Agent" if number == 13 else "agent-old"), "avatar_url": f"a{number}",
+                                      "url": "u", "prs": number}],
+                }))
+            # Older monthly summaries on the news branch carry no counts; the index reads only counts files.
+            (news / "monthly/2025-02/summary.json").write_text(json.dumps({"title": "Old", "summary": "Old."}))
+            (news / "monthly/2026-01/website.json").write_text(json.dumps({
+                "period_start": "2026-01-01", "title": "Apps", "text": "A new Apps directory.",
+                "images": [{"url": "https://x/2026-01.jpg"}]}))
+            index = build_index(news, "2026-02-01")
+        self.assertEqual(len(index["months"]), 13)
+        self.assertEqual(index["months"][0], {"month": "2025-01", "merged_prs": 1, "title": None, "summary": None, "image": None})
+        self.assertEqual(index["months"][-1], {"month": "2026-01", "merged_prs": 13, "title": "Apps",
+                                               "summary": "A new Apps directory.", "image": "https://x/2026-01.jpg"})
+        self.assertEqual(index["contributors"],
+                         [{"id": 7, "login": "Agent", "avatar_url": "a13", "url": "u", "prs": sum(range(2, 14))}])
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:

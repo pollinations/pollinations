@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Build operations/social/news/index.json — the one news feed Enter and the README read.
+"""Build operations/social/news/index.json — the one news feed Enter, the README and the website read.
 
-Reads gists and daily summaries from the news branch checkout and keeps:
+Reads gists, daily summaries and monthly pages from the news branch checkout and keeps:
 - `models`: official model announcements from recent gists
 - `api`: API changes from the post-deploy docs PRs
 - `highlights`: the items each daily summary picked for users
+- `months`: merged PRs per month (monthly/*/contributors.json) with that month's website page
+- `contributors`: the top GitHub accounts by merged PRs over the last 12 months
 
     python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
 
@@ -24,6 +26,8 @@ from common import GISTS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit_files_to_bran
 INDEX_PATH = f"{NEWS_REL_DIR}/index.json"
 RECENT_DAYS = 30
 README_ITEMS = 10
+CONTRIBUTOR_MONTHS = 12
+TOP_CONTRIBUTORS = 20
 # Announcement changes the model cards show; everything else stays in the gist.
 CARD_FIELDS = ("pricing", "paid_only", "capabilities", "input_modalities", "output_modalities",
                "context_length", "per_user_rpm", "max_reference_images", "model_id", "voices")
@@ -101,15 +105,44 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
     return items[:README_ITEMS] if len(recent) < README_ITEMS else recent
 
 
+def month_entries(counts: List[Dict], pages: List[Dict]) -> List[Dict]:
+    """The build diary: each month's merged PRs, with its website page once it is written."""
+    by_month = {page["period_start"][:7]: page for page in pages}
+    entries = []
+    for record in sorted(counts, key=lambda c: c["month"]):
+        page = by_month.get(record["month"], {})
+        entries.append({
+            "month": record["month"],
+            "merged_prs": record["merged_prs"],
+            "title": page.get("title"),
+            "summary": page.get("text"),
+            "image": next((image["url"] for image in page.get("images") or []), None),
+        })
+    return entries
+
+
+def contributor_entries(counts: List[Dict]) -> List[Dict]:
+    """Merged PRs per GitHub account over the last 12 recorded months; the latest month names each one."""
+    people = {}
+    for record in sorted(counts, key=lambda c: c["month"])[-CONTRIBUTOR_MONTHS:]:
+        for person in record["contributors"]:
+            entry = people.setdefault(person["id"], {"prs": 0})
+            entry.update({**person, "prs": entry["prs"] + person["prs"]})
+    return sorted(people.values(), key=lambda p: (-p["prs"], p["login"].lower()))[:TOP_CONTRIBUTORS]
+
+
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
     gists = read_json(news_dir.glob("gists/*/PR-*.json"))
+    counts = read_json(news_dir.glob("monthly/*/contributors.json"))
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "models": model_entries(gists, since, today),
         "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
+        "months": month_entries(counts, read_json(news_dir.glob("monthly/*/website.json"))),
+        "contributors": contributor_entries(counts),
     }
 
 
@@ -123,7 +156,8 @@ def main():
     index_file = args.news_dir / "index.json"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     index = build_index(args.news_dir, today)
-    print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights")
+    print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights, "
+          f"{len(index['months'])} months, {len(index['contributors'])} contributors")
 
     previous = json.loads(index_file.read_text()) if index_file.exists() else {}
     if {**previous, "generated_at": None} == {**index, "generated_at": None}:

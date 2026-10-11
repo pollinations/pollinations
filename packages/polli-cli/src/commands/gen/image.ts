@@ -28,7 +28,10 @@ export function createImageCommand() {
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")
         .option("--safe", "Enable safety filters")
-        .option("--transparent", "Transparent background (PNG)")
+        .option(
+            "--transparent",
+            "Transparent background (PNG, supported models only)",
+        )
         .option(
             "--image <url...>",
             "Reference image URL(s) for editing/i2i (repeatable)",

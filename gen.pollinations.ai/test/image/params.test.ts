@@ -405,4 +405,24 @@ describe("ImageParamsSchema", () => {
         });
         expect(result.success).toBe(false);
     });
+
+    it.each([
+        "tongyi-mai/z-image-turbo",
+        "tongyi-mai/z-image-turbo:fal",
+    ] as const)("rejects transparent backgrounds for %s", (model) => {
+        const result = ImageParamsSchema.safeParse({
+            model,
+            transparent: true,
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues).toContainEqual(
+                expect.objectContaining({
+                    path: ["transparent"],
+                    message:
+                        "Transparent backgrounds are not supported by z-image-turbo.",
+                }),
+            );
+        }
+    });
 });

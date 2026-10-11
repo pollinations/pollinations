@@ -133,4 +133,28 @@ describe("Flux primary route", () => {
         expect(error).toMatchObject({ status: 500 });
         expect(isRetryableFallbackError(error)).toBe(true);
     });
+
+    it("rejects transparent backgrounds with 400 before querying the pool", async () => {
+        let error: unknown;
+        try {
+            await callSelfHostedServer(
+                "a red apple",
+                {
+                    ...fluxParams,
+                    model: "tongyi-mai/z-image-turbo",
+                    transparent: true,
+                },
+                "zimage",
+            );
+        } catch (caught) {
+            error = caught;
+        }
+
+        expect(error).toMatchObject({
+            status: 400,
+            message: expect.stringContaining(
+                "Transparent backgrounds are not supported",
+            ),
+        });
+    });
 });

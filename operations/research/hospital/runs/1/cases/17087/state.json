@@ -1,0 +1,15 @@
+{
+  "number": 17087,
+  "kind": "feature",
+  "start": "2026-10-11 18:36:46",
+  "base": "953c897635352bdcdc5811c4cb0824566e74f321",
+  "outcome": "escalated",
+  "next": "implement",
+  "reworks": 0,
+  "end": "2026-10-11 18:41:09",
+  "cost_by_key": {
+    "polli-harness-claude-code": 1.422728,
+    "polli-sandbox-il8713rah47igszlv5yzt": 1.8171884999999997,
+    "Device HNVRSAXK": 0.00569245
+  }
+}

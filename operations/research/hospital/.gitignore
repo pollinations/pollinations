@@ -1,0 +1,5 @@
+.lock
+__pycache__/
+cache/
+usage-*.json
+DONE

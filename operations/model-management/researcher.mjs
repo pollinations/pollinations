@@ -1563,6 +1563,8 @@ export async function publish(env = process.env) {
         assert.ok(
             existing.number === saved.number &&
                 !existing.pull_request &&
+                existing.user?.login === "github-actions[bot]" &&
+                existing.user.type === "Bot" &&
                 existing.body?.includes(marker),
             "Saved parent issue identity mismatch",
         );
@@ -1580,7 +1582,11 @@ export async function publish(env = process.env) {
         const issues = await prior.json();
         assert.ok(Array.isArray(issues), "Invalid GitHub issue list");
         const matching = issues.filter(
-            (item) => !item.pull_request && item.body?.includes(marker),
+            (item) =>
+                !item.pull_request &&
+                item.user?.login === "github-actions[bot]" &&
+                item.user.type === "Bot" &&
+                item.body?.includes(marker),
         );
         assert.ok(matching.length <= 1, "Ambiguous duplicate parent issues");
         existing = matching[0];

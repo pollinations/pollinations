@@ -12,6 +12,28 @@ permissions:
 # request diff without fetching the full repository history.
 
 jobs:
+  model-researcher:
+    name: Test model researcher
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Check for researcher changes
+        id: changes
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- operations/model-management .claude/skills/model-management .github/workflows/models-research.yml .github/workflows/ci-pull-request-checks.yml; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v5
+        if: steps.changes.outputs.changed == 'true'
+        with:
+          node-version: '24'
+      - name: Test researcher logic and fetch boundaries
+        if: steps.changes.outputs.changed == 'true'
+        run: node --test operations/model-management/*.test.mjs
+
   project-manager:
     name: Test PR classification and gist enrichment
     runs-on: ubuntu-latest

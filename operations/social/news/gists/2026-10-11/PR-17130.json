@@ -1,0 +1,55 @@
+{
+  "pr_number": 17130,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17130",
+  "merged_at": "2026-10-11T21:39:41Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Regenerated APIDOCS.md from the OpenAPI spec to keep the API reference in sync. The supplied PR details do not identify which reference entries changed.",
+    "keywords": [
+      "API documentation",
+      "OpenAPI",
+      "API reference"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-11/PR-17130.jpg",
+    "prompt": "Polli, a cute pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears tiny reading glasses while reviewing an API reference with a friendly CRT monitor robot beside a flowering code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; a prominent lime green (#ecf874) glow lights the pages against a warm cream background with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-11T21:40:44.865541+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "f7e4688031cb8aed7dd8e9cd266493a3511a5eeb",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete",
+    "api": "complete"
+  },
+  "api_changes": [
+    {
+      "id": "pr-17130:POST /v1/responses",
+      "endpoint": "POST /v1/responses",
+      "summary": "Create Response",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:client_metadata",
+          "before": null,
+          "after": {
+            "type": "object|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ]
+    }
+  ]
+}

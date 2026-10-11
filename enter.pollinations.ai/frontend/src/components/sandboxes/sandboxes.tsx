@@ -186,7 +186,7 @@ export function Sandboxes() {
         create: {
             title: "Create a sandbox?",
             confirm: "Create",
-            text: `Starts a ${template.trim() || "new"} sandbox that stays up for ${formatSeconds(seconds)}.`,
+            text: `Starts a ${template.trim() || "new"} sandbox that stays up for ${formatSeconds(seconds)}. You can run ${pricing.maxRunning} at once; ${running} running now.`,
         },
         resume: {
             title: "Resume this sandbox?",
@@ -265,9 +265,11 @@ export function Sandboxes() {
                 title={dialog?.title ?? ""}
                 description={dialog?.text}
                 intent={
-                    action?.kind === "kill" || action?.kind === "pause"
+                    action?.kind === "kill"
                         ? "danger"
-                        : "commit"
+                        : action?.kind === "pause"
+                          ? "neutral"
+                          : "commit"
                 }
                 confirmLabel={pending ? "Working…" : (dialog?.confirm ?? "")}
                 confirmDisabled={pending}

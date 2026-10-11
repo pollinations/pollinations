@@ -118,4 +118,12 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
         expect(result.messages).toEqual([{ role: "user", content: "" }]);
     });
+
+    it("rejects an empty messages array", () => {
+        expect(() =>
+            CreateChatCompletionRequestSchema.parse({
+                messages: [],
+            }),
+        ).toThrow();
+    });
 });

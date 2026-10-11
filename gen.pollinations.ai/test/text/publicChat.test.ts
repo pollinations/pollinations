@@ -151,3 +151,44 @@ it("passes non-Vercel stream bytes through the real handler unchanged", async ()
     expect(calls).toBe(1);
     expect(text).toBe(wire);
 });
+
+it("returns ValidationError when messages is empty", async () => {
+    const { key } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "openai",
+                messages: [],
+                max_tokens: 3,
+            }),
+        }),
+        withInlineGenerationCoordinator(env),
+        context,
+    );
+    await waitOnExecutionContext(context);
+    expect(response.status).toBe(400);
+    const body = (await response.json()) as {
+        success: boolean;
+        status: number;
+        error: { code: string; details?: { name: string } };
+    };
+    expect(body).toMatchObject({
+        success: false,
+        status: 400,
+        error: {
+            code: "BAD_REQUEST",
+            details: {
+                name: "ValidationError",
+            },
+        },
+    });
+});

@@ -1,9 +1,14 @@
 import debug from "debug";
+import { ValidationError } from "@shared/http/validation-error.ts";
+import { z } from "zod";
 import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
 const MESSAGE_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 const SEMANTIC_NAME_ROLES = new Set(["tool", "function"]);
+const messagesSchema = z.object({
+    messages: z.array(z.any()).min(1),
+});
 
 function normalizeMessageName(name: unknown, role: string): string | undefined {
     if (name === undefined || name === null) return undefined;
@@ -27,11 +32,10 @@ function normalizeMessageName(name: unknown, role: string): string | undefined {
  */
 export function prepareMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
-        const error = new Error(
-            "Messages must be a non-empty array",
-        ) as ServiceError;
-        error.status = 400;
-        throw error;
+        const result = messagesSchema.safeParse({ messages });
+        if (!result.success) {
+            throw new ValidationError(result.error, "json");
+        }
     }
 
     return messages.map((raw) => {

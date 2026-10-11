@@ -60,6 +60,12 @@ describe("prepareMessages", () => {
             ]),
         ).toEqual([{ role: "user", content: "hello" }]);
     });
+
+    it("throws ValidationError when messages is empty or not an array", async () => {
+        const { ValidationError } = await import("@shared/http/validation-error.ts");
+        expect(() => prepareMessages([])).toThrow(ValidationError);
+        expect(() => prepareMessages("not-an-array")).toThrow(ValidationError);
+    });
 });
 
 describe("normalizeOptions", () => {

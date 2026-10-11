@@ -1,4 +1,5 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
     CONTENT_POLICY_STATUS,
@@ -25,7 +26,12 @@ export function apiErrorStatus(details: unknown, status: number): number {
 }
 
 export function throwTextError(error: ServiceError): never {
-    if (error instanceof UpstreamError) throw error;
+    if (
+        error instanceof UpstreamError ||
+        error instanceof ValidationError ||
+        (error instanceof Error && error.name === "ValidationError")
+    )
+        throw error;
     const status =
         typeof error.status === "number"
             ? error.status

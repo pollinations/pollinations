@@ -310,7 +310,7 @@ const ChatCompletionStreamOptionsSchema = z
 
 export const CreateChatCompletionRequestSchema = z
     .object({
-        messages: z.array(ChatCompletionRequestMessageSchema),
+        messages: z.array(ChatCompletionRequestMessageSchema).min(1),
         model: z.string().optional().default(DEFAULT_TEXT_MODEL).meta({
             description:
                 "AI model for text generation. See /v1/models for full list.",

@@ -356,17 +356,14 @@ kpiRoutes.get("/user-segments", async (c) => {
 });
 
 async function fetchPublicGithub(url: string): Promise<Response> {
-    // These repository stats are public. An expired optional token must not
-    // make them unavailable; cache successes to conserve the public API quota.
+    // Public kpi-data snapshots. Only successes are cached, so a file that is
+    // missing or briefly unreachable shows up as soon as it is back.
     const cache = await caches.open("kpi-public-github");
     const key = new Request(url);
     const cached = await cache.match(key);
     if (cached) return cached;
     const response = await fetch(url, {
-        headers: {
-            "User-Agent": "KPI-Dashboard",
-            Accept: "application/vnd.github+json",
-        },
+        headers: { "User-Agent": "KPI-Dashboard" },
     });
     if (response.ok) {
         const stored = new Response(response.clone().body, {

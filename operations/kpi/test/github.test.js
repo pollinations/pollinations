@@ -66,15 +66,21 @@ it("reads weekly app submissions from the daily snapshot", async () => {
     );
 });
 
-it("reports unavailable app submissions instead of a fake zero", async () => {
-    vi.stubGlobal(
-        "fetch",
-        vi.fn().mockResolvedValue(new Response("Not found", { status: 404 })),
-    );
-    const result = await kpiRoutes.request("https://kpi.test/app-submissions");
-    expect(result.status).toBe(502);
-    expect(await result.json()).toEqual({
+it("reports missing app submissions without caching the failure", async () => {
+    const weeks = [{ week: "2026-09-21", submitted: 99 }];
+    const upstream = vi
+        .fn()
+        .mockResolvedValueOnce(new Response("Not found", { status: 404 }))
+        .mockResolvedValueOnce(Response.json(weeks));
+    vi.stubGlobal("fetch", upstream);
+    const request = () => kpiRoutes.request("https://kpi.test/app-submissions");
+    const missing = await request();
+    expect(missing.status).toBe(502);
+    expect(await missing.json()).toEqual({
         error: "App submission snapshots unavailable",
         data: [],
     });
+    const recovered = await request();
+    expect(await recovered.json()).toEqual({ data: weeks });
+    expect(upstream).toHaveBeenCalledTimes(2);
 });

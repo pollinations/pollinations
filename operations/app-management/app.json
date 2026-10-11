@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Midi Journey 2",
+    "url": null,
+    "description": "Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "desktop",
+    "githubUsername": "ElliotEtag",
+    "githubUserId": "36901823",
+    "repositoryUrl": "https://github.com/pollinations/MIDIjourney",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17053",
+    "approvedDate": "2026-10-11",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/66f75130-ed8a-4649-ac66-ffa9f8fbcffd"
+  },
+  {
     "emoji": "📚",
     "name": "Text Comparison",
     "url": "https://mahmoudpov373-star.github.io/Comart",

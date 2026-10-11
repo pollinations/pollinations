@@ -1,5 +1,7 @@
 import copy
 import json
+import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -8,11 +10,17 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import filter_daily_gists, generate_platform_post, validate_gist
+import generate_daily
+import generate_models_news
+import generate_monthly
+import generate_weekly
+import posts
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, filter_daily_gists, generate_platform_post,
+                    models_news_staged_files, validate_gist)
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
-from generate_daily import build_daily_summary_artifact, generate_summary
+from generate_daily import generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
@@ -434,6 +442,209 @@ class GistEnrichmentTest(unittest.TestCase):
             pr["merge_commit_sha"] = git("rev-parse", "HEAD")
             with self.assertRaisesRegex(ValueError, "Cannot verify the full PR range"):
                 pr_comparison_refs(pr, root)
+
+
+# One reply carrying every field any post reads, so old and new runs see the same recap.
+REPLY = {
+    "pr_summary": "#1: Larger media inputs", "pr_count": 2, "one_liner": "Uploads grow.", "theme": "Bigger inputs.",
+    "arcs": [{"headline": "Larger uploads", "summary": "Uploads increase from 32 MiB to 100 MiB — größer."}],
+    "highlights": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
+    "tweet": "Uploads now take 100 MiB.", "title": "Larger uploads", "body": "Uploads grow to 100 MiB.",
+    "hook": "Uploads grew.", "closing": "The repo is public.", "hashtags": ["#AI", "#OpenSource"],
+    "message": "Hi <@&1424461167883194418>", "caption": "Bigger boxes.", "image_prompt": "Bee carrying a big box",
+    "images": [{"prompt": f"Bee scene {n}"} for n in (1, 2, 3)],
+    "models_md_section": "## 2026-10-14\n\n### Added\n- `new` (text)", "discord_text": "<@&MODEL_ROLE_ID> Model updates",
+}
+
+
+def gist(number, merged_at, tier="daily"):
+    return {"pr_number": number, "title": f"PR {number}", "author": "someone", "merged_at": merged_at,
+            "url": f"https://github.com/pollinations/pollinations/pull/{number}", "labels": [],
+            "area": "Models", "type": "Feature", "source": "Team", "image": {"prompt": "Bee"},
+            "gist": {"category": "feature", "user_facing": True, "publish_tier": tier, "importance": "major",
+                     "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
+
+
+class PostsTest(unittest.TestCase):
+    """posts.py against the old generators: the same model calls and pictures, the same saved files."""
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.checkout("news")
+        for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
+                                                "GITHUB_REPOSITORY": "pollinations/pollinations",
+                                                "DISCORD_MODELS_ROLE_ID": "42"}),
+                        patch("time.sleep")):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def checkout(self, name):
+        self.news, self.work = self.root / name, self.root / f"{name}-work"
+        (self.news / NEWS_REL_DIR).mkdir(parents=True)
+
+    def put(self, path, data):
+        file = self.news / NEWS_REL_DIR / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
+
+    def files(self):
+        return {str(path.relative_to(self.news)): path.read_bytes() for path in self.news.rglob("*") if path.is_file()}
+
+    def fakes(self, long_linkedin=False, **changes):
+        calls, images = [], []
+        def model(system_prompt, user_prompt, token, temperature=0.7, response_format=None):
+            calls.append((system_prompt, user_prompt, temperature))
+            reply = {**REPLY, **changes}
+            if long_linkedin and "Create a LinkedIn post" in user_prompt and "The previous draft" not in user_prompt:
+                reply["body"] = "x" * 1300
+            return json.dumps(reply)
+        def image(prompt, token, width=2048, height=2048, index=0, model=None):
+            images.append((prompt, width, height, index))
+            return prompt.encode() + b" picture", None
+        return calls, images, model, image
+
+    def new(self, job, date, overwrite=False, **options):
+        calls, images, model, image = self.fakes(**options)
+        before = self.files()
+        with patch("posts.call_pollinations_api", model), patch("posts.generate_image", image):
+            posts.write(job, date, self.news, self.work, overwrite)
+            posts.save(job, date, self.news, self.work, overwrite)
+        return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
+
+    def old(self, module, env, **options):
+        calls, images, model, image = self.fakes(**options)
+        committed = {}
+        def commit_image(data, path, branch, token, owner, repo):
+            committed[path] = data
+            return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+        def commit_files(files, *args, **kwargs):
+            committed.update({path: json.dumps(data, indent=2, ensure_ascii=False).encode() for path, data in files})
+            return True
+        name = module.__name__
+        with patch.dict(os.environ, env), patch("common.get_repo_root", return_value=str(self.news)), \
+             patch("common.call_pollinations_api", model), patch(f"{name}.call_pollinations_api", model), \
+             patch(f"{name}.generate_image", image), patch(f"{name}.commit_image_to_branch", commit_image), \
+             patch(f"{name}.commit_files_to_branch", commit_files):
+            module.main()
+        return calls, images, committed
+
+    def assertSameRun(self, old, new, calls, files):
+        stamp = lambda saved: {path: re.sub(rb'"generated_at": "[^"]*"', b'"generated_at": ""', data)
+                               for path, data in saved.items()}
+        self.assertEqual(sorted(new[0]), sorted(old[0]))
+        self.assertEqual(sorted(new[1]), sorted(old[1]))
+        self.assertEqual(stamp(new[2]), stamp(old[2]))
+        self.assertEqual((len(new[0]), len(new[2])), (calls, files))
+
+    def test_daily_matches_today(self):
+        for number in (1, 2):
+            self.put(f"gists/2026-10-06/PR-{number}.json", gist(number, "2026-10-06T10:00:00Z"))
+        self.put("gists/2026-10-06/PR-3.json", gist(3, "2026-10-06T11:00:00Z", tier="discord_only"))
+        self.put("gists/2026-10-07/PR-4.json", gist(4, "2026-10-07T11:00:00Z", tier="discord_only"))
+        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-06"})
+        self.assertSameRun(old, self.new("daily", "2026-10-06"), calls=3, files=5)
+        # A day without daily-tier gists writes and saves nothing, as today.
+        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-07"})
+        self.assertSameRun(old, self.new("daily", "2026-10-07"), calls=0, files=0)
+        # A post whose text is missing stops the run instead of being saved empty.
+        with self.assertRaisesRegex(SystemExit, "missing tweet"):
+            self.new("daily", "2026-10-06", overwrite=True, tweet=None)
+
+    def test_weekly_matches_today_with_and_without_the_linkedin_rewrite(self):
+        for long_linkedin, calls in ((False, 6), (True, 7)):
+            with self.subTest(long_linkedin=long_linkedin):
+                self.checkout(f"news-{long_linkedin}")
+                for number, day in ((1, "2026-09-27"), (2, "2026-09-30"), (3, "2026-10-03"), (4, "2026-10-04")):
+                    self.put(f"gists/{day}/PR-{number}.json", gist(number, f"{day}T10:00:00Z"))
+                old = self.old(generate_weekly, {"WEEK_START_DATE": "2026-09-27"}, long_linkedin=long_linkedin)
+                new = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
+                self.assertSameRun(old, new, calls=calls, files=13)
+                # The Sunday's own gist belongs to the next week.
+                self.assertNotIn("PR 4", "".join(user for _, user, _ in new[0]))
+
+    def test_monthly_matches_today(self):
+        # The cover's picture prompt is trimmed, as today; the other posts' prompts never were.
+        for reply in ({}, {"image_prompt": "  Bee at a desk \n"}):
+            with self.subTest(reply=reply):
+                self.checkout(f"news-{len(reply)}")
+                for day in ("2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
+                    self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {day}", "pr_count": 2,
+                                                           "summary": "Things shipped.",
+                                                           "prs": [{"number": 1, "date": day}]})
+                old = self.old(generate_monthly, {"TARGET_MONTH": "2026-09"}, **reply)
+                self.assertSameRun(old, self.new("monthly", "2026-09", **reply), calls=2, files=2)
+
+    def test_model_post_matches_today_and_a_week_without_changes_saves_only_the_snapshot(self):
+        previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
+                    "embeddings": []}
+        current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
+        changelog = "# Pollinations Model Changelog\n\n## 2026-10-07\n\n- Older section\n"
+        self.put("models/snapshots/2026-10-07.json", previous)
+        self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
+        self.put("models/models.md", changelog)
+        staging = self.root / "staging"
+        staging.mkdir()
+        for date, baseline, snapshot, calls, files in (("2026-10-14", previous, "2026-10-07", 1, 4),
+                                                       ("2026-10-28", current, "2026-10-21", 0, 1)):
+            with self.subTest(date=date):
+                old_calls, _, model, _ = self.fakes()
+                committed = {}
+                def commit_text(token, owner, repo, path, content, message, committed=committed):
+                    committed[path] = content.encode()
+                    return True
+                with patch.dict(os.environ, {"TARGET_DATE": date}), \
+                     patch("generate_models_news._path_exists_on_news", return_value=False), \
+                     patch("generate_models_news.fetch_all_snapshots", return_value=copy.deepcopy(current)), \
+                     patch("generate_models_news.find_previous_snapshot_date", return_value=snapshot), \
+                     patch("generate_models_news.load_snapshot_from_news", return_value=copy.deepcopy(baseline)), \
+                     patch("generate_models_news.load_models_md", return_value=changelog), \
+                     patch("generate_models_news.models_news_staging_dir", return_value=str(staging)), \
+                     patch("generate_models_news.commit_text_to_news", commit_text), \
+                     patch("generate_models_news.call_pollinations_api", model):
+                    self.assertEqual(generate_models_news.main(), 0)
+                if calls:
+                    committed = {path: (staging / name).read_bytes() for name, path in models_news_staged_files(date)}
+                with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+                    new = self.new("models", date)
+                self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
+                if calls:
+                    self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
+        # An overwrite replaces the date's models.md section rather than adding a second one.
+        changelog = self.news / NEWS_REL_DIR / "models/models.md"
+        saved = changelog.read_text()
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            self.new("models", "2026-10-14", overwrite=True)
+        self.assertEqual(changelog.read_text(), saved)
+
+    def test_model_baseline_is_never_silently_rebuilt(self):
+        self.put("models/models.md", "# Pollinations Model Changelog\n")
+        with patch("posts.fetch_all_snapshots", return_value={"text": [{"name": "a"}]}):
+            with self.assertRaisesRegex(SystemExit, "refusing to rebuild the baseline"):
+                posts.write("models", "2026-10-14", self.news, self.work)
+            with patch.dict(os.environ, {"ALLOW_BASELINE_REBUILD": "1"}):
+                new = self.new("models", "2026-10-14")
+        self.assertEqual(list(new[2]), [f"{NEWS_REL_DIR}/models/snapshots/2026-10-14.json"])
+
+    def test_a_saved_date_is_replaced_only_when_asked_and_keeps_its_delivery_record(self):
+        self.put("gists/2026-10-06/PR-1.json", gist(1, "2026-10-06T10:00:00Z"))
+        self.new("daily", "2026-10-06")
+        delivery = self.news / NEWS_REL_DIR / "daily/2026-10-06/delivery.json"
+        delivery.write_text('{"daily-x": "done"}')
+        _, _, model, image = self.fakes()
+        with patch("posts.call_pollinations_api", model), patch("posts.generate_image", image):
+            for command in (posts.write, posts.save):
+                with self.assertRaisesRegex(SystemExit, "already saved"):
+                    command("daily", "2026-10-06", self.news, self.work)
+            posts.write("daily", "2026-10-06", self.news, self.work, overwrite=True)
+            posts.save("daily", "2026-10-06", self.news, self.work, overwrite=True)
+            for job, date in (("weekly", "2026-10-05"), ("daily", "2026-10-6"), ("monthly", "2026-10-06")):
+                with self.assertRaisesRegex(SystemExit, "is not a"):
+                    posts.write(job, date, self.news, self.work)
+            with self.assertRaisesRegex(SystemExit, "not a checkout"):
+                posts.write("daily", "2026-10-06", self.root, self.work)
+        self.assertEqual(delivery.read_text(), '{"daily-x": "done"}')
 
 
 if __name__ == "__main__":

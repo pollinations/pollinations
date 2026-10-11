@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "InkBloom",
+    "url": "https://coloring-project1.ismailbanouigu.workers.dev",
+    "description": "Turn photos or text prompts into printable coloring pages. Text-to-coloring generation is powered by Pollinations.",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "ismailbanouigu",
+    "githubUserId": "20683163",
+    "repositoryUrl": "https://github.com/ismailbanouigu/LANDING-PAGE-COLORING-PROJECT",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17015",
+    "approvedDate": "2026-10-11",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/d6d4c0da-3be3-437e-9970-76e2830d6f29"
+  },
+  {
     "emoji": "🤖",
     "name": "MebelSmetaBot",
     "url": "https://t.me/MebelSmetaBot",

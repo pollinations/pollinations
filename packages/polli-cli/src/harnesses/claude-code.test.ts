@@ -1,3 +1,4 @@
+import type * as childProcess from "node:child_process";
 import {
     chmodSync,
     existsSync,
@@ -9,7 +10,6 @@ import {
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import * as childProcess from "node:child_process";
 import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HarnessContext } from "./types.js";
@@ -31,7 +31,11 @@ vi.mock("node:child_process", async (importOriginal) => {
     const actual = await importOriginal<typeof import("node:child_process")>();
     return {
         ...actual,
-        spawnSync: (file: string, args: string[], options: any) => {
+        spawnSync: (
+            file: string,
+            args: string[],
+            options?: childProcess.SpawnSyncOptions,
+        ) => {
             if (mocks.spawnSync.getMockImplementation()) {
                 return mocks.spawnSync(file, args, options);
             }
@@ -240,11 +244,7 @@ describe("Claude Code harness", () => {
             });
             expect(mocks.spawnSync).toHaveBeenCalledWith(
                 shim,
-                expect.arrayContaining([
-                    "-p",
-                    "--settings",
-                    settingsFile(),
-                ]),
+                expect.arrayContaining(["-p", "--settings", settingsFile()]),
                 expect.objectContaining({
                     shell: true,
                 }),

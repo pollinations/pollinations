@@ -21,7 +21,9 @@ describe("harness home paths", () => {
 
 describe("command resolution", () => {
     it("resolves a command with extension on Windows", async () => {
-        const { mkdtempSync, rmSync, writeFileSync, chmodSync } = await import("node:fs");
+        const { mkdtempSync, rmSync, writeFileSync, chmodSync } = await import(
+            "node:fs"
+        );
         const { tmpdir } = await import("node:os");
         const dir = mkdtempSync(join(tmpdir(), "polli-fs-test-"));
         const cmdPath = join(dir, "mycmd.cmd");

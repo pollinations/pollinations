@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Read one public HTTPS page for the isolated model-management researcher."""
 
-import html
 import ipaddress
 import json
 import socket
@@ -12,7 +11,22 @@ from urllib.parse import parse_qsl, urljoin, urlsplit, urlunsplit
 
 MAX_CHARACTERS = 18_000
 MAX_REDIRECTS = 5
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 SENSITIVE_QUERY_NAMES = {"access_key", "access_token", "api_key", "apikey", "auth", "authorization", "bearer", "client_secret", "credential", "key", "password", "secret", "signature", "sig", "token"}
+
+
+class ValidationError(ValueError):
+    pass
+
+
+def _public_addresses(host):
+    try:
+        addresses = {item[4][0] for item in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)}
+    except socket.gaierror as error:
+        raise ValidationError("url host could not be resolved") from error
+    if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
+        raise ValidationError("url host must resolve only to public IP addresses")
+    return sorted(addresses)
 
 
 class _TextParser(HTMLParser):
@@ -66,20 +80,15 @@ def _safe_url(value):
 
 def _validate_url(value):
     if not isinstance(value, str) or len(value) > 2_048:
-        raise ValueError("url must be a public HTTPS URL")
+        raise ValidationError("url must be a public HTTPS URL")
     parsed = urlsplit(value)
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValueError("url must be a public HTTPS URL")
+        raise ValidationError("url must be a public HTTPS URL")
     if any(_is_sensitive_query_name(name) for name, _ in parse_qsl(parsed.query, keep_blank_values=True)):
-        raise ValueError("url must not include credential-bearing query parameters")
+        raise ValidationError("url must not include credential-bearing query parameters")
     if parsed.port not in (None, 443):
-        raise ValueError("url must use HTTPS port 443")
-    try:
-        addresses = {item[4][0] for item in socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)}
-    except socket.gaierror as error:
-        raise ValueError("url host could not be resolved") from error
-    if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
-        raise ValueError("url host must resolve only to public IP addresses")
+        raise ValidationError("url must use HTTPS port 443")
+    _public_addresses(parsed.hostname)
     return urlunsplit(("https", parsed.netloc, parsed.path or "/", parsed.query, ""))
 
 
@@ -90,15 +99,23 @@ def _page_html(page):
     body = getattr(page, "body", b"")
     if isinstance(body, bytes):
         return body.decode(getattr(page, "encoding", None) or "utf-8", errors="replace")
-    return str(body)
+    return body if isinstance(body, str) else ""
 
 
 def _read_http(url, max_characters):
-    from scrapling.fetchers import Fetcher
+    from curl_cffi import CurlOpt
+    from scrapling.fetchers import FetcherSession
 
     current = _validate_url(url)
     for _ in range(MAX_REDIRECTS + 1):
-        page = Fetcher.get(current, follow_redirects=False, timeout=20, retries=0)
+        host = urlsplit(current).hostname
+        addresses = _public_addresses(host)
+        resolved = ",".join(f"[{address}]" if ":" in address else address for address in addresses)
+        with FetcherSession() as session:
+            # Pinned Scrapling 0.4.15 has no public transport-options hook.
+            session._curl_session.curl_options = {CurlOpt.RESOLVE: [f"{host}:443:{resolved}"], CurlOpt.MAXFILESIZE_LARGE: MAX_RESPONSE_BYTES}
+            session._curl_session.trust_env = False
+            page = session.get(current, follow_redirects=False, timeout=20, retries=0)
         status = int(getattr(page, "status", 0))
         headers = getattr(page, "headers", {})
         if status in {301, 302, 303, 307, 308}:
@@ -109,10 +126,13 @@ def _read_http(url, max_characters):
             continue
         if not 200 <= status < 300:
             return _result(current, "scrapling-http", f"upstream returned HTTP {status}")
+        content = _page_html(page)
+        if len(content.encode("utf-8")) > MAX_RESPONSE_BYTES:
+            return _result(current, "scrapling-http", "upstream content exceeded the fetch limit")
         parser = _TextParser()
-        parser.feed(_page_html(page))
+        parser.feed(content)
         parser.close()
-        text = html.unescape(parser.text())[:max_characters]
+        text = parser.text()[:max_characters]
         if not text.strip():
             return _result(current, "scrapling-http", "upstream returned no readable content")
         return {
@@ -128,20 +148,20 @@ def main():
     try:
         request = json.load(sys.stdin)
         if not isinstance(request, dict):
-            raise ValueError("request must be a JSON object")
+            raise ValidationError("request must be a JSON object")
         url = request.get("url")
         mode = request.get("mode", "http")
         max_characters = request.get("maxCharacters", MAX_CHARACTERS)
         if mode not in {"http", "dynamic"}:
-            raise ValueError("mode must be http or dynamic")
+            raise ValidationError("mode must be http or dynamic")
         if not isinstance(max_characters, int) or isinstance(max_characters, bool) or not 1 <= max_characters <= MAX_CHARACTERS:
-            raise ValueError(f"maxCharacters must be an integer from 1 to {MAX_CHARACTERS}")
+            raise ValidationError(f"maxCharacters must be an integer from 1 to {MAX_CHARACTERS}")
         url = _validate_url(url)
         if mode == "dynamic":
             # Scrapling's DynamicFetcher has no documented per-request DNS/IP policy hook.
             return _result(url, "scrapling-dynamic", "dynamic mode is unavailable because browser subrequests cannot be safely validated")
         return _read_http(url, max_characters)
-    except ValueError as error:
+    except ValidationError as error:
         return _result(_safe_url(locals().get("url", "")), "scrapling-http", str(error))
     except Exception:
         return _result(_safe_url(locals().get("url", "")), "scrapling-http", "HTTP fetch failed")

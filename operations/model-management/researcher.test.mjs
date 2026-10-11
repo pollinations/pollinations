@@ -646,7 +646,7 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
         assert.ok(url.endsWith("/v1/chat/completions"));
         payloads.push(JSON.parse(options.body));
         return Response.json({
-            usage: { total_tokens: 1 },
+            usage: { prompt_tokens: 1, completion_tokens: 0, total_tokens: 1 },
             choices: [
                 {
                     message: {
@@ -671,6 +671,10 @@ test("runner sends GPT-6.1 Sol medium effort and accounts for reasoning token al
             assert.equal(payload.reasoning_effort, "medium");
             assert.equal(payload.max_tokens, 12000);
             assert.equal(payload.temperature, undefined);
+            assert.match(
+                payload.messages[0].content,
+                /training knowledge is unusable as evidence/,
+            );
             assert.match(
                 JSON.parse(payload.messages[1].content).operatingPolicy,
                 /Research the exact route/,

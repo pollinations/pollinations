@@ -114,4 +114,3 @@ it("preserves raw markdown when stdout is not a TTY", async () => {
     expect(writes.join("")).toBe(`${rawMarkdown}\n`);
     expect(writes.join("")).toContain('`response_format: "url"`');
 });
-

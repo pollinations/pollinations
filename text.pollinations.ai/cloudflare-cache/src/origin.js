@@ -224,7 +224,7 @@ export async function origin(request, env, ctx) {
     return errorPage(404, `Cannot ${method} ${encodeUrl(url.pathname)}`, true);
 }
 
-/** The request line and header lines, as the VM received them over HTTP/1.1 */
+/** The request line and header lines, as sent to the VM over HTTP/1.1 */
 function headSize(request, { pathname, search }) {
     let size = `${request.method} ${pathname}${search} HTTP/1.1\r\n`.length;
     for (const [name, value] of request.headers) {
@@ -281,7 +281,7 @@ function redirectType(accept) {
         return {
             name: name.toLowerCase(),
             q: at === -1 ? 1 : Number.parseFloat(params[at].slice(2)),
-            // a media type parameter before q never matches a bare type
+            // a media type parameter before q keeps it from matching these
             params: at === -1 ? params.length : at,
             o,
         };

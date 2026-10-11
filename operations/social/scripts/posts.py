@@ -114,7 +114,7 @@ def period(job: str, date: str) -> tuple[str, str]:
     return date, date
 
 
-def check(job: str, date: str, news: Path, overwrite: bool) -> None:
+def check_date(job: str, date: str) -> None:
     fmt = "%Y-%m" if job == "monthly" else "%Y-%m-%d"
     try:
         day = datetime.strptime(date, fmt)
@@ -123,6 +123,10 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
         valid = False
     if not valid:
         sys.exit(f"{job}: {date} is not {DATES[job]}")
+
+
+def check(job: str, date: str, news: Path, overwrite: bool) -> None:
+    check_date(job, date)
     if not (news / NEWS_REL_DIR).is_dir():
         sys.exit(f"{news} is not a checkout of the news branch")
     saved = f"snapshots/{date}.json" if job == "models" else f"{date}/summary.json"
@@ -339,23 +343,30 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
     return files
 
 
+def model_post(raw: dict) -> dict | None:
+    """The model post's discord.json, or None in a week without changes."""
+    report = raw["outputs"].get("model-post")
+    if not report:
+        return None
+    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID")
+    return discord_payload(
+        report["discord_text"],
+        raw["date"],
+        raw["previous_date"],
+        role_id,
+        raw["generated_at"],
+    )
+
+
 def model_files(raw: dict, news: Path) -> dict[str, bytes]:
     """The /models snapshot and, when something changed, the post, the comparison and models.md."""
     date = raw["date"]
     files = {f"{MODELS_NEWS_DIR}/snapshots/{date}.json": json_file(raw["snapshot"])}
     report = raw["outputs"].get("model-post")
     if report:
-        role_id = os.environ.get("DISCORD_MODELS_ROLE_ID")
-        post = discord_payload(
-            report["discord_text"],
-            date,
-            raw["previous_date"],
-            role_id,
-            raw["generated_at"],
-        )
         changelog = news / MODELS_NEWS_DIR / "models.md"
         existing = changelog.read_text(encoding="utf-8") if changelog.exists() else ""
-        files[f"{MODELS_NEWS_DIR}/{date}/discord.json"] = json_file(post)
+        files[f"{MODELS_NEWS_DIR}/{date}/discord.json"] = json_file(model_post(raw))
         files[f"{MODELS_NEWS_DIR}/diffs/{date}.json"] = json_file(raw["diff"])
         files[f"{MODELS_NEWS_DIR}/models.md"] = models_md(
             existing, report["models_md_section"]

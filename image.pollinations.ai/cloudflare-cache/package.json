@@ -21,9 +21,9 @@
     "author": "Pollinations",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.8.61",
+        "@cloudflare/vitest-pool-workers": "^0.12.21",
         "vitest": "^3.2.4",
-        "wrangler": "^4.28.1"
+        "wrangler": "^4.147.0"
     },
     "dependencies": {
         "dotenv": "^17.0.1",

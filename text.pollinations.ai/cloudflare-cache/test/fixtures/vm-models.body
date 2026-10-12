@@ -1,0 +1,1 @@
+[{"name":"openai-fast","description":"GPT-OSS 20B Reasoning LLM (OVH)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]

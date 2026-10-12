@@ -23,5 +23,14 @@
         "@cloudflare/vitest-pool-workers": "^0.12.21",
         "vitest": "3.2.4",
         "wrangler": "^4.147.0"
+    },
+    "dependencies": {
+        "@weftlabs/sdk": "0.27.1",
+        "@x402/core": "2.27.0",
+        "@x402/evm": "2.27.0",
+        "content-type": "1.0.5",
+        "hono": "4.13.9",
+        "iconv-lite": "0.6.3",
+        "media-typer": "0.3.0"
     }
 }

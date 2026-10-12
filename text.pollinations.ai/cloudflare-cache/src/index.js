@@ -1,7 +1,9 @@
 // No imports needed for Web Crypto API
 import { checkTurnstile } from "../../../shared/turnstile.js";
+import { origin } from "./origin.js";
 
 // Durable Object classes must be exported by the Worker's main module
+export { FeedHub } from "../../../shared/feed-hub.js";
 export { IpSlot } from "../../../shared/ip-slot.js";
 
 // Worker version to track which deployment is running
@@ -94,26 +96,27 @@ const worker = {
                 return turnstileResponse; // Return 403 if verification failed
             }
 
-            // Let origin handle GET root requests (e.g. redirects) without caching
-            // But allow POST requests to root to be cached
+            // The GET root redirect (POST / is cached) and the listed paths'
+            // static GET and HEAD answers come fresh from origin(), never R2
+            const read = request.method === "GET" || request.method === "HEAD";
+            // Until every generation runs here, the VM's feed has most events
             if (
-                (url.pathname === "/" || url.pathname === "") &&
-                request.method === "GET"
+                read &&
+                url.pathname === "/feed" &&
+                Number(env.ADAPTER_SHARE ?? 0) < 100
             ) {
-                log(
-                    "request",
-                    "Proxying GET root request directly to origin without caching",
-                );
                 return await proxyRequest(request, env);
             }
-
-            // Check if the path should be excluded from caching (exact match only)
+            if (
+                (url.pathname === "/" && request.method === "GET") ||
+                (read && NON_CACHE_PATHS.includes(url.pathname))
+            ) {
+                return await origin(request, env, ctx);
+            }
+            // Other methods there are uncached too, but can generate
+            // (POST /openai/models), so they follow the split
             if (NON_CACHE_PATHS.includes(url.pathname)) {
-                log(
-                    "request",
-                    `Path ${url.pathname} excluded from caching, proxying directly`,
-                );
-                return await proxyRequest(request, env);
+                return await missToOrigin(request, env, ctx);
             }
 
             // Generate a cache key for the request
@@ -125,7 +128,6 @@ const worker = {
 
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
-
 
                 // For HEAD requests, return headers only (no body)
                 if (request.method === "HEAD") {
@@ -142,20 +144,23 @@ const worker = {
 
             // Cached responses stay free. A paid cache miss reaches the origin,
             // but its settlement headers and body must not enter the public cache.
-            if (request.headers.has("payment-signature") || request.headers.has("x-payment")) {
-                return await proxyRequest(request, env);
+            if (
+                request.headers.has("payment-signature") ||
+                request.headers.has("x-payment")
+            ) {
+                return await missToOrigin(request, env, ctx);
             }
 
             // A HEAD response has no body. HEAD shares the GET cache key, so
             // storing it would serve an empty body to every later GET.
             if (request.method === "HEAD") {
-                return await proxyRequest(request, env);
+                return await missToOrigin(request, env, ctx);
             }
 
             log("cache", "Cache miss, proxying to origin...");
 
-            // Forward the request to the origin server
-            const originResp = await proxyRequest(request, env);
+            // Generate the response in the Worker or on the VM
+            const originResp = await missToOrigin(request, env, ctx);
 
             // Don't cache error responses
             if (originResp.status >= 401) {
@@ -163,7 +168,6 @@ const worker = {
                     "cache",
                     `Not caching error response with status ${originResp.status}`,
                 );
-
 
                 return originResp;
             }
@@ -201,7 +205,6 @@ const worker = {
                         "cache",
                         `✅ Cached response: ${key} (${content.byteLength} bytes)`,
                     );
-
 
                     // Return the original response
                     return originResp;
@@ -289,7 +292,6 @@ const worker = {
                                     `✅ Response cached successfully (${totalSize} bytes)`,
                                 );
 
-
                                 // Free memory
                                 chunks = null;
                             } catch (err) {
@@ -331,25 +333,56 @@ const worker = {
                 }),
             });
         } catch (err) {
-            log("error", `❌ Worker error: ${err.message}`);
-            if (err.stack) log("error", `Stack: ${err.stack}`);
-
-            return new Response(`Worker error: ${err.message}`, {
-                status: 500,
-                headers: {
-                    "Content-Type": "text/plain",
-                    "X-Error": err.message,
-                },
-            });
+            return workerError(err);
         }
     },
 };
+
+/** The Worker's 500 for an exception */
+function workerError(err) {
+    log("error", `❌ Worker error: ${err.message}`);
+    if (err.stack) log("error", `Stack: ${err.stack}`);
+
+    return new Response(`Worker error: ${err.message}`, {
+        status: 500,
+        headers: {
+            "Content-Type": "text/plain",
+            "X-Error": err.message,
+        },
+    });
+}
 
 export default {
     async fetch(request, env, ctx) {
         return withAttributionHeaders(await worker.fetch(request, env, ctx));
     },
 };
+
+/**
+ * Sends a cache miss to origin() for ADAPTER_SHARE percent of requests and to
+ * the VM otherwise, and labels the response, exceptions included, with the
+ * path it took.
+ */
+async function missToOrigin(request, env, ctx) {
+    const path =
+        Math.random() * 100 < Number(env.ADAPTER_SHARE ?? 0) ? "worker" : "vm";
+    let response;
+    try {
+        response =
+            path === "worker"
+                ? await origin(request, env, ctx)
+                : await proxyRequest(request, env);
+    } catch (err) {
+        response = workerError(err);
+    }
+    const headers = new Headers(response.headers);
+    headers.set("X-Legacy-Path", path);
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
 
 /**
  * Proxy the request to the origin server

@@ -351,7 +351,7 @@ class GistEnrichmentTest(unittest.TestCase):
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
-            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"app": True} if day == 3 else {})}]}
+            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"kind": "app"} if day == 3 else {})}]}
             for day in range(1, 13)]
         self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
         self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")

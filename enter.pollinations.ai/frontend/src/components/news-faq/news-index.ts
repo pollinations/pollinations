@@ -46,21 +46,15 @@ export type Highlight = {
     date: string;
     title: string;
     text: string;
-    app?: boolean;
     /** PRs the highlight comes from; older backfilled highlights have none. */
     prs?: number[];
-    /** Set by the daily summary; models and API changes belong to the Changelog. */
-    kind?: "model" | "api" | "product";
+    /** Set by the daily summary: models and API changes belong to the Changelog, apps to the README. */
+    kind?: "model" | "api" | "app" | "product";
 };
 
-/**
- * Highlights for Updates: not models or API changes (the Changelog lists
- * them) and not apps (README only). Unlabelled highlights still show.
- */
+/** Highlights for Updates: product news only. */
 export function newsHighlights(index: NewsIndex): Highlight[] {
-    return index.highlights.filter(
-        ({ app, kind }) => !app && kind !== "model" && kind !== "api",
-    );
+    return index.highlights.filter(({ kind }) => kind === "product");
 }
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/;

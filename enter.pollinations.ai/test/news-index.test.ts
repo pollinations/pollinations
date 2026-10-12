@@ -203,11 +203,11 @@ describe("model news cards", () => {
                     highlight("model launch", { kind: "model" }),
                     highlight("new endpoint", { kind: "api" }),
                     highlight("feature", { kind: "product" }),
-                    highlight("app", { kind: "product", app: true }),
+                    highlight("app", { kind: "app" }),
                     highlight("unlabelled"),
                 ],
             }).map(({ title }) => title),
-        ).toEqual(["feature", "unlabelled"]);
+        ).toEqual(["feature"]);
     });
 
     it("moves a highlight's link under its title", () => {

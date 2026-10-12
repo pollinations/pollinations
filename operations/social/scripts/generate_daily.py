@@ -22,9 +22,8 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 from common import (
-    gist_context,
-    build_canonical_summary,
-    join_summary_parts,
+    build_daily_summary_artifact,
+    daily_summary_input,
     normalize_platform_post,
     load_prompt,
     get_env,
@@ -38,17 +37,12 @@ from common import (
     github_api_request,
     commit_files_to_branch,
     GITHUB_API_BASE,
+    DAILY_REL_DIR,
     GISTS_BRANCH,
     IMAGE_SIZE,
-    NEWS_REL_DIR,
     OWNER,
     REPO,
 )
-
-# ── Constants ────────────────────────────────────────────────────────
-
-DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -61,62 +55,12 @@ def get_target_date(override: Optional[str] = None) -> str:
 
 
 
-def build_daily_summary_artifact(
-    summary: Dict, gists: List[Dict], date_str: str, generated_at: str
-) -> Dict:
-    """Build the canonical daily summary stored on the news branch."""
-    arcs = summary.get("arcs") or []
-    one_liner = (summary.get("one_liner") or "").strip()
-    headline = next(
-        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
-        "",
-    )
-    title = headline or one_liner or f"Updates for {date_str}"
-    arc_summaries = [
-        (arc.get("summary") or "").strip()
-        for arc in arcs[:3]
-        if (arc.get("summary") or "").strip()
-    ]
-    summary_text = join_summary_parts(
-        ([one_liner] if one_liner and one_liner != title else []) + arc_summaries
-    )
-    if not summary_text:
-        summary_text = one_liner or title
-
-    prs = [{"number": gist.get("pr_number"), "date": date_str} for gist in gists]
-    artifact = build_canonical_summary(
-        date=date_str,
-        period_start=date_str,
-        period_end=date_str,
-        title=title,
-        summary=summary_text,
-        prs=prs,
-        generated_at=generated_at,
-    )
-    # Shown directly on Enter's News page and in the README via index.json.
-    artifact["highlights"] = [
-        item for item in summary.get("highlights") or []
-        if isinstance(item, dict) and item.get("title") and item.get("text")
-    ]
-    return artifact
-
-
 # ── Step 1: Generate daily summary ──────────────────────────────────
 
 def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
     """Cluster gists into narrative arcs and produce summary.json."""
     system_prompt = load_prompt("daily")
-
-    # Build gist context for AI
-    gist_lines = []
-    for g in gists:
-        gist_lines.append(json.dumps(gist_context(g), indent=2))
-
-    user_prompt = f"""Date: {date_str}
-Number of PRs: {len(gists)}
-
-PR Gists:
-{chr(10).join(gist_lines)}"""
+    user_prompt = daily_summary_input(gists, date_str)
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,

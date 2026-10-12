@@ -1,18 +1,33 @@
+import base64
 import copy
+import hashlib
 import json
+import os
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).parent))
-from common import filter_daily_gists, generate_platform_post, validate_gist
+import deliver
+import generate_daily
+import generate_models_news
+import generate_monthly
+import generate_weekly
+import posts
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, filter_daily_gists, generate_platform_post,
+                    models_news_staged_files, validate_gist)
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
-from generate_daily import build_daily_summary_artifact, generate_summary
+from generate_daily import generate_summary
 from generate_monthly import generate_digest as generate_monthly_digest
 from generate_weekly import generate_digest, generate_discord_post
 from publish_realtime import generate_snippet
@@ -434,6 +449,460 @@ class GistEnrichmentTest(unittest.TestCase):
             pr["merge_commit_sha"] = git("rev-parse", "HEAD")
             with self.assertRaisesRegex(ValueError, "Cannot verify the full PR range"):
                 pr_comparison_refs(pr, root)
+
+
+# One reply carrying every field any post reads, so old and new runs see the same recap.
+REPLY = {
+    "pr_summary": "#1: Larger media inputs", "pr_count": 2, "one_liner": "Uploads grow.", "theme": "Bigger inputs.",
+    "arcs": [{"headline": "Larger uploads", "summary": "Uploads increase from 32 MiB to 100 MiB — größer."}],
+    "highlights": [{"emoji": "🚀", "title": "Larger uploads", "text": "Upload up to 100 MiB.", "prs": [1]}],
+    "tweet": "Uploads now take 100 MiB.", "title": "Larger uploads", "body": "Uploads grow to 100 MiB.",
+    "hook": "Uploads grew.", "closing": "The repo is public.", "hashtags": ["#AI", "#OpenSource"],
+    "message": "Hi <@&1424461167883194418>", "caption": "Bigger boxes.", "image_prompt": "Bee carrying a big box",
+    "images": [{"prompt": f"Bee scene {n}"} for n in (1, 2, 3)],
+    "models_md_section": "## 2026-10-14\n\n### Added\n- `new` (text)", "discord_text": "<@&MODEL_ROLE_ID> Model updates",
+}
+
+
+def gist(number, merged_at, tier="daily"):
+    return {"pr_number": number, "title": f"PR {number}", "author": "someone", "merged_at": merged_at,
+            "url": f"https://github.com/pollinations/pollinations/pull/{number}", "labels": [],
+            "area": "Models", "type": "Feature", "source": "Team", "image": {"prompt": "Bee"},
+            "gist": {"category": "feature", "user_facing": True, "publish_tier": tier, "importance": "major",
+                     "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
+
+
+class PostsTest(unittest.TestCase):
+    """posts.py against the old generators: the same model calls and pictures, the same saved files."""
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.checkout("news")
+        for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
+                                                "GITHUB_REPOSITORY": "pollinations/pollinations",
+                                                "DISCORD_MODELS_ROLE_ID": "42"}),
+                        patch("time.sleep")):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def checkout(self, name):
+        self.news, self.work = self.root / name, self.root / f"{name}-work"
+        (self.news / NEWS_REL_DIR).mkdir(parents=True)
+
+    def put(self, path, data):
+        file = self.news / NEWS_REL_DIR / path
+        file.parent.mkdir(parents=True, exist_ok=True)
+        file.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
+
+    def files(self):
+        return {str(path.relative_to(self.news)): path.read_bytes() for path in self.news.rglob("*") if path.is_file()}
+
+    def fakes(self, long_linkedin=False, **changes):
+        calls, images = [], []
+        def model(system_prompt, user_prompt, token, temperature=0.7, response_format=None):
+            calls.append((system_prompt, user_prompt, temperature))
+            reply = {**REPLY, **changes}
+            if long_linkedin and "Create a LinkedIn post" in user_prompt and "The previous draft" not in user_prompt:
+                reply["body"] = "x" * 1300
+            return json.dumps(reply)
+        def image(prompt, token, width=2048, height=2048, index=0, model=None):
+            images.append((prompt, width, height, index))
+            return prompt.encode() + b" picture", None
+        return calls, images, model, image
+
+    def new(self, job, date, overwrite=False, **options):
+        calls, images, model, image = self.fakes(**options)
+        before = self.files()
+        with patch("posts.call_pollinations_api", model), patch("posts.generate_image", image):
+            posts.write(job, date, self.news, self.work, overwrite)
+            posts.save(job, date, self.news, self.work, overwrite)
+        return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
+
+    def old(self, module, env, **options):
+        calls, images, model, image = self.fakes(**options)
+        committed = {}
+        def commit_image(data, path, branch, token, owner, repo):
+            committed[path] = data
+            return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
+        def commit_files(files, *args, **kwargs):
+            committed.update({path: json.dumps(data, indent=2, ensure_ascii=False).encode() for path, data in files})
+            return True
+        name = module.__name__
+        with patch.dict(os.environ, env), patch("common.get_repo_root", return_value=str(self.news)), \
+             patch("common.call_pollinations_api", model), patch(f"{name}.call_pollinations_api", model), \
+             patch(f"{name}.generate_image", image), patch(f"{name}.commit_image_to_branch", commit_image), \
+             patch(f"{name}.commit_files_to_branch", commit_files):
+            module.main()
+        return calls, images, committed
+
+    def assertSameRun(self, old, new, calls, files):
+        stamp = lambda saved: {path: re.sub(rb'"generated_at": "[^"]*"', b'"generated_at": ""', data)
+                               for path, data in saved.items()}
+        self.assertEqual(sorted(new[0]), sorted(old[0]))
+        self.assertEqual(sorted(new[1]), sorted(old[1]))
+        self.assertEqual(stamp(new[2]), stamp(old[2]))
+        self.assertEqual((len(new[0]), len(new[2])), (calls, files))
+
+    def test_daily_matches_today(self):
+        for number in (1, 2):
+            self.put(f"gists/2026-10-06/PR-{number}.json", gist(number, "2026-10-06T10:00:00Z"))
+        self.put("gists/2026-10-06/PR-3.json", gist(3, "2026-10-06T11:00:00Z", tier="discord_only"))
+        self.put("gists/2026-10-07/PR-4.json", gist(4, "2026-10-07T11:00:00Z", tier="discord_only"))
+        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-06"})
+        self.assertSameRun(old, self.new("daily", "2026-10-06"), calls=3, files=5)
+        # A day without daily-tier gists writes and saves nothing, as today.
+        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-07"})
+        self.assertSameRun(old, self.new("daily", "2026-10-07"), calls=0, files=0)
+        # A post whose text is missing stops the run instead of being saved empty.
+        with self.assertRaisesRegex(SystemExit, "missing tweet"):
+            self.new("daily", "2026-10-06", overwrite=True, tweet=None)
+
+    def test_weekly_matches_today_with_and_without_the_linkedin_rewrite(self):
+        for long_linkedin, calls in ((False, 6), (True, 7)):
+            with self.subTest(long_linkedin=long_linkedin):
+                self.checkout(f"news-{long_linkedin}")
+                for number, day in ((1, "2026-09-27"), (2, "2026-09-30"), (3, "2026-10-03"), (4, "2026-10-04")):
+                    self.put(f"gists/{day}/PR-{number}.json", gist(number, f"{day}T10:00:00Z"))
+                old = self.old(generate_weekly, {"WEEK_START_DATE": "2026-09-27"}, long_linkedin=long_linkedin)
+                new = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
+                self.assertSameRun(old, new, calls=calls, files=13)
+                # The Sunday's own gist belongs to the next week.
+                self.assertNotIn("PR 4", "".join(user for _, user, _ in new[0]))
+
+    def test_monthly_matches_today(self):
+        # The cover's picture prompt is trimmed, as today; the other posts' prompts never were.
+        for reply in ({}, {"image_prompt": "  Bee at a desk \n"}):
+            with self.subTest(reply=reply):
+                self.checkout(f"news-{len(reply)}")
+                for day in ("2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
+                    self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {day}", "pr_count": 2,
+                                                           "summary": "Things shipped.",
+                                                           "prs": [{"number": 1, "date": day}]})
+                old = self.old(generate_monthly, {"TARGET_MONTH": "2026-09"}, **reply)
+                self.assertSameRun(old, self.new("monthly", "2026-09", **reply), calls=2, files=2)
+
+    def test_model_post_matches_today_and_a_week_without_changes_saves_only_the_snapshot(self):
+        previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
+                    "embeddings": []}
+        current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
+        changelog = "# Pollinations Model Changelog\n\n## 2026-10-07\n\n- Older section\n"
+        self.put("models/snapshots/2026-10-07.json", previous)
+        self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
+        self.put("models/models.md", changelog)
+        staging = self.root / "staging"
+        staging.mkdir()
+        for date, baseline, snapshot, calls, files in (("2026-10-14", previous, "2026-10-07", 1, 4),
+                                                       ("2026-10-28", current, "2026-10-21", 0, 1)):
+            with self.subTest(date=date):
+                old_calls, _, model, _ = self.fakes()
+                committed = {}
+                def commit_text(token, owner, repo, path, content, message, committed=committed):
+                    committed[path] = content.encode()
+                    return True
+                with patch.dict(os.environ, {"TARGET_DATE": date}), \
+                     patch("generate_models_news._path_exists_on_news", return_value=False), \
+                     patch("generate_models_news.fetch_all_snapshots", return_value=copy.deepcopy(current)), \
+                     patch("generate_models_news.find_previous_snapshot_date", return_value=snapshot), \
+                     patch("generate_models_news.load_snapshot_from_news", return_value=copy.deepcopy(baseline)), \
+                     patch("generate_models_news.load_models_md", return_value=changelog), \
+                     patch("generate_models_news.models_news_staging_dir", return_value=str(staging)), \
+                     patch("generate_models_news.commit_text_to_news", commit_text), \
+                     patch("generate_models_news.call_pollinations_api", model):
+                    self.assertEqual(generate_models_news.main(), 0)
+                if calls:
+                    committed = {path: (staging / name).read_bytes() for name, path in models_news_staged_files(date)}
+                with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+                    new = self.new("models", date)
+                self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
+                if calls:
+                    self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
+        # A saved model post is never replaced; a week without changes can be taken again.
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            with self.assertRaisesRegex(SystemExit, "has a saved model post"):
+                self.new("models", "2026-10-14", overwrite=True)
+            self.assertEqual(self.new("models", "2026-10-28", overwrite=True)[0], [])
+
+    def test_model_baseline_is_never_silently_rebuilt(self):
+        self.put("models/models.md", "# Pollinations Model Changelog\n")
+        with patch("posts.fetch_all_snapshots", return_value={"text": [{"name": "a"}]}):
+            with self.assertRaisesRegex(SystemExit, "refusing to rebuild the baseline"):
+                posts.write("models", "2026-10-14", self.news, self.work)
+            with patch.dict(os.environ, {"ALLOW_BASELINE_REBUILD": "1"}):
+                new = self.new("models", "2026-10-14")
+        self.assertEqual(list(new[2]), [f"{NEWS_REL_DIR}/models/snapshots/2026-10-14.json"])
+
+    def test_a_saved_date_is_replaced_only_when_asked_and_keeps_its_delivery_record(self):
+        self.put("gists/2026-10-06/PR-1.json", gist(1, "2026-10-06T10:00:00Z"))
+        self.new("daily", "2026-10-06")
+        delivery = self.news / NEWS_REL_DIR / "daily/2026-10-06/delivery.json"
+        delivery.write_text('{"daily-x": "done"}')
+        _, _, model, image = self.fakes()
+        with patch("posts.call_pollinations_api", model), patch("posts.generate_image", image):
+            for command in (posts.write, posts.save):
+                with self.assertRaisesRegex(SystemExit, "already saved"):
+                    command("daily", "2026-10-06", self.news, self.work)
+            posts.write("daily", "2026-10-06", self.news, self.work, overwrite=True)
+            posts.save("daily", "2026-10-06", self.news, self.work, overwrite=True)
+            for job, date in (("weekly", "2026-10-05"), ("daily", "2026-10-6"), ("monthly", "2026-10-06")):
+                with self.assertRaisesRegex(SystemExit, "is not a"):
+                    posts.write(job, date, self.news, self.work)
+            with self.assertRaisesRegex(SystemExit, "not a checkout"):
+                posts.write("daily", "2026-10-06", self.root, self.work)
+        self.assertEqual(delivery.read_text(), '{"daily-x": "done"}')
+
+
+jsonlib = json
+
+
+def reply(status, body=None):
+    return SimpleNamespace(status_code=status, json=lambda: body or {}, text="", headers={})
+
+
+class DeliverTest(unittest.TestCase):
+    """deliver.py against the news branch as GitHub's contents API keeps it, and fake channels."""
+
+    def setUp(self):
+        self.store, self.faults, self.calls, self.broken = {}, [], [], {}
+        self.reddit = True
+        env = {"GITHUB_TOKEN": "test", "BUFFER_ACCESS_TOKEN": "test", "DISCORD_MODELS_ROLE_ID": "42",
+               "DISCORD_WEEKLY_WEBHOOK_URL": "https://discord.test/weekly",
+               "DISCORD_MODELS_WEBHOOK_URL": "https://discord.test/models"}
+        for patcher in (
+            patch.dict(os.environ, env),
+            patch.dict(deliver.START, {"daily": "2026-10-01", "weekly": "2026-10-01", "models": "2026-10-01"}),
+            patch.dict(deliver.BUFFER_CHANNELS, {"twitter": "x", "linkedin": "li", "instagram": "ig"}),
+            patch("deliver.github", self.github),
+            patch("deliver.requests.post", self.post),
+            patch("deliver.requests.head", return_value=reply(200)),
+            patch("deliver.requests.get", return_value=SimpleNamespace(
+                status_code=200, headers={"content-type": "image/jpeg"}, content=b"jpeg")),
+            patch("deliver.reddit_settings", return_value=("host", "user", "key")),
+            patch("deliver.deploy_reddit_post", self.deploy),
+            patch("time.sleep"),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def github(self, method, path, params=None, json=None):
+        """A stale sha gets 409 and a create over an existing file 422, as on GitHub."""
+        current = self.store.get(path)
+        if method == "GET":
+            if current is None:
+                return reply(404)
+            return reply(200, {"content": base64.b64encode(current).decode(),
+                               "sha": hashlib.sha1(current).hexdigest()})
+        fault = self.faults.pop(0) if self.faults else None
+        if fault == "409":
+            return reply(409)
+        if fault == "taken":  # another run's claim lands just before this one
+            record = jsonlib.loads(base64.b64decode(json["content"]))
+            taken = {post: {**entry, "run": "other"} for post, entry in record.items() if entry["run"] == deliver.RUN}
+            self.store[path] = jsonlib.dumps({**record, **taken}).encode()
+            return reply(409)
+        if current is not None and json.get("sha") != hashlib.sha1(current).hexdigest():
+            return reply(409 if "sha" in json else 422)
+        self.store[path] = base64.b64decode(json["content"])
+        return reply(502 if fault == "502" else 201)
+
+    def post(self, url, json=None, files=None, timeout=None, headers=None):
+        self.calls.append((url, json, files))
+        answers = self.broken.get(url) or []
+        trouble = answers.pop(0) if answers else None
+        if isinstance(trouble, Exception):
+            raise trouble
+        if trouble:
+            return reply(*trouble)
+        if url == deliver.BUFFER_URL:
+            due = json["variables"]["input"]["dueAt"]
+            return reply(200, {"data": {"createPost": {"__typename": "PostActionSuccess",
+                                                       "post": {"id": f"b{len(self.calls)}", "dueAt": due}}}})
+        return reply(200, {"id": f"m{len(self.calls)}"})
+
+    def deploy(self, post, host, user, key):
+        self.calls.append(("reddit", post, None))
+        if isinstance(self.reddit, Exception):
+            raise self.reddit
+        return self.reddit
+
+    def save(self, job, date, posts, summary=True):
+        folder = f"{deliver.JOB_DIRS[job]}/{date}"
+        if summary:
+            self.store[f"{folder}/summary.json"] = b"{}"
+        for name, post in posts.items():
+            self.store[f"{folder}/{name}"] = json.dumps(post).encode()
+
+    def record(self, job, date):
+        content = self.store.get(f"{deliver.JOB_DIRS[job]}/{date}/delivery.json")
+        return {post: entry["state"] for post, entry in json.loads(content).items()} if content else {}
+
+    def sent(self, target):
+        return [call for call in self.calls if call[0] == target]
+
+    def weekly(self, date="2026-10-11"):
+        pictures = [{"url": f"https://raw.githubusercontent.com/pollinations/pollinations/news/{n}.jpg"} for n in range(3)]
+        picture = pictures[0]
+        self.save("weekly", date, {
+            "twitter.json": {"text": "Shipped.", "images": [picture]},
+            "linkedin.json": {"text": "A week of work.", "images": [picture]},
+            "instagram.json": {"text": "Cozy.", "images": pictures},
+            "discord.json": {"text": "Hi <@&1424461167883194418>", "images": [picture]},
+            "reddit.json": {"title": "Week", "text": "Body", "images": [picture]},
+        })
+
+    def test_each_post_goes_out_once_as_today(self):
+        self.weekly()
+        for _ in range(2):
+            deliver.run("schedule", "weekly", "2026-10-11")
+            deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual(self.record("weekly", "2026-10-11"), {
+            "twitter.json": "done", "linkedin.json": "done", "instagram.json": "done",
+            "discord.json": "done", "reddit.json": "started"})
+        buffer = [call[1] for call in self.sent(deliver.BUFFER_URL)]
+        self.assertEqual(len(buffer), 3)
+        # Buffer only schedules, at today's slots; nothing is posted right away.
+        for request in buffer:
+            self.assertEqual(request["query"], deliver.CREATE_POST)
+            self.assertEqual((request["variables"]["input"]["mode"],
+                              request["variables"]["input"]["schedulingType"]), ("customScheduled", "automatic"))
+        x, linkedin, instagram = (request["variables"]["input"] for request in buffer)
+        self.assertEqual((len(x["assets"]), len(instagram["assets"])), (1, 3))
+        self.assertEqual(instagram["metadata"], {"instagram": {"type": "post", "shouldShareToFeed": True}})
+        self.assertNotIn("metadata", linkedin)
+        # The weekly Discord post carries its picture and, as today, pings nobody.
+        (_, payload, files), = self.sent("https://discord.test/weekly?wait=true")
+        self.assertIsNone(payload)
+        self.assertEqual(json.loads(files["payload_json"][1]), {"content": "Hi <@&1424461167883194418>"})
+        self.assertEqual(len(self.sent("reddit")), 1)
+        # A rerun whose checks would fail doesn't report the posts that went out.
+        with patch("deliver.reddit_settings", side_effect=ValueError("no settings")):
+            deliver.run("send", "weekly", "2026-10-11")
+
+    def test_slots_are_todays(self):
+        def slot(channel, *when):
+            return deliver.next_slot(channel, datetime(2026, 10, *when, tzinfo=UTC))
+        self.assertEqual(slot("twitter", 12, 6, 30), "2026-10-12T15:00:00Z")    # Monday's daily
+        self.assertEqual(slot("twitter", 11, 6, 30), "2026-10-12T15:00:00Z")    # Sunday's weekly X → Monday
+        self.assertEqual(slot("twitter", 12, 14, 55), "2026-10-13T15:00:00Z")   # 10 minutes ahead at least
+        self.assertEqual(slot("linkedin", 11, 6, 30), "2026-10-11T18:00:00Z")
+        self.assertEqual(slot("instagram", 11, 17, 55), "2026-10-18T18:00:00Z")
+
+    def test_text_limits_are_todays(self):
+        # As today, a post whose pictures don't load is scheduled anyway.
+        deliver.requests.head.return_value = reply(404)
+        self.save("weekly", "2026-10-11", {
+            "twitter.json": {"text": "x" * 281, "images": [{"url": "https://raw.githubusercontent.com/p.jpg"}]},
+            "linkedin.json": {"text": "y" * 1249},
+            "instagram.json": {"text": "z" * 2201},
+        })
+        with self.assertRaisesRegex(SystemExit, "linkedin.json"):
+            deliver.run("schedule", "weekly", "2026-10-11")
+        texts = [call[1]["variables"]["input"]["text"] for call in self.sent(deliver.BUFFER_URL)]
+        self.assertEqual(texts, ["x" * 277 + "...", "z" * 2197 + "..."])
+        self.assertNotIn("linkedin.json", self.record("weekly", "2026-10-11"))
+
+    def test_an_unclear_send_waits_for_a_person_and_the_rest_goes_out(self):
+        self.weekly()
+        self.broken[deliver.BUFFER_URL] = [requests.ReadTimeout()]
+        self.broken["https://discord.test/weekly?wait=true"] = [(503,)]
+        self.reddit = OSError("connection dropped after the deploy command")
+        for command in ("schedule", "send"):
+            for _ in range(2):
+                with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                    deliver.run(command, "weekly", "2026-10-11")
+        self.assertEqual(self.record("weekly", "2026-10-11"), {
+            "twitter.json": "attempt", "linkedin.json": "done", "instagram.json": "done",
+            "discord.json": "attempt", "reddit.json": "attempt"})
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("reddit"))), (3, 1))
+        # A person found the X post and the Discord message missing: one is done, one goes again.
+        deliver.mark("weekly", "2026-10-11", "twitter.json", "done")
+        deliver.mark("weekly", "2026-10-11", "discord.json", "failed")
+        deliver.mark("weekly", "2026-10-11", "reddit.json", "done")
+        deliver.run("schedule", "weekly", "2026-10-11")
+        deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("https://discord.test/weekly?wait=true"))), (3, 2))
+        self.assertEqual(self.record("weekly", "2026-10-11")["discord.json"], "done")
+
+    def test_a_clean_failure_is_sent_again_and_false_conflicts_resolve(self):
+        self.save("daily", "2026-10-11", {"twitter.json": {"text": "Shipped."},
+                                          "reddit.json": {"title": "Day", "text": "Body"}})
+        self.broken[deliver.BUFFER_URL] = [(401, {"errors": [{"extensions": {"code": "UNAUTHENTICATED"}}]})]
+        self.reddit = False
+        for command in ("schedule", "send"):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deliver.run(command, "daily", "2026-10-11")
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "failed", "reddit.json": "failed"})
+        # A commit landing in the same instant gives a false 409; a 502 can hide a write that landed.
+        self.reddit = True
+        self.faults = ["409", None, None, "502"]
+        deliver.run("schedule", "daily", "2026-10-11")
+        deliver.run("send", "daily", "2026-10-11")
+        deliver.run("send", "daily", "2026-10-11")
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "done", "reddit.json": "started"})
+        self.assertEqual((len(self.sent(deliver.BUFFER_URL)), len(self.sent("reddit"))), (2, 2))
+
+    def test_only_saved_dates_from_the_start_date_are_delivered(self):
+        self.save("daily", "2026-10-10", {"twitter.json": {"text": "Saturday"}})        # never delivered
+        self.save("daily", "2026-10-08", {"twitter.json": {"text": "Thursday"}})        # reddit.json missing
+        for date in ("2026-10-10", "2026-10-07"):                                       # 10-07: nothing saved
+            deliver.run("send", "daily", date)
+            deliver.run("schedule", "daily", date)
+        with self.assertRaisesRegex(SystemExit, "reddit.json"):
+            deliver.run("send", "daily", "2026-10-08")
+        self.assertEqual(self.calls, [])
+        # A post saved without its summary still goes out.
+        self.save("daily", "2026-10-09", {"twitter.json": {"text": "Friday"}}, summary=False)
+        deliver.run("schedule", "daily", "2026-10-09")
+        self.assertEqual(len(self.sent(deliver.BUFFER_URL)), 1)
+        for start, date in ((None, "2026-10-08"), ("2026-10-09", "2026-10-08")):
+            with patch.dict(deliver.START, {"daily": start}), self.assertRaisesRegex(SystemExit, "start date"):
+                deliver.run("schedule", "daily", date)
+
+    def test_a_post_claimed_by_another_run_is_left_to_it(self):
+        self.save("daily", "2026-10-11", {"twitter.json": {"text": "Shipped."}})
+        self.faults = ["taken"]
+        deliver.run("schedule", "daily", "2026-10-11")
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "attempt"})
+
+    def test_a_half_sent_discord_post_is_finished_by_hand(self):
+        self.save("weekly", "2026-10-11", {"discord.json": {"text": "line\n" * 400},
+                                           "reddit.json": {"title": "Week", "text": "Body"}})
+        self.broken["https://discord.test/weekly?wait=true"] = [None, (429,)]
+        with self.assertRaisesRegex(SystemExit, "discord.json"):
+            deliver.run("send", "weekly", "2026-10-11")
+        with self.assertRaisesRegex(SystemExit, "by hand"):
+            deliver.mark("weekly", "2026-10-11", "discord.json", "failed")
+        deliver.mark("weekly", "2026-10-11", "discord.json", "done")
+        deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual(len(self.sent("https://discord.test/weekly?wait=true")), 2)
+
+    def test_model_post_is_sent_once_from_work_and_never_saved_with_another_text(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        work = Path(directory.name)
+        raw = {"job": "models", "date": "2026-10-14", "previous_date": "2026-10-07", "generated_at": "now",
+               "outputs": {"model-post": {"discord_text": "<@&MODEL_ROLE_ID> " + "a " * 1000}}}
+        (work / "raw.json").write_text(json.dumps(raw))
+        for _ in range(2):
+            deliver.run("send", "models", "2026-10-14", work)
+        (_, payload, _), = self.sent("https://discord.test/models?wait=true")
+        self.assertEqual(payload["allowed_mentions"], {"parse": ["roles"]})
+        self.assertEqual(payload["content"], deliver.safe_truncate(("<@&42> " + "a " * 1000).strip(), 1900))
+        # A person who marks it done keeps it tied to the text that went out.
+        deliver.mark("models", "2026-10-14", "discord.json", "done")
+        deliver.run("send", "models", "2026-10-14", work)
+        raw["outputs"]["model-post"]["discord_text"] = "<@&MODEL_ROLE_ID> other"
+        (work / "raw.json").write_text(json.dumps(raw))
+        with self.assertRaisesRegex(SystemExit, "this WORK's text"):
+            deliver.run("send", "models", "2026-10-14", work)
+        # A week without changes has nothing to send, and save then keeps the snapshot.
+        raw["outputs"] = {}
+        (work / "raw.json").write_text(json.dumps({**raw, "date": "2026-10-21"}))
+        deliver.run("send", "models", "2026-10-21", work)
+        self.assertEqual(len(self.calls), 1)
+        self.assertEqual(self.record("models", "2026-10-21"), {})
 
 
 if __name__ == "__main__":

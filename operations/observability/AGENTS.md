@@ -94,7 +94,7 @@ Grafana doesn't render escaped newlines in tooltips—they appear as literal `\n
 
 ### ✅ Do: Keep descriptions concise and single-line
 ```json
-"description": "Daily Pollen: Paid (green) vs Free (orange). Subsidy % (red) = free share. Excludes Dec 30–Jan 8 bug window."
+"description": "Daily Pollen: Paid (green) vs Quest (orange)."
 ```
 
 ---
@@ -114,12 +114,10 @@ BYOP and BYOM are independent dimensions: BYOP is end-user-authenticated consump
 The `users` and `apps` states in `generation_usage_hourly` and `byop_app_daily` count every request, including requests rejected with a 402 for lack of Pollen. Count active users and apps with `funding_source != 'unfunded'`, for example `uniqMergeIf(users, funding_source != 'unfunded')` or `uniqIfMergeIf(apps, funding_source != 'unfunded')`. Without the filter, WAU runs about 24% above the KPI app's WAU.
 
 ### ❌ Don't: Guess field values
-Meter slugs changed over time (`v1:meter:tier` → `local:tier`). Using wrong values returns zero data.
+A wrong value returns zero rows. Check the live values before filtering on a column.
 
-### ✅ Do: Use `IN` clauses for compatibility
-```sql
-WHERE selected_meter_slug IN ('v1:meter:pack', 'local:pack')
-```
+### ✅ Do: Split funding with `funding_source`
+`generation_usage_hourly` and `byop_app_daily` carry `funding_source` (`paid`, `quest`, `unfunded`), mapped from `selected_meter_slug` by their materialized pipes in `enter.pollinations.ai/observability/materializations/`. Filter on it instead of on meter slugs.
 
 ### ❌ Don't: Forget time filters
 Queries without `$__timeFilter()` return all data regardless of dashboard time picker.
@@ -201,8 +199,8 @@ SELECT
 FROM (
   SELECT 
     user_id,
-    minIf(start_time, selected_meter_slug IN ('v1:meter:tier', 'local:tier')) as first_tier,
-    minIf(start_time, selected_meter_slug IN ('v1:meter:pack', 'local:pack')) as first_pack
+    minIf(start_time, selected_meter_slug = 'v1:meter:tier') as first_tier,
+    minIf(start_time, selected_meter_slug = 'v1:meter:pack') as first_pack
   FROM generation_event_v2
   WHERE environment = 'production' AND total_price > 0
   GROUP BY user_id
@@ -215,26 +213,9 @@ If users who sign up but never use the product aren't meaningful, use **first ev
 
 ---
 
-## Data Quality Filters
-
-### ❌ Don't: Forget to exclude known bad data
-Bug windows, undefined values, and non-production data skew results.
-
-### ✅ Do: Build global filters into every query
-```sql
-WHERE $__timeFilter(start_time)
-  AND environment = 'production'
-  AND response_status >= 200 AND response_status < 300
-  AND total_price > 0
-  AND (start_time < toDateTime('2025-12-30 16:59:45') 
-       OR start_time > toDateTime('2026-01-08 18:19:58'))
-```
-
----
-
 ## Dashboard Variables
 
-Every dashboard shows the **last 30 complete UTC days**: `"time": {"from": "now-30d/d", "to": "now-1d/d"}`, `"timezone": "utc"` and `"refresh": "1h"`, so no generation-data bar is a partial day and Grafana's days match the SQL's UTC days (Registrations' last bar fills in at the ~03:20 UTC d1_user sync). The app embeds Grafana in kiosk mode, which hides the time picker, so readers only ever see this range. Custom filter variables were intentionally removed to keep the dashboards simple and focused on answering strategic questions rather than ad-hoc filtering.
+Every dashboard shows the **last 30 complete UTC days**: `"time": {"from": "now-30d/d", "to": "now-1d/d"}`, `"timezone": "utc"` and `"refresh": "1h"`, so no generation-data bar is a partial day and Grafana's days match the SQL's UTC days (Registrations' last bar fills in at the ~03:20 UTC d1_user sync). The app embeds Grafana in kiosk mode, which hides the time picker; its header picker sends 7, 30 or 90 days instead as `from=now-<n>d/d&to=now-1d/d` on the iframe URL, with 30 days as the default. Custom filter variables were intentionally removed to keep the dashboards simple and focused on answering strategic questions rather than ad-hoc filtering.
 
 If you need to add variables in the future, edit the `templating.list` array in the dashboard JSON file directly (provisioned dashboards are read-only via API).
 
@@ -242,10 +223,9 @@ If you need to add variables in the future, edit the `templating.list` array in 
 
 ## Workflow
 
-1. **Edit JSON** → Save file
-2. **Restart Grafana** → `docker compose restart grafana`
-3. **Hard refresh browser** → Cmd+Shift+R
-4. **Check for errors** → `docker logs grafana | grep -i error`
+1. **Edit the dashboard JSON** in `provisioning/dashboards/` (Grafana refuses UI saves of provisioned dashboards)
+2. **Run `npm test`** in `operations/observability`
+3. **Deploy** through `.github/workflows/deploy-applications.yml` from `production`; Grafana loads the files on start
 
 ---
 
@@ -269,20 +249,6 @@ Grafana XY charts create a **separate Y-axis** for any field used as the color d
 ```
 
 If you need color gradients, consider using a table with color-coded cells instead.
-
----
-
-## Terminology: Pack vs Tier
-
-Use consistent terminology across all panels:
-
-| Internal Field | Display Name | Meaning |
-|----------------|--------------|---------|
-| `paid_cost` | **Pack ρ** | Pollen from purchased packs |
-| `free_cost` | **Tier ρ** | Pollen from tier allocation |
-| `paid_share` | **Pack %** | % of consumption from packs |
-
-**Never use:** "paid/free", "revenue/subsidy" in user-facing labels.
 
 ---
 

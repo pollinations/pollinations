@@ -359,6 +359,46 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBe(billing.servedPrice);
     });
 
+    it("preserves the Grok Azure quote while accounting for ZDR gateway costs and long-context images", () => {
+        const model = "x-ai/grok-4.7";
+        const primary = TEXT_SERVICES[model];
+        const fallback = TEXT_SERVICES["x-ai/grok-4.7:openrouter:xai-zdr"];
+        expect(primary.priceMultiplier).toBe(1);
+        expect(fallback.priceMultiplier).toBe(1);
+        expect(fallback.paidOnly).toBe(false);
+        const usage = {
+            promptTextTokens: 198_830,
+            promptCachedTokens: 1_152,
+            promptImageTokens: 18,
+            completionTextTokens: 1,
+            completionReasoningTokens: 32,
+        };
+        const billing = calculateUsageBilling({
+            model,
+            usage,
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.79694 * 1.055, 12);
+        expect(billing.price.totalPrice).toBe(0.79694);
+        expect(
+            primary.selectCostVariant?.({
+                usage: { promptTextTokens: 199_999 },
+            }),
+        ).toBeUndefined();
+        expect(primary.selectCostVariant?.({ usage })).toBe("long_context");
+        expect(
+            resolveDirectResponsesTarget(model, {
+                model,
+                input: "Hello",
+                reasoning: { effort: "low" },
+                stream: false,
+                store: false,
+                safe: undefined,
+            }),
+        ).toBeNull();
+    });
+
     it("preserves the Astra quote while recording Data Zone costs", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-astra"];
         const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];

@@ -79,10 +79,7 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
-    // OpenRouter xAI tag for Grok 4.7 (2026-09-21). web_search_options is
-    // withheld: OpenRouter bills web search per call ($0.005), a non-token
-    // charge our cost model can't meter yet.
-    openRouterGrok47: [
+    grok47: [
         ...TOOL_CHAT,
         ...SAMPLING,
         ...LOGPROBS,
@@ -90,6 +87,7 @@ export const CHAT_PARAMETERS = {
         "seed",
         "structured_outputs",
         "reasoning_effort",
+        "parallel_tool_calls",
     ],
     azureGrok46: [
         ...CHAT,

@@ -292,6 +292,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesAuthHeader: "api-key",
         responsesStreamUpstream: true,
     }),
+    "grok-4.7": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.7/chat/completions?api-version=2024-12-01-preview",
+        directAuthHeader: "api-key",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+        model: "grok-4.7",
+        requiresBase64ImageUrls: true,
+        // Azure's native Responses endpoint rejects reasoning controls.
+        // The existing Chat adapter preserves them on /v1/responses.
+    }),
 
     "grok-4.6-azure-sweden": () => ({
         ...portkeyConfig["grok-4.6"](),
@@ -643,11 +654,21 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
     ),
+    "grok-4.7-openrouter-xai-zdr": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai/zdr"],
+                    allow_fallbacks: false,
+                    zdr: true,
+                },
+            },
+        }),
     "grok-large-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.3",
         "xai/zdr",

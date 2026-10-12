@@ -1,6 +1,6 @@
 # Data Processing Addendum
 
-**Version: 2026-10-09 — Internal draft; not part of the customer Terms.**
+**Version: 2026-10-12 — Internal draft; not part of the customer Terms.**
 
 This working document is excluded from the website. It is not offered to customers or incorporated into the Terms. Supplier coverage and operational measures have not been established; the public provider disclosure is an inventory, not an approved contractual annex.
 
@@ -92,6 +92,14 @@ The following reflects the published Privacy Policy and must be reconciled with 
 - Restricted backups: published policy states a **30–90-day rotation**; coverage and enforcement must be confirmed.
 
 Image requests may use **POST /v1/images/generations** with a JSON body instead of placing the prompt in the caller's URL. POST does not guarantee that internal routing, provider systems, image metadata, telemetry, or caches contain no prompt-derived data. The standard service offers no verified zero-logging or private-cache guarantee in this draft.
+
+### Grok 4.7 route review — 2026-10-12
+
+Primary inference uses the `grok-4.7` version 1 Global Standard deployment in `myceli-prod-eastus`; fallback uses OpenRouter pinned to `xai/zdr`, with gateway fallbacks disabled and ZDR required. The direct xAI account returned `x-zero-data-retention: false` in a synthetic probe and is not part of this new fallback. Request data includes text, supplied images/image URLs, tool definitions/results, settings, outputs, and usage metadata. Pollinations cache and billing retention are unchanged.
+
+[Microsoft’s processing documentation](https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy) describes worldwide processing for Global deployments and possible abuse-monitoring retention. The resource does not establish modified abuse monitoring. [OpenRouter’s endpoint catalog](https://openrouter.ai/api/v1/models/x-ai/grok-4.7/endpoints) identifies the ZDR endpoint; [xAI’s DPA](https://x.ai/legal/data-processing-addendum) identifies SpaceXAI LLC and requires ZDR for personal data. These sources do not establish every processing country, the applicable account agreements/contracting entities, or executed transfer safeguards; those remain under operator review.
+
+Before production activation, assess account-specific terms and applicable customer notice/objection requirements. This PR does not establish notice delivery or approve this internal draft DPA; its proposed 14-day clause is not an effective blanket notice period.
 
 ## Annex B — Technical and organisational measures
 

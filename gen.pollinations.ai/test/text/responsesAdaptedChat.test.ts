@@ -3,10 +3,33 @@ import { describe, expect, it } from "vitest";
 import {
     chatCompletionToResponse,
     chatStreamToResponsesStream,
+    chatUsageToResponsesUsage,
     responsesToChatRequest,
 } from "@/text/responses/adaptedChat.ts";
 import { ResponsesInvalidRequestError } from "@/text/responses/request.ts";
 import type { ChatCompletion } from "@/text/types.ts";
+
+it.each([
+    {
+        prompt_tokens: 24,
+        completion_tokens: 1,
+        total_tokens: 245,
+        completion_tokens_details: { reasoning_tokens: 220 },
+    },
+    {
+        prompt_tokens: 24,
+        completion_tokens: 221,
+        total_tokens: 245,
+        completion_tokens_details: { reasoning_tokens: 220 },
+    },
+])("normalizes additive and inclusive Chat reasoning into Responses output totals", (usage) => {
+    expect(chatUsageToResponsesUsage(usage)).toMatchObject({
+        input_tokens: 24,
+        output_tokens: 221,
+        total_tokens: 245,
+        output_tokens_details: { reasoning_tokens: 220 },
+    });
+});
 
 const usage = { prompt_tokens: 9, completion_tokens: 4, total_tokens: 13 };
 

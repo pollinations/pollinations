@@ -392,6 +392,128 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    describe("endpoints without SSE", () => {
+        const chatJson = {
+            choices: [{ message: { role: "assistant", content: "OK" } }],
+            usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
+        };
+        const responseJson = {
+            id: "resp_1",
+            object: "response",
+            model: "test-model",
+            status: "completed",
+            output: [],
+            usage: { input_tokens: 4, output_tokens: 1, total_tokens: 5 },
+        };
+        const jsonFor = { chat_completions: chatJson, responses: responseJson };
+        const probe = (api: "chat_completions" | "responses") =>
+            testCommunityEndpoint({
+                api,
+                url: "https://api.example.com/v1/infer",
+                bearerToken: "test-provider-token",
+                model: "test-model",
+            });
+
+        it.each([
+            "chat_completions",
+            "responses",
+        ] as const)("registers a %s endpoint that answers stream: true with JSON", async (api) => {
+            const fetchMock = vi.fn(async () => Response.json(jsonFor[api]));
+            vi.stubGlobal("fetch", fetchMock);
+
+            const result = await probe(api);
+
+            expect(result).toMatchObject({
+                usage: jsonFor[api].usage,
+                streaming: false,
+                streamingError:
+                    "Endpoint did not return a text/event-stream response",
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+
+        it.each([
+            400, 422,
+        ])("registers an endpoint that rejects stream: true with %i", async (status) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? Response.json(
+                              { error: { message: "stream not supported" } },
+                              { status },
+                          )
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(probe("chat_completions")).resolves.toMatchObject({
+                streaming: false,
+                streamingError: `Endpoint responded ${status}: stream not supported`,
+            });
+        });
+
+        it.each([
+            401, 429, 500,
+        ])("still fails when the streaming request returns %i", async (status) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? Response.json({}, { status })
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(probe("chat_completions")).rejects.toThrow(
+                `Endpoint responded ${status}`,
+            );
+        });
+
+        it("still requires terminal usage from an endpoint that streams", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"OK"}}]}\n\ndata: [DONE]\n\n',
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(probe("chat_completions")).rejects.toThrow(
+                "Endpoint omitted valid terminal streaming usage",
+            );
+        });
+
+        it("stores the flag only as advertised.streaming: false", () => {
+            const listing = {
+                name: "test-model",
+                title: "Test model",
+                api: "chat_completions",
+                url: "https://api.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+            };
+            for (const [streaming, valid] of [
+                [false, true],
+                [true, false],
+            ] as const) {
+                expect(
+                    CreateEndpointSchema.safeParse({
+                        ...listing,
+                        advertised: { streaming },
+                    }).success,
+                ).toBe(valid);
+            }
+        });
+    });
+
     it("detects token billing when image endpoints return OpenAI usage", async () => {
         let editRequested = false;
         const fetchMock = vi.fn(async (input, init) => {

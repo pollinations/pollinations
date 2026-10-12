@@ -91,7 +91,7 @@ export const simpleAudioQuerySchema = z.object({
         }),
     instructions: z.string().optional().meta({
         description:
-            "Emotion/style instruction (Gemini TTS and `qwen/qwen3-tts-instruct-flash`)",
+            "Emotion/style instruction (Gemini TTS and `qwen/qwen-audio-3.0-tts-flash`)",
         example: "speak softly and warmly",
     }),
     loop: z

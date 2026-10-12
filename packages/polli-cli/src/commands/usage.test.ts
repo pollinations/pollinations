@@ -171,6 +171,7 @@ describe("token totals", () => {
     const row = {
         input_text_tokens: 10,
         input_cached_tokens: 3,
+        input_cache_write_tokens: 7,
         input_audio_tokens: 2,
         input_image_tokens: 1,
         output_text_tokens: 20,
@@ -179,8 +180,8 @@ describe("token totals", () => {
         output_image_tokens: 6,
     };
 
-    it("sums all input token columns", () => {
-        expect(tokensIn(row)).toBe(16);
+    it("sums all input token columns, including cache writes", () => {
+        expect(tokensIn(row)).toBe(23);
     });
 
     it("sums all output token columns including reasoning", () => {
@@ -228,6 +229,11 @@ describe("usage command output", () => {
     });
 
     let urls: string[] = [];
+    // An unbudgeted key sees the wallet total in both fields.
+    let balanceBody: object = {
+        balance: 0.123456,
+        accountBalance: { total: 0.123456 },
+    };
 
     async function run(args: string[], mode: "human" | "json" = "json") {
         urls = [];
@@ -246,7 +252,7 @@ describe("usage command output", () => {
                 return Response.json({ usage: dailyRows, count: 2 });
             if (url.includes("/account/usage"))
                 return Response.json({ usage: [record], count: 1 });
-            return Response.json({ balance: 0.123456 });
+            return Response.json(balanceBody);
         });
         await usageCommand.parseAsync(args, { from: "user" });
         return writes.join("");
@@ -272,5 +278,13 @@ describe("usage command output", () => {
         expect(await run(["--history"], "human")).toContain("$0.0000");
         expect(await run(["--history", "--csv"])).toBe("a,b\n1,2\n");
         expect(JSON.parse(await run([]))).toEqual({ pollen: 0.123456 });
+    });
+
+    it("shows the wallet, not a budgeted key's remaining budget, as pollen", async () => {
+        balanceBody = { balance: 4.5, accountBalance: { total: 0 } };
+        expect(JSON.parse(await run([]))).toEqual({
+            pollen: 0,
+            key_budget: 4.5,
+        });
     });
 });

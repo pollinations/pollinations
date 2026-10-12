@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { transcribeMai } from "../src/audio/mai-transcription.ts";
 import { transcribeWithAzure } from "../src/routes/audio.ts";
 
 describe("transcribeWithAzure", () => {
@@ -79,5 +80,26 @@ describe("transcribeWithAzure", () => {
                 apiKey: "test-key",
             }),
         ).rejects.toMatchObject({ status: 502 });
+    });
+});
+
+describe("MAI request validation", () => {
+    it.each([
+        { responseFormat: "srt" },
+        { responseFormat: "vtt" },
+        { responseFormat: "diarized_json" },
+        { language: "en" },
+        { prompt: "vocabulary hint" },
+        { temperature: 0.2 },
+    ])("rejects unsupported controls before any provider call: %j", async (options) => {
+        // An absent credential proves validation runs before provider access.
+        await expect(
+            transcribeMai({
+                file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
+                modelId: "microsoft/mai-transcribe-2",
+                apiKey: "",
+                ...options,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
     });
 });

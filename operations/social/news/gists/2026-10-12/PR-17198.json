@@ -1,0 +1,38 @@
+{
+  "pr_number": 17198,
+  "title": "docs(news): correct the repair guide's send recovery steps",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17198",
+  "merged_at": "2026-10-12T16:54:36Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Corrected the internal news-pipeline repair guide. For a stuck send, check Buffer’s Queue and Sent tabs and the destination before marking it failed; leave an uncertain send at `attempt`. To recover a model post, rerun the failed job from the original run so its `models` artifact records the text sent; a new run produces text the record rejects, and `models` with `write + save` only writes. Clarified that `run=deliver` on `daily` or `weekly` schedules Buffer only, while Reddit and the weekly Discord post use `job=afternoon`. The guide now says to inspect each failure in a red delivery run rather than assuming Reddit alone failed.",
+    "keywords": [
+      "news pipeline",
+      "repair guide",
+      "Buffer",
+      "model posts",
+      "delivery",
+      "Reddit",
+      "Discord"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17198.jpg",
+    "prompt": "In a cozy garden-shed newsroom, Polli studies a retro terminal showing a delivery checklist beside a lime green (#ecf874) code-plant; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny editor’s visor, small-to-medium in the scene and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, warm cream tones, dark purple (#110518) outlines, and a subtle CRT glow."
+  },
+  "generated_at": "2026-10-12T16:55:53.036599+00:00",
+  "area": "Internal automation",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "cd4aba7fa26c882ceb136d2fd743b83c32a2c08b",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

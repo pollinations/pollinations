@@ -1,0 +1,33 @@
+{
+  "pr_number": 17240,
+  "title": "chore: serve all legacy image cache misses from the worker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17240",
+  "merged_at": "2026-10-12T23:32:25Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Raised the legacy image API’s cache Worker share from 50% to 100%, routing every cache miss and `/feed` through the Worker while retaining the unused VM as a fallback. The Worker’s FeedHub preserves `/feed` events, replay, and filtering while keeping API keys out of `imageURL`. At 50% traffic, the Worker had no exceptions across roughly 26,000 requests in 15 minutes; observed 500s had the same underlying causes on both paths. Gen’s image-bridge-key 429s reflect an existing per-key cap also reached by the VM.",
+    "keywords": [
+      "legacy image API",
+      "Cloudflare Worker",
+      "cache misses",
+      "FeedHub",
+      "feed",
+      "reliability"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17240.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small in the scene and wearing a tiny tool belt, she tends a glowing lime green (#ecf874) Worker cache that carries image tiles and a little feed stream past a resting retro VM, with code-plants nearby. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, a warm cream backdrop, and subtle CRT glow."
+  },
+  "generated_at": "2026-10-12T23:33:34.556827+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "35a22f381ad786b38292c1080c2b6ec1cd27855e",
+  "announcements": []
+}

@@ -1,0 +1,36 @@
+{
+  "pr_number": 17164,
+  "title": "feat: add the ip slot and feed hub to the legacy image cache (unused)",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17164",
+  "merged_at": "2026-10-12T13:46:38Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Configured the legacy image-cache Worker with custom domains in order: image.myceli.ai, then image.pollinations.ai. Disabled its workers.dev and preview URLs. Added unused IP_SLOT and FEED_HUB SQLite Durable Object bindings to production and test configuration, with shared class exports and a v1 migration. Updated Wrangler to ^4.147.0 and @cloudflare/vitest-pool-workers to ^0.12.21 while retaining the 2025-08-01 compatibility date. All seven tests pass, including a binding test; wrangler dev boots and a production dry run lists both objects. As the Worker's first Durable Object migration, v1 becomes its rollback baseline; earlier versions cannot be rollback targets after deployment. The new bindings do not change image requests yet.",
+    "keywords": [
+      "image cache",
+      "Cloudflare Workers",
+      "Durable Objects",
+      "domains",
+      "migration"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17164.jpg",
+    "prompt": "In a cozy garden server shed, Polli wears a tiny tool belt and checks two labeled route signs beside a quiet retro image-cache terminal, while two unopened seed pots marked IP_SLOT and FEED_HUB sit nearby; the cute pixel art bee mascot has a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings, and she is small-to-medium in the scene, never oversized or realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, prominent lime green (#ecf874), warm cream and lavender tones, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T13:47:51.220916+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "50693ed3aad8ceaf4d2d3e8506489abaacb5097b",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

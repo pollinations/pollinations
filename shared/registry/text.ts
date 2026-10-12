@@ -3681,9 +3681,10 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
         paidOnly: false,
+        // OVHcloud lists this moderation endpoint as free (2026-10-12).
         cost: {
-            promptTextTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.01),
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
         description:

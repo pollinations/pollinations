@@ -37,7 +37,6 @@ type KeyDialogContentProps = {
     name: string;
     onNameChange: (name: string) => void;
     permissions: ReturnType<typeof useKeyPermissions>;
-    expiresAt?: string | null;
     redirectUris: string[];
     onRedirectUrisChange: (uris: string[]) => void;
     earningsEnabled: boolean;
@@ -64,7 +63,6 @@ export function KeyDialogContent({
     name,
     onNameChange,
     permissions,
-    expiresAt,
     redirectUris,
     onRedirectUrisChange,
     earningsEnabled,
@@ -272,7 +270,6 @@ export function KeyDialogContent({
                             <KeyPermissionsInputs
                                 nameField={nameField}
                                 value={permissions}
-                                expiresAt={expiresAt}
                                 accessContext={accessContext}
                                 disabled={isSubmitting}
                             />

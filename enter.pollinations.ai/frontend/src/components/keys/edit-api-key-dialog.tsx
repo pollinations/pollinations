@@ -100,7 +100,6 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}
-                expiresAt={apiKey.expiresAt}
                 redirectUris={redirectUris}
                 onRedirectUrisChange={setRedirectUris}
                 earningsEnabled={earningsEnabled}

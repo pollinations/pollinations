@@ -36,14 +36,12 @@ export function KeyLimitInput({
     onChange,
     disabled = false,
     accessContext,
-    expiresAt,
 }: {
     kind: keyof typeof limits;
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
     accessContext?: "app" | "device";
-    expiresAt?: string | null;
 }) {
     const inputId = useId();
     const limit = limits[kind];
@@ -64,19 +62,6 @@ export function KeyLimitInput({
         <AuthAccessItem
             icon={limit.icon}
             rowClassName="grid max-w-xs grid-cols-[1.25rem_4.5rem_minmax(0,1fr)]"
-            details={
-                kind === "expiry" && expiresAt ? (
-                    <span>
-                        Current expiry:{" "}
-                        <time dateTime={expiresAt}>
-                            {new Date(expiresAt).toLocaleString(undefined, {
-                                dateStyle: "medium",
-                                timeStyle: "long",
-                            })}
-                        </time>
-                    </span>
-                ) : undefined
-            }
             control={
                 <label htmlFor={inputId} className="flex items-center gap-2">
                     <span className="sr-only">{limit.label} value</span>

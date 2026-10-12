@@ -49,7 +49,6 @@ export function useKeyPermissions(initial: Partial<KeyPermissions> = {}) {
 
 interface KeyPermissionsInputsProps {
     value: ReturnType<typeof useKeyPermissions>;
-    expiresAt?: string | null;
     disabled?: boolean;
     accessContext?: "app" | "device";
     visiblePermissions?: ReadonlySet<string>;
@@ -66,7 +65,6 @@ interface KeyPermissionsInputsProps {
  */
 export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     value,
-    expiresAt,
     disabled = false,
     accessContext,
     visiblePermissions,
@@ -130,7 +128,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
             </AuthAccessItem>
             <KeyLimitInput
                 kind="expiry"
-                expiresAt={expiresAt}
                 accessContext={accessContext}
                 value={permissions.expiryDays}
                 onChange={setExpiryDays}

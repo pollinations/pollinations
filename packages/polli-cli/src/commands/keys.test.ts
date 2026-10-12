@@ -147,3 +147,24 @@ describe("keys create --expires-in validation", () => {
         ).rejects.toThrow();
     });
 });
+
+describe("keys update", () => {
+    it("sends only the model list", async () => {
+        const { fetch, stdout } = prepare({ models: ["text", "flux"] });
+        await keysCommand.parseAsync(
+            ["update", "key-1", "--models", "flux", "text"],
+            { from: "user" },
+        );
+
+        const [url, init] = fetch.mock.calls[0];
+        expect(url).toMatch(/\/account\/keys\/key-1$/);
+        expect(init.method).toBe("PATCH");
+        expect(JSON.parse(String(init.body))).toEqual({
+            allowedModels: ["flux", "text"],
+        });
+        const output = stdout.mock.calls
+            .map(([chunk]) => String(chunk))
+            .join("");
+        expect(output).toContain("permissions: models:text|flux");
+    });
+});

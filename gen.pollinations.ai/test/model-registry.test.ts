@@ -1,4 +1,8 @@
 import { env } from "cloudflare:test";
+import {
+    getModels,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
@@ -44,6 +48,24 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("requires paid Pollen outside Azure and Fireworks except the three approved image models", () => {
+        const exceptions = new Set([
+            "tongyi-mai/z-image-turbo",
+            "black-forest-labs/flux.1-schnell",
+            "black-forest-labs/flux.2-klein-4b",
+        ]);
+        const questModels = [];
+        for (const id of getModels()) {
+            const definition = getRegistryModelDefinition(id);
+            // Access follows the requested public model, including its internal fallbacks.
+            if (definition.fallbackOnly) continue;
+            if (["azure", "fireworks"].includes(definition.provider)) continue;
+            expect(definition.paidOnly, id).toBe(!exceptions.has(id));
+            if (!definition.paidOnly) questModels.push(id);
+        }
+        expect(new Set(questModels)).toEqual(exceptions);
+    });
+
     it("declares unique Chat controls for every configured route", async () => {
         const registry = await getGenerationModelRegistry(env);
         for (const model of availableModels) {

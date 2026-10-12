@@ -234,7 +234,7 @@ test("media routes own their endpoint-specific model defaults", async () => {
     expect(videoResponse.status).toBe(403);
 });
 
-test("filters OpenRouter text models by paid balance", async ({
+test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
@@ -259,19 +259,19 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+    const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
-        return definition.provider === "openrouter";
+        return !["azure", "fireworks"].includes(definition.provider);
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
-    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(paidProviderModelNames.length).toBeGreaterThan(0);
     expect(
-        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+        paidProviderModelNames.every((model) => !freeModelNames.has(model)),
     ).toBe(true);
     expect(
-        openRouterModelNames.every((model) => paidModelNames.has(model)),
+        paidProviderModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
     expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
@@ -364,7 +364,7 @@ test("filters paid-only audio models by paid balance", async ({
         freeModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",
         ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
         paidModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",

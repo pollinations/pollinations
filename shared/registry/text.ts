@@ -98,7 +98,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.05),
             completionTextTokens: perMillion(0.18),
@@ -1154,7 +1154,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
@@ -2185,7 +2185,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Moonshot AI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-07-30).
         cost: {
@@ -2495,7 +2495,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-07-27").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             // Fireworks NVFP4 serverless rates (2026-09-30).
@@ -2520,7 +2520,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "NVIDIA",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         perUserRpm: 60,
         cost: {
@@ -2712,7 +2712,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.035),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2738,7 +2738,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.33),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2791,7 +2791,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-19").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-08-29).
         cost: {
@@ -2816,7 +2816,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Z.ai",
         category: "text",
         addedDate: new Date("2026-08-27").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         // Fireworks standard serverless rates (2026-08-29).
         cost: {
@@ -2990,7 +2990,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
@@ -3239,7 +3239,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-14").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             // Fireworks accounts/fireworks/models/qwen3p8-2p4t-a95b rates (2026-08-14).
@@ -3674,7 +3674,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.01),

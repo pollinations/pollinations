@@ -126,7 +126,7 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     } as CloudflareBindings);
     await mocks.enable("tinybird", "inferenceport");
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 2 },
+        user: { tierBalance: 2, packBalance: 2 },
     });
     const prompt = crypto.randomUUID();
 
@@ -182,7 +182,8 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
         }),
     ]);
     const balance = await getUserBalance(drizzle(env.DB), userId);
-    expect(balance.tierBalance).toBeCloseTo(1.41, 10);
+    expect(balance.tierBalance).toBe(2);
+    expect(balance.packBalance).toBeCloseTo(1.41, 10);
 });
 
 test("POST /3d sends JSON image and seed to the existing Rodin provider path", async () => {
@@ -263,7 +264,7 @@ test("media Responses and Chat reuse native text-to-3D generation", async () => 
 }, 10_000);
 
 test("POST /3d preserves authentication and rejects ignored parameters", async ({
-    apiKey,
+    paidApiKey,
 }) => {
     syncModel3dEnvironment({
         ...env,
@@ -284,7 +285,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
     expect(unauthenticated.status).toBe(401);
 
     const queryAuthenticated = await fetch3d(
-        `/3d/query-auth?key=${apiKey}&safe=false`,
+        `/3d/query-auth?key=${paidApiKey}&safe=false`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -304,7 +305,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         const response = await fetch3d("/3d/validation-check", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${paidApiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(invalidBody),
@@ -321,7 +322,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
         const response = await fetch3d(`/3d/query-validation?${query}`, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Bearer ${paidApiKey}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(body),
@@ -333,7 +334,7 @@ test("POST /3d preserves authentication and rejects ignored parameters", async (
 });
 
 test("GET /3d keeps query behavior and Trellis resolution", async ({
-    apiKey,
+    paidApiKey,
 }) => {
     syncModel3dEnvironment({
         ...env,
@@ -343,7 +344,7 @@ test("GET /3d keeps query behavior and Trellis resolution", async ({
 
     const response = await fetch3d(
         `/3d/${crypto.randomUUID()}?model=trellis-2&image=${encodeURIComponent("https://example.com/reference.jpg")}&resolution=medium`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
+        { headers: { Authorization: `Bearer ${paidApiKey}` } },
     );
 
     expect(response.status).toBe(200);

@@ -1266,7 +1266,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
+            // OpenRouter base Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
             // including the account's 5.5% credit-purchase fee. Alibaba
             // halves them the rest of the day; costs are not time-based, so
             // the peak rate applies all day and never undercharges.

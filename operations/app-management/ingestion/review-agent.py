@@ -214,14 +214,22 @@ def parse_github_repo(repo_url):
     return f"{parts[0]}/{parts[1].removesuffix('.git')}"
 
 
+def repo_folder(repo_url):
+    # A tree/<branch>/<folder> URL points at one app inside a larger repository.
+    # ponytail: assumes a branch name without slashes; reads the default branch.
+    parts = [part for part in urlparse(repo_url).path.split("/") if part]
+    return "/".join(parts[4:]) if parts[2:3] == ["tree"] else ""
+
+
 def inspect_repo(repo_url):
     repo = parse_github_repo(repo_url)
     if not repo:
         return {"provided": bool(repo_url), "valid_github_repo": False}
+    folder = repo_folder(repo_url)
     details = github_api(f"/repos/{repo}")
     readme_text = ""
     try:
-        readme = github_api(f"/repos/{repo}/readme")
+        readme = github_api(f"/repos/{repo}/readme/{folder}".rstrip("/"))
         download_url = readme.get("download_url")
         if download_url:
             readme_text = session.get(download_url, timeout=15).text[:250_000]
@@ -230,7 +238,8 @@ def inspect_repo(repo_url):
     code_matches = None
     code_search_error = None
     try:
-        search = github_api(f"/search/code?q=pollinations+repo:{repo}")
+        path_filter = f"+path:{folder}" if folder else ""
+        search = github_api(f"/search/code?q=pollinations+repo:{repo}{path_filter}")
         code_matches = search.get("total_count", 0)
     except requests.RequestException as error:
         code_search_error = str(error)[:200]
@@ -238,6 +247,7 @@ def inspect_repo(repo_url):
         "provided": True,
         "valid_github_repo": True,
         "repo": repo,
+        "folder": folder,
         "archived": details.get("archived", False),
         "description": details.get("description") or "",
         "pollinations_markers": marker_hits(readme_text),

@@ -1,9 +1,6 @@
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { proxy } from "hono/proxy";
-// piexif-ts builds a Function when it loads, which Workers allow only at
-// startup, not in brand.ts's lazy load during a request
-import "piexif-ts/dist/piexif.js";
 import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import {
     deleteCacheEntry,

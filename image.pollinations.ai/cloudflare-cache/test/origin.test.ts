@@ -6,7 +6,6 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
-import { load, TagValues } from "piexif-ts/dist/piexif.js";
 import { beforeAll, describe, expect, test, vi } from "vitest";
 import worker from "../src/index.ts";
 import { ImageParamsSchema } from "../src/params.ts";
@@ -14,6 +13,11 @@ import feedHeaders from "./fixtures/image.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/image.pollinations.ai-prime.headers?raw";
 import blockedBody from "./fixtures/vm-blocked-model-500.body?raw";
 import blockedHeaders from "./fixtures/vm-blocked-model-500.headers?raw";
+// The Exif APP1 segments of VM images, marker included
+import vmExifControl from "./fixtures/vm-exif-control.bin";
+import vmExifLive from "./fixtures/vm-exif-live.bin";
+import vmExifRedFox from "./fixtures/vm-exif-red-fox.bin";
+import vmExifUnicode from "./fixtures/vm-exif-unicode.bin";
 import vmFeedEvent from "./fixtures/vm-feed-event.body?raw";
 import {
     alarmOf,
@@ -51,18 +55,6 @@ const released = async (ip: string) => {
     const alarm = await alarmOf(ip);
     return alarm !== null && alarm <= Date.now() + 45_000;
 };
-
-const binary = (bytes: Uint8Array) =>
-    Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
-
-/** The UserComment JSON of a generated JPEG */
-function userComment(jpeg: Uint8Array) {
-    const comment = load(binary(jpeg)).Exif[TagValues.ExifIFD.UserComment];
-    const bytes = Uint8Array.from(comment.slice(8), (char: string) =>
-        char.charCodeAt(0),
-    );
-    return new TextDecoder().decode(bytes);
-}
 
 describe("parameters", () => {
     const parse = (query: Record<string, string | string[]>) =>
@@ -176,16 +168,24 @@ test("a free GET answers the branded JPEG with the VM's headers and is stored", 
     expect(hit.bytes).toEqual(bytes);
 });
 
-test("the EXIF UserComment is the VM's JSON, byte for byte", async () => {
-    // A live VM image of 2026-10-11 for this path wrote this JSON
-    const { bytes } = await call(
-        "/prompt/weftprobe-f-3236312293?width=256&height=256&seed=7&nologo=true",
-    );
-
-    expect(load(binary(bytes))["0th"][TagValues.ImageIFD.Make]).toBe("sana");
-    expect(userComment(bytes)).toBe(
-        '{"prompt":"weftprobe-f-3236312293","originalPrompt":"weftprobe-f-3236312293","width":256,"height":256,"seed":7,"model":"sana","enhance":false,"nologo":true,"negative_prompt":"undefined","nofeed":false,"safe":false,"quality":"medium","image":[],"transparent":false,"isMature":false,"isChild":false,"trackingData":{"actualModel":"sana","usage":{"completionImageTokens":1,"totalTokenCount":1}}}',
-    );
+test("the Exif segment follows the start marker and is the VM's, byte for byte", async () => {
+    for (const [path, vm] of [
+        // A live image of 2026-10-11
+        [
+            "/prompt/weftprobe-f-3236312293?width=256&height=256&seed=7&nologo=true",
+            vmExifLive,
+        ],
+        // Images of the VM replica of 2026-10-12: libvips wrote non-ASCII
+        // characters as GLib's ASCII ("café 😀" as "cafe ?")
+        ["/prompt/p9r1-c101%20a%20red%20fox", vmExifRedFox],
+        ["/prompt/p9r1-c115g%20caf%C3%A9%20%F0%9F%98%80", vmExifUnicode],
+        ["/prompt/p9r1-c115b%0Aline%09tab%7Fdel%C2%85nel", vmExifControl],
+    ] as const) {
+        const { bytes } = await call(path);
+        const segment = new Uint8Array(vm);
+        expect([...bytes.subarray(0, 2)], path).toEqual([0xff, 0xd8]);
+        expect(bytes.subarray(2, 2 + segment.length), path).toEqual(segment);
+    }
 });
 
 test("gen gets the VM's request: bridge key, sana, at least a megapixel, the seed and safe as given", async () => {

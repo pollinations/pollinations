@@ -1,6 +1,5 @@
 import { env } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
-import { load, TagValues } from "piexif-ts/dist/piexif.js";
 import { describe, expect, it } from "vitest";
 import { brand, getLogoPlacement } from "../src/brand.ts";
 
@@ -72,9 +71,38 @@ function tones(
     return { white, black };
 }
 
-/** The bytes as the binary string piexif-ts reads */
-const binary = (bytes: Uint8Array) =>
-    Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
+const SIZES = { 2: 1, 3: 2, 4: 4, 5: 8, 7: 1 };
+
+/**
+ * The entries of a JPEG's Exif segment, read from its little-endian TIFF:
+ * "<IFD>:<tag hex>" -> value bytes
+ */
+function exifEntries(jpeg: Uint8Array) {
+    expect([...jpeg.subarray(2, 4)]).toEqual([0xff, 0xe1]);
+    const tiff = jpeg.subarray(12);
+    const view = new DataView(tiff.buffer, tiff.byteOffset);
+    const entries = new Map<string, Uint8Array>();
+    const read = (name: string, at: number) => {
+        for (let i = 0; i < view.getUint16(at, true); i++) {
+            const entry = at + 2 + 12 * i;
+            const tag = view.getUint16(entry, true);
+            const size =
+                SIZES[view.getUint16(entry + 2, true)] *
+                view.getUint32(entry + 4, true);
+            const offset =
+                size > 4 ? view.getUint32(entry + 8, true) : entry + 8;
+            entries.set(
+                `${name}:${tag.toString(16)}`,
+                tiff.subarray(offset, offset + size),
+            );
+            if (tag === 0x8769) read("Exif", view.getUint32(entry + 8, true));
+        }
+    };
+    read("IFD0", view.getUint32(4, true));
+    return entries;
+}
+
+const text = (bytes: Uint8Array) => String.fromCharCode(...bytes);
 
 describe("brand", () => {
     for (const [input, prompt] of [
@@ -122,19 +150,40 @@ describe("brand", () => {
                     image.free();
                 }
 
-                // Make, and the UserComment the VM wrote: "ASCII", three
-                // NULs, the JSON in UTF-8
-                const exif = load(binary(jpeg));
-                expect(exif["0th"][TagValues.ImageIFD.Make]).toBe("sana");
-                const comment = exif.Exif[TagValues.ExifIFD.UserComment];
-                expect(comment.slice(0, 8)).toBe("ASCII\0\0\0");
-                const bytes = Uint8Array.from(
-                    comment.slice(8),
-                    (char: string) => char.charCodeAt(0),
+                // The VM's tags: Make and UserComment ("ASCII", three NULs,
+                // the JSON in GLib's ASCII) in IFD0, the pixel size in the
+                // Exif IFD
+                const exif = exifEntries(jpeg);
+                expect([...exif.keys()]).toEqual([
+                    "IFD0:10f",
+                    "IFD0:112",
+                    "IFD0:11a",
+                    "IFD0:11b",
+                    "IFD0:128",
+                    "IFD0:213",
+                    "IFD0:8769",
+                    "Exif:9000",
+                    "Exif:9101",
+                    "Exif:a000",
+                    "Exif:a001",
+                    "Exif:a002",
+                    "Exif:a003",
+                    "IFD0:9286",
+                ]);
+                expect(text(exif.get("IFD0:10f"))).toBe("sana\0");
+                expect(text(exif.get("IFD0:9286"))).toBe(
+                    `ASCII\0\0\0${JSON.stringify(METADATA).replaceAll("é", "e")}`,
                 );
-                expect(JSON.parse(new TextDecoder().decode(bytes))).toEqual(
-                    METADATA,
+                const size = new DataView(
+                    new Uint8Array([
+                        ...exif.get("Exif:a002"),
+                        ...exif.get("Exif:a003"),
+                    ]).buffer,
                 );
+                expect([
+                    size.getUint32(0, true),
+                    size.getUint32(4, true),
+                ]).toEqual([width, height]);
             });
         }
     }

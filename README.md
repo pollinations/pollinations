@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
 | [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
@@ -37,7 +38,6 @@
 | [🖼️ InkBloom](https://coloring-project1.ismailbanouigu.workers.dev) | Turn photos or text prompts into printable coloring pages. Text-to-coloring generation is powered by Pollinations. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [🤖 MebelSmetaBot](https://t.me/MebelSmetaBot) | Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al | [@druzhininige-dotcom](https://github.com/druzhininige-dotcom) |
 | [✍️ Nice No](https://nice-no.maxtoms21.chatgpt.site) | Nice No helps people turn awkward everyday requests into kind, clear boundary messages. Describe a situation, choose Gentle, Firm, or Brief, then copy a suggested reply and a follow-up for pushback. I | [@maxtoms](https://github.com/maxtoms) |
-| [✍️ Fable Finder](https://mhmdrizki803-boop.github.io/fable-finder) | Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

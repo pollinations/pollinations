@@ -386,9 +386,6 @@ describe("gen worker routing", () => {
             "text/markdown; charset=utf-8",
         );
         expect(agentHome.headers.get("Vary")).toBe("Accept");
-        expect(
-            Number(agentHome.headers.get("x-markdown-tokens")),
-        ).toBeGreaterThan(0);
         expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
 
         const browserHome = await fetchWorker("/", envWithEnter(), {

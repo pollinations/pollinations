@@ -1,0 +1,31 @@
+{
+  "pr_number": 17216,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17216",
+  "merged_at": "2026-10-12T21:13:41Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Regenerated APIDOCS.md from the OpenAPI spec after a production deploy; one documentation line changed. The supplied context does not identify a substantive API change.",
+    "keywords": [
+      "API documentation",
+      "OpenAPI",
+      "generated docs"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17216.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli checks a single updated line on a small API document beside a lime green (#ecf874) code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and is small-to-medium sized within the scene, sharing the frame with other elements—never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, lo-fi warmth like Stardew Valley, and an emotionally warm feel."
+  },
+  "generated_at": "2026-10-12T21:14:52.139955+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "adde0d58af0961fca134b27f076cc696dd232d89",
+  "announcements": [],
+  "api_changes": []
+}

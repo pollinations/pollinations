@@ -24,6 +24,21 @@ import type { ModelPrice, PriceKind } from "./types.ts";
 
 type Icon = FC<IconProps>;
 
+export const ContextIcon = (props: IconProps) => (
+    <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        {...props}
+    >
+        <path d="M4 6h16M4 12h12M4 18h8" />
+    </svg>
+);
+
 export const ModelBrandIcon: FC<{
     model: ModelPrice;
     className?: string;

@@ -1,5 +1,15 @@
 @import "@pollinations/ui/app.css";
 
+/* Expanding a form should not move its controls around the screen. */
+.resource-dialog {
+    margin-block: 0;
+}
+
+.model-title-link,
+.model-title-link span {
+    text-decoration: none;
+}
+
 .catalog-search .polli-input-shell,
 .catalog-search > .polli-input {
     background-color: var(--polli-color-bg-subtle);
@@ -37,4 +47,11 @@
         transparent
     );
     color: var(--polli-color-text-strong);
+}
+
+.dashboard-add-button {
+    width: 4.25rem;
+    height: 2.75rem;
+    padding-inline: 0.75rem;
+    gap: 0.25rem;
 }

@@ -157,7 +157,7 @@ function validate(md: string): Failure[] {
                 failures.push({
                     rule: "image-model-in-video",
                     line: block.startLine,
-                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan, nova-reel)`,
+                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan)`,
                 });
             }
         }

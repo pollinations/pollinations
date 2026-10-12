@@ -1,12 +1,23 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     getOutputMode,
     printError,
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+
+// The response's Content-Type, not the model name, decides the file
+// extension: zimage, flux and most other models return JPEG.
+const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/svg+xml": "svg",
+};
 
 export function createImageCommand() {
     return new Command("image")
@@ -22,7 +33,7 @@ export function createImageCommand() {
             "--image <url...>",
             "Reference image URL(s) for editing/i2i (repeatable)",
         )
-        .option("--output <path>", "Save to file", "image.png")
+        .option("--output <path>", "Save to file (extension inferred)")
         .action(async (prompt, opts) => {
             const isHuman = getOutputMode() === "human";
 
@@ -42,7 +53,7 @@ export function createImageCommand() {
                     printError(
                         `--image requires a public http(s) URL, not a local path: ${bad}`,
                     );
-                    process.exit(1);
+                    throw new ExitSignal(1);
                 }
                 params.set("image", opts.image.join("|"));
             }
@@ -50,16 +61,26 @@ export function createImageCommand() {
             const encodedPrompt = encodeURIComponent(prompt);
             const path = `/image/${encodedPrompt}?${params}`;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            if (opts.output)
+                mkdirSync(dirname(opts.output), { recursive: true });
             if (isHuman) printInfo("Generating image...");
 
             try {
                 const res = await fetchGen(path);
+                const contentType = (res.headers.get("content-type") ?? "")
+                    .split(";")[0]
+                    .trim()
+                    .toLowerCase();
+                const extension =
+                    EXTENSION_BY_CONTENT_TYPE[contentType] ?? "png";
+                const output = opts.output ?? `image.${extension}`;
 
                 const buffer = Buffer.from(await res.arrayBuffer());
-                writeFileSync(opts.output, buffer);
+                writeFileSync(output, buffer);
 
                 printMeta({
-                    path: opts.output,
+                    path: output,
                     size: buffer.length,
                     model: opts.model,
                 });

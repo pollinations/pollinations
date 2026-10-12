@@ -147,7 +147,7 @@ export async function askModel({ fetchImpl = fetch, apiKey, prompt }) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                model: "gpt-5.6-luna",
+                model: "openai/gpt-6-luna",
                 messages: [{ role: "user", content: prompt }],
                 response_format: { type: "json_object" },
             }),

@@ -77,4 +77,13 @@ describe("shared link destinations", () => {
         expect(html).not.toContain("target=");
         expect(html).not.toContain("rel=");
     });
+    test("supports a quiet tone while keeping the shared link treatment", () => {
+        const html = renderToStaticMarkup(
+            <InlineLink href="/activity" tone="quiet">
+                View activity
+            </InlineLink>,
+        );
+        expect(html).toContain('class="polli-link"');
+        expect(html).toContain('data-tone="quiet"');
+    });
 });

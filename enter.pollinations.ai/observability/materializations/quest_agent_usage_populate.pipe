@@ -1,9 +1,12 @@
 DESCRIPTION >
     Record successful top-level prompt, code and endpoint agent calls, including
-    zero-cost agents. Internal steps, MCP calls, proxies and failed calls do not
-    qualify. The creator's own successful test counts. Creator attribution uses
-    the existing community/<github-username>/<name> model ID. GitHub renames
-    before claiming can lose historical creator eligibility.
+    zero-cost agents, and top-level community model (proxy) calls. Internal
+    steps, MCP calls and failed calls do not qualify. The creator's own
+    successful test counts for the agent flag. Community model rows set a flag
+    for billed calls and sum the price paid from Paid Pollen (the pack bucket);
+    Quest Pollen spend is excluded. Creator attribution uses the existing
+    community/<github-username>/<name> model ID. GitHub renames before claiming
+    can lose historical creator eligibility.
     Backfill is bounded to three months; live flags persist thereafter.
 
 NODE quest_agent_usage_populate_node
@@ -11,9 +14,11 @@ SQL >
     SELECT
         user_id,
         if(startsWith(resolved_model_requested, 'community/'), lower(splitByChar('/', resolved_model_requested)[2]), '') AS owner_username,
-        maxState(toUInt8(1)) AS used_agent
+        maxState(toUInt8(community_endpoint_type != 'proxy')) AS used_agent,
+        maxState(toUInt8(community_endpoint_type = 'proxy' AND total_price > 0)) AS used_community_model,
+        sumState(if(community_endpoint_type = 'proxy' AND selected_meter_slug IN ('v1:meter:pack', 'local:pack'), total_price, 0)) AS community_model_paid_pollen
     FROM generation_event_v2
-    WHERE community_endpoint_type IN ('prompt_agent', 'code_agent', 'endpoint_agent')
+    WHERE community_endpoint_type IN ('prompt_agent', 'code_agent', 'endpoint_agent', 'proxy')
       AND parent_request_id = ''
       AND is_final
       AND response_status >= 200 AND response_status < 300

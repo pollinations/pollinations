@@ -11,6 +11,7 @@ export const USAGE_TYPE_HEADERS: Record<UsageType, string> = {
     promptAudioSeconds: "x-usage-prompt-audio-seconds",
     promptImageTokens: "x-usage-prompt-image-tokens",
     promptVideoTokens: "x-usage-prompt-video-tokens",
+    promptVideoSeconds: "x-usage-prompt-video-seconds",
     completionTextTokens: "x-usage-completion-text-tokens",
     completionReasoningTokens: "x-usage-completion-reasoning-tokens",
     completionAudioTokens: "x-usage-completion-audio-tokens",
@@ -24,6 +25,12 @@ export const USAGE_MISSING_HEADER = "x-usage-missing";
 
 /** Internal worker header for response-derived prompt-cache pricing. */
 export const PROMPT_CACHE_TYPE_HEADER = "x-usage-prompt-cache-type";
+
+/** Provider billing units are independent of generated media duration. */
+export const PROVIDER_BILLING_HEADERS = {
+    units: "x-usage-provider-billable-units",
+    unitCost: "x-usage-provider-unit-cost",
+} as const;
 
 /** Alibaba reports `ephemeral` only when an explicit prompt-cache read served. */
 export function hasExplicitPromptCacheHit(usage: unknown): boolean {

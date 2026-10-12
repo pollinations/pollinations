@@ -15,6 +15,8 @@ Available: coreutils, grep, sed, awk, jq, xan (CSV), file, html-to-markdown, tar
 
 Write a file by passing its content in \`stdin\` and running \`cat > path\`; stdin is used as-is, no quoting.
 
+The bundled jq has no --arg, --argjson or --rawfile: read shell variables with \`env.NAME\` instead. In jq, write a literal parenthesis in a regex as \`[(]\`, not \`\\\\(\`, and bind function arguments with \`def f(a): a as $a | ...\`, because \`def f($a)\` binds them wrongly.
+
 Send files out with \`assets publish <path>\`, which copies one file to media storage and prints an unlisted URL kept 30 days (tar a folder first).
 
 Output is stdout and stderr, truncated at 64 KB; a non-zero exit is an error.`;
@@ -47,32 +49,17 @@ export function createComputerMcpServer(workspace: WorkspaceClient): McpServer {
             },
         },
         async ({ command, stdin, cwd = HOME }, context) => {
-            // stdin goes through a file in /tmp, not the runtime's stdin
-            // option: @cloudflare/computer 0.3.0 hands stdin to the shell as
-            // a latin1 byte string, and a `>` redirect then writes each UTF-8
-            // byte as its own character. A file read by `<` stays UTF-8.
-            const stdinPath =
-                stdin === undefined
-                    ? undefined
-                    : `${TMP_DIR}/.stdin-${crypto.randomUUID()}`;
             try {
                 await workspace.fs
                     .mkdir(cwd, { recursive: true })
                     .catch(() => undefined);
                 await workspace.fs.mkdir(TMP_DIR, { recursive: true });
-                if (stdinPath !== undefined) {
-                    await workspace.fs.writeFile(stdinPath, stdin ?? "");
-                }
-                const handle = await workspace.runtime.exec(
-                    stdinPath === undefined
-                        ? command
-                        : `{\n${command}\n} < ${stdinPath}`,
-                    {
-                        cwd,
-                        encoding: "utf8",
-                        timeoutMs: COMMAND_TIMEOUT_MS,
-                    },
-                );
+                const handle = await workspace.runtime.exec(command, {
+                    cwd,
+                    encoding: "utf8",
+                    timeoutMs: COMMAND_TIMEOUT_MS,
+                    stdin,
+                });
                 const onAbort = () => void handle.kill().catch(() => undefined);
                 context.signal.addEventListener("abort", onAbort, {
                     once: true,

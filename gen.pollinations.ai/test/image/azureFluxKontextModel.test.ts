@@ -3,6 +3,7 @@ import type { AuthResult } from "../../src/image/createAndReturnImages.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callAzureFlux2,
+    callAzureFlux11Pro,
     callAzureFluxKontext,
 } from "../../src/image/models/azureFluxKontextModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
@@ -31,8 +32,11 @@ const baseParams: ImageParams = {
 
 beforeEach(() => {
     syncImageEnv(
-        { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,
-        ["AZURE_MYCELI_PROD_API_KEY"],
+        {
+            AZURE_MYCELI_PROD_API_KEY: "test-azure-key",
+            AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-sweden-key",
+        } as CloudflareBindings,
+        ["AZURE_MYCELI_PROD_API_KEY", "AZURE_MYCELI_PROD_SWEDEN_API_KEY"],
     );
 });
 
@@ -244,6 +248,101 @@ describe("callAzureFluxKontext", () => {
     });
 });
 
+describe("callAzureFlux11Pro", () => {
+    it.each([
+        [
+            "black-forest-labs/flux.1.1-pro",
+            "myceli-prod-eastus",
+            "test-azure-key",
+        ],
+        [
+            "black-forest-labs/flux.1.1-pro:azure:sweden",
+            "myceli-prod-swedencentral",
+            "test-sweden-key",
+        ],
+    ] as const)("routes %s with exact dimensions, seed, and flat image usage", async (model, resource, apiKey) => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async (url, init) => {
+                expect(url.toString()).toBe(
+                    `https://${resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-pro-1.1?api-version=preview`,
+                );
+                expect(init?.headers).toMatchObject({
+                    Authorization: `Bearer ${apiKey}`,
+                });
+                expect(JSON.parse(init?.body as string)).toEqual({
+                    model: "FLUX-1.1-pro",
+                    prompt: "blue ceramic teapot",
+                    width: 768,
+                    height: 1024,
+                    seed: 42,
+                    output_format: "png",
+                    num_images: 1,
+                });
+                return Response.json({
+                    data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                });
+            });
+
+        const result = await callAzureFlux11Pro(
+            "blue ceramic teapot",
+            { ...baseParams, model, width: 768 },
+            USER_INFO,
+        );
+
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
+        expect(result.trackingData).toMatchObject({
+            actualModel: model,
+            usage: { completionImageTokens: 1 },
+        });
+    });
+
+    it.each([
+        [{ width: 257 }, "multiples of 32"],
+        [{ image: [INPUT_IMAGE_URL] as string[] }, "text-to-image"],
+        [{ guidance_scale: 4.5 }, "guidance_scale"],
+        [{ transparent: true }, "transparency"],
+    ] as const)("rejects unsupported parameters with a useful 400", async (overrides, message) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            callAzureFlux11Pro(
+                "blue ceramic teapot",
+                {
+                    ...baseParams,
+                    model: "black-forest-labs/flux.1.1-pro",
+                    ...overrides,
+                },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining(message),
+        });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("preserves provider content-filter errors", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                { error: { message: "Request blocked by content filter" } },
+                { status: 400 },
+            ),
+        );
+
+        await expect(
+            callAzureFlux11Pro(
+                "unsafe request",
+                { ...baseParams, model: "black-forest-labs/flux.1.1-pro" },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 422,
+            errorCode: "content_policy_violation",
+        });
+    });
+});
+
 describe("callAzureFlux2", () => {
     it.each([
         ["black-forest-labs/flux.2-pro", "FLUX.2-pro", "flux-2-pro"],
@@ -331,9 +430,7 @@ describe("callAzureFlux2", () => {
     });
 
     it.each([
-        [{ width: 255, height: 1024 }, "at least 256px"],
         [{ width: 1000, height: 750 }, "multiples of 16px"],
-        [{ width: 4112, height: 1024 }, "at most 4,194,304 pixels"],
     ])("rejects unsupported dimensions", async (dimensions, message) => {
         await expect(
             callAzureFlux2(
@@ -348,23 +445,6 @@ describe("callAzureFlux2", () => {
         ).rejects.toMatchObject({
             status: 400,
             message: expect.stringContaining(message),
-        });
-    });
-
-    it("rejects references beyond the selected route limit", async () => {
-        await expect(
-            callAzureFlux2(
-                "too many references",
-                {
-                    ...baseParams,
-                    model: "black-forest-labs/flux.2-pro",
-                    image: Array(9).fill(INPUT_IMAGE_URL),
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: "FLUX.2 Pro supports at most 8 reference images",
         });
     });
 

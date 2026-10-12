@@ -35,4 +35,11 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 Earn Pollen by completing useful actions — onboarding, using models, growing an app, GitHub contributions.
 - complete a Quest, claim the reward, Pollen lands in your wallet
 - Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed reward
+- A quest that asks for an app is completed by submitting the app with the quest number; the submitter claims the reward once the app is approved
 - in alpha — rewards and availability evolve
+
+## Public Content
+
+- Keep unconfirmed deployment status in metadata, not public copy. Describe merged work as "added" or "merged" without routine deployment disclaimers. Include known effective dates when relevant; do not claim a change is live, inactive or awaiting activation without evidence.
+- Gists and generated posts are public. Omit details of unresolved security vulnerabilities; a merge alone does not prove a fix is live.
+- Omit user complaints and churn narratives. Describe the resulting product fixes and their practical effects factually.

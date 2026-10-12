@@ -37,6 +37,8 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
+import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
@@ -51,6 +53,7 @@ import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
+import SANDBOXES_MD from "../docs/sandboxes.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
@@ -67,6 +70,7 @@ const DOC_TAGS = {
     cli: "CLI",
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
+    sandboxes: "Sandboxes",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -87,8 +91,6 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
-    "🧩 Community Models": DOC_TAGS.communityModels,
-    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
@@ -101,9 +103,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
     "🤖 Models": DOC_TAGS.models,
-    "✨ Quests": DOC_TAGS.quests,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
-    "👤 Account": DOC_TAGS.account,
     "📊 Public Stats": DOC_TAGS.publicStats,
     "media.pollinations.ai": DOC_TAGS.mediaStorage,
 };
@@ -141,6 +141,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
+    ),
+    [DOC_TAGS.sandboxes]: docsIcon(
+        '<rect x="3" y="4" width="18" height="16" rx="2" /><polyline points="7 9 10 12 7 15" /><line x1="13" y1="15" x2="17" y2="15" />',
     ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
@@ -200,6 +203,7 @@ const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
+const SANDBOXES_DOCS = stripLeadingHeading(SANDBOXES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -332,6 +336,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -341,6 +346,7 @@ const LLM_DOC_TEXT = [
     CLI_SECTION,
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
+    SANDBOXES_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -351,6 +357,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     cli: CLI_SECTION,
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
+    sandboxes: SANDBOXES_SECTION,
 };
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
@@ -474,6 +481,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
                     DOC_TAGS.codingHarnesses,
+                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -547,6 +555,10 @@ function generationDocumentation(): OpenApiSchema {
                 description: MCP_DOCS,
             },
             {
+                name: DOC_TAGS.sandboxes,
+                description: SANDBOXES_DOCS,
+            },
+            {
                 name: DOC_TAGS.errors,
                 description: stripLeadingHeading(ERRORS_DOCS),
             },
@@ -617,17 +629,6 @@ function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
 
 function normalizeDocTagName(tag: string): string {
     return LEGACY_DOC_TAGS[tag] ?? tag;
-}
-
-function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
-    return mergeTags(
-        tags.map((tag) =>
-            typeof tag.name === "string"
-                ? { ...tag, name: normalizeDocTagName(tag.name) }
-                : tag,
-        ),
-        [],
-    );
 }
 
 function normalizeOperationTags(paths: OpenApiSchema): void {
@@ -718,24 +719,48 @@ function isPublicMediaRead(method: string, path: string): boolean {
     return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
+// gen owns every docs tag. enter operations get their sidebar tag from their
+// public path, so a tag string written in enter can never split a group.
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
-        paths[publicEnterPath(path)] = value;
+        const publicPath = publicEnterPath(path);
+        paths[publicPath] = withOperationTag(value, enterDocTag(publicPath));
     }
-    normalizeOperationTags(paths);
-    return {
-        ...schema,
-        tags: tagsForPaths(
-            {
-                ...schema,
-                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
-            },
-            paths,
-        ),
-        paths,
-    };
+    return { ...schema, paths };
+}
+
+function enterDocTag(path: string): string {
+    if (isPublicQuestCatalogPath(path)) return DOC_TAGS.quests;
+    if (
+        path === "/account/agents" ||
+        path.startsWith("/account/agents/") ||
+        path === "/account/my-models/endpoint-agents"
+    ) {
+        return DOC_TAGS.communityAgents;
+    }
+    if (
+        path === "/account/my-models" ||
+        path.startsWith("/account/my-models/")
+    ) {
+        return DOC_TAGS.communityModels;
+    }
+    return DOC_TAGS.account;
+}
+
+function withOperationTag(pathItem: unknown, tag: string): unknown {
+    if (!pathItem || typeof pathItem !== "object") return pathItem;
+    const tagged: OpenApiSchema = {};
+    for (const [key, operation] of Object.entries(pathItem as OpenApiSchema)) {
+        tagged[key] =
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+                ? { ...(operation as OpenApiSchema), tags: [tag] }
+                : operation;
+    }
+    return tagged;
 }
 
 function isPublicEnterPath(path: string): boolean {
@@ -761,28 +786,6 @@ function publicEnterPath(path: string): string {
     return path
         .replace(/^\/api\/account(?=\/|$)/, "/account")
         .replace(/^\/api\/quests(?=\/|$)/, "/quests");
-}
-
-function tagsForPaths(
-    schema: OpenApiSchema,
-    paths: OpenApiSchema,
-): OpenApiSchema[] {
-    const usedTags = new Set<string>();
-    for (const pathItem of Object.values(paths)) {
-        if (!pathItem || typeof pathItem !== "object") continue;
-        for (const operation of Object.values(pathItem as OpenApiSchema)) {
-            if (!operation || typeof operation !== "object") continue;
-            const tags = (operation as { tags?: unknown }).tags;
-            if (!Array.isArray(tags)) continue;
-            for (const tag of tags) {
-                if (typeof tag === "string") usedTags.add(tag);
-            }
-        }
-    }
-
-    return asRecordArray(schema.tags).filter(
-        (tag) => typeof tag.name === "string" && usedTags.has(tag.name),
-    );
 }
 
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
@@ -866,10 +869,7 @@ function mergeSchemas(
         info: generationSchema.info,
         servers: generationSchema.servers,
         security: generationSchema.security,
-        tags: mergeTags(
-            asRecordArray(generationSchema.tags),
-            asRecordArray(enterSchema?.tags),
-        ),
+        tags: generationSchema.tags,
         components: mergeComponents(
             asRecord(enterSchema?.components),
             asRecord(generationSchema.components),
@@ -893,16 +893,6 @@ function mergeSchemas(
             ...asRecord(mediaSchema.paths),
         },
     };
-}
-
-function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {
-    const tags = new Map<string, OpenApiSchema>();
-    for (const tag of [...primary, ...secondary]) {
-        if (typeof tag.name === "string" && !tags.has(tag.name)) {
-            tags.set(tag.name, tag);
-        }
-    }
-    return [...tags.values()];
 }
 
 function mergeComponents(base: OpenApiSchema, overrides: OpenApiSchema) {
@@ -930,14 +920,6 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
-function asRecordArray(value: unknown): OpenApiSchema[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-        (item): item is OpenApiSchema =>
-            !!item && typeof item === "object" && !Array.isArray(item),
-    );
-}
-
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -960,6 +942,14 @@ export async function buildMergedOpenApiSpec(
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
@@ -1014,6 +1004,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
+        .get("/polli-skill.md", (c) => c.text(CLI_SKILL))
+        .get("/polli-tasks.md", (c) => c.text(CLI_TASKS))
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {

@@ -326,7 +326,7 @@ async function generateWanVideo(
         mimeType: "video/mp4",
         durationSeconds: requestedDuration,
         trackingData: {
-            actualModel: config.trackingName,
+            actualModel: safeParams.model,
             usage: {
                 completionVideoSeconds: billedDuration,
             },

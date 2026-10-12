@@ -1,6 +1,8 @@
+import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBedrockNativeConfig } from "../../../src/text/configs/providerConfigs.js";
 import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrlToBase64Transform.js";
+import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: createBedrockNativeConfig() };
@@ -28,6 +30,30 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("rejects invalid image URLs on the configured Nex Mini route", async () => {
+        const input = imageMessage(["http://127.0.0.1/image.png"]);
+        const resolved = resolveModelConfig(input, {
+            model: "nex-agi/nex-n2.5-mini",
+        });
+
+        await expect(transform(input, resolved.options)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
+    it("rejects invalid image URLs on the configured Nex Pro route", async () => {
+        const input = imageMessage(["http://127.0.0.1/image.png"]);
+        const resolved = resolveModelConfig(input, {
+            model: "nex-agi/nex-n2.5-pro",
+        });
+
+        await expect(transform(input, resolved.options)).rejects.toMatchObject({
+            status: 400,
+            errorCode: "invalid_image_url",
+        });
+    });
+
     it("uses the declared flag rather than the provider name", async () => {
         const input = imageMessage(["not-a-url"]);
         const result = await transform(input, {
@@ -167,6 +193,42 @@ describe("imageUrlToBase64Transform", () => {
     });
 
     it.each([
+        "moonshotai/kimi-k2.6",
+        "moonshotai/kimi-k2.6:azure:sweden",
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake",
+    ] as const)("converts as many image URLs as %s advertises, and no more", async (model) => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async () =>
+                new Response(PNG_BYTES, {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+        const { options } = resolveModelConfig([], { model });
+        const limit = getRegistryModelDefinition(model).maxReferenceImages;
+        if (!limit) throw new Error(`${model} declares no image limit`);
+        const urls = (count: number) =>
+            imageMessage(
+                Array.from(
+                    { length: count },
+                    (_, index) => `https://example.com/${index}.png`,
+                ),
+            );
+
+        const result = await transform(urls(limit), options);
+        const content = result.messages[0].content as {
+            image_url: { url: string };
+        }[];
+        expect(content).toHaveLength(limit);
+        for (const part of content) {
+            expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
+        }
+
+        await expect(transform(urls(limit + 1), options)).rejects.toMatchObject(
+            { status: 400, errorCode: "image_too_large" },
+        );
+    });
+
+    it.each([
         401, 403, 404, 429, 500,
     ])("returns 400 failed_to_download_image when the image host answers %i", async (upstreamStatus) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -185,24 +247,22 @@ describe("imageUrlToBase64Transform", () => {
         });
     });
 
-    // Not our call to make: the type is relayed and the provider answers. It
-    // gives a better error about its own accepted formats than a guess here.
-    it("relays a non-image content type instead of refusing it", async () => {
+    it("rejects non-image content before calling the provider", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("<html></html>", {
                 headers: { "content-type": "text/html" },
             }),
         );
 
-        const { messages } = await transform(
-            imageMessage(["https://example.com/page.html"]),
-            bedrockOptions,
-        );
-
-        const [part] = (
-            messages[0] as { content: { image_url: { url: string } }[] }
-        ).content;
-        expect(part.image_url.url).toMatch(/^data:text\/html;base64,/);
+        await expect(
+            transform(
+                imageMessage(["https://example.com/page.html"]),
+                bedrockOptions,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            errorCode: "unsupported_image_media_type",
+        });
     });
 
     it("rejects an image larger than the request budget", async () => {

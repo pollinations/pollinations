@@ -1,5 +1,6 @@
 import {
     InlineLink,
+    TabButton,
     Table,
     TableBody,
     TableCell,
@@ -7,11 +8,13 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
+import { accountClient } from "../../api.ts";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
     ActivityFilter,
+    ActivityKeyFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
     downloadFile,
@@ -20,7 +23,7 @@ import {
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import type { FilterState, Metric } from "./types";
+import type { FilterState, Metric, UsageGroupBy } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -29,6 +32,8 @@ type UsageSectionProps = {
     period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     selectedKeyIds: string[];
     selectedModels: string[];
     onMetricChange: (metric: Metric) => void;
@@ -40,13 +45,14 @@ export const UsageSection: FC<UsageSectionProps> = ({
     period,
     onPeriodChange,
     metric,
+    groupBy,
+    onGroupByChange,
     selectedKeyIds,
     selectedModels,
     onMetricChange,
     onSelectedKeyIdsChange,
     onSelectedModelsChange,
 }) => {
-    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const filters: FilterState = {
         period,
         metric,
@@ -55,6 +61,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
     };
     const {
         loading,
+        refreshing,
         error,
         fetchUsage,
         usedModels,
@@ -63,39 +70,36 @@ export const UsageSection: FC<UsageSectionProps> = ({
         hasData,
         stats,
         hasPeriodData,
-    } = useUsageData(filters);
+    } = useUsageData(filters, groupBy);
 
     const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
         label: k.label,
     }));
-    for (const id of selectedKeyIds) {
-        const key = apiKeys.find((key) => key.id === id);
-        if (key && !keySelectOptions.some((option) => option.value === id))
-            keySelectOptions.push({
-                value: id,
-                label: key.name || "Unnamed key",
-            });
-    }
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
         label: m.label,
     }));
-    const downloadDisabled = loading || !hasPeriodData;
-    const downloadDisabledReason = loading
-        ? "Loading usage data"
-        : "No transactions to download for this selected period";
+    const downloadDisabled = loading || refreshing || !hasPeriodData;
+    const downloadDisabledReason =
+        loading || refreshing
+            ? "Loading usage data"
+            : "No transactions to download for this selected period";
 
     function downloadDetailedUsage(): void {
         if (downloadDisabled) return;
 
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: period.granularity,
-            period: period.period,
-            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-        });
-        downloadFile(`/api/account/usage?${params.toString()}`);
+        accountClient.usage
+            .$get({
+                query: {
+                    format: "csv",
+                    granularity: period.granularity,
+                    period: period.period,
+                    limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                },
+            })
+            .then(downloadFile)
+            .catch((error) => console.error("Usage download failed:", error));
     }
 
     return (
@@ -124,7 +128,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
             >
                 {hasPeriodData && (
                     <>
-                        <ActivityFilter
+                        <ActivityKeyFilter
                             label="Keys"
                             missingLabel="Unavailable key"
                             options={keySelectOptions}
@@ -151,6 +155,8 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 metric={metric}
                 hasData={hasData}
                 stats={stats}
+                groupBy={groupBy}
+                onGroupByChange={onGroupByChange}
                 period={period}
                 onPeriodChange={onPeriodChange}
             />
@@ -163,6 +169,8 @@ type UsageChartViewProps = Pick<
     "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
 > & {
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
 };
@@ -175,36 +183,18 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     metric,
     hasData,
     stats,
+    groupBy,
+    onGroupByChange,
     period,
     onPeriodChange,
 }) => {
     return (
         <>
-            <div className="min-h-[180px]">
-                {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching usage data…
-                        </p>
-                    </div>
+            <SectionContent loading={loading}>
+                {error && (
+                    <LoadError onRetry={() => fetchUsage()}>{error}</LoadError>
                 )}
-                {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <div className="text-center">
-                            <p className="text-sm text-intent-danger-text font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchUsage()}
-                                className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {!loading && !error && hasData && (
+                {hasData && (
                     <Chart
                         key={`${period.granularity}:${period.period}`}
                         period={period}
@@ -218,11 +208,16 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         metric={metric}
                     />
                 )}
-                {!loading && !error && !hasData && <UsageEmptyState />}
-            </div>
+                {!error && !hasData && <UsageEmptyState />}
+            </SectionContent>
 
-            {!loading && !error && hasData && (
-                <ModelBreakdownTable stats={stats} metric={metric} />
+            {!loading && hasData && (
+                <UsageBreakdownTable
+                    stats={stats}
+                    metric={metric}
+                    groupBy={groupBy}
+                    onGroupByChange={onGroupByChange}
+                />
             )}
         </>
     );
@@ -232,45 +227,75 @@ const UsageEmptyState: FC = () => (
     <ActivityEmptyState>
         No usage in this period. Once you start using the API, your deductions
         will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an API key
-        </InlineLink>
-        .
+        <InlineLink href="/keys">Create an API key</InlineLink>.
     </ActivityEmptyState>
 );
 
-type ModelBreakdownTableProps = {
+type UsageBreakdownTableProps = {
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
+const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
     stats,
     metric,
+    groupBy,
+    onGroupByChange,
 }) => {
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     return (
         <div className="min-w-0 max-w-full overflow-x-auto">
             <Table
-                aria-label="Usage by model"
+                aria-label={`Usage by ${groupBy}`}
                 className="min-w-[340px] [&_tr:hover]:bg-transparent"
             >
-                <TableHead className="sr-only">
+                <TableHead>
                     <TableRow>
-                        <TableHeaderCell scope="col">Model</TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            aria-label={groupBy === "model" ? "Model" : "Key"}
+                            className="px-2 py-1 font-normal"
+                        >
+                            <fieldset
+                                aria-label="Group usage by"
+                                className="flex items-center gap-1"
+                            >
+                                {(["model", "key"] as const).map((group) => (
+                                    <TabButton
+                                        key={group}
+                                        active={groupBy === group}
+                                        onClick={() => onGroupByChange(group)}
+                                        size="xs"
+                                        className="min-h-8"
+                                    >
+                                        {group === "model" ? "Models" : "Keys"}
+                                    </TabButton>
+                                ))}
+                            </fieldset>
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            scope="col"
+                            align="right"
+                            className="px-2 py-1 font-normal"
+                        >
                             Share
                         </TableHeaderCell>
-                        <TableHeaderCell scope="col" align="right">
+                        <TableHeaderCell
+                            scope="col"
+                            align="right"
+                            className="px-2 py-1 font-normal"
+                        >
                             {metric === "pollen" ? "Pollen" : "Requests"}
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody divider="neutral">
-                    {stats.modelBreakdowns.map((model) => (
-                        <TableRow key={model.model}>
+                    {stats.breakdowns.map((row) => (
+                        <TableRow key={row.id}>
                             <TableCell className="max-w-64 break-words text-xs">
-                                {model.label}
+                                {row.label}
                             </TableCell>
                             <TableCell
                                 align="right"
@@ -278,7 +303,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                 className="text-xs"
                             >
                                 {total > 0
-                                    ? ((model[metric] / total) * 100).toFixed(1)
+                                    ? ((row[metric] / total) * 100).toFixed(1)
                                     : "0.0"}
                                 %
                             </TableCell>
@@ -287,7 +312,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                 numeric
                                 className="text-xs"
                             >
-                                <PollenUsageBadges {...model} metric={metric} />
+                                <PollenUsageBadges {...row} metric={metric} />
                             </TableCell>
                         </TableRow>
                     ))}

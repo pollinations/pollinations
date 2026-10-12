@@ -59,31 +59,23 @@ describe("API provider identities", () => {
 
 // These are routing expectations, not another provider catalog. Compare the
 // actual text connection configuration with the vendor attributed by the registry.
-// Other modalities have catalog membership coverage above; the two renamed
-// Nova routes additionally pin the supplier used by their Bedrock SDK handlers.
-describe("Nova media API provider attribution", () => {
-    it.each([
-        "amazon/nova-canvas-v1",
-        "amazon/nova-reel-v1",
-    ])("%s attributes cost to AWS Bedrock", (model) => {
-        expect(getRegistryModelDefinition(model).provider).toBe("aws");
-    });
-});
-
 const PROTOCOL_VENDORS: Record<string, string> = {
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
-    "perplexity-ai": "perplexity",
     openrouter: "openrouter",
 };
 const HOST_VENDORS: Record<string, string> = {
+    "api.openai.com": "openai",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
     "api.mistral.ai": "mistral",
+    "api.novita.ai": "novita",
+    "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",
     "ai-gateway.vercel.sh": "vercel",
+    "api.x.ai": "xai",
     "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
         "ovhcloud",
     "oai.endpoints.kepler.ai.cloud.ovh.net": "ovhcloud",

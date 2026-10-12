@@ -191,6 +191,79 @@ describe("generateTextPortkey", () => {
         expect(billing.price.totalPrice).toBe(0.0013155);
     });
 
+    it("falls back from both Azure Grok regions to xAI direct at the primary price", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(String(input));
+                hosts.push(url.hostname);
+                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
+                if (url.hostname !== "api.x.ai") {
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status: 429 },
+                    );
+                }
+                const headers = new Headers(init?.headers);
+                expect(headers.has("api-key")).toBe(false);
+                expect(headers.get("authorization")).toBe(
+                    `Bearer ${env.XAI_API_KEY}`,
+                );
+                return Response.json({
+                    model: "grok-4.6",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Paris" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Observed xAI usage (2026-09-24): reasoning is additive
+                    // and cost_in_usd_ticks reported $0.001296.
+                    usage: {
+                        prompt_tokens: 648,
+                        completion_tokens: 1,
+                        total_tokens: 776,
+                        prompt_tokens_details: {
+                            text_tokens: 648,
+                            image_tokens: 0,
+                            cached_tokens: 512,
+                        },
+                        completion_tokens_details: { reasoning_tokens: 127 },
+                    },
+                });
+            },
+        );
+        const { result, index } = await withModelFallback(
+            ["x-ai/grok-4.6", ...TEXT_SERVICES["x-ai/grok-4.6"].fallbacks].map(
+                (id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                }),
+            ),
+            ({ id }) =>
+                generateTextPortkey([{ role: "user", content: "Capital?" }], {
+                    model: id,
+                }),
+        );
+        expect(index).toBe(2);
+        expect(hosts).toEqual([
+            "myceli-prod-eastus.cognitiveservices.azure.com",
+            "myceli-prod-swedencentral.cognitiveservices.azure.com",
+            "api.x.ai",
+        ]);
+        const billing = calculateUsageBilling({
+            model: "x-ai/grok-4.6",
+            usage: openaiUsageToUsage(
+                result.usage as Parameters<typeof openaiUsageToUsage>[0],
+            ),
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:xai"],
+            quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.001296, 12);
+        expect(billing.price.totalPrice).toBe(0.000972);
+    });
+
     it("routes Gemini through direct Vertex via Portkey", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",
@@ -205,17 +278,17 @@ describe("generateTextPortkey", () => {
                 expect(headers.get("x-portkey-provider")).toBe("vertex-ai");
                 expect(headers.get("x-portkey-vertex-region")).toBe("global");
                 expect(headers.get("x-portkey-vertex-model-id")).toBe(
-                    "gemini-2.5-flash-lite",
+                    "gemini-3.5-flash-lite",
                 );
                 expect(headers.get("Authorization")).toBe(
                     "Bearer test-google-token",
                 );
                 expect(JSON.parse(String(init?.body))).toMatchObject({
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-3.5-flash-lite",
                 });
                 return Response.json({
                     id: "generation-1",
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-3.5-flash-lite",
                     choices: [
                         {
                             index: 0,
@@ -235,7 +308,7 @@ describe("generateTextPortkey", () => {
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "gemini-fast",
+                model: "google/gemini-3.5-flash-lite",
                 portkeyGatewayUrl: "https://portkey.test",
             },
             portkeyFetcher,
@@ -254,16 +327,16 @@ describe("generateTextPortkey", () => {
         });
     });
 
-    it("falls back from direct Vertex to the proven OpenRouter route", async () => {
+    it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",
         );
         const primary = "google/gemini-2.5-flash-lite" as const;
         const fallback =
-            "google/gemini-2.5-flash-lite:openrouter:vertex-eu" as const;
+            "google/gemini-2.5-flash-lite:openrouter:ai-studio" as const;
         const portkeyFetcher = vi.fn(async () =>
             Response.json(
-                { error: { message: "Vertex unavailable" } },
+                { error: { message: "Vercel unavailable" } },
                 { status: 503 },
             ),
         );
@@ -271,13 +344,26 @@ describe("generateTextPortkey", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementation(
                 async (input: RequestInfo | URL, init?: RequestInit) => {
+                    if (
+                        String(input) ===
+                        "https://ai-gateway.vercel.sh/v1/chat/completions"
+                    ) {
+                        expect(JSON.parse(String(init?.body))).toMatchObject({
+                            model: "google/gemini-2.5-flash-lite",
+                            providerOptions: { gateway: { only: ["google"] } },
+                        });
+                        return Response.json(
+                            { error: { message: "Vercel unavailable" } },
+                            { status: 503 },
+                        );
+                    }
                     expect(String(input)).toBe(
                         "https://openrouter.ai/api/v1/chat/completions",
                     );
                     expect(JSON.parse(String(init?.body))).toMatchObject({
                         model: "google/gemini-2.5-flash-lite",
                         provider: {
-                            only: ["google-vertex/eu"],
+                            only: ["google-ai-studio"],
                             allow_fallbacks: false,
                         },
                     });
@@ -338,8 +424,8 @@ describe("generateTextPortkey", () => {
                 ),
         );
 
-        expect(portkeyFetcher).toHaveBeenCalledOnce();
-        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
         expect(candidate.id).toBe(fallback);
         expect(index).toBe(1);
         expect(result).toMatchObject({
@@ -403,7 +489,7 @@ describe("generateTextPortkey", () => {
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+                model: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
                 stream: true,
             },
             portkeyFetcher,

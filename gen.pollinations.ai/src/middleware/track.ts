@@ -51,6 +51,7 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     PROMPT_CACHE_TYPE_HEADER,
+    PROVIDER_BILLING_HEADERS,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -82,7 +83,6 @@ import { mergeContentFilterResults } from "@/content-filter.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
-    isContentPolicyViolation,
 } from "@/image/utils/contentModeration.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
@@ -93,6 +93,7 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import { apiErrorStatus } from "@/text/errors.ts";
 import {
     getResponsesEventUsage,
     isResponsesFailure,
@@ -201,7 +202,13 @@ export const track = (eventType: EventType) =>
             rawIp !== "unknown" ? stripIPv4MappedPrefix(rawIp) : undefined;
         const ipSubnet = truncateIpToSubnet(clientIp);
 
-        const userTracking = requestIdentity(c.var.auth);
+        const polliClient = c.req
+            .header("x-polli-client")
+            ?.match(/^cli\/(\d+\.\d+\.\d+)$/);
+        const userTracking = {
+            ...requestIdentity(c.var.auth),
+            polliClientVersion: polliClient?.[1],
+        };
 
         let responseOverride: Response | null = null;
         // What the caller asked for; a provider's response may refine it.
@@ -365,6 +372,7 @@ export const track = (eventType: EventType) =>
                     response,
                     finalCandidate,
                     pricingInput,
+                    c.get("error"),
                 );
                 if (responseTracking.cacheHit) {
                     await releaseApiKeyBudgetReservation(c.var, c.env);
@@ -407,6 +415,7 @@ export const track = (eventType: EventType) =>
                             c.var.balance.apiKeyReservation?.amount,
                         byopClientKeyId: c.var.auth?.apiKey?.byopClientKeyId,
                         modelPaidOnly: c.var.model?.definition.paidOnly,
+                        questPollenOnly: c.var.auth?.apiKey?.questPollenOnly,
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.
@@ -672,6 +681,7 @@ export async function trackResponse(
     response: Response,
     candidate: FallbackCandidate,
     pricingInput?: PricingInput,
+    error?: unknown,
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
@@ -698,9 +708,32 @@ export async function trackResponse(
         return notBilled();
     }
     if (!response.ok) {
-        return notBilled({
+        // A failure is billed only when the provider charged for it, which the
+        // handler reports on the error (an xAI video rejected after generation).
+        const usage =
+            error instanceof UpstreamError ? error.billedUsage : undefined;
+        if (!usage) {
+            return notBilled({
+                modelUsed,
+            });
+        }
+        return {
+            responseStatus: response.status,
+            cacheHit,
+            isBilledUsage: true,
+            fallbackUsed,
+            ...calculateUsageBilling({
+                model: resolvedModelRequested,
+                usage,
+                servedBy:
+                    candidate.definition ?? requestTracking.modelDefinition,
+                quotedBy: requestTracking.modelDefinition,
+                input: pricingInput,
+            }),
             modelUsed,
-        });
+            modelProviderUsed,
+            usage,
+        };
     }
 
     // Verify the response content-type matches the expected output before
@@ -890,9 +923,7 @@ function streamError(raw: unknown): StreamError {
         message?: unknown;
     };
     return {
-        status: isContentPolicyViolation(JSON.stringify(raw ?? {}))
-            ? CONTENT_POLICY_STATUS
-            : 502,
+        status: apiErrorStatus(raw ?? {}, 502),
         code: typeof code === "string" ? code : undefined,
         message: typeof message === "string" ? message : undefined,
     };
@@ -985,10 +1016,16 @@ function getContentTypeGuard(
         const isTimestampedTts =
             response.headers.get("x-pollinations-response-format") ===
             "audio-with-timestamps";
+        const isStemSeparation =
+            requestTracking.modelDefinition.supportedEndpoints?.includes(
+                "/alpha/audio/stem-separation",
+            );
         return {
             kind: "audio",
             isExpected: (contentType) =>
                 contentType.startsWith("audio/") ||
+                (isStemSeparation &&
+                    contentType.startsWith("application/zip")) ||
                 (isSTTModel &&
                     (contentType.startsWith("application/json") ||
                         contentType.startsWith("text/plain"))) ||
@@ -1068,6 +1105,8 @@ export type UserData = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
 };
 
 export function requestIdentity(auth: AuthVariables["auth"]): UserData {
@@ -1090,6 +1129,10 @@ export function requestIdentity(auth: AuthVariables["auth"]): UserData {
             ? "redirect-auth"
             : (apiKeyMetadata?.createdVia as string | undefined),
         apiKeyClientId: byopClientKeyId ?? undefined,
+        apiKeyCreatedById: apiKeyMetadata?.createdByApiKeyId as
+            | string
+            | undefined,
+        apiKeyOriginAppId: apiKeyMetadata?.originAppKeyId as string | undefined,
         apiKeyCreatedForApp: auth.apiKey?.byopClientName ?? undefined,
         apiKeyCreatedForUserId: auth.apiKey?.byopClientUserId ?? undefined,
     };
@@ -1282,11 +1325,30 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
             "Failed to determine model: x-model-used header was missing",
         );
     }
+    const unitsHeader = response.headers.get(PROVIDER_BILLING_HEADERS.units);
+    const unitCostHeader = response.headers.get(
+        PROVIDER_BILLING_HEADERS.unitCost,
+    );
+    let providerBilling: PricingInput["providerBilling"];
+    if (unitsHeader !== null || unitCostHeader !== null) {
+        const units = Number(unitsHeader);
+        const unitCost = Number(unitCostHeader);
+        if (
+            !Number.isFinite(units) ||
+            units <= 0 ||
+            !Number.isFinite(unitCost) ||
+            unitCost <= 0
+        ) {
+            throw new Error("Invalid provider billing receipt");
+        }
+        providerBilling = { units, unitCost };
+    }
     const usage = parseUsageHeaders(response.headers);
     return {
         model: modelUsed,
         usage,
         pricingInput: {
+            providerBilling,
             hasExplicitCacheHit:
                 response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
         },

@@ -1,4 +1,6 @@
-const MODEL_HEALTH_URL = "https://gen.pollinations.ai/models/status";
+import { BASE_URL } from "../lib/config.js";
+
+const MODEL_HEALTH_URL = `${BASE_URL}/models/status`;
 
 export async function fetchModelStats(
     minutes = 60,

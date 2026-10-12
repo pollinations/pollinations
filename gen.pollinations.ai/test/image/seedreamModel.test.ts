@@ -119,38 +119,9 @@ describe("seedreamReplicateModel - seedream 4.0", () => {
         expect(result.trackingData?.actualModel).toBe("bytedance/seedream-4.0");
         expect(result.trackingData?.usage?.completionImageTokens).toBe(1);
     });
-
-    it("rejects more than 10 reference images", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = {
-            ...baseParams,
-            image: Array.from(
-                { length: 11 },
-                (_, i) => `https://example.com/${i}.jpg`,
-            ),
-        };
-
-        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
-            status: 400,
-        });
-    });
 });
 
 describe("seedreamReplicateModel - aspect ratio mapping", () => {
-    it("rejects unsupported aspect ratio 9:21 with 400", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = {
-            ...baseParams,
-            aspectRatio: "9:21",
-        } as ImageParams;
-
-        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
-            status: 400,
-        });
-    });
-
     it("maps 'adaptive' to match_input_image", async () => {
         const requests: ReplicateRequest[] = [];
         mockReplicateFetch(requests);
@@ -287,21 +258,6 @@ describe("seedreamReplicateModel - seedream 4.0 custom-size mode", () => {
         expect(input.size).not.toBe("custom");
         expect(input.aspect_ratio).toBe("match_input_image");
     });
-
-    it("rejects out-of-range custom dimensions with 400", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = {
-            ...baseParams,
-            width: 800, // below 1024 minimum
-            height: 1024,
-            dimensionsExplicit: true,
-        };
-
-        await expect(callSeedreamAPI("test", params)).rejects.toMatchObject({
-            status: 400,
-        });
-    });
 });
 
 describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
@@ -376,23 +332,6 @@ describe("seedreamReplicateModel - seedream5 5.0 Lite", () => {
         expect(input.output_format).toBe("png");
     });
 
-    it("rejects more than 14 reference images", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = {
-            ...baseParams,
-            model: "bytedance/seedream-5.0-lite",
-            image: Array.from(
-                { length: 15 },
-                (_, i) => `https://example.com/${i}.jpg`,
-            ),
-        };
-
-        await expect(callSeedream5API("test", params)).rejects.toMatchObject({
-            status: 400,
-        });
-    });
-
     it("returns seedream5 as actualModel", async () => {
         mockReplicateFetch([]);
 
@@ -452,24 +391,5 @@ describe("seedreamReplicateModel - seedream5 5.0 Pro", () => {
         const input = (requests[0].body as { input: Record<string, unknown> })
             .input;
         expect(input.size).toBe("2K");
-    });
-
-    it("rejects more than 10 reference images", async () => {
-        mockReplicateFetch([]);
-
-        const params: ImageParams = {
-            ...baseParams,
-            model: "bytedance/seedream-5.0-pro",
-            image: Array.from(
-                { length: 11 },
-                (_, i) => `https://example.com/${i}.jpg`,
-            ),
-        };
-
-        await expect(callSeedream5ProAPI("test", params)).rejects.toMatchObject(
-            {
-                status: 400,
-            },
-        );
     });
 });

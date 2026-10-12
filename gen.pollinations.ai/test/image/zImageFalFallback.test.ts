@@ -42,18 +42,21 @@ function createZImageFallbackMocks() {
                     state.falRequests.push(
                         (await request.json()) as Record<string, unknown>,
                     );
-                    return Response.json({
-                        images: [
-                            {
-                                url: `https://${falMediaHost}/output.png`,
-                                content_type: "image/png",
-                                width: 1024,
-                                height: 1024,
-                            },
-                        ],
-                        seed: 42,
-                        has_nsfw_concepts: [false],
-                    });
+                    return Response.json(
+                        {
+                            images: [
+                                {
+                                    url: `https://${falMediaHost}/output.png`,
+                                    content_type: "image/png",
+                                    width: 1024,
+                                    height: 1024,
+                                },
+                            ],
+                            seed: 42,
+                            has_nsfw_concepts: [false],
+                        },
+                        { headers: { "x-fal-billable-units": "1" } },
+                    );
                 },
                 [falMediaHost]: async () =>
                     new Response(Buffer.from(png1x1Base64, "base64"), {
@@ -159,10 +162,8 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
         isFinal: true,
         isBilledUsage: true,
     });
-    expect(mocks.tinybird.state.events[1].totalCost).toBeCloseTo(
-        1.048576 * 0.005,
-        10,
-    );
+    // Cost follows fal's billed megapixels, not the requested 1.048576 MP.
+    expect(mocks.tinybird.state.events[1].totalCost).toBeCloseTo(0.005, 10);
 });
 
 test("rejects direct calls to the internal Fal route", async ({

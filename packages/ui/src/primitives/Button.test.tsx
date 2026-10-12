@@ -13,6 +13,15 @@ describe("Button appearances", () => {
         expect(html).not.toContain("polli:border-r-[3px]");
     });
 
+    test("paints the surface intent as a white pill without the accent fill", () => {
+        const html = renderToStaticMarkup(
+            <Button intent="surface">Docs</Button>,
+        );
+
+        expect(html).toContain("polli:bg-surface-opaque");
+        expect(html).not.toContain("polli:bg-theme-bg-active");
+    });
+
     test("preserves an explicit submit type", () => {
         const html = renderToStaticMarkup(
             <Button type="submit">Submit</Button>,
@@ -57,6 +66,23 @@ describe("Button appearances", () => {
             <DialogFooter>{button}</DialogFooter>,
         );
         expect(footer).toContain(standalone);
+    });
+
+    test("keeps primary footer actions pill-shaped and outlined", () => {
+        const button = (
+            <Button intent="commit" type="submit">
+                Save changes
+            </Button>
+        );
+        const standalone = renderToStaticMarkup(button);
+        const footer = renderToStaticMarkup(
+            <DialogFooter>{button}</DialogFooter>,
+        );
+
+        expect(footer).toContain(standalone);
+        expect(standalone).toContain("polli:rounded-full");
+        expect(standalone).toContain("polli:border-theme-text-soft");
+        expect(standalone).toContain('type="submit"');
     });
 
     test("makes disabled polymorphic links inert", () => {

@@ -1,8 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { AccountPollen } from "./AccountPollen.tsx";
+import { formatPollen } from "./format-pollen.ts";
+import { WalletBalanceCard } from "./wallet-display.tsx";
 
 describe("account Pollen", () => {
+    it("preserves a Pollen amount already within the four-decimal display budget", () => {
+        expect(formatPollen(0.0003)).toBe("0.0003");
+    });
+
     it("shows the app budget as an amount or an Unlimited badge", () => {
         const some = renderToStaticMarkup(
             <AccountPollen source={{ type: "budget", remaining: 3.25 }} />,
@@ -59,9 +65,9 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(mixed).toContain("Quest Pollen:");
-        expect(mixed).toContain("Paid Pollen:");
-        expect(mixed).not.toContain("No Pollen");
+        expect(mixed).toContain("Quest pollen:");
+        expect(mixed).toContain("Paid pollen:");
+        expect(mixed).not.toContain("No pollen");
         expect(mixed).not.toContain("/top-up");
         expect(mixed.indexOf("Quest")).toBeLessThan(mixed.indexOf("Paid"));
     });
@@ -73,21 +79,62 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(linked).toContain("No Pollen");
+        expect(linked).toContain("No pollen");
         expect(linked).toContain('href="/top-up"');
-        expect(linked).not.toContain("Quest Pollen:");
+        expect(linked).not.toContain("Quest pollen:");
         const menu = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
-        expect(menu).toContain("No Pollen");
+        expect(menu).toContain("No pollen");
         expect(menu).not.toContain("<a ");
+    });
+
+    it("keeps the top-up return destination in the same tab", () => {
+        const href = "/top-up?redirect=%2Fauthorize%3Fclient_id%3Dexample";
+        const markup = renderToStaticMarkup(
+            <AccountPollen
+                source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
+                topUpHref={href}
+            />,
+        );
+        expect(markup).toContain(`href="${href}"`);
+        expect(markup).not.toContain('target="_blank"');
     });
 
     it("renders nothing while the wallet is unavailable", () => {
         expect(
             renderToStaticMarkup(<AccountPollen source={{ type: "wallet" }} />),
         ).toBe("");
+    });
+});
+
+describe("wallet card colors", () => {
+    it("keeps the balance palette as the default", () => {
+        for (const kind of ["paid", "tier"] as const) {
+            const html = renderToStaticMarkup(
+                <WalletBalanceCard kind={kind} label="Balance" value={5} />,
+            );
+            expect(html).toContain(`polli-wallet-panel-${kind}`);
+            expect(html).toContain(`polli-wallet-text-${kind}`);
+        }
+    });
+
+    it("uses neutral colors for totals without changing the card layout", () => {
+        const html = renderToStaticMarkup(
+            <WalletBalanceCard
+                tone="neutral"
+                kind="tier"
+                label="Pollen"
+                value={27.5}
+            />,
+        );
+        expect(html).not.toContain("polli-wallet-panel-tier");
+        expect(html).not.toContain("polli-wallet-text-tier");
+        expect(html).toContain("polli:bg-surface-opaque");
+        expect(html).toContain("polli:rounded-card polli:p-3.5");
+        expect(html).toContain("polli-wallet-balance-value");
+        expect(html).toContain("27.5");
     });
 });

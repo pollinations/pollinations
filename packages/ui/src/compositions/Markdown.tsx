@@ -33,8 +33,13 @@ const AUDIO_EXTENSIONS = new Set([
 ]);
 
 function urlExtension(src: string): string {
-    const path = src.split(/[?#]/, 1)[0];
-    return path.split(".").pop()?.toLowerCase() ?? "";
+    // Only the path names a file; the base resolves relative links.
+    try {
+        const { pathname } = new URL(src, "http://localhost");
+        return pathname.split(".").pop()?.toLowerCase() ?? "";
+    } catch {
+        return "";
+    }
 }
 
 function inlineMedia(src: string | undefined, label: string | undefined) {

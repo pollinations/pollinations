@@ -163,4 +163,18 @@ describe("Claude thinking model wiring", () => {
         );
         expect(options.thinking).toEqual({ type: "disabled" });
     });
+
+    it("does not send unsupported disabled thinking to Bedrock Opus 5.5", async () => {
+        const transform = findModelByName(
+            "anthropic/claude-opus-5.5",
+        )?.transform;
+        if (!transform) throw new Error("Opus 5.5 transform missing");
+        for (const reasoning_effort of [undefined, "none"] as const) {
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                { reasoning_effort },
+            );
+            expect(options.thinking).toBeUndefined();
+        }
+    });
 });

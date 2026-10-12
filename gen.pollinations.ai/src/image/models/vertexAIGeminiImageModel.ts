@@ -29,7 +29,6 @@ const VERTEX_ASPECT_RATIOS = [
 type VertexGeminiImageConfig = {
     model: string;
     generator: string;
-    maxReferenceImages: number;
     resolution: "none" | "tiered" | "1K";
     reasoning: boolean;
 };
@@ -38,28 +37,24 @@ const VERTEX_GEMINI_IMAGE_CONFIGS = {
     "google/gemini-2.5-flash-image": {
         model: "gemini-2.5-flash-image",
         generator: "Vertex AI Gemini 2.5 Flash Image",
-        maxReferenceImages: 3,
         resolution: "none",
         reasoning: false,
     },
     "google/gemini-3.1-flash-image": {
         model: "gemini-3.1-flash-image",
         generator: "Vertex AI Gemini 3.1 Flash Image",
-        maxReferenceImages: 14,
         resolution: "tiered",
         reasoning: true,
     },
     "google/gemini-3.1-flash-lite-image": {
         model: "gemini-3.1-flash-lite-image",
         generator: "Vertex AI Gemini 3.1 Flash-Lite Image",
-        maxReferenceImages: 14,
         resolution: "1K",
         reasoning: true,
     },
     "google/gemini-3-pro-image": {
         model: "gemini-3-pro-image",
         generator: "Vertex AI Gemini 3 Pro Image",
-        maxReferenceImages: 14,
         resolution: "tiered",
         reasoning: false,
     },
@@ -259,11 +254,6 @@ export async function callVertexAIGeminiImageAPI(
             message: `Unsupported Vertex Gemini image model: ${params.model}`,
         });
     }
-    if (params.image.length > config.maxReferenceImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${params.model} supports at most ${config.maxReferenceImages} reference images`,
-        });
-    }
 
     const projectId = getImageEnv("GOOGLE_PROJECT_ID");
     if (!projectId) {
@@ -373,8 +363,6 @@ export async function callVertexAIGeminiImageAPI(
     });
     return {
         buffer: finalImageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: { actualModel: params.model, usage },
     };
 }

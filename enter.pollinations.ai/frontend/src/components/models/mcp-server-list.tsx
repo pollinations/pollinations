@@ -81,7 +81,6 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                             <UsagePriceRows
                                                 adjustments={pricing.rates}
                                                 align="left"
-                                                fractionDigits={8}
                                             />
                                         </div>
                                     )}

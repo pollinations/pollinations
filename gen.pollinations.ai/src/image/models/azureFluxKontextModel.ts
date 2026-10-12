@@ -29,25 +29,33 @@ const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 
+const AZURE_FLUX_11_PRO_ROUTES = {
+    "black-forest-labs/flux.1.1-pro": {
+        resource: "myceli-prod-eastus",
+        apiKeyEnv: "AZURE_MYCELI_PROD_API_KEY",
+    },
+    "black-forest-labs/flux.1.1-pro:azure:sweden": {
+        resource: "myceli-prod-swedencentral",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    },
+} as const;
+
 const AZURE_FLUX_2_CONFIG = {
     "black-forest-labs/flux.2-pro": {
         upstreamModel: "FLUX.2-pro",
         modelPath: "flux-2-pro",
         title: "FLUX.2 Pro",
-        maxReferenceImages: 8,
     },
     "black-forest-labs/flux.2-flex": {
         upstreamModel: "FLUX.2-flex",
         modelPath: "flux-2-flex",
         title: "FLUX.2 Flex",
-        maxReferenceImages: 10,
     },
 } as const;
 
 type AzureFlux2Model = keyof typeof AZURE_FLUX_2_CONFIG;
 
-const AZURE_FLUX_2_MAX_PIXELS = 2048 * 2048;
-const AZURE_FLUX_2_MIN_SIDE = 256;
+// Azure rejects out-of-range sizes itself; only the step is checked here.
 const AZURE_FLUX_2_DIMENSION_STEP = 16;
 
 function flux2Endpoint(modelPath: string): string {
@@ -290,13 +298,8 @@ export async function callAzureFluxKontext(
     // Convert base64 to buffer
     const imageBuffer = base64ToBuffer(data.data[0].b64_json);
 
-    // Return result with content safety flags from Azure response
     return {
         buffer: imageBuffer,
-        isMature:
-            asRecord(asRecord(data.data[0].content_filter_results)?.sexual)
-                ?.filtered === true,
-        isChild: false, // Azure doesn't provide child detection
         trackingData: {
             actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: {
@@ -307,27 +310,111 @@ export async function callAzureFluxKontext(
     };
 }
 
+export async function callAzureFlux11Pro(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    const model = safeParams.model as keyof typeof AZURE_FLUX_11_PRO_ROUTES;
+    const route = AZURE_FLUX_11_PRO_ROUTES[model];
+    if (!route) {
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Azure FLUX 1.1 Pro route: ${model}`,
+        });
+    }
+    if (safeParams.image.length > 0) {
+        throw UpstreamError.fromProvider(400, {
+            message: "FLUX 1.1 Pro supports text-to-image generation only",
+        });
+    }
+    if (safeParams.guidance_scale !== undefined || safeParams.transparent) {
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "FLUX 1.1 Pro does not support guidance_scale or transparency",
+        });
+    }
+    const { width, height } = safeParams;
+    // Azure rejects out-of-range sizes itself; only the step is checked here.
+    if (width % 32 !== 0 || height % 32 !== 0) {
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "FLUX 1.1 Pro requires width and height in multiples of 32",
+        });
+    }
+
+    const apiKey = getImageEnv(route.apiKeyEnv);
+    if (!apiKey)
+        throw new Error(
+            `${route.apiKeyEnv} not found in environment variables`,
+        );
+    await requireSafePrompt(prompt, safeParams, userInfo);
+
+    const endpoint = `https://${route.resource}.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-pro-1.1?api-version=preview`;
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            model: "FLUX-1.1-pro",
+            prompt: sanitizeString(prompt),
+            width,
+            height,
+            seed: safeParams.seed,
+            output_format: "png",
+            num_images: 1,
+        }),
+    });
+    await ensureAzureImageOk(response, endpoint);
+
+    const data = (await response.json()) as AzureFluxResponse;
+    const firstImage = data.data?.[0];
+    const encodedImage = firstImage?.b64_json;
+    if (!encodedImage) {
+        const requestUrl = new URL(endpoint);
+        const responseBody = JSON.stringify(data);
+        const upstreamHeaders = collectUpstreamHeaders(response.headers);
+        const rejectionReason = contentPolicyReason(data);
+        if (rejectionReason) {
+            throw new UpstreamError(CONTENT_POLICY_STATUS, {
+                message: contentPolicyMessage(rejectionReason),
+                errorCode: CONTENT_POLICY_ERROR_CODE,
+                requestUrl,
+                upstreamStatus: response.status,
+                responseBody,
+                upstreamHeaders,
+            });
+        }
+        throw new UpstreamError(502, {
+            message: "Azure FLUX 1.1 Pro returned no image",
+            requestUrl,
+            upstreamStatus: response.status,
+            responseBody,
+            upstreamHeaders,
+        });
+    }
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: model,
+            usage: { completionImageTokens: 1, totalTokenCount: 1 },
+        },
+    };
+}
+
 function validateFlux2Dimensions(
     modelTitle: string,
     width: number,
     height: number,
 ): void {
-    if (width < AZURE_FLUX_2_MIN_SIDE || height < AZURE_FLUX_2_MIN_SIDE) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
-        });
-    }
     if (
         width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
         height % AZURE_FLUX_2_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
             message: `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
-        });
-    }
-    if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${modelTitle} supports at most 4,194,304 pixels`,
         });
     }
 }
@@ -352,11 +439,6 @@ export async function callAzureFlux2(
     }
 
     validateFlux2Dimensions(config.title, safeParams.width, safeParams.height);
-    if (safeParams.image.length > config.maxReferenceImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${config.title} supports at most ${config.maxReferenceImages} reference images`,
-        });
-    }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
     if (!apiKey) {
@@ -464,8 +546,6 @@ export async function callAzureFlux2(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: model,
             usage: {

@@ -8,6 +8,8 @@ type BaseInlineLinkProps = {
     showIcon?: boolean;
     /** Inline text inherits its size; footers use 13px and standalone links 14px. */
     size?: "inherit" | "footer" | "sm";
+    /** Accent for prominent links; quiet for secondary navigation. */
+    tone?: "accent" | "quiet";
     className?: string;
 };
 
@@ -19,7 +21,7 @@ export type InlineLinkProps<T extends React.ElementType = "a"> =
             keyof BaseInlineLinkProps | "as"
         >;
 
-/** Shared text-link rule: surrounding font, accent ink, persistent underline,
+/** Shared text-link rule: surrounding font, selectable ink, persistent underline,
  * visible keyboard focus, and an external arrow only when leaving the app.
  * Navigation and button-shaped actions use their own primitives.
  */
@@ -28,6 +30,7 @@ export function InlineLink<T extends React.ElementType = "a">({
     external,
     showIcon = true,
     size = "inherit",
+    tone = "accent",
     className,
     children,
     ...linkProps
@@ -46,6 +49,7 @@ export function InlineLink<T extends React.ElementType = "a">({
             }
             className={["polli-link", className].filter(Boolean).join(" ")}
             data-size={size}
+            data-tone={tone}
             {...linkProps}
         >
             {children}

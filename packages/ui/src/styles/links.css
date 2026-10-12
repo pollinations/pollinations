@@ -16,6 +16,9 @@
 }
 .polli-link[data-size="footer"] { font-size: 13px; }
 .polli-link[data-size="sm"] { font-size: 14px; }
+.polli-link[data-tone="quiet"] {
+    color: var(--polli-color-text-muted, oklch(0.55 0.02 80));
+}
 .polli-link:hover {
     color: var(--polli-color-text-strong, oklch(0.25 0.02 80));
 }

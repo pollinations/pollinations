@@ -23,13 +23,20 @@ const logCloudflare = debug("pollinations:cloudflare");
 
 const AZURE_MAI_ENDPOINT =
     "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
-const AZURE_MAI_DEPLOYMENT = "MAI-Image-2.5-Flash";
-const AZURE_MAI_TITLE = "MAI Image 2.5 Flash";
-// Azure MAI generation limits (docs and live 400s): each side at least 768px,
-// 16px steps (Azure otherwise snaps down silently), at most 1024x1024 pixels.
-const AZURE_MAI_MIN_SIDE = 768;
+const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
+    "microsoft/mai-image-2.6-flash": {
+        deployment: "MAI-Image-2.6-Flash",
+        title: "MAI Image 2.6 Flash",
+    },
+    "microsoft/mai-image-2.6": {
+        deployment: "MAI-Image-2.6",
+        title: "MAI Image 2.6",
+    },
+};
+type MaiRoute = (typeof MAI_ROUTES)[string];
+// Azure MAI rejects out-of-range sizes itself, but snaps sizes that are not
+// 16px steps down silently.
 const AZURE_MAI_DIMENSION_STEP = 16;
-const AZURE_MAI_MAX_PIXELS = 1024 * 1024;
 
 type AzureMaiResponse = {
     data?: Array<{ b64_json?: string }>;
@@ -40,23 +47,17 @@ type AzureMaiResponse = {
     };
 };
 
-function validateMaiDimensions(width: number, height: number): void {
-    if (width < AZURE_MAI_MIN_SIDE || height < AZURE_MAI_MIN_SIDE) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${AZURE_MAI_TITLE} requires width and height of at least ${AZURE_MAI_MIN_SIDE}px`,
-        });
-    }
+function validateMaiDimensions(
+    width: number,
+    height: number,
+    route: MaiRoute,
+): void {
     if (
         width % AZURE_MAI_DIMENSION_STEP !== 0 ||
         height % AZURE_MAI_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
-            message: `${AZURE_MAI_TITLE} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
-        });
-    }
-    if (width * height > AZURE_MAI_MAX_PIXELS) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${AZURE_MAI_TITLE} supports at most 1,048,576 pixels (width × height)`,
+            message: `${route.title} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
         });
     }
 }
@@ -71,6 +72,7 @@ async function editFormData(
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
+    route: MaiRoute,
 ): Promise<FormData> {
     const { buffer, mimeType } = await downloadUserImage(safeParams.image[0]);
     const imageSafetyResult = await analyzeImageSafety(buffer);
@@ -90,7 +92,7 @@ async function editFormData(
 
     // Edits take the reference as multipart; Azure rejects width/height here.
     const formData = new FormData();
-    formData.append("model", AZURE_MAI_DEPLOYMENT);
+    formData.append("model", route.deployment);
     formData.append("prompt", sanitizeString(prompt));
     formData.append(
         "image",
@@ -105,19 +107,19 @@ export async function callAzureMaiImage(
     safeParams: ImageParams,
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
+    const route = MAI_ROUTES[safeParams.model];
+    if (!route) {
+        throw new Error(`Unknown Azure MAI image route: ${safeParams.model}`);
+    }
     if (safeParams.transparent) {
         throw UpstreamError.fromProvider(400, {
             message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
         });
     }
-    if (safeParams.image.length > 1) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${AZURE_MAI_TITLE} supports at most 1 reference image`,
-        });
-    }
-    const isEdit = safeParams.image.length === 1;
+    // MAI edits take one reference image; extra images are ignored.
+    const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
-        validateMaiDimensions(safeParams.width, safeParams.height);
+        validateMaiDimensions(safeParams.width, safeParams.height, route);
     }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
@@ -133,12 +135,12 @@ export async function callAzureMaiImage(
     const headers: Record<string, string> = { "api-key": apiKey };
     let body: BodyInit;
     if (isEdit) {
-        body = await editFormData(prompt, safeParams, userInfo);
+        body = await editFormData(prompt, safeParams, userInfo, route);
     } else {
         headers["Content-Type"] = "application/json";
         // Only these fields are accepted; seed, quality and guidance are 400s.
         body = JSON.stringify({
-            model: AZURE_MAI_DEPLOYMENT,
+            model: route.deployment,
             prompt: sanitizeString(prompt),
             width: safeParams.width,
             height: safeParams.height,
@@ -146,7 +148,7 @@ export async function callAzureMaiImage(
     }
 
     logCloudflare(
-        `Calling Azure ${AZURE_MAI_TITLE} in ${isEdit ? "edit" : "generation"} mode`,
+        `Calling Azure ${route.title} in ${isEdit ? "edit" : "generation"} mode`,
     );
     const response = await fetch(endpoint, { method: "POST", headers, body });
     await ensureAzureImageOk(response, endpoint);
@@ -160,7 +162,7 @@ export async function callAzureMaiImage(
     });
     if (!encodedImage) {
         throw new UpstreamError(502, {
-            message: `Azure ${AZURE_MAI_TITLE} returned no image`,
+            message: `Azure ${route.title} returned no image`,
             requestUrl: new URL(endpoint),
             upstreamStatus: response.status,
             responseBody: responseSummary,
@@ -171,7 +173,7 @@ export async function callAzureMaiImage(
     const completionImageTokens = tokenCount(data.usage?.num_output_tokens);
     if (completionImageTokens === 0) {
         throw new UpstreamError(502, {
-            message: `Azure ${AZURE_MAI_TITLE} returned no billing metadata`,
+            message: `Azure ${route.title} returned no billing metadata`,
             requestUrl: new URL(endpoint),
             upstreamStatus: response.status,
             responseBody: responseSummary,
@@ -183,8 +185,6 @@ export async function callAzureMaiImage(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {

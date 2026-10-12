@@ -1,16 +1,20 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
 import { isInActivityBucket } from "./activity-period";
 import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
-    ModelBreakdown,
+    UsageGroupBy,
 } from "./types";
 
-type UsageModelBreakdown = ModelBreakdown & {
+type UsageTotals = {
+    id: string;
+    label: string;
+    requests: number;
+    pollen: number;
     paidPollen: number;
     tierPollen: number;
     paidRequests: number;
@@ -19,6 +23,7 @@ type UsageModelBreakdown = ModelBreakdown & {
 
 type UsageDataResult = {
     loading: boolean;
+    refreshing: boolean;
     error: string | null;
     fetchUsage: () => void;
     usedModels: { id: string; label: string }[];
@@ -33,53 +38,63 @@ type UsageDataResult = {
         paidPollen: number;
         paidRequests: number;
         tierRequests: number;
-        modelBreakdowns: UsageModelBreakdown[];
+        breakdowns: UsageTotals[];
     };
 };
 
-export function useUsageData(filters: FilterState): UsageDataResult {
-    const [dailyUsage, setDailyUsage] = useState<DailyUsageRecord[]>([]);
-    const [loading, setLoading] = useState(true);
-    const request = useRef<AbortController | null>(null);
-    const [error, setError] = useState<string | null>(null);
+const EMPTY_USAGE: DailyUsageRecord[] = [];
+
+export function useUsageData(
+    filters: FilterState,
+    groupBy: UsageGroupBy,
+): UsageDataResult {
     const { granularity, period } = filters.period;
+    const requestKey = `${granularity}:${period}`;
+    const [result, setResult] = useState<{
+        key: string;
+        rows: DailyUsageRecord[];
+    } | null>(null);
+    const [status, setStatus] = useState({
+        key: requestKey,
+        pending: true,
+        error: null as string | null,
+    });
+    const request = useRef<AbortController | null>(null);
+    const hasLoaded = result?.key === requestKey;
+    const dailyUsage = hasLoaded ? result.rows : EMPTY_USAGE;
+    const pending = status.key !== requestKey || status.pending;
+    const loading = pending && !hasLoaded;
+    const refreshing = pending && hasLoaded;
+    const error = status.key === requestKey ? status.error : null;
 
     const fetchUsage = useCallback(() => {
         request.current?.abort();
         const controller = new AbortController();
         request.current = controller;
-        setDailyUsage([]);
-        setLoading(true);
-        setError(null);
-
-        const query: {
-            granularity: string;
-            period: string;
-        } = {
-            granularity,
-            period,
-        };
-
-        apiClient.account.usage.daily
-            .$get({ query }, { init: { signal: controller.signal } })
+        setStatus({ key: requestKey, pending: true, error: null });
+        return accountClient.usage.daily
+            .$get(
+                { query: { granularity, period } },
+                { init: { signal: controller.signal } },
+            )
             .then((r) => {
-                if (!r.ok)
-                    throw new Error(`Failed to fetch usage data: ${r.status}`);
+                if (!r.ok) throw new Error(`Failed to load usage: ${r.status}`);
                 return r.json() as Promise<{ usage: DailyUsageRecord[] }>;
             })
             .then((data) => {
-                if (!controller.signal.aborted) setDailyUsage(data.usage);
+                if (controller.signal.aborted) return;
+                setResult({ key: requestKey, rows: data.usage });
+                setStatus({ key: requestKey, pending: false, error: null });
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
-                console.error("Usage fetch error:", err);
-                setError(err.message || "Failed to load usage data");
-                setDailyUsage([]);
-            })
-            .finally(() => {
-                if (!controller.signal.aborted) setLoading(false);
+                if (!controller.signal.aborted)
+                    setStatus({
+                        key: requestKey,
+                        pending: false,
+                        error: err.message || "Couldn’t load usage.",
+                    });
             });
-    }, [granularity, period]);
+    }, [granularity, period, requestKey]);
 
     useEffect(() => {
         fetchUsage();
@@ -89,11 +104,11 @@ export function useUsageData(filters: FilterState): UsageDataResult {
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
         for (const r of dailyUsage) {
-            if (r.model) modelIds.add(r.model);
+            modelIds.add(r.model || "");
         }
 
         return Array.from(modelIds)
-            .map((id) => ({ id, label: id }))
+            .map((id) => ({ id, label: id || "Unknown model" }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
@@ -104,8 +119,18 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             apiKeyLabels.set(r.api_key_id, r.api_key || "Unnamed key");
         }
 
+        const labelCounts = new Map<string, number>();
+        for (const label of apiKeyLabels.values()) {
+            labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+        }
         return Array.from(apiKeyLabels.entries())
-            .map(([id, label]) => ({ id, label }))
+            .map(([id, label]) => ({
+                id,
+                label:
+                    (labelCounts.get(label) ?? 0) > 1
+                        ? `${label} (${id})`
+                        : label,
+            }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
@@ -208,25 +233,23 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 0,
             );
         const paidPollen = selectedRows
-            .filter((r) => r.meter_source !== "tier")
+            .filter((r) => r.meter_source === "pack")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
-        const modelTotals = new Map<
-            string,
-            {
-                requests: number;
-                pollen: number;
-                paidPollen: number;
-                tierPollen: number;
-                paidRequests: number;
-                tierRequests: number;
-            }
-        >();
+        const keyLabels = new Map(
+            usedApiKeys.map(({ id, label }) => [id, label]),
+        );
+        const totalsByGroup = new Map<string, UsageTotals>();
         for (const r of selectedRows) {
-            if (!r.model) continue;
-            const cur = modelTotals.get(r.model) || {
+            const id = groupBy === "key" ? r.api_key_id : (r.model ?? "");
+            const cur = totalsByGroup.get(id) || {
+                id,
+                label:
+                    groupBy === "key"
+                        ? (keyLabels.get(id) ?? id)
+                        : id || "Unknown model",
                 requests: 0,
                 pollen: 0,
                 paidPollen: 0,
@@ -239,17 +262,15 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             if (r.meter_source === "tier") {
                 cur.tierPollen += r.cost_usd || 0;
                 cur.tierRequests += r.requests || 0;
-            } else {
+            } else if (r.meter_source === "pack") {
                 cur.paidPollen += r.cost_usd || 0;
                 cur.paidRequests += r.requests || 0;
             }
-            modelTotals.set(r.model, cur);
+            totalsByGroup.set(id, cur);
         }
-        const modelBreakdowns: UsageModelBreakdown[] = Array.from(
-            modelTotals.entries(),
-        )
-            .map(([model, totals]) => ({ model, label: model, ...totals }))
-            .sort((a, b) => b[filters.metric] - a[filters.metric]);
+        const breakdowns = Array.from(totalsByGroup.values()).sort(
+            (a, b) => b[filters.metric] - a[filters.metric],
+        );
         return {
             chartData: sorted,
             hasData: filtered.length > 0,
@@ -260,7 +281,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen,
                 paidRequests: selectedRows.reduce(
                     (sum, row) =>
-                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                        sum + (row.meter_source === "pack" ? row.requests : 0),
                     0,
                 ),
                 tierRequests: selectedRows.reduce(
@@ -268,11 +289,13 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                         sum + (row.meter_source === "tier" ? row.requests : 0),
                     0,
                 ),
-                modelBreakdowns,
+                breakdowns,
             },
         };
     }, [
         dailyUsage,
+        usedApiKeys,
+        groupBy,
         filters.selectedKeyIds,
         filters.selectedModels,
         filters.metric,
@@ -281,6 +304,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
 
     return {
         loading,
+        refreshing,
         error,
         fetchUsage,
         usedModels,

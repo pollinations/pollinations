@@ -4,10 +4,12 @@ import {
     BotIcon,
     ClockIcon,
     EditableCombobox,
+    ImageIcon,
     InlineLink,
     McpIcon,
     Section,
     SparklesIcon,
+    SpeakerIcon,
     TabButton,
     TokensIcon,
     UsageIcon,
@@ -22,7 +24,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { DashboardLoading } from "../layout/dashboard-loading.tsx";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { McpServerList } from "./mcp-server-list.tsx";
 import {
     type ApiModelInfo,
@@ -53,6 +55,7 @@ import {
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import { ModelSortMenu } from "./model-sort-menu.tsx";
+import { ModelHealthIcon } from "./model-status-chips.tsx";
 import {
     type SectionType,
     sectionLabels,
@@ -253,21 +256,28 @@ export const Models: FC = () => {
     );
     const searchOptions = useMemo(() => {
         let options = getModelQuerySuggestions(
-            draftFilter ? search : visibleSearch,
+            draftFilter
+                ? `${draftFilter.key}:${draftFilter.value}`
+                : visibleSearch,
             activeTabModels,
             supportedFilterKeys,
         );
-        if (explicitModelSource) {
+        if (explicitModelSource && draftFilter?.key !== "source") {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
-            ? options.map(getModelQueryDraftSuggestionValue)
+            ? options.map((option) =>
+                  getModelQueryDraftSuggestionValue(
+                      option,
+                      visibleSearch,
+                      draftFilter.value,
+                  ),
+              )
             : options;
     }, [
         activeTabModels,
         draftFilter,
         explicitModelSource,
-        search,
         supportedFilterKeys,
         visibleSearch,
     ]);
@@ -479,20 +489,8 @@ export const Models: FC = () => {
         });
     };
 
-    if (catalogLoading && activePrimaryTab !== "mcp") {
-        return (
-            <DashboardLoading
-                label={
-                    activePrimaryTab === "agent"
-                        ? "Loading agents…"
-                        : "Loading models…"
-                }
-            />
-        );
-    }
-
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section
                 title={
                     activePrimaryTab === "agent"
@@ -509,7 +507,7 @@ export const Models: FC = () => {
                             size="sm"
                             className="inline-flex items-center gap-1.5 whitespace-nowrap"
                         >
-                            <UsageIcon className="h-4 w-4" />
+                            <ModelHealthIcon />
                             Model health
                         </InlineLink>
                     )
@@ -562,7 +560,7 @@ export const Models: FC = () => {
                         </div>
                     )}
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                        <div className="catalog-search min-w-0 flex-1 basis-[240px]">
+                        <div className="catalog-search min-w-0 flex-1 basis-full sm:basis-[240px]">
                             <div>
                                 <EditableCombobox
                                     value={visibleSearch}
@@ -656,35 +654,45 @@ export const Models: FC = () => {
                         </span>
                     </Alert>
                 )}
-                {catalogError && activeTab !== "mcp" && (
-                    <Alert intent="danger">{catalogError}</Alert>
-                )}
                 {activeTab === "mcp" ? (
                     <McpServerList query={query} />
-                ) : query && sectionModels[activeTab].length === 0 ? (
-                    <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match{" "}
-                        {visibleSearch.trim()
-                            ? `“${visibleSearch.trim()}”`
-                            : "the selected filters"}
-                        .
-                    </p>
                 ) : (
-                    <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <UnifiedModelTable
-                            listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
-                            allModels={sectionModels.all}
-                            imageModels={sectionModels.image}
-                            videoModels={sectionModels.video}
-                            model3dModels={sectionModels["3d"]}
-                            audioModels={sectionModels.audio}
-                            realtimeModels={sectionModels.realtime}
-                            textModels={sectionModels.text}
-                            embeddingModels={sectionModels.embedding}
-                            agentModels={sectionModels.agent}
-                            activeTab={activeTab}
-                        />
-                    </div>
+                    <SectionContent loading={catalogLoading}>
+                        {catalogError ? (
+                            <LoadError
+                                onRetry={() => {
+                                    setCatalogLoading(true);
+                                    void loadModelCatalog();
+                                }}
+                            >
+                                {catalogError}
+                            </LoadError>
+                        ) : query && sectionModels[activeTab].length === 0 ? (
+                            <p className="py-8 text-center text-sm text-theme-text-muted">
+                                No {searchTarget.toLowerCase()} match{" "}
+                                {visibleSearch.trim()
+                                    ? `“${visibleSearch.trim()}”`
+                                    : "the selected filters"}
+                                .
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                                <UnifiedModelTable
+                                    listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
+                                    allModels={sectionModels.all}
+                                    imageModels={sectionModels.image}
+                                    videoModels={sectionModels.video}
+                                    model3dModels={sectionModels["3d"]}
+                                    audioModels={sectionModels.audio}
+                                    realtimeModels={sectionModels.realtime}
+                                    textModels={sectionModels.text}
+                                    embeddingModels={sectionModels.embedding}
+                                    agentModels={sectionModels.agent}
+                                    activeTab={activeTab}
+                                />
+                            </div>
+                        )}
+                    </SectionContent>
                 )}
                 {activeTab !== "mcp" && (
                     <div className="space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted">
@@ -715,21 +723,35 @@ export const Models: FC = () => {
                         <p className="flex items-start gap-1.5">
                             <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>/sec</strong> — per second of
-                                video/audio; TTS is estimated from text length.
+                                <strong>/sec</strong> — per second of video or
+                                audio.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <ImageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/MP · /image</strong> — per megapixel,
+                                or per reference image.
+                            </span>
+                        </p>
+                        <p className="flex items-start gap-1.5">
+                            <SpeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                <strong>/K chars · /K bytes</strong> — speech
+                                priced per thousand characters or UTF-8 bytes of
+                                input text.
                             </span>
                         </p>
                         <p className="flex items-start gap-1.5">
                             <UsageIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                             <span>
-                                <strong>requests /pollen</strong> — estimated
-                                from the median observed cost over the last 7
-                                days.
+                                <strong>requests /$1</strong> — estimated from
+                                the median observed cost over the last 7 days.
                             </span>
                         </p>
                     </div>
                 )}
             </Section>
-        </div>
+        </>
     );
 };

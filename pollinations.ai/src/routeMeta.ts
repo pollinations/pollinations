@@ -44,6 +44,17 @@ export const NOT_FOUND_META: RouteMeta = {
     description: "The requested page could not be found.",
 };
 
+// The known page a URL path shows, or undefined for the 404 page. The router
+// matches paths in any case and with a trailing slash, so this must too.
+export function knownPage(pathname: string): string | undefined {
+    const path = (
+        pathname !== "/" && pathname.endsWith("/")
+            ? pathname.slice(0, -1)
+            : pathname
+    ).toLowerCase();
+    return path in ROUTE_META ? path : undefined;
+}
+
 export function routeHead(path?: string) {
     const known = path ? ROUTE_META[path] : undefined;
     const meta = known ?? NOT_FOUND_META;

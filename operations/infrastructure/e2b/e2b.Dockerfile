@@ -44,7 +44,7 @@ COPY polli-harnesses.sh /etc/profile.d/
 USER user
 WORKDIR /home/user
 
-# herdr is pinned above, and `user` can't replace it anyway.
+# herdr is pinned above, so it shouldn't offer updates.
 RUN mkdir -p .config/herdr && printf '[update]\nversion_check = false\n' > .config/herdr/config.toml
 
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh \

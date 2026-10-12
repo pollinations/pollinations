@@ -823,11 +823,11 @@ describe("static provider fallbacks", () => {
         expect(
             TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.25 / 1_000_000) * 1.055,
+            promptTextTokens: (0.225 / 1_000_000) * 1.055,
             promptCachedTokens: (0.05 / 1_000_000) * 1.055,
-            promptImageTokens: (0.25 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.25 / 1_000_000) * 1.055,
-            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+            promptImageTokens: (0.225 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.225 / 1_000_000) * 1.055,
+            completionTextTokens: (1.98 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[

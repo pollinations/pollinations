@@ -248,14 +248,14 @@ export const TEXT_FALLBACKS = {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                // OpenRouter AkashML FP8 rates (2026-09-21), including the
+                // OpenRouter AkashML FP8 rates (2026-10-12), including the
                 // account's 5.5% credit-purchase fee. OpenRouter publishes one
                 // prompt rate and no separate image/video rates.
-                promptTextTokens: perMillion(0.25) * 1.055,
+                promptTextTokens: perMillion(0.225) * 1.055,
                 promptCachedTokens: perMillion(0.05) * 1.055,
-                promptImageTokens: perMillion(0.25) * 1.055,
-                promptVideoTokens: perMillion(0.25) * 1.055,
-                completionTextTokens: perMillion(2.2) * 1.055,
+                promptImageTokens: perMillion(0.225) * 1.055,
+                promptVideoTokens: perMillion(0.225) * 1.055,
+                completionTextTokens: perMillion(1.98) * 1.055,
             },
         },
     },

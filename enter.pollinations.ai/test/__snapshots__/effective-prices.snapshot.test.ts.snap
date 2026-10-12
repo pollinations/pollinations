@@ -3456,18 +3456,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3.8-27b:openrouter:akashml-fp8": {
     "cost": {
-      "completionTextTokens": 0.000002321,
+      "completionTextTokens": 0.0000020889,
       "promptCachedTokens": 0.00000005275,
-      "promptImageTokens": 0.00000026375,
-      "promptTextTokens": 0.00000026375,
-      "promptVideoTokens": 0.00000026375,
+      "promptImageTokens": 0.000000237375,
+      "promptTextTokens": 0.000000237375,
+      "promptVideoTokens": 0.000000237375,
     },
     "price": {
-      "completionTextTokens": 0.000002321,
+      "completionTextTokens": 0.0000020889,
       "promptCachedTokens": 0.00000005275,
-      "promptImageTokens": 0.00000026375,
-      "promptTextTokens": 0.00000026375,
-      "promptVideoTokens": 0.00000026375,
+      "promptImageTokens": 0.000000237375,
+      "promptTextTokens": 0.000000237375,
+      "promptVideoTokens": 0.000000237375,
     },
   },
   "qwen/qwen3.8-flash": {

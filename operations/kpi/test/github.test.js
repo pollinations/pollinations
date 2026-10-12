@@ -54,71 +54,33 @@ it("reports unavailable star snapshots instead of a fake zero", async () => {
     });
 });
 
-it("paginates submissions, ignores PRs and older issues, and caches successful pages", async () => {
-    const page = Array.from({ length: 98 }, () => ({
-        created_at: "2026-09-21T12:00:00Z",
-    }));
-    page.push({ created_at: "2026-09-21T12:00:00Z", pull_request: {} });
-    page.push({ created_at: "2025-09-01T12:00:00Z" });
-    const upstream = vi
-        .fn()
-        .mockResolvedValueOnce(Response.json(page))
-        .mockResolvedValueOnce(
-            Response.json([
-                { created_at: "2026-09-27T23:59:59Z" },
-                { created_at: "2026-09-28T00:00:00Z" },
-            ]),
-        );
+it("reads weekly app submissions from the daily snapshot", async () => {
+    const weeks = [{ week: "2026-09-21", submitted: 99 }];
+    const upstream = vi.fn().mockResolvedValue(Response.json(weeks));
     vi.stubGlobal("fetch", upstream);
-    const request = () =>
-        kpiRoutes.request(
-            "https://kpi.test/app-submissions",
-            {},
-            { GITHUB_TOKEN: "expired-token" },
-        );
-    for (let i = 0; i < 2; i++) {
-        const result = await request();
-        expect(result.status).toBe(200);
-        expect(await result.json()).toEqual({
-            data: [
-                { week: "2026-09-21", submitted: 99 },
-                { week: "2026-09-28", submitted: 1 },
-            ],
-        });
-    }
-    expect(upstream).toHaveBeenCalledTimes(2);
-    expect(new URL(upstream.mock.calls[1][0]).searchParams.get("page")).toBe(
-        "2",
+    const result = await kpiRoutes.request("https://kpi.test/app-submissions");
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ data: weeks });
+    expect(upstream.mock.calls[0][0]).toBe(
+        "https://raw.githubusercontent.com/pollinations/pollinations/kpi-data/github-app-submissions.json",
     );
-    expect(
-        new Headers(upstream.mock.calls[0][1].headers).has("Authorization"),
-    ).toBe(false);
 });
 
-it("does not cache GitHub failures or return partial submission totals", async () => {
-    const fullPage = Array.from({ length: 100 }, () => ({
-        created_at: "2026-09-21T12:00:00Z",
-    }));
+it("reports missing app submissions without caching the failure", async () => {
+    const weeks = [{ week: "2026-09-21", submitted: 99 }];
     const upstream = vi
         .fn()
-        .mockResolvedValueOnce(Response.json(fullPage))
-        .mockResolvedValueOnce(
-            Response.json(
-                { message: "API rate limit exceeded" },
-                { status: 403 },
-            ),
-        )
-        .mockResolvedValueOnce(Response.json([]));
+        .mockResolvedValueOnce(new Response("Not found", { status: 404 }))
+        .mockResolvedValueOnce(Response.json(weeks));
     vi.stubGlobal("fetch", upstream);
-    const request = () =>
-        kpiRoutes.request("https://kpi.test/app-submissions", {}, {});
-    const failed = await request();
-    expect(failed.status).toBe(502);
-    expect(await failed.json()).toEqual({ error: "GitHub 403", data: [] });
-    const recovered = await request();
-    expect(recovered.status).toBe(200);
-    expect(await recovered.json()).toEqual({
-        data: [{ week: "2026-09-21", submitted: 100 }],
+    const request = () => kpiRoutes.request("https://kpi.test/app-submissions");
+    const missing = await request();
+    expect(missing.status).toBe(502);
+    expect(await missing.json()).toEqual({
+        error: "App submission snapshots unavailable",
+        data: [],
     });
-    expect(upstream).toHaveBeenCalledTimes(3);
+    const recovered = await request();
+    expect(await recovered.json()).toEqual({ data: weeks });
+    expect(upstream).toHaveBeenCalledTimes(2);
 });

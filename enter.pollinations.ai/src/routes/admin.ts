@@ -1,6 +1,7 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { parseListingPayload } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -29,7 +30,8 @@ export const adminRoutes = new Hono<Env>()
         }
 
         // Full admin token has access to all endpoints
-        if (providedKey === c.env.PLN_ENTER_TOKEN) {
+        const adminToken = c.env.PLN_ENTER_TOKEN;
+        if (adminToken && (await secretEquals(providedKey, adminToken))) {
             return await next();
         }
 

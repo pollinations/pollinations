@@ -267,9 +267,13 @@ export function AuthAccessItem({
         <li>
             <Row
                 className={cn(
-                    "polli:flex polli:min-h-8 polli:items-center polli:gap-3 polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
+                    "polli:flex polli:min-h-8 polli:items-center polli:font-body polli:text-sm polli:font-semibold polli:leading-5",
+                    info != null && icon == null
+                        ? "polli:gap-0"
+                        : "polli:gap-3",
                     info != null && "polli:min-w-0",
                     onChange &&
+                        Row === "label" &&
                         (disabled
                             ? "polli:cursor-not-allowed"
                             : "polli:cursor-pointer"),
@@ -284,7 +288,16 @@ export function AuthAccessItem({
                         {icon}
                     </span>
                 ) : (
-                    <CheckboxLabel className="polli:relative polli:flex polli:h-5 polli:w-5 polli:shrink-0">
+                    <CheckboxLabel
+                        className={cn(
+                            "polli:relative polli:flex polli:h-5 polli:shrink-0",
+                            info != null ? "polli:w-8 polli:pr-3" : "polli:w-5",
+                            onChange &&
+                                (disabled
+                                    ? "polli:cursor-not-allowed"
+                                    : "polli:cursor-pointer"),
+                        )}
+                    >
                         <input
                             ref={inputRef}
                             id={inputId}

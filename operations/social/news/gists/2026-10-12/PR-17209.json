@@ -1,0 +1,38 @@
+{
+  "pr_number": 17209,
+  "title": "feat(enter): sign in MCP clients with Client ID Metadata Documents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17209",
+  "merged_at": "2026-10-12T23:38:54Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "MCP clients can use an HTTPS Client ID Metadata Document URL as `client_id` at `/authorize` instead of registering a `pk_` key; the user still signs in with their own Pollinations account. Enter requires a canonical HTTPS URL on a public host with no credentials or fragment, then fetches a matching document with a 200 response, no redirects, a 5 KB size cap and a 5-second timeout. The document must provide `client_name` and valid `redirect_uris`, with no client secret. Consent shows the client name and host, warns about localhost redirects, and leaves requested `keys` and `machines` scopes unticked. Approval mints the same restricted `sk_` as the existing `pk_` flow, with a default budget of 5, a 7-day expiry and no refresh token. `POST /api/oauth/code` fetches the document again and requires an exact redirect match; `/token` and the `pk_` path are unchanged. `/.well-known/oauth-authorization-server` now advertises `client_id_metadata_document_supported: true`.",
+    "keywords": [
+      "MCP",
+      "OAuth",
+      "Client ID Metadata Documents",
+      "authorization",
+      "consent",
+      "accounts",
+      "keys"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17209.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with a retro terminal and code-plants, wearing tiny reading glasses as she checks an HTTPS JSON card beside a consent screen, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender surroundings, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T23:41:00.146070+00:00",
+  "area": "Accounts & keys",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "ba8cfbfae1728d2b5b644c41d8895bd952c6a02d",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "ba8cfbfae1728d2b5b644c41d8895bd952c6a02d^1",
+    "after_ref": "ba8cfbfae1728d2b5b644c41d8895bd952c6a02d"
+  }
+}

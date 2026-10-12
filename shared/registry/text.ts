@@ -1386,22 +1386,22 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-21").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter xAI route rates (2026-09-21), including the mandatory
+        // OpenRouter xAI route rates (2026-10-12), including the mandatory
         // 5.5% OpenRouter credit fee. Image inputs are tokenized into
         // promptTextTokens; no separate usage is reported. Excludes the
         // $0.005-per-call web search charge (not exposed on this model).
         cost: {
-            promptTextTokens: perMillion(1.6) * 1.055,
-            promptCachedTokens: perMillion(0.4) * 1.055,
-            completionTextTokens: perMillion(4.8) * 1.055,
+            promptTextTokens: perMillion(2) * 1.055,
+            promptCachedTokens: perMillion(0.5) * 1.055,
+            completionTextTokens: perMillion(6) * 1.055,
         },
         // xAI reprices the whole request from 200K prompt tokens.
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(3.2) * 1.055,
-                    promptCachedTokens: perMillion(0.8) * 1.055,
-                    completionTextTokens: perMillion(9.6) * 1.055,
+                    promptTextTokens: perMillion(4) * 1.055,
+                    promptCachedTokens: perMillion(1) * 1.055,
+                    completionTextTokens: perMillion(12) * 1.055,
                 },
             },
             longContextAtLeast(200_000),

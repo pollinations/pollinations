@@ -95,7 +95,7 @@ Image requests may use **POST /v1/images/generations** with a JSON body instead 
 
 ### Gemma 4 route review — 2026-10-12
 
-Gemma 4 26B A4B and 31B exchange the order of existing providers: DeepInfra becomes primary; OpenRouter, pinned to Novita BF16 with gateway fallbacks disabled, becomes the Pollinations fallback. Data includes text, images/image URLs, tool definitions/results, settings, outputs, and usage metadata. Pollinations cache and billing retention are unchanged.
+Gemma 4 26B A4B and 31B exchange the order of existing providers: DeepInfra becomes primary; direct Novita BF16 becomes the 26B fallback, while OpenRouter pinned to Novita BF16 with gateway fallbacks disabled becomes the 31B fallback. Data includes text, images/image URLs, tool definitions/results, settings, outputs, and usage metadata. Remote 26B image URLs are fetched and converted to inline image data by the existing gateway transform. Pollinations cache and billing retention are unchanged.
 
 [DeepInfra’s public privacy policy](https://deepinfra.com/privacy) identifies DeepInfra, Inc., describes US processing, and states inference inputs/outputs are not stored or used for training without consent. [OpenRouter’s provider directory](https://openrouter.ai/providers/) lists Novita with no training and zero prompt retention; [Novita’s privacy policy](https://novita.ai/legal/privacy-policy) separately describes account/technical records and possible international transfers. These published statements do not verify the exact account settings, all processing countries, supplier agreement coverage, or executed transfer safeguards for these routes; those remain unknown pending operator review.
 

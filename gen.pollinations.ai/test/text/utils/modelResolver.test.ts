@@ -792,16 +792,17 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Gemma 4 26B A4B OpenRouter fallback to Novita without fallback", () => {
+    it("routes Gemma 4 26B A4B fallback directly to Novita with inline images", () => {
         const result = resolveModelConfig(messages, {
-            model: "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
+            model: "google/gemma-4-26b-a4b-it:novita",
         });
 
         expect(result.options.model).toBe("google/gemma-4-26b-a4b-it");
-        expect(result.options.provider).toEqual({
-            only: ["novita/bf16"],
-            allow_fallbacks: false,
+        expect(result.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            requiresBase64ImageUrls: true,
         });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {

@@ -11,9 +11,11 @@ const severityOrder: Record<ContentFilterSeverity, number> = {
 };
 
 function getMostSevere(
-    a: ContentFilterSeverity,
-    b: ContentFilterSeverity,
-): ContentFilterSeverity {
+    a: ContentFilterSeverity | undefined,
+    b: ContentFilterSeverity | undefined,
+): ContentFilterSeverity | undefined {
+    if (a === undefined) return b;
+    if (b === undefined) return a;
     return severityOrder[a] > severityOrder[b] ? a : b;
 }
 

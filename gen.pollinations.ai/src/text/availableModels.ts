@@ -447,8 +447,8 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-26B-A4B-it"],
     },
     {
-        name: "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
-        config: portkeyConfig["gemma-4-26b-openrouter-novita"],
+        name: "google/gemma-4-26b-a4b-it:novita",
+        config: portkeyConfig["gemma-4-26b-novita"],
     },
     {
         name: "google/gemma-4-31b-it",
@@ -457,6 +457,7 @@ const models: ModelDefinition[] = [
     {
         name: "google/gemma-4-31b-it:openrouter:novita-bf16",
         config: portkeyConfig["gemma-4-31b-openrouter-novita"],
+        transform: omitParameters("provider"),
     },
     {
         name: "deepseek/deepseek-v4-pro",

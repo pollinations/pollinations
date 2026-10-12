@@ -1464,16 +1464,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000007,
     },
   },
-  "google/gemma-4-26b-a4b-it:openrouter:novita-bf16": {
+  "google/gemma-4-26b-a4b-it:novita": {
     "cost": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.0000004,
+      "promptImageTokens": 0.00000013,
+      "promptTextTokens": 0.00000013,
     },
     "price": {
-      "completionTextTokens": 0.000000422,
-      "promptImageTokens": 0.00000013715,
-      "promptTextTokens": 0.00000013715,
+      "completionTextTokens": 0.0000004,
+      "promptImageTokens": 0.00000013,
+      "promptTextTokens": 0.00000013,
     },
   },
   "google/gemma-4-31b-it": {

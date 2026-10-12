@@ -409,15 +409,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemma-4-26b-a4b-it": {
-        "google/gemma-4-26b-a4b-it:openrouter:novita-bf16": {
+        "google/gemma-4-26b-a4b-it:novita": {
             supportedParameters: CHAT_PARAMETERS.openRouterGemma,
-            provider: "openrouter",
+            provider: "novita",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                // OpenRouter Novita BF16 preserves remote image URLs.
-                promptTextTokens: perMillion(0.13) * 1.055,
-                promptImageTokens: perMillion(0.13) * 1.055,
-                completionTextTokens: perMillion(0.4) * 1.055,
+                // Direct Novita BF16; image URLs are converted to inline data.
+                promptTextTokens: perMillion(0.13),
+                promptImageTokens: perMillion(0.13),
+                completionTextTokens: perMillion(0.4),
             },
         },
     },

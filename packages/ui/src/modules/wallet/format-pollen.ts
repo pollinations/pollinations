@@ -8,6 +8,8 @@ const MAX_DECIMALS = 4;
 const COMPACT_THRESHOLD = 100_000;
 
 function floorTo(value: number, decimals: number): number {
+    // Avoid scaling error when the value already fits the display precision.
+    if (Number(value.toFixed(decimals)) === value) return value;
     const factor = 10 ** decimals;
     return Math.floor(value * factor) / factor;
 }

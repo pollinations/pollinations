@@ -1,0 +1,37 @@
+{
+  "pr_number": 16988,
+  "title": "feat(gen): serve the docs as Markdown to agents that ask for it",
+  "author": "patbing",
+  "url": "https://github.com/pollinations/pollinations/pull/16988",
+  "merged_at": "2026-10-12T17:08:29Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "GET /docs now serves the full guide as Markdown when the Accept header prefers text/markdown, using the same body as /docs/llm.txt instead of the Scalar HTML shell. Content negotiation follows RFC 9110 specificity and quality rules: exact media types outrank text/* and */* matches, while browser headers and a bare */* retain HTML. Markdown responses include Vary: Accept, Cache-Control: public, max-age=3600, and an advisory x-markdown-tokens estimate based on characters divided by four. GET / also serves the llms.txt body as text/markdown to agent clients; /llms.txt remains text/plain, and its interactive-docs entry now mentions the Accept header.",
+    "keywords": [
+      "docs",
+      "Markdown",
+      "agents",
+      "content negotiation",
+      "llms.txt",
+      "API reference"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16988.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and helps a friendly CRT monitor robot turn an HTML-covered reference book into a readable Markdown guide beside a lime green (#ecf874) glowing terminal and flowering code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art and never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T17:09:40.158858+00:00",
+  "area": "Docs & support",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "4c528ee04b621066de739303af2edd4cda5f8bc9",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

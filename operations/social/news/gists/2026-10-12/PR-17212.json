@@ -1,0 +1,34 @@
+{
+  "pr_number": 17212,
+  "title": "fix: whisper returns srt/vtt again; gpt-transcribe accepts text",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17212",
+  "merged_at": "2026-10-12T22:25:31Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed `whisper` and `whisper-1` requests with `response_format=srt` or `vtt`: OVH is now asked for both word and segment timestamps, so subtitle cues use measured segments instead of returning 400. OVH `verbose_json` also includes those segments instead of a placeholder; a provider response with text but no segments returns 502 rather than an empty 200. The DeepInfra fallback is unchanged. `openai/gpt-transcribe` now accepts `response_format=text` and returns a plain transcript. Azure is still asked for JSON internally because that response includes the billed `usage.seconds`. Route, formatter, and Azure tests cover the changes.",
+    "keywords": [
+      "transcription",
+      "whisper",
+      "gpt-transcribe",
+      "subtitles",
+      "srt",
+      "vtt",
+      "audio API"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17212.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears tiny headphones and watches a retro terminal turn an audio waveform into neatly timed SRT and VTT subtitle cards, with code-plants growing beside it. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T22:26:43.027900+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "43c9d81f59ebe92f45f2e066fab24609fd06f42f",
+  "announcements": []
+}

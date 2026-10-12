@@ -183,13 +183,15 @@ def inspect_app(app_url):
     if title:
         evidence["title"] = re.sub(r"\s+", " ", unescape(title.group(1))).strip()[:160]
 
-    origin = urlparse(final_url)
-    script_urls = re.findall(r"<script[^>]+src=[\"']([^\"']+)", html, re.I)
-    for source in script_urls[:3]:
+    origin = normalized_origin(urlparse(final_url))
+    # Keep only the app's own scripts before taking three, so libraries loaded
+    # from a CDN ahead of them don't use up the inspection slots.
+    script_urls = []
+    for source in re.findall(r"<script[^>]+src=[\"']([^\"']+)", html, re.I):
         script_url = urljoin(final_url, unescape(source))
-        parsed = urlparse(script_url)
-        if normalized_origin(parsed) != normalized_origin(origin):
-            continue
+        if normalized_origin(urlparse(script_url)) == origin:
+            script_urls.append(script_url)
+    for script_url in script_urls[:3]:
         try:
             _, script = fetch_public_text(script_url, max_bytes=250_000)
             evidence["scripts_checked"] += 1

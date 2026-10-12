@@ -68,12 +68,30 @@ one escalated. See `runs/2/REPORT.md`.
 - Server key budgets were the hard stop. No request was refused, but the Claude
   key ended with 0.12 left.
 
+## Run 3 (2026-10-12)
+
+Iteration 3 harness:
+- stopped stages keep partial notes;
+- the box key can't change key budgets;
+- a free version-bump check runs at admission.
+
+The run stopped early when the account ran out of paid Pollen. See
+`runs/3/REPORT.md`.
+
+| Case | Kind | Outcome | Pollen |
+|---|---|---|---:|
+| #17200 | PR review | changes requested at admission: no `polli-cli` version bump | 0 |
+| #17201 | PR review | changes requested at admission: no `ui` version bump | 0 |
+| #17045 | PR review | plan review asked for a rework, because the red run would reach the live provider; the reworked workup was refused when the account ran out of paid Pollen | 2.56 |
+
+- Cost: about 2.7 Pollen.
+- The same version-bump check flags 22 of 26 open non-draft package PRs.
+
 ## Next questions
 
 - Is about 3.7 Pollen per discharged one-line PR worth it, compared with one
   independent review pass?
-- Should the driver keep a killed stage's partial notes (stream-json), or ask
-  for a wrap-up before killing?
-- Should free static checks (version bump, duplicate PR) run before any model?
-- Is the #17082 review worth posting on the PR? Run 2 was a dry run, so
+- Should the driver check the account's paid balance before a run, and list
+  PRs that fix the same issue at admission?
+- Is the #17082 review worth posting on the PR? The runs are dry runs, so
   nothing was posted.

@@ -1,0 +1,14 @@
+{
+  "number": 17045,
+  "kind": "pr",
+  "start": "2026-10-12 20:56:27",
+  "base": "90e652b5d0b7d30af6a71f2631cb4f12fc68579e",
+  "outcome": "escalated",
+  "next": "workup",
+  "reworks": 1,
+  "end": "2026-10-12 21:04:21",
+  "cost_by_role": {
+    "claude": 1.598935,
+    "codex": 0.8364480000000001
+  }
+}

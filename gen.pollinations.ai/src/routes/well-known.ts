@@ -28,6 +28,18 @@ async function sha256Hex(text: string): Promise<string> {
         .join("");
 }
 
+// One entry per hosted MCP server's Server Card. The SEP-2127 AI Catalog and
+// the ARD manifest share this list, so the two can't drift. Both schemas
+// require a per-entry displayName (ards-project/ard-spec, ai-catalog v1.0).
+function buildCatalogEntries(origin: string) {
+    return MCP_SERVERS.map((server) => ({
+        identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
+        displayName: server.name,
+        type: SERVER_CARD_MEDIA_TYPE,
+        url: `${origin}/mcp/${server.id}/server-card`,
+    }));
+}
+
 export const wellKnownRoutes = new Hono<Env>()
     // SEP-2127 AI Catalog: one entry per hosted MCP server's Server Card.
     .get("/ai-catalog.json", etag(), (c) => {
@@ -38,15 +50,21 @@ export const wellKnownRoutes = new Hono<Env>()
             JSON.stringify(
                 {
                     specVersion: "1.0",
-                    entries: MCP_SERVERS.map((server) => ({
-                        identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
-                        type: SERVER_CARD_MEDIA_TYPE,
-                        url: `${origin}/mcp/${server.id}/server-card`,
-                    })),
+                    entries: buildCatalogEntries(origin),
                 },
                 null,
                 2,
             ),
+        );
+    })
+    // Agentic Resource Discovery manifest: the canonical entry source path;
+    // the ai-catalog.json predecessor path stays for compatibility.
+    .get("/ard.json", etag(), (c) => {
+        const origin = getPublicOrigin(c);
+        c.header("Content-Type", "application/json; charset=utf-8");
+        c.header("Cache-Control", "public, max-age=3600");
+        return c.body(
+            JSON.stringify({ entries: buildCatalogEntries(origin) }, null, 2),
         );
     })
     .get("/agent-skills/index.json", async (c) => {

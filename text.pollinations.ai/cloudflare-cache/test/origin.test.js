@@ -231,17 +231,15 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
 test("the VM's other routes: redirect, models, crossdomain, feed and preflight", async () => {
     const root = await call("/");
     expect(root.response.status).toBe(301);
-    const vm = capturedHeaders(vmRootRedirect);
-    for (const name of [
-        "content-type",
-        "content-length",
-        "location",
-        "vary",
-        "access-control-allow-origin",
-        "access-control-expose-headers",
-    ]) {
-        expect(root.response.headers.get(name), name).toBe(vm.get(name));
-    }
+    // Every header of the live redirect, X-Powered-By: Express included
+    const vm = Object.fromEntries(capturedHeaders(vmRootRedirect));
+    expect(Object.fromEntries(root.response.headers)).toEqual(vm);
+    // HEAD / takes the cache path and its split
+    const head = await call("/", { method: "HEAD" });
+    expect(Object.fromEntries(head.response.headers)).toEqual({
+        ...vm,
+        "x-legacy-path": "worker",
+    });
     expect(root.text).toBe(
         "Moved Permanently. Redirecting to https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
     );

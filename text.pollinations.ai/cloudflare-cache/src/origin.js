@@ -351,6 +351,7 @@ function redirect(request) {
         status: 301,
         headers: {
             ...CORS,
+            "X-Powered-By": "Express",
             Location: DOCS_URL,
             Vary: "Accept",
             ...(type && { "Content-Type": `${type}; charset=utf-8` }),

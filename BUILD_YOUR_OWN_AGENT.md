@@ -26,6 +26,7 @@ An agent combines catalog fields with its runtime configuration:
 | `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
 | `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
 | `mcpServers` | No | Any of `pollinations`, `ffmpeg`, `exa`, `composio`, `computer`. Details: [`GET /mcp`](https://gen.pollinations.ai/mcp). |
+| `codemode` | No | `true` replaces the separate MCP tools with one tool that runs JavaScript calling them, so one step can chain, combine, and filter many tool calls. The code runs in a sandbox without network access. Defaults to `false`. |
 
 Example `agent.json`:
 

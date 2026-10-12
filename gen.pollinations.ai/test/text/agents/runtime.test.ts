@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import type { AgentOutputItem } from "@shared/agents/output.ts";
 import { functionOutputText } from "@shared/schemas/response-function-items.ts";
 import OpenAI from "openai";
@@ -27,6 +28,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
     fetcher: (input, init) => globalThis.fetch(input, init),
+    loader: env.LOADER,
 };
 const POLLINATIONS_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/pollinations`;
 const EXA_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/exa`;
@@ -923,6 +925,165 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(200);
         expect(mcpToolCalls).toBe(48);
         expect(body.usage.tool_call_counts.mcp_call).toBe(48);
+    });
+
+    it("runs codemode JavaScript that calls MCP tools in a Dynamic Worker", async () => {
+        const modelRequests: {
+            tools?: { function: { name: string; description: string } }[];
+            messages: { role: string; content: unknown }[];
+        }[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === EXA_MCP_PROXY_URL) {
+                    if (request.method === "DELETE") {
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                        params?: { arguments?: { query?: string } };
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: { name: "test", version: "1" },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "search",
+                                        inputSchema: {
+                                            type: "object",
+                                            properties: {
+                                                query: { type: "string" },
+                                            },
+                                            required: ["query"],
+                                        },
+                                    },
+                                ],
+                            },
+                        });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            content: [
+                                {
+                                    type: "text",
+                                    text: JSON.stringify({
+                                        title: `found ${body.params?.arguments?.query}`,
+                                    }),
+                                },
+                            ],
+                        },
+                    });
+                }
+
+                modelRequests.push(await request.json());
+                if (modelRequests.length === 1) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "",
+                                    tool_calls: [
+                                        {
+                                            id: "code-1",
+                                            type: "function",
+                                            function: {
+                                                name: "mcp__codemode__execute",
+                                                arguments: JSON.stringify({
+                                                    // JSON text arrives parsed; the trailing `;`
+                                                    // is how models often end the function.
+                                                    code: 'async () => (await Promise.all(["a", "b"].map((query) => exa.search({ query })))).map((page) => page.title);',
+                                                }),
+                                            },
+                                        },
+                                    ],
+                                },
+                                finish_reason: "tool_calls",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 1,
+                            total_tokens: 2,
+                        },
+                    });
+                }
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                });
+            }),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "search a and b" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: ["exa"],
+                    codemode: true,
+                },
+                // The test workerd predates WorkerLoader.load(); a fresh
+                // get() ID gives the same one-off Dynamic Worker.
+                loader: {
+                    get: (name, getCode) => env.LOADER.get(name, getCode),
+                    load: (code) =>
+                        env.LOADER.get(crypto.randomUUID(), () => code),
+                },
+            },
+        );
+        const body = (await response.json()) as {
+            output: AgentOutputItem[];
+            usage: { tool_call_counts: { mcp_call: number } };
+        };
+        expect(response.status).toBe(200);
+        // The model sees one code tool whose description types the MCP tools.
+        const offered = modelRequests[0].tools?.map((t) => t.function) ?? [];
+        expect(offered.map((t) => t.name)).toEqual(["mcp__codemode__execute"]);
+        expect(offered[0].description).toContain("exa");
+        expect(offered[0].description).toContain("search");
+        const result = JSON.stringify({
+            content: [
+                {
+                    type: "text",
+                    text: JSON.stringify({ result: ["found a", "found b"] }),
+                },
+            ],
+        });
+        expect(body.output[1]).toMatchObject({
+            type: "function_call_output",
+            call_id: "code-1",
+            output: [{ type: "input_text", text: result }],
+        });
+        expect(JSON.stringify(modelRequests[1].messages)).toContain("found a");
+        expect(body.usage.tool_call_counts.mcp_call).toBe(2);
     });
 
     it.each([

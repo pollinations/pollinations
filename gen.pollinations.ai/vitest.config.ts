@@ -130,6 +130,8 @@ export default defineConfig(async ({ mode }) => {
                 "./test/setup/public-tinybird-pipes.ts",
             ],
             exclude: [...configDefaults.exclude],
+            // Workerd cannot link codemode's native `ai` import; let Vite load it.
+            server: { deps: { inline: ["@cloudflare/codemode"] } },
             deps: {
                 optimizer: {
                     ssr: {

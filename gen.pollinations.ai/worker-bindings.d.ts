@@ -28,6 +28,7 @@ interface CloudflareBindings {
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;
     DB: D1Database;
+    LOADER: WorkerLoader;
     ENVIRONMENT:
         | "local"
         | "production"

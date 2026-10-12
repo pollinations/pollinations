@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import {
     createAgentModelProvider,
     strictAgentUsage,
@@ -23,6 +24,7 @@ const RUNTIME = {
     genBaseUrl: "https://gen.test",
     fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init),
+    loader: env.LOADER,
 };
 
 function request(input: Record<string, unknown>) {

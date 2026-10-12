@@ -631,6 +631,9 @@ export const PromptAgentConfigSchema = z.object({
         })
         .optional()
         .default([]),
+    // Replace the MCP tools with one tool that runs model-written JavaScript
+    // calling them, so a single step can chain and filter many tool calls.
+    codemode: z.boolean().optional(),
 });
 export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 

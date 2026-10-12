@@ -393,6 +393,7 @@ describe("community endpoint 3-hour price-change delay", () => {
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai",
                 mcpServers: ["pollinations"],
+                codemode: true,
                 name: "partial-update-agent",
                 title: "Prompt agent",
             }),
@@ -419,6 +420,7 @@ describe("community endpoint 3-hour price-change delay", () => {
             systemPrompt: "Answer in detail.",
             baseModel: "openai",
             mcpServers: ["pollinations"],
+            codemode: true,
         });
     });
 

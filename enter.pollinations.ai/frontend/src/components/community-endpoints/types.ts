@@ -41,6 +41,7 @@ export type ManagedPromptAgent = ManagedAgentBase & {
     systemPrompt: string;
     baseModel: string;
     mcpServers: McpServerId[];
+    codemode?: boolean;
 };
 
 export type ManagedCodeAgent = ManagedAgentBase & {
@@ -60,6 +61,7 @@ export type AgentFormState = AgentFields &
     ModelListingFormState & {
         type: "prompt_agent" | "code_agent";
         repository: string;
+        codemode: boolean;
     };
 
 export type CommunityProviderProfile = {
@@ -307,6 +309,7 @@ export const emptyAgentForm: AgentFormState = {
     requiredSafetyFeatures: [],
     mcpServers: [],
     repository: "",
+    codemode: false,
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -452,6 +455,7 @@ export function agentToForm(agent?: ManagedAgent): AgentFormState {
                   systemPrompt: agent.systemPrompt,
                   baseModel: agent.baseModel,
                   mcpServers: agent.mcpServers,
+                  codemode: agent.codemode ?? false,
               }),
     };
 }
@@ -571,6 +575,7 @@ function promptAgentPayload(form: AgentFormState) {
         baseModel,
         requiredSafetyFeatures: form.requiredSafetyFeatures,
         mcpServers: form.mcpServers,
+        codemode: form.codemode,
     };
 }
 

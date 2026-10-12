@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T18:36:06.490298+00:00",
+  "generated_at": "2026-10-12T22:18:55.440578+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -5790,6 +5790,37 @@
             "promptCachedTokens": "0.000000422",
             "promptCacheWriteTokens": "0.00001055",
             "completionTextTokens": "0.0000422"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17179:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-12",
+      "pr": 17179,
+      "url": "https://github.com/pollinations/pollinations/pull/17179",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000012"
           }
         }
       }

@@ -568,6 +568,22 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "meta/muse-wonder-1.0": {
+        "meta/muse-wonder-1.0:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMuseWonder,
+            provider: "vercel",
+            addedDate: new Date("2026-10-12").getTime(),
+            // Vercel AI Gateway catalog rates (2026-10-12): base rates with no
+            // OpenRouter fee. Same Meta-hosted model; covers OpenRouter
+            // failures, not Meta outages.
+            cost: {
+                promptTextTokens: perMillion(4),
+                promptCachedTokens: perMillion(0.2),
+                promptImageTokens: perMillion(4),
+                completionTextTokens: perMillion(20),
+            },
+        },
+    },
     "nvidia/nemotron-3.5-lightning": {
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
             supportedParameters: CHAT_PARAMETERS.openRouterNemotron,

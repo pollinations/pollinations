@@ -1056,6 +1056,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
     {
+        name: "meta/muse-wonder-1.0",
+        config: portkeyConfig["meta/muse-wonder-1.0"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "meta/muse-wonder-1.0:vercel",
+        config: portkeyConfig["meta/muse-wonder-1.0:vercel"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "meta/llama-3.3-70b-instruct",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
         // No reasoning mode; Azure 422/400s on reasoning_effort.

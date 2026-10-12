@@ -673,6 +673,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-glimmer-30b",
         "together",
     ),
+    "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
+        "meta/muse-wonder",
+        "meta",
+    ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
@@ -1007,6 +1011,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "meta/muse-spark-1.2": () =>
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
+        }),
+    "meta/muse-wonder-1.0:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-wonder-1.0",
         }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------

@@ -334,6 +334,27 @@ export const CHAT_PARAMETERS = {
         "top_k",
     ],
     museSpark: [...CHAT, "temperature", "tools"],
+    // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
+    openRouterMuseWonder: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "repetition_penalty",
+        "structured_outputs",
+        "top_k",
+    ],
+    // Vercel catalog parameters (2026-10-12): no top_p, top_k, or
+    // repetition_penalty.
+    vercelMuseWonder: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
     vercelMistralLarge4: [

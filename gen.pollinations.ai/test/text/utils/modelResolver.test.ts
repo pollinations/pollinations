@@ -690,6 +690,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("pins Muse Wonder to Meta on OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "meta/muse-wonder-1.0",
+        });
+
+        expect(result.options.model).toBe("meta/muse-wonder");
+        expect(result.options.provider).toEqual({
+            only: ["meta"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Grok 4.6 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, { model: "grok-4.6" });
 

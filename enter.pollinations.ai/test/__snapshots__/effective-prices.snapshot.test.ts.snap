@@ -1865,6 +1865,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
+  "meta/muse-wonder-1.0": {
+    "cost": {
+      "completionTextTokens": 0.0000211,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000422,
+      "promptTextTokens": 0.00000422,
+    },
+    "price": {
+      "completionTextTokens": 0.0000211,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000422,
+      "promptTextTokens": 0.00000422,
+    },
+  },
+  "meta/muse-wonder-1.0:vercel": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+    },
+  },
   "microsoft/mai-image-2.6": {
     "cost": {
       "completionImageTokens": 0.000038,

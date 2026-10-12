@@ -1,0 +1,63 @@
+{
+  "pr_number": 17189,
+  "title": "fix: match QwenGuard pricing to free OVH endpoint",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17189",
+  "merged_at": "2026-10-12T23:52:21Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Qwen3Guard 8B pricing was changed to match its free OVHcloud endpoint, billed per million input and output tokens. Quest + Paid access and model capabilities are unchanged; Paid-only access is a separate change in #16686. Safe/unsafe classification and streaming were verified, with usage recorded without a wallet debit.",
+    "keywords": [
+      "Qwen3Guard",
+      "OVHcloud",
+      "model pricing",
+      "Pollen",
+      "usage"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17189.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli checks a Qwen3Guard price tag beside a glowing retro terminal while code-plants grow from prominent lime green (#ecf874) pots. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny accountant glasses, stays small-to-medium in the scene, and is strictly pixel art, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T23:55:11.124923+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "9275d76fecd01a0e8ef0f981cb94ca3cf019bfe3",
+  "announcements": [
+    {
+      "id": "pr-17189:qwen/qwen3guard-gen-8b",
+      "model_id": "qwen/qwen3guard-gen-8b",
+      "title": "Qwen3Guard 8B",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000001",
+            "completionTextTokens": "0.00000001"
+          },
+          "after": {
+            "currency": "pollen"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "9275d76fecd01a0e8ef0f981cb94ca3cf019bfe3^1",
+    "after_ref": "9275d76fecd01a0e8ef0f981cb94ca3cf019bfe3"
+  }
+}

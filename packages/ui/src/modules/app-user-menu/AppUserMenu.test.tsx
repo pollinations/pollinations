@@ -20,7 +20,7 @@ const sdk = vi.hoisted(() => ({
         refresh: vi.fn(),
     },
     actions: {
-        logout: vi.fn(),
+        disconnect: vi.fn(),
         enterUrl: "https://enter.pollinations.ai",
     },
 }));

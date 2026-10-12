@@ -238,3 +238,85 @@ test(
         }
     },
 );
+
+test("DELETE /api/account/key - revokes only the caller without account permissions", async ({
+    accountToken,
+    pubApiKey,
+}) => {
+    const current = await createApiKeyViaApi(accountToken, {
+        name: "disconnect-current",
+    });
+    const unrelated = await createApiKeyViaApi(accountToken, {
+        name: "disconnect-unrelated",
+    });
+    const headers = { Authorization: `Bearer ${current.key}` };
+    const before = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+        headers,
+    });
+    expect(before.status).toBe(200);
+    expect((await before.json()).permissions?.account ?? []).not.toContain(
+        "keys",
+    );
+
+    const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+        method: "DELETE",
+        headers,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true });
+    for (const method of ["GET", "DELETE"]) {
+        const revoked = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            method,
+            headers,
+        });
+        expect(revoked.status).toBe(401);
+        await revoked.text();
+    }
+    for (const key of [unrelated.key, pubApiKey]) {
+        const preserved = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: { Authorization: `Bearer ${key}` },
+        });
+        expect(preserved.status).toBe(200);
+        await preserved.text();
+    }
+});
+
+test("DELETE /api/account/key - rejects public keys, sessions, and agent run tokens", async ({
+    accountToken,
+    pubApiKey,
+}) => {
+    const parent = await createApiKeyViaApi(accountToken, {
+        name: "disconnect-agent-parent",
+    });
+    const runToken = await signAgentRunToken({
+        secret: env.BETTER_AUTH_SECRET,
+        parentApiKeyId: parent.id,
+        parentRequestId: crypto.randomUUID(),
+    });
+    for (const token of [pubApiKey, accountToken, runToken]) {
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        expect(response.status).toBe(403);
+        await response.text();
+    }
+    for (const key of [parent.key, pubApiKey]) {
+        const preserved = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            headers: { Authorization: `Bearer ${key}` },
+        });
+        expect(preserved.status).toBe(200);
+        await preserved.text();
+    }
+});
+
+test("DELETE /api/account/key - requires authentication", async () => {
+    for (const headers of [{}, { Authorization: "Bearer invalid_key" }]) {
+        const response = await SELF.fetch(`http://localhost:3000${endpoint}`, {
+            method: "DELETE",
+            headers,
+        });
+        expect(response.status).toBe(401);
+        await response.text();
+    }
+});

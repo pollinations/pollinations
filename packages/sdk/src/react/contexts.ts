@@ -25,6 +25,8 @@ export interface AuthorizeRequest {
 export interface AuthActionsValue {
     login: (request?: AuthorizeRequest) => void;
     logout: () => void;
+    /** Revoke the current key, then clear the local connection. Rejects on failure. */
+    disconnect: () => Promise<void>;
     setApiKey: (apiKey: string | null) => void;
     /** Auth and dashboard URL. */
     enterUrl: string;

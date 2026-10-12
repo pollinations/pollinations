@@ -1,6 +1,6 @@
 {
     "name": "@pollinations/ui",
-    "version": "0.1.0-alpha.11",
+    "version": "0.1.0-alpha.12",
     "description": "Design primitives and UI modules for Pollinations apps.",
     "license": "MIT",
     "type": "module",
@@ -81,7 +81,7 @@
         "directory": "packages/ui"
     },
     "peerDependencies": {
-        "@pollinations/sdk": "^5.1.0-alpha.1",
+        "@pollinations/sdk": "^5.1.0-alpha.15",
         "react": "^19.0.0",
         "react-dom": "^19.0.0"
     },

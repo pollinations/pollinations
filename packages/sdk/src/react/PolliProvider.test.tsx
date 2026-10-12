@@ -281,6 +281,117 @@ describe("PolliProvider", () => {
         });
     });
 
+    it.each([
+        200,
+        401,
+        403,
+        500,
+        "network",
+    ] as const)("disconnect handles %s without forgetting a usable key on failure", async (status) => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        let respond!: (response: Response) => void;
+        let fail!: (error: Error) => void;
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
+            () =>
+                new Promise<Response>((resolve, reject) => {
+                    respond = resolve;
+                    fail = reject;
+                }),
+        );
+        let renderer!: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(
+                <PolliProvider
+                    appKey="pk_test"
+                    apiBaseUrl="https://api.example/"
+                    storage={storage}
+                >
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        let result!: Promise<unknown>;
+        await act(async () => {
+            if (!auth.current) throw new Error("Missing auth context");
+            result = auth.current.disconnect().catch((error) => error);
+        });
+        expect(auth.current?.isLoggedIn).toBe(true);
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
+        expect(fetchMock).toHaveBeenCalledWith(
+            "https://api.example/account/key",
+            expect.objectContaining({
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_stored" },
+            }),
+        );
+        let error: unknown;
+        await act(async () => {
+            if (status === "network") fail(new Error("Offline"));
+            else
+                respond(
+                    Response.json(
+                        { error: { message: "Revocation failed" } },
+                        { status },
+                    ),
+                );
+            error = await result;
+        });
+        const disconnected = status === 200 || status === 401;
+        expect(auth.current?.isLoggedIn).toBe(!disconnected);
+        expect(storage.getItem("polli:pk_test:token")).toBe(
+            disconnected ? null : "sk_stored",
+        );
+        if (disconnected) expect(error).toBeUndefined();
+        else expect(error).toBeInstanceOf(Error);
+        await act(async () => {
+            renderer.unmount();
+        });
+    });
+
+    it("reports failed browser cleanup after revocation", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage({ "polli:pk_test:token": "sk_stored" });
+        const auth: { current: ReturnType<typeof useAuth> | null } = {
+            current: null,
+        };
+        function Probe() {
+            auth.current = useAuth();
+            return null;
+        }
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ success: true }),
+        );
+        vi.spyOn(storage, "removeItem").mockImplementation(() => {
+            throw new Error("Storage unavailable");
+        });
+        let renderer!: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <Probe />
+                </PolliProvider>,
+            );
+        });
+        await act(async () => {
+            await expect(auth.current?.disconnect()).rejects.toThrow(
+                "App access removed, but the saved key could not be cleared",
+            );
+        });
+        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
+        await act(async () => {
+            renderer.unmount();
+        });
+    });
+
     it("ignores repeated login calls while a redirect is pending", async () => {
         const win = stubWindow("https://app.example/");
         const storage = memoryStorage();

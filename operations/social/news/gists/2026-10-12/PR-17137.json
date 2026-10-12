@@ -1,0 +1,36 @@
+{
+  "pr_number": 17137,
+  "title": "ci(news): add a practice-only news posts workflow",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17137",
+  "merged_at": "2026-10-12T01:49:22Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Added a manual-only news posts workflow for practice runs. It can prepare a single daily, weekly, or monthly post, or run a morning sequence that prepares the daily post, the weekly post on Sundays, and the monthly post on the 1st, in that order. It uses posts.py to write into a sparse checkout of news, saves the results, and prints the staged diff. It has no push step, delivery job, or posting keys. Planned practice runs cover a recent daily and weekly post against news, plus the morning of 2026-03-01, which is both a Sunday and the 1st.",
+    "keywords": [
+      "news pipeline",
+      "GitHub Actions",
+      "practice workflow",
+      "posts.py",
+      "staged diff"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17137.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny editor's cap and checks a glowing lime green (#ecf874) retro monitor showing three simple calendar pages beside a pot of code-flowers; a small stack of draft pages rests safely on the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T01:50:35.188961+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "2a4f3fe63591086110577e2d55f0271c128f25ac",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

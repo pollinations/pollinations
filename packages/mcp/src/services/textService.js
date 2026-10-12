@@ -154,6 +154,7 @@ async function generateText(params, context) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
+                    logprobs: choice?.logprobs,
                 },
                 true,
             ),

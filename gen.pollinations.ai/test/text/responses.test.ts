@@ -185,7 +185,6 @@ describe("direct Responses transport", () => {
         ["previous_response_id", { previous_response_id: "resp_previous" }],
         ["conversation", { conversation: "conv_previous" }],
         ["background", { background: true }],
-        ["encrypted state", { include: ["reasoning.encrypted_content"] }],
         ["n", { n: 2 }],
     ])("rejects unsupported state or fan-out: %s", (_name, field) => {
         expect(() =>
@@ -221,19 +220,28 @@ describe("direct Responses transport", () => {
         });
     });
 
-    it("rejects encrypted and referenced response state", () => {
-        expect(() =>
-            validateDirectResponsesRequest(
-                request({
-                    input: [
-                        {
-                            type: "reasoning",
-                            encrypted_content: "opaque-state",
-                        },
-                    ],
-                }),
-            ),
-        ).toThrow(/Encrypted or reusable response state/);
+    it("accepts replayed encrypted reasoning but not stored item references", () => {
+        const parsed = CreateResponseRequestSchema.parse({
+            model: "qwen-large",
+            input: [
+                {
+                    type: "reasoning",
+                    summary: [],
+                    encrypted_content: "opaque-state",
+                },
+            ],
+            include: ["reasoning.encrypted_content"],
+            client_metadata: { session_id: "codex-session" },
+        });
+        expect(() => validateDirectResponsesRequest(parsed)).not.toThrow();
+        const target = resolveDirectResponsesTarget("qwen-large", parsed);
+        if (!target) throw new Error("expected direct target");
+        const body = buildDirectResponsesRequestBody(parsed, target);
+        expect(body).toMatchObject({
+            include: ["reasoning.encrypted_content"],
+            input: parsed.input,
+        });
+        expect(body).not.toHaveProperty("client_metadata");
 
         expect(() =>
             validateDirectResponsesRequest(
@@ -241,7 +249,7 @@ describe("direct Responses transport", () => {
                     input: [{ type: "item_reference", id: "item_123" }],
                 }),
             ),
-        ).toThrow(/Encrypted or reusable response state/);
+        ).toThrow(/Stored response items/);
     });
 
     it("resolves only explicit direct Responses targets", () => {

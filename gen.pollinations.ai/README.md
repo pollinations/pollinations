@@ -32,8 +32,12 @@ Simplified API gateway for pollinations.ai, providing clean URLs via Cloudflare 
 # Install dependencies (first time only)
 npm install -D wrangler typescript @cloudflare/workers-types
 
-# Run locally (requires enter.pollinations.ai running on port 3000)
+# Run locally (requires enter.pollinations.ai running on port 3000).
+# Without the SOPS key it uses your .dev.vars (created from .dev.vars.example).
 npm run dev
+
+# Seed a local API key and give every local account Quest Pollen
+npm run seed:local
 
 # Type check
 npm run typecheck

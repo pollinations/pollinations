@@ -515,6 +515,16 @@ class PostsTest(unittest.TestCase):
         self.assertEqual(stamp(new[2]), stamp(old[2]))
         self.assertEqual((len(new[0]), len(new[2])), (calls, files))
 
+    def assertDeliverable(self, job, base, saved):
+        """Each file deliver.py sends is saved with its text and its pictures' saved urls."""
+        for name in deliver.POSTS[job]:
+            post = json.loads(saved[f"{base}/{name}"])
+            self.assertTrue(post["text"].strip())
+            pictures = deliver.get_post_image_urls(post)
+            self.assertTrue(pictures)
+            for url in pictures:
+                self.assertIn(url.split("/news/", 1)[1], saved)
+
     def test_daily(self):
         for number in (1, 2):
             self.put(f"gists/2026-10-06/PR-{number}.json", gist(number, "2026-10-06T10:00:00Z"))
@@ -524,6 +534,7 @@ class PostsTest(unittest.TestCase):
         base = f"{NEWS_REL_DIR}/daily/2026-10-06"
         self.assertEqual(sorted(saved), [f"{base}/{name}" for name in (
             "images/reddit.jpg", "images/twitter.jpg", "reddit.json", "summary.json", "twitter.json")])
+        self.assertDeliverable("daily", base, saved)
         # The summary, then the Reddit and X posts, from the day's daily-tier gists only.
         self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7, 0.8])
         self.assertIn("PR 2", calls[0][1])
@@ -550,6 +561,8 @@ class PostsTest(unittest.TestCase):
                 calls, images, saved = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
                 base = f"{NEWS_REL_DIR}/weekly/2026-10-04"
                 self.assertEqual(len(saved), 13)
+                self.assertDeliverable("weekly", base, saved)
+                self.assertLessEqual(len(json.loads(saved[f"{base}/linkedin.json"])["text"]), 1248)
                 self.assertEqual([temperature for _, _, temperature in calls], temperatures)
                 summary = json.loads(saved[f"{base}/summary.json"])
                 self.assertEqual((summary["period_start"], summary["period_end"]), ("2026-09-27", "2026-10-03"))

@@ -430,14 +430,17 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             sys.exit(f"models {date} isn't recorded as sent with this WORK's text")
         outcomes = {"discord.json": outcome}
     else:
-        if read_news(f"{folder}/summary.json")[0] is None:
+        # A date counts as empty only when none of its files exist; a saved post is
+        # delivered even without its summary, and an expected post that is missing fails.
+        files = {post: read_news(f"{folder}/{post}")[0] for post in POSTS[job]}
+        if read_news(f"{folder}/summary.json")[0] is None and not any(files.values()):
             print(f"Nothing saved for {job} {date}: nothing to deliver")
             return
         outcomes = {}
         for post, channel in targets.items():
 
             def prepare(post=post, channel=channel):
-                content = read_news(f"{folder}/{post}")[0]
+                content = files[post]
                 if content is None:
                     raise ValueError("the post file is missing")
                 data = json.loads(content)
@@ -469,6 +472,11 @@ def mark(job: str, date: str, post: str, state: str) -> None:
     folder = f"{JOB_DIRS[job]}/{date}"
     record, sha = read_record(folder)
     print(f"Replacing {record.get(post)}")
+    sent = (record.get(post) or {}).get("discord")
+    if state == "failed" and sent:
+        sys.exit(
+            f"Discord messages {sent} went out: post the rest by hand, then mark done"
+        )
     entry = {
         **(record.get(post) or {}),
         "state": state,

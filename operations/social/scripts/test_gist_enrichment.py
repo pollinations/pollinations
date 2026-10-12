@@ -653,6 +653,9 @@ class PostsTest(unittest.TestCase):
         self.assertEqual(delivery.read_text(), '{"daily-x": "done"}')
 
 
+jsonlib = json
+
+
 def reply(status, body=None):
     return SimpleNamespace(status_code=status, json=lambda: body or {}, text="", headers={})
 
@@ -693,6 +696,11 @@ class DeliverTest(unittest.TestCase):
         fault = self.faults.pop(0) if self.faults else None
         if fault == "409":
             return reply(409)
+        if fault == "taken":  # another run's claim lands just before this one
+            record = jsonlib.loads(base64.b64decode(json["content"]))
+            taken = {post: {**entry, "run": "other"} for post, entry in record.items() if entry["run"] == deliver.RUN}
+            self.store[path] = jsonlib.dumps({**record, **taken}).encode()
+            return reply(409)
         if current is not None and json.get("sha") != hashlib.sha1(current).hexdigest():
             return reply(409 if "sha" in json else 422)
         self.store[path] = base64.b64decode(json["content"])
@@ -700,7 +708,8 @@ class DeliverTest(unittest.TestCase):
 
     def post(self, url, json=None, files=None, timeout=None, headers=None):
         self.calls.append((url, json, files))
-        trouble = self.broken.pop(url, None)
+        answers = self.broken.get(url) or []
+        trouble = answers.pop(0) if answers else None
         if isinstance(trouble, Exception):
             raise trouble
         if trouble:
@@ -795,8 +804,8 @@ class DeliverTest(unittest.TestCase):
 
     def test_an_unclear_send_waits_for_a_person_and_the_rest_goes_out(self):
         self.weekly()
-        self.broken[deliver.BUFFER_URL] = requests.ReadTimeout()
-        self.broken["https://discord.test/weekly?wait=true"] = (503,)
+        self.broken[deliver.BUFFER_URL] = [requests.ReadTimeout()]
+        self.broken["https://discord.test/weekly?wait=true"] = [(503,)]
         self.reddit = OSError("connection dropped after the deploy command")
         for command in ("schedule", "send"):
             for _ in range(2):
@@ -818,7 +827,7 @@ class DeliverTest(unittest.TestCase):
     def test_a_clean_failure_is_sent_again_and_false_conflicts_resolve(self):
         self.save("daily", "2026-10-11", {"twitter.json": {"text": "Shipped."},
                                           "reddit.json": {"title": "Day", "text": "Body"}})
-        self.broken[deliver.BUFFER_URL] = (401, {"errors": [{"extensions": {"code": "UNAUTHENTICATED"}}]})
+        self.broken[deliver.BUFFER_URL] = [(401, {"errors": [{"extensions": {"code": "UNAUTHENTICATED"}}]})]
         self.reddit = False
         for command in ("schedule", "send"):
             with self.assertRaisesRegex(SystemExit, "Not delivered"):
@@ -835,17 +844,39 @@ class DeliverTest(unittest.TestCase):
 
     def test_only_saved_dates_from_the_start_date_are_delivered(self):
         self.save("daily", "2026-10-10", {"twitter.json": {"text": "Saturday"}})        # never delivered
-        self.save("daily", "2026-10-09", {"twitter.json": {"text": "Friday"}}, summary=False)
         self.save("daily", "2026-10-08", {"twitter.json": {"text": "Thursday"}})        # reddit.json missing
-        for date in ("2026-10-10", "2026-10-09"):
+        for date in ("2026-10-10", "2026-10-07"):                                       # 10-07: nothing saved
             deliver.run("send", "daily", date)
             deliver.run("schedule", "daily", date)
         with self.assertRaisesRegex(SystemExit, "reddit.json"):
             deliver.run("send", "daily", "2026-10-08")
         self.assertEqual(self.calls, [])
+        # A post saved without its summary still goes out.
+        self.save("daily", "2026-10-09", {"twitter.json": {"text": "Friday"}}, summary=False)
+        deliver.run("schedule", "daily", "2026-10-09")
+        self.assertEqual(len(self.sent(deliver.BUFFER_URL)), 1)
         for start, date in ((None, "2026-10-08"), ("2026-10-09", "2026-10-08")):
             with patch.dict(deliver.START, {"daily": start}), self.assertRaisesRegex(SystemExit, "start date"):
                 deliver.run("schedule", "daily", date)
+
+    def test_a_post_claimed_by_another_run_is_left_to_it(self):
+        self.save("daily", "2026-10-11", {"twitter.json": {"text": "Shipped."}})
+        self.faults = ["taken"]
+        deliver.run("schedule", "daily", "2026-10-11")
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.record("daily", "2026-10-11"), {"twitter.json": "attempt"})
+
+    def test_a_half_sent_discord_post_is_finished_by_hand(self):
+        self.save("weekly", "2026-10-11", {"discord.json": {"text": "line\n" * 400},
+                                           "reddit.json": {"title": "Week", "text": "Body"}})
+        self.broken["https://discord.test/weekly?wait=true"] = [None, (429,)]
+        with self.assertRaisesRegex(SystemExit, "discord.json"):
+            deliver.run("send", "weekly", "2026-10-11")
+        with self.assertRaisesRegex(SystemExit, "by hand"):
+            deliver.mark("weekly", "2026-10-11", "discord.json", "failed")
+        deliver.mark("weekly", "2026-10-11", "discord.json", "done")
+        deliver.run("send", "weekly", "2026-10-11")
+        self.assertEqual(len(self.sent("https://discord.test/weekly?wait=true")), 2)
 
     def test_model_post_is_sent_once_from_work_and_never_saved_with_another_text(self):
         directory = tempfile.TemporaryDirectory()

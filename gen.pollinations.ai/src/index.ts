@@ -112,6 +112,10 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
 
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
+
 ## Account
 
 - [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.

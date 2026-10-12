@@ -37,7 +37,7 @@ function requestForMcp(
     user: AuthUser,
 ): Request {
     const headers = new Headers(request.headers);
-    if (server.billing === "usage_receipt") {
+    if (server.billing !== "downstream") {
         headers.delete("authorization");
     }
     headers.delete("cookie");

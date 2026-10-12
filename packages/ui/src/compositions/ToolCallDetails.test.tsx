@@ -44,14 +44,21 @@ describe("ToolCallDetails", () => {
             "https://en.wikipedia.org/wiki/Pollen_(biology)",
             ").",
         ],
-    ])("keeps prose punctuation outside links in %s", (output, href, suffix) => {
-        const html = renderToStaticMarkup(
-            <ToolCallDetails name="SEARCH_WEB" output={output} defaultOpen />,
-        );
+    ])(
+        "keeps prose punctuation outside links in %s",
+        (output, href, suffix) => {
+            const html = renderToStaticMarkup(
+                <ToolCallDetails
+                    name="SEARCH_WEB"
+                    output={output}
+                    defaultOpen
+                />,
+            );
 
-        expect(html).toContain(`href="${href}"`);
-        expect(html).toContain(`</a>${suffix}`);
-    });
+            expect(html).toContain(`href="${href}"`);
+            expect(html).toContain(`</a>${suffix}`);
+        },
+    );
 
     it.each([
         ["https://example.test/result", "https://example.test/result"],

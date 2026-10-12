@@ -691,7 +691,7 @@ describe("Pollinations video reference media", () => {
         const url = new URL(fetchMock.mock.calls[0][0] as string);
         expect(url.searchParams.get("image")).toBe(
             Array.isArray(referenceImage)
-                ? referenceImage.join(",")
+                ? referenceImage.join("|")
                 : (referenceImage ?? null),
         );
         for (const name of [
@@ -701,6 +701,18 @@ describe("Pollinations video reference media", () => {
         ]) {
             expect(url.searchParams.has(name)).toBe(false);
         }
+    });
+
+    it("serializes multiple reference images using pipe delimiter for image generation", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const references = [
+            "https://media.example/ref1.png?v=1",
+            "https://media.example/ref2.png?v=2",
+        ];
+        await newClient().image("a scene", { referenceImage: references });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(references.join("|"));
     });
 });
 

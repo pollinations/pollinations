@@ -209,32 +209,12 @@ const UsageChartView: FC<UsageChartViewProps> = ({
             </SectionContent>
 
             {!loading && hasData && (
-                <>
-                    <fieldset
-                        aria-label="Group usage by"
-                        className="flex items-center gap-2"
-                    >
-                        <span className="text-xs font-medium text-theme-text-muted">
-                            Group by
-                        </span>
-                        {(["model", "key"] as const).map((group) => (
-                            <TabButton
-                                key={group}
-                                active={groupBy === group}
-                                onClick={() => onGroupByChange(group)}
-                                size="xs"
-                                className="min-h-8"
-                            >
-                                {group === "model" ? "Models" : "Keys"}
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                    <UsageBreakdownTable
-                        stats={stats}
-                        metric={metric}
-                        groupBy={groupBy}
-                    />
-                </>
+                <UsageBreakdownTable
+                    stats={stats}
+                    metric={metric}
+                    groupBy={groupBy}
+                    onGroupByChange={onGroupByChange}
+                />
             )}
         </>
     );
@@ -251,6 +231,7 @@ const UsageEmptyState: FC = () => (
 type UsageBreakdownTableProps = {
     metric: Metric;
     groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
@@ -258,6 +239,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
     stats,
     metric,
     groupBy,
+    onGroupByChange,
 }) => {
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     return (
@@ -272,7 +254,22 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                             scope="col"
                             className="px-2 py-1 font-normal"
                         >
-                            {groupBy === "model" ? "Model" : "Key"}
+                            <fieldset
+                                aria-label="Group usage by"
+                                className="flex items-center gap-1"
+                            >
+                                {(["model", "key"] as const).map((group) => (
+                                    <TabButton
+                                        key={group}
+                                        active={groupBy === group}
+                                        onClick={() => onGroupByChange(group)}
+                                        size="xs"
+                                        className="min-h-8"
+                                    >
+                                        {group === "model" ? "Models" : "Keys"}
+                                    </TabButton>
+                                ))}
+                            </fieldset>
                         </TableHeaderCell>
                         <TableHeaderCell
                             scope="col"

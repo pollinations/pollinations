@@ -238,7 +238,7 @@ Before publishing:
 - Format changed files with the repository formatter.
 - Run focused tests and type checks for every touched service.
 - Review the complete diff for unrelated changes and dead code.
-- Write the description in the decision format below.
+- Write the description in the format below.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
 #### Scheduled merges and holds
@@ -250,43 +250,35 @@ Before publishing:
 - Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
 - Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
 
-#### Decision format
+#### PR description
 
-The description is a lean decision read of at most ~150 words. Start with one line:
+Decision first, at most ~150 words, no narrative:
 
-**Decision:** `ready to merge`, or `needs your call:` and one question.
+```md
+**Decision:** ready to merge | needs your call: <question>
 
-Then one table per affected public model ID, headed by its ID and effective date:
-
-`<public ID>` · effective on production deployment (not live yet), or `YYYY-MM-DD HH:MM UTC`
+`<model ID>` · effective on production deploy | YYYY-MM-DD HH:MM UTC
 
 | | Before | After |
 | --- | --- | --- |
-| Access | Quest + Paid / Paid only | `same` or new value |
-| Price (pollen per <unit>) | exact rates | exact rates |
-| Primary · cost | provider → host · upstream ID · rates · vs price | same shape |
-| Fallback · cost | same shape, or `none` | same shape, or `none` |
-| Promo | promo rate, end date, post-promo cost vs price, or `none` | same shape |
-| Capabilities | | `unchanged`, or what is added or lost |
+| Access | | |
+| Price (pollen/<unit>) | | |
+| Primary · cost | | |
+| Fallback · cost | | |
+| Promo | | |
+| Capabilities | | |
 
-End with:
+**Verified:** <routes × capabilities> · provider charge = our cost · wallet = price
+**Flags:** <only if action is needed>
+```
 
-**Verified:** routes × capabilities run end to end · provider charge = our cost · wallet = price
-**Flags:** only what needs a decision or a follow-up; omit the line when there is none.
-
-- Read every value from the base and proposed code, catalog and live provider; never infer it from the title. Write `same` for an unchanged value and keep units in the row label.
-- Compare every route's cost with the customer price as `= price`, `below price` or `above price ⚠`. A primary that can cost more than the price is a flag.
-- A new model shows `Unavailable` before. A provider-only change still fills the Primary and Fallback rows.
-- Leave test counts, probe logs and narrative out of the description.
-
-A retirement also adds this row, which the news pipeline reads:
+- Take values from code, catalog and live provider. Write `same` if unchanged, `none` if absent.
+- End each cost cell with `= price`, `below price` or `above price ⚠`.
+- Retirement, once decided: add the row below; the news pipeline parses it. Postpone with a new row, withdraw with `Cancelled`, never move a date earlier. Note a provider's route deadline as a code comment, not in the registry.
 
 | Model | Action | Change | Before | After | Effective |
 | --- | --- | --- | --- | --- | --- |
-| `<public ID>` | RETIRE | Availability | Available | Retired | `YYYY-MM-DD HH:MM UTC` |
-
-- Announce a retirement only once it is decided (no other provider will keep the model). Merge the row with the future date; to postpone, merge a new row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
-- The removal PR uses the same row with its deployment as `Effective`. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
+| `<model ID>` | RETIRE | Availability | Available | Retired | YYYY-MM-DD HH:MM UTC |
 
 ## Completion gate
 

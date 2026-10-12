@@ -25,6 +25,16 @@ describe("hostname redirects", () => {
         ],
         [
             "GET",
+            "https://playground.pollinations.ai/",
+            "https://pollinations.ai/play",
+        ],
+        [
+            "HEAD",
+            "https://playground.pollinations.ai/index.html?model=flux",
+            "https://pollinations.ai/play",
+        ],
+        [
+            "GET",
             "https://www.pollinations.ai/apps?category=image",
             "https://pollinations.ai/apps?category=image",
         ],

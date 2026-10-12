@@ -1550,6 +1550,9 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.responsesDirect.state.requests[0]).toMatchObject({
         body: {
             model: "gpt-5.6-luna",
+            // Azure gets a stream so its headers arrive before Cloudflare's
+            // ~125 s cutoff; the caller still receives JSON.
+            stream: true,
             store: false,
             input: [
                 {
@@ -1786,6 +1789,65 @@ test("direct Responses JSON preserves protocol and bills once", async ({
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
         tokenCountCompletionText: 4,
+        tokenCountCompletionReasoning: 3,
+        isBilledUsage: true,
+    });
+});
+
+// What Codex sends on its second turn: session metadata, encrypted reasoning
+// requested, and the first turn's reasoning item replayed.
+const codexSecondTurn = {
+    model: "openai/gpt-6-astra",
+    stream: true,
+    store: false,
+    include: ["reasoning.encrypted_content"],
+    client_metadata: { session_id: "codex-session" },
+    input: [
+        { role: "user", content: [{ type: "input_text", text: "first" }] },
+        {
+            type: "reasoning",
+            id: "rs_1",
+            summary: [],
+            encrypted_content: "opaque-reasoning",
+        },
+        {
+            type: "message",
+            role: "assistant",
+            content: [{ type: "output_text", text: "answer" }],
+        },
+        { role: "user", content: [{ type: "input_text", text: "second" }] },
+    ],
+};
+
+test("direct Responses passes a Codex turn's encrypted reasoning through and bills once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify(codexSecondTurn),
+    });
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toContain('"type":"response.completed"');
+    await wait();
+
+    const requests = mocks.responsesDirect.state.requests;
+    expect(requests).toHaveLength(1);
+    expect(requests[0].body).toMatchObject({
+        model: "gpt-6-astra",
+        include: ["reasoning.encrypted_content"],
+        input: codexSecondTurn.input,
+    });
+    expect(requests[0].body).not.toHaveProperty("client_metadata");
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "openai/gpt-6-astra",
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
     });

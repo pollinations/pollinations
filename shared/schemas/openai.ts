@@ -397,6 +397,7 @@ export type CreateChatCompletionRequest = z.infer<
 >;
 
 const StatelessResponseIncludeSchema = z.enum([
+    "reasoning.encrypted_content",
     "web_search_call.action.sources",
     "code_interpreter_call.outputs",
     "computer_call_output.output.image_url",
@@ -446,6 +447,8 @@ export const CreateResponseRequestSchema = z
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).nullish(),
+        // Codex session telemetry; accepted, never sent upstream.
+        client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),

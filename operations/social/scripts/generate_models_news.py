@@ -29,86 +29,39 @@ import base64
 import json
 import os
 import sys
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 import requests
 
 from common import (
+    CATEGORIES,
     GISTS_BRANCH,
     GITHUB_API_BASE,
     MODELS_NEWS_DIR,
     OWNER,
     REPO,
+    Diff,
     _github_headers,
+    _migrate_old_snapshot,
     call_pollinations_api,
+    diff_models,
+    discord_payload,
+    fetch_all_snapshots,
     get_env,
     get_file_sha,
     github_api_request,
     load_prompt,
+    models_md,
     models_news_staging_dir,
+    models_report_input,
     parse_json_response,
 )
 
-CATEGORIES: tuple[str, ...] = ("text", "image", "video", "audio", "embeddings")
-GEN_BASE = "https://gen.pollinations.ai"
 MODELS_DIR = MODELS_NEWS_DIR
 MODELS_MD_PATH = f"{MODELS_DIR}/models.md"
 SNAPSHOT_PREFIX = f"{MODELS_DIR}/snapshots"
 DIFF_PREFIX = f"{MODELS_DIR}/diffs"
-
-
-@dataclass(frozen=True)
-class Diff:
-    added: dict[str, list[dict[str, Any]]]
-    removed: dict[str, list[dict[str, Any]]]
-    changed: dict[str, list[dict[str, Any]]]
-
-    def is_empty(self) -> bool:
-        return not any(
-            self.added[c] or self.removed[c] or self.changed[c] for c in CATEGORIES
-        )
-
-    def to_json(self) -> dict[str, Any]:
-        return {"added": self.added, "removed": self.removed, "changed": self.changed}
-
-
-def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
-    """GET /models returns every model in one call with a 'category' field.
-    We bucket by that field into the known categories.
-
-    No auth — authenticated requests filter by key permissions, which would
-    create false 'removed' entries when keys differ between runs."""
-    url = f"{GEN_BASE}/models"
-    resp = requests.get(url, headers={"Accept": "application/json"}, timeout=30)
-    resp.raise_for_status()
-    payload = resp.json()
-    # /v1/models wraps in {data:[...]}; /models returns a bare list.
-    all_models: list[dict[str, Any]] = (
-        list(payload["data"])
-        if isinstance(payload, dict) and "data" in payload
-        else list(payload)
-        if isinstance(payload, list)
-        else []
-    )
-    if not all_models:
-        raise ValueError(f"Unexpected or empty response from {url}: {payload!r:.200}")
-
-    result: dict[str, list[dict[str, Any]]] = {cat: [] for cat in CATEGORIES}
-    unknown: list[str] = []
-    for model in all_models:
-        cat = model.get("category", "")
-        # API returns "embedding" (singular); we bucket under "embeddings"
-        if cat == "embedding":
-            cat = "embeddings"
-        if cat in result:
-            result[cat].append(model)
-        else:
-            unknown.append(f"{model.get('name', '?')}({cat})")
-    if unknown:
-        print(f"  Warning: unrecognised categories, skipped: {unknown[:10]}")
-    return result
 
 
 class GithubProbeError(RuntimeError):
@@ -270,119 +223,11 @@ def load_models_md(github_token: str, owner: str, repo: str) -> str:
     return base64.b64decode(resp.json()["content"]).decode()
 
 
-# Fields ignored when comparing models.
-# description: prose edits with no capability change.
-# added_date: static timestamp, never changes for existing models.
-# name / id: identity key fields used for lookup — excluded from value comparison
-#   so that snapshots migrating from 'id' to 'name' don't flood the diff.
-_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
-    {"description", "added_date", "name", "id"}
-)
-
-
-def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    for k, v in model.items():
-        if k in _DIFF_IGNORED_FIELDS:
-            continue
-        # Sort lists so reordering aliases/modalities/capabilities doesn't
-        # trigger false "changed" entries.
-        result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
-    # Snapshots taken before the catalog always sent paid_only omit it for
-    # models that were never paid-only; missing meant false. Remove once the
-    # stored snapshot has been taken from a catalog that always sends it.
-    result.setdefault("paid_only", False)
-    return result
-
-
-def _migrate_old_snapshot(
-    snapshot: dict[str, list[dict[str, Any]]],
-) -> dict[str, list[dict[str, Any]]]:
-    """One-time migration: old snapshots stored image+video together under 'image'
-    (fetched from /image/models before the video split). If 'video' is absent but
-    'image' is present, re-bucket by each model's 'category' field so the diff
-    doesn't report all video models as removed from image."""
-    if "video" in snapshot or "image" not in snapshot:
-        return snapshot
-    migrated = {k: list(v) for k, v in snapshot.items()}
-    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
-    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
-    video_count = len(migrated["video"])
-    if video_count:
-        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
-    return migrated
-
-
-def _model_key(m: dict[str, Any]) -> str | None:
-    """Return a stable identity key for a model, falling back to 'id' for
-    older snapshots that predate the 'name' field."""
-    return m.get("name") or m.get("id")
-
-
-def diff_models(
-    previous: dict[str, list[dict[str, Any]]] | None,
-    current: dict[str, list[dict[str, Any]]],
-) -> Diff:
-    added: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
-    removed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
-    changed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
-
-    if previous is None:
-        # First run: treat the snapshot as baseline with no announced changes.
-        return Diff(added=added, removed=removed, changed=changed)
-
-    for cat in CATEGORIES:
-        curr_raw = current.get(cat, [])
-        curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
-
-        # Category absent from previous snapshot = newly tracked (e.g. 'video'
-        # added after this code change). Treat as no baseline — don't flood the
-        # diff by announcing every existing model as "added".
-        if cat not in previous:
-            print(
-                f"  Info: '{cat}' not in previous snapshot — skipping (new category)."
-            )
-            continue
-
-        prev_raw = previous[cat]
-        prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
-
-        # Old snapshot has raw models but none resolved to a key — structural
-        # mismatch (e.g. old format used a different field). Skip rather than
-        # reporting every current model as "added".
-        if prev_raw and not prev_by_name:
-            print(
-                f"  Warning: previous snapshot for '{cat}' has {len(prev_raw)} models "
-                "but none have a resolvable key — skipping diff for this category."
-            )
-            continue
-
-        for name, model in curr_by_name.items():
-            if name not in prev_by_name:
-                added[cat].append(model)
-            elif _normalize_for_diff(prev_by_name[name]) != _normalize_for_diff(model):
-                changed[cat].append({"before": prev_by_name[name], "after": model})
-
-        for name, model in prev_by_name.items():
-            if name not in curr_by_name:
-                removed[cat].append(model)
-
-    return Diff(added=added, removed=removed, changed=changed)
-
-
 def render_ai_report(
     diff: Diff, date_str: str, previous_date: str | None, pollinations_token: str
 ) -> dict[str, str] | None:
     system_prompt = load_prompt("models_news")
-    user_prompt = json.dumps(
-        {
-            "date": date_str,
-            "previous_date": previous_date,
-            "diff": diff.to_json(),
-        },
-        indent=2,
-        ensure_ascii=False,
-    )
+    user_prompt = models_report_input(diff.to_json(), date_str, previous_date)
     raw = call_pollinations_api(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
@@ -426,24 +271,6 @@ def commit_text_to_news(
         return True
     print(f"  Failed to commit {file_path}: {resp.status_code} {resp.text[:200]}")
     return False
-
-
-def discord_payload(
-    discord_text: str, date_str: str, previous_date: str | None, role_id: str | None
-) -> dict[str, Any]:
-    text = discord_text
-    if role_id:
-        text = text.replace("<@&MODEL_ROLE_ID>", f"<@&{role_id}>")
-    else:
-        text = text.replace("<@&MODEL_ROLE_ID>", "").lstrip()
-    return {
-        "platform": "discord",
-        "scope": "models_weekly",
-        "date": date_str,
-        "previous_date": previous_date,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "text": text,
-    }
 
 
 def main() -> int:
@@ -535,23 +362,18 @@ def main() -> int:
         return 1
 
     discord = discord_payload(
-        report["discord_text"], target_date, previous_date, role_id
+        report["discord_text"],
+        target_date,
+        previous_date,
+        role_id,
+        datetime.now(timezone.utc).isoformat(),
     )
     try:
         existing_md = load_models_md(github_token, owner, repo)
     except RuntimeError as exc:
         print(f"  {exc}", file=sys.stderr)
         return 1
-    # Strip any existing top-level changelog heading so we don't accumulate
-    # duplicates each week — the H1 is re-added below.
-    body = existing_md.lstrip()
-    if body.startswith("# Pollinations Model Changelog"):
-        body = body.split("\n", 1)[1].lstrip() if "\n" in body else ""
-    new_md = (
-        "# Pollinations Model Changelog\n\n"
-        + report["models_md_section"].rstrip()
-        + ("\n\n" + body if body else "\n")
-    )
+    new_md = models_md(existing_md, report["models_md_section"])
 
     if dry_run:
         print("--- DRY RUN: models.md head ---")

@@ -66,11 +66,11 @@ describe("prepareMessages", () => {
 
 describe("local request validation", () => {
     it("keeps an empty messages array a ValidationError, not an UpstreamError", () => {
-        let error: unknown;
+        let error: ValidationError | undefined;
         try {
             prepareMessages([]);
         } catch (e) {
-            error = e;
+            error = e as ValidationError;
         }
         expect(error).toBeInstanceOf(ValidationError);
         expect(() => throwTextError(error as ValidationError)).toThrow(error);

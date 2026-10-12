@@ -1,0 +1,36 @@
+{
+  "pr_number": 17170,
+  "title": "fix: keep api keys out of the public image feed",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17170",
+  "merged_at": "2026-10-12T15:32:19Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added feedImageURL() to omit credential-like query parameters from public image-feed imageURL events while preserving the order and encoding of other parameters. Image generation, caching, and response headers are unchanged.",
+    "keywords": [
+      "image feed",
+      "imageURL",
+      "API keys",
+      "query parameters",
+      "privacy"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17170.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli wears a tiny librarian scarf and tends a vine of picture frames beside a retro monitor showing an image feed; a small sealed-key icon rests safely away from the frames. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with consistent rounded proportions, strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) accents."
+  },
+  "generated_at": "2026-10-12T15:33:42.081958+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "cd106d81cecdc13922d29d9d2fc2308c70f6c272",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

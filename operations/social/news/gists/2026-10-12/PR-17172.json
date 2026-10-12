@@ -1,0 +1,36 @@
+{
+  "pr_number": 17172,
+  "title": "feat(news): send the wednesday model post through posts.py and deliver.py",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17172",
+  "merged_at": "2026-10-12T16:10:03Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Moved the Wednesday model-news post to `posts.py` and `deliver.py`, replacing the old workflow, generator, publisher and prompt file. `news-posts.yml` schedules it for Wednesday at 14:00 UTC or accepts a manual `job: models` run; the post keeps the same Discord channel and role ping. Delivery through `deliver.py` is configured from 2026-10-14. The posts job retains its output with the run, and the deliver job commits the four comparison files only after a successful send, so a failed send does not advance next week's comparison. Weeks without model changes save only the snapshot. Fixture tests replace the old generator test; a frozen-catalog check found matching requests and output files apart from timestamps.",
+    "keywords": [
+      "model news",
+      "Discord",
+      "news pipeline",
+      "scheduled posts",
+      "catalog snapshot"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17172.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli wears a tiny mail-carrier cap and carries one model-news letter from a Wednesday calendar to a Discord-marked mailbox, beside four neatly stacked files and a small code-plant. Polli is a cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, subtle CRT glow, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T16:11:19.590088+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "f71f0d35e1758a772ac5a12ace68a4bb58a75202",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

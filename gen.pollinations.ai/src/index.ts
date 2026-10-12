@@ -82,11 +82,8 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
-            // Content Signals (contentsignals.org) express what a crawler may
-            // do with the docs this host serves. `ai-train` follows the
-            // published no-training-without-opt-in commitment in the Privacy
-            // Policy; search and AI input stay open so agents can find us.
-            "Content-Signal: search=yes, ai-input=yes, ai-train=no",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
     );

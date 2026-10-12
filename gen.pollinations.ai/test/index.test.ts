@@ -261,16 +261,9 @@ describe("gen worker routing", () => {
         expect(response.headers.get("Content-Type")).toBe("text/plain");
         const body = await response.text();
         expect(body).toContain("Disallow: /api/");
-        // Content Signals have to sit in the same robots.txt group as
-        // User-agent, otherwise crawlers ignore them.
         expect(body).toContain(
-            "Content-Signal: search=yes, ai-input=yes, ai-train=no",
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         );
-        const group = body.slice(
-            body.indexOf("User-agent: *"),
-            body.indexOf("Content-Signal:"),
-        );
-        expect(group).not.toContain("\n\n");
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {

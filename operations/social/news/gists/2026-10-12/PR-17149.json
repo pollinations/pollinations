@@ -1,0 +1,38 @@
+{
+  "pr_number": 17149,
+  "title": "Add SPOT AI to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17149",
+  "merged_at": "2026-10-12T07:56:01Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added SPOT AI to the games catalog in README.md and the app registry. Built for Pollinations Quest #15725, the browser game asks players to distinguish real images from AI-generated ones using Pollinations image models.",
+    "keywords": [
+      "SPOT AI",
+      "games",
+      "image generation",
+      "community app",
+      "Quest #15725"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17149.jpg",
+    "prompt": "In a cozy pixel-art game nook, Polli studies two framed pictures marked with a tiny question mark while pixel flowers grow around a lime green (#ecf874) display. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny detective glasses and stays small within the scene, sharing the frame with the pictures. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T07:57:05.259279+00:00",
+  "app_name": "SPOT AI",
+  "app_url": "https://spotai-gold.vercel.app",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "874ae94ecc92007dab75ad827ebfba7aeba770f7",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "pr_number": 17153,
+  "title": "fix(review-agent): inspect the app's own scripts when CDN scripts come first",
+  "author": "lotxo1",
+  "url": "https://github.com/pollinations/pollinations/pull/17153",
+  "merged_at": "2026-10-12T18:11:50Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Fixed app pre-review inspection so three CDN scripts cannot use up the script-check limit before the reviewer reaches an app’s own code. The reviewer now skips other-origin scripts first, then inspects up to three same-origin scripts for Pollinations integration. Added a regression test with three cdnjs scripts followed by an app.js that calls gen.pollinations.ai.",
+    "keywords": [
+      "app review",
+      "app catalog",
+      "integration detection",
+      "scripts",
+      "regression test"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17153.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium in the scene, wears tiny inspector glasses, and helps a chunky CRT monitor robot look past three labeled CDN scrolls to an app.js scroll sprouting a lime green (#ecf874) code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T18:13:25.105341+00:00",
+  "area": "App catalog & showcase",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "c04d76a4b0a94603b9a3d02af7fa2eb82e2270fc",
+  "announcements": []
+}

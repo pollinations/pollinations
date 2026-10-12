@@ -3681,8 +3681,8 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
         paidOnly: false,
-        // OVHcloud lists this moderation endpoint as free (2026-10-12).
         cost: {
+            // OVHcloud lists this moderation endpoint as free (2026-10-12).
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),
         },

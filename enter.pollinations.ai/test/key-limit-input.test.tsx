@@ -32,6 +32,14 @@ describe("key budget form constraints", () => {
         expect(html).toContain('min="0"');
     });
 
+    it("allows an unchanged expired key to be saved", () => {
+        const html = renderToStaticMarkup(
+            <KeyLimitInput kind="expiry" value={0} onChange={() => {}} />,
+        );
+        expect(html).toContain('min="0"');
+        expect(html).toContain('value="0"');
+    });
+
     it("keeps the expiry minimum positive", () => {
         const html = renderToStaticMarkup(
             <KeyLimitInput kind="expiry" value={null} onChange={() => {}} />,

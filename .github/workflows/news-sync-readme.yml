@@ -1,4 +1,4 @@
-name: Docs / Update README
+name: News / Sync README
 
 on:
   schedule:
@@ -42,7 +42,7 @@ jobs:
           node-version: "22"
 
       - name: Update Latest News section
-        run: python operations/social/scripts/update_readme.py
+        run: python operations/social/scripts/readme.py
 
       - name: Update star history chart
         continue-on-error: true

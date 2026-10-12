@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     fail,
     getOutputMode,
@@ -203,8 +204,15 @@ Examples:
             if (opts.earnings === true && opts.type !== "publishable") {
                 fail("--earnings requires --type publishable");
             }
-            if (opts.expiresIn !== undefined)
-                body.expiresIn = Number(opts.expiresIn);
+            if (opts.expiresIn !== undefined) {
+                body.expiresIn = numberOption(
+                    "--expires-in",
+                    opts.expiresIn,
+                    1,
+                    365 * 86400,
+                    true,
+                );
+            }
             if (opts.models) body.allowedModels = opts.models;
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);

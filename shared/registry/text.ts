@@ -1157,9 +1157,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: false,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Fireworks Standard rates (2026-10-12).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:
@@ -1265,7 +1266,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
+            // OpenRouter base Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
             // including the account's 5.5% credit-purchase fee. Alibaba
             // halves them the rest of the day; costs are not time-based, so
             // the peak rate applies all day and never undercharges.

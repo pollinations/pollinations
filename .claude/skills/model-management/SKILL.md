@@ -238,7 +238,7 @@ Before publishing:
 - Format changed files with the repository formatter.
 - Run focused tests and type checks for every touched service.
 - Review the complete diff for unrelated changes and dead code.
-- Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
+- Write the description in the format below.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
 #### Scheduled merges and holds
@@ -250,19 +250,35 @@ Before publishing:
 - Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
 - Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
 
-The PR description must include a user-visible change table for each affected model, using its public model ID:
+#### PR description
+
+Decision first, at most ~150 words, no narrative:
+
+```md
+**Decision:** ready to merge | needs your call: <question>
+
+`<model ID>` · effective on production deploy | YYYY-MM-DD HH:MM UTC
+
+| | Before | After |
+| --- | --- | --- |
+| Access | | |
+| Price (pollen/<unit>) | | |
+| Primary · cost | | |
+| Fallback · cost | | |
+| Promo | | |
+| Capabilities | | |
+
+**Verified:** <routes × capabilities> · provider charge = our cost · wallet = price
+**Flags:** <only if action is needed>
+```
+
+- Take values from code, catalog and live provider. Write `same` if unchanged, `none` if absent.
+- End each cost cell with `= price`, `below price` or `above price ⚠`.
+- Retirement, once decided: add the row below; the news pipeline parses it. Postpone with a new row, withdraw with `Cancelled`, never move a date earlier. Note a provider's route deadline as a code comment, not in the registry.
 
 | Model | Action | Change | Before | After | Effective |
 | --- | --- | --- | --- | --- | --- |
-| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
-
-- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
-- Announce a retirement only once it is decided (no other provider will keep the model): merge a PR whose table has a `RETIRE` row with the future date and timezone in `Effective`, e.g. `2026-11-02 00:00 UTC`. News shows it as upcoming until the removal PR merges. To postpone, merge a new `RETIRE` row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
-- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
-- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
-- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
-- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
-- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
+| `<model ID>` | RETIRE | Availability | Available | Retired | YYYY-MM-DD HH:MM UTC |
 
 ## Completion gate
 

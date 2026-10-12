@@ -91,15 +91,20 @@ describe("MAI request validation", () => {
         { language: "en" },
         { prompt: "vocabulary hint" },
         { temperature: 0.2 },
-    ])("rejects unsupported controls before any provider call: %j", async (options) => {
-        // An absent credential proves validation runs before provider access.
-        await expect(
-            transcribeMai({
-                file: new File(["audio"], "audio.wav", { type: "audio/wav" }),
-                modelId: "microsoft/mai-transcribe-2",
-                apiKey: "",
-                ...options,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
+    ])(
+        "rejects unsupported controls before any provider call: %j",
+        async (options) => {
+            // An absent credential proves validation runs before provider access.
+            await expect(
+                transcribeMai({
+                    file: new File(["audio"], "audio.wav", {
+                        type: "audio/wav",
+                    }),
+                    modelId: "microsoft/mai-transcribe-2",
+                    apiKey: "",
+                    ...options,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+        },
+    );
 });

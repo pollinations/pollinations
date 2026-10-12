@@ -1,0 +1,36 @@
+{
+  "pr_number": 16622,
+  "title": "fix(sdk): reject prematurely closed chat streams",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16622",
+  "merged_at": "2026-10-12T14:41:59Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The SDK now rejects chat streams that close without a terminal finish event or [DONE], instead of returning partial text as a completed response. Adds a regression test for early stream closure and bumps the package to 5.1.0-alpha.15.",
+    "keywords": [
+      "SDK",
+      "chat streams",
+      "stream completion",
+      "partial responses",
+      "regression test"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16622.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli checks a chat ribbon that stops before its [DONE] marker while a friendly CRT monitor robot holds the loose end; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny inspector glasses and small-to-medium sized within the scene, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, a prominent lime green (#ecf874) glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T14:43:47.719879+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "2f49a31c19a5e05d776d4faeeca6076f1a230648",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

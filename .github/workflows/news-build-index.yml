@@ -49,4 +49,4 @@ jobs:
       - name: Build and publish index
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python operations/social/scripts/build_news_index.py --news-dir news/operations/social/news --publish
+        run: python operations/social/scripts/news_index.py --news-dir news/operations/social/news --publish

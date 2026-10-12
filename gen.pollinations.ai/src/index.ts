@@ -157,7 +157,17 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", async (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (c.req.header("accept")?.includes("text/markdown")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(await llmsTxt(c).text(), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

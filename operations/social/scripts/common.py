@@ -6,7 +6,6 @@ Shared code for LinkedIn, Twitter, and other platforms.
 
 import os
 import sys
-import time
 import json
 import calendar
 import random
@@ -28,10 +27,8 @@ POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 MODEL = "openai/gpt-6-sol"  # Text generation model
 IMAGE_MODEL = "nanobanana-2-lite"  # Image generation model
 
-# Limits and retry settings
+# Limits
 MAX_SEED = 2147483647
-MAX_RETRIES = 3
-INITIAL_RETRY_DELAY = 2
 DEFAULT_TIMEOUT = 30  # seconds for GitHub API / general requests
 LINKEDIN_MAX_CHARS = 1248
 
@@ -84,30 +81,10 @@ def github_api_request(
     url: str,
     headers: Dict,
     timeout: int = None,
-    max_retries: int = 3,
     **kwargs,
 ) -> requests.Response:
-    """Make a GitHub API request with retry on transient failures (5xx, 429)."""
-    _timeout = timeout or DEFAULT_TIMEOUT
-    resp = None
-    last_exc = None
-    for attempt in range(max_retries):
-        try:
-            resp = requests.request(method, url, headers=headers, timeout=_timeout, **kwargs)
-            if resp.status_code < 500 and resp.status_code != 429:
-                return resp
-            print(f"  GitHub API {resp.status_code} on attempt {attempt + 1}/{max_retries}")
-        except requests.exceptions.RequestException as e:
-            last_exc = e
-            print(f"  GitHub API request error on attempt {attempt + 1}/{max_retries}: {e}")
-        if attempt < max_retries - 1:
-            delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            time.sleep(delay)
-    # Exhausted retries — raise on network error, return 5xx response for callers to handle
-    if last_exc:
-        raise last_exc
-    print(f"  WARNING: GitHub API returned {resp.status_code} after {max_retries} retries: {url}")
-    return resp
+    """One GitHub API request; callers check its status, and a failure stops the run."""
+    return requests.request(method, url, headers=headers, timeout=timeout or DEFAULT_TIMEOUT, **kwargs)
 
 
 def post_discord_webhook(
@@ -116,25 +93,13 @@ def post_discord_webhook(
     json_body: Optional[Dict] = None,
     files: Optional[Dict] = None,
 ) -> requests.Response:
-    """Retry explicit Discord server failures without replaying timed-out posts."""
+    """One Discord webhook post, waiting for the message so its status is known."""
     url = webhook_url
     if "wait=" not in url:
         url += ("&" if "?" in url else "?") + "wait=true"
-
-    for attempt in range(MAX_RETRIES):
-        if files is not None:
-            resp = requests.post(url, files=files, timeout=30)
-        else:
-            resp = requests.post(url, json=json_body or {}, timeout=30)
-        if resp.status_code < 500:
-            return resp
-        print(
-            f"  Discord webhook {resp.status_code} on attempt "
-            f"{attempt + 1}/{MAX_RETRIES}"
-        )
-        if attempt < MAX_RETRIES - 1:
-            time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
-    return resp
+    if files is not None:
+        return requests.post(url, files=files, timeout=30)
+    return requests.post(url, json=json_body or {}, timeout=30)
 
 
 def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
@@ -335,76 +300,43 @@ def call_pollinations_api(
     temperature: float = 0.7,
     response_format: Optional[Dict] = None,
 ) -> Optional[str]:
-    """Call pollinations.ai API with retry logic and exponential backoff
-
-    Args:
-        system_prompt: System prompt for the AI
-        user_prompt: User prompt for the AI
-        token: pollinations.ai API token
-        temperature: Temperature for generation (default 0.7)
-        response_format: Optional OpenAI-compatible response format
-
-    Returns:
-        Response content or None if failed
-    """
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
+    """One model call. None when it fails or the answer is empty: the caller stops the run."""
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        "temperature": temperature
     }
-
-    last_error = None
-
-    for attempt in range(MAX_RETRIES):
-        payload = {
-            "model": MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            "temperature": temperature
-        }
-        if response_format is not None:
-            payload["response_format"] = response_format
-
-        if attempt > 0:
-            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
-            time.sleep(backoff_delay)
-
-        try:
-            response = requests.post(
-                POLLINATIONS_API_BASE,
-                headers=headers,
-                json=payload,
-                timeout=120
-            )
-
-            if response.status_code == 200:
-                try:
-                    result = response.json()
-                    content = result['choices'][0]['message']['content']
-                    print(
-                        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
-                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content)}"
-                    )
-                    return content
-                except (KeyError, IndexError, json.JSONDecodeError) as e:
-                    last_error = f"Error parsing API response: {e}"
-                    error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                    print(f"  {last_error}")
-                    print(f"  Response preview: {error_preview}")
-            else:
-                last_error = f"API error: {response.status_code}"
-                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
-                print(f"  {last_error}")
-                print(f"  Error preview: {error_preview}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request failed: {e}"
-            print(f"  {last_error}")
-
-    print(f"All {MAX_RETRIES} attempts failed. Last error: {last_error}")
-    return None
+    if response_format is not None:
+        payload["response_format"] = response_format
+    try:
+        response = requests.post(
+            POLLINATIONS_API_BASE,
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=120
+        )
+    except requests.exceptions.RequestException as e:
+        print(f"  Request failed: {e}")
+        return None
+    if response.status_code != 200:
+        print(f"  API error: {response.status_code}")
+        print(f"  Error preview: {response.text[:500]}")
+        return None
+    try:
+        result = response.json()
+        content = result['choices'][0]['message']['content']
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        print(f"  Error parsing API response: {e}")
+        print(f"  Response preview: {response.text[:500]}")
+        return None
+    print(
+        f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
+        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content or '')}"
+    )
+    return content if content and content.strip() else None
 
 
 def generate_image(prompt: str, token: str, width: int = 2048, height: int = 2048, index: int = 0, model: str = None) -> tuple[Optional[bytes], Optional[str]]:
@@ -427,72 +359,47 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
 
     print(f"\n  Generating image {index + 1} (model={use_model}): {prompt[:80]}...")
 
-    last_error = None
+    seed = random.randint(0, MAX_SEED)
+    print(f"  Using seed: {seed}")
+    params = {
+        "model": use_model,
+        "width": width,
+        "height": height,
+        "quality": "hd",
+        "seed": seed,
+        "key": token,
+        "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg",
+    }
+    # One attempt: a failed picture stops the run, and a person reruns it.
+    try:
+        response = requests.get(base_url, params=params, timeout=300)
+    except requests.exceptions.RequestException as e:
+        print(f"  Request error: {e}")
+        return None, None
+    content_type = response.headers.get('content-type', '')
+    image_bytes = response.content
+    is_jpeg = image_bytes[:2] == b'\xff\xd8'
+    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
+    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
+    if response.status_code != 200:
+        print(f"  HTTP error: {response.status_code}")
+        return None, None
+    if 'image' not in content_type:
+        print(f"  Unexpected content type: {content_type}")
+        return None, None
+    if len(image_bytes) < 1000:
+        print(f"  Image too small ({len(image_bytes)} bytes)")
+        return None, None
+    if not (is_jpeg or is_png or is_webp):
+        print("  Invalid image format")
+        return None, None
 
-    for attempt in range(MAX_RETRIES):
-        seed = random.randint(0, MAX_SEED)
-
-        params = {
-            "model": use_model,
-            "width": width,
-            "height": height,
-            "quality": "hd",
-            "seed": seed,
-            "key": token,
-            "image": "https://raw.githubusercontent.com/pollinations/pollinations/main/operations/social/prompts/brand/characters-ref.jpg",
-        }
-
-        if attempt == 0:
-            print(f"  Using seed: {seed}")
-        else:
-            backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
-            time.sleep(backoff_delay)
-
-        try:
-            response = requests.get(base_url, params=params, timeout=300)
-
-            if response.status_code == 200:
-                content_type = response.headers.get('content-type', '')
-                if 'image' in content_type:
-                    image_bytes = response.content
-
-                    if len(image_bytes) < 1000:
-                        last_error = f"Image too small ({len(image_bytes)} bytes)"
-                        print(f"  {last_error}")
-                        continue
-
-                    # Check valid image format
-                    is_jpeg = image_bytes[:2] == b'\xff\xd8'
-                    is_png = image_bytes[:8] == b'\x89PNG\r\n\x1a\n'
-                    is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
-
-                    if not (is_jpeg or is_png or is_webp):
-                        last_error = "Invalid image format"
-                        print(f"  {last_error}")
-                        continue
-
-                    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
-                    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes)")
-
-                    # Build public URL without key
-                    public_params = {k: v for k, v in params.items() if k != "key"}
-                    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
-
-                    return image_bytes, public_url
-                else:
-                    last_error = f"Unexpected content type: {content_type}"
-                    print(f"  {last_error}")
-            else:
-                last_error = f"HTTP error: {response.status_code}"
-                print(f"  {last_error}")
-
-        except requests.exceptions.RequestException as e:
-            last_error = f"Request error: {e}"
-            print(f"  {last_error}")
-
-    print(f"  Failed to generate image after {MAX_RETRIES} attempts")
-    return None, None
+    img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
+    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes)")
+    # Build public URL without key
+    public_params = {k: v for k, v in params.items() if k != "key"}
+    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+    return image_bytes, public_url
 
 
 def _github_headers(token: str) -> Dict:
@@ -613,19 +520,15 @@ def validate_gist(gist: Dict) -> List[str]:
     if not gist.get("image", {}).get("prompt"):
         errors.append("missing image.prompt")
 
-    if "enrichment" in gist:
-        for field in ("classification", "models"):
-            if gist["enrichment"].get(field) not in {"complete", "failed"}:
-                errors.append(f"invalid enrichment.{field}")
-        if gist["enrichment"].get("classification") == "complete":
-            sys.path.insert(0, get_repo_root())
-            from operations.github.project_manager import area_names, read_brief, PR_TYPES, SOURCES
-            if gist.get("area") not in [None, *area_names(read_brief())]:
-                errors.append("invalid area")
-            if gist.get("type") not in ([None] if gist.get("area") is None else PR_TYPES):
-                errors.append("invalid type")
-            if gist.get("source") not in SOURCES:
-                errors.append("invalid source")
+    if "merge_commit_sha" in gist:  # enriched at merge: classified, with its model changes
+        sys.path.insert(0, get_repo_root())
+        from operations.github.project_manager import area_names, read_brief, PR_TYPES, SOURCES
+        if gist.get("area") not in [None, *area_names(read_brief())]:
+            errors.append("invalid area")
+        if gist.get("type") not in ([None] if gist.get("area") is None else PR_TYPES):
+            errors.append("invalid type")
+        if gist.get("source") not in SOURCES:
+            errors.append("invalid source")
         for event in gist.get("announcements", []):
             if event.get("action") not in {"NEW", "UPDATE", "RETIRE"}:
                 errors.append("invalid announcement action")

@@ -351,6 +351,7 @@ export class Pollinations {
 
             if (Array.isArray(value)) {
                 const separator = [
+                    "image",
                     "reference_images",
                     "reference_videos",
                     "reference_audios",

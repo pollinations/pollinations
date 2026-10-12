@@ -1,0 +1,32 @@
+{
+  "pr_number": 17208,
+  "title": "feat: run a herdr server in the pollinations sandbox templates",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17208",
+  "merged_at": "2026-10-12T23:03:14Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added herdr 0.9.3 to both sizes of the pollinations sandbox template, pinned to its GitHub asset digest with update checks disabled. In polli CLI 0.1.44, each `ssh <id>.polli` bootstrap starts or reuses a herdr server as `user` when `/usr/local/bin/herdr` is present; other templates are unchanged. Agents and shell processes running in herdr panes can survive SSH disconnects and sandbox pause/resume, and `herdr agent list` shows their state. Added a note to the sandbox docs.",
+    "keywords": [
+      "sandboxes",
+      "herdr",
+      "polli CLI",
+      "SSH",
+      "agents"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17208.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli watches a tiny agent tending a code-plant inside a glowing herdr pane while an unplugged SSH cable rests nearby; a single retro terminal shows the agent still working. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and is small-to-medium within the scene, sharing the frame without dominating it, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-12T23:04:30.558835+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "3ef5ced15a2496ac1ad86754e06d913defc4e270",
+  "announcements": []
+}

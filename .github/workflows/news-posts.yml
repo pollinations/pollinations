@@ -161,6 +161,15 @@ jobs:
           git -C news diff --cached --stat
           git -C news diff --cached -- '*.json'
 
+      - name: Keep what would be saved
+        # The texts and pictures, to compare with what is on news.
+        if: ${{ !cancelled() && env.RUN == 'preview' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: preview
+          path: work/
+          if-no-files-found: ignore
+
       - name: Report failure as an issue
         if: ${{ failure() && env.RUN != 'preview' }}
         uses: ./.github/actions/failure-issue

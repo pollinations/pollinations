@@ -1,0 +1,38 @@
+{
+  "pr_number": 17156,
+  "title": "Add Colmena to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17156",
+  "merged_at": "2026-10-12T11:01:45Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added Colmena by lotxo1 to the app catalog and README. The multi-model AI studio supports chats with GPT-6, DeepSeek, Grok, Kimi and more than 30 Pollinations text models, with streaming, Markdown, code highlighting and an “Ask another model” option for comparing answers.",
+    "keywords": [
+      "Colmena",
+      "app catalog",
+      "multi-model chat",
+      "model comparison",
+      "streaming"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17156.jpg",
+    "prompt": "In a cozy pixel art studio, Polli wears tiny headphones while comparing answers on two warm CRT screens beside a pot of code-flowers; lime green (#ecf874) glows prominently against mint and peach pastels with dark purple (#110518) outlines. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never dominating the scene, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T11:02:53.311729+00:00",
+  "app_name": "Colmena",
+  "app_url": "https://lotxo1.github.io/colmena",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "bf25b6644274bba935ec81aeb9aa95950e61e46f",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

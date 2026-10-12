@@ -40,10 +40,8 @@ export async function toModelPermissions(
     dbBinding: D1Database,
     values: readonly string[],
 ): Promise<string[]> {
-    const registry = new Map(
-        values.map((value) => [value, registryPermission(value)]),
-    );
-    const communityIds = values.filter((value) => !registry.get(value));
+    const registry = values.flatMap((value) => registryPermission(value) ?? []);
+    const communityIds = values.filter((value) => !registryPermission(value));
     const community = await communityModelIds(dbBinding, communityIds);
     const unknown = communityIds.find((id) => !community.has(id));
     if (unknown !== undefined) {
@@ -51,11 +49,7 @@ export async function toModelPermissions(
             message: `Model permission '${unknown}' is not a model category (${MODEL_CATEGORIES.join(", ")}) or a model ID from /models.`,
         });
     }
-    const permissions = new Set(
-        values.flatMap(
-            (value) => registry.get(value) ?? community.get(value) ?? [],
-        ),
-    );
+    const permissions = new Set([...registry, ...community.values()]);
     return [
         ...MODEL_CATEGORIES.filter((category) => permissions.has(category)),
         ...[...permissions].filter((value) => !isCategory(value)),

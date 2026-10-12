@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "Colmena",
+    "url": "https://lotxo1.github.io/colmena",
+    "description": "Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use \"Ask another model\" to compare answers in pl",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "lotxo1",
+    "githubUserId": "338330353",
+    "repositoryUrl": "https://github.com/lotxo1/colmena",
+    "repositoryStars": null,
+    "discordUsername": "nemoleo.",
+    "other": null,
+    "submittedDate": "2026-10-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17144",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/984d8bfc-b5e3-4566-9b38-62e298fd8bfa"
+  },
+  {
     "emoji": "🎮",
     "name": "SPOT AI",
     "url": "https://spotai-gold.vercel.app",

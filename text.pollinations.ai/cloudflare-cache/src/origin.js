@@ -700,6 +700,18 @@ async function generate(env, job, cacheControl, ended) {
         }
         if (job.stream) return sse(response.body);
         const completion = completionOf(await response.json());
+        if (completion.error) {
+            // handleRequest: an error object in gen's answer
+            const { message, status } =
+                typeof completion.error === "string"
+                    ? { message: completion.error }
+                    : completion.error;
+            return await errorResponse(
+                status || 500,
+                String(message || "An error occurred"),
+                cacheControl,
+            );
+        }
         return await (job.format === "openai"
             ? openAiResponse(completion, cacheControl)
             : textResponse(completion));

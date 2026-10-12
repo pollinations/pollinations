@@ -220,6 +220,18 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
     expect(rejected.response.status).toBe(400);
     expect(await storedAt("/gen:400")).not.toBeNull();
 
+    // An error object in gen's 200 answers its status, else 500
+    const inOk = await call("/gen:200-error");
+    expect(inOk.response.status).toBe(503);
+    expect(JSON.parse(inOk.text)).toEqual({
+        error: "boom",
+        status: 503,
+        deprecation_notice: NOTICE,
+    });
+    const textError = await call("/gen:200-error-text");
+    expect(textError.response.status).toBe(500);
+    expect(JSON.parse(textError.text).error).toBe("oops");
+
     const stream = await call("/gen:400?stream=true");
     expect(stream.response.status).toBe(500);
     expect(JSON.parse(stream.text)).toEqual({

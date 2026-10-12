@@ -89,6 +89,12 @@ async function gen(req, res) {
         const message = { role: "assistant", content: JSON.stringify(echo) };
         return send(res, 200, { ...COMPLETION, choices: [{ message }] });
     }
+    // An error object in a 200, with and without a status
+    if (prompt === "gen:200-error") {
+        return send(res, 200, { error: { message: "boom", status: 503 } });
+    }
+    if (prompt === "gen:200-error-text")
+        return send(res, 200, { error: "oops" });
     if (prompt === "gen:empty") {
         const message = { role: "assistant", content: "", reasoning: "hm" };
         return send(res, 200, { ...COMPLETION, choices: [{ message }] });

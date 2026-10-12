@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Discord Real-Time Post — Per-PR Announcement
+Discord post for each merged PR.
 
-Reads the gist JSON committed by generate_realtime.py and posts
-a Discord announcement using shared format + platform voice.
+Reads the gist JSON committed by gist.py and posts a Discord announcement
+written from prompts/posts/discord-pr.md in the Discord voice.
 
 See operations/social/PIPELINE.md for full architecture.
 """
@@ -27,9 +27,12 @@ from common import (
     get_repo_root,
     gist_path_for_pr,
     github_api_request,
-    load_format,
     load_prompt,
+    prompt_text,
 )
+from posts import POSTS_DIR, fill, read_post
+
+POST = read_post(POSTS_DIR / "discord-pr.md")
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -90,8 +93,10 @@ def generate_snippet(gist: Dict, token: str) -> Optional[str]:
     """Generate announcement text without publishing it."""
     # Discord may state exact model prices; other platforms never receive announcements.
     context = {**gist_context(gist), "announcements": gist.get("announcements", [])}
-    task = load_format("realtime").replace("{gist}", json.dumps(context, indent=2))
-    return call_pollinations_api(load_prompt("tone/discord"), task, token, temperature=0.7)
+    task = fill(prompt_text(POST["text"]), gist=json.dumps(context, indent=2))
+    return call_pollinations_api(
+        load_prompt(f"tone/{POST['tone']}"), task, token, temperature=POST["temperature"]
+    )
 
 
 # ── Main ─────────────────────────────────────────────────────────────
@@ -209,23 +214,6 @@ def main():
 
         if resp.status_code in [200, 201, 204]:
             print("  Discord post sent")
-            try:
-                data = resp.json()
-                channel_id, msg_id = data.get("channel_id"), data.get("id")
-                import os
-
-                token = os.environ.get("DISCORD_TOKEN")
-                if token and channel_id and msg_id:
-                    requests.post(
-                        f"https://discord.com/api/v10/channels/{channel_id}/messages/{msg_id}/crosspost",
-                        headers={
-                            "Authorization": f"Bot {token}",
-                            "Content-Type": "application/json",
-                        },
-                        timeout=10,
-                    )
-            except Exception:
-                pass
         else:
             print(f"  Discord webhook error: {resp.status_code} {resp.text[:200]}")
             sys.exit(1)

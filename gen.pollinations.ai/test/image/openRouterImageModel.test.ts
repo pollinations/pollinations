@@ -107,7 +107,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
         });
     });
 
-    it("forwards one edit image and tracks its input fee", async () => {
+    it("forwards every edit image and tracks their input fees", async () => {
         syncImageEnv(
             { OPENROUTER_API_KEY: "openrouter-test-key" } as CloudflareBindings,
             ["OPENROUTER_API_KEY"],
@@ -119,7 +119,10 @@ describe("OpenRouter Grok Imagine Pro", () => {
             ...baseParams,
             width: 1280,
             height: 720,
-            image: ["https://example.com/input.png"],
+            image: [
+                "https://example.com/input.png",
+                "https://example.com/b.png",
+            ],
         });
 
         expect(requests[0]).toEqual({
@@ -133,10 +136,14 @@ describe("OpenRouter Grok Imagine Pro", () => {
                     type: "image_url",
                     image_url: { url: "https://example.com/input.png" },
                 },
+                {
+                    type: "image_url",
+                    image_url: { url: "https://example.com/b.png" },
+                },
             ],
         });
         expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: 1,
+            promptImageTokens: 2,
             completionImageTokens: 1,
         });
     });
@@ -505,16 +512,16 @@ describe("OpenRouter Seedream 5.0 Flash", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
-    it("accepts ten reference images", async () => {
+    it("accepts 14 reference images", async () => {
         const requests: Record<string, unknown>[] = [];
         setEnvAndMock(requests);
 
         await callOpenRouterSeedreamFlashAPI("test prompt", {
             ...flashParams,
-            image: Array(10).fill(REFERENCE_IMAGE_URL),
+            image: Array(14).fill(REFERENCE_IMAGE_URL),
         });
 
-        expect(requests[0].input_references).toHaveLength(10);
+        expect(requests[0].input_references).toHaveLength(14);
     });
 });
 

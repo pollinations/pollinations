@@ -130,6 +130,7 @@ export const IMAGE_FALLBACKS = {
         "qwen/qwen-image-3:replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+            maxReferenceImages: 1, // Replicate takes a single `image`.
             cost: {
                 promptImageTokens: 0,
                 completionImageTokens: 0.03,

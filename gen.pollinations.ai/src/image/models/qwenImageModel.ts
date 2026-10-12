@@ -41,10 +41,6 @@ const QWEN_ASPECT_RATIOS = [
 ] as const;
 type QwenAspectRatio = (typeof QWEN_ASPECT_RATIOS)[number];
 
-// qwen/qwen-image-edit-plus accepts a multi-image array; cap matches the prior
-// DashScope edit path and registry maxReferenceImages: 3.
-const QWEN_EDIT_MAX_IMAGES = 3;
-
 /**
  * Map ImageParams.aspectRatio to Qwen's enum. Supported values pass through;
  * "adaptive"/"21:9"/"9:21"/unset round to the nearest enum by log-space ratio
@@ -82,9 +78,7 @@ export async function callQwenImageAPI(
     let input: Record<string, unknown>;
 
     if (hasImage) {
-        const imageInput = await Promise.all(
-            images.slice(0, QWEN_EDIT_MAX_IMAGES).map(toDataUri),
-        );
+        const imageInput = await Promise.all(images.map(toDataUri));
         model = QWEN_EDIT_MODEL;
         input = {
             prompt,

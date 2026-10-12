@@ -16,14 +16,11 @@ const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
  * modelId should be "grok-imagine-image" (basic) or
  * "grok-imagine-image-quality" (pro).
  *
- * When `safeParams.image` contains a reference image URL, the request is
+ * When `safeParams.image` contains reference image URLs, the request is
  * routed to /v1/images/edits for image-to-image generation. xAI's edits
  * endpoint requires application/json (NOT multipart/form-data — explicitly
- * called out in xAI's docs as a divergence from the OpenAI SDK). The
- * `image` field is a single ImageUrl object: `{url, detail}`, not an array
- * — verified empirically against the live endpoint (array form returns
- * 422). Only the first reference image is forwarded; additional entries
- * in `safeParams.image` are ignored.
+ * called out in xAI's docs as a divergence from the OpenAI SDK). Every
+ * reference goes in the `images` array, which takes up to 5 sources.
  */
 export async function callXaiImageAPI(
     prompt: string,
@@ -37,14 +34,7 @@ export async function callXaiImageAPI(
         });
     }
 
-    if (safeParams.image && safeParams.image.length > 1) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${safeParams.model || modelId} supports at most 1 reference image.`,
-        });
-    }
-
-    const referenceImage = safeParams.image?.[0];
-    const isEditMode = !!referenceImage;
+    const isEditMode = safeParams.image.length > 0;
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;
 
     logOps(
@@ -63,8 +53,11 @@ export async function callXaiImageAPI(
         requestBody.resolution = "2k";
     }
 
-    if (isEditMode && referenceImage) {
-        requestBody.image = { url: referenceImage, detail: "auto" };
+    if (isEditMode) {
+        requestBody.images = safeParams.image.map((url) => ({
+            url,
+            type: "image_url",
+        }));
     }
 
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
@@ -108,7 +101,9 @@ export async function callXaiImageAPI(
                     ? "x-ai/grok-imagine-image-quality"
                     : "x-ai/grok-imagine-image",
             usage: {
-                ...(isEditMode ? { promptImageTokens: 1 } : {}),
+                ...(isEditMode
+                    ? { promptImageTokens: safeParams.image.length }
+                    : {}),
                 completionImageTokens: 1,
             },
         },

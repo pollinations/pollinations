@@ -1,7 +1,16 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
+
+const REFERENCE_IMAGE_LIMITS = Object.entries(IMAGE_SERVICES).flatMap(
+    ([model, definition]) => {
+        const max = (definition as ModelDefinition).maxReferenceImages;
+        return max === undefined ? [] : [[max, model] as const];
+    },
+);
 
 describe("ImageParamsSchema", () => {
     it("normalizes seed -1 to the sentinel seed", () => {
@@ -406,25 +415,25 @@ describe("ImageParamsSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it.each([
-        "microsoft/mai-image-2.6",
-        "microsoft/mai-image-2.6-flash",
-        "x-ai/grok-imagine-image",
-        "x-ai/grok-imagine-image-quality",
-    ] as const)("enforces single reference image limit on %s", (model) => {
-        const singleImage = ImageParamsSchema.safeParse({
-            model,
-            image: ["https://example.com/one.png"],
-        });
-        expect(singleImage.success).toBe(true);
+    it.each(
+        REFERENCE_IMAGE_LIMITS,
+    )("accepts at most %i reference images on %s", (max, model) => {
+        const images = Array.from(
+            { length: max + 1 },
+            (_, i) => `https://example.com/${i}.png`,
+        );
+        expect(
+            ImageParamsSchema.safeParse({
+                model,
+                image: images.slice(0, max),
+            }).success,
+        ).toBe(true);
 
-        const multiImage = ImageParamsSchema.safeParse({
-            model,
-            image: [
-                "https://example.com/one.png",
-                "https://example.com/two.png",
-            ],
+        const result = ImageParamsSchema.safeParse({ model, image: images });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({
+            path: ["image"],
+            message: expect.stringContaining(`at most ${max} reference`),
         });
-        expect(multiImage.success).toBe(false);
     });
 });

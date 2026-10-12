@@ -297,8 +297,17 @@ async function generateMediaWithFallback(
         }
         return isRetryableFallbackError(error);
     };
-    const { result, index } = await withModelFallback(
-        fallbackCandidates(c.var.model),
+    // Skip a fallback route that would drop some of the reference images.
+    const candidates = fallbackCandidates(c.var.model)
+        .map((candidate, originalIndex) => ({ ...candidate, originalIndex }))
+        .filter(
+            ({ definition, originalIndex }) =>
+                originalIndex === 0 ||
+                (definition?.maxReferenceImages ?? Infinity) >=
+                    safeParams.image.length,
+        );
+    const { result, candidate } = await withModelFallback(
+        candidates,
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
@@ -339,7 +348,7 @@ async function generateMediaWithFallback(
     );
     return {
         ...result,
-        servedIndex: index,
+        servedIndex: candidate.originalIndex,
     };
 }
 

@@ -268,10 +268,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6 Flash",
         description:
-            "Photorealistic generation and single-reference editing with accurate text rendering",
+            "Photorealistic generation and editing with up to five references and accurate text rendering",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "microsoft/mai-image-2.6": {
         aliases: [],
@@ -291,10 +291,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6",
         description:
-            "Detailed photorealistic generation and single-reference editing with strong instruction following",
+            "Detailed photorealistic generation and editing with up to five references and strong instruction following",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
@@ -469,10 +469,10 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["1k", "2k"],
         title: "Seedream 5.0 Flash",
         description:
-            "Image generation and editing at 1K or 2K with up to ten references",
+            "Image generation and editing at 1K or 2K with up to 14 references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 10,
+        maxReferenceImages: 14, // OpenRouter input_references limit.
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
@@ -1313,7 +1313,7 @@ const IMAGE_BASE_SERVICES = {
             "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
+        maxReferenceImages: 3, // Replicate qwen-image-edit-plus works best with 1 to 3.
     },
     "qwen/qwen-image-2.1": {
         aliases: [],
@@ -1432,7 +1432,7 @@ const IMAGE_BASE_SERVICES = {
         description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+        maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
     "x-ai/grok-imagine-image-quality": {
         aliases: [
@@ -1459,7 +1459,7 @@ const IMAGE_BASE_SERVICES = {
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+        maxReferenceImages: 3, // OpenRouter input_references limit.
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],

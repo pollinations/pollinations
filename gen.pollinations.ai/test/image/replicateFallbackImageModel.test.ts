@@ -82,12 +82,12 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
-    it("uses the first reference when Replicate supports fewer than the public route", async () => {
+    it("sends Replicate's single reference image", async () => {
         const fetchSpy = mockPrediction();
 
         const result = await callReplicateFallbackImage(
             "make it blue",
-            params("qwen/qwen-image-3:replicate", [PNG, PNG]),
+            params("qwen/qwen-image-3:replicate", [PNG]),
         );
 
         const body = JSON.parse(
@@ -95,7 +95,7 @@ describe("callReplicateFallbackImage", () => {
         );
         expect(body.input.image).toBe(PNG);
         expect(result.trackingData.usage).toEqual({
-            promptImageTokens: 2,
+            promptImageTokens: 1,
             completionImageTokens: 1,
         });
     });

@@ -143,7 +143,7 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "black-forest-labs/flux.1-kontext-pro:replicate": {
-            const images = await prepareFluxImages(params.image.slice(0, 1));
+            const images = await prepareFluxImages(params.image);
             buffer = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
                 {

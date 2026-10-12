@@ -147,9 +147,8 @@ MCP fee.
 `runFfmpeg` accepts public HTTPS media inputs and ordinary FFmpeg arguments. It
 supports multiple inputs and returns the output as a hosted MCP resource link.
 Pollinations saves sources as `input0`, `input1`, and so on. Reference those
-exact names in arguments—for example, `["-i", "input0", "-vf",
-"scale=1280:-2"]`—and omit the `ffmpeg` executable, source URLs, and output
-path.
+exact names in arguments, such as `["-i", "input0", "-vf", "scale=1280:-2"]`.
+Omit the `ffmpeg` executable, source URLs, and output path.
 
 ### Exa Search MCP
 

@@ -364,7 +364,7 @@ test("rendered standings point the viewer at the quest that passes the next row"
     expect(html).toContain("Pollen supporter");
     // A 1 Pollen gap needs more than 1 Pollen, so the 5 Pollen quest is next.
     expect(html).toContain(
-        "1 Pollen to pass @bob — “Contribute a pull request” is +5.",
+        "1 Pollen to pass @bob. “Contribute a pull request” earns 5 Pollen.",
     );
 });
 
@@ -400,7 +400,7 @@ test("rendered standings show the minimum increment for a tied row", () => {
     );
 
     expect(html).toContain(
-        "0.25 Pollen to pass @alice — “Use a text model” is +0.25.",
+        "0.25 Pollen to pass @alice. “Use a text model” earns 0.25 Pollen.",
     );
 });
 

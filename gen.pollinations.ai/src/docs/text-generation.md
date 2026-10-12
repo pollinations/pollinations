@@ -1,13 +1,13 @@
 ## Text Generation
 
-Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs — use an OpenAI SDK by changing the base URL.
+Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs. Use an OpenAI SDK by changing its base URL.
 
 | Endpoint | Best for |
 |----------|----------|
-| `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
+| `POST /v1/chat/completions` | OpenAI compatibility: streaming, tools, vision, structured outputs |
 | `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
-| `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
-| `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
+| `POST /v1/messages` | Anthropic Messages API for Claude Code and the Anthropic SDKs |
+| `GET /text/{prompt}` | Simple GET for prototyping; returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
 
@@ -40,7 +40,7 @@ Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effor
 
 ### Anthropic Messages API
 
-Models that list `/v1/messages` in `supported_endpoints` — every text model that supports Chat Completions — also accept Anthropic Messages requests. Point Claude Code or an Anthropic SDK at `https://gen.pollinations.ai` and authenticate with a bearer token:
+Every text model that supports Chat Completions also accepts Anthropic Messages requests and lists `/v1/messages` in `supported_endpoints`. Point Claude Code or an Anthropic SDK at `https://gen.pollinations.ai` and authenticate with a bearer token:
 
 ```bash
 export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
@@ -166,11 +166,15 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 }
 ```
 
-**Gemini** — the prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools are not cached — including built-in tools, so `google/gemini-3.7-flash`, `google/gemini-3-flash-preview`, `google/gemini-3.1-pro-preview`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `google/gemini-2.5-flash-lite` and `google/gemini-3.5-flash-lite` cache by default. Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often — roughly a dozen reuses per hour on the cheapest models.
+**Gemini:** The prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools, including built-in tools, are not cached. This means `google/gemini-3.7-flash`, `google/gemini-3-flash-preview`, `google/gemini-3.1-pro-preview`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `google/gemini-2.5-flash-lite` and `google/gemini-3.5-flash-lite` cache by default.
 
-**Claude** — all Claude models cache. The prefix minimum varies by model: 512 tokens on `anthropic/claude-fable-5`, `anthropic/claude-fable-5.1`, and `anthropic/claude-opus-5`, and 1,024 on `anthropic/claude-sonnet-4.6`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
+Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often: roughly a dozen reuses per hour on the cheapest models.
 
-**Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+**Claude:** All Claude models cache. The prefix minimum varies by model: 512 tokens on `anthropic/claude-fable-5`, `anthropic/claude-fable-5.1`, and `anthropic/claude-opus-5`, and 1,024 on `anthropic/claude-sonnet-4.6`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400.
+
+Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
+
+**Nova:** `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 

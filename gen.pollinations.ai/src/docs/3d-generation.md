@@ -2,7 +2,7 @@
 
 Generate 3D models from text prompts and images via a simple GET request.
 Returns glTF Binary in GLB format by default. Depending on the model, certain
-models ignore text inputs — any text prompt passed to the Trellis 2/Asset Harvester family will
+models ignore text inputs. Any text prompt passed to the Trellis 2/Asset Harvester family will
 be ignored; only the image URL is used.
 
 https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftrellis-2&resolution=low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE

@@ -52,7 +52,7 @@ export function AccountPermissionsInput({
                 info={
                     id === "machines" ? (
                         <Tooltip
-                            content="Alpha — experimental, may be unstable."
+                            content="Alpha. Experimental and may be unstable."
                             ariaLabel="Sandboxes are in alpha"
                             tapEnabled
                             className="ml-1.5 inline-flex items-center text-intent-info-text"

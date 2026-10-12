@@ -906,8 +906,7 @@ const TEXT_BASE_SERVICES = {
             completionAudioTokens: perMillion(20.0),
         },
         title: "GPT Audio Mini",
-        description:
-            "Talks and listens — voice conversations with spoken or text replies",
+        description: "Voice conversations with spoken or text replies",
         voices: [...AUDIO_VOICES],
         inputModalities: ["text", "audio"],
         outputModalities: ["audio", "text"],
@@ -1873,8 +1872,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
-        description:
-            "Sharp reasoning with fast responses — a strong default for most work",
+        description: "Reasoning model with fast responses for general use",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
@@ -2203,8 +2201,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(4.0) * 1.055,
         },
         title: "Moonshot Kimi K2.7 Code",
-        description:
-            "Built for agentic coding — plans, reasons and edits code step by step",
+        description: "Plans, reasons, and edits code step by step",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 30,
@@ -3574,7 +3571,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
-            "Fast image understanding — describes, reads and analyzes what it sees",
+            "Describes images, reads text in them, and analyzes visual content",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
@@ -3715,8 +3712,7 @@ const TEXT_BASE_SERVICES = {
             completionTextTokens: perMillion(0.01),
         },
         title: "Qwen3Guard 8B",
-        description:
-            "Flags unsafe content — a moderation filter, not a chat companion",
+        description: "Flags unsafe content for moderation",
         inputModalities: ["text"],
         outputModalities: ["text"],
         isSpecialized: true,

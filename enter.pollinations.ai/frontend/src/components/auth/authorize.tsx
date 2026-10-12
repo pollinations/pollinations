@@ -191,7 +191,7 @@ export function Authorize() {
             // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
             if (response_type && response_type !== "code") {
                 setError(
-                    'Unsupported response_type — only "code" is supported.',
+                    'Unsupported response_type. Only "code" is supported.',
                 );
                 return;
             }

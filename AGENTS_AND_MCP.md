@@ -21,16 +21,16 @@ agent actually performs.
 
 The main implementation boundaries are:
 
-- [community model registry](./gen.pollinations.ai/src/community-models.ts) —
+- [community model registry](./gen.pollinations.ai/src/community-models.ts):
   resolves proxy, prompt-agent, and endpoint-agent listings;
-- [agent gateway context](./gen.pollinations.ai/src/text/communityEndpoint.ts)
-  — mints run tokens and selects the upstream agent;
-- [prompt-agent runtime](./enter.pollinations.ai/src/services/prompt-agent-runtime.ts)
-  — runs the hosted model/tool loop;
-- [run-token authentication](./shared/auth/api-key.ts) — verifies `ag_` tokens
+- [agent gateway context](./gen.pollinations.ai/src/text/communityEndpoint.ts):
+  mints run tokens and selects the upstream agent;
+- [prompt-agent runtime](./enter.pollinations.ai/src/services/prompt-agent-runtime.ts):
+  runs the hosted model/tool loop;
+- [run-token authentication](./shared/auth/api-key.ts): verifies `ag_` tokens
   and resolves their parent key;
 - [MCP gateway](./gen.pollinations.ai/src/routes/mcp.ts) and
-  [MCP registry](./shared/registry/mcp.ts) — expose hosted MCPs and settle their
+  [MCP registry](./shared/registry/mcp.ts): expose hosted MCPs and settle their
   usage.
 
 ## Calling a prompt agent

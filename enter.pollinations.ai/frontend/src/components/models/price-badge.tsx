@@ -349,7 +349,7 @@ const ModelPricingControls: FC<{
                                         type="button"
                                         size="xs"
                                         intent="neutral"
-                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` — ${modelName}` : ""}`}
+                                        aria-label={`Show prices for ${dropdown.key === "context" ? "context length" : dropdown.label.toLowerCase()}${modelName ? ` for ${modelName}` : ""}`}
                                         className="polli:w-full polli:min-w-0 polli:justify-between polli:gap-1 polli:px-1 polli:py-0 polli:text-xs polli:tabular-nums"
                                     >
                                         <span className="truncate">

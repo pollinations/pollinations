@@ -4,7 +4,7 @@ name: News / Build index
 # /news page and the README read. Runs after every PR gist and every daily summary.
 on:
   workflow_run:
-    workflows: ['News / Create PR gist', 'News / Generate social summary']
+    workflows: ['News / Create PR gist', 'News / Posts']
     types: [completed]
   schedule:
     - cron: '30 6 * * *' # Daily rebuild so dated entries roll out of the window

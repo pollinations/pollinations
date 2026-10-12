@@ -117,3 +117,38 @@ describe("keys list permissions output", () => {
         expect(output).not.toContain("[object Object]");
     });
 });
+
+describe("keys create --expires-in", () => {
+    it.each([
+        "3600",
+        String(400 * 86400),
+    ])("sends %s seconds", async (seconds) => {
+        const { fetch } = prepare(null);
+        await keysCommand.parseAsync(
+            ["create", "--name", "test", "--expires-in", seconds],
+            { from: "user" },
+        );
+        expect(JSON.parse(String(fetch.mock.calls[0][1].body))).toMatchObject({
+            expiresIn: Number(seconds),
+        });
+    });
+
+    it.each([
+        "abc",
+        "Infinity",
+        "",
+        "0",
+        "-1",
+        "1.5",
+        "9".repeat(16),
+    ])("rejects %j without a request", async (seconds) => {
+        const { fetch } = prepare(null);
+        await expect(
+            keysCommand.parseAsync(
+                ["create", "--name", "test", "--expires-in", seconds],
+                { from: "user" },
+            ),
+        ).rejects.toThrow();
+        expect(fetch).not.toHaveBeenCalled();
+    });
+});

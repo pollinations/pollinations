@@ -161,7 +161,7 @@ const create = new Command("create")
         "Key type: secret or publishable app key",
         "secret",
     )
-    .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
+    .option("--expires-in <seconds>", "Expiry in whole seconds from now")
     .option(
         "--models <models...>",
         "Restrict to model categories (text, image, video, audio, 3d, embedding, realtime); a model ID allows its whole category",
@@ -203,8 +203,22 @@ Examples:
             if (opts.earnings === true && opts.type !== "publishable") {
                 fail("--earnings requires --type publishable");
             }
-            if (opts.expiresIn !== undefined)
-                body.expiresIn = Number(opts.expiresIn);
+            if (opts.expiresIn !== undefined) {
+                // The API takes positive whole seconds that give a valid date.
+                const seconds = Number(opts.expiresIn);
+                if (
+                    !Number.isInteger(seconds) ||
+                    seconds <= 0 ||
+                    Number.isNaN(
+                        new Date(Date.now() + seconds * 1000).getTime(),
+                    )
+                ) {
+                    fail(
+                        "--expires-in must be a positive whole number of seconds",
+                    );
+                }
+                body.expiresIn = seconds;
+            }
             if (opts.models) body.allowedModels = opts.models;
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);

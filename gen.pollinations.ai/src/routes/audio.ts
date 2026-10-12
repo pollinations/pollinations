@@ -851,15 +851,19 @@ export async function transcribeWithAzure(opts: {
             message: "Azure transcription service is not configured",
         });
     }
+    // OpenAI documents only json for gpt-4o-transcribe; text is the same
+    // transcript without the JSON wrapper, so callers that send it get it.
     assertTranscriptionResponseFormat(responseFormat, "openai/gpt-transcribe", [
         "json",
+        "text",
     ]);
 
     const formData = new FormData();
     formData.append("model", "gpt-transcribe");
     if (language) formData.append("language", language);
     if (prompt) formData.append("prompt", prompt);
-    formData.append("response_format", responseFormat);
+    // Only the json answer carries usage.seconds, which the request bills on.
+    formData.append("response_format", "json");
     if (temperature !== undefined) {
         formData.append("temperature", String(temperature));
     }
@@ -4113,11 +4117,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        assertTranscriptionResponseFormat(
-            responseFormat,
-            "whisper model",
-            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-        );
+        assertTranscriptionResponseFormat(responseFormat, "whisper model", [
+            ...UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            "srt",
+            "vtt",
+        ]);
 
         const whisperFormData = new FormData();
         const filename =
@@ -4129,12 +4133,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "model",
             isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
         );
-        whisperFormData.append(
-            isDeepInfra
-                ? "timestamp_granularities"
-                : "timestamp_granularities[]",
-            "word",
-        );
+        if (isDeepInfra) {
+            // DeepInfra returns segments either way, and drops words when
+            // both granularities are requested.
+            whisperFormData.append("timestamp_granularities", "word");
+        } else {
+            // OVH leaves segments empty unless asked; srt/vtt cues are those.
+            whisperFormData.append("timestamp_granularities[]", "word");
+            whisperFormData.append("timestamp_granularities[]", "segment");
+        }
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4660,7 +4667,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",

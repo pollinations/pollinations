@@ -153,7 +153,7 @@ fixtureTest(
         );
         const oldPolli = communityModelId("pollinations-router", "polli");
         const newPolli = communityModelId("pollinations-ai", "polli");
-        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
+        const oldKey = await createTestApiKey({ allowedModels: ["text"] });
 
         const catalogIdsFor = async (key: string) => {
             const response = await fetchGen(
@@ -195,7 +195,7 @@ fixtureTest(
                 ),
             ).toBe(current);
         }
-        // Keys hold categories, so a text key keeps the agent under its new ID.
+        // A text key keeps the agent under its new ID.
         expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
     },
 );

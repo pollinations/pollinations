@@ -86,6 +86,40 @@ describe("key permissions layout", () => {
         }
     });
 
+    it("keeps a key's model IDs when categories change and only lets the user remove them", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(<Editor allowedModels={["text", "flux"]} />);
+        });
+        const buttons = (name: string) =>
+            renderer.root.findAll(
+                (button) =>
+                    button.type === "button" && button.children.includes(name),
+            );
+        try {
+            expect(buttons("Text")[0].props["aria-pressed"]).toBe(true);
+            expect(buttons("Image")[0].props["aria-pressed"]).toBe(false);
+            await act(async () => buttons("Image")[0].props.onClick());
+            expect(buttons("Image")[0].props["aria-pressed"]).toBe(true);
+            expect(buttons("flux")).toHaveLength(1);
+            await act(async () => buttons("flux")[0].props.onClick());
+            expect(buttons("flux")).toHaveLength(0);
+        } finally {
+            await act(async () => renderer.unmount());
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it("links to the CLI and API for limiting a key to specific models", () => {
+        const html = renderToStaticMarkup(<Editor accessContext="app" />);
+        expect(html).toContain("to specific models");
+        expect(html).toContain("packages/polli-cli#account");
+        expect(html).toContain(
+            "APIDOCS.md#patch-accountkeysid--update-api-key",
+        );
+    });
+
     it.each([undefined, "app", "device"] as const)(
         "uses the %s context in the identity tooltip",
         (accessContext) => {

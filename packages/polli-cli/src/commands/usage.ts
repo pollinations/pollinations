@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
     fail,
@@ -328,7 +329,10 @@ export const usageCommand = new Command("usage")
                 let rows = filterDailyRows(data.usage, keyIds, models);
                 // --daily prints every row unless --limit is passed (#16947).
                 if (command.getOptionValueSource("limit") === "cli")
-                    rows = rows.slice(0, Number(opts.limit));
+                    rows = rows.slice(
+                        0,
+                        numberOption("--limit", opts.limit, 1, 100_000, true),
+                    );
                 // JSON keeps the API records: numeric cost_usd, no rounding.
                 if (getOutputMode() !== "human") {
                     printResult(rows);

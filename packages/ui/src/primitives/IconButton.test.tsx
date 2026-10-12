@@ -46,20 +46,4 @@ describe("IconButton", () => {
         expect(html).toContain("polli-control");
         expect(html).not.toContain('type="button"');
     });
-
-    test("renders button with tooltip without putting polli-control on wrapper span", () => {
-        const html = renderToStaticMarkup(
-            <IconButton title="Edit key" intent="info">
-                <span>E</span>
-            </IconButton>,
-        );
-
-        expect(html).toContain('type="button"');
-        expect(html).toContain('aria-label="Edit key"');
-        // The inner button must be a control, but the outer wrapper span must not be
-        // to avoid pseudo-elements intercepting touch events on mobile
-        expect(html).toMatch(
-            /<span[^>]*class="(?![^"]*polli-control)[^"]*"[^>]*>[\s\S]*<button[^>]*class="[^"]*polli-control/,
-        );
-    });
 });

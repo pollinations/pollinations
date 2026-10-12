@@ -1,11 +1,9 @@
 import {
     type CSSProperties,
     type FC,
-    type FocusEvent,
     type KeyboardEvent,
     type MouseEvent,
     type ReactNode,
-    type PointerEvent as ReactPointerEvent,
     useEffect,
     useId,
     useRef,
@@ -139,8 +137,8 @@ export const Tooltip: FC<TooltipProps> = ({
     };
 
     // Informational triggers use help; action wrappers can override the cursor.
-    // Non-interactive span triggers must not be assigned `polli-control`,
-    // otherwise their expanded tap area pseudo-element covers interactive children.
+    // Only real controls get the expanded tap area; on a plain span wrapper it
+    // would cover the interactive child (e.g. IconButton) on mobile.
     const isControl = triggerAs === "button" || tapEnabled;
     const triggerClassName = cn(
         isControl && "polli-control",
@@ -196,13 +194,11 @@ export const Tooltip: FC<TooltipProps> = ({
         "aria-label": ariaLabel,
         "aria-describedby": content && showTooltip ? tooltipId : undefined,
         className: triggerClassName,
-        onPointerEnter: (e: ReactPointerEvent) => {
-            if (e.pointerType === "touch") return;
+        onMouseEnter: () => {
             updateTooltipPosition();
             setShowTooltip(true);
         },
-        onPointerLeave: (e: ReactPointerEvent) => {
-            if (e.pointerType === "touch") return;
+        onMouseLeave: () => {
             if (!tapPinnedRef.current) setShowTooltip(false);
         },
         onClick: (e: MouseEvent) => {
@@ -219,20 +215,7 @@ export const Tooltip: FC<TooltipProps> = ({
             tapPinnedRef.current = true;
             setShowTooltip(true);
         },
-        onFocus: (e: FocusEvent) => {
-            try {
-                const target = e.currentTarget;
-                if (
-                    target &&
-                    typeof target.matches === "function" &&
-                    !target.matches(":focus-visible") &&
-                    !triggerRef.current?.matches(":focus-visible")
-                ) {
-                    return;
-                }
-            } catch {
-                // If :focus-visible matching throws or is unsupported in test env, continue
-            }
+        onFocus: () => {
             updateTooltipPosition();
             setShowTooltip(true);
         },
@@ -281,8 +264,8 @@ export const Tooltip: FC<TooltipProps> = ({
             aria-label={ariaLabel}
             aria-describedby={content && showTooltip ? tooltipId : undefined}
             className={triggerClassName}
-            onPointerEnter={sharedProps.onPointerEnter}
-            onPointerLeave={sharedProps.onPointerLeave}
+            onMouseEnter={sharedProps.onMouseEnter}
+            onMouseLeave={sharedProps.onMouseLeave}
             onClick={sharedProps.onClick}
             onFocus={sharedProps.onFocus}
             onBlur={sharedProps.onBlur}

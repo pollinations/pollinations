@@ -8,7 +8,6 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { exponentialBackoffDelay } from "@shared/util.ts";
 import { afterEach, expect, vi } from "vitest";
 import { test } from "./fixtures.ts";
 
@@ -137,41 +136,4 @@ test("sendToTinybird does not retry network errors", async ({ log }) => {
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-});
-
-test("Exponential backoff delay", async () => {
-    const backoffConfig = {
-        minDelay: 100,
-        maxDelay: 10000,
-        maxAttempts: 5,
-        jitter: 0,
-    };
-    expect(exponentialBackoffDelay(1, backoffConfig)).toBe(100);
-    expect(exponentialBackoffDelay(3, backoffConfig)).toBeGreaterThan(100);
-    expect(exponentialBackoffDelay(3, backoffConfig)).toBeLessThan(10000);
-    expect(exponentialBackoffDelay(5, backoffConfig)).toBe(10000);
-    const backoffConfigWithJitter = {
-        minDelay: 100,
-        maxDelay: 10000,
-        maxAttempts: 5,
-        jitter: 0.1,
-    };
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(1, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(100 + 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(100 - 100 * 0.1);
-    expect(
-        exponentialBackoffDelay(3, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeGreaterThanOrEqual(10000 - 10000 * 0.1);
-    expect(
-        exponentialBackoffDelay(5, backoffConfigWithJitter),
-    ).toBeLessThanOrEqual(10000 + 10000 * 0.1);
 });

@@ -48,3 +48,39 @@ it.each([
         content: endpoint === "models" ? modelsSection : section,
     });
 });
+
+it.each([
+    ["/image", "### Image (URL)\nimage example\n"],
+    ["/text", "### Text (Python)\ntext example\n"],
+    ["/audio", "### Audio (cURL)\naudio example\n"],
+])("does not print the preamble for %s", async (endpoint, section) => {
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(
+                    [
+                        "> Generate text, images, video, audio, and embeddings.",
+                        "",
+                        "**Base URL:** https://gen.pollinations.ai",
+                        "",
+                        "## Quick Start",
+                        "",
+                        "### Image (URL)\nimage example",
+                        "### Text (Python)\ntext example",
+                        "### Audio (cURL)\naudio example",
+                        "",
+                    ].join("\n"),
+                ),
+            ),
+    );
+    const write = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    setOutputMode("json");
+
+    await docsCommand.parseAsync([endpoint], { from: "user" });
+
+    expect(JSON.parse(String(write.mock.calls[0][0])).content).toBe(section);
+});

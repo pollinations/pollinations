@@ -405,6 +405,13 @@ test("retrieves a model by canonical ID", async () => {
     });
 });
 
+test("retrieves a canonical ID with an unencoded slash", async () => {
+    const response = await fetchWorker("/v1/models/openai/gpt-5-nano");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("openai/gpt-5-nano");
+});
+
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
     const model = "z-ai/glm-5.3-flash";
     const response = await fetchWorker(
@@ -548,19 +555,17 @@ test("keeps supported Chat parameters identical for aliases and list entries", a
     expect(alias).not.toHaveProperty("default_parameters");
 });
 
-test("advertises direct Responses support through supported_endpoints", async () => {
-    const supported = await fetchWorker("/v1/models/qwen-large");
-    expect(supported.status).toBe(200);
-    await expect(supported.json()).resolves.toMatchObject({
-        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
-    });
-
-    const unsupported = await fetchWorker("/v1/models/claude");
-    expect(unsupported.status).toBe(200);
-    const unsupportedBody = (await unsupported.json()) as {
-        supported_endpoints?: string[];
-    };
-    expect(unsupportedBody.supported_endpoints).not.toContain("/v1/responses");
+test("advertises Responses for native and Chat-adapted text models", async () => {
+    for (const model of ["qwen-large", "claude"]) {
+        const response = await fetchWorker(`/v1/models/${model}`);
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            supported_endpoints: expect.arrayContaining([
+                "/v1/chat/completions",
+                "/v1/responses",
+            ]),
+        });
+    }
 });
 
 test("returns 404 for an unknown model", async () => {

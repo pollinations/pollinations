@@ -95,8 +95,9 @@ class GistEnrichmentTest(unittest.TestCase):
         gist = build_full_gist(pr, ai, [])
         original = copy.deepcopy(gist)
         def classification(args, **kwargs):
-            Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
-                {"area": "Models", "type": "Feature", "source": "Team"}))
+            if args[0] == sys.executable:  # not `npm ci`, which runs when tsx isn't installed
+                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
+                    {"area": "Models", "type": "Feature", "source": "Team"}))
         with patch("gist.subprocess.run", side_effect=classification):
             enrich_gist(gist, pr, [], "test")
         self.assertEqual(gist["gist"], original["gist"])

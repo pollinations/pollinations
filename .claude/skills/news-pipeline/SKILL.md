@@ -49,7 +49,9 @@ The model post is written, sent to Discord and saved in one run; the run saves o
 
 ## A missing or wrong gist
 
-- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and posts Discord **again**: ask first. A gist run that failed saved and posted nothing, so rerunning it posts once.
+- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and posts Discord **again**: ask first. Which step of a failed run went red decides the repair:
+  - **Generate PR gist** (classification, model or API changes, analysis, picture): nothing was saved or posted, so rerunning posts once.
+  - **Post to Discord**: the gist is saved, and Discord may have accepted the message before the run timed out. Per-PR posts have no `delivery.json`, so look in the Discord channel first: if the message is there, don't rerun; if not, rerun.
 - To fix only the gist's facts (classification, model or API changes), edit `gists/<merge date>/PR-N.json` on `news` by hand, keeping its shape.
 - Then `gh workflow run news-build-index.yml`. A daily already written from the old gist keeps its text unless rewritten with `overwrite=true` (preview first).
 

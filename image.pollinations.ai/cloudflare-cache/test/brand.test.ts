@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
 import { describe, expect, it } from "vitest";
-import { brand, getLogoPlacement } from "../src/brand.ts";
+import { brand, getLogoPlacement, toAscii } from "../src/brand.ts";
 
 // Ported from image.pollinations.ai/test/imageOperations.test.ts
 describe("Pollinations logo", () => {
@@ -103,6 +103,22 @@ function exifEntries(jpeg: Uint8Array) {
 }
 
 const text = (bytes: Uint8Array) => String.fromCharCode(...bytes);
+
+it("writes text as the ASCII GLib's g_str_to_ascii gave on the VM", () => {
+    // Each expected value is GLib 2.81.1's, as libvips wrote it
+    for (const [text, ascii] of [
+        ["café 😀", "cafe ?"],
+        ["Ærøskøbing", "AEroeskoebing"],
+        ["naïve façade", "naive facade"],
+        ["Łódź", "Lodz"],
+        ["“Straße” — ½ € ™…", '"Strasse" --  1/2  EUR (TM)...'],
+        ["ＡＢＣ！", "ABC!"],
+        ["x² º 日本", "x? ? ??"],
+        ["\u00a0\u202f\u3000", "   "],
+    ]) {
+        expect(toAscii(text), text).toBe(ascii);
+    }
+});
 
 describe("brand", () => {
     for (const [input, prompt] of [

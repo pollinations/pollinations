@@ -6,7 +6,6 @@ import {
 } from "@cf-wasm/photon";
 import blackLockup from "../assets/lockup-horizontal-black.png";
 import whiteLockup from "../assets/lockup-horizontal-white.png";
-import { GLIB_ASCII } from "./glib-ascii.ts";
 
 // The VM's post-processing (createAndReturnImages.ts, imageOperations.ts and
 // writeExifMetadata.ts) with photon instead of sharp: resize to the exact
@@ -98,17 +97,63 @@ function addLogo(image: PhotonImage) {
     watermark(image, white, BigInt(placement.left), BigInt(placement.top));
 }
 
-/**
- * GLib 2.81.1's g_str_to_ascii, which libvips 8.15.3 (sharp 0.33.5) applied
- * to Make and UserComment: a character outside ASCII becomes its entry in
- * GLib's default transliteration table (glib-ascii.ts, generated from
- * gtranslit-data.h), else "?". That table has no two-character entries, and
- * the VM never set a locale that would pick another table.
- */
-const toAscii = (text: string) =>
-    Array.from(text, (char) =>
-        char.codePointAt(0) < 0x80 ? char : (GLIB_ASCII[char] ?? "?"),
-    ).join("");
+// GLib's ASCII for characters that do not decompose to it, by code point:
+// spaces, dashes, quotes, symbols and letters with a stroke or ligature
+const ASCII = new Map([
+    [0xa0, " "],
+    [0x202f, " "],
+    [0x3000, " "],
+    [0x2010, "-"],
+    [0x2011, "-"],
+    [0x2012, "-"],
+    [0x2013, "-"],
+    [0x2014, "--"],
+    [0x2015, "-"],
+    [0x2018, "'"],
+    [0x2019, "'"],
+    [0x201a, ","],
+    [0x201b, "'"],
+    [0x201c, '"'],
+    [0x201d, '"'],
+    [0x201e, ",,"],
+    [0x2022, "o"],
+    [0x2026, "..."],
+    [0xab, "<<"],
+    [0xbb, ">>"],
+    [0xd7, "x"],
+    [0xb5, "u"],
+    [0xbd, " 1/2 "],
+    [0xa9, "(C)"],
+    [0xae, "(R)"],
+    [0x2122, "(TM)"],
+    [0x20ac, "EUR"],
+    [0xdf, "ss"],
+    [0xc6, "AE"],
+    [0xe6, "ae"],
+    [0xd8, "OE"],
+    [0xf8, "oe"],
+    [0x152, "OE"],
+    [0x153, "oe"],
+    [0x141, "L"],
+    [0x142, "l"],
+]);
+
+// Approximates GLib's g_str_to_ascii (libvips/sharp on the VM); exact for
+// ASCII prompts and common accents and punctuation
+export function toAscii(text: string) {
+    return Array.from(text, (char) => {
+        const code = char.codePointAt(0);
+        if (code < 0x80) return char;
+        if (ASCII.has(code)) return ASCII.get(code);
+        // Fullwidth forms of ASCII
+        if (code >= 0xff01 && code <= 0xff5e) {
+            return String.fromCharCode(code - 0xfee0);
+        }
+        // Accented letters without their marks
+        const base = char.normalize("NFD").replace(/\p{M}/gu, "");
+        return /^[ -~]+$/.test(base) ? base : "?";
+    }).join("");
+}
 
 const SHORT = 3;
 

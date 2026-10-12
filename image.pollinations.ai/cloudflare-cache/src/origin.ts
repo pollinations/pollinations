@@ -39,6 +39,10 @@ const TRACKING_DATA = {
     actualModel: "sana",
     usage: { completionImageTokens: 1, totalTokenCount: 1 },
 };
+// Query parameters the public feed leaves out of imageURL, by name; values
+// starting with sk_ or pk_ are left out too
+const CREDENTIAL_NAMES =
+    /^(token|key|api_key|apikey|access_token|auth|authorization)$/i;
 
 type Env = Cloudflare.Env & Record<string, any>;
 type Step = { step: string; timestamp: number };
@@ -529,6 +533,27 @@ function imageResponse(originalPrompt: string, jpeg: Uint8Array) {
 }
 
 /**
+ * req.url as the VM got it, without the query parameters that carry a
+ * credential (the VM published them): the rest keeps its order and encoding
+ */
+function publicPath(url: URL) {
+    const path = url.href.slice(url.origin.length);
+    const at = path.indexOf("?");
+    if (at === -1) return path;
+    const kept = path
+        .slice(at + 1)
+        .split("&")
+        .filter((part) => {
+            const [name = "", value = ""] =
+                new URLSearchParams(part).entries().next().value ?? [];
+            return !CREDENTIAL_NAMES.test(name) && !/^(sk|pk)_/.test(value);
+        });
+    return kept.length
+        ? `${path.slice(0, at)}?${kept.join("&")}`
+        : path.slice(0, at);
+}
+
+/**
  * sendToFeedListeners for one generation with saveAsLastState: the VM's feed
  * event, kept for the replay; private and mature events reach no listener
  */
@@ -538,8 +563,7 @@ function publish(job: Job, prompt: string) {
     const event = {
         ...safeParams,
         concurrentRequests: 0,
-        // req.url as the VM got it: the path and the full query
-        imageURL: `https://image.pollinations.ai${url.href.slice(url.origin.length)}`,
+        imageURL: `https://image.pollinations.ai${publicPath(url)}`,
         prompt,
         isChild: false,
         // sendToFeedListeners flagged a prompt with a mature word

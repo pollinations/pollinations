@@ -608,8 +608,7 @@ describe("feed", () => {
         expect(await next()).toMatchObject({
             prompt: "feed me",
             seed: 3,
-            imageURL:
-                "https://image.pollinations.ai/prompt/feed%20me?token=sk_secret&seed=3",
+            imageURL: "https://image.pollinations.ai/prompt/feed%20me?seed=3",
             referrer: "https://app.example",
             token: "sk...",
         });
@@ -617,6 +616,22 @@ describe("feed", () => {
             headers: { authorization: "Bearer pk_abc" },
         });
         expect((await next()).token).toBe("pk...");
+
+        // Changed: imageURL leaves out the parameters that carry a credential
+        await call("/prompt/feed%20keys?key=sk_x&token=pk_y&width=512");
+        expect((await next()).imageURL).toBe(
+            "https://image.pollinations.ai/prompt/feed%20keys?width=512",
+        );
+        await call(
+            "/prompt/feed%20more?b=%C3%A9+x&API_KEY=a&ref=sk_live&Auth=1&seed=8&n=pk_test&a=1",
+        );
+        expect((await next()).imageURL).toBe(
+            "https://image.pollinations.ai/prompt/feed%20more?b=%C3%A9+x&seed=8&a=1",
+        );
+        await call("/prompt/feed%20only%20keys?access_token=abc");
+        expect((await next()).imageURL).toBe(
+            "https://image.pollinations.ai/prompt/feed%20only%20keys",
+        );
         await leave();
 
         // The VM never answered a HEAD

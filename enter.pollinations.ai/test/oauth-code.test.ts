@@ -80,6 +80,13 @@ describe("OAuth authorization server metadata", () => {
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
+        // service_documentation points at the gen /docs destination (RFC 8414
+        // imposes no same-origin requirement). Independent fixture value:
+        // localhost carries no enter. subdomain, so the gen origin is the
+        // https form of BASE — deliberately not computed with the
+        // implementation's helper. The six endpoints above stay on the
+        // enter origin.
+        expect(meta.service_documentation).toBe("https://localhost:3000/docs");
     });
 });
 

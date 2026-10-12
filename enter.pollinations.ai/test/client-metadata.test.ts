@@ -73,6 +73,8 @@ describe("fetchClientMetadata", () => {
         ["dot segments", "https://client.example/a/../client.json"],
         ["credentials", "https://user:pass@client.example/client.json"],
         ["a fragment", "https://client.example/client.json#x"],
+        ["an empty fragment", "https://client.example/client.json#"],
+        ["one of our hosts", "https://media.pollinations.ai/u_abc_client"],
         ["localhost", "https://localhost/client.json"],
         ["a private IP", "https://10.0.0.1/client.json"],
         ["a pk_", "pk_test_client"],

@@ -35,8 +35,11 @@ export async function fetchClientMetadata(
             url.href !== clientId ||
             url.username ||
             url.password ||
-            url.hash ||
-            isBlockedHostname(url.hostname)
+            clientId.includes("#") ||
+            isBlockedHostname(url.hostname) ||
+            // Our hosts serve user uploads (media.pollinations.ai), which
+            // would show as a first-party host; our own apps use a pk_.
+            /(^|\.)(pollinations|myceli)\.ai\.?$/.test(url.hostname)
         ) {
             return null;
         }

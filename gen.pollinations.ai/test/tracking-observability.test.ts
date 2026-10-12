@@ -2367,7 +2367,13 @@ describe("tracking observability", () => {
             modelUsed: model,
             isBilledUsage: true,
             tokenCountCompletionVideoSeconds: 5,
-            tokenPriceCompletionVideoSeconds: 0.025,
+            tokenPriceCompletionVideoSeconds: 0,
+            adjustmentUnits: {
+                "fal.minimax_h3_max_turbo.provider_units.v1": units,
+            },
+            adjustmentCosts: {
+                "fal.minimax_h3_max_turbo.provider_units.v1": totalCost,
+            },
             totalCost,
             totalPrice: totalCost,
         });

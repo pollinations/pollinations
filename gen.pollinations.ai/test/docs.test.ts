@@ -127,6 +127,13 @@ describe("docs routes", () => {
                 "/api/account/quests/rewards": {
                     get: { tags: ["👤 Account"] },
                 },
+                // Drifted enter tag literals must still land in gen's groups.
+                "/api/account/integrations": {
+                    get: { tags: ["🔗 Account"] },
+                },
+                "/api/account/my-models/endpoint-agents": {
+                    post: { tags: ["Community Agents "] },
+                },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
                 "/generate/text/{prompt}": { get: { tags: ["Old"] } },
@@ -320,6 +327,39 @@ describe("docs routes", () => {
         )?.get as Record<string, unknown> | undefined;
         expect(agentsGet?.description).toContain("account:keys");
         expect(agentsGet?.tags).toEqual(["Community Agents"]);
+
+        const integrationsGet = (
+            schema.paths["/account/integrations"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(integrationsGet?.tags).toEqual(["Account"]);
+
+        const endpointAgentsPost = (
+            schema.paths["/account/my-models/endpoint-agents"] as Record<
+                string,
+                unknown
+            >
+        )?.post as Record<string, unknown> | undefined;
+        expect(endpointAgentsPost?.tags).toEqual(["Community Agents"]);
+
+        // Every operation tag must be one gen declares, or Scalar shows an
+        // extra, undescribed sidebar group.
+        const declaredTags = new Set(schema.tags.map((tag) => tag.name));
+        const undeclared = Object.entries(schema.paths).flatMap(
+            ([path, pathItem]) =>
+                Object.entries(pathItem as Record<string, unknown>).flatMap(
+                    ([method, operation]) =>
+                        (
+                            ((operation as { tags?: unknown })?.tags ??
+                                []) as string[]
+                        )
+                            .filter((tag) => !declaredTags.has(tag))
+                            .map((tag) => `${method} ${path}: ${tag}`),
+                ),
+        );
+        expect(undeclared).toEqual([]);
+        expect(new Set(schema.tags.map((tag) => tag.name)).size).toBe(
+            schema.tags.length,
+        );
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (

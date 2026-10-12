@@ -55,7 +55,15 @@ type AzureRealtimeApiKey =
 // Deployment names are independent of the public model ids. Mini is in East
 // US 2 because Azure's Sweden Central control plane accepts the deployment but
 // its Realtime data plane currently rejects the exact model.
+const MAI_STREAMING_MODEL = "microsoft/mai-transcribe-2-streaming";
 const REALTIME_ROUTES = {
+    [MAI_STREAMING_MODEL]: {
+        endpoint:
+            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/realtime",
+        deployment: "mai-transcribe-2-streaming",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+        intent: "transcription",
+    },
     "openai/gpt-realtime-2.1": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
@@ -315,7 +323,10 @@ function forwardMessage(
             onReject?.();
             return;
         }
-        if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
+        if (isOpen(target)) {
+            const payload = transform ? transform(event.data) : event.data;
+            if (payload !== null) target.send(payload ?? event.data);
+        }
     });
 }
 
@@ -1007,23 +1018,85 @@ function proxyRealtimeWebSockets(
 ): Response {
     const pair = new WebSocketPair();
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
+    const mai = tracking.resolvedModelRequested === MAI_STREAMING_MODEL;
     const allowTranscription =
-        tracking.resolvedModelRequested === "openai/gpt-live-transcribe";
+        mai || tracking.resolvedModelRequested === "openai/gpt-live-transcribe";
+    const transcriptionModel = mai
+        ? MAI_STREAMING_MODEL
+        : "openai/gpt-live-transcribe";
+    const deployment = REALTIME_ROUTES[transcriptionModel].deployment;
+    let maiStarted = false;
+    let maiConfigured = false;
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
     forwardMessage(
         downstream,
         upstream,
-        (data) => validateClientRealtimeEvent(data, allowTranscription),
+        (data) => {
+            if (!mai)
+                return validateClientRealtimeEvent(data, allowTranscription);
+            const event = asRecord(parseEventData(data));
+            if (event.type === "session.update") {
+                if (maiStarted)
+                    return "MAI settings cannot change after audio starts.";
+                const session = asRecord(event.session);
+                const input = asRecord(asRecord(session.audio).input);
+                const format = asRecord(input.format);
+                const transcription = asRecord(input.transcription);
+                if (
+                    transcription.model !== undefined &&
+                    transcription.model !== MAI_STREAMING_MODEL
+                )
+                    return "MAI sessions cannot select another transcription model.";
+                if (
+                    session.type !== "transcription" ||
+                    format.type !== "audio/pcm" ||
+                    ![16000, 24000].includes(numeric(format.rate))
+                )
+                    return "MAI requires a transcription session and mono 16-bit PCM at 16000 or 24000 Hz.";
+                if (
+                    (input.turn_detection !== undefined &&
+                        input.turn_detection !== null) ||
+                    (input.noise_reduction !== undefined &&
+                        input.noise_reduction !== null)
+                )
+                    return "MAI supports manual commits; turn_detection and noise_reduction must be null.";
+                maiConfigured = true;
+                return null;
+            }
+            if (event.type === "input_audio_buffer.append") {
+                if (!maiConfigured)
+                    return "Send session.update before MAI audio.";
+                const inspected = inspectAudioBase64(event.audio, "pcm_24000");
+                if ("error" in inspected) return inspected.error;
+                if (inspected.audioSeconds <= 0)
+                    return "MAI requires nonempty PCM audio.";
+                return null;
+            }
+            return event.type === "input_audio_buffer.commit"
+                ? null
+                : "MAI supports session.update, input_audio_buffer.append and input_audio_buffer.commit.";
+        },
         () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
-                  rewriteLiveTranscriptionModel(
-                      data,
-                      ["openai/gpt-live-transcribe", "gpt-live-transcribe"],
-                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
-                  )
+                  (() => {
+                      if (mai) {
+                          const event = asRecord(parseEventData(data));
+                          if (event.type === "input_audio_buffer.append") {
+                              maiStarted = true;
+                          }
+                      }
+                      return rewriteLiveTranscriptionModel(
+                          data,
+                          [
+                              transcriptionModel,
+                              ...(mai ? [] : ["gpt-live-transcribe"]),
+                          ],
+                          deployment,
+                      );
+                  })()
             : undefined,
     );
     forwardMessage(
@@ -1033,11 +1106,21 @@ function proxyRealtimeWebSockets(
         () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
-                  rewriteLiveTranscriptionModel(
-                      data,
-                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
-                      "openai/gpt-live-transcribe",
-                  )
+                  (() => {
+                      const event = asRecord(parseEventData(data));
+                      // MAI provisional revisions are not OpenAI events. Forward only finalized deltas/completions.
+                      if (
+                          mai &&
+                          event.type ===
+                              "conversation.item.input_audio_transcription.intermediate"
+                      )
+                          return null;
+                      return rewriteLiveTranscriptionModel(
+                          data,
+                          deployment,
+                          transcriptionModel,
+                      );
+                  })()
             : undefined,
     );
     wireClose(c, downstream, upstream, tracking);

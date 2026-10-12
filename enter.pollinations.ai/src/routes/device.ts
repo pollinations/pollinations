@@ -1,12 +1,15 @@
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { USER_CODE_LENGTH } from "@shared/auth/device-code.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import type { Env } from "../env.ts";
 import { type AuthVariables, auth } from "../middleware/auth.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
@@ -21,6 +24,19 @@ const DEVICE_CODE_LENGTH = 40;
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";
+
+/**
+ * Body sent by the consent page once it has minted the key. expiresIn is the
+ * key's lifetime and is echoed to the CLI as the token's expires_in, so it
+ * gets the same validation as key creation and the OAuth code grant.
+ */
+const ApproveDeviceSchema = z.object({
+    userCode: z.string().min(1),
+    apiKey: z.string().min(1),
+    apiKeyId: z.string().min(1),
+    expiresIn: apiKeyExpiresInSchema.nullish(),
+    scope: z.string().optional(),
+});
 
 function isExpired(device: { expiresAt: Date }) {
     return device.expiresAt < new Date();
@@ -157,21 +173,10 @@ export const deviceRoutes = new Hono<Env>()
     .post(
         "/approve",
         auth({ allowApiKey: false, allowSessionCookie: true }),
+        validator("json", ApproveDeviceSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
-            const body = await c.req.json<{
-                userCode: string;
-                apiKey: string;
-                apiKeyId: string;
-                expiresIn?: number;
-                scope?: string;
-            }>();
-
-            if (!body.userCode || !body.apiKey || !body.apiKeyId) {
-                throw new HTTPException(400, {
-                    message: "userCode, apiKey, and apiKeyId are required",
-                });
-            }
+            const body = c.req.valid("json");
 
             const db = drizzle(c.env.DB, { schema });
             const device = await requirePendingDevice(db, body.userCode);

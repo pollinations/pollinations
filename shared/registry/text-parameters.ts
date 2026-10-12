@@ -558,6 +558,19 @@ export const CHAT_PARAMETERS = {
         "top_k",
         "frequency_penalty",
     ],
+    // OpenRouter's Step 5 Preview endpoint lists these parameters (2026-10-08).
+    step5: [
+        ...CHAT,
+        ...SAMPLING,
+        "tools",
+        "stop",
+        "frequency_penalty",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "response_format",
+        "structured_outputs",
+        "reasoning_effort",
+    ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
     // The System One adapter forwards the native request untouched, so token
     // caps, sampling and tools have no effect; only the SSE wrapper is ours.

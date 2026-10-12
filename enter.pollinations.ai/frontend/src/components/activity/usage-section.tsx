@@ -8,6 +8,7 @@ import {
     TableRow,
 } from "@pollinations/ui";
 import type { FC } from "react";
+import { accountClient } from "../../api.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
     ActivityEmptyState,
@@ -83,13 +84,17 @@ export const UsageSection: FC<UsageSectionProps> = ({
     function downloadDetailedUsage(): void {
         if (downloadDisabled) return;
 
-        const params = new URLSearchParams({
-            format: "csv",
-            granularity: period.granularity,
-            period: period.period,
-            limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
-        });
-        downloadFile(`/api/account/usage?${params.toString()}`);
+        accountClient.usage
+            .$get({
+                query: {
+                    format: "csv",
+                    granularity: period.granularity,
+                    period: period.period,
+                    limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
+                },
+            })
+            .then(downloadFile)
+            .catch((error) => console.error("Usage download failed:", error));
     }
 
     return (

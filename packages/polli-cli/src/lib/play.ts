@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { platform } from "node:os";
+import { resolve } from "node:path";
 
 type Player = { cmd: string; args: (file: string) => string[] };
 
@@ -14,7 +15,8 @@ const PLAYERS: Record<string, Player[]> = {
         { cmd: "mpv", args: (f) => ["--no-video", "--really-quiet", f] },
         { cmd: "mpg123", args: (f) => ["-q", f] },
     ],
-    // Windows: MediaPlayer handles mp3 (SoundPlayer is wav-only).
+    // Windows: MediaPlayer handles mp3 (SoundPlayer is wav-only). It needs an
+    // absolute path: a relative [uri] never loads and playback times out.
     win32: [
         {
             cmd: "powershell",
@@ -23,7 +25,7 @@ const PLAYERS: Record<string, Player[]> = {
                 "-Command",
                 `Add-Type -AssemblyName PresentationCore;` +
                     `$p=New-Object System.Windows.Media.MediaPlayer;` +
-                    `$p.Open([uri]'${f.replace(/'/g, "''")}');` +
+                    `$p.Open([uri]'${resolve(f).replace(/'/g, "''")}');` +
                     `$p.Play();` +
                     `$deadline=(Get-Date).AddSeconds(10);` +
                     `while(-not $p.NaturalDuration.HasTimeSpan){` +

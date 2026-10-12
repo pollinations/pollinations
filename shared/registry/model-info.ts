@@ -171,6 +171,12 @@ export const ModelInfoSchema = z.object({
             "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
         ),
     reasoning: z.boolean().optional(),
+    supports_streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+        ),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
@@ -310,6 +316,7 @@ export function modelInfoFromDefinition(
         supports_structured_output: service.supportsStructuredOutput,
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
+        supports_streaming: service.supportsStreaming,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,

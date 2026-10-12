@@ -1,6 +1,6 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
 import { isInActivityBucket } from "./activity-period";
 import type {
@@ -65,7 +65,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const controller = new AbortController();
         request.current = controller;
         setStatus({ key: requestKey, pending: true, error: null });
-        return apiClient.account.usage.daily
+        return accountClient.usage.daily
             .$get(
                 { query: { granularity, period } },
                 { init: { signal: controller.signal } },

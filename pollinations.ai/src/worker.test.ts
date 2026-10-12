@@ -11,6 +11,16 @@ describe("hostname redirects", () => {
         ],
         [
             "GET",
+            "https://playground.pollinations.ai/",
+            "https://pollinations.ai/play",
+        ],
+        [
+            "HEAD",
+            "https://playground.pollinations.ai/index.html?model=flux",
+            "https://pollinations.ai/play",
+        ],
+        [
+            "GET",
             "https://www.pollinations.ai/apps?category=image",
             "https://pollinations.ai/apps?category=image",
         ],
@@ -24,6 +34,46 @@ describe("hostname redirects", () => {
         expect(response.headers.get("Location")).toBe(target);
         expect(await response.text()).toBe("");
         expect(fetchAsset).not.toHaveBeenCalled();
+    });
+});
+
+describe("legacy image links", () => {
+    test.each([
+        [
+            "GET",
+            "/p/a%20red%20apple?width=512&seed=3",
+            "https://image.pollinations.ai/prompt/a%20red%20apple?width=512&seed=3",
+        ],
+        ["HEAD", "/prompt/cat", "https://image.pollinations.ai/prompt/cat"],
+    ])("redirects %s %s to the image API", async (method, path, target) => {
+        const fetchAsset = vi.fn();
+        const response = await worker.fetch(
+            new Request(`https://pollinations.ai${path}`, { method }),
+            { ASSETS: { fetch: fetchAsset } },
+        );
+
+        expect(response.status).toBe(301);
+        expect(response.headers.get("Location")).toBe(target);
+        expect(fetchAsset).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        ["/p"],
+        ["/p/"],
+        ["/play"],
+        ["/prompts/cat"],
+    ])("leaves %s to the site", async (path) => {
+        const fetchAsset = vi.fn(
+            async () =>
+                new Response("", {
+                    headers: { "content-type": "image/png" },
+                }),
+        );
+        await worker.fetch(new Request(`https://pollinations.ai${path}`), {
+            ASSETS: { fetch: fetchAsset },
+        });
+
+        expect(fetchAsset).toHaveBeenCalled();
     });
 });
 

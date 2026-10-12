@@ -1,4 +1,5 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
 import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
@@ -55,6 +56,9 @@ export function createModel3dCommand() {
             const encodedPrompt = encodeURIComponent(promptArg || "model");
             const path = `/3d/${encodedPrompt}?${params}`;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            if (opts.output)
+                mkdirSync(dirname(opts.output), { recursive: true });
             if (isHuman)
                 printInfo("Generating 3D model (this can take a while)...");
 

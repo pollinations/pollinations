@@ -2016,13 +2016,33 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             const log = c.get("log").getChild("account-key");
 
-            // This endpoint requires API key authentication
+            // This endpoint requires API key authentication. A dashboard
+            // session token (used by the media service at upload time) carries
+            // no key, and reports the account owner as a secret key so
+            // downstream services accept it without treating it as a BYOP key.
             const apiKey = c.var.auth.apiKey;
             if (!apiKey) {
-                log.debug("No API key provided");
-                throw new HTTPException(401, {
-                    message:
-                        "API key required. This endpoint validates API keys.",
+                const user = c.var.auth.user;
+                if (!user) {
+                    log.debug("No API key provided");
+                    throw new HTTPException(401, {
+                        message:
+                            "API key required. This endpoint validates API keys.",
+                    });
+                }
+                return c.json({
+                    id: user.id,
+                    valid: true,
+                    type: "secret" as const,
+                    name: "Account session",
+                    expiresAt: null,
+                    expiresIn: null,
+                    permissions: { models: null, account: null },
+                    pollenBudget: null,
+                    questPollenOnly: false,
+                    rateLimitEnabled: false,
+                    userId: user.id,
+                    byopApp: null,
                 });
             }
 

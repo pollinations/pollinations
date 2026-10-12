@@ -40,6 +40,15 @@ export function forgetSessionToken(): void {
 }
 
 /**
+ * A session token to call another Pollinations service (such as the media
+ * upload API) as the signed-in account. Resolves to null when the dashboard
+ * has no session.
+ */
+export function accountBearerToken(): Promise<string | null> {
+    return sessionToken().catch(() => null);
+}
+
+/**
  * The public account API on gen.pollinations.ai, called with a short-lived
  * token minted from the dashboard session. Apps and agents call the same
  * routes with their API keys. Signed out, requests go without a token and get

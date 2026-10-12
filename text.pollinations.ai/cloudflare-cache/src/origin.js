@@ -150,6 +150,40 @@ const logFailure = (route, details) =>
  * uncached paths.
  */
 export async function origin(request, env, ctx) {
+    return notModified(request, await answer(request, env, ctx));
+}
+
+/**
+ * Express's res.send freshness check (fresh 0.5.2) once the response is
+ * built, so a generation has run and billed: a GET or HEAD whose
+ * If-None-Match is "*" or names the ETag gets an empty 304
+ */
+function notModified({ method, headers }, response) {
+    // Only res.send set an ETag. It set no Last-Modified, so fresh() failed
+    // on any If-Modified-Since.
+    const etag = response.headers.get("etag");
+    const noneMatch = headers.get("if-none-match");
+    if (!etag || !response.ok || !noneMatch) return response;
+    if (headers.get("if-modified-since")) return response;
+    if (method !== "GET" && method !== "HEAD") return response;
+    const cacheControl = headers.get("cache-control") ?? "";
+    if (/(?:^|,)\s*?no-cache\s*?(?:,|$)/.test(cacheControl)) return response;
+    const tags = noneMatch.split(",").map((tag) => tag.replace(/^ +| +$/g, ""));
+    const matches = (tag) =>
+        tag === etag || tag === `W/${etag}` || `W/${tag}` === etag;
+    if (noneMatch !== "*" && !tags.some(matches)) return response;
+    const kept = new Headers(response.headers);
+    for (const name of [
+        "content-type",
+        "content-length",
+        "transfer-encoding",
+    ]) {
+        kept.delete(name);
+    }
+    return new Response(null, { status: 304, headers: kept });
+}
+
+async function answer(request, env, ctx) {
     const url = new URL(request.url);
     // Node answered an empty 431 before Express ran
     if (headSize(request, url) > MAX_HEAD_BYTES) {

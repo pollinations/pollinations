@@ -306,6 +306,86 @@ test("the VM's other routes: redirect, models, crossdomain and feed", async () =
     });
 });
 
+test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
+    const etag = 'W/"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"';
+    // The live 304 of 2026-10-12, without the edge's headers
+    const live = {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        etag,
+        "x-powered-by": "Express",
+    };
+    for (const noneMatch of [
+        etag,
+        "*",
+        '"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"',
+        `W/"other",  ${etag}`,
+    ]) {
+        const { response, text } = await call("/models", {
+            headers: { "if-none-match": noneMatch },
+        });
+        expect(response.status, noneMatch).toBe(304);
+        expect(text, noneMatch).toBe("");
+        expect(Object.fromEntries(response.headers), noneMatch).toEqual(live);
+    }
+    // fresh() fails on no-cache, on If-Modified-Since and on another tag
+    for (const headers of [
+        { "if-none-match": "*", "cache-control": "max-age=0, no-cache" },
+        {
+            "if-none-match": "*",
+            "if-modified-since": "Mon, 12 Oct 2026 00:00:00 GMT",
+        },
+        { "if-none-match": 'W/"other"' },
+    ]) {
+        const { response } = await call("/models", { headers });
+        expect(response.status, JSON.stringify(headers)).toBe(200);
+    }
+
+    // A generation runs and bills first; the 304 is not stored
+    const gen = recordingGen();
+    const { response, text } = await call("/if%20none%20match", {
+        headers: { "if-none-match": "*" },
+        testEnv: gen.testEnv,
+    });
+    expect(response.status).toBe(304);
+    expect(text).toBe("");
+    expect(gen.bodies).toHaveLength(1);
+    // As the live 304 of a generation, which reached the cache code
+    // without Content-Length (its ETag is that of "ok")
+    expect(Object.fromEntries(response.headers)).toEqual({
+        ...CACHE_MISS,
+        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "cache-control": "public, max-age=31536000, immutable",
+        etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
+        "x-legacy-path": "worker",
+        "x-model-used": "gpt-oss-20b",
+        "x-powered-by": "Express",
+        "x-usage-completion-reasoning-tokens": "10",
+        "x-usage-completion-text-tokens": "36",
+        "x-usage-prompt-text-tokens": "322",
+        "x-usage-total-tokens": "368",
+    });
+    expect(await storedAt("/if%20none%20match")).toBeNull();
+
+    const head = await call("/if%20none%20match%20head", {
+        method: "HEAD",
+        headers: { "if-none-match": "*" },
+    });
+    expect(head.response.status).toBe(304);
+    // res.send's check covered GET and HEAD only, and not streams
+    const post = await call("/", {
+        method: "POST",
+        headers: { ...JSON_BODY, "if-none-match": "*" },
+        body: JSON.stringify({ messages: [{ role: "user", content: "hi" }] }),
+    });
+    expect(post.response.status).toBe(200);
+    const stream = await call("/if%20none%20match?stream=true", {
+        headers: { "if-none-match": "*" },
+    });
+    expect(stream.response.status).toBe(200);
+    expect(stream.text).toBe(SSE_UNTIL_DONE);
+});
+
 test("a preflight gets the live 204: cors() headers plus the cache code's, and nothing is stored", async () => {
     // The live captures of 2026-10-12, without the edge's headers
     const live = {

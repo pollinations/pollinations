@@ -382,6 +382,23 @@ test("a paid GET verifies, generates, then settles; it is private and never stor
     }
 });
 
+test("a paid GET with a matching If-None-Match settles, then gets the 304 with its receipt", async () => {
+    // The VM's payment middleware settled every status below 400
+    const paid = await payFor("/paid%20if%20none%20match", {
+        headers: { ...CURL, "if-none-match": "*" },
+    });
+
+    expect(paid.response.status).toBe(304);
+    expect(paid.text).toBe("");
+    expect(events).toEqual(["/verify", "gen", "/settle"]);
+    expect(
+        JSON.parse(atob(paid.response.headers.get("payment-response"))),
+    ).toEqual(SETTLED);
+    expect(paid.response.headers.get("cache-control")).toBe(
+        "public, max-age=31536000, immutable, private",
+    );
+});
+
 test("a paid generation leaves the IP's slot as it was", async () => {
     const ip = await limitedIp();
     const hold = await alarmOf(ip);

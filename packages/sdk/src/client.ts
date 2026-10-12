@@ -950,28 +950,19 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) {
-                        const chunk = parseChatStreamData(data);
-                        if (
-                            chunk.choices.some(
-                                (choice) => choice.finish_reason != null,
-                            )
-                        ) {
-                            completed = true;
-                        }
-                        yield chunk;
-                    }
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
+                    yield chunk;
                 }
                 events = [];
                 if (done) {
-                    if (!completed) {
-                        throw new PollinationsError(
-                            "Chat completion stream closed before completion",
-                            "INCOMPLETE_STREAM",
-                            502,
-                        );
-                    }
-                    return;
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
                 }
             }
         } catch (error) {

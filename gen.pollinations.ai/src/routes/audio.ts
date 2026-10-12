@@ -2217,7 +2217,7 @@ async function parseSpeechRequest(
                     | "flac"
                     | "opus"
                     | "aac"
-                    | "pcm") || "mp3",
+                    | "pcm") || undefined,
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
             // fal-ai/stable-audio-3/medium controls.
             seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),

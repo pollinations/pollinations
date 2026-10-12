@@ -333,7 +333,8 @@ const TEXT_BASE_SERVICES = {
         // Preserve the existing one-third customer price multiplier.
         priceMultiplier: 1 / 3,
         paidOnly: false,
-        // Azure Global Standard promotional rates through at least 2026-11-30.
+        // Azure Global Standard rates (retail prices API and billed meters,
+        // 2026-10-12).
         cost: {
             promptTextTokens: perMillion(4.0),
             promptCachedTokens: perMillion(0.4),

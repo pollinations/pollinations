@@ -406,9 +406,7 @@ test("the public feed gets each public generation as the VM sent it, and nothing
 
 test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its events", async () => {
     const hub = env.FEED_HUB.getByName("backlog");
-    const stalled = (
-        await hub.fetch("https://feed-hub.invalid/")
-    ).body.getReader();
+    const stalled = (await hub.fetch("https://feed-hub.invalid/")).body;
     const reading = (
         await hub.fetch("https://feed-hub.invalid/")
     ).body.getReader();
@@ -426,9 +424,7 @@ test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its
     }
     // The stalled listener's stream ends after the four events queued for it
     let stalledBytes = 0;
-    for (let read; !(read = await stalled.read()).done; ) {
-        stalledBytes += read.value.byteLength;
-    }
+    for await (const chunk of stalled) stalledBytes += chunk.byteLength;
     expect(stalledBytes).toBe(4 * event.length);
     const count = () =>
         runInDurableObject(hub, (feedHub) => feedHub.writers.size);

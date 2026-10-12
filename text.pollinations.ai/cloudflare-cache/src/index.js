@@ -3,6 +3,7 @@ import { checkTurnstile } from "../../../shared/turnstile.js";
 import { origin } from "./origin.js";
 
 // Durable Object classes must be exported by the Worker's main module
+export { FeedHub } from "../../../shared/feed-hub.js";
 export { IpSlot } from "../../../shared/ip-slot.js";
 
 // Worker version to track which deployment is running
@@ -98,6 +99,14 @@ const worker = {
             // The GET root redirect (POST / is cached) and the listed paths'
             // static GET and HEAD answers come fresh from origin(), never R2
             const read = request.method === "GET" || request.method === "HEAD";
+            // Until every generation runs here, the VM's feed has most events
+            if (
+                read &&
+                url.pathname === "/feed" &&
+                Number(env.ADAPTER_SHARE ?? 0) < 100
+            ) {
+                return await proxyRequest(request, env);
+            }
             if (
                 (url.pathname === "/" && request.method === "GET") ||
                 (read && NON_CACHE_PATHS.includes(url.pathname))

@@ -8,6 +8,7 @@ import { Buffer } from "node:buffer";
 import { deflateSync, gzipSync } from "node:zlib";
 import { expect, test, vi } from "vitest";
 import worker from "../src/index.js";
+import feedHeaders from "./fixtures/text.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
@@ -310,14 +311,96 @@ test("the VM's other routes: redirect, models, crossdomain and feed", async () =
     expect(xml.text).toContain(
         '<allow-access-from domain="*" secure="false"/>',
     );
+});
 
-    const feed = await call("/feed");
-    expect(feed.response.status).toBe(410);
-    expect(feed.response.headers.get("cache-control")).toBe("no-store");
-    expect(JSON.parse(feed.text)).toEqual({
-        error: "feed_removed",
-        message: "The public feed has been retired.",
+test("the public feed gets each public generation as the VM sent it, and nothing private", async () => {
+    const ctx = createExecutionContext();
+    const listener = await worker.fetch(
+        new Request("https://text.pollinations.ai/feed?password=x"),
+        env,
+        ctx,
+    );
+    // Every header of the live feed
+    expect(Object.fromEntries(listener.headers)).toEqual(
+        Object.fromEntries(capturedHeaders(feedHeaders)),
+    );
+    const events = listener.body.getReader();
+    const next = async () => {
+        const value = new TextDecoder().decode((await events.read()).value);
+        expect(value).toMatch(/^data: .*\n\n$/s);
+        return JSON.parse(value.slice("data: ".length));
+    };
+
+    // Private requests reach no public listener
+    await call("/v1/chat/completions", {
+        method: "POST",
+        headers: JSON_BODY,
+        body: JSON.stringify({ messages: [{ role: "user", content: "p1" }] }),
     });
+    await call("/openai/p2", { method: "POST" });
+    await call("/openai-p3");
+    await call("/p4?private=true");
+
+    await call("/feed%20me?seed=7&temperature=9&referrer=app");
+    expect(await next()).toEqual({
+        response: "ok",
+        parameters: {
+            messages: [{ role: "user", content: "feed me" }],
+            jsonMode: false,
+            seed: 7,
+            model: "openai-fast",
+            // getRequestData's value, before the clamp
+            temperature: 9,
+            referrer: "app",
+            isPrivate: false,
+            voice: "alloy",
+            prompt_tokens: 322,
+            completion_tokens: 46,
+            total_tokens: 368,
+            completion_tokens_details: { reasoning_tokens: 10 },
+        },
+    });
+
+    // A stream is announced when gen starts answering, without usage
+    await call("/", {
+        method: "POST",
+        headers: { ...JSON_BODY, origin: "https://app.example" },
+        body: JSON.stringify({
+            messages: [{ role: "user", content: "s" }],
+            stream: true,
+            json: "true",
+        }),
+    });
+    expect(await next()).toEqual({
+        response: "Streaming response",
+        parameters: {
+            messages: [{ role: "user", content: "s" }],
+            jsonMode: true,
+            model: "openai-fast",
+            referrer: "https://app.example",
+            stream: true,
+            isPrivate: false,
+            voice: "alloy",
+        },
+    });
+
+    // A listener that leaves is dropped at the next event
+    await events.cancel();
+    await waitOnExecutionContext(ctx);
+    await call("/after%20leaving");
+    await expect
+        .poll(() =>
+            runInDurableObject(
+                env.FEED_HUB.getByName("text"),
+                (hub) => hub.writers.size,
+            ),
+        )
+        .toBe(0);
+
+    // The VM never answered a HEAD
+    const head = await call("/feed", { method: "HEAD" });
+    expect(head.response.status).toBe(200);
+    expect(head.text).toBe("");
 });
 
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
@@ -1010,6 +1093,11 @@ test("ADAPTER_SHARE 0 sends every generating path to the VM", async () => {
             Boolean(stored),
         );
     }
+    // Below 100 the feed is the VM's, which has most events
+    const feed = await call("/feed", {
+        testEnv: { ...env, ADAPTER_SHARE: "99" },
+    });
+    expect(feed.text).toBe("from the vm");
 });
 
 test("an exception on a miss path is the Worker's 500, labelled with the path", async () => {

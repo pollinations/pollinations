@@ -14,6 +14,8 @@ import { prepareForwardedHeaders } from "./index.js";
 // the GEN service binding, billed to the GEN_API_KEY bridge key.
 
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
+// Any URL: the feed hub answers every fetch with the event stream
+const FEED_URL = "https://feed-hub.invalid/";
 const FREE_INTERVAL_MS = 30_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 const MAX_TOKENS = 1500;
@@ -231,6 +233,7 @@ async function answer(request, env, ctx) {
     const generate = (prompt, format, route) =>
         generation(request, env, ctx, ip, {
             data: { ...Object.fromEntries(url.searchParams), ...body },
+            body,
             prompt,
             format,
             route,
@@ -257,13 +260,7 @@ async function answer(request, env, ctx) {
     if (read && path === "/models") {
         return send(MODELS_BODY, 200, { "Content-Type": JSON_TYPE });
     }
-    if (read && path === "/feed") {
-        const gone = {
-            error: "feed_removed",
-            message: "The public feed has been retired.",
-        };
-        return json(gone, 410, "no-store");
-    }
+    if (read && path === "/feed") return feed(env, method);
     if (read && path === "/openai/models") {
         const model = {
             id: "openai-fast",
@@ -487,15 +484,18 @@ function toBool(value) {
     return Boolean(value);
 }
 
+/** validateJsonMode: its first truthy value, which need not be a boolean */
+const jsonModeOf = (data) =>
+    data.jsonMode ||
+    (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
+    data.json === true ||
+    data.response_format?.type === "json_object";
+
 /** getRequestData and normalizeOptions: query and body merged, body winning */
 function readParams(data, prompt) {
     const messages = data.messages || [{ role: "user", content: prompt }];
     if (data.system) messages.unshift({ role: "system", content: data.system });
-    const jsonMode =
-        data.jsonMode ||
-        (typeof data.json === "string" && data.json.toLowerCase() === "true") ||
-        data.json === true ||
-        data.response_format?.type === "json_object";
+    const jsonMode = jsonModeOf(data);
     return {
         model: data.model == null ? "openai-fast" : String(data.model),
         stream: Boolean(toBool(data.stream)),
@@ -585,7 +585,7 @@ async function generation(
     env,
     ctx,
     ip,
-    { data, prompt, format, route },
+    { data, body, prompt, format, route },
 ) {
     let params;
     try {
@@ -596,7 +596,12 @@ async function generation(
         // is not a function"). Answered as Express answers a route's error.
         return errorPage(500, `${error.name}: ${error.message}`, true);
     }
-    const job = { ...params, format, route };
+    const job = {
+        ...params,
+        format,
+        route,
+        publish: publisher(request, env, ctx, data, body, params, route),
+    };
     const canWait = params.stream || !weftEnabled(env);
     let slot;
     try {
@@ -642,6 +647,89 @@ async function generation(
     })();
     ctx.waitUntil(response);
     return response;
+}
+
+/** setupFeedEndpoint, public listeners only: a password is ignored */
+async function feed(env, method) {
+    // The VM never answered a HEAD; here it gets the headers alone
+    const events =
+        method === "GET"
+            ? (await env.FEED_HUB.getByName("text").fetch(FEED_URL)).body
+            : null;
+    return new Response(events, {
+        headers: {
+            ...CORS,
+            "X-Powered-By": "Express",
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache",
+        },
+    });
+}
+
+/**
+ * sendToFeedListeners for one generation: publish(response, usage) sends
+ * {response, parameters} to the public feed, where parameters are
+ * getRequestData's values (validated, not clamped) and gen's usage. Private
+ * requests, the /openai paths included, send nothing.
+ */
+function publisher(request, env, ctx, data, body, { messages }, route) {
+    const url = new URL(request.url);
+    const isPrivate =
+        url.pathname.startsWith("/openai") ||
+        route === "POST /v1/chat/completions" ||
+        toBool(data.private) === true;
+    if (isPrivate) return () => {};
+    const parameters = {
+        messages,
+        jsonMode: jsonModeOf(data),
+        seed: toInt(data.seed),
+        model: data.model == null ? "openai-fast" : String(data.model),
+        temperature: toFloat(data.temperature),
+        top_p: toFloat(data.top_p),
+        presence_penalty: toFloat(data.presence_penalty),
+        frequency_penalty: toFloat(data.frequency_penalty),
+        referrer: referrerOf(request, url, body),
+        stream: toBool(data.stream),
+        isPrivate,
+        voice: data.voice == null ? "alloy" : String(data.voice),
+        tools: data.tools || undefined,
+        tool_choice: data.tool_choice || undefined,
+        modalities: data.modalities,
+        audio: data.audio,
+        reasoning_effort:
+            data.reasoning_effort == null
+                ? undefined
+                : String(data.reasoning_effort),
+        response_format: data.response_format || undefined,
+    };
+    return (response, usage) => {
+        const event = { response, parameters: { ...parameters, ...usage } };
+        // JSON.stringify leaves no line breaks for the VM's escaping to replace
+        const line = `data: ${JSON.stringify(event)}\n\n`;
+        ctx.waitUntil(
+            env.FEED_HUB.getByName("text")
+                .publish(line)
+                .catch((error) =>
+                    logFailure(route, { error: "feed", type: error.name }),
+                ),
+        );
+    };
+}
+
+/** extractReferrer: the query, then the body, then the headers */
+function referrerOf(request, url, body) {
+    const query =
+        url.searchParams.get("referrer") || url.searchParams.get("referer");
+    if (query) return query;
+    if (body.referrer) return String(body.referrer);
+    if (body.referer) return String(body.referer);
+    const { headers } = request;
+    return (
+        headers.get("referer") ||
+        headers.get("referrer") ||
+        headers.get("origin") ||
+        null
+    );
 }
 
 /**
@@ -698,7 +786,10 @@ async function generate(env, job, cacheControl, ended) {
                       details,
                   ));
         }
-        if (job.stream) return sse(response.body);
+        if (job.stream) {
+            job.publish("Streaming response");
+            return sse(response.body);
+        }
         const completion = completionOf(await response.json());
         if (completion.error) {
             // handleRequest: an error object in gen's answer
@@ -712,6 +803,10 @@ async function generate(env, job, cacheControl, ended) {
                 cacheControl,
             );
         }
+        job.publish(
+            completion.choices[0].message?.content || "",
+            completion.usage,
+        );
         return await (job.format === "openai"
             ? openAiResponse(completion, cacheControl)
             : textResponse(completion));

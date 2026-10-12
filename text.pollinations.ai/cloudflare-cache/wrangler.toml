@@ -34,9 +34,18 @@ service = "pollinations-gen-production"
 name = "IP_SLOT"
 class_name = "IpSlot"
 
+# The public /feed's listeners (shared/feed-hub.js), one object
+[[durable_objects.bindings]]
+name = "FEED_HUB"
+class_name = "FeedHub"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["IpSlot"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["FeedHub"]
 
 # The paywall art (shared/assets/weft-paywall.webp) is imported as bytes
 [[rules]]
@@ -96,3 +105,7 @@ service = "pollinations-gen"
 [[env.test.durable_objects.bindings]]
 name = "IP_SLOT"
 class_name = "IpSlot"
+
+[[env.test.durable_objects.bindings]]
+name = "FEED_HUB"
+class_name = "FeedHub"

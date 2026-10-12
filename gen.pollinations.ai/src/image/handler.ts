@@ -1,6 +1,7 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
@@ -462,13 +463,14 @@ function extractRegisterToken(
     return null;
 }
 
-function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterWrite(
     c: ImageContext,
     body: Record<string, unknown>,
-): boolean {
+): Promise<boolean> {
     const expected = getImageEnv("PLN_GPU_TOKEN");
-    if (!expected) return false;
-    return extractRegisterToken(c, body) === expected;
+    const presented = extractRegisterToken(c, body);
+    if (!expected || !presented) return false;
+    return secretEquals(presented, expected);
 }
 
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
@@ -487,7 +489,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!isAuthorizedRegisterWrite(c, {})) {
+        if (!(await isAuthorizedRegisterWrite(c, {}))) {
             return c.json({ success: false, message: "Unauthorized" }, 401);
         }
         if (!isValidType(typeParam)) {
@@ -511,7 +513,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!isAuthorizedRegisterWrite(c, body)) {
+    if (!(await isAuthorizedRegisterWrite(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

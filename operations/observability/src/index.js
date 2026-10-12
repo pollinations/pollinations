@@ -63,6 +63,11 @@ export class ObservabilityGrafana extends Container {
         // Each open tab would hold a Live WebSocket and keep the container
         // awake. The dashboards refresh hourly and stream nothing.
         GF_LIVE_MAX_CONNECTIONS: "0",
+        // Grafana 13 downloads a set of data source plugins on every start.
+        // Each cold start has a fresh disk, so this would repeat every time
+        // and can push boot past the 60 s port wait. Only the ClickHouse
+        // plugin baked into the image is used.
+        GF_PLUGINS_PREINSTALL_DISABLED: "true",
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),

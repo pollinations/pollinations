@@ -1,0 +1,37 @@
+{
+  "pr_number": 17225,
+  "title": "chore: upgrade Biome to 2.5.15 and drop the version pin",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17225",
+  "merged_at": "2026-10-12T23:18:19Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Upgraded @biomejs/biome from 2.3.10 to 2.5.15 and removed the version pin from formatting instructions; docs and skills now use `npx @biomejs/biome check --write` so npx runs the repository's installed package rather than the unrelated `biome@0.3.3`. Reformatted 126 files for the new formatter, mostly tests, without intended behavior changes. Fixed new lint errors by adding explicit types to buttons on five app pages, closing a missing `</head>` in OpenClaw, correcting three unsafe optional chains in tests, and changing one export order. Disabled `noSvgWithoutTitle` only for SVG files because the 79 logos are displayed through `<img alt>`. The lockfile's root workspace entry for packages/sdk now matches its package version, 5.1.0-alpha.14. Repo-wide Biome errors fell from 184 to 165 with none newly introduced; warnings rose from 210 to 227 and do not fail CI.",
+    "keywords": [
+      "Biome",
+      "formatter",
+      "lint",
+      "developer tooling",
+      "CI",
+      "SDK lockfile"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17225.jpg",
+    "prompt": "In a cozy pixel art garden shed, one small bee tidies a stack of code pages beside a retro terminal glowing lime green (#ecf874), while code-plants grow in pastel pots. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and sorts the pages with an amused expression, small-to-medium sized within the scene, never oversized or dominating, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-12T23:19:53.957202+00:00",
+  "area": "CI & releases",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "b034478e92927e944907714d6d3801e8465e6d29",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "b034478e92927e944907714d6d3801e8465e6d29^1",
+    "after_ref": "b034478e92927e944907714d6d3801e8465e6d29"
+  }
+}

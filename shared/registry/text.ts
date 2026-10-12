@@ -1157,9 +1157,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: false,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Fireworks Standard rates (2026-10-12).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:

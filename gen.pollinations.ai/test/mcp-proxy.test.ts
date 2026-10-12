@@ -22,6 +22,19 @@ test("lists the MCP servers exposed through Gen", async () => {
     expect(await response.json()).toEqual({
         data: [
             {
+                id: "tako",
+                name: "Tako Search",
+                description:
+                    "Search web pages and structured data with sources.",
+                url: "https://gen.pollinations.ai/mcp/tako",
+                paid_only: true,
+                pricing: {
+                    description:
+                        "Provider-reported AI Gateway request cost, including model tokens and search. Promotion status is unconfirmed; no fixed free rate.",
+                    rates: [],
+                },
+            },
+            {
                 id: "pollinations",
                 name: "Pollinations",
                 description:

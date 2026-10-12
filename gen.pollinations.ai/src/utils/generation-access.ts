@@ -98,6 +98,7 @@ export async function requireFunds(
     c: Context<Env>,
     price: number,
     purpose: string,
+    paidOnly = false,
 ): Promise<void> {
     const charge =
         price > 0 ? `this ${purpose} (${price} pollen)` : `this ${purpose}`;
@@ -121,7 +122,7 @@ export async function requireFunds(
     const spendable = apiKey?.questPollenOnly
         ? { ...balance, packBalance: 0 }
         : balance;
-    if (canCoverEstimatedCharge(spendable, price)) return;
+    if (canCoverEstimatedCharge(spendable, price, paidOnly)) return;
     if (apiKey?.questPollenOnly) {
         throw new PaymentRequiredError(
             "QUEST_POLLEN_ONLY",

@@ -24,7 +24,8 @@ type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
-    binding: McpBindingName;
+    binding: McpBindingName | "GEN";
+    paidOnly?: boolean;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
     accountPath?: string;
@@ -100,6 +101,20 @@ const COMPOSIO_MCP_PRICING = {
 } as const;
 
 export const MCP_SERVERS = [
+    {
+        id: "tako",
+        name: "Tako Search",
+        description: "Search web pages and structured data with sources.",
+        binding: "GEN",
+        billing: "usage_receipt",
+        provider: "vercel",
+        paidOnly: true,
+        pricing: {
+            description:
+                "Provider-reported AI Gateway request cost, including model tokens and search. Promotion status is unconfirmed; no fixed free rate.",
+            rates: [],
+        },
+    },
     {
         id: "pollinations",
         name: "Pollinations",

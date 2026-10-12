@@ -9,8 +9,7 @@ At 06:00 UTC daily:
   4. Generate platform posts using existing prompts: twitter.json, reddit.json
   5. Generate platform images (1 twitter + 1 reddit)
   Note: LinkedIn and Instagram are weekly-only — no daily posts.
-  6. Generate highlights from gists
-  7. Commit all content (posts, images, highlights) to the news branch
+  6. Commit all content (summary with highlights, posts, images) to the news branch
 
 See operations/social/PIPELINE.md for full architecture.
 """
@@ -23,146 +22,27 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 from common import (
-    gist_context,
-    build_canonical_summary,
-    join_summary_parts,
+    build_daily_summary_artifact,
+    daily_summary_input,
     normalize_platform_post,
     load_prompt,
     get_env,
-    get_repo_root,
     call_pollinations_api,
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
     read_gists_for_date,
-    read_news_text_file,
     filter_daily_gists,
     parse_json_response,
     github_api_request,
     commit_files_to_branch,
     GITHUB_API_BASE,
+    DAILY_REL_DIR,
     GISTS_BRANCH,
     IMAGE_SIZE,
-    NEWS_REL_DIR,
     OWNER,
     REPO,
 )
-
-# ── Constants ────────────────────────────────────────────────────────
-
-DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
-HIGHLIGHTS_PATH = f"{NEWS_REL_DIR}/highlights.md"
-
-
-# ── Highlights ────────────────────────────────────────────────────────
-
-def load_gists_as_changelog(date_str: str) -> tuple[str, int]:
-    """Read gists for a date and format as a changelog for the highlights prompt.
-
-    Filters to user-facing, publishable gists only.
-    Returns (changelog_text, gist_count).
-    """
-    gists = read_gists_for_date(date_str)
-
-    filtered = [
-        g for g in gists
-        if g.get("gist", {}).get("publish_tier") != "none"
-        and g.get("gist", {}).get("user_facing", False)
-    ]
-
-    if not filtered:
-        return "", 0
-
-    lines = [f"# Updates for {date_str}\n"]
-    for g in filtered:
-        lines.append(json.dumps(gist_context(g), indent=2))
-        lines.append("")
-
-    return "\n".join(lines), len(filtered)
-
-
-def create_highlights_prompt(news_content: str, news_date: str) -> tuple:
-    """Create prompt to extract only the most significant highlights."""
-    template = load_prompt("highlights")
-    system_prompt = (template.replace("{news_date}", news_date)
-                     .replace("{news_content}", news_content))
-
-    return system_prompt, "Generate the highlights now."
-
-
-def parse_highlights_response(response: str) -> str:
-    """Clean up AI response, removing code blocks if present"""
-    message = response.strip()
-
-    if message.startswith('```'):
-        lines = message.split('\n')
-        if lines[0].strip() == '```' or lines[0].startswith('```'):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == '```':
-            lines = lines[:-1]
-        message = '\n'.join(lines)
-
-    return message.strip()
-
-
-def merge_highlights(new_highlights: str, existing_highlights: str) -> str:
-    """Prepend new highlights to existing ones"""
-    new_clean = new_highlights.strip()
-    existing_clean = existing_highlights.strip()
-
-    if not existing_clean:
-        return new_clean + "\n"
-
-    return new_clean + "\n" + existing_clean + "\n"
-
-
-def generate_highlights(pollinations_token: str, date_str: str) -> str | None:
-    """Generate updated highlights.md content without creating a PR.
-
-    Reads gists for the given date, AI-curates highlights, merges with existing
-    highlights.md.
-
-    Returns merged highlights content, or None if no updates.
-    """
-    changelog, gist_count = load_gists_as_changelog(date_str)
-    if not changelog:
-        print(f"  Highlights: no qualifying gists for {date_str}")
-        return None
-    print(f"  Highlights: {gist_count} qualifying gists for {date_str}")
-
-    system_prompt, user_prompt = create_highlights_prompt(changelog, date_str)
-    ai_response = call_pollinations_api(
-        system_prompt, user_prompt, pollinations_token,
-        temperature=0.3,
-    )
-    if not ai_response:
-        print("  FATAL: Highlights AI generation failed")
-        sys.exit(1)
-
-    new_highlights = parse_highlights_response(ai_response)
-    if not new_highlights.strip():
-        print("  FATAL: Highlights AI returned empty content")
-        sys.exit(1)
-
-    print(f"  Highlights: generated new entries")
-
-    repo_root = get_repo_root()
-    highlights_path = os.path.join(repo_root, HIGHLIGHTS_PATH)
-    existing_highlights = ""
-    if os.path.exists(highlights_path):
-        with open(highlights_path, "r") as f:
-            existing_highlights = f.read()
-    else:
-        github_token = get_env("GITHUB_TOKEN", required=False)
-        if github_token:
-            fetched = read_news_text_file(HIGHLIGHTS_PATH, github_token, OWNER, REPO)
-            if fetched:
-                existing_highlights = fetched
-                print("  Highlights: fetched existing from news branch via API")
-    merged_highlights = merge_highlights(new_highlights, existing_highlights)
-
-    return merged_highlights
-
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -175,56 +55,12 @@ def get_target_date(override: Optional[str] = None) -> str:
 
 
 
-def build_daily_summary_artifact(
-    summary: Dict, gists: List[Dict], date_str: str, generated_at: str
-) -> Dict:
-    """Build the canonical daily summary stored on the news branch."""
-    arcs = summary.get("arcs") or []
-    one_liner = (summary.get("one_liner") or "").strip()
-    headline = next(
-        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
-        "",
-    )
-    title = headline or one_liner or f"Updates for {date_str}"
-    arc_summaries = [
-        (arc.get("summary") or "").strip()
-        for arc in arcs[:3]
-        if (arc.get("summary") or "").strip()
-    ]
-    summary_text = join_summary_parts(
-        ([one_liner] if one_liner and one_liner != title else []) + arc_summaries
-    )
-    if not summary_text:
-        summary_text = one_liner or title
-
-    prs = [{"number": gist.get("pr_number"), "date": date_str} for gist in gists]
-    return build_canonical_summary(
-        date=date_str,
-        period_start=date_str,
-        period_end=date_str,
-        title=title,
-        summary=summary_text,
-        prs=prs,
-        generated_at=generated_at,
-    )
-
-
 # ── Step 1: Generate daily summary ──────────────────────────────────
 
 def generate_summary(gists: List[Dict], date_str: str, token: str) -> Optional[Dict]:
     """Cluster gists into narrative arcs and produce summary.json."""
     system_prompt = load_prompt("daily")
-
-    # Build gist context for AI
-    gist_lines = []
-    for g in gists:
-        gist_lines.append(json.dumps(gist_context(g), indent=2))
-
-    user_prompt = f"""Date: {date_str}
-Number of PRs: {len(gists)}
-
-PR Gists:
-{chr(10).join(gist_lines)}"""
+    user_prompt = daily_summary_input(gists, date_str)
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -312,7 +148,6 @@ def commit_daily_to_news(
     owner: str,
     repo: str,
     reddit_post: Optional[Dict] = None,
-    highlights_content: Optional[str] = None,
 ) -> bool:
     """Commit all daily content directly to the news branch. Returns True on success."""
     base_path = f"{DAILY_REL_DIR}/{date_str}"
@@ -354,9 +189,6 @@ def commit_daily_to_news(
                 raw_post=reddit_post,
             ),
         ))
-    if highlights_content:
-        files_to_commit.append(("operations/social/news/highlights.md", highlights_content))
-
     if not files_to_commit:
         print("  No files to commit")
         return False
@@ -382,7 +214,7 @@ def main():
     print(f"  Target date: {date_str}")
 
     # ── Read gists ───────────────────────────────────────────────────
-    print(f"\n[1/5] Reading gists for {date_str}...")
+    print(f"\n[1/4] Reading gists for {date_str}...")
 
     # Try local repo first, fall back to GitHub API
     gists = read_gists_for_date(date_str)
@@ -426,19 +258,19 @@ def main():
         return
 
     # ── Generate summary ─────────────────────────────────────────────
-    print(f"\n[2/5] Generating daily summary...")
+    print(f"\n[2/4] Generating daily summary...")
     summary = generate_summary(daily_gists, date_str, pollinations_token)
     if not summary:
         print("  Summary generation failed!")
         sys.exit(1)
-    print(f"  {len(summary.get('arcs', []))} arcs: {summary.get('one_liner', '')}")
+    print(f"  {len(summary.get('arcs', []))} arcs, {len(summary.get('highlights') or [])} highlights: {summary.get('one_liner', '')}")
     generated_at = datetime.now(timezone.utc).isoformat()
     summary_artifact = build_daily_summary_artifact(
         summary, daily_gists, date_str, generated_at
     )
 
     # ── Generate platform posts ──────────────────────────────────────
-    print(f"\n[3/5] Generating platform posts...")
+    print(f"\n[3/4] Generating platform posts...")
 
     print("  Twitter...")
     twitter_post = generate_twitter_post(summary, pollinations_token)
@@ -461,12 +293,8 @@ def main():
         sys.exit(1)
     print(f"  Reddit: {reddit_post.get('title', '')[:80]}")
 
-    # ── Generate highlights ──────────────────────────────────────────
-    print(f"\n[4/5] Generating highlights...")
-    highlights_content = generate_highlights(pollinations_token, date_str)
-
     # ── Commit daily content to news branch ──────────────────────────
-    print(f"\n[5/5] Committing daily content to news branch...")
+    print(f"\n[4/4] Committing daily content to news branch...")
     success = commit_daily_to_news(
         date_str,
         summary_artifact,
@@ -474,7 +302,6 @@ def main():
         generated_at,
         github_token, owner, repo,
         reddit_post=reddit_post,
-        highlights_content=highlights_content,
     )
 
     if not success:

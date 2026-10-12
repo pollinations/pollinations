@@ -437,3 +437,42 @@ test("Scout catalog exposes its enforced output capabilities", async () => {
         context_length: 131072,
     });
 });
+
+test("MAI transcription allows Quest Pollen and hides its fallback route", async ({
+    apiKey,
+}) => {
+    const modelDefinition = getRegistryModelDefinition(
+        "microsoft/mai-transcribe-2",
+    );
+    expect(modelDefinition.paidOnly).toBe(false);
+    expect(modelDefinition.priceMultiplier).toBe(0.75);
+    for (const [model, status] of [
+        ["microsoft/mai-transcribe-2", 400],
+        ["microsoft/mai-transcribe-2:vercel", 400],
+    ] as const) {
+        const form = new FormData();
+        form.set("model", model);
+        form.set("response_format", "srt");
+        form.set(
+            "file",
+            new File(["audio"], "test.wav", { type: "audio/wav" }),
+        );
+        const response = await fetchWorker("/v1/audio/transcriptions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: form,
+        });
+        expect(response.status, model).toBe(status);
+        if (model === "microsoft/mai-transcribe-2:vercel") {
+            const body = (await response.json()) as {
+                error: { message: string };
+            };
+            expect(body.error.message).toContain("Invalid model or alias");
+        } else {
+            const body = (await response.json()) as {
+                error: { message: string };
+            };
+            expect(body.error.message).toContain("response_format");
+        }
+    }
+});

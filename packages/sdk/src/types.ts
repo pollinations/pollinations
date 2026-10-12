@@ -789,7 +789,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Restrict to specific models */
+    /** Model categories the key can use (e.g. `image`, `text`); a model ID allows its whole category */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;

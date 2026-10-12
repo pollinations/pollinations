@@ -120,19 +120,18 @@ describe("key permissions layout", () => {
         );
     });
 
-    it.each([
-        undefined,
-        "app",
-        "device",
-    ] as const)("uses the %s context in the identity tooltip", (accessContext) => {
-        const html = renderToStaticMarkup(
-            <Editor accessContext={accessContext} />,
-        );
-        expect(html).toContain(
-            `This ${accessContext ?? "key"} can access your username`,
-        );
-        expect(html).not.toContain("Anyone using this key");
-    });
+    it.each([undefined, "app", "device"] as const)(
+        "uses the %s context in the identity tooltip",
+        (accessContext) => {
+            const html = renderToStaticMarkup(
+                <Editor accessContext={accessContext} />,
+            );
+            expect(html).toContain(
+                `This ${accessContext ?? "key"} can access your username`,
+            );
+            expect(html).not.toContain("Anyone using this key");
+        },
+    );
 
     it("explains earnings to the reader of each screen", () => {
         const consent = renderToStaticMarkup(<AppEarningsRow />);

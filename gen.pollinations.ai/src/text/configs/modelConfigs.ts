@@ -758,10 +758,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.2",
         "z-ai/fp8",
     ),
-    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4-pro-0813",
-        "alibaba",
-    ),
+    // The base slug "alibaba" also matches alibaba/us-east-1, whose peak rate
+    // is above the quoted one, so it is excluded explicitly.
+    "deepseek-v4-pro-openrouter-alibaba": () =>
+        createOpenRouterModelConfig({
+            model: "deepseek/deepseek-v4-pro-0813",
+            defaultOptions: {
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",

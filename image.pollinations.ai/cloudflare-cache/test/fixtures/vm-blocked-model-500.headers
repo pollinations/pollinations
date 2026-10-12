@@ -1,0 +1,13 @@
+HTTP/2 500 
+date: Sun, 11 Oct 2026 10:59:46 GMT
+content-type: application/json
+cf-ray: a48d5b79e884f56c-TXL
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+server: cloudflare
+x-cache: MISS
+access-control-allow-headers: Content-Type, X-PAYMENT, Payment-Signature
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: Link,X-Pollinations-Logo,X-Powered-By,Payment-Required,Payment-Response
+x-error-type: Internal Server Error
+

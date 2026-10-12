@@ -1,0 +1,15 @@
+HTTP/2 200 
+date: Sun, 11 Oct 2026 11:00:01 GMT
+content-type: text/event-stream
+cf-ray: a48d5bd6aeed7cc3-TXL
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: no-cache
+link: <https://pollinations.ai>; rel="service"
+server: cloudflare
+x-pollinations-logo: https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.svg
+x-powered-by: Pollinations.AI
+access-control-allow-headers: Content-Type
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: Link,X-Pollinations-Logo,X-Powered-By,Payment-Required,Payment-Response
+

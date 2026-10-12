@@ -17,10 +17,9 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
-import generate_models_news
 import posts
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
-                    models_news_staged_files, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+                    monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
 from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
 from api_changes import api_changes, api_changes_for_pr, api_surface
 from build_news_index import api_entries, build_index, highlight_entries, model_entries
@@ -507,14 +506,6 @@ class PostsTest(unittest.TestCase):
             posts.save(job, date, self.news, self.work, overwrite)
         return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
 
-    def assertSameRun(self, old, new, calls, files):
-        stamp = lambda saved: {path: re.sub(rb'"generated_at": "[^"]*"', b'"generated_at": ""', data)
-                               for path, data in saved.items()}
-        self.assertEqual(sorted(new[0]), sorted(old[0]))
-        self.assertEqual(sorted(new[1]), sorted(old[1]))
-        self.assertEqual(stamp(new[2]), stamp(old[2]))
-        self.assertEqual((len(new[0]), len(new[2])), (calls, files))
-
     def assertDeliverable(self, job, base, saved):
         """Each file deliver.py sends is saved with its text and its pictures' saved urls."""
         for name in deliver.POSTS[job]:
@@ -594,7 +585,7 @@ class PostsTest(unittest.TestCase):
                 self.assertNotIn("Day 2026-10-01", calls[0][1])
                 self.assertEqual([image[0] for image in images], [picture])
 
-    def test_model_post_matches_today_and_a_week_without_changes_saves_only_the_snapshot(self):
+    def test_model_post_and_a_week_without_changes_saves_only_the_snapshot(self):
         previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
                     "embeddings": []}
         current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
@@ -602,33 +593,22 @@ class PostsTest(unittest.TestCase):
         self.put("models/snapshots/2026-10-07.json", previous)
         self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
         self.put("models/models.md", changelog)
-        staging = self.root / "staging"
-        staging.mkdir()
-        for date, baseline, snapshot, calls, files in (("2026-10-14", previous, "2026-10-07", 1, 4),
-                                                       ("2026-10-28", current, "2026-10-21", 0, 1)):
-            with self.subTest(date=date):
-                old_calls, _, model, _ = self.fakes()
-                committed = {}
-                def commit_text(token, owner, repo, path, content, message, committed=committed):
-                    committed[path] = content.encode()
-                    return True
-                with patch.dict(os.environ, {"TARGET_DATE": date}), \
-                     patch("generate_models_news._path_exists_on_news", return_value=False), \
-                     patch("generate_models_news.fetch_all_snapshots", return_value=copy.deepcopy(current)), \
-                     patch("generate_models_news.find_previous_snapshot_date", return_value=snapshot), \
-                     patch("generate_models_news.load_snapshot_from_news", return_value=copy.deepcopy(baseline)), \
-                     patch("generate_models_news.load_models_md", return_value=changelog), \
-                     patch("generate_models_news.models_news_staging_dir", return_value=str(staging)), \
-                     patch("generate_models_news.commit_text_to_news", commit_text), \
-                     patch("generate_models_news.call_pollinations_api", model):
-                    self.assertEqual(generate_models_news.main(), 0)
-                if calls:
-                    committed = {path: (staging / name).read_bytes() for name, path in models_news_staged_files(date)}
-                with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
-                    new = self.new("models", date)
-                self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
-                if calls:
-                    self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
+        models = f"{NEWS_REL_DIR}/models"
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, images, saved = self.new("models", "2026-10-14")
+        # One call compares with the last snapshot before the post, and four files are saved together.
+        self.assertEqual([temperature for _, _, temperature in calls], [0.4])
+        self.assertIn("2026-10-07", calls[0][1])
+        self.assertEqual(sorted(saved), [f"{models}/2026-10-14/discord.json", f"{models}/diffs/2026-10-14.json",
+                                         f"{models}/models.md", f"{models}/snapshots/2026-10-14.json"])
+        self.assertIn('"text": "<@&42> Model updates"', saved[f"{models}/2026-10-14/discord.json"].decode())
+        self.assertEqual(json.loads(saved[f"{models}/snapshots/2026-10-14.json"]), current)
+        self.assertLess(saved[f"{models}/models.md"].decode().index("## 2026-10-14"),
+                        saved[f"{models}/models.md"].decode().index("## 2026-10-07"))
+        # A week without changes makes no call and saves only the snapshot.
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, _, saved = self.new("models", "2026-10-28")
+        self.assertEqual((calls, list(saved)), ([], [f"{models}/snapshots/2026-10-28.json"]))
         # A saved model post is never replaced; a week without changes can be taken again.
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
             with self.assertRaisesRegex(SystemExit, "has a saved model post"):

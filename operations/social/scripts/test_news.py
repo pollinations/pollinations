@@ -18,8 +18,8 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
 import posts
-from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
-                    monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
+                    filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
 from contributors import github_account, rank_contributors
 from discord_pr import generate_snippet
 from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
@@ -456,6 +456,18 @@ def gist(number, merged_at, tier="daily"):
             "area": "Models", "type": "Feature", "source": "Team", "image": {"prompt": "Bee"},
             "gist": {"category": "feature", "user_facing": True, "publish_tier": tier, "importance": "major",
                      "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
+
+
+class TextCallTest(unittest.TestCase):
+    def test_an_empty_answer_is_asked_again_with_a_seed(self):
+        """The API saves an empty answer under its request; asking the same again gets it back."""
+        answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
+        for answers, expected in ((["", "Hello"], "Hello"), (["", None, "  "], None)):
+            with self.subTest(answers=answers), patch("time.sleep"), \
+                 patch("common.requests.post", side_effect=[answer(text) for text in answers]) as post:
+                self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
+                self.assertEqual([call.kwargs["json"].get("seed") for call in post.call_args_list],
+                                 [None, 1, 2][:len(answers)])
 
 
 class ContributorsTest(unittest.TestCase):

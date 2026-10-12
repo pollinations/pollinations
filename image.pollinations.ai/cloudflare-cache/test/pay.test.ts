@@ -212,11 +212,10 @@ test("browsers get the VM's paywall page byte for byte", async () => {
 
     expect(response.status).toBe(402);
     expect(text).toBe(browserBody);
-    // The edge drops Content-Length and ETag from HTML on the way out
-    const vm = Object.fromEntries(capturedHeaders(browserHeaders));
-    const headers = withoutLabel(response.headers);
-    delete headers["content-length"];
-    expect(headers).toEqual(vm);
+    // Every header of the live page, which had no Content-Length or ETag
+    expect(withoutLabel(response.headers)).toEqual(
+        Object.fromEntries(capturedHeaders(browserHeaders)),
+    );
 });
 
 test("a rate-limited HEAD generates unpaid without booking the slot, as on the VM", async () => {
@@ -266,9 +265,8 @@ test("a rate-limited POST, PUT, PATCH or DELETE gets Express's 404 page and no g
 
         expect(response.status, method).toBe(404);
         expect(text, method).toBe(postBody.replace("POST", method));
-        const headers = withoutLabel(response.headers);
-        delete headers["content-length"];
-        expect(headers, method).toEqual(vm);
+        // Every header of the live page, Content-Length absent as there
+        expect(withoutLabel(response.headers), method).toEqual(vm);
     }
     // finalhandler's encodeurl 2.0.0 keeps $ and | of the path the VM got
     // (^ arrives escaped); escape-html the quote

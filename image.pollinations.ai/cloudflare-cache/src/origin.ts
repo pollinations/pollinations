@@ -60,10 +60,10 @@ export const logFailure = (route: string, details: object) =>
     console.error(JSON.stringify({ adapter: "image", route, ...details }));
 
 /**
- * A body without Content-Length, as node:http sent every response it wrote
- * with writeHead() first
+ * A body without Content-Length, as clients got every response node:http
+ * wrote with writeHead() first, and the VM's HTML pages
  */
-const chunked = (body: string | Uint8Array) =>
+export const chunked = (body: string | Uint8Array) =>
     new ReadableStream({
         start(controller) {
             controller.enqueue(
@@ -100,15 +100,11 @@ const HTML_ESCAPES = {
 export function expressPage(status: number, message: string) {
     const text = message.replace(/["&'<>]/g, (char) => HTML_ESCAPES[char]);
     const body = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${text}</pre>\n</body>\n</html>\n`;
-    return new Response(body, {
-        status,
-        headers: {
-            ...VM_CORS,
-            "X-Powered-By": "Express",
-            "Content-Security-Policy": "default-src 'none'",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Type": "text/html; charset=utf-8",
-        },
+    return vmResponse(body, status, {
+        "X-Powered-By": "Express",
+        "Content-Security-Policy": "default-src 'none'",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Type": "text/html; charset=utf-8",
     });
 }
 

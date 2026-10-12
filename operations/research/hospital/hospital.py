@@ -8,6 +8,8 @@ STAGES = ['workup', 'plan-review', 'implement', 'review', 'discharge']
 ROLES = {'implement': 'fellow', 'plan-review': 'review-attending', 'review': 'review-attending'}
 POLL = 10
 STAGE_SECONDS = 600
+# AGENTS.md: a PR that changes what one of these npm packages ships bumps its version.
+SHIPS = {'packages/sdk': ['src/'], 'packages/ui': ['src/'], 'packages/polli-cli': ['src/', 'bin/', 'SKILL.md']}
 
 def now(): return dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 def save(p, x): p.write_text(json.dumps(x, indent=2) + '\n')
@@ -60,6 +62,39 @@ def missing_evidence(folder, stage):
     if stage == 'implement' and 0 not in codes: return 'no passing run-test log'
     if stage == 'review' and not (0 in codes and any(codes)): return 'no red and green run-test logs'
 
+def missing_version_bumps(diff):
+    """Packages whose shipped files the diff changes without a version line in their package.json. Free: runs before any model."""
+    changed, bumped = set(), set()
+    for chunk in re.split(r'^(?=diff --git )', diff, flags=re.M):
+        m = re.match(r'diff --git a/\S+ b/(\S+)', chunk)
+        if not m: continue
+        path = m.group(1)
+        changed.add(path)
+        if path.endswith('/package.json') and re.search(r'^\+\s*"version":', chunk, re.M): bumped.add(path)
+    return [pkg for pkg, shipped in SHIPS.items() if f'{pkg}/package.json' not in bumped
+            and any(p.startswith(f'{pkg}/{s}') and '.test.' not in p for p in changed for s in shipped)]
+
+def events(text):
+    for line in text.splitlines():
+        try: e = json.loads(line)
+        except ValueError: continue
+        if isinstance(e, dict): yield e
+
+def final_note(role, log, output):
+    """The stage's note, or what the model logged before the driver stopped it: a killed stage keeps its findings."""
+    text = log.read_text()
+    if role == 'review-attending':
+        if output.exists(): return output.read_text()
+        return 'PARTIAL NOTE: the stage stopped before its final note. Log tail:\n' + text[-6000:]
+    results = [e['result'] for e in events(text) if e.get('type') == 'result' and e.get('result')]
+    if results: return results[-1]
+    steps = []
+    for e in events(text):
+        for b in e['message'].get('content', []) if e.get('type') == 'assistant' else []:
+            if b.get('type') == 'text': steps.append(b['text'])
+            elif b.get('type') == 'tool_use': steps.append(f"[{b.get('name')}] {json.dumps(b.get('input'))[:300]}")
+    return 'PARTIAL NOTE: the stage stopped before its final note. Steps so far:\n' + '\n'.join(steps)[-6000:]
+
 def verdict(body):
     found = re.findall(r'^\W*VERDICT:\s*(APPROVE|REWORK|ESCALATE|CHANGES)\b', body, re.M)
     return found[-1] if found else None
@@ -68,8 +103,9 @@ def role_cmd(role, prompt, output):
     if role == 'review-attending':
         return ['codex', 'exec', '--model', 'openai/gpt-6-astra', '--dangerously-bypass-approvals-and-sandbox', '-C', str(REPO), '-o', str(output), prompt]
     # Only the tools a role needs: no subagents or web access, and a smaller prompt.
+    # stream-json logs each step as it happens, so a stopped stage still has its findings.
     return ['claude', '-p', '--settings', str(pathlib.Path.home() / '.pollinations/claude-code.json'), '--model', 'anthropic/claude-opus-5.5',
-            '--tools', 'Bash,Read,Edit,Write,Grep,Glob', '--dangerously-skip-permissions', prompt]
+            '--tools', 'Bash,Read,Edit,Write,Grep,Glob', '--dangerously-skip-permissions', '--output-format', 'stream-json', '--verbose', prompt]
 
 def close(folder, state, outcome, reason, keys):
     state.update(outcome=outcome, end=now())
@@ -115,6 +151,9 @@ def main():
         save(folder/'state.json',s)
         (folder/'CHART.md').write_text((ROOT/'chart-template.md').read_text().replace('{{number}}',str(a.number)))
         note(folder,'ADMISSION',f"Kind: {a.kind}\nStart: {s['start']} UTC\nBranch: hospital/{a.number}\nBase: {s['base']}\nSource: {source['html_url']}\n{source['title']}\nOpen PRs that mention this case: {', '.join(related) or 'none in cache'}")
+        unbumped = missing_version_bumps((ROOT/'cache'/f'pr-{a.number}.diff').read_text()) if a.kind == 'pr' else []
+        if unbumped:
+            close(folder,s,'changes-requested',f"Static check, no model run: the diff changes what {', '.join(unbumped)} ships without bumping its package.json version (AGENTS.md: published packages bump their version, including their own package-lock.json).",keys)
         return
     s = json.loads((folder/'state.json').read_text())
     if s['outcome'] in TERMINAL: raise SystemExit('Case already closed')
@@ -129,7 +168,7 @@ def main():
     role = ROLES.get(a.action, a.action)
     prompt = f'''You are running exactly one hospital stage: {a.action}. Read {ROOT}/PROTOCOL.md, {ROOT}/roles/{role}.md, {folder}/CHART.md, {folder}/source.json, and {ROOT}/PRECEDENTS.md. Repo: {REPO}. Base commit: {s['base']}. Kind: {s['kind']}. Cached GitHub data: {ROOT}/cache/ (a PR's diff is pr-<number>.diff). Test logs so far: {folder}/tests/.
 Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Its logs are the only test evidence the driver and discharge accept.
-Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites. Work only in the current hospital branch. Do not modify hospital records; print your note as final output. Keep it under 700 words, with concrete evidence and a final standalone line VERDICT: APPROVE, VERDICT: REWORK, or VERDICT: ESCALATE. In a PR case, VERDICT: CHANGES ends the case when the PR's own diff must change before merge; REWORK is only for the hospital's plan or implementation. You have a small billed budget: aim for about 15 tool calls, and read only the lines you need. If verification needs live services or production data, or you cannot conclude within that scope, stop and escalate with what you found; a stage killed at its time limit loses its note. No user questions: unresolved blockers get I-PASS. Do not commit; driver preserves work. For PR case, implementation means applying the cached PR diff after approved plan, not inventing a different fix.'''
+Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites. Work only in the current hospital branch. Do not modify hospital records; print your note as final output. Keep it under 700 words, with concrete evidence and a final standalone line VERDICT: APPROVE, VERDICT: REWORK, or VERDICT: ESCALATE. In a PR case, VERDICT: CHANGES ends the case when the PR's own diff must change before merge; REWORK is only for the hospital's plan or implementation. You have a small billed budget: aim for about 15 tool calls, and read only the lines you need. If verification needs live services or production data, or you cannot conclude within that scope, stop and escalate with what you found; a stage stopped at its time limit keeps only a partial note. No user questions: unresolved blockers get I-PASS. Do not commit; driver preserves work. For PR case, implementation means applying the cached PR diff after approved plan, not inventing a different fix.'''
     attempt = len(list(folder.glob(f'{a.action}-*.log'))) + 1
     log = folder/f'{a.action}-{attempt}.log'
     output = folder/f'{a.action}-{attempt}.md'
@@ -152,8 +191,8 @@ Do not spawn agents or call another model. No external writes, secrets, live API
                 try: proc.wait(timeout=10)
                 except subprocess.TimeoutExpired: os.killpg(proc.pid,signal.SIGKILL); proc.wait()
                 break
-    if role != 'review-attending': output.write_text(log.read_text())
-    body = output.read_text() if output.exists() else 'Missing final note'
+    body = final_note(role,log,output)
+    output.write_text(body)
     note(folder,a.action.upper().replace('-','_'),body)
     if stop or proc.returncode != 0:
         close(folder,s,'escalated','Precedents checked P1-P3. I-PASS: stage stopped; '+(stop or f'runner exit {proc.returncode}')+'; inspect stage log; preserve branch; receiver must restate blocker.',keys); return

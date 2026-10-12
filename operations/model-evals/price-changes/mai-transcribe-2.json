@@ -3,7 +3,7 @@
     "runtime_change": false,
     "currency": "USD",
     "price_multiplier": 0.75,
-    "merge_policy": "Keep draft. Confirm effective date, timezone, serving-route rates and billing evidence; add registry changes and validate before merging.",
+    "merge_policy": "Keep draft. January 1, 2027 is a planning date inferred from the official offer through end of 2026, not an automatic cutover. Confirm exact cutoff/timezone, both serving-route rates and billing; add registry changes and validate before manual merge.",
     "model": "microsoft/mai-transcribe-2",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16798",
     "current_price": {
@@ -12,13 +12,14 @@
     "next_price": {
         "per_audio_hour": 0.36
     },
-    "merge_on": null,
+    "merge_on": "2027-01-01",
     "unknowns": [
-        "Promotion end date and timezone",
+        "Exact promotion cutoff time and timezone",
         "Matching Vercel fallback rate on effective date"
     ],
     "sources": [
-        "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md"
+        "https://github.com/microsoft-foundry/model-releases/blob/main/models/microsoft-ai/mai-transcribe-2/README.md",
+        "https://microsoft.ai/news/mai-transcribe-2-is-the-fastest-most-accurate-and-cheapest-speech-recognition-model-in-the-world/"
     ],
     "required_changes": [
         "Update Azure and Vercel route costs from confirmed provider rates",

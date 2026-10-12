@@ -202,7 +202,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             },
         );
 
-        expect(requests[0]).toEqual({
+        expect(requests[1]).toEqual({
             url: H3_MAX_TURBO_TEXT_ENDPOINT,
             body: {
                 prompt: "a paper windmill turning gently",
@@ -241,7 +241,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             height,
         });
 
-        expect(requests[0]?.body?.aspect_ratio).toBe(expectedAspectRatio);
+        expect(requests[1]?.body?.aspect_ratio).toBe(expectedAspectRatio);
     });
 
     it.each([
@@ -261,7 +261,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             image: [start, end],
         });
 
-        expect(requests[0]).toEqual({
+        expect(requests[1]).toEqual({
             url: H3_MAX_TURBO_IMAGE_ENDPOINT,
             body: {
                 prompt: "a seamless camera move",
@@ -290,7 +290,7 @@ describe("callMinimaxH3MaxTurboAPI", () => {
             duration,
             resolution,
         });
-        expect(requests[0]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
+        expect(requests[1]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
         expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
         expect(result.trackingData.providerBilling).toEqual({
             units: Number(units),
@@ -328,20 +328,34 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         );
     });
 
-    it("keeps the reviewed registry rate when fal's pricing API changes", async () => {
+    it.each([
+        0.015, 0.025,
+    ])("bills the live endpoint rate %s before and after promotion expiry", async (unitPrice) => {
         const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", "5", 0.05);
-        const result = await callMinimaxH3MaxTurboAPI("reviewed pricing", {
+        mockH3Fetch(requests, "COMPLETED", "8", unitPrice);
+        const result = await callMinimaxH3MaxTurboAPI("live pricing", {
             ...baseParams,
             model: "minimax/minimax-h3-max-turbo",
+            resolution: "768p",
+            image: ["https://media.pollinations.ai/start.png"],
         });
-        expect(
-            requests.some((request) => request.url.includes("/models/pricing")),
-        ).toBe(false);
+        expect(new URL(requests[0].url).searchParams.get("endpoint_id")).toBe(
+            "minimax/h3-max-turbo/image-to-video",
+        );
         expect(result.trackingData.providerBilling).toEqual({
-            units: 5,
-            unitCost: 0.025,
+            units: 8,
+            unitCost: unitPrice,
         });
+        const billing = calculateUsageBilling({
+            model: "minimax/minimax-h3-max-turbo",
+            usage: result.trackingData.usage,
+            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+            input: {
+                resolution: "768p",
+                providerBilling: result.trackingData.providerBilling,
+            },
+        });
+        expect(billing.price.totalPrice).toBeCloseTo(8 * unitPrice);
     });
 
     it("surfaces a terminal provider failure", async () => {

@@ -486,6 +486,68 @@ test("50 concurrent first requests in a fresh isolate all get a 402 and share on
     expect(events.filter((event) => event === "/supported")).toHaveLength(1);
 });
 
+test("after a facilitator outage at first use, the paywall is built again on the first GET 30 s later, as the VM synced again", async () => {
+    replies["/supported"] = () => reply(500, "facilitator down");
+    const app = await freshWorker();
+    const ip = await limitedIp();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+        const down = await call("/prompt/outage%201", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(down.response.status).toBe(500);
+        expect(down.text).toContain("<pre>Internal Server Error</pre>");
+        expect(events).toEqual(["/supported"]);
+
+        // Still down, within 30 s of the failed sync: no new /supported call
+        events.length = 0;
+        vi.setSystemTime(Date.now() + 29_000);
+        const stillDown = await call("/prompt/outage%202", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(stillDown.response.status).toBe(500);
+        expect(events).toEqual([]);
+
+        // 30 s after it: one new sync, which fails, then none for 30 s more
+        vi.setSystemTime(Date.now() + 1_000);
+        const retried = await call("/prompt/outage%203", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(retried.response.status).toBe(500);
+        expect(events).toEqual(["/supported"]);
+        events.length = 0;
+        vi.setSystemTime(Date.now() + 29_000);
+        await call("/prompt/outage%204", { ip, headers: CURL, app });
+        expect(events).toEqual([]);
+
+        // Back up, 30 s after the last failed sync: the challenge again
+        replies["/supported"] = STUB_REPLIES["/supported"];
+        vi.setSystemTime(Date.now() + 1_000);
+        const back = await call("/prompt/outage%205", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(back.response.status).toBe(402);
+        expect(events).toEqual(["/supported"]);
+        const again = await call("/prompt/outage%206", {
+            ip,
+            headers: CURL,
+            app,
+        });
+        expect(again.response.status).toBe(402);
+        expect(events).toEqual(["/supported"]);
+    } finally {
+        vi.useRealTimers();
+    }
+});
+
 test("without /supported, a rate-limited GET gets Express's 500 page, as on the VM", async () => {
     replies["/supported"] = () => reply(500, "facilitator down");
     const app = await freshWorker();

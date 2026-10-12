@@ -20,13 +20,19 @@ const PAYMENT_HEADERS = { "User-Agent": "node" };
 // Statuses the payment middleware answers itself: the challenge, a failed
 // verify or settlement, and an unavailable facilitator
 const PAYWALL_STATUSES = [402, 412, 503];
+// The Express middleware synced /supported again on the first payment request
+// at least this long after a failed sync
+const SYNC_RETRY_MS = 30_000;
 
 type Bindings = { generate: () => Promise<Response> };
-let app: Hono<{ Bindings: Bindings }> | undefined;
+type Paywall = { app?: Hono<{ Bindings: Bindings }>; unsyncedSince: number };
+// unsyncedSince: when the app first answered that /supported had not synced
+let paywall: Paywall | undefined;
 
 /** The middleware fetches /supported when built, so build it inside a request */
 function paywallApp(env: Record<string, any>) {
-    const paywall = weftPaymentMiddlewareHono(
+    const built: Paywall = { unsyncedSince: 0 };
+    const middleware = weftPaymentMiddlewareHono(
         {
             "GET *": {
                 accepts: {
@@ -61,14 +67,18 @@ function paywallApp(env: Record<string, any>) {
             ],
         },
     );
-    return (
-        new Hono<{ Bindings: Bindings }>()
-            .use(paywall)
-            .all("*", (c) => c.env.generate())
-            // A facilitator exception (no /supported yet, a malformed reply, a
-            // timeout) reached Express's default error handler
-            .onError((error) => expressError(error))
-    );
+    built.app = new Hono<{ Bindings: Bindings }>()
+        .use(middleware)
+        .all("*", (c) => c.env.generate())
+        // A facilitator exception (no /supported yet, a malformed reply, a
+        // timeout) reached Express's default error handler
+        .onError((error) => {
+            if (error.message?.startsWith("Facilitator does not support")) {
+                built.unsyncedSince ||= Date.now();
+            }
+            return expressError(error);
+        });
+    return built;
 }
 
 /** finalhandler for an error, with NODE_ENV=production: the status message */
@@ -94,8 +104,14 @@ export async function pay(
     ctx: ExecutionContext,
     generate: () => Promise<Response>,
 ) {
-    app ??= paywallApp(env);
-    const paid = app.fetch(
+    // The middleware's own retry would run unawaited in a request that ends
+    // first, which a Worker does not finish: build it again instead
+    const { unsyncedSince } = paywall ?? {};
+    if (unsyncedSince && Date.now() - unsyncedSince >= SYNC_RETRY_MS) {
+        paywall = undefined;
+    }
+    paywall ??= paywallApp(env);
+    const paid = paywall.app.fetch(
         new Request(RESOURCE_ORIGIN + pathname, {
             method: request.method,
             headers: request.headers,

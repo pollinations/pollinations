@@ -123,6 +123,7 @@ jobs:
       - name: Write and save
         env:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}  # the monthly job counts the month's merged PRs
           POSTS: ${{ steps.posts.outputs.posts }}
           OVERWRITE: ${{ inputs.overwrite || env.RUN == 'preview' }}
         # Each post is saved and pushed before the next is written. A preview

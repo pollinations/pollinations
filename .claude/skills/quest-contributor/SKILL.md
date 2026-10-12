@@ -1,6 +1,6 @@
 ---
 name: quest-contributor
-description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Pollen rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, claim, build, prove, submit, get paid.
+description: Contribute to Pollinations community quests (POLLEN-QUEST issues in pollinations/pollinations) and earn Pollen rewards. Use when asked to find an open Pollinations quest, pick one that fits, submit a PR for it, claim a quest reward, or when working on any issue labeled POLLEN-QUEST. Covers the full loop - discover, choose, build, prove, submit, get paid.
 ---
 
 # Quest Contributor
@@ -39,12 +39,12 @@ claimed). New quests appear without warning - re-check before starting.
   [quest-solution-review skill](https://github.com/pollinations/pollinations/blob/main/.claude/skills/quest-solution-review/SKILL.md);
   read it to learn exactly how your PR will be judged.
 
-## 3. Claim fast
+## 3. Start
 
-Quests are competitive and effectively first-merged-wins (unless multi-winner).
-Post a short comment stating your approach **before** building, then open a
-minimal working PR quickly and harden it with follow-up commits. A polished
-late PR loses to a correct early one.
+No claim or assignment is needed: open your PR when it works. Being first does
+not win. Maintainers compare the open PRs and merge the smallest correct one,
+so a short comment on the issue saying what you plan helps others avoid
+duplicate work but reserves nothing.
 
 ## 4. Build
 
@@ -84,11 +84,9 @@ maintainer a one-line command to run it - do not fake a transcript.
 ## 7. Get paid
 
 After merge, open [enter.pollinations.ai/quests](https://enter.pollinations.ai/quests),
-check quests, and claim the reward if one is pending for you - a merge does
-not by itself guarantee a payout; the issue's reward rules decide. Rewards
-are keyed to your GitHub account. Maintainers have also paid bonuses for
-reusable techniques and thoughtful feedback posted on the quest issue, so
-sharing what you learned is worthwhile even when your PR is not selected.
+check quests, and claim the pending reward. Rewards are keyed to your GitHub
+account. When a PR is not selected but an idea from it ships, maintainers
+sometimes pay a small bonus.
 
 ## Standards and discovery
 

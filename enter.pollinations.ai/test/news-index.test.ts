@@ -207,7 +207,7 @@ describe("model news cards", () => {
                     highlight("unlabelled"),
                 ],
             }).map(({ title }) => title),
-        ).toEqual(["feature"]);
+        ).toEqual(["feature", "unlabelled"]);
     });
 
     it("moves a highlight's link under its title", () => {

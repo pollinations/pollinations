@@ -53,10 +53,13 @@ export type Highlight = {
     kind?: "model" | "api" | "product";
 };
 
-/** Highlights for Updates: product news only, and not apps (README only). */
+/**
+ * Highlights for Updates: not models or API changes (the Changelog lists
+ * them) and not apps (README only). Unlabelled highlights still show.
+ */
 export function newsHighlights(index: NewsIndex): Highlight[] {
     return index.highlights.filter(
-        ({ app, kind }) => !app && kind === "product",
+        ({ app, kind }) => !app && kind !== "model" && kind !== "api",
     );
 }
 

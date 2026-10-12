@@ -1,0 +1,36 @@
+{
+  "pr_number": 16717,
+  "title": "fix(mcp): preserve requested log probabilities in generateText responses",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16717",
+  "merged_at": "2026-10-12T14:29:42Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "MCP generateText now includes choice.logprobs in its metadata, so callers receive token log probabilities requested with logprobs or top_logprobs. A regression test covers the response.",
+    "keywords": [
+      "MCP",
+      "generateText",
+      "logprobs",
+      "top_logprobs",
+      "metadata"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16717.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli uses a tiny magnifying glass to inspect probability-labeled token petals emerging from a retro terminal glowing lime green (#ecf874). Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, a warm cream and pastel gradient background, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T14:31:05.955682+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "846b7ff569b16178a6d18aac0cc24b491bdde422",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

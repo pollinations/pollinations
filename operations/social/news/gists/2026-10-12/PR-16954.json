@@ -1,0 +1,126 @@
+{
+  "pr_number": 16954,
+  "title": "feat: add Claude Opus 5.5 fast mode via OpenRouter",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/16954",
+  "merged_at": "2026-10-12T18:33:15Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Adds the paid-only `anthropic/claude-opus-5.5:fast` model, with input, cache-read, cache-write, and output pricing per 1M tokens. It routes OpenRouter’s `anthropic/claude-opus-5.5` through the pinned `anthropic/fast` endpoint, with no standard-speed fallback that could charge fast-mode rates for standard-speed service. The model accepts text and images, supports tool calling, and uses the standard Opus 5.5 parameters without forcing tool choice.",
+    "keywords": [
+      "Claude Opus 5.5",
+      "fast mode",
+      "OpenRouter",
+      "Anthropic",
+      "text models",
+      "paid models"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16954.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny running goggles and watches a CRT monitor robot guide a glowing request along a single lime green (#ecf874) path toward a little terminal labeled 'FAST', with code-plants blooming beside it. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T18:35:27.456779+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Community",
+  "merge_commit_sha": "5f66ee89ca3b22f627cd4c3f8ac9b88032179f09",
+  "announcements": [
+    {
+      "id": "pr-16954:anthropic/claude-opus-5.5:fast",
+      "model_id": "anthropic/claude-opus-5.5:fast",
+      "title": "Claude Opus 5.5 Fast",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000844",
+            "promptCachedTokens": "0.000000422",
+            "promptCacheWriteTokens": "0.00001055",
+            "completionTextTokens": "0.0000422"
+          }
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "reasoning_effort",
+            "tools",
+            "stop"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "5f66ee89ca3b22f627cd4c3f8ac9b88032179f09^1",
+    "after_ref": "5f66ee89ca3b22f627cd4c3f8ac9b88032179f09"
+  }
+}

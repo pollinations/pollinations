@@ -861,6 +861,7 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("deepseek/deepseek-v4-pro-0813");
         expect(result.options.provider).toEqual({
             only: ["alibaba"],
+            ignore: ["alibaba/us-east-1"],
             allow_fallbacks: false,
         });
     });

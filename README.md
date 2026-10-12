@@ -274,10 +274,11 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Model Restrictions
 
-Each API key can be scoped to model categories. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
+Each API key can be scoped to model categories or specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
 
 - **Allow all models** — key works with any available model
-- **Restrict to categories** — e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later; choosing a model ID allows its whole category
+- **Restrict to categories** — e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later
+- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models flux zimage`; a model ID allows only that model
 
 ### Usage
 

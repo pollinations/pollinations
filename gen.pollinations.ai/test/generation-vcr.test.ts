@@ -134,6 +134,10 @@ function createGenerationMocks() {
     const azureSpeechState: {
         requests: Array<{ url: string; body: Record<string, unknown> }>;
     } = { requests: [] };
+    const ovhWhisperState: { requests: FormData[] } = { requests: [] };
+    const geminiSpeechState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -263,6 +267,75 @@ function createGenerationMocks() {
             },
             reset: () => {
                 azureSpeechState.requests = [];
+            },
+        },
+        geminiSpeech: {
+            state: geminiSpeechState,
+            handlerMap: {
+                "generativelanguage.googleapis.com": async (
+                    request: Request,
+                ) => {
+                    geminiSpeechState.requests.push(await request.json());
+                    return Response.json({
+                        status: "completed",
+                        usage: {
+                            total_input_tokens: 5,
+                            total_output_tokens: 76,
+                            input_tokens_by_modality: [
+                                { modality: "text", tokens: 5 },
+                            ],
+                            output_tokens_by_modality: [
+                                { modality: "audio", tokens: 76 },
+                            ],
+                            total_cached_tokens: 0,
+                            total_thought_tokens: 0,
+                            total_tool_use_tokens: 0,
+                        },
+                        steps: [
+                            {
+                                content: [
+                                    {
+                                        type: "audio",
+                                        mime_type: "audio/wav",
+                                        data: btoa("RIFF\0\0\0\0WAVE"),
+                                    },
+                                ],
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                geminiSpeechState.requests = [];
+            },
+        },
+        ovhWhisper: {
+            state: ovhWhisperState,
+            handlerMap: {
+                "oai.endpoints.kepler.ai.cloud.ovh.net": async (
+                    request: Request,
+                ) => {
+                    ovhWhisperState.requests.push(await request.formData());
+                    // Trimmed from a live OVH verbose_json answer.
+                    return Response.json({
+                        text: " The water cycle starts with evaporation.",
+                        language: "en",
+                        duration: 3.2,
+                        usage: { type: "duration", seconds: 4 },
+                        words: [],
+                        segments: [
+                            {
+                                id: 1,
+                                start: 0,
+                                end: 3.2,
+                                text: " The water cycle starts with evaporation.",
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                ovhWhisperState.requests = [];
             },
         },
         portkeyDirect: {
@@ -1193,6 +1266,73 @@ test("speech without a model, or with the tts alias, uses free OpenAI TTS", asyn
         expect(request.url).toContain("/deployments/tts/audio/speech");
         expect(request.body).toMatchObject({ model: "tts-1" });
     }
+});
+
+test("multipart Gemini speech without a format defaults to wav", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "geminiSpeech");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        GEMINI_API_KEY: "gemini-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const form = new FormData();
+    form.append("model", "google/gemini-3.8-flash-tts");
+    form.append("input", `multipart gemini ${crypto.randomUUID()}`);
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/speech",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    // The form path used to assume mp3, which Gemini cannot produce: 400.
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("content-type")).toContain("audio/wav");
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.geminiSpeech.state.requests).toHaveLength(1);
+});
+
+test("whisper srt cues are the segments OVH is asked for", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "ovhWhisper");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        OVHCLOUD_API_KEY: "ovh-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const form = new FormData();
+    // Unique bytes so the transcription cache cannot answer instead.
+    form.append("file", new File([crypto.randomUUID()], "clip.wav"));
+    form.append("model", "whisper-1");
+    form.append("response_format", "srt");
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/transcriptions",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toBe(
+        "1\n00:00:00,000 --> 00:00:03,200\nThe water cycle starts with evaporation.\n",
+    );
+    await wait();
+    // OVH answers segments: [] unless segment timings are requested (#13552).
+    expect(
+        mocks.ovhWhisper.state.requests[0].getAll("timestamp_granularities[]"),
+    ).toEqual(["word", "segment"]);
 });
 
 test("chat completions use local text generation with VCR-backed Portkey", async ({

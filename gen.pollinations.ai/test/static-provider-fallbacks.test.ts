@@ -681,6 +681,42 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it.each([
+        ["deepseek/deepseek-v4.1-flash", 0.000546],
+        ["deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8", 0.000240751],
+    ] as const)("bills DeepSeek V4.1 Flash at the current quote when %s serves", (route, cost) => {
+        const billing = calculateUsageBilling({
+            model: "deepseek/deepseek-v4.1-flash",
+            servedBy: TEXT_SERVICES[route],
+            quotedBy: TEXT_SERVICES["deepseek/deepseek-v4.1-flash"],
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000546, 8);
+    });
+
+    it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
+        const billing = calculateUsageBilling({
+            model: "deepseek/deepseek-v4-pro",
+            servedBy:
+                TEXT_SERVICES["deepseek/deepseek-v4-pro:openrouter:streamlake"],
+            quotedBy: TEXT_SERVICES["deepseek/deepseek-v4-pro"],
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00113729, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00201231, 8);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];

@@ -218,22 +218,6 @@ describe("callAzureMaiImage", () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it("rejects transparent backgrounds before calling Azure", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callAzureMaiImage(
-                "a logo",
-                { ...baseParams, transparent: true },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("Transparent"),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("maps Azure content safety rejections to a content policy error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(

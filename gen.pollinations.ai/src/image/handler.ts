@@ -1,5 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
@@ -135,7 +136,7 @@ function parseImageParams(
         ...queryParams,
         ...body,
         model: c.var.model.communityEndpoint
-            ? "openai/gpt-image-1-mini"
+            ? DEFAULT_IMAGE_MODEL
             : resolvedModel,
     };
     delete mergedParams.prompt;
@@ -161,6 +162,16 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {

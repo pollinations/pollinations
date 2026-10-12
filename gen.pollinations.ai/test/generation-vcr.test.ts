@@ -3140,7 +3140,10 @@ test("OpenAI image generation returns token usage", async ({
     await wait();
 });
 
-test("gpt-image-2 rejects transparent backgrounds with 400", async ({
+test.for([
+    "openai/gpt-image-2",
+    "tongyi-mai/z-image-turbo",
+])("%s rejects transparent backgrounds with 400", async (model, {
     paidApiKey,
     mocks,
 }) => {
@@ -3153,7 +3156,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
             authorization: `Bearer ${paidApiKey}`,
         },
         body: JSON.stringify({
-            model: "openai/gpt-image-2",
+            model,
             prompt: "transparent",
             transparent: true,
         }),
@@ -3164,8 +3167,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message:
-                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${model}.`,
         },
     });
     await wait();
@@ -3173,7 +3175,7 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
-        modelRequested: "openai/gpt-image-2",
+        modelRequested: model,
         responseStatus: 400,
     });
 });

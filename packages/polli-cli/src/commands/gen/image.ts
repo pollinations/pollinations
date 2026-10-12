@@ -30,7 +30,7 @@ export function createImageCommand() {
         .option("--safe", "Enable safety filters")
         .option(
             "--transparent",
-            "Transparent background (PNG, supported models only)",
+            "Transparent background (GPT Image 1 Mini, 1.5 and 2.5 only)",
         )
         .option(
             "--image <url...>",

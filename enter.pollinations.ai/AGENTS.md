@@ -117,7 +117,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
+curl "$BASE_URL/generate/image/test7?model=gptimage&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file

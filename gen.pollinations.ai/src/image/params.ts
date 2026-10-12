@@ -150,26 +150,6 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "openai/gpt-image-2" && data.transparent) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
-        if (
-            (data.model === "tongyi-mai/z-image-turbo" ||
-                data.model === "tongyi-mai/z-image-turbo:fal") &&
-            data.transparent
-        ) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by z-image-turbo.",
-            });
-        }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
         const references = [
             {

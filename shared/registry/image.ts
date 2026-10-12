@@ -600,6 +600,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-1.5": {
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
@@ -624,6 +625,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-2": {
         aliases: ["gpt-image-2"],
@@ -670,6 +672,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "openai/gpt-image-2.5-sunburst": {
         aliases: [],
@@ -694,6 +697,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T06:47:03.775912+00:00",
+  "generated_at": "2026-10-12T14:56:48.612462+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7563,7 +7563,8 @@
       "prs": [
         16896,
         17115
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-11",
@@ -7573,7 +7574,8 @@
       "prs": [
         17034
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "date": "2026-10-11",
@@ -7583,7 +7585,8 @@
       "prs": [
         17035
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "date": "2026-10-11",
@@ -7593,7 +7596,8 @@
       "prs": [
         17108
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "date": "2026-10-11",
@@ -7602,7 +7606,8 @@
       "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
       "prs": [
         17125
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-10",
@@ -7612,7 +7617,8 @@
       "prs": [
         16213,
         16985
-      ]
+      ],
+      "kind": "product"
     },
     {
       "date": "2026-10-10",
@@ -7621,7 +7627,8 @@
       "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16898
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-10",
@@ -7631,7 +7638,8 @@
       "prs": [
         16862,
         16908
-      ]
+      ],
+      "kind": "api"
     },
     {
       "date": "2026-10-10",
@@ -7641,7 +7649,8 @@
       "prs": [
         16948
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "date": "2026-10-09",
@@ -7683,7 +7692,7 @@
         16869
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-09",
@@ -7694,7 +7703,7 @@
         16871
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-08",
@@ -7746,7 +7755,7 @@
         16810
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-07",
@@ -7788,7 +7797,7 @@
         16664
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-07",
@@ -7799,7 +7808,7 @@
         16665
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-06",
@@ -7894,7 +7903,7 @@
         16448
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-04",
@@ -7915,7 +7924,7 @@
         16425
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-04",
@@ -7927,7 +7936,7 @@
         16418
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-04",
@@ -7939,7 +7948,7 @@
         16377
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-04",
@@ -7970,7 +7979,7 @@
         16299
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-03",
@@ -7981,7 +7990,7 @@
         16301
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-03",
@@ -8044,7 +8053,7 @@
         16211
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-02",
@@ -8055,7 +8064,7 @@
         16258
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-01",
@@ -8078,7 +8087,7 @@
         16120
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-10-01",
@@ -8154,7 +8163,7 @@
         15931
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-30",
@@ -8220,7 +8229,7 @@
         15785
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-28",
@@ -8281,7 +8290,7 @@
         15522
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-27",
@@ -8292,7 +8301,7 @@
         15523
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-26",
@@ -8343,7 +8352,7 @@
         15470
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-25",
@@ -8388,7 +8397,7 @@
         15424
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-25",
@@ -8419,7 +8428,7 @@
         15398
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-23",
@@ -8463,7 +8472,7 @@
         15330
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-23",
@@ -8546,7 +8555,7 @@
         15246
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-21",
@@ -8568,7 +8577,7 @@
         15207
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-20",
@@ -8589,7 +8598,7 @@
         15194
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-19",
@@ -8600,7 +8609,7 @@
         15196
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-19",
@@ -8611,7 +8620,7 @@
         15198
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-19",
@@ -8676,7 +8685,7 @@
         15104
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-17",
@@ -8688,7 +8697,7 @@
         15107
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-17",
@@ -8740,7 +8749,7 @@
         14945
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-16",
@@ -8751,7 +8760,7 @@
         14947
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-16",
@@ -8762,7 +8771,7 @@
         14972
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-15",
@@ -8773,7 +8782,7 @@
         14919
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-15",
@@ -8784,7 +8793,7 @@
         14920
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-15",
@@ -8825,7 +8834,7 @@
         14874
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-14",
@@ -8836,7 +8845,7 @@
         14871
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "date": "2026-09-14",
@@ -8937,7 +8946,7 @@
         14750
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     }
   ]
 }

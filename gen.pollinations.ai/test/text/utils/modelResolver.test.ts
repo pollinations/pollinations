@@ -312,6 +312,23 @@ describe("resolveModelConfig", () => {
         expect(result.options.max_tokens).toBe(128000);
     });
 
+    it("routes Claude Haiku 5.5 to the Bedrock global inference profile and the Vercel fallback to the gateway", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "anthropic/claude-haiku-5.5",
+        });
+        expect(primary.options.model).toBe("global.anthropic.claude-haiku-5-5");
+        expect(primary.options.modelConfig?.provider).toBe("bedrock");
+        expect(primary.options.max_tokens).toBe(128000);
+
+        const fallback = resolveModelConfig(messages, {
+            model: "anthropic/claude-haiku-5.5:vercel",
+        });
+        expect(fallback.options.model).toBe("anthropic/claude-haiku-5.5");
+        expect(fallback.options.modelConfig?.directEndpoint).toBe(
+            "https://ai-gateway.vercel.sh/v1/chat/completions",
+        );
+    });
+
     it("routes Claude Opus 5.5 to the Bedrock global inference profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-opus-5.5",
@@ -718,7 +735,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
-        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "deepinfra/fp8"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",

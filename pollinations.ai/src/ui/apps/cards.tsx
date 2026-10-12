@@ -3,7 +3,6 @@ import {
     ClockIcon,
     cn,
     GitHubIcon,
-    InlineLink,
     LinkCard,
     StarIcon,
     TrendUpIcon,
@@ -43,7 +42,7 @@ function AppSignals({ app }: { app: DirectoryApp }) {
                 </span>
             ) : null}
             {isPollen(app) ? (
-                <span role="img" title="Pollen Pay" aria-label="Pollen Pay">
+                <span role="img" title="pollen pay" aria-label="pollen pay">
                     <WalletIcon className="size-4" />
                 </span>
             ) : null}
@@ -100,7 +99,7 @@ export function AppTile({
             tabIndex={tabIndex}
             showIcon={false}
             className="h-full w-full"
-            surfaceClassName="overflow-hidden rounded-2xl p-0"
+            surfaceClassName="overflow-hidden p-0"
         >
             <AppCoverImage src={app.screenshot_url} className="h-30" />
             <div className="flex flex-col gap-1.5 px-5 py-4">
@@ -138,17 +137,17 @@ export function SpotlightTile({
 
     return (
         <article>
-            {href ? (
+            {/* A click target for the mouse only: the title is the one link
+                keyboards and screen readers meet. */}
+            {href ? ( // biome-ignore lint/a11y/useAnchorContent: hidden on purpose, duplicates the title link
                 <a
                     key={`${appIdentity(app)}-image`}
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={`Open ${app.name}`}
-                    className={cn(
-                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border-strong",
-                        slideClassName,
-                    )}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className={cn("block", slideClassName)}
                 >
                     {image}
                 </a>
@@ -168,7 +167,7 @@ export function SpotlightTile({
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border"
                         >
                             {app.name}
                         </a>
@@ -196,11 +195,16 @@ export function AppRow({ app }: { app: DirectoryApp }) {
 
     return (
         <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
-            {href && (
+            {/* The title is the row's one link; the screenshot is a click
+                target for the mouse only. */}
+            {href && ( // biome-ignore lint/a11y/useAnchorContent: hidden on purpose, duplicates the title link
                 <a
                     href={href}
-                    aria-label={`Open ${app.name}`}
-                    className="overflow-hidden rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="overflow-hidden rounded-xl"
                 >
                     <AppCoverImage
                         src={app.screenshot_url}
@@ -213,7 +217,9 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     {href ? (
                         <a
                             href={href}
-                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong sm:text-lg"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-sm font-body text-base font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border sm:text-lg"
                         >
                             {app.name}
                         </a>
@@ -231,6 +237,8 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     {profile && (
                         <a
                             href={profile}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 hover:text-theme-text-strong"
                         >
                             <GitHubIcon className="size-3.5 shrink-0" />
@@ -250,11 +258,6 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                         >
                             {platform}
                         </Chip>
-                    )}
-                    {href && (
-                        <InlineLink href={href} className="ml-auto text-xs">
-                            Open
-                        </InlineLink>
                     )}
                 </div>
             </div>

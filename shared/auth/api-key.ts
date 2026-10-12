@@ -312,7 +312,7 @@ async function authenticateSessionToken(
  * This deliberately does not accept the parent key's raw value so delegated
  * credentials never need to contain or recover that secret.
  */
-async function loadActiveApiKeyAuthResult(opts: {
+export async function loadActiveApiKeyAuthResult(opts: {
     apiKeyId: string;
     rawApiKey: string;
     env: ApiKeyAuthBindings;

@@ -17,15 +17,12 @@ async function main() {
                 registry.getRegistryModelDefinition(name),
             ),
         )
-        .map((name: string) => {
-            const definition = registry.getRegistryModelDefinition(name);
-            return {
-                ...info.modelInfoFromDefinition(name, definition),
-                retirement_at: definition.retirementDate
-                    ? new Date(definition.retirementDate).toISOString()
-                    : undefined,
-            };
-        });
+        .map((name: string) =>
+            info.modelInfoFromDefinition(
+                name,
+                registry.getRegistryModelDefinition(name),
+            ),
+        );
     process.stdout.write(JSON.stringify(models));
 }
 main().catch((error) => {

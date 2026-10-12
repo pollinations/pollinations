@@ -1,6 +1,7 @@
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
+import { BooleanQueryParamSchema } from "./text.ts";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
@@ -120,7 +121,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
-    transparent: z.coerce.boolean().optional().default(false).meta({
+    transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
     }),
@@ -141,7 +142,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         description:
             "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
-    audio: z.coerce.boolean().optional().meta({
+    audio: BooleanQueryParamSchema.optional().meta({
         description:
             "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),

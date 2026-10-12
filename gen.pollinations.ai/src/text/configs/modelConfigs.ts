@@ -108,6 +108,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
         }),
+    "gpt-6-luna-decisions": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.openai.com/v1/decisions",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+        decisionsProtocol: "openai",
+    }),
+    "openai/gpt-6-luna-decisions:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "openai/gpt-6-luna-decisions",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -277,6 +290,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
     }),
 
     "grok-4.6-azure-sweden": () => ({
@@ -830,6 +844,17 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-haiku-5.5": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "anthropic/claude-haiku-5.5",
+            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-sonnet-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5",
@@ -999,7 +1024,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-30b-a3b-instruct",
-        "alibaba",
+        "deepinfra/fp8",
     ),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({
@@ -1010,6 +1035,14 @@ export const portkeyConfig: PortkeyConfigMap = {
     "stepfun/step-3.5-flash": () =>
         createOpenRouterModelConfig({
             model: "stepfun/step-3.5-flash",
+        }),
+    "stepfun/step-5-preview": () =>
+        createOpenRouterModelConfig({
+            model: "stepfun/step-5-preview",
+        }),
+    "stepfun/step-5-preview:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "stepfun/step-5-preview",
         }),
 
     // -- DeepInfra (StepFun) --------------------------------------------------

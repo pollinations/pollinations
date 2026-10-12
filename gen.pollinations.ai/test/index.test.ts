@@ -288,6 +288,116 @@ describe("gen worker routing", () => {
         }
     });
 
+    it("publishes the polli and pollinations-api skills through Agent Skills well-known discovery", async () => {
+        const index = await fetchWorker("/.well-known/agent-skills/index.json");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("application/json");
+        expect(index.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        const body = (await index.json()) as {
+            $schema: string;
+            skills: {
+                name: string;
+                type: string;
+                description: string;
+                url: string;
+                digest: string;
+            }[];
+        };
+        expect(body.$schema).toBe(
+            "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+        );
+        expect(body.skills).toHaveLength(2);
+        const [skill, apiSkill] = body.skills;
+        expect(skill).toMatchObject({
+            name: "polli",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/polli/SKILL.md",
+        });
+        expect(skill.description).toMatch(/^Generate images/);
+        expect(apiSkill).toMatchObject({
+            name: "pollinations-api",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        });
+        expect(apiSkill.description).toMatch(/without installing/);
+
+        const skillFile = await fetchWorker(skill.url);
+        expect(skillFile.status).toBe(200);
+        expect(skillFile.headers.get("Content-Type")).toContain(
+            "text/markdown",
+        );
+        const bytes = new Uint8Array(await skillFile.arrayBuffer());
+        expect(new TextDecoder().decode(bytes)).toMatch(/^---\nname: polli\n/);
+        const hash = await crypto.subtle.digest("SHA-256", bytes);
+        const hex = [...new Uint8Array(hash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(skill.digest).toBe(`sha256:${hex}`);
+
+        const apiFile = await fetchWorker(apiSkill.url);
+        expect(apiFile.status).toBe(200);
+        expect(apiFile.headers.get("Content-Type")).toContain("text/markdown");
+        const apiBytes = new Uint8Array(await apiFile.arrayBuffer());
+        expect(new TextDecoder().decode(apiBytes)).toMatch(
+            /^---\nname: pollinations-api\n/,
+        );
+        const apiHash = await crypto.subtle.digest("SHA-256", apiBytes);
+        const apiHex = [...new Uint8Array(apiHash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(apiSkill.digest).toBe(`sha256:${apiHex}`);
+
+        const llms = await fetchWorker("/llms.txt");
+        const llmsBody = await llms.text();
+        expect(llmsBody).toContain("/.well-known/agent-skills/index.json");
+        expect(llmsBody).toContain(
+            "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        );
+    });
+
+    it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
+        const catalog = await fetchWorker("/.well-known/api-catalog");
+        expect(catalog.status).toBe(200);
+        expect(catalog.headers.get("Content-Type")).toContain(
+            "application/linkset+json",
+        );
+        const body = (await catalog.json()) as {
+            linkset: {
+                anchor: string;
+                "service-desc": { href: string; type: string }[];
+                "service-doc": { href: string; type: string }[];
+            }[];
+        };
+        expect(body.linkset).toHaveLength(1);
+        const [linkset] = body.linkset;
+        // The origin follows the serving host (the test worker serves staging).
+        const origin = "https://staging.gen.pollinations.ai";
+        expect(linkset.anchor).toBe(origin);
+        expect(linkset["service-desc"]).toEqual([
+            { href: `${origin}/openapi.json`, type: "application/json" },
+        ]);
+        expect(linkset["service-doc"]).toEqual([
+            { href: `${origin}/docs/llm.txt`, type: "text/plain" },
+        ]);
+        expect(catalog.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(catalog.headers.get("Access-Control-Allow-Origin")).toBe("*");
+
+        const head = await fetchWorker(
+            "/.well-known/api-catalog",
+            envWithEnter(),
+            { method: "HEAD" },
+        );
+        expect(head.status).toBe(200);
+        expect(head.headers.get("Link")).toBe(
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/.well-known/api-catalog");
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 
@@ -498,6 +608,24 @@ describe("gen worker routing", () => {
                     ?.supported_endpoints,
             ).toEqual(["/v1/audio/transcriptions"]);
         }
+    });
+
+    it("marks paid-only models on the OpenAI-compatible model list", async () => {
+        const response = await fetchWorker("/v1/models", envWithEnter());
+        const models = (await response.json()) as {
+            data: { id: string; paid_only: boolean }[];
+        };
+        const paidOnly = (id: string) =>
+            models.data.find((model) => model.id === id)?.paid_only;
+
+        expect(paidOnly("anthropic/claude-haiku-5.5")).toBe(true);
+        expect(paidOnly("openai/gpt-6-luna")).toBe(false);
+
+        const retrieved = await fetchWorker(
+            "/v1/models/anthropic/claude-haiku-5.5",
+            envWithEnter(),
+        );
+        expect(await retrieved.json()).toMatchObject({ paid_only: true });
     });
 
     it.each([
@@ -1079,15 +1207,15 @@ fixtureTest(
 
                 if (
                     request.url ===
-                    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+                    "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
                 ) {
                     await expect(request.json()).resolves.toEqual({
-                        model: "qwen3-tts-instruct-flash",
+                        model: "qwen-audio-3.0-tts-flash",
                         input: {
                             text: "Hello Qwen",
-                            voice: "Serena",
+                            voice: "loongeva_v3.6",
                         },
-                        parameters: { instructions: "speak softly" },
+                        parameters: { instruction: "speak softly" },
                     });
 
                     return Response.json({
@@ -1142,18 +1270,18 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
         expect(response.headers.get("x-model-used")).toBe(
-            "qwen/qwen3-tts-instruct-flash",
+            "qwen/qwen-audio-3.0-tts-flash",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );
-        expect(response.headers.get("x-tts-voice")).toBe("Serena");
+        expect(response.headers.get("x-tts-voice")).toBe("loongeva_v3.6");
         await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(
-            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
         );
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),

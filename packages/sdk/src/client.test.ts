@@ -454,6 +454,15 @@ describe("Pollinations media upload", () => {
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
     });
+
+    it("keeps an uploaded file's name", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ id: "media-id" }));
+
+        await newClient().upload(new File(["video"], "holiday.mp4"));
+
+        const formData = fetchMock.mock.calls[0][1].body as FormData;
+        expect((formData.get("file") as File).name).toBe("holiday.mp4");
+    });
 });
 
 describe("audio inputs", () => {
@@ -544,7 +553,8 @@ describe("Pollinations server-owned defaults", () => {
                 },
             ],
         };
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ data: [{ b64_json: "AAAA" }] }),
@@ -723,7 +733,8 @@ describe("Pollinations seed handling", () => {
 
     it("passes seed through text and chat requests consistently", async () => {
         const client = newClient();
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ choices: [{ message: { content: "ok" } }] }),
@@ -916,25 +927,24 @@ describe("Pollinations chat routing", () => {
             },
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: false,
-            routing: {
-                text: "openai",
-                web_search: "perplexity-fast",
-                image_generation: "flux",
-                image_editing: "nanobanana",
-                video: "veo",
-                audio: "elevenlabs",
-            },
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: false });
+        expect(body.metadata).toEqual({
+            model: "openai",
+            web_search: "perplexity-fast",
+            image_generation: "flux",
+            image_editing: "nanobanana",
+            video: "veo",
+            audio: "elevenlabs",
         });
+        expect(body.routing).toBeUndefined();
     });
 
     it("serializes partial routing for streaming chat requests", async () => {
         const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -952,11 +962,10 @@ describe("Pollinations chat routing", () => {
             // Consume the stream.
         }
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: true,
-            routing: { video: "veo" },
-        });
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: true });
+        expect(body.metadata).toEqual({ video: "veo" });
+        expect(body.routing).toBeUndefined();
     });
 
     it("omits routing when no override is provided", async () => {
@@ -969,7 +978,7 @@ describe("Pollinations chat routing", () => {
             model: "floret",
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
+        expect(bodyOf(fetchMock.mock.calls[0]).metadata).toBeUndefined();
     });
 });
 
@@ -1017,7 +1026,7 @@ describe("Pollinations chat streaming", () => {
         expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
             messages,
             model: "requested-alias",
-            routing,
+            metadata: { model: "publisher/custom-model" },
             seed: 0,
             temperature: 0,
             stream: true,
@@ -1095,10 +1104,36 @@ describe("Pollinations chat streaming", () => {
         expect(body.locked).toBe(false);
     });
 
+    it("rejects a chat stream that closes before completion instead of returning partial text", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(
+                'data: {"choices":[{"delta":{"content":"unfinished"},"finish_reason":null}]}\n\n',
+                { headers: { "content-type": "text/event-stream" } },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream through EOF.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INCOMPLETE_STREAM",
+            status: 502,
+        });
+    });
+
     it("discards an incomplete SSE event at EOF", async () => {
+        const terminal = { choices: [{ delta: {}, finish_reason: "stop" }] };
         const event = { choices: [{ delta: { content: "last" } }] };
         fetchMock.mockResolvedValue(
-            new Response(`data: ${JSON.stringify(event)}`),
+            new Response(
+                `data: ${JSON.stringify(terminal)}\n\ndata: ${JSON.stringify(event)}`,
+            ),
         );
 
         const chunks = [];
@@ -1108,7 +1143,7 @@ describe("Pollinations chat streaming", () => {
             chunks.push(chunk);
         }
 
-        expect(chunks).toEqual([]);
+        expect(chunks).toEqual([terminal]);
     });
 
     it("does not guess event boundaries between complete JSON data lines", async () => {
@@ -1729,6 +1764,32 @@ describe("Pollinations.accountQuests", () => {
         await expect(client.accountQuests()).resolves.toEqual(questsResponse);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/account/quests",
+        );
+    });
+});
+
+describe("usage CSV export", () => {
+    const csv = "timestamp,model\n2026-10-08,openai\n";
+    const csvResponse = () =>
+        new Response(csv, { headers: { "content-type": "text/csv" } });
+
+    it("returns usage history CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsage({ format: "csv" });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage?format=csv",
+        );
+    });
+
+    it("returns daily usage CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsageDaily({
+            format: "csv",
+        });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage/daily?format=csv",
         );
     });
 });

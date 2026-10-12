@@ -353,6 +353,9 @@ def call_pollinations_api(
     }
 
     last_error = None
+    # The API saves each answer under its exact request, an empty one too, so a retry
+    # after an empty answer adds a seed to get a new answer instead of the saved one.
+    seed = None
 
     for attempt in range(MAX_RETRIES):
         payload = {
@@ -365,6 +368,8 @@ def call_pollinations_api(
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if seed is not None:
+            payload["seed"] = seed
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
@@ -385,9 +390,12 @@ def call_pollinations_api(
                     content = result['choices'][0]['message']['content']
                     print(
                         f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
-                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content)}"
+                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content or '')}"
                     )
-                    return content
+                    if content and content.strip():
+                        return content
+                    last_error = "Empty response"
+                    seed = attempt + 1
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
                     error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text

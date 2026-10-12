@@ -135,6 +135,9 @@ function createGenerationMocks() {
         requests: Array<{ url: string; body: Record<string, unknown> }>;
     } = { requests: [] };
     const ovhWhisperState: { requests: FormData[] } = { requests: [] };
+    const geminiSpeechState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -264,6 +267,46 @@ function createGenerationMocks() {
             },
             reset: () => {
                 azureSpeechState.requests = [];
+            },
+        },
+        geminiSpeech: {
+            state: geminiSpeechState,
+            handlerMap: {
+                "generativelanguage.googleapis.com": async (
+                    request: Request,
+                ) => {
+                    geminiSpeechState.requests.push(await request.json());
+                    return Response.json({
+                        status: "completed",
+                        usage: {
+                            total_input_tokens: 5,
+                            total_output_tokens: 76,
+                            input_tokens_by_modality: [
+                                { modality: "text", tokens: 5 },
+                            ],
+                            output_tokens_by_modality: [
+                                { modality: "audio", tokens: 76 },
+                            ],
+                            total_cached_tokens: 0,
+                            total_thought_tokens: 0,
+                            total_tool_use_tokens: 0,
+                        },
+                        steps: [
+                            {
+                                content: [
+                                    {
+                                        type: "audio",
+                                        mime_type: "audio/wav",
+                                        data: btoa("RIFF\0\0\0\0WAVE"),
+                                    },
+                                ],
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                geminiSpeechState.requests = [];
             },
         },
         ovhWhisper: {
@@ -1223,6 +1266,37 @@ test("speech without a model, or with the tts alias, uses free OpenAI TTS", asyn
         expect(request.url).toContain("/deployments/tts/audio/speech");
         expect(request.body).toMatchObject({ model: "tts-1" });
     }
+});
+
+test("multipart Gemini speech without a format defaults to wav", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "geminiSpeech");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        GEMINI_API_KEY: "gemini-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const form = new FormData();
+    form.append("model", "google/gemini-3.8-flash-tts");
+    form.append("input", `multipart gemini ${crypto.randomUUID()}`);
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/speech",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    // The form path used to assume mp3, which Gemini cannot produce: 400.
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("content-type")).toContain("audio/wav");
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.geminiSpeech.state.requests).toHaveLength(1);
 });
 
 test("whisper srt cues are the segments OVH is asked for", async ({

@@ -532,6 +532,86 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
 });
 
+test("nano-banana-2.1 routes to OpenRouter AI Studio and bills exact usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vertex", "openrouter");
+    mocks.openrouter.state.usage = {
+        prompt_tokens: 10,
+        completion_tokens: 1692,
+        total_tokens: 1702,
+        completion_tokens_details: { image_tokens: 1680, reasoning_tokens: 4 },
+    };
+    const { response, wait } = await fetchWorker(
+        "/image/green%20star?model=google/gemini-nano-banana-2.1&width=1920&height=1080&seed=42",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe(
+        "google/gemini-nano-banana-2.1",
+    );
+    expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
+        "1680",
+    );
+    expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
+        "4",
+    );
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.vertex.state.requests).toHaveLength(0);
+    expect(mocks.openrouter.state.requests).toHaveLength(1);
+    expect(mocks.openrouter.state.requests[0].body).toEqual({
+        model: "google/gemini-nano-banana-2.1",
+        prompt: "green star",
+        n: 1,
+        aspect_ratio: "16:9",
+        resolution: "2K",
+        provider: { only: ["google-ai-studio"], allow_fallbacks: false },
+    });
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        modelRequested: "google/gemini-nano-banana-2.1",
+        tokenCountCompletionText: 8,
+        tokenCountCompletionReasoning: 4,
+    });
+    const expectedCost =
+        ((10 * 1.5 + 12 * 7.5 + 1680 * 30) / 1_000_000) * 1.055;
+    expect(event.totalCost).toBeCloseTo(expectedCost, 10);
+    expect(event.totalPrice).toBeCloseTo(expectedCost * 1.055, 7);
+});
+
+test("nano-banana-2.1 rejects 4K before calling a provider", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "vertex", "openrouter");
+    const { response, wait } = await fetchWorker(
+        "/image/star?model=google/gemini-nano-banana-2.1&width=3840&height=2160",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+    expect(response.status).toBe(400);
+    expect(await response.text()).toContain("up to 2K");
+    await wait();
+    expect(mocks.openrouter.state.requests).toHaveLength(0);
+    expect(mocks.vertex.state.requests).toHaveLength(0);
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(0);
+});
+
+test("nano-banana-2.1 requires paid Pollen", async ({ apiKey, mocks }) => {
+    await mocks.enable("tinybird", "vertex", "openrouter");
+    const { response, wait } = await fetchWorker(
+        "/image/star?model=google/gemini-nano-banana-2.1",
+        { headers: { authorization: `Bearer ${apiKey}` } },
+    );
+    expect(response.status).toBe(402);
+    await wait();
+    expect(mocks.openrouter.state.requests).toHaveLength(0);
+});
+
 test("nanobanana-pro preserves 4K Vertex routing and exact billing", async ({
     paidApiKey,
     mocks,

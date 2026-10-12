@@ -27,11 +27,11 @@ type BillingEvent = {
     tokenCountPromptCached: number;
     tokenCountPromptCacheWrite?: number;
     tokenCountPromptAudio: number;
-    tokenCountPromptImage: number;
+    usagePromptImageUnits: number;
     tokenCountCompletionText: number;
     tokenCountCompletionReasoning: number;
     tokenCountCompletionAudio: number;
-    tokenCountCompletionImage: number;
+    usageCompletionImageUnits: number;
     tokenCountCompletionVideoSeconds?: number;
     tokenCountCompletionVideoTokens?: number;
     totalCost: number;
@@ -44,11 +44,11 @@ function usageFromEvent(event: BillingEvent): Usage {
         promptCachedTokens: event.tokenCountPromptCached,
         promptCacheWriteTokens: event.tokenCountPromptCacheWrite || 0,
         promptAudioTokens: event.tokenCountPromptAudio,
-        promptImageTokens: event.tokenCountPromptImage,
+        promptImageTokens: event.usagePromptImageUnits,
         completionTextTokens: event.tokenCountCompletionText,
         completionReasoningTokens: event.tokenCountCompletionReasoning,
         completionAudioTokens: event.tokenCountCompletionAudio,
-        completionImageTokens: event.tokenCountCompletionImage,
+        completionImageTokens: event.usageCompletionImageUnits,
         completionVideoSeconds: event.tokenCountCompletionVideoSeconds || 0,
         completionVideoTokens: event.tokenCountCompletionVideoTokens || 0,
     };

@@ -56,10 +56,10 @@ async def _fake_run_agent(messages, **kwargs):
 
 @pytest.mark.parametrize(
     "routing",
-    [{"image": "flux"}, {"video": " "}, {"text": None}],
+    [{"image": "flux"}, {"video": " "}, {"model": None}],
 )
 def test_invalid_routing_shape_is_rejected(routing):
-    body = _request_body(stream=False) | {"routing": routing}
+    body = _request_body(stream=False) | {"metadata": routing}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -68,12 +68,24 @@ def test_invalid_routing_shape_is_rejected(routing):
     assert response.status_code == 422
 
 
-@pytest.mark.parametrize("routing", [None, {"text": "auto"}])
+def test_top_level_routing_is_rejected_with_metadata_hint(monkeypatch):
+    monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
+    body = _request_body(stream=False) | {"routing": {"text": "openai"}}
+
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions", json=body, headers=_HEADERS
+    )
+
+    assert response.status_code == 422
+    assert "metadata.model" in response.text
+
+
+@pytest.mark.parametrize("routing", [None, {"model": "auto"}])
 def test_omitted_and_auto_routing_values_remain_allowed(monkeypatch, routing):
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
     body = _request_body(stream=False)
     if routing is not None:
-        body["routing"] = routing
+        body["metadata"] = routing
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -92,7 +104,7 @@ def test_invalid_routing_preference_returns_stable_422(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -114,7 +126,7 @@ def test_unavailable_routing_registry_returns_503(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", _fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"video": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"video": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -142,7 +154,7 @@ def test_non_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
-    body = _request_body(stream=False) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=False) | {"metadata": {"image_generation": "flux"}}
 
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions", json=body, headers=_HEADERS
@@ -170,7 +182,7 @@ def test_stream_routing_is_validated_once_and_propagated(monkeypatch):
 
     monkeypatch.setattr(api_mod, "validate_routing", fake_validate, raising=False)
     monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
-    body = _request_body(stream=True) | {"routing": {"image_generation": "flux"}}
+    body = _request_body(stream=True) | {"metadata": {"image_generation": "flux"}}
 
     with TestClient(api_mod.app).stream(
         "POST", "/v1/chat/completions", json=body, headers=_HEADERS
@@ -470,20 +482,30 @@ def test_request_without_credential_is_rejected(monkeypatch: pytest.MonkeyPatch)
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 401
-    assert resp.json() == {"detail": "Missing agent run token."}
+    assert resp.json() == {"detail": "Missing API key."}
 
 
-@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "invalid"])
-def test_direct_endpoint_rejects_non_agent_credentials(key):
-    """Users authenticate to gen; only its delegated token reaches Floret."""
+@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "user-key"])
+def test_direct_endpoint_accepts_any_bearer_credential(key, monkeypatch):
+    """Direct callers may spend their own key; Floret forwards it opaquely."""
+    from floret.config import _current_api_key
+    from floret.tools import gen
+
+    async def fake_run_agent(messages, **kwargs):
+        assert _current_api_key() == key
+        assert gen._key() == key
+        return {"text": "ok", "artifacts": [], "iterations": 1}
+
+    monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
         headers={"Authorization": f"Bearer {key}"},
     )
 
-    assert response.status_code == 401
-    assert response.json() == {"detail": "Floret requires an agent run token."}
+    assert response.status_code == 200
+    assert response.json()["choices"][0]["message"]["content"] == "ok"
 
 
 def test_agent_run_token_reaches_brain_and_tools(monkeypatch):

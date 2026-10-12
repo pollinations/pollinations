@@ -1,5 +1,3 @@
-import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
-import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
 import {
@@ -15,7 +13,11 @@ import {
     getUserStripeBillingRow,
     retrieveActiveCustomer,
 } from "./customer.ts";
-import type { AutoTopUpIssue, BillingOverview } from "./types.ts";
+import type {
+    AutoTopUpIssue,
+    BillingOverview,
+    SavedPaymentMethod,
+} from "./types.ts";
 
 export async function getBillingOverview(
     env: CloudflareBindings,
@@ -26,14 +28,18 @@ export async function getBillingOverview(
     const customer = user.stripeCustomerId
         ? await retrieveActiveCustomer(stripe, user.stripeCustomerId)
         : null;
-    const paymentMethod = customer
-        ? await getDefaultPaymentMethod(stripe, customer)
-        : null;
+    const [paymentMethod, savedMethods, taxIds] = customer
+        ? await Promise.all([
+              getDefaultPaymentMethod(stripe, customer),
+              stripe.customers.listPaymentMethods(customer.id, { limit: 20 }),
+              stripe.customers.listTaxIds(customer.id, { limit: 10 }),
+          ])
+        : [null, null, null];
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
-    const autoTopUpEnabled =
-        user.autoTopUpEnabled && !!paymentMethod && billingDetailsComplete;
+    const ready = !!paymentMethod && billingDetailsComplete;
+    const autoTopUpEnabled = user.autoTopUpEnabled && ready;
 
     const lastIssue = await getLastAutoTopUpIssue(env.DB, stripe, userId);
     const packAmountUsd =
@@ -42,22 +48,38 @@ export async function getBillingOverview(
     return {
         autoTopUp: {
             enabled: autoTopUpEnabled,
-            thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,
             packAmountUsd,
-            serviceFeeCents: calculateServiceFeeCents(packAmountUsd * 100),
             lastIssue,
         },
-        paymentMethod: paymentMethod
-            ? {
-                  hasDefault: true,
-                  brand: paymentMethod.card?.brand ?? "card",
-                  last4: paymentMethod.card?.last4 ?? null,
-              }
-            : { hasDefault: false, brand: null, last4: null },
+        paymentMethods: (savedMethods?.data ?? [])
+            .map((method) => toSavedPaymentMethod(method, paymentMethod?.id))
+            .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),
         billingDetails: customer
-            ? getBillingDetailsSummary(customer, paymentMethod)
+            ? getBillingDetailsSummary(
+                  customer,
+                  paymentMethod,
+                  taxIds?.data ?? [],
+              )
             : null,
         billingDetailsComplete,
+        publishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    };
+}
+
+function toSavedPaymentMethod(
+    method: Stripe.PaymentMethod,
+    defaultId: string | undefined,
+): SavedPaymentMethod {
+    return {
+        id: method.id,
+        type: method.type,
+        brand: method.card?.brand ?? null,
+        last4: method.card?.last4 ?? method.sepa_debit?.last4 ?? null,
+        expMonth: method.card?.exp_month ?? null,
+        expYear: method.card?.exp_year ?? null,
+        wallet: method.card?.wallet?.type ?? null,
+        email: method.paypal?.payer_email ?? method.link?.email ?? null,
+        isDefault: method.id === defaultId,
     };
 }
 
@@ -68,7 +90,7 @@ async function getLastAutoTopUpIssue(
 ): Promise<AutoTopUpIssue | null> {
     const row = await db
         .prepare(
-            `SELECT status, failure_reason, completed_at, updated_at, created_at, stripe_invoice_id
+            `SELECT status, completed_at, updated_at, created_at, stripe_invoice_id
                 FROM stripe_auto_top_up_attempt
                 WHERE user_id = ?
                 ORDER BY COALESCE(completed_at, updated_at, created_at) DESC
@@ -77,7 +99,6 @@ async function getLastAutoTopUpIssue(
         .bind(userId)
         .first<{
             status: string;
-            failure_reason: string | null;
             completed_at: number | null;
             updated_at: number | null;
             created_at: number;
@@ -114,7 +135,6 @@ async function getLastAutoTopUpIssue(
     }
     return {
         kind: "failed",
-        reason: row.failure_reason ?? "Auto top-up could not be completed.",
         occurredAt: new Date(occurredAtMs).toISOString(),
     };
 }

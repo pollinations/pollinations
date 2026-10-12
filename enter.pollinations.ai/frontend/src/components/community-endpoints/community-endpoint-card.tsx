@@ -9,12 +9,9 @@ import {
     CopyButton,
     currentPeriod,
     ExternalLinkIcon,
-    EyeIcon,
-    EyeOffIcon,
     GitHubIcon,
     GlobeIcon,
     IconButton,
-    InlineLink,
     LockIcon,
     PencilIcon,
     Surface,
@@ -22,13 +19,12 @@ import {
     TokensIcon,
     XIcon,
 } from "@pollinations/ui";
-import {
-    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-    communityEndpointPriceFieldsForModality,
-} from "@shared/community-endpoints.ts";
+import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { isModelReliable } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { openWebUiChatUrl } from "../models/open-webui-link.tsx";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import { ResourceCardHeader } from "../resource-card-header.tsx";
@@ -44,8 +40,8 @@ import {
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
     agent?: ManagedAgent;
-    isToggling: boolean;
-    onToggle: () => void;
+    health?: ModelInfo["health"];
+    healthUnavailable?: boolean;
     onEdit?: () => void;
     onDelete: () => void;
 };
@@ -53,24 +49,17 @@ type CommunityEndpointCardProps = {
 export function CommunityEndpointCard({
     endpoint,
     agent,
-    isToggling,
-    onToggle,
+    health,
+    healthUnavailable,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
-    const relistAt =
-        isPublic && endpoint.hiddenAt
-            ? new Date(endpoint.hiddenAt).getTime() +
-              COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-            : 0;
-    const relistIsDelayed = Date.now() < relistAt;
-    const visibilityTooltip = relistIsDelayed
-        ? `Relist available at ${new Date(relistAt).toLocaleTimeString([], { timeStyle: "short" })}`
-        : isToggling
-          ? "Saving visibility"
-          : `${endpoint.hidden ? "Relist" : "Unlist"} ${isAgent ? "agent" : "model"}`;
+    const filteredByReliability =
+        isPublic &&
+        endpoint.type === "proxy" &&
+        !isModelReliable(health?.success_rate);
     const hasUpstreamEndpoint =
         endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
@@ -87,7 +76,16 @@ export function CommunityEndpointCard({
                         <BeakerIcon className="h-4 w-4" aria-hidden="true" />
                     )
                 }
-                title={endpoint.title}
+                title={
+                    testableModelId ? (
+                        <OpenWebUiLink
+                            modelId={testableModelId}
+                            title={endpoint.title}
+                        />
+                    ) : (
+                        endpoint.title
+                    )
+                }
                 description={endpoint.description}
                 badges={
                     <>
@@ -99,9 +97,9 @@ export function CommunityEndpointCard({
                             )}
                             {VISIBILITY_LABELS[endpoint.visibility]}
                         </Chip>
-                        {endpoint.hidden && (
+                        {filteredByReliability && (
                             <Chip intent="danger" size="sm">
-                                Unlisted
+                                Hidden from listings
                             </Chip>
                         )}
                         <Link
@@ -128,31 +126,10 @@ export function CommunityEndpointCard({
                         >
                             Activity
                         </Link>
-                        {testableModelId && (
-                            <InlineLink
-                                href={openWebUiChatUrl(testableModelId)}
-                                size="footer"
-                                tone="quiet"
-                                title="Test in Open WebUI"
-                            >
-                                Test
-                            </InlineLink>
-                        )}
                     </>
                 }
                 actions={
                     <>
-                        <IconButton
-                            title={visibilityTooltip}
-                            disabled={isToggling || relistIsDelayed}
-                            onClick={onToggle}
-                        >
-                            {endpoint.hidden ? (
-                                <EyeIcon className="h-4 w-4" />
-                            ) : (
-                                <EyeOffIcon className="h-4 w-4" />
-                            )}
-                        </IconButton>
                         {onEdit && (
                             <IconButton
                                 intent="info"
@@ -174,6 +151,37 @@ export function CommunityEndpointCard({
             />
 
             <PendingChangeNotice endpoint={endpoint} />
+
+            {endpoint.type === "proxy" && !isPublic && (
+                <p className="mt-3 px-2 text-sm text-theme-text-muted">
+                    Private calls are free. Your prices, Paid Pollen setting,
+                    and fallbacks are saved for when you publish.
+                </p>
+            )}
+
+            {filteredByReliability && (
+                <Alert
+                    intent="danger"
+                    className="mt-3"
+                    title="Hidden from model lists"
+                >
+                    Recent success is {health?.success_rate?.toFixed(1)}% across{" "}
+                    {health?.requests} eligible requests (last 50 within seven
+                    days). The model still works by exact ID and can recover
+                    automatically as successful requests arrive.
+                </Alert>
+            )}
+
+            {isPublic && endpoint.type === "proxy" && healthUnavailable && (
+                <Alert
+                    intent="warning"
+                    className="mt-3"
+                    title="Listing status unavailable"
+                >
+                    Couldn’t check whether this model appears in public lists.
+                    Try again shortly.
+                </Alert>
+            )}
 
             <div className="mt-5 grid gap-2 px-2">
                 <CommunityDetailRow

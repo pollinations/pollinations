@@ -12,6 +12,21 @@ const CATEGORIES = new Set([
     "business",
 ]);
 
+// The form's platforms; a subset of APP_PLATFORMS in
+// pollinations.ai/src/routes/-app-search.ts.
+const PLATFORMS = new Set([
+    "web",
+    "android",
+    "ios",
+    "desktop",
+    "cli",
+    "discord",
+    "telegram",
+    "browser-ext",
+    "library",
+    "api",
+]);
+
 const CATEGORY_EMOJI = {
     image: "🖼️",
     video_audio: "🎬",
@@ -63,33 +78,26 @@ function normalizeLanguage(value) {
     return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(language) ? language : "";
 }
 
-function inferPlatform(name, appUrl, description) {
-    const text = `${name} ${description}`.toLowerCase();
-    let hostname = "";
-    let pathname = "";
-    try {
-        const parsed = new URL(appUrl);
-        hostname = parsed.hostname.toLowerCase();
-        pathname = parsed.pathname.toLowerCase();
-    } catch {}
-
-    const hostIs = (domain) =>
-        hostname === domain || hostname.endsWith(`.${domain}`);
-    if (hostIs("play.google.com")) return "android";
-    if (hostIs("apps.apple.com") || hostIs("routinehub.co")) return "ios";
-    if (hostIs("discord.com") || hostIs("discord.gg")) return "discord";
-    if (hostIs("t.me")) return "telegram";
-    if (hostIs("npmjs.com") || hostIs("pypi.org")) return "library";
-    if (hostIs("addons.mozilla.org") || hostIs("chromewebstore.google.com"))
-        return "browser-ext";
-    if (hostIs("wordpress.org") && pathname.startsWith("/plugins"))
-        return "wordpress";
-    if (text.includes("discord bot")) return "discord";
-    if (text.includes("telegram bot")) return "telegram";
-    if (text.includes("browser extension")) return "browser-ext";
-    if (/\b(command[- ]line|cli)\b/.test(text)) return "cli";
-    if (text.includes("desktop app")) return "desktop";
-    return hostname ? "web" : "api";
+// Accept GitHub uploads and raw repository images in Markdown, HTML or plain text.
+function parseScreenshotUrl(value) {
+    for (const candidate of value.match(/https:\/\/[^\s<>"')]+/g) || []) {
+        try {
+            const url = new URL(candidate);
+            if (url.username || url.password || url.port) continue;
+            const attachment =
+                url.hostname === "github.com" &&
+                /^\/user-attachments\/(?:assets|files)\/[^/]+/.test(
+                    url.pathname,
+                );
+            const repositoryImage =
+                url.hostname === "raw.githubusercontent.com" &&
+                /^\/[^/]+\/[^/]+\/[^/]+\/.+/.test(url.pathname);
+            if (attachment || repositoryImage) return url.href;
+        } catch {
+            // Ignore malformed links and continue looking for a supported image.
+        }
+    }
+    return "";
 }
 
 function parseSubmission(body) {
@@ -98,8 +106,11 @@ function parseSubmission(body) {
     const appUrl = normalizeUrl(section(body, "App URL"));
     const repoUrl = normalizeUrl(section(body, "GitHub Repository URL"));
     const category = clean(section(body, "App Category"), 30).toLowerCase();
+    const platform = clean(section(body, "Platform"), 30).toLowerCase();
     const language = normalizeLanguage(section(body, "App Language"));
     const discord = clean(section(body, "Discord Username"), 80);
+    const quest = clean(section(body, "Quest"), 20).replace(/^#/, "");
+    const screenshotUrl = parseScreenshotUrl(section(body, "Screenshot"));
 
     return {
         name,
@@ -109,7 +120,9 @@ function parseSubmission(body) {
         category,
         language,
         discord,
-        platform: inferPlatform(name, appUrl || repoUrl, description),
+        quest,
+        screenshotUrl,
+        platform,
         emoji: CATEGORY_EMOJI[category] || "🚀",
     };
 }
@@ -121,10 +134,18 @@ function validateSubmission(submission) {
         errors.push(
             "App Description must explain what the app does and how it uses Pollinations.",
         );
-    if (!submission.appUrl)
-        errors.push("App URL must be a valid public HTTP(S) URL.");
+    if (!submission.appUrl && !submission.repoUrl)
+        errors.push(
+            "Provide a valid public App URL, a GitHub Repository URL, or both.",
+        );
+    if (!submission.screenshotUrl)
+        errors.push(
+            "Screenshot needs a supported GitHub image URL: upload an image in the Screenshot field or link to a raw.githubusercontent.com repository image.",
+        );
     if (!CATEGORIES.has(submission.category))
         errors.push("App Category must be selected from the submission form.");
+    if (!PLATFORMS.has(submission.platform))
+        errors.push("Platform must be selected from the submission form.");
     if (!submission.language)
         errors.push(
             "App Language must be an ISO language code such as en or pt-BR.",
@@ -134,6 +155,8 @@ function validateSubmission(submission) {
         !/^https:\/\/github\.com\/[^/]+\/[^/]+/i.test(submission.repoUrl)
     )
         errors.push("GitHub Repository URL must point to a GitHub repository.");
+    if (submission.quest && !/^\d+$/.test(submission.quest))
+        errors.push("Quest must be a quest issue number such as #15600.");
     return errors;
 }
 
@@ -168,7 +191,7 @@ function buildApp(submission, metadata) {
     return {
         emoji: submission.emoji,
         name: submission.name,
-        url: submission.appUrl,
+        url: submission.appUrl || null,
         description: submission.description,
         language: submission.language,
         category: submission.category,
@@ -190,7 +213,6 @@ function buildApp(submission, metadata) {
 module.exports = {
     buildApp,
     findCatalogDuplicate,
-    inferPlatform,
     parseSubmission,
     validateSubmission,
 };

@@ -36,10 +36,9 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
-import requests
-
 from common import (
     GISTS_BRANCH,
+    post_discord_webhook,
     GITHUB_API_BASE,
     OWNER,
     REPO,
@@ -49,6 +48,7 @@ from common import (
     models_news_staged_files,
     models_news_staging_dir,
     read_news_file,
+    safe_truncate,
 )
 
 # Hard limit matches the prompt instruction (1900) and leaves headroom under
@@ -57,48 +57,16 @@ from common import (
 DISCORD_CHAR_LIMIT = 1900
 
 
-def _safe_truncate(text: str, limit: int) -> str:
-    """Truncate to <= limit characters without cutting mid-token.
-
-    - Walks back to the last whitespace before the cut so we don't split a
-      word, URL, or `<@&123>` role mention.
-    - Drops a trailing partial code span (odd count of backticks) by
-      rewinding to before the last backtick.
-    - Drops any trailing partial `<...>` (e.g. `<@&12`) so Discord doesn't
-      render broken markup.
-    - Appends "…" as a visible truncation marker.
-    """
-    if len(text) <= limit:
-        return text
-    cut = limit - 1  # leave room for the ellipsis
-    head = text[:cut]
-    # Prefer a newline boundary, then any whitespace. Always walk back to it
-    # if one exists — a token that spans the cut (URL, role mention, code
-    # span) is far more visible damage than dropping a line of bullet text.
-    boundary = max(head.rfind("\n"), head.rfind(" "))
-    if boundary > 0:
-        head = head[:boundary]
-    head = head.rstrip()
-    # Strip a dangling unmatched '<' (broken mention or HTML-ish tag).
-    last_lt = head.rfind("<")
-    last_gt = head.rfind(">")
-    if last_lt > last_gt:
-        head = head[:last_lt].rstrip()
-    # Close or drop a dangling unmatched code span.
-    if head.count("`") % 2 == 1:
-        last_backtick = head.rfind("`")
-        head = head[:last_backtick].rstrip()
-    return head + "…"
-
-
 def post_to_discord(webhook_url: str, content: str) -> bool:
     """POST to Discord webhook. Truncates safely if the AI overran the prompt's
     1900-char cap so we never split a role mention or code span."""
-    content = _safe_truncate(content, DISCORD_CHAR_LIMIT)
-    resp = requests.post(
+    content = safe_truncate(content, DISCORD_CHAR_LIMIT)
+    resp = post_discord_webhook(
         webhook_url,
-        json={"content": content, "allowed_mentions": {"parse": ["roles"]}},
-        timeout=30,
+        json_body={
+            "content": content,
+            "allowed_mentions": {"parse": ["roles"]},
+        },
     )
     if 200 <= resp.status_code < 300:
         print("  Discord post sent.")

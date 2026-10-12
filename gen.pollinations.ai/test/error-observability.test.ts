@@ -317,6 +317,7 @@ describe("error observability", () => {
             const error = UpstreamError.fromProvider(422, {
                 message: "provider rejection",
                 responseBody: body,
+                billedUsage: { completionVideoSeconds: 5 },
             });
             try {
                 throwImageError(error);
@@ -327,6 +328,7 @@ describe("error observability", () => {
                     responseBody: body,
                     message: "provider rejection",
                     errorCode: code,
+                    billedUsage: { completionVideoSeconds: 5 },
                 });
             }
         }
@@ -1110,7 +1112,7 @@ describe("error observability", () => {
             error: {
                 code: "failed_to_download_image",
                 message: expect.stringContaining(
-                    "The image server is rate limiting requests",
+                    "The media server is rate limiting requests",
                 ),
                 details: {
                     upstreamHost: "example.com",

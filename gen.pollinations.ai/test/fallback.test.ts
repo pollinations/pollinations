@@ -36,6 +36,7 @@ function registryEntry(
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
+        paidOnly: false,
         addedDate: 0,
         title: id,
     };
@@ -63,10 +64,20 @@ function communityEntry(
     entry.visible = visibility === "public" && hiddenAt === null;
     entry.definition.hidden = hiddenAt !== null;
     entry.communityEndpoint = {
+        id,
+        modelId: id,
+        name: id,
+        title: id,
+        description: null,
         type: "proxy",
         ownerUserId,
         visibility,
-        hiddenAt,
+        baseUrl: "https://example.com/v1/chat/completions",
+        api: "chat_completions",
+        upstreamModel: id,
+        bearerTokenCiphertext: "test",
+        inputModalities: ["text"],
+        perUserRpm: null,
         paidOnly,
         imagePricing: "request",
         fallbacks,
@@ -206,6 +217,7 @@ describe("registry fallback linking", () => {
 
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
+            "owner/disabled",
         ]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
@@ -436,6 +448,19 @@ describe("isRetryableFallbackError", () => {
                 UpstreamError.fromProvider(402, { message: "no quota" }),
             ),
         ).toBe(true);
+    });
+
+    it("fails over when the provider rejects our egress region", () => {
+        const region = UpstreamError.fromProvider(400, {
+            message: "User location is not supported for the API use.",
+        });
+        expect(isRetryableFallbackError(region)).toBe(true);
+        // An ordinary caller 400 still does not fail over.
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(400, { message: "Invalid voice" }),
+            ),
+        ).toBe(false);
     });
 
     it("uses the wrapper status for a malformed successful response", () => {

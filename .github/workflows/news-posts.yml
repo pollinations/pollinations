@@ -1,0 +1,106 @@
+name: News / Posts
+
+# Writes and saves the daily, weekly and monthly news posts with posts.py.
+# For now it only practises: it shows what it would save on the news branch,
+# and saves and delivers nothing. The live runs and the schedule come when the
+# old summary workflows are switched off.
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'morning = what the 06:00 run does on that day'
+        required: true
+        type: choice
+        options:
+          - morning
+          - daily
+          - weekly
+          - monthly
+      date:
+        description: 'The day (morning, daily), the Sunday (weekly) or the month, YYYY-MM (monthly)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  posts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Choose the posts
+        id: posts
+        env:
+          JOB: ${{ inputs.job }}
+          DATE: ${{ inputs.date }}
+        # The 06:00 run on day T writes T−1's daily, on Sunday also the week
+        # ending T, and on the 1st also last month, in that order.
+        run: |
+          python - "$JOB" "$DATE" >> "$GITHUB_OUTPUT" <<'EOF'
+          import sys
+          from datetime import date, timedelta
+          sys.path.insert(0, "operations/social/scripts")
+          from posts import check_date
+          job, day = sys.argv[1:]
+          posts = [(job, day)]
+          if job == "morning":
+              check_date("daily", day)
+              today = date.fromisoformat(day)
+              yesterday = today - timedelta(days=1)
+              posts = [("daily", yesterday.isoformat())]
+              if today.isoweekday() == 7:
+                  posts.append(("weekly", today.isoformat()))
+              if today.day == 1:
+                  posts.append(("monthly", yesterday.strftime("%Y-%m")))
+          for job, day in posts:
+              check_date(job, day)
+          print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
+          print("folders<<FOLDERS")
+          for job, day in posts:
+              print(f"/operations/social/news/{job}/{day}/")
+          print("FOLDERS")
+          EOF
+
+      - name: Checkout news
+        uses: actions/checkout@v5
+        with:
+          ref: news
+          path: news
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            operations/social/news/gists/**/*.json
+            operations/social/news/*/*/summary.json
+            ${{ steps.posts.outputs.folders }}
+
+      - name: Write and save, without pushing
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          POSTS: ${{ steps.posts.outputs.posts }}
+        run: |
+          set -- $POSTS
+          while [ $# -gt 0 ]; do
+            for command in write save; do
+              python operations/social/scripts/posts.py "$command" "$1" "$2" --news news --work "work/$1" --overwrite
+            done
+            shift 2
+          done
+
+      - name: Show what would be saved
+        # Also after a failed post, to show the ones saved before it.
+        if: ${{ !cancelled() }}
+        run: |
+          git -C news add --all
+          git -C news diff --cached --stat
+          git -C news diff --cached -- '*.json'

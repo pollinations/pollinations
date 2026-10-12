@@ -3,18 +3,75 @@ import {
     longContextAtLeast,
     totalPromptTokens,
 } from "./cost-variants";
-import { openRouterGeminiBilling } from "./gemini-billing";
-import type { FallbackMap } from "./merge-fallbacks";
 import {
-    PERPLEXITY_PRO_BILLING,
-    PERPLEXITY_REASONING_BILLING,
-    PERPLEXITY_SONAR_BILLING,
-} from "./perplexity-billing";
+    openRouterGeminiBilling,
+    VERCEL_EXA_SEARCH_BILLING,
+} from "./gemini-billing";
+import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "liquid/d1": {
+        // Same Liquid backend; this covers gateway failures, not Liquid outages.
+        "liquid/d1:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.04),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
+    "openai/gpt-6-luna-decisions": {
+        // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
+        "openai/gpt-6-luna-decisions:openrouter": {
+            provider: "openrouter",
+            cost: {
+                promptTextTokens: perMillion(0.1) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+            // OpenRouter's flat rate must not inherit OpenAI's context tier.
+            costVariants: undefined,
+            selectCostVariant: undefined,
+            costVariantMetadata: undefined,
+            defaultCostVariantLabel: undefined,
+            pricingDimensions: undefined,
+        },
+    },
+    "stepfun/step-5-preview": {
+        // Same StepFun model through Vercel's AI Gateway at the posted base
+        // rates, without OpenRouter's credit fee.
+        "stepfun/step-5-preview:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(1),
+                promptCachedTokens: perMillion(0.05),
+                completionTextTokens: perMillion(2.7),
+            },
+        },
+    },
+    "inclusionai/ling-3.1-flash": {
+        "inclusionai/ling-3.1-flash:openrouter:novita": {
+            provider: "openrouter",
+            // Free during the launch promotion, matching the public quote.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
+        "inclusionai/ling-3.1-flash:vercel:novita": {
+            provider: "vercel",
+            // Same Novita checkpoint through a separate gateway. Both routes
+            // are free during the launch promotion; recheck rates at cutover.
+            cost: {
+                promptTextTokens: perMillion(0),
+                promptCachedTokens: perMillion(0),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     // OpenRouter Alibaba routes cover gateway failures, not Alibaba-wide outages.
     // Max currently requires reasoning and rejects forced tool choice.
     "qwen/qwen3.8-max": {
@@ -31,78 +88,16 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "perplexity/sonar": {
-        "perplexity/sonar:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(1.0) * 1.055,
-                completionTextTokens: perMillion(1.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_SONAR_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
-            },
-        },
-    },
-    "perplexity/sonar-pro": {
-        "perplexity/sonar-pro:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonar,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(3.0) * 1.055,
-                completionTextTokens: perMillion(15.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_PRO_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
-            },
-        },
-    },
-    "perplexity/sonar-reasoning-pro": {
-        "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
-            supportedParameters: CHAT_PARAMETERS.openRouterSonarReasoning,
-            provider: "openrouter",
-            cost: {
-                promptTextTokens: perMillion(2.0) * 1.055,
-                completionTextTokens: perMillion(8.0) * 1.055,
-            },
-            billing: {
-                adjustments: PERPLEXITY_REASONING_BILLING.adjustments?.map(
-                    ({ resolveUnitCost, ...rule }) => ({
-                        ...rule,
-                        unitCost: rule.unitCost * 1.055,
-                        ...(resolveUnitCost && {
-                            resolveUnitCost: (
-                                ...args: Parameters<typeof resolveUnitCost>
-                            ) => resolveUnitCost(...args) * 1.055,
-                        }),
-                    }),
-                ),
-            },
+    "openai/gpt-5.3-codex": {
+        "openai/gpt-5.3-codex:azure:sweden": {
+            provider: "azure",
+            // Provider retires this route on 2027-08-24.
         },
     },
     "openai/gpt-6-astra": {
         "openai/gpt-6-astra:azure:datazone": {
             provider: "azure",
+            // Provider retires this route on 2028-01-11.
             // Same checkpoint, separate US Data Zone quota pool. The caller
             // keeps the Global quote; Pollinations absorbs the 10% premium.
             cost: {
@@ -121,10 +116,50 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "openai/gpt-6-sol": {
+        "openai/gpt-6-sol:openai": { provider: "openai" },
+    },
+    "openai/gpt-6.1-sol": {
+        "openai/gpt-6.1-sol:openai": { provider: "openai" },
+    },
+    "openai/gpt-6-luna": {
+        "openai/gpt-6-luna:openai": { provider: "openai" },
+    },
     "x-ai/grok-4.6": {
         "x-ai/grok-4.6:azure:sweden": {
             provider: "azure",
             addedDate: new Date("2026-09-06").getTime(),
+            // Provider retires this route on 2027-08-24.
+        },
+        "x-ai/grok-4.6:xai": {
+            provider: "xai",
+            addedDate: new Date("2026-09-24").getTime(),
+            // xAI /v1/language-models/grok-4.6 rates (2026-09-24). Image tokens
+            // bill at the text input rate; reasoning bills as output.
+            cost: {
+                promptTextTokens: perMillion(2),
+                promptCachedTokens: perMillion(0.5),
+                promptImageTokens: perMillion(2),
+                completionTextTokens: perMillion(6),
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4),
+                        promptCachedTokens: perMillion(1),
+                        completionTextTokens: perMillion(12),
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
         },
     },
     "deepseek/deepseek-v4-flash": {
@@ -154,14 +189,28 @@ export const TEXT_FALLBACKS = {
         },
     },
     "minimax/minimax-m2.7": {
-        "minimax/minimax-m2.7:deepinfra": {
+        "minimax/minimax-m2.7:openrouter:minimax": {
+            supportedParameters: CHAT_PARAMETERS.openRouterMinimax27FirstParty,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter MiniMax first-party FP8 rates (2026-09-23),
+                // including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.06) * 1.055,
+                completionTextTokens: perMillion(1.2) * 1.055,
+            },
+        },
+    },
+    "minimax/minimax-m3": {
+        "minimax/minimax-m3:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+            // https://deepinfra.com/MiniMaxAI/MiniMax-M3 (2026-10-07).
             cost: {
-                promptTextTokens: perMillion(0.25),
-                promptCachedTokens: perMillion(0.05),
-                completionTextTokens: perMillion(1),
+                promptTextTokens: perMillion(0.28),
+                promptCachedTokens: perMillion(0.056),
+                completionTextTokens: perMillion(1.1),
             },
         },
     },
@@ -283,6 +332,11 @@ export const TEXT_FALLBACKS = {
         },
     },
     "moonshotai/kimi-k2.6": {
+        "moonshotai/kimi-k2.6:azure:sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-23").getTime(),
+            // Provider retires this route on 2027-04-16.
+        },
         "moonshotai/kimi-k2.6:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
             provider: "deepinfra",
@@ -292,6 +346,18 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.15),
                 promptImageTokens: perMillion(0.75),
                 completionTextTokens: perMillion(3.5),
+            },
+        },
+    },
+    "moonshotai/kimi-k3": {
+        "moonshotai/kimi-k3:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            // https://deepinfra.com/moonshotai/Kimi-K3 (2026-10-07).
+            cost: {
+                promptTextTokens: perMillion(2.85),
+                promptCachedTokens: perMillion(0.285),
+                completionTextTokens: perMillion(14.25),
             },
         },
     },
@@ -316,6 +382,14 @@ export const TEXT_FALLBACKS = {
                 promptCachedTokens: perMillion(0.05),
                 completionTextTokens: perMillion(1.5),
             },
+        },
+    },
+    "mistralai/mistral-large-4": {
+        // Both routes use Mistral infrastructure; this covers gateway failures.
+        "mistralai/mistral-large-4:vercel": {
+            supportedParameters: CHAT_PARAMETERS.vercelMistralLarge4,
+            provider: "vercel",
+            addedDate: new Date("2026-10-06").getTime(),
         },
     },
     "mistralai/mistral-small-3.2": {
@@ -442,6 +516,14 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "anthropic/claude-haiku-5.5": {
+        // Same model through Vercel's AI Gateway at Anthropic's list price,
+        // so it inherits the primary's rates and long-context tier.
+        "anthropic/claude-haiku-5.5:vercel": {
+            provider: "vercel",
+            addedDate: new Date("2026-10-07").getTime(),
+        },
+    },
     "anthropic/claude-opus-5.5": {
         "anthropic/claude-opus-5.5:openrouter:anthropic": {
             supportedParameters: CHAT_PARAMETERS.openRouterOpus,
@@ -471,15 +553,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "meta/muse-glimmer-30b": {
-        "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
+        "meta/muse-glimmer-30b:openrouter:together": {
             supportedParameters: CHAT_PARAMETERS.openRouterMuseGlimmer,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-09-23").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.3) * 1.055,
+                // OpenRouter Together rates (2026-09-23), including the
+                // account's 5.5% credit-purchase fee. Costs more than the
+                // primary; Phala was cheaper but rate-limited bursts.
+                promptTextTokens: perMillion(0.35) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
-                promptImageTokens: perMillion(0.3) * 1.055,
-                completionTextTokens: perMillion(1.2) * 1.055,
+                promptImageTokens: perMillion(0.35) * 1.055,
+                completionTextTokens: perMillion(1.5) * 1.055,
             },
         },
     },
@@ -494,6 +579,21 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.07) * 1.055,
                 promptCachedTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(0.2) * 1.055,
+            },
+        },
+    },
+    "nvidia/nemotron-3-ultra": {
+        "nvidia/nemotron-3-ultra:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-30").getTime(),
+            cost: {
+                // DeepInfra standard-tier rates (2026-09-30). Flex is
+                // deliberately excluded because requests may wait up to ten
+                // minutes.
+                promptTextTokens: perMillion(0.5),
+                promptCachedTokens: perMillion(0.1),
+                completionTextTokens: perMillion(2.2),
             },
         },
     },
@@ -573,7 +673,7 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemini-2.5-flash-lite": {
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu": {
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini25,
             provider: "openrouter",
             priceMultiplier: 1,
@@ -591,6 +691,21 @@ export const TEXT_FALLBACKS = {
                 searchCostPerThousandRequests: 14 * 1.055,
                 storageCostPerMillionTokenHours: 1.0 * 1.055,
             }),
+        },
+    },
+    "google/gemini-2.5-flash-lite:search": {
+        "google/gemini-2.5-flash-lite:search:vercel": {
+            provider: "vercel",
+            cost: {
+                promptTextTokens: perMillion(0.1),
+                promptCachedTokens: perMillion(0.01),
+                promptCacheWriteTokens: perMillion(0.1),
+                promptAudioTokens: perMillion(0.1),
+                promptImageTokens: perMillion(0.1),
+                promptVideoTokens: perMillion(0.1),
+                completionTextTokens: perMillion(0.4),
+            },
+            billing: VERCEL_EXA_SEARCH_BILLING,
         },
     },
     "google/gemini-3.5-flash-lite": {
@@ -681,17 +796,33 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
-    "moonshotai/kimi-k2.7-code": {
-        "moonshotai/kimi-k2.7-code:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-09-01").getTime(),
+    "z-ai/glm-5.3-flash": {
+        "z-ai/glm-5.3-flash:openrouter": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGlm53,
+            provider: "openrouter",
+            contextLength: 1048575,
             cost: {
-                promptTextTokens: perMillion(0.68),
-                promptCachedTokens: perMillion(0.136),
-                promptCacheWriteTokens: perMillion(0.85),
-                promptImageTokens: perMillion(0.68),
-                completionTextTokens: perMillion(3.4),
+                // Same-priced OpenRouter routes, including its 5.5% credit fee.
+                promptTextTokens: perMillion(0.15) * 1.055,
+                promptCachedTokens: perMillion(0.03) * 1.055,
+                promptImageTokens: perMillion(0.15) * 1.055,
+                completionTextTokens: perMillion(0.5) * 1.055,
+            },
+        },
+    },
+    "moonshotai/kimi-k2.7-code": {
+        "moonshotai/kimi-k2.7-code:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterKimiStreamLake,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $0.95/$4.00), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.7125) * 1.055,
+                promptCachedTokens: perMillion(0.1425) * 1.055,
+                promptCacheWriteTokens: perMillion(0.7125) * 1.055,
+                promptImageTokens: perMillion(0.7125) * 1.055,
+                completionTextTokens: perMillion(3.0) * 1.055,
             },
         },
     },
@@ -704,6 +835,34 @@ export const TEXT_FALLBACKS = {
                 promptTextTokens: perMillion(0.18) * 1.055,
                 promptCachedTokens: perMillion(0.036) * 1.055,
                 completionTextTokens: perMillion(0.9) * 1.055,
+            },
+        },
+    },
+    "deepseek/deepseek-v4-pro": {
+        "deepseek/deepseek-v4-pro:openrouter:streamlake": {
+            supportedParameters: CHAT_PARAMETERS.openRouterStreamLakeReasoning,
+            provider: "openrouter",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // OpenRouter StreamLake promo rates (2026-09-23; list
+                // $1.32/$3.96), including the account's 5.5% credit-purchase fee.
+                promptTextTokens: perMillion(0.462) * 1.055,
+                promptCachedTokens: perMillion(0.0154) * 1.055,
+                completionTextTokens: perMillion(1.386) * 1.055,
+            },
+        },
+    },
+    "z-ai/glm-5.2": {
+        "z-ai/glm-5.2:deepinfra": {
+            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-23").getTime(),
+            cost: {
+                // DeepInfra FP4 rates (2026-09-23): list $0.75/$2.40 with an
+                // open-ended 25% discount.
+                promptTextTokens: perMillion(0.5625),
+                promptCachedTokens: perMillion(0.105),
+                completionTextTokens: perMillion(1.8),
             },
         },
     },

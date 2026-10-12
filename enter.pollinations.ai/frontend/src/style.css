@@ -1,9 +1,13 @@
 @import "@pollinations/ui/app.css";
 
+/* Expanding a form should not move its controls around the screen. */
 .resource-dialog {
-    margin-block: auto;
-    height: auto;
-    max-height: calc(100dvh - 2rem);
+    margin-block: 0;
+}
+
+.model-title-link,
+.model-title-link span {
+    text-decoration: none;
 }
 
 .catalog-search .polli-input-shell,

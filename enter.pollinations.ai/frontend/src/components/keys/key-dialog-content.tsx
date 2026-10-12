@@ -1,4 +1,5 @@
 import {
+    AccountIcon,
     AppIcon,
     Button,
     CheckIcon,
@@ -112,7 +113,6 @@ export function KeyDialogContent({
             <CopyButton
                 value={createdKey}
                 variant="button"
-                intent="commit"
                 copiedTimeoutMs={500}
                 tooltip={null}
                 onCopied={onCopied}
@@ -172,7 +172,11 @@ export function KeyDialogContent({
                     )
                 }
             >
-                {header && <div className="-mx-6 -mt-4">{header}</div>}
+                {header && (
+                    <div className="-mx-(--polli-dialog-gutter) -mt-4">
+                        {header}
+                    </div>
+                )}
                 <DialogHeader
                     inBody
                     title={title}
@@ -235,7 +239,7 @@ export function KeyDialogContent({
                         </FieldStack>
                     </AuthInfoCard>
                 ) : showFields ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <AuthInfoCard>
                             <ul className="space-y-3 text-sm">
                                 <KeyNameField
@@ -276,6 +280,17 @@ export function KeyDialogContent({
                                 value={permissions}
                                 accessContext={accessContext}
                                 disabled={isSubmitting}
+                                lead={
+                                    <AuthAccessItem icon={<AccountIcon />}>
+                                        <span className="inline-flex items-center">
+                                            Username and picture
+                                            <InfoTip
+                                                text="Anyone using this key can see your username and profile picture."
+                                                label="Username and picture information"
+                                            />
+                                        </span>
+                                    </AuthAccessItem>
+                                }
                             />
                         )}
                     </div>

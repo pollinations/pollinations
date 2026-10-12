@@ -499,6 +499,17 @@ export const ButtonsDemo: FC = () => (
                 <TabButton active={false} disabled onClick={noop}>
                     Disabled
                 </TabButton>
+                <TabButton active intent="amber" onClick={noop}>
+                    Amber
+                </TabButton>
+                <TabButton
+                    active
+                    intent="green"
+                    detail="@creator"
+                    onClick={noop}
+                >
+                    Green
+                </TabButton>
             </Row>
             <Row label="Chip">
                 <Chip>Default</Chip>

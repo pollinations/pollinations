@@ -686,7 +686,7 @@ Actions:
 - semantic: URL + cosine clustering (finds related content blocks)
 - regex: URL + pattern extraction (emails, URLs, phones, dates, IPs)
 - multi: Multiple URLs concurrently (max 10)
-- fetch_file: Fetch + parse Discord attachment (code, json, logs)
+- fetch_file: Fetch + parse public JSON/text URLs or Discord attachments (code, json, logs); use this for live model catalogs
 - parse_file: Parse raw file content directly
 
 Anti-bot features:
@@ -809,7 +809,7 @@ Page scanning:
                 },
                 "file_url": {
                     "type": "string",
-                    "description": "Discord attachment URL (for fetch_file action)",
+                    "description": "Public JSON/text or Discord attachment URL (for fetch_file action)",
                 },
                 "file_content": {
                     "type": "string",

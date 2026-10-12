@@ -1,3 +1,5 @@
+import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { activityCsv } from "../frontend/src/components/activity/activity-csv";
 import {
@@ -10,6 +12,60 @@ import {
     switchActivityView,
     toggleActivityBucket,
 } from "../frontend/src/components/activity/activity-period";
+import { useUsageData } from "../frontend/src/components/activity/use-usage-data";
+
+vi.mock("../frontend/src/api.ts", () => ({ apiClient: {} }));
+vi.mock("react", async (importOriginal) => {
+    const actual = await importOriginal<typeof React>();
+    return { ...actual, useState: vi.fn(actual.useState) };
+});
+vi.hoisted(() => {
+    vi.stubGlobal("window", { location: { origin: "http://localhost:3000" } });
+    vi.stubEnv("MODE", "development");
+});
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.mocked(React.useState).mockReset();
+});
+
+it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
+    const rows = ["unknown", null, "pack", "tier"].map((meter_source, i) => ({
+        date: "2026-08-08 04:00:00",
+        api_key_id: "key",
+        api_key: "Example",
+        model: "example-model",
+        meter_source,
+        requests: i + 1,
+        cost_usd: 2 * (i + 1),
+    }));
+    vi.mocked(React.useState).mockReturnValueOnce([
+        { key: "day:2026-08-08", rows },
+        vi.fn(),
+    ]);
+    function Summary() {
+        const { stats } = useUsageData({
+            period: { granularity: "day", period: "2026-08-08" },
+            metric: "requests",
+            selectedKeyIds: [],
+            selectedModels: [],
+        });
+        expect([stats.totalRequests, stats.totalPollen]).toEqual([10, 20]);
+        expect(stats.modelBreakdowns[0]).toMatchObject({
+            requests: 10,
+            pollen: 20,
+        });
+        for (const usage of [stats, stats.modelBreakdowns[0]])
+            expect(usage).toMatchObject({
+                paidRequests: 3,
+                paidPollen: 6,
+                tierRequests: 4,
+                tierPollen: 8,
+            });
+        return null;
+    }
+    renderToStaticMarkup(React.createElement(Summary));
+});
 
 describe("activity period and bar selection", () => {
     beforeEach(() => {

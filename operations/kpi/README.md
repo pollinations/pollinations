@@ -40,8 +40,8 @@ Run Enter locally on port 3000. Set `POLLINATIONS_AUTH_BASE_URL` to
 The production callback registration stays HTTPS-only.
 
 The Worker needs its own `POLLINATIONS_AUTH_SESSION_SECRET` (at least 32
-characters), a staging-only `TINYBIRD_READ_TOKEN`, and optionally `GITHUB_TOKEN`
-for authenticated GitHub metrics (public reads also work without it). Adding or copying credentials requires separate approval
+characters) and a staging-only `TINYBIRD_READ_TOKEN`. GitHub metrics use public
+reads cached for 30 minutes and do not require a GitHub token. Adding or copying credentials requires separate approval
 under the repository's secret rules. Never reuse Enter's session signing secret.
 Private reads use same-origin `/api/kpi/*`; cookies are separated by port locally.
 

@@ -54,6 +54,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 cacheUrl,
                 c.req.header(SAFETY_HEADER_NAME),
                 getRequiredSafetyFeatures(variables.model),
+                variables.model?.definition.cacheVersion,
             );
         },
         async get(c, cacheKey) {
@@ -98,7 +99,7 @@ export const imageCache = createGenerationCache(imageAdapter);
 export const imageExecutionCache = createGenerationExecutionCache(imageAdapter);
 
 const audioAdapter = mediaCacheAdapter({
-    mediaTypes: ["audio/"],
+    mediaTypes: ["audio/", "application/zip"],
     label: "audio-cache",
 });
 export const audioCache = createGenerationCache(audioAdapter);

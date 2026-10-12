@@ -27,6 +27,45 @@ const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
 const replicateDeliveryHost = "replicate.delivery";
 
+// Perplexity's Agent API lists sources in a search_results item (IDs are not
+// in order across searches) and reports cache writes and searches its own way.
+const PERPLEXITY_SEARCH_RESULTS = {
+    type: "search_results",
+    queries: ["vcr sonar"],
+    results: [
+        {
+            id: 2,
+            url: "https://example.test/second",
+            title: "Second",
+            snippet: "two",
+            date: null,
+            last_updated: "2026-09-22",
+            source: "web",
+        },
+        {
+            id: 1,
+            url: "https://example.test/first",
+            title: "First",
+            snippet: "one",
+            date: "2026-09-01",
+            last_updated: "2026-09-21",
+            source: "web",
+        },
+    ],
+};
+const PERPLEXITY_USAGE = {
+    input_tokens: 4000,
+    input_tokens_details: {
+        cache_creation_input_tokens: 3500,
+        cache_read_input_tokens: 0,
+        cached_tokens: 0,
+    },
+    output_tokens: 100,
+    output_tokens_details: { reasoning_tokens: 0 },
+    total_tokens: 4100,
+    tool_calls_details: { search_web: { invocation: 2, cost_usd: 0.005 } },
+};
+
 afterEach(async () => {
     await teardownFetchMock();
 });
@@ -53,8 +92,12 @@ function createGenerationMocks() {
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
-    const portkeyState: { requests: Record<string, unknown>[] } = {
+    const portkeyState: {
+        requests: Record<string, unknown>[];
+        failStatus: number | null;
+    } = {
         requests: [],
+        failStatus: null,
     };
     const replicateState: {
         requests: Array<{
@@ -67,14 +110,17 @@ function createGenerationMocks() {
         requests: Array<{
             body: Record<string, unknown>;
             headers: Record<string, string>;
+            url: string;
         }>;
         omitUsage: boolean;
+        failStatus: number | null;
         failStream: boolean;
         wrongStreamContentType: boolean;
         terminalTypeInEventOnly: boolean;
     } = {
         requests: [],
         omitUsage: false,
+        failStatus: null,
         failStream: false,
         wrongStreamContentType: false,
         terminalTypeInEventOnly: false,
@@ -85,18 +131,30 @@ function createGenerationMocks() {
     const elevenLabsState: { requests: Record<string, unknown>[] } = {
         requests: [],
     };
+    const azureSpeechState: {
+        requests: Array<{ url: string; body: Record<string, unknown> }>;
+    } = { requests: [] };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
             body,
             headers: Object.fromEntries(request.headers.entries()),
+            url: request.url,
         });
+        if (responsesState.failStatus) {
+            return Response.json(
+                { error: { message: "responses provider unavailable" } },
+                { status: responsesState.failStatus },
+            );
+        }
+        const perplexity = body.model === "perplexity/sonar";
         const response = {
             id: "resp_direct_test",
             object: "response",
             model: body.model,
             status: "completed",
             output: [
+                ...(perplexity ? [PERPLEXITY_SEARCH_RESULTS] : []),
                 {
                     id: "msg_direct_test",
                     type: "message",
@@ -111,16 +169,18 @@ function createGenerationMocks() {
                     ],
                 },
             ],
-            usage: {
-                input_tokens: 12,
-                input_tokens_details: {
-                    cached_tokens: 2,
-                    cache_write_tokens: 1,
-                },
-                output_tokens: 7,
-                output_tokens_details: { reasoning_tokens: 3 },
-                total_tokens: 19,
-            },
+            usage: perplexity
+                ? PERPLEXITY_USAGE
+                : {
+                      input_tokens: 12,
+                      input_tokens_details: {
+                          cached_tokens: 2,
+                          cache_write_tokens: 1,
+                      },
+                      output_tokens: 7,
+                      output_tokens_details: { reasoning_tokens: 3 },
+                      total_tokens: 19,
+                  },
         };
         if (responsesState.omitUsage) {
             delete (response as { usage?: unknown }).usage;
@@ -186,6 +246,25 @@ function createGenerationMocks() {
                 elevenLabsState.requests = [];
             },
         },
+        azureSpeech: {
+            state: azureSpeechState,
+            handlerMap: {
+                "myceli-prod-swedencentral.openai.azure.com": async (
+                    request: Request,
+                ) => {
+                    azureSpeechState.requests.push({
+                        url: request.url,
+                        body: await request.json(),
+                    });
+                    return new Response("audio bytes", {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                },
+            },
+            reset: () => {
+                azureSpeechState.requests = [];
+            },
+        },
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
@@ -196,11 +275,18 @@ function createGenerationMocks() {
                             unknown
                         >,
                     );
+                    if (portkeyState.failStatus) {
+                        return Response.json(
+                            { error: { message: "chat provider unavailable" } },
+                            { status: portkeyState.failStatus },
+                        );
+                    }
                     return fakePortkeyResponse(request);
                 },
             },
             reset: () => {
                 portkeyState.requests = [];
+                portkeyState.failStatus = null;
             },
         },
         responsesDirect: {
@@ -208,10 +294,12 @@ function createGenerationMocks() {
             handlerMap: {
                 "openrouter.ai": responsesHandler,
                 "myceli-prod-eastus.openai.azure.com": responsesHandler,
+                "api.perplexity.ai": responsesHandler,
             },
             reset: () => {
                 responsesState.requests = [];
                 responsesState.omitUsage = false;
+                responsesState.failStatus = null;
                 responsesState.failStream = false;
                 responsesState.wrongStreamContentType = false;
                 responsesState.terminalTypeInEventOnly = false;
@@ -251,6 +339,10 @@ function createGenerationMocks() {
                         : new Response(Buffer.from(png1x1Base64, "base64"), {
                               headers: { "content-type": "image/png" },
                           });
+                },
+                "gpt-dead-reference.test": async () => {
+                    gptImageState.imageHostRequests++;
+                    return new Response("not found", { status: 404 });
                 },
                 "content-safety.test": async () =>
                     Response.json({ categoriesAnalysis: [] }),
@@ -419,15 +511,6 @@ async function fakePortkeyResponse(request: Request) {
         : model;
 
     if (body.stream) {
-        const streamUsageExtras = prompt.includes("vcr perplexity stream cost")
-            ? {
-                  search_context_size: "low",
-                  cost: {
-                      request_cost: 0.007,
-                      total_cost: 0.00701,
-                  },
-              }
-            : {};
         const streamEvent = {
             id: "chatcmpl_vcr_stream",
             object: "chat.completion.chunk",
@@ -453,7 +536,6 @@ async function fakePortkeyResponse(request: Request) {
                 prompt_tokens: 7,
                 completion_tokens: 3,
                 total_tokens: 10,
-                ...streamUsageExtras,
             },
         };
         const usageChunk = prompt.includes("vcr missing chat stream usage")
@@ -522,31 +604,6 @@ async function fakePortkeyResponse(request: Request) {
             promptTokens: 9,
             completionTokens: 2,
             citations: ["https://example.test/source"],
-        },
-        {
-            matches: prompt.includes("vcr perplexity reported cost"),
-            content: "snapshot perplexity response",
-            promptTokens: 10,
-            completionTokens: 5,
-            usageExtras: {
-                search_context_size: "low",
-                cost: {
-                    request_cost: 0.006,
-                    total_cost: 0.00602,
-                },
-            },
-        },
-        {
-            matches: prompt.includes("vcr perplexity invalid cost"),
-            content: "snapshot perplexity response",
-            promptTokens: 10,
-            completionTokens: 5,
-            usageExtras: {
-                search_context_size: "low",
-                cost: {
-                    request_cost: "not-a-number",
-                },
-            },
         },
         {
             matches: prompt.includes("vcr moderated text"),
@@ -659,7 +716,6 @@ async function fakePortkeyResponse(request: Request) {
                           total_tokens:
                               (selectedCase?.promptTokens || 7) +
                               (selectedCase?.completionTokens || 3),
-                          ...selectedCase?.usageExtras,
                       },
                   }),
         },
@@ -1086,6 +1142,59 @@ test("media audio uses native speech billing and preserves literal text", async 
     ).toBeLessThan(before.packBalance);
 });
 
+test("speech without a model, or with the tts alias, uses free OpenAI TTS", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "azureSpeech");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        AZURE_MYCELI_PROD_SWEDEN_API_KEY: "azure-speech-test-key",
+    });
+    // Quest Pollen only: a paid-only model would answer 402.
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const speech = (body: Record<string, unknown>): RequestInit => ({
+        method: "POST",
+        headers: {
+            authorization: `Bearer ${key}`,
+            "content-type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+    const requests: Array<[string, RequestInit]> = [
+        [
+            `/audio/${encodeURIComponent(`no model ${crypto.randomUUID()}`)}`,
+            { headers: { authorization: `Bearer ${key}` } },
+        ],
+        [
+            "/v1/audio/speech",
+            speech({
+                input: `no model ${crypto.randomUUID()}`,
+                voice: "alloy",
+            }),
+        ],
+        [
+            "/v1/audio/speech",
+            speech({
+                model: "tts",
+                input: `tts alias ${crypto.randomUUID()}`,
+                voice: "alloy",
+            }),
+        ],
+    ];
+    for (const [path, init] of requests) {
+        const { response, wait } = await fetchWorker(path, init, bindings);
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("openai/tts-1");
+        await response.arrayBuffer();
+        await wait();
+    }
+    expect(mocks.azureSpeech.state.requests).toHaveLength(3);
+    for (const request of mocks.azureSpeech.state.requests) {
+        expect(request.url).toContain("/deployments/tts/audio/speech");
+        expect(request.body).toMatchObject({ model: "tts-1" });
+    }
+});
+
 test("chat completions use local text generation with VCR-backed Portkey", async ({
     paidApiKey,
     mocks,
@@ -1168,6 +1277,42 @@ test("chat completions reject a successful envelope without usage", async ({
         responseStatus: 502,
         isBilledUsage: false,
     });
+});
+
+test("chat completions forward a 28 MiB inline-image request", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/png;base64,${"A".repeat(28 * 1024 * 1024)}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
 });
 
 test("chat streaming without usage fails closed and remains unbilled", async ({
@@ -1405,6 +1550,9 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.responsesDirect.state.requests[0]).toMatchObject({
         body: {
             model: "gpt-5.6-luna",
+            // Azure gets a stream so its headers arrive before Cloudflare's
+            // ~125 s cutoff; the caller still receives JSON.
+            stream: true,
             store: false,
             input: [
                 {
@@ -1641,6 +1789,65 @@ test("direct Responses JSON preserves protocol and bills once", async ({
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
         tokenCountCompletionText: 4,
+        tokenCountCompletionReasoning: 3,
+        isBilledUsage: true,
+    });
+});
+
+// What Codex sends on its second turn: session metadata, encrypted reasoning
+// requested, and the first turn's reasoning item replayed.
+const codexSecondTurn = {
+    model: "openai/gpt-6-astra",
+    stream: true,
+    store: false,
+    include: ["reasoning.encrypted_content"],
+    client_metadata: { session_id: "codex-session" },
+    input: [
+        { role: "user", content: [{ type: "input_text", text: "first" }] },
+        {
+            type: "reasoning",
+            id: "rs_1",
+            summary: [],
+            encrypted_content: "opaque-reasoning",
+        },
+        {
+            type: "message",
+            role: "assistant",
+            content: [{ type: "output_text", text: "answer" }],
+        },
+        { role: "user", content: [{ type: "input_text", text: "second" }] },
+    ],
+};
+
+test("direct Responses passes a Codex turn's encrypted reasoning through and bills once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify(codexSecondTurn),
+    });
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toContain('"type":"response.completed"');
+    await wait();
+
+    const requests = mocks.responsesDirect.state.requests;
+    expect(requests).toHaveLength(1);
+    expect(requests[0].body).toMatchObject({
+        model: "gpt-6-astra",
+        include: ["reasoning.encrypted_content"],
+        input: codexSecondTurn.input,
+    });
+    expect(requests[0].body).not.toHaveProperty("client_metadata");
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "openai/gpt-6-astra",
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
     });
@@ -1896,11 +2103,175 @@ test("direct Responses returns 400 for reusable input state", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
-test("Responses rejects models without a direct endpoint without calling Chat", async ({
+test.for([
+    ["stepfun/step-3.7-flash", false],
+    ["stepfun/step-3.7-flash", true],
+    ["anthropic/claude-haiku-4.5", false],
+    ["anthropic/claude-haiku-4.5", true],
+    ["google/gemini-3.8-flash", false],
+    ["google/gemini-3.8-flash", true],
+] as const)("Responses on Chat-only %s bills exactly like Chat (stream: %s)", async ([
+    model,
+    stream,
+], { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const db = drizzle(env.DB);
+    const call = async (path: string, body: Record<string, unknown>) => {
+        const caller = await createTestApiKey({ user: { packBalance: 100 } });
+        const before = await getUserBalance(db, caller.userId);
+        const { response, wait } = await fetchWorker(path, {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${caller.key}`,
+            },
+            body: JSON.stringify({ model, stream, ...body }),
+        });
+        expect(response.status).toBe(200);
+        const text = await response.text();
+        await wait();
+        const after = await getUserBalance(db, caller.userId);
+        return { text, charged: before.packBalance - after.packBalance };
+    };
+
+    const chat = await call("/v1/chat/completions", {
+        messages: [{ role: "user", content: "vcr adapted billing" }],
+    });
+    const responses = await call("/v1/responses", {
+        input: "vcr adapted billing",
+    });
+
+    // One provider call each, both in Chat form.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
+    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
+        messages: [{ role: "user", content: "vcr adapted billing" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[1]).not.toHaveProperty("input");
+    if (stream) {
+        expect(responses.text).toContain("event: response.completed");
+        expect(responses.text).toContain('"input_tokens":7');
+        expect(responses.text.trimEnd().endsWith("data: [DONE]")).toBe(true);
+    } else {
+        expect(JSON.parse(responses.text)).toMatchObject({
+            object: "response",
+            status: "completed",
+            model,
+            output: [{ type: "message", role: "assistant" }],
+            usage: { input_tokens: 7, output_tokens: 3, total_tokens: 10 },
+        });
+    }
+
+    const [chatEvent, responsesEvent] = mocks.tinybird.state.events;
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    for (const field of [
+        "modelUsed",
+        "isBilledUsage",
+        "tokenCountPromptText",
+        "tokenCountCompletionText",
+        "totalPrice",
+    ] as const) {
+        expect(responsesEvent[field]).toEqual(chatEvent[field]);
+    }
+    expect(responsesEvent).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(responsesEvent.totalPrice).toBeGreaterThan(0);
+    expect(responses.charged).toBeCloseTo(chat.charged, 12);
+    expect(responses.charged).toBeCloseTo(responsesEvent.totalPrice, 12);
+});
+
+test.for([
+    {
+        direction: "native to adapted",
+        primary: "meta/llama-3.3-70b-instruct",
+        fallback: "meta/llama-3.3-70b-instruct:deepinfra",
+        failing: "responsesDirect",
+    },
+    {
+        direction: "adapted to native",
+        primary: "anthropic/claude-haiku-4.5",
+        fallback: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
+        failing: "portkeyDirect",
+    },
+] as const)("Responses falls back $direction and bills only the fallback", async ({
+    primary,
+    fallback,
+    failing,
+}, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    mocks[failing].state.failStatus = 503;
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const before = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: primary,
+            input: "vcr responses fallback",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe(fallback);
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await expect(response.json()).resolves.toMatchObject({
+        object: "response",
+        status: "completed",
+        output: [{ type: "message", role: "assistant" }],
+    });
+    await wait();
+
+    // One attempt per upstream: Chat form for the adapted model, Responses
+    // form for the native one.
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        messages: [{ role: "user", content: "vcr responses fallback" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("input");
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.responsesDirect.state.requests[0].body).toMatchObject({
+        input: "vcr responses fallback",
+        store: false,
+    });
+    expect(mocks.responsesDirect.state.requests[0].body).not.toHaveProperty(
+        "messages",
+    );
+
+    const events = mocks.tinybird.state.events;
+    expect(events).toHaveLength(2);
+    expect(events[0]).toMatchObject({
+        modelUsed: primary,
+        responseStatus: 503,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(events[1]).toMatchObject({
+        modelUsed: fallback,
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
+    });
+    expect(events[1].totalPrice).toBeGreaterThan(0);
+    const after = await getUserBalance(db, caller.userId);
+    expect(before.packBalance - after.packBalance).toBeCloseTo(
+        events[1].totalPrice,
+        12,
+    );
+});
+
+test("Responses on a Chat-only model fails without provider usage", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird");
+    await mocks.enable("tinybird", "portkeyDirect");
     const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
@@ -1909,15 +2280,81 @@ test("Responses rejects models without a direct endpoint without calling Chat", 
         },
         body: JSON.stringify({
             model: "stepfun/step-3.7-flash",
-            input: "must not adapt to chat",
+            input: "vcr missing chat usage",
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { message: expect.stringContaining("omitted usage") },
+    });
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+    });
+});
+
+test("Responses stream on a Chat-only model fails without usage and is not billed", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            stream: true,
+            input: "vcr missing chat stream usage",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: error");
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).toContain("event: response.failed");
+    expect(stream).not.toContain("response.completed");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test("Responses rejects what Chat cannot express before calling a Chat-only model", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "stepfun/step-3.7-flash",
+            input: "must not reach chat",
+            max_tool_calls: 2,
         }),
     });
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
-        error: {
-            message: expect.stringContaining("stateless Responses API"),
-        },
+        error: { type: "invalid_request_error", param: "max_tool_calls" },
     });
     await wait();
     expect(mocks.portkeyDirect.state.requests).toHaveLength(0);
@@ -1987,11 +2424,11 @@ test("canonical model headers preserve provider-reported payload models", async 
     });
 });
 
-test("chat completions bill provider-reported Perplexity request cost without exposing it", async ({
+test("Sonar searches through Perplexity's Agent API and bills each search", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
+    await mocks.enable("tinybird", "responsesDirect");
 
     const { response, wait } = await fetchWorker("/v1/chat/completions", {
         method: "POST",
@@ -2001,53 +2438,132 @@ test("chat completions bill provider-reported Perplexity request cost without ex
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [
-                { role: "user", content: "vcr perplexity reported cost" },
-            ],
+            messages: [{ role: "user", content: "vcr sonar search" }],
+            frequency_penalty: 0.5,
+            web_search_options: { search_context_size: "medium" },
+            search_domain_filter: ["wikipedia.org"],
+            search_recency_filter: "week",
         }),
     });
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        usage?: Record<string, unknown>;
-    };
+    const body = (await response.json()) as Record<string, unknown>;
+    // Result-ID order, so an inline [n] is citations[n - 1].
+    expect(body.citations).toEqual([
+        "https://example.test/first",
+        "https://example.test/second",
+    ]);
+    expect(body.search_results).toEqual([
+        {
+            url: "https://example.test/first",
+            title: "First",
+            snippet: "one",
+            date: "2026-09-01",
+            last_updated: "2026-09-21",
+            source: "web",
+        },
+        {
+            url: "https://example.test/second",
+            title: "Second",
+            snippet: "two",
+            date: null,
+            last_updated: "2026-09-22",
+            source: "web",
+        },
+    ]);
     expect(body.usage).toMatchObject({
-        prompt_tokens: 10,
-        completion_tokens: 5,
-        total_tokens: 15,
+        prompt_tokens: 4000,
+        prompt_tokens_details: { cache_write_tokens: 3500 },
+        server_tool_use_details: { web_search_requests: 2 },
     });
-    expect(body.usage).not.toHaveProperty("cost");
-    expect(body.usage).not.toHaveProperty("search_context_size");
     await wait();
 
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const upstream = mocks.responsesDirect.state.requests[0];
+    expect(upstream.url).toBe("https://api.perplexity.ai/v1/agent");
+    expect(upstream.body).toMatchObject({
+        model: "perplexity/sonar",
+        instructions: expect.stringContaining("[1][2]"),
+        // Legacy Sonar always searched; the Agent API skips simple questions.
+        tool_choice: "required",
+        tools: [
+            {
+                type: "web_search",
+                search_context_size: "medium",
+                filters: {
+                    search_domain_filter: ["wikipedia.org"],
+                    search_recency_filter: "week",
+                },
+            },
+        ],
+    });
+    expect(upstream.body).not.toHaveProperty("frequency_penalty");
+    expect(upstream.body).not.toHaveProperty("web_search_options");
+
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
         modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 10,
-        tokenCountCompletionText: 5,
+        modelUsed: "perplexity/sonar",
         isBilledUsage: true,
+        adjustmentCosts: { "perplexity.web_search.v1": 0.005 },
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
     });
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.006015, 8);
-    // Itemized search fee rides along in the Map columns, keyed by rule id.
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_low.search_request.v1": 0.006,
-    });
-    expect(mocks.tinybird.state.events[0].adjustmentUnits).toEqual({
-        "perplexity.sonar_low.search_request.v1": 1,
-    });
+    // 4,000 input tokens (3,500 of them cache writes) at $0.25/M, 100 output
+    // tokens at $2.50/M, and two searches at $2.50/1K.
+    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00625, 8);
 });
 
-test("Perplexity aliases add no options and allow explicit override", async ({
+test("streaming Sonar sends its sources with the finish chunk", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
+    await mocks.enable("tinybird", "responsesDirect");
 
-    for (const [model, requestedSize] of [
-        ["perplexity-high", undefined],
-        ["sonar-deep", "low"],
-    ] as const) {
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "perplexity/sonar",
+            stream: true,
+            messages: [{ role: "user", content: "vcr sonar stream" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const chunks = (await response.text())
+        .split("\n\n")
+        .filter((line) => line.startsWith("data: {"))
+        .map((line) => JSON.parse(line.slice(6)));
+    const finish = chunks.find(
+        (chunk) => chunk.choices?.[0]?.finish_reason === "stop",
+    );
+    expect(finish.citations).toEqual([
+        "https://example.test/first",
+        "https://example.test/second",
+    ]);
+    expect(chunks.at(-1).usage).toMatchObject({
+        server_tool_use_details: { web_search_requests: 2 },
+    });
+    await wait();
+
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        isBilledUsage: true,
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
+    });
+});
+
+test("retired Sonar models answer as Sonar with web search on", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    for (const model of [
+        "perplexity/sonar-pro",
+        "sonar-reasoning-pro",
+        "perplexity",
+    ]) {
         const { response, wait } = await fetchWorker("/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -2056,12 +2572,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
             },
             body: JSON.stringify({
                 model,
-                messages: [{ role: "user", content: `context ${model}` }],
-                ...(requestedSize && {
-                    web_search_options: {
-                        search_context_size: requestedSize,
-                    },
-                }),
+                messages: [{ role: "user", content: `vcr retired ${model}` }],
             }),
         });
 
@@ -2071,21 +2582,21 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         await wait();
     }
 
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(2);
-    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
-        "web_search_options",
-    );
-    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
-    });
+    for (const { body } of mocks.responsesDirect.state.requests) {
+        expect(body).toMatchObject({
+            model: "perplexity/sonar",
+            tools: [{ type: "web_search" }],
+        });
+    }
 });
 
-test("forwards a medium search context and bills the medium fee", async ({
+test("Responses requests to Sonar search by default and bill each search", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
         method: "POST",
         headers: {
             "content-type": "application/json",
@@ -2093,7 +2604,55 @@ test("forwards a medium search context and bills the medium fee", async ({
         },
         body: JSON.stringify({
             model: "perplexity/sonar",
-            messages: [{ role: "user", content: "medium context" }],
+            input: "vcr sonar responses",
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests[0].body).toMatchObject({
+        model: "perplexity/sonar",
+        tools: [{ type: "web_search" }],
+    });
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        isBilledUsage: true,
+        adjustmentUnits: { "perplexity.web_search.v1": 2 },
+    });
+});
+
+test("simple text lists Sonar's sources", async ({ paidApiKey, mocks }) => {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    const { response } = await fetchWorker(
+        "/text/vcr%20sonar%20text?model=sonar",
+        {
+            headers: { authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe(
+        "direct response\n\n---\nSources:\n[1] https://example.test/first\n[2] https://example.test/second\n",
+    );
+});
+
+test("forwards web search options untouched to other models", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "context gpt-5-nano" }],
             web_search_options: { search_context_size: "medium" },
         }),
     });
@@ -2105,138 +2664,7 @@ test("forwards a medium search context and bills the medium fee", async ({
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
         web_search_options: { search_context_size: "medium" },
     });
-    // The reply reports no tier, so the fee follows what the caller asked for.
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_medium.search_request.v1": 0.008,
-    });
-});
-
-test("forwards search options untouched and bills the requested tier", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    for (const [model, searchContextSize] of [
-        ["perplexity/sonar-pro", "low"],
-        ["perplexity/sonar-reasoning-pro", "high"],
-        ["openai/gpt-5-nano", "medium"],
-    ] as const) {
-        const { response, wait } = await fetchWorker("/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${paidApiKey}`,
-            },
-            body: JSON.stringify({
-                model,
-                messages: [{ role: "user", content: `context ${model}` }],
-                web_search_options: {
-                    search_context_size: searchContextSize,
-                },
-            }),
-        });
-
-        expect(response.status).toBe(200);
-        await response.text();
-        await wait();
-    }
-
-    expect(mocks.portkeyDirect.state.requests).toHaveLength(3);
-    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
-        web_search_options: { search_context_size: "low" },
-    });
-    expect(mocks.portkeyDirect.state.requests[1]).toMatchObject({
-        web_search_options: { search_context_size: "high" },
-    });
-    expect(mocks.portkeyDirect.state.requests[2]).toMatchObject({
-        web_search_options: { search_context_size: "medium" },
-    });
-    expect(mocks.tinybird.state.events[0].adjustmentCosts).toEqual({
-        "perplexity.sonar_pro_low.search_request.v1": 0.006,
-    });
-    expect(mocks.tinybird.state.events[1].adjustmentCosts).toEqual({
-        "perplexity.sonar_reasoning_high.search_request.v1": 0.014,
-    });
-    expect(mocks.tinybird.state.events[2].adjustmentCosts).toBeUndefined();
-});
-
-test("streaming chat completions bill provider-reported Perplexity request cost", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "perplexity/sonar",
-            stream: true,
-            messages: [{ role: "user", content: "vcr perplexity stream cost" }],
-        }),
-    });
-
-    expect(response.status).toBe(200);
-    await response.text();
-    await wait();
-
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
-        modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 7,
-        tokenCountCompletionText: 3,
-        isBilledUsage: true,
-    });
-    // 0.007 provider-reported request fee + 0.00001 token cost.
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.00701, 8);
-});
-
-test("malformed provider-reported cost bills the static fee, not a 5xx", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "portkeyDirect");
-
-    const { response, wait } = await fetchWorker("/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "perplexity/sonar",
-            messages: [
-                { role: "user", content: "vcr perplexity invalid cost" },
-            ],
-        }),
-    });
-
-    // Clamp-and-alert: a malformed provider cost on an otherwise-good
-    // generation no longer fails the request. The response succeeds and the
-    // request is billed at the static registry fee.
-    expect(response.status).toBe(200);
-    const body = (await response.json()) as {
-        usage?: Record<string, unknown>;
-    };
-    expect(body.usage).not.toHaveProperty("cost");
-    await wait();
-
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.text",
-        modelRequested: "perplexity/sonar",
-        tokenCountPromptText: 10,
-        tokenCountCompletionText: 5,
-        isBilledUsage: true,
-    });
-    // 0.005 static request fee + 0.000015 token cost (10 prompt + 5 completion
-    // @ $1/1M). Provider request_cost was malformed → static fee substituted.
-    expect(mocks.tinybird.state.events[0].totalCost).toBeCloseTo(0.005015, 8);
+    expect(mocks.tinybird.state.events[0].adjustmentCosts).toBeUndefined();
 });
 
 test("non-stream chat completions keep moderation telemetry in generation events", async ({
@@ -2750,17 +3178,21 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
     });
 });
 
-test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
+// 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
+test.for([
+    429, 404,
+])("gpt-image-2 falls back to OpenAI direct on an Azure %i", async (azureStatus, {
     mocks,
 }) => {
     await mocks.enable("tinybird", "gptImage");
+    mocks.gptImage.state.azureStatus = azureStatus;
     const { key } = await createTestApiKey({
         allowedModels: ["openai/gpt-image-2"],
         user: { tierBalance: 100 },
     });
 
     const { response, wait } = await fetchWorker(
-        "/image/fallback%20probe?model=gpt-image-2&quality=low&seed=9347",
+        `/image/fallback%20probe%20${azureStatus}?model=gpt-image-2&quality=low&seed=9347`,
         { headers: { authorization: `Bearer ${key}` } },
     );
 
@@ -2829,6 +3261,25 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
         isFinal: true,
         isBilledUsage: true,
     });
+});
+
+test("gpt-image-2 does not retry a dead reference image link on OpenAI", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    const { key } = await createTestApiKey({
+        allowedModels: ["openai/gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+    const { response, wait } = await fetchWorker(
+        "/image/dead-reference?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-dead-reference.test%2Finput.png&seed=9351",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+    expect(response.status).toBe(400);
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.gptImage.state.imageHostRequests).toBe(1);
+    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
 });
 
 test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({

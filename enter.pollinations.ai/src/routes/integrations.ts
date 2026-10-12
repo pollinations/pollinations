@@ -1,3 +1,4 @@
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_USER_ID_HEADER } from "@shared/registry/mcp.ts";
@@ -8,12 +9,12 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { type AuthEnv, auth } from "../middleware/auth.ts";
-import { requireAccountPermission } from "./account-permissions.ts";
 
 const ConnectionSchema = z.object({
     id: z.string(),
     toolkit: z.string(),
     name: z.string().nullable(),
+    description: z.string().optional(),
     logo: z.string().nullable(),
     alias: z.string().nullable(),
     status: z.string(),
@@ -68,7 +69,7 @@ async function forwardComposioResponse(response: Response): Promise<Response> {
 }
 
 export const integrationsRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     .use("*", async (c, next) => {
         c.var.auth.requireUser();
         requireAccountPermission(c.var.auth.apiKey, "keys");
@@ -77,7 +78,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "List Connected Apps",
             responses: {
                 200: {
@@ -98,7 +99,7 @@ export const integrationsRoutes = new Hono<Env>()
     .get(
         "/toolkits",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Search Connectable Apps",
             responses: {
                 200: {
@@ -125,7 +126,7 @@ export const integrationsRoutes = new Hono<Env>()
     .post(
         "/",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Connect App",
             responses: {
                 200: { description: "Hosted authentication URL" },
@@ -151,7 +152,7 @@ export const integrationsRoutes = new Hono<Env>()
     .delete(
         "/:id",
         describeRoute({
-            tags: ["🔗 Account"],
+            tags: ["👤 Account"],
             summary: "Disconnect App",
             responses: { 204: { description: "App disconnected" } },
         }),

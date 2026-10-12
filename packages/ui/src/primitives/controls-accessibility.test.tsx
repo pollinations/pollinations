@@ -1,7 +1,10 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
+import {
+    AccountIdentity,
+    AccountIdentityLink,
+} from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
 import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
@@ -179,6 +182,20 @@ describe("shared control accessibility", () => {
         expect(markup).toContain('href="/pollen"');
         expect(markup).not.toContain("https://enter.pollinations.ai");
         expect(markup).not.toContain("<button");
+    });
+
+    it("makes the whole identity pill one external link", () => {
+        const markup = renderToStaticMarkup(
+            <AccountIdentityLink
+                name="@alex"
+                href="https://github.com/alex"
+                avatarUrl="https://github.com/alex.png"
+            />,
+        );
+        expect(markup.match(/<a\b/g)).toHaveLength(1);
+        expect(markup).toContain('href="https://github.com/alex"');
+        expect(markup).toContain('target="_blank"');
+        expect(markup).toContain('rel="noopener noreferrer"');
     });
 
     it("exposes the pressed state of toggle icon buttons", () => {

@@ -29,7 +29,7 @@ docker build -t floret .
 docker run -p 8000:8000 --env-file .env floret
 ```
 
-The container needs no baked-in secrets. Hosted calls pass a short-lived agent run token via `Authorization: Bearer ag_…`; `OPENAI_API_KEY` is available only for local/dev use when `POLLI_ALLOW_OPERATOR_KEY=true`.
+The container needs no baked-in secrets. Hosted calls usually pass a short-lived agent run token via `Authorization: Bearer ag_…`, but any valid Pollinations key (`sk_`/`pk_`/`ag_`) is accepted and forwarded to gen; `OPENAI_API_KEY` is available only for local/dev use when `POLLI_ALLOW_OPERATOR_KEY=true`.
 
 ## API
 
@@ -38,11 +38,11 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "pollinations-router/floret",
+    "model": "pollinations-ai/floret",
     "messages": [{"role": "user", "content": "Create a narrated launch concept"}],
     "stream": true,
-    "routing": {
-      "text": "auto",
+    "metadata": {
+      "model": "auto",
       "web_search": "gemini-search",
       "image_generation": "flux",
       "image_editing": "nanobanana",
@@ -52,11 +52,16 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token; Floret's direct endpoint rejects user keys.
+Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway usually calls Floret with a short-lived internal `ag_` token; Floret also accepts those user keys directly and lets gen authenticate them.
 
 Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
 
-For the `routing` object:
+Agent settings use `metadata`. `metadata.model` selects Floret's inner text model.
+Ask in the conversation to use only Quest-compatible models; Floret uses the
+`paid_only` flag from `list_models` to choose eligible generation models. This is
+a preference and does not select a wallet balance or enforce a billing boundary.
+
+For `metadata`:
 
 - Every field is optional.
 - Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.

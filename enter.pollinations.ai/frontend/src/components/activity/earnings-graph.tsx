@@ -8,12 +8,13 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
+import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityEmptyState,
     ActivityFilter,
+    ActivityKeyFilter,
     CsvDownloadButton,
     clearActivitySelectionOnEscape,
     PollenUsageBadges,
@@ -45,9 +46,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     onSelectedAppKeyIdsChange,
     onSelectedModelIdsChange,
 }) => {
-    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const {
         loading,
+        refreshing,
         error,
         fetchEarnings,
         usedApps,
@@ -68,24 +69,17 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         value: app.id,
         label: app.label,
     }));
-    for (const id of selectedAppKeyIds) {
-        const key = apiKeys.find((key) => key.id === id);
-        if (key && !appSelectOptions.some((option) => option.value === id))
-            appSelectOptions.push({
-                value: id,
-                label: key.name || "Unnamed app",
-            });
-    }
     const modelSelectOptions = usedModels.map((model) => ({
         value: model.id,
         label: model.label,
     }));
 
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
-    const downloadDisabled = loading || exportRows.length === 0;
-    const downloadDisabledReason = loading
-        ? "Loading earnings data"
-        : "No earnings to download for this selected period";
+    const downloadDisabled = loading || refreshing || exportRows.length === 0;
+    const downloadDisabledReason =
+        loading || refreshing
+            ? "Loading earnings data"
+            : "No earnings to download for this selected period";
 
     function downloadEarnings(): void {
         if (downloadDisabled) return;
@@ -137,8 +131,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             >
                 {hasPeriodData && (
                     <>
-                        <ActivityFilter
+                        <ActivityKeyFilter
                             label="Apps"
+                            unnamedLabel="Unnamed app"
                             missingLabel="Unavailable app"
                             options={appSelectOptions}
                             selected={selectedAppKeyIds}
@@ -156,32 +151,13 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )}
             </ActivityToolbar>
 
-            <div className="min-h-[180px]">
-                {loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <p className="text-sm text-theme-text-muted animate-[pulse_2s_ease-in-out_infinite]">
-                            Fetching earnings data...
-                        </p>
-                    </div>
+            <SectionContent loading={loading}>
+                {error && (
+                    <LoadError onRetry={() => fetchEarnings()}>
+                        {error}
+                    </LoadError>
                 )}
-                {error && !loading && (
-                    <div className="flex items-center justify-center h-[180px]">
-                        <div className="text-center">
-                            <p className="text-sm text-intent-danger-text font-medium">
-                                {error}
-                            </p>
-                            <button
-                                type="button"
-                                onClick={() => fetchEarnings()}
-                                className="mt-2 text-xs text-intent-danger-text hover:text-intent-danger-text underline"
-                            >
-                                Try again
-                            </button>
-                        </div>
-                    </div>
-                )}
-                {!loading &&
-                    !error &&
+                {(!error || hasData) &&
                     (hasData ? (
                         <Chart
                             key={`${period.granularity}:${period.period}`}
@@ -201,26 +177,40 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     ) : (
                         <EarningsEmptyState />
                     ))}
-            </div>
+            </SectionContent>
 
-            {!loading && !error && hasData && (
+            {!loading && hasData && (
                 <div className="min-w-0 max-w-full overflow-x-auto">
                     <Table
                         aria-label="Earnings by source"
                         className="min-w-[440px] [&_tr:hover]:bg-transparent"
                     >
-                        <TableHead className="sr-only">
+                        <TableHead>
                             <TableRow>
-                                <TableHeaderCell scope="col">
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Name
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col">
+                                <TableHeaderCell
+                                    scope="col"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Source
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col" align="right">
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="right"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     Share
                                 </TableHeaderCell>
-                                <TableHeaderCell scope="col" align="right">
+                                <TableHeaderCell
+                                    scope="col"
+                                    align="right"
+                                    className="px-2 py-1 font-normal"
+                                >
                                     {metric === "pollen"
                                         ? "Pollen"
                                         : "Requests"}
@@ -297,10 +287,7 @@ const EarningsEmptyState: FC = () => (
     <ActivityEmptyState>
         No earnings in this period. Once users spend Pollen through your apps or
         community models, earnings will appear here.{" "}
-        <InlineLink href="/keys" showIcon={false}>
-            Create an App key
-        </InlineLink>
-        .
+        <InlineLink href="/keys">Create an App key</InlineLink>.
     </ActivityEmptyState>
 );
 

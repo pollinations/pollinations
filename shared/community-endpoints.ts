@@ -102,6 +102,8 @@ export const CommunityEndpointAdvertisedSchema = z
             .positive()
             .max(MAX_COMMUNITY_CONTEXT_LENGTH)
             .optional(),
+        // Absent means the endpoint streams. The endpoint test detects false.
+        streaming: z.literal(false).optional(),
     })
     .strict();
 
@@ -123,6 +125,7 @@ export function normalizeCommunityEndpointAdvertised(
         if (capabilities.length) advertised.capabilities = capabilities;
     }
     if (value.contextLength) advertised.contextLength = value.contextLength;
+    if (value.streaming === false) advertised.streaming = false;
     return advertised;
 }
 
@@ -575,9 +578,8 @@ export const ProxyListingPayloadSchema = z
         bearerTokenCiphertext: z.string().min(1),
         // Media listings have no text API and do not need a data migration.
         api: CommunityEndpointApiSchema.nullable().default(null),
-        // Owner-set: callers may only spend Paid Pollen on this model. Rows
-        // from before paid-only support are public-spend by default.
-        paidOnly: z.boolean().default(false),
+        // Owner-set: callers may only spend Paid Pollen on this model.
+        paidOnly: z.boolean(),
         modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
         inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
@@ -843,8 +845,6 @@ type CommunityEndpointRuntimeBase = {
     // Community model ids tried in order when this endpoint's upstream fails.
     // A target's own list is never followed: the owner declares the full order.
     fallbacks: string[];
-    hiddenAt: number | null;
-    hiddenReason: string | null;
 } & CommunityEndpointPrices;
 
 /** A third-party server, reached with its registered upstream bearer secret. */
@@ -906,8 +906,7 @@ export type CommunityModelDefinitionInput = {
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
-    hidden?: boolean;
-    paidOnly?: boolean;
+    paidOnly: boolean;
 } & CommunityEndpointPrices;
 
 export type CommunityProviderProfile = {
@@ -1066,8 +1065,11 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
-    const { capabilities = [], ...advertised } =
-        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
+    const {
+        capabilities = [],
+        streaming,
+        ...advertised
+    } = normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",
@@ -1094,11 +1096,10 @@ export function communityModelDefinition(
               }
             : {}),
         requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
-        hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }
             : {}),
-        paidOnly: endpoint.paidOnly ?? false,
+        paidOnly: endpoint.paidOnly,
         alpha: true,
         // Explicit false (not omitted) for token-priced image endpoints: the
         // catalog only renders per-1M prices when flat_rate === false or a
@@ -1106,6 +1107,7 @@ export function communityModelDefinition(
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
         ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
         ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...(streaming === false ? { supportsStreaming: false } : {}),
         ...advertised,
     };
 }

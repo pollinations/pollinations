@@ -258,7 +258,7 @@ describe("long-context cost variants", () => {
         ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
-        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 1],
     ] satisfies [
         ModelName,
         number,
@@ -485,21 +485,69 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
-    it.each([
-        [1024, 1024, 0.04, undefined],
-        [1008, 1040, 0.06, "2048"],
-        [1024, 1040, 0.06, "2048"],
-        [2048, 2048, 0.06, "2048"],
-    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
-        const billing = bill(
-            "amazon/nova-canvas-v1",
-            { completionImageTokens: 1 },
-            { maxImageDimension: Math.max(width, height) },
-        );
-
-        expect(billing.costVariant).toBe(variant);
-        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    it("FLUX.3 quotes both launch and list prices at the cutoff in the same warm registry", () => {
+        const model = "black-forest-labs/flux-3-image";
+        const definition = getRegistryModelDefinition(model);
+        const cutoff = Date.parse("2026-10-08T15:00:00Z");
+        const now = vi.spyOn(Date, "now");
+        try {
+            for (const [time, oneK, twoK] of [
+                [cutoff - 1, 0.024, 0.05],
+                [cutoff, 0.048, 0.1],
+                [cutoff + 1, 0.048, 0.1],
+            ]) {
+                now.mockReturnValue(time);
+                const info = modelInfoFromDefinition(model, definition);
+                expect(Number(info.pricing.completionImageTokens)).toBeCloseTo(
+                    oneK * 1.055,
+                    10,
+                );
+                expect(
+                    Number(
+                        info.pricing_variants?.find(({ name }) => name === "2k")
+                            ?.pricing.completionImageTokens,
+                    ),
+                ).toBeCloseTo(twoK * 1.055, 10);
+                for (const [resolution, cost] of [
+                    ["1k", oneK],
+                    ["2k", twoK],
+                ] as const) {
+                    const billing = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        { resolution },
+                    );
+                    expect(billing.cost.totalCost).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    expect(billing.price.totalPrice).toBeCloseTo(
+                        cost * 1.055,
+                        10,
+                    );
+                    // In-flight requests settle the actual provider receipt,
+                    // even when it differs from the catalog's current quote.
+                    const receipt = bill(
+                        model,
+                        { completionImageTokens: 1 },
+                        {
+                            resolution,
+                            providerBilling: { units: 0.024, unitCost: 1.055 },
+                        },
+                    );
+                    expect(receipt.cost.totalCost).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                    expect(receipt.price.totalPrice).toBeCloseTo(
+                        0.024 * 1.055,
+                        10,
+                    );
+                }
+            }
+        } finally {
+            now.mockRestore();
+        }
     });
 
     it("p-video bills the 720p base and 1080p variant", () => {
@@ -743,6 +791,26 @@ describe("selection safety and composition", () => {
         expect(billing.servedPrice).toBeCloseTo(0.006, 12);
         expect(billing.price.totalPrice).toBeCloseTo(0.01, 12);
         expect(billing.priceDefinition.promptTextTokens).toBeCloseTo(1e-5, 15);
+    });
+
+    it("applies the serving multiplier to provider cost while preserving the fallback quote", () => {
+        const billing = calculateUsageBilling({
+            model: "quoted-model",
+            usage: { completionVideoSeconds: 5 },
+            servedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.025 },
+                priceMultiplier: 2,
+            }),
+            quotedBy: fakeModel({
+                cost: { completionVideoSeconds: 0.08 },
+                priceMultiplier: 2,
+            }),
+            input: { providerBilling: { units: 8, unitCost: 0.0125 } },
+        });
+        expect(billing.cost).toEqual({ totalCost: 0.1 });
+        expect(billing.servedPrice).toBe(0.2);
+        expect(billing.price.totalPrice).toBe(0.8);
+        expect(billing.priceDefinition.completionVideoSeconds).toBe(0.16);
     });
 
     it("reports a served-side selector failure while preserving the quoted price variant", () => {

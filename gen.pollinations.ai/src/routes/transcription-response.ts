@@ -109,13 +109,18 @@ export function buildTranscriptionResponse(opts: {
     normalized: NormalizedTranscript;
     responseFormat: string;
     usageHeaders: Record<string, string>;
+    /** Body usage for token-billed models; defaults to duration metering. */
+    usage?: Record<string, unknown>;
 }): Response {
     const { normalized, responseFormat, usageHeaders } = opts;
     const { text, duration } = normalized;
     // OpenAI defines usage.seconds and the top-level duration as the same
     // quantity — "duration of the input audio" — so they are one number here.
     // That is also what we bill, so the body and the usage headers agree.
-    const usage = { type: "duration" as const, seconds: duration };
+    const usage = opts.usage ?? {
+        type: "duration" as const,
+        seconds: duration,
+    };
 
     if (responseFormat === "text") {
         return new Response(text, {

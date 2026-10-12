@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { platform } from "node:os";
+import { resolve } from "node:path";
 
 type Player = { cmd: string; args: (file: string) => string[] };
 
@@ -14,7 +15,8 @@ const PLAYERS: Record<string, Player[]> = {
         { cmd: "mpv", args: (f) => ["--no-video", "--really-quiet", f] },
         { cmd: "mpg123", args: (f) => ["-q", f] },
     ],
-    // Windows: MediaPlayer handles mp3 (SoundPlayer is wav-only).
+    // Windows: MediaPlayer handles mp3 (SoundPlayer is wav-only). It needs an
+    // absolute path: a relative [uri] never loads and playback times out.
     win32: [
         {
             cmd: "powershell",
@@ -23,9 +25,12 @@ const PLAYERS: Record<string, Player[]> = {
                 "-Command",
                 `Add-Type -AssemblyName PresentationCore;` +
                     `$p=New-Object System.Windows.Media.MediaPlayer;` +
-                    `$p.Open([uri]'${f.replace(/'/g, "''")}');` +
+                    `$p.Open([uri]'${resolve(f).replace(/'/g, "''")}');` +
                     `$p.Play();` +
-                    `while(-not $p.NaturalDuration.HasTimeSpan){Start-Sleep -m 50};` +
+                    `$deadline=(Get-Date).AddSeconds(10);` +
+                    `while(-not $p.NaturalDuration.HasTimeSpan){` +
+                    `if((Get-Date) -ge $deadline){throw 'Audio playback could not start'};` +
+                    `Start-Sleep -Milliseconds 50};` +
                     `Start-Sleep -Seconds $p.NaturalDuration.TimeSpan.TotalSeconds`,
             ],
         },
@@ -57,16 +62,4 @@ export const playAudio = async (filePath: string): Promise<boolean> => {
         child.on("error", () => resolve(false));
         child.on("exit", (code) => resolve(code === 0));
     });
-};
-
-/** Human-readable hint for when no player is found on the host. */
-export const playerMissingHint = (): string => {
-    switch (platform()) {
-        case "linux":
-            return "No mp3-capable player found. Install one of: ffmpeg (ffplay), mpv, or mpg123.";
-        case "win32":
-            return "No audio player found. PowerShell is required for playback on Windows.";
-        default:
-            return "No audio player found on this system.";
-    }
 };

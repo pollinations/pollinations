@@ -5,6 +5,8 @@ import type {
 } from "@shared/schemas/decisions.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
+import { withModelFallbackResponse } from "../../fallback.ts";
+import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import { requestDecision } from "../systemOneClient.js";
@@ -22,33 +24,39 @@ export async function generateDecision(c: Context<Env>): Promise<Response> {
     ) as CreateDecisionRequest;
 
     syncTextEnvironment(c.env);
-    const { options } = resolveModelConfig([], {
-        model: c.var.model.resolved,
-    });
+    return withModelFallbackResponse(
+        c.var.model,
+        async (candidate) => {
+            const { options } = resolveModelConfig([], {
+                model: candidate.id,
+            });
+            const { result, requestUrl } = await requestDecision(
+                { state, questions },
+                options,
+            );
+            c.set("upstreamRequestUrl", requestUrl);
 
-    const { result, requestUrl } = await requestDecision(
-        { state, questions },
-        options,
-    ).catch(throwTextError);
-    c.set("upstreamRequestUrl", requestUrl);
+            const body: CreateDecisionResponse = {
+                id: `dec-${crypto.randomUUID()}`,
+                // The registry owns public model identity: the provider answers with
+                // its own dated build id, which is not a name callers can request.
+                model: c.var.model.resolved,
+                provider: c.var.model.definition.publisher ?? "",
+                answers: result.answers as CreateDecisionResponse["answers"],
+                usage: {
+                    input_tokens: result.usage.input_tokens,
+                    output_tokens: result.usage.output_tokens,
+                },
+            };
 
-    const body: CreateDecisionResponse = {
-        id: `dec-${crypto.randomUUID()}`,
-        // The registry owns public model identity: the provider answers with
-        // its own dated build id, which is not a name callers can request.
-        model: c.var.model.resolved,
-        provider: c.var.model.definition.publisher ?? "",
-        answers: result.answers as CreateDecisionResponse["answers"],
-        usage: {
-            input_tokens: result.usage.input_tokens,
-            output_tokens: result.usage.output_tokens,
+            return Response.json(body, {
+                headers: buildUsageHeaders(candidate.id, {
+                    promptTextTokens: result.usage.input_tokens,
+                    completionTextTokens: result.usage.output_tokens,
+                }),
+            });
         },
-    };
-
-    return Response.json(body, {
-        headers: buildUsageHeaders(c.var.model.resolved, {
-            promptTextTokens: result.usage.input_tokens,
-            completionTextTokens: result.usage.output_tokens,
-        }),
-    });
+        c.var.track?.attempts,
+        (candidate) => enforceModelRateLimit(c, candidate),
+    ).catch(throwTextError);
 }

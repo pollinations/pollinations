@@ -190,21 +190,20 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
-**Where this fits:**
-- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
-- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
-- **MCP servers** — AI agent requests access, user approves from their browser
-- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
-- **VS Code extensions** — extension shows the code, user approves in browser
+Use this for CLIs, bots, extensions, and other apps that cannot show the authorization page themselves.
 
 ```bash
 # 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
   -d '{"client_id": "pk_yourkey"}'
-# → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
+# → { "device_code": "...", "user_code": "ABCD-1234",
+#     "verification_uri": "https://enter.pollinations.ai/device",
+#     "verification_uri_complete": "https://enter.pollinations.ai/device?user_code=ABCD-1234",
+#     "expires_in": 1800, "interval": 5 }
 
-# 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
+# 2. give the user verification_uri_complete to open directly,
+#    or show verification_uri and user_code
 
 # 3. poll for the key (every 5s)
 curl -X POST https://enter.pollinations.ai/api/device/token \

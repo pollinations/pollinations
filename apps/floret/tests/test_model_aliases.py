@@ -154,7 +154,7 @@ class ModelAliasTests(unittest.IsolatedAsyncioTestCase):
             "floret.routing.fetch_model_catalog", AsyncMock(return_value=catalog)
         ):
             self.assertEqual(
-                (await validate_routing(RoutingInput(text="chosen"))).text, "chosen"
+                (await validate_routing(RoutingInput(model="chosen"))).text, "chosen"
             )
 
     async def test_veo_reference_frame_duration_for_legacy_and_canonical_ids(self):

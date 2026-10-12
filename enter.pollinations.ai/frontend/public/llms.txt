@@ -1,0 +1,9 @@
+# Pollinations account
+
+> Sign in, manage API keys, and check Pollen balance for the Pollinations API and CLI.
+
+## For agents and developers
+
+- [Agent and CLI entry point](https://gen.pollinations.ai/llms.txt): Task recipes, CLI skill, API reference, OpenAPI schema, and MCP server.
+- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.

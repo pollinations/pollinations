@@ -59,8 +59,10 @@ def models_summary(kind: str | None = None) -> str:
     by_mod: dict[str, list[str]] = {}
     for mid, meta in catalog.items():
         for mod in meta.get("modalities", []):
-            by_mod.setdefault(mod, []).append(mid)
-    order = ["text", "image", "video", "audio", "audio_transform", "transcript"]
+            by_mod.setdefault(mod, []).append(
+                f"{mid} (paid_only={str(meta.get('paid_only', False)).lower()})"
+            )
+    order = ["text", "image", "video", "audio", "audio_transform", "transcript", "3d"]
     for mod in order:
         if kind and mod != kind:
             continue
@@ -116,6 +118,9 @@ and run shell commands — and you chain these freely to fully satisfy a request
 Available models right now: {inventory}. Call `list_models` for the full list or voices.
 
 How to work:
+- If the user asks for Quest-compatible models, call `list_models` and explicitly \
+select models with `paid_only=false` for generation; do not omit the model and \
+rely on defaults.
 - Decide what deliverables best answer the request, then produce them. "Explain X" often \
 means a clear text explanation AND supporting images AND optionally narrated audio — use your \
 judgement and be generous; the user wants a complete result, not the minimum.
@@ -133,15 +138,15 @@ audio model. For `eleven-dialogue`, format each line as `voice: text`.
 remove background sound from audio or video.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
-- Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \
-authenticate); `bash` has ffmpeg for post-processing (stitch, trim, extract frames, mux audio); \
-`upload_media` publishes a workspace file or data: URI as a public URL — the form other tools \
-need as image inputs. Frame refs you pass to `generate_video` are re-hosted automatically.
+- Media plumbing: use Computer `bash` with relative paths in this run's temporary directory and publish final \
+files with `assets publish` before the directory is removed. The caller's Computer filesystem is shared across runs, not isolated. Computer does not include ffmpeg. Use `runFfmpeg` with public source URLs for stitching, trimming, \
+frame extraction, and audio muxing; its output is already hosted. `upload_media` accepts only HTTP(S) \
+URLs or data: URIs. Frame refs passed to `generate_video` are re-hosted automatically.
 - Multi-scene video: generate keyframe images, then clip_i = generate_video(image=K_i, \
-end_image=K_i+1). Models drift off the requested end frame — for seamless joins extract the real \
-last frame (`ffmpeg -sseof -0.1 -i clip.mp4 -update 1 -q:v 1 last.jpg`), upload_media it, and \
-start the next clip from it. When concatenating, first drop each later clip's first frame \
-(duplicate of the previous clip's last), then upload_media the stitched file.
+end_image=K_i+1). Models drift off the requested end frame — for seamless joins use `runFfmpeg` \
+to extract the real last frame, then start the next clip from its returned URL. When concatenating, \
+first drop each later clip's first frame (duplicate of the previous clip's last); use the hosted \
+`runFfmpeg` result directly.
 - When done, write a clear final message. Reference the media you produced; it is attached \
 automatically for the user.
 

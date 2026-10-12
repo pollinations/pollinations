@@ -1,33 +1,32 @@
-import { ExternalLinkButton, GitHubIcon, Section } from "@pollinations/ui";
+import { GitHubIcon, InlineLink, Section } from "@pollinations/ui";
+import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
 import { FAQ } from "./faq.tsx";
-import {
-    Announcements,
-    HIGHLIGHTS_GITHUB_URL,
-    NewsBanner,
-} from "./news-banner.tsx";
+import { Changelog, NEWS_MORE_URL, NewsBanner } from "./news-banner.tsx";
 
-export const NewsFaq: FC = () => (
-    <div className="flex flex-col gap-6">
-        <Section title="Announcements" framed>
-            <Announcements />
-        </Section>
-        <Section
-            title="News"
-            framed
-            action={
-                <ExternalLinkButton href={HIGHLIGHTS_GITHUB_URL}>
-                    <span className="inline-flex items-center gap-1.5">
-                        <GitHubIcon className="h-4 w-4 shrink-0" />
+export const NewsFaq: FC = () => {
+    const { user } = useLoaderData({ from: "/_dashboard" });
+    return (
+        <>
+            {user && <Changelog />}
+            <Section
+                title="News"
+                framed
+                action={
+                    <InlineLink href={NEWS_MORE_URL} size="sm">
+                        <GitHubIcon
+                            aria-hidden="true"
+                            className="mr-1.5 inline-block h-4 w-4 align-text-bottom"
+                        />
                         More on GitHub
-                    </span>
-                </ExternalLinkButton>
-            }
-        >
-            <NewsBanner />
-        </Section>
-        <Section title="FAQ" framed>
-            <FAQ showTitle={false} />
-        </Section>
-    </div>
-);
+                    </InlineLink>
+                }
+            >
+                <NewsBanner />
+            </Section>
+            <Section title="FAQ" id="faq">
+                <FAQ showTitle={false} />
+            </Section>
+        </>
+    );
+};

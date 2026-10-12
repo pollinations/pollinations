@@ -24,7 +24,8 @@ from buffer_publish import (
     stage_buffer_posts,
 )
 from common import (
-    DISCORD_CHUNK_SIZE,
+    chunk_message,
+    post_discord_webhook,
     deploy_reddit_news_post,
     get_env,
     get_post_image_urls,
@@ -55,33 +56,6 @@ def get_weekly_date() -> str:
     return sunday.strftime("%Y-%m-%d")
 
 
-def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
-    """Split message into chunks at paragraph breaks."""
-    if len(message) <= max_length:
-        return [message]
-
-    chunks = []
-    remaining = message
-    while remaining:
-        if len(remaining) <= max_length:
-            chunks.append(remaining)
-            break
-        chunk = remaining[:max_length]
-        # Split at paragraph break
-        split = chunk.rfind("\n\n")
-        if split >= max_length * 0.5:
-            split_point = split + 2
-        else:
-            split = chunk.rfind("\n")
-            if split >= max_length * 0.5:
-                split_point = split + 1
-            else:
-                split_point = max_length
-        chunks.append(remaining[:split_point].rstrip())
-        remaining = remaining[split_point:].lstrip()
-    return chunks
-
-
 def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bool:
     """Post weekly summary to Discord with optional image. Returns True on success."""
     # Download image if available
@@ -96,12 +70,6 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
         except Exception as e:
             print(f"  Could not download image for Discord: {e}")
 
-    # Ensure webhook waits for message
-    if "?" not in webhook_url:
-        webhook_url += "?wait=true"
-    else:
-        webhook_url += "&wait=true"
-
     chunks = chunk_message(message)
     for i, chunk in enumerate(chunks):
         # Attach image to the first chunk only
@@ -114,9 +82,9 @@ def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bo
                 ),
                 "files[0]": ("image.jpg", image_bytes, "image/jpeg"),
             }
-            resp = requests.post(webhook_url, files=files, timeout=30)
+            resp = post_discord_webhook(webhook_url, files=files)
         else:
-            resp = requests.post(webhook_url, json={"content": chunk}, timeout=30)
+            resp = post_discord_webhook(webhook_url, json_body={"content": chunk})
 
         if resp.status_code in [200, 201, 204]:
             try:

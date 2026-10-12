@@ -162,8 +162,6 @@ export async function callWanImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             // Flat per-image pricing on Replicate; report 1 image token.

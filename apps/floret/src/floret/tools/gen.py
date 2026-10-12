@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 from openai import AsyncOpenAI
 
+from floret import registry
 from floret.config import resolve_api_key, settings
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,47 @@ def _url(path: str, params: dict[str, Any]) -> str:
     clean = {k: v for k, v in params.items() if v is not None}
     query = urllib.parse.urlencode(clean, doseq=True)
     return f"{path}?{query}" if query else path
+
+
+async def generate_3d(
+    prompt: str,
+    model: str | None = None,
+    image: str | list[str] | None = None,
+    resolution: str | None = None,
+    seed: int | None = None,
+) -> tuple[str, str]:
+    """Generate a hosted 3D asset through the durable 3D endpoint."""
+    prompt = prompt.strip()
+    if not prompt or prompt in {".", ".."}:
+        raise ValueError("A descriptive 3D prompt is required")
+    if resolution is not None and resolution not in {"low", "medium", "high"}:
+        raise ValueError("resolution must be low, medium, or high")
+    images = [image] if isinstance(image, str) else image or []
+    model = model or registry.default_model("3d", prompt, "")
+    if not model:
+        raise ValueError("No 3D model is available")
+    body: dict[str, Any] = {"model": model}
+    if images:
+        body["image"] = [await _public_frame_url(url) for url in images]
+    if resolution is not None:
+        body["resolution"] = resolution
+    if seed is not None:
+        body["seed"] = seed
+    url = f"{_base()}/3d/{urllib.parse.quote(prompt, safe='')}"
+    async with _http_client().stream(
+        "POST",
+        url,
+        headers={"Authorization": f"Bearer {_key()}"},
+        json=body,
+        timeout=310,
+    ) as response:
+        response.raise_for_status()
+        enclosure = response.links.get("enclosure", {}).get("url")
+        if not enclosure or not enclosure.startswith("https://media.pollinations.ai/"):
+            raise RuntimeError("3D generation returned no public file URL")
+        return enclosure, response.headers.get(
+            "content-type", "application/octet-stream"
+        )
 
 
 async def _fetch_bytes(

@@ -1,5 +1,6 @@
 import { Heading, Surface, Text } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
+import { dataWindow } from "../lib/chartScale";
 import { formatValue, weekLabel } from "../lib/format";
 
 const SERIES_COLORS = [
@@ -60,23 +61,8 @@ function widerStep(step) {
     return next * magnitude;
 }
 
-/** The window the data occupies, with a little air above and below. */
-function dataWindow(values) {
-    const rawMin = Math.min(...values);
-    const rawMax = Math.max(...values);
-    const span = rawMax - rawMin || Math.abs(rawMax) || 1;
-    const min = rawMin - span * 0.08;
-    return {
-        // Air below, but a series that never goes negative keeps a floor of
-        // zero rather than dipping into it. Gross margin does go negative.
-        min: rawMin >= 0 ? Math.max(0, min) : min,
-        max: rawMax + span * 0.08,
-    };
-}
-
 /**
- * Fit the axis to the data rather than to zero — twelve weeks of WAU sitting
- * between 6k and 7k is a flat line on a zero baseline.
+ * Include zero so changes in revenue, users and usage retain their proportion.
  *
  * The bounds are the data window itself, and the ticks are the round numbers
  * that fall inside it. Snapping the bounds outward to round numbers instead is
@@ -416,7 +402,7 @@ export function LineChart({
 
                 {hover != null && points[hover] && (
                     <div
-                        className="pointer-events-none absolute top-2 z-10 w-64 max-w-full rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-well"
+                        className="pointer-events-none absolute top-2 z-10 w-64 max-w-full rounded-lg bg-theme-bg-pale px-2 py-1.5 shadow-lg"
                         style={{
                             left: Math.min(
                                 Math.max(xAt(hover) - 128, 0),

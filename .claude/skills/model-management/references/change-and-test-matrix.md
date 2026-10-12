@@ -10,7 +10,7 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 | Add model | Full declared-modality matrix, aliases, permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
 | Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, and provider-managed fallback behavior |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
-| Canonical name or alias | Audit registries and stored aliases; deploy and verify alias-aware permission readers with future IDs recognized before any rename migration. Test old/new IDs, empty scopes, community IDs, catalogs, realtime and fallback filtering. Keep canonical writes and the migration; repeat bounded cleanup after both workers deploy to catch old-writer races and verify zero old IDs. Removed IDs return model-not-found when no alias was approved |
+| Canonical name or alias | Audit registries and stored aliases; migrate stale stored IDs in one D1 migration and verify zero old IDs after deploy. Test old/new IDs, catalogs, realtime and fallback filtering. API keys store categories and need no migration. Removed IDs return model-not-found when no alias was approved |
 | Description or publisher | Catalog returns developer-facing copy without the title; publisher mapping resolves to a real SVG; `addedDate` unchanged |
 | Input/output modality | Real sample proves the modality; unsupported inputs fail clearly; matching usage field is billed |
 | Image size/aspect/format | Every supported value returns the claimed dimensions/format; unsupported values are 4xx |
@@ -25,6 +25,7 @@ Test every claimed capability:
 
 - non-streaming and streaming completion, including finish reason and final stream marker
 - small `max_tokens` edge
+- non-streaming latency at the default reasoning effort with a realistic hard prompt, against the gateway budget in the operating policy
 - system/user/assistant messages and any supported JSON/structured output
 - tool call and valid tool arguments
 - reasoning usage when advertised
@@ -95,3 +96,4 @@ For any media route that may exceed 120 seconds:
 - Verify paid-only access with the correct balance types.
 - For caches, test a real MISS followed by a byte-identical HIT and understand whether usage headers and billing rows are expected on each.
 - Sample current production peak before choosing burst concurrency. Run cache-busted bursts at expected load and document 429s, 5xx responses, and latency. Zero unexplained 5xx responses is the acceptance gate.
+- For token-limited deployments, also send one request near the largest accepted input and output size. A 429 there means the per-minute token limit is too small for the contract, not that traffic is too high.

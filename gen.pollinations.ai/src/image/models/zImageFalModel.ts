@@ -2,6 +2,7 @@ import { UpstreamError } from "@shared/error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
+import { falBillableUnits } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 
 const ZIMAGE_FAL_ENDPOINT = "https://fal.run/fal-ai/z-image/turbo";
@@ -12,7 +13,6 @@ type FalZImageResponse = {
         url?: string;
         content_type?: string;
     }>;
-    has_nsfw_concepts?: boolean[];
 };
 
 async function readFalResponse(response: Response): Promise<FalZImageResponse> {
@@ -64,6 +64,7 @@ export async function callZImageFalAPI(
             message: "Z-Image Fal returned no image",
         });
     }
+    const billedMegapixels = falBillableUnits(response);
 
     const imageResponse = await fetchUpstream(image.url, {
         signal: AbortSignal.timeout(ZIMAGE_FAL_TIMEOUT_MS),
@@ -76,11 +77,11 @@ export async function callZImageFalAPI(
             image.content_type ||
             imageResponse.headers.get("content-type") ||
             undefined,
-        isMature: result.has_nsfw_concepts?.[0] ?? false,
-        isChild: false,
         trackingData: {
             actualModel: "tongyi-mai/z-image-turbo:fal",
             usage: { completionImageTokens: 1 },
+            // Fal rounds each image up to whole megapixels.
+            pricingInput: { megapixels: billedMegapixels },
         },
     };
 }

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Tier 1: News / Create PR gist
+News / Create PR gist: the gist of each merged PR.
 
 On PR merge:
-  Step 1: AI analyzes PR → structured gist JSON
+  Step 1: AI analyzes the PR → structured gist JSON, with the PR's exact official
+          model changes (from the registry revisions it merged) and API changes
+          (from the APIDOCS.md the post-deploy docs PR regenerates)
   Step 2: Generate pixel art image → commit image + gist to news branch
 
-Discord posting is handled separately by publish_realtime.py.
+Discord posting is handled separately by discord_pr.py.
 See operations/social/PIPELINE.md for full architecture.
 """
 
@@ -18,9 +20,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from api_changes import API_DOCS, api_changes_for_pr
 from common import (
     load_prompt,
     get_env,
@@ -37,6 +38,239 @@ from common import (
     GISTS_BRANCH,
     MODEL,
 )
+
+
+# ── API changes: the post-deploy docs PR's APIDOCS.md diff ──────────
+
+API_DOCS = "APIDOCS.md"
+HEADING = re.compile(r"^#### `(\w+)` `([^`]+)`(?: — (.*))?")
+NAME = re.compile(r"^`([^`]+)`( \*)?$")
+
+
+def api_surface(markdown: str) -> Dict:
+    """Each endpoint's summary, parameters and top-level body fields: {"POST /x": {"summary", "parameters", "body"}}."""
+    surface, endpoint, section = {}, None, None
+    for line in markdown.splitlines():
+        if heading := HEADING.match(line):
+            endpoint, section = f"{heading[1].upper()} {heading[2]}", None
+            surface[endpoint] = {"summary": heading[3] or "", "parameters": {}, "body": {}}
+        elif line.startswith(("## ", "### ")):
+            endpoint = section = None
+        elif endpoint and "**Parameters**" in line:
+            section = "parameters"
+        elif endpoint and "**Request body**" in line:
+            section = "body"
+        elif endpoint and line.startswith(("📤", "💻", "🔎")):
+            section = None
+        elif endpoint and section and line.startswith("| `"):
+            cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line)[1:-1]]
+            name = NAME.match(cells[0])
+            if not name or (section == "body" and "." in name[1]):
+                continue  # nested body fields follow their parent
+            key = f"{cells[1].strip('`')}:{name[1]}" if section == "parameters" else name[1]
+            type_ = cells[2] if section == "parameters" else cells[1]
+            type_ = re.sub(r"enum \(\d+\) — .*", "enum", type_.replace("\\|", "|").replace("`", ""))
+            surface[endpoint][section][key] = {"type": "|".join(t.strip() for t in type_.split("|")),
+                                               "required": bool(name[2])}
+    return surface
+
+
+def _types(field: Optional[Dict]) -> set:
+    return set(field["type"].split("|")) if field else set()
+
+
+def _field_change(name: str, before: Optional[Dict], after: Optional[Dict]) -> Optional[Dict]:
+    """One parameter or body field; None when nothing a client relies on changed."""
+    # "any" means the docs lost the schema: the change is unknown, not a change.
+    if before == after or "any" in _types(before) | _types(after):
+        return None
+    breaking = (
+        (before is not None and after is None)  # removed
+        or (after is not None and after["required"] and not (before or {}).get("required"))  # newly required
+        or (before is not None and after is not None and not _types(before) <= _types(after))  # narrowed
+    )
+    return {"field": name, "before": before, "after": after, "breaking": breaking}
+
+
+def api_changes(before: Dict, after: Dict, pr: Dict) -> List[Dict]:
+    """ADD / REMOVE / CHANGE per endpoint (`METHOD /path`), with breaking flags."""
+    events = []
+    for endpoint in sorted(before.keys() | after.keys()):
+        old, new = before.get(endpoint), after.get(endpoint)
+        changes = []
+        if old and new:
+            for kind in ("parameters", "body"):
+                # A body documented on one side only is a documentation gap, not an API change.
+                if kind == "body" and (not old[kind] or not new[kind]):
+                    continue
+                for name in sorted(old[kind].keys() | new[kind].keys()):
+                    if change := _field_change(f"{kind}:{name}", old[kind].get(name), new[kind].get(name)):
+                        changes.append(change)
+            if not changes:
+                continue
+        action = "ADD" if not old else "REMOVE" if not new else "CHANGE"
+        events.append({
+            "id": f"pr-{pr['number']}:{endpoint}",
+            "endpoint": endpoint,
+            "summary": (new or old).get("summary", ""),
+            "action": action,
+            "breaking": action == "REMOVE" or any(change["breaking"] for change in changes),
+            "changes": changes,
+        })
+    return events
+
+
+def api_changes_for_pr(pr: Dict, root) -> List[Dict]:
+    """API changes of a merged PR that regenerates APIDOCS.md (the post-deploy docs PR)."""
+    def surface(ref):
+        return api_surface(subprocess.run(["git", "show", f"{ref}:{API_DOCS}"], cwd=root,
+                                          capture_output=True, text=True, check=True).stdout)
+
+    return api_changes(*(surface(ref) for ref in pr_comparison_refs(pr, root)), pr)
+
+
+# ── Model changes: exact official changes from merged registry revisions ──
+
+ROOT = Path(__file__).resolve().parents[3]
+IGNORED = {"health", "pending_change", "name", "title", "description", "publisher",
+           "brand_url", "brand_icon_url", "added_date", "community", "agent"}
+
+
+def model_changes(before, after, pr):
+    old = {m["name"]: m for m in before if not m.get("community")}
+    new = {m["name"]: m for m in after if not m.get("community")}
+    aliases = {alias for model in new.values() for alias in model.get("aliases", [])}
+    removed = old.keys() - new.keys()
+    renamed = {name: next((alias for alias in model.get("aliases", []) if alias in removed), None)
+               for name, model in new.items() if name not in old}
+    events = []
+    for name in sorted(old.keys() | new.keys()):
+        if name in removed and name in aliases:
+            continue  # This ID still works through an alias; it is not retired.
+        previous, current = old.get(renamed.get(name) or name), new.get(name)
+        changes = {}
+        for field in sorted((previous or {}).keys() | (current or {}).keys()):
+            if field in IGNORED:
+                continue
+            a, b = (previous or {}).get(field), (current or {}).get(field)
+            if field == "paid_only" and previous and current:
+                a, b = bool(a), bool(b)
+            if a != b:
+                changes[field] = {"before": a, "after": b}
+        if renamed.get(name):
+            # The old ID keeps working as an alias, but the model behind it changed.
+            changes["model_id"] = {"before": renamed[name], "after": name}
+        if previous is None or current is None:
+            changes["availability"] = {"before": "Available" if previous else "Unavailable",
+                                       "after": "Available" if current else "Retired"}
+        kind = "added" if previous is None else "removed" if current is None else "changed"
+        if changes or previous is None or current is None:
+            events.append({"id": f"pr-{pr['number']}:{name}", "model_id": name,
+                           "title": (current or previous).get("title", name), "action": {"added": "NEW", "removed": "RETIRE", "changed": "UPDATE"}[kind],
+                           "category": (current or previous).get("category"),
+                           "pricing_units": {"before": (previous or {}).get("pricing_units"), "after": (current or {}).get("pricing_units")},
+                           "changes": changes, "effective_at": None, "effective_status": "unconfirmed", "official": True,
+                           **({"previous_title": previous.get("title", renamed[name])} if renamed.get(name) else {})})
+    return events
+
+
+def export_at(ref, root=ROOT):
+    # Only tracked files enter the temporary checkout; local credentials are never copied.
+    with tempfile.TemporaryDirectory(prefix="news-catalog-") as directory:
+        target = Path(directory)
+        archive = subprocess.run(["git", "archive", ref], cwd=root, check=True, capture_output=True)
+        subprocess.run(["tar", "-x", "-C", directory], input=archive.stdout, check=True)
+        (target / "node_modules").symlink_to(root / "node_modules", target_is_directory=True)
+        result = subprocess.run(["node", "--import", "tsx", str(ROOT / "operations/social/scripts/model_catalog.ts"), directory],
+                                cwd=root, check=True, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+
+def pr_comparison_refs(pr, root=ROOT):
+    sha = pr["merge_commit_sha"]
+    parents = subprocess.run(["git", "rev-list", "--parents", "-n", "1", sha], cwd=root,
+                             check=True, capture_output=True, text=True).stdout.split()
+    before = f"{sha}^1"
+    # For rebases, match the complete PR commit sequence by stable patch ID.
+    # Squashes and merge commits compare the actual first-parent merged trees.
+    if len(parents) == 2 and pr.get("commits", 1) > 1:
+        count = pr["commits"]
+        originals = pr.get("_commit_shas")
+        if not originals or len(originals) != count:
+            raise ValueError("Multi-commit PR requires its commit list to distinguish squash from rebase")
+        merged = subprocess.run(["git", "rev-list", f"--max-count={count}", sha], cwd=root, check=True, capture_output=True, text=True).stdout.splitlines()[::-1]
+        def patch_id(*refs):
+            command = (["git", "diff", "--no-ext-diff", *refs] if len(refs) == 2
+                       else ["git", "show", "--pretty=format:", "--no-ext-diff", refs[0]])
+            patch = subprocess.run(command, cwd=root, check=True, capture_output=True).stdout
+            result = subprocess.run(["git", "patch-id", "--stable"], input=patch, check=True, capture_output=True).stdout.decode().split()
+            return result[0] if result else None
+        expected = [patch_id(commit) for commit in originals]
+        if all(expected) and expected == [patch_id(commit) for commit in merged]:
+            before = f"{sha}~{count}"
+        else:
+            source_base = subprocess.run(["git", "merge-base", before, originals[-1]], cwd=root,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+            combined = patch_id(source_base, originals[-1])
+            if not combined or combined != patch_id(before, sha):
+                raise ValueError("Cannot verify the full PR range as a rebase or squash")
+    return before, sha
+
+
+# A RETIRE row of the model-change table in a PR description (model-management skill):
+# | `model` | RETIRE | Availability | Available | Retired | 2026-11-02 00:00 UTC |
+RETIRE_ROW = re.compile(r"^\|\s*`?([\w./:-]+)`?\s*\|\s*RETIRE\s*\|(?:[^|\n]*\|){3}\s*([^|\n]*?)\s*\|\s*$",
+                        re.MULTILINE | re.IGNORECASE)
+WHEN = re.compile(r"(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?\s*(UTC|Z|[+-]\d{2}:\d{2})?")
+
+
+def announces_retirement(pr):
+    return bool(RETIRE_ROW.search(pr.get("body") or ""))
+
+
+def announced_retirements(pr, catalog):
+    """Dated or cancelled retirements a merged PR announces in its model-change table.
+
+    A RETIRE row whose Effective cell is a future date schedules a retirement; "Cancelled"
+    withdraws one. Rows without a date (the removal itself) and unknown or removed model IDs
+    are skipped: the removal is reported by the registry diff.
+    """
+    models = {model["name"]: model for model in catalog}
+    merged_at = datetime.fromisoformat(pr["merged_at"].replace("Z", "+00:00"))
+    events = []
+    for model_id, effective in RETIRE_ROW.findall(pr.get("body") or ""):
+        model = models.get(model_id)
+        when = WHEN.search(effective)
+        if not model:
+            continue
+        if effective.lower() == "cancelled":
+            status, effective_at = "cancelled", None
+        elif when:
+            zone = (when[3] or "UTC").replace("UTC", "+00:00").replace("Z", "+00:00")
+            at = datetime.fromisoformat(f"{when[1]}T{when[2] or '00:00'}{zone}").astimezone(timezone.utc)
+            if at <= merged_at:
+                continue
+            status, effective_at = "scheduled", at.strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            continue
+        events.append({"id": f"pr-{pr['number']}:{model_id}:retirement", "model_id": model_id,
+                       "title": model.get("title", model_id), "action": "RETIRE",
+                       "category": model.get("category"),
+                       "changes": {"availability": {"before": "Available", "after": "Retired"}},
+                       "effective_at": effective_at, "effective_status": status, "official": True,
+                       "source": "pr_description"})
+    return events
+
+
+def announcements_for_pr(pr, files, root=ROOT, refs=None):
+    changed = any(path.startswith("shared/") for path in files)
+    if not changed and not announces_retirement(pr):
+        return []
+    # Announcement-only PRs need just the merged catalog to check the model IDs.
+    before, after = (refs or pr_comparison_refs(pr, root)) if changed else (None, pr["merge_commit_sha"])
+    catalog = export_at(after, root)
+    events = model_changes(export_at(before, root), catalog, pr) if changed else []
+    return events + announced_retirements(pr, catalog)
 
 
 # ── GitHub helpers ───────────────────────────────────────────────────
@@ -81,7 +315,6 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
     for f in all_files:
         status = f.get("status", "modified")
         filename = f.get("filename", "")
-        changes = f.get("changes", 0)
         lines.append(f"  {status}: {filename} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
     summary = "\n".join(lines) if lines else "(no files changed)"
     return summary, filenames
@@ -108,7 +341,6 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
         print("  WARNING: Merge-time classification failed; gist classification remains unknown")
         status["classification"] = "failed"
     try:
-        from model_announcements import announcements_for_pr, announces_retirement, pr_comparison_refs
         changed = any(path.startswith("shared/") for path in files)
         if changed or announces_retirement(pr):
             if not (root / "node_modules/tsx").is_dir():
@@ -320,7 +552,7 @@ def main():
           f"importance={gist['gist']['importance']}")
 
     # ── Step 2: Generate image → update gist ─────────────────────────
-    print(f"\n[2/2] Generating image...")
+    print("\n[2/2] Generating image...")
     image_url = generate_gist_image(gist, pollinations_token, github_token, owner, repo)
     if not image_url:
         print("  FATAL: Could not generate or commit gist image")

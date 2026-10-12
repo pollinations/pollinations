@@ -1,0 +1,39 @@
+{
+  "pr_number": 17213,
+  "title": "feat: limit API keys to specific models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17213",
+  "merged_at": "2026-10-12T22:34:17Z",
+  "labels": [
+    "API"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "API keys can now be limited to specific model IDs alongside existing categories. `image` still permits every image model, but `flux` now permits only Flux, stored as `black-forest-labs/flux.1-schnell`, instead of widening to all image models. BYOP authorize links can use `models=flux,zimage` to create keys limited to those models. Gen checks canonical model IDs and aliases, so an old ID retained as an alias continues to work after a rename; a community model ID without an alias stops working for a pinned key if ownership transfer changes its ID. The dashboard shows model IDs as removable chips beside category buttons without widening them on save, and links to the polli CLI and API docs. CLI 0.1.43 adds `polli keys update <id> --models …`. Permission refusals now name the key’s limits, such as `text, flux`.",
+    "keywords": [
+      "API keys",
+      "model permissions",
+      "BYOP",
+      "Flux",
+      "polli CLI",
+      "dashboard"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17213.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene and wearing a tiny tool belt, she carefully attaches a 'FLUX' tag to one model-shaped flower while other flowers grow nearby. A retro terminal glows beside her against a prominent soft lime green (#ecf874) and pastel gradient background; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites and an emotionally warm feel."
+  },
+  "generated_at": "2026-10-12T22:36:10.433807+00:00",
+  "area": "Accounts & keys",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "2f854be1ac42186878c9787f4fc2b25d599e1bbb",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "2f854be1ac42186878c9787f4fc2b25d599e1bbb^1",
+    "after_ref": "2f854be1ac42186878c9787f4fc2b25d599e1bbb"
+  }
+}

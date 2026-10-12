@@ -24,7 +24,7 @@ import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { normalizedJsonBody } from "@/middleware/generation-cache.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
-import { arrayBufferToBase64 } from "@/util.ts";
+import { arrayBufferToBase64, SENTINEL_SEED } from "@/util.ts";
 
 // --- Helpers ---
 
@@ -101,7 +101,7 @@ function resolveParams(opts: {
         ...(Number.isInteger(width) ? { width } : {}),
         ...(Number.isInteger(height) ? { height } : {}),
         quality: QUALITY_MAP[opts.quality || ""] || opts.quality || "medium",
-        seed: opts.seed ?? Math.floor(Math.random() * 2147483647),
+        seed: opts.seed ?? SENTINEL_SEED,
     };
 }
 
@@ -184,6 +184,9 @@ async function parseEditInput(c: Context): Promise<{
                 ...(formData.has("resolution")
                     ? { resolution: formData.get("resolution") as string }
                     : {}),
+                ...(formData.has("aspectRatio")
+                    ? { aspectRatio: formData.get("aspectRatio") as string }
+                    : {}),
             },
         };
     }
@@ -214,7 +217,7 @@ async function parseEditInput(c: Context): Promise<{
         seed: body.seed as number | undefined,
         safe: body.safe as SafeValue,
         response_format: parsed.data.response_format,
-        extra: collectPassthrough(body, "resolution"),
+        extra: collectPassthrough(body, "resolution", "aspectRatio"),
     };
 }
 
@@ -244,7 +247,7 @@ export async function prepareImageEditRequest(
         image: imageUrls.map((image_url) => ({ image_url })),
     };
     // Replay the JSON edits contract even when the caller uploaded multipart files.
-    // Leave random seed selection to execution so retries without a seed still join.
+    // Preserve an omitted seed in the cache identity; execution defaults it to 42.
     const identity = normalizedJsonBody(JSON.stringify(body));
     c.set("generationRequestBody", identity);
     c.set("generationCacheBody", identity);

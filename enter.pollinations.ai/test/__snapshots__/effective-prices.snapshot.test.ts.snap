@@ -3515,6 +3515,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
       "promptVideoTokens": 0.000002,
     },
+    "costVariants": {
+      "explicit_cache": {
+        "promptCachedTokens": 0.00000017,
+      },
+    },
     "price": {
       "completionTextTokens": 0.000006,
       "promptCacheWriteTokens": 0.0000025,
@@ -3532,6 +3537,11 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.000002,
       "promptTextTokens": 0.000002,
       "promptVideoTokens": 0.000002,
+    },
+    "costVariants": {
+      "explicit_cache": {
+        "promptCachedTokens": 0.00000017,
+      },
     },
     "price": {
       "completionTextTokens": 0.000006,

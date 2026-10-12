@@ -2,10 +2,15 @@
 # E2B's base image with polli, the coding harnesses polli connects, and what
 # `ssh <id>.polli` needs, so the first ssh doesn't install it. Gen logs polli
 # in inside each new sandbox; the first interactive login connects the
-# harnesses (polli-harnesses.sh). Rebuild with the E2B team key:
-#   E2B_API_KEY=... npx -y @e2b/cli@2.20.0 template create pollinations \
-#     --path operations/infrastructure/e2b --cpu-count 2 --memory-mb 2048
-# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192.
+# harnesses (polli-harnesses.sh). Rebuild both sizes with the E2B team key
+# through build.mjs, which says why not with the e2b CLI:
+#   npm ci --prefix operations/infrastructure/e2b
+#   E2B_API_KEY=... node operations/infrastructure/e2b/build.mjs pollinations
+#   E2B_API_KEY=... node operations/infrastructure/e2b/build.mjs pollinations-large
+# To test a change before merging, build it under another name
+# (`build.mjs pollinations pollinations-test`), check a box from it
+# (`polli sandbox create pollinations-test`), then delete it
+# (`npx -y @e2b/cli@2.21.2 template delete -y pollinations-test`).
 FROM e2bdev/base
 
 USER root

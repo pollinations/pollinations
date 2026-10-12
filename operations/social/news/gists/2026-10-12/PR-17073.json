@@ -1,0 +1,36 @@
+{
+  "pr_number": 17073,
+  "title": "fix: read KPI app submissions from the daily GitHub snapshot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17073",
+  "merged_at": "2026-10-12T10:46:26Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed the KPI dashboard’s missing GitHub app-submissions series. The daily GitHub snapshot now uses its token to count APP-SUBMISSION issues by UTC week and writes github-app-submissions.json to kpi-data, rewriting it only when counts change. /api/kpi/app-submissions reads the snapshot instead of paging GitHub anonymously on every dashboard load, avoiding shared-IP rate limits and whole-series failures when a page request fails. The current week updates daily rather than live, and the tooltip says so; the table uses only finished weeks. Failed snapshot reads are not cached, so the panel can recover when the file becomes available. The script was renamed to snapshot-github.mjs; the workflow’s schedule and permissions are unchanged. A dry run counted 541 submissions across 22 weeks in 11 API calls.",
+    "keywords": [
+      "KPI dashboard",
+      "app submissions",
+      "GitHub snapshot",
+      "rate limits",
+      "weekly counts"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17073.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli checks a lime green (#ecf874) weekly submissions chart growing beside a CRT monitor, with small flowers around the desk; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny clipboard satchel, small-to-medium sized and sharing the frame, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T10:47:43.084649+00:00",
+  "area": "Data & insights",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "5e9f81d9609bb4e93f67d9a7dfdea1b54a83701d",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

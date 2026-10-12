@@ -16,6 +16,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 ## Find what happened
 
 - Runs: `gh run list --workflow news-posts.yml` (or `news-create-pr-gist.yml`, `news-build-index.yml`, `news-sync-readme.yml`); `gh run view <id> --log`.
+- Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
 - Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Reddit sending is broken (draft fix #14651), but read every failed run: another post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/<daily|weekly|monthly|models>/<date>/` — `summary.json`, the post files, `images/`, `delivery.json`.
 - `delivery.json` states: `done` (sent, never again), `failed` (nothing sent; the next delivery retries), `attempt` (unknown: the run stays red until a person decides), `started` (Reddit: handed to the server, never retried).
@@ -48,7 +49,9 @@ The model post is written, sent to Discord and saved in one run; the run saves o
 
 ## A missing or wrong gist
 
-- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and posts Discord **again**: ask first.
+- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and posts Discord **again**: ask first. Which step of a failed run went red decides the repair:
+  - **Generate PR gist** (classification, model or API changes, analysis, picture): nothing was saved or posted, so rerunning posts once.
+  - **Post to Discord**: the gist is saved, and Discord may have accepted the message before the run timed out. Per-PR posts have no `delivery.json`, so look in the Discord channel first: if the message is there, don't rerun; if not, rerun.
 - To fix only the gist's facts (classification, model or API changes), edit `gists/<merge date>/PR-N.json` on `news` by hand, keeping its shape.
 - Then `gh workflow run news-build-index.yml`. A daily already written from the old gist keeps its text unless rewritten with `overwrite=true` (preview first).
 

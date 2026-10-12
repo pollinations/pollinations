@@ -1,9 +1,36 @@
 import threading
 import unittest
+from unittest import mock
 
 from fastapi import HTTPException
 
 import server
+
+
+@mock.patch.object(server, "MAX_DIM", 768)
+@mock.patch.object(server, "MAX_PIXELS", 512 * 512)
+class ClampDimsTest(unittest.TestCase):
+    def test_keeps_wide_aspect_ratio_when_capping(self):
+        self.assertEqual(server.clamp_dims(1280, 720), (672, 384))
+        self.assertEqual(server.clamp_dims(1024, 576), (672, 384))
+        self.assertEqual(server.clamp_dims(1920, 1080), (672, 384))
+
+    def test_keeps_tall_aspect_ratio_when_capping(self):
+        self.assertEqual(server.clamp_dims(576, 1024), (384, 672))
+
+    def test_leaves_sizes_within_the_caps_unchanged(self):
+        self.assertEqual(server.clamp_dims(512, 512), (512, 512))
+        self.assertEqual(server.clamp_dims(512, 288), (512, 288))
+
+    def test_squares_scale_down_to_the_pixel_cap(self):
+        self.assertEqual(server.clamp_dims(1024, 1024), (512, 512))
+
+    def test_long_side_never_exceeds_max_dim(self):
+        self.assertEqual(server.clamp_dims(2048, 512), (768, 192))
+        self.assertEqual(server.clamp_dims(16, 8000), (32, 768))
+
+    def test_tiny_or_zero_sizes_floor_to_32(self):
+        self.assertEqual(server.clamp_dims(0, 0), (32, 32))
 
 
 class GenerationSlotTest(unittest.TestCase):

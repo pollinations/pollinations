@@ -302,6 +302,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:fast",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["anthropic/fast"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Claude Sonnet 5.5 to the Bedrock global inference profile", () => {
         const result = resolveModelConfig(messages, {
             model: "anthropic/claude-sonnet-5.5",

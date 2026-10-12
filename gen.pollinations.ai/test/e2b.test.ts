@@ -648,6 +648,25 @@ test("the account owner's session token runs sandboxes without a key scope", asy
     expect((await createSandbox(token)).status).toBe(201);
 });
 
+test("the dashboard prices a lease as gen charges it", async () => {
+    stubE2b();
+    const owner = await sandboxKey();
+    const pricing = await (await call(owner.key, "/pricing")).json<{
+        maxRunning: number;
+        vcpuSecond: number;
+        gibSecond: number;
+        templates: Record<string, { cpuCount: number; memoryMB: number }>;
+    }>();
+    expect(pricing).toMatchObject({
+        maxRunning: 3,
+        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+    });
+    // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
+    expect(
+        300 * (2 * pricing.vcpuSecond + 0.5 * pricing.gibSecond),
+    ).toBeCloseTo(LEASE_300S, 12);
+});
+
 test("the pollinations templates come logged in with a key from enter's key API", async () => {
     const e2b = stubE2b();
     const owner = await createTestApiKey({

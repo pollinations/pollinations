@@ -55,8 +55,13 @@ const PRICE_MULTIPLIER = 0.25;
 const DEFAULT_TIMEOUT_SECONDS = 300;
 // Gen logs polli in inside these templates, one image with polli and the
 // coding harnesses in two sizes, with a key of the sandbox's own. Exact names
-// only: E2B resolves them to our team's templates.
-const LOGGED_IN_TEMPLATES = ["pollinations", "pollinations-large"];
+// only: E2B resolves them to our team's templates. Their sizes, as built, let
+// the dashboard price a create before E2B reports the size.
+const TEMPLATE_SIZES: Record<string, { cpuCount: number; memoryMB: number }> = {
+    pollinations: { cpuCount: 2, memoryMB: 2048 },
+    "pollinations-large": { cpuCount: 4, memoryMB: 8192 },
+};
+const LOGGED_IN_TEMPLATES = Object.keys(TEMPLATE_SIZES);
 // What `polli auth login` asks for.
 const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
 // E2B takes a timeout as 32-bit seconds.
@@ -555,6 +560,16 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 }
                 return response;
             },
+        )
+        // Not E2B's: what the dashboard shows before a create, at the rates
+        // callers pay.
+        .get("/pricing", (c) =>
+            c.json({
+                maxRunning: MAX_RUNNING_PER_USER,
+                vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
+                gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
+                templates: TEMPLATE_SIZES,
+            }),
         )
         // Everything else (templates, snapshots, forks, volumes, secrets,
         // webhooks, ...) stays closed until someone reviews how it is billed.

@@ -32,7 +32,9 @@ export function inputAudioToFireworks(
                     audio_url: {
                         url: data.startsWith("https://media.pollinations.ai/")
                             ? data
-                            : `data:audio/${format === "opus" ? "ogg" : format};base64,${data}`,
+                            : data.startsWith("data:audio/")
+                              ? data
+                              : `data:audio/${format === "opus" ? "ogg" : format};base64,${data}`,
                     },
                 };
             });

@@ -1,4 +1,3 @@
-import { apiKeyClient } from "@better-auth/api-key/client";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import { inferAdditionalFields } from "better-auth/client/plugins";
@@ -10,7 +9,6 @@ export const authClient = createAuthClient({
     basePath: config.authPath,
     plugins: [
         oauthProviderClient(),
-        apiKeyClient(),
         inferAdditionalFields(authAdditionalFields),
     ],
 });

@@ -18,17 +18,16 @@ See operations/social/PIPELINE.md for full architecture.
 import sys
 import json
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
-
-from collections import defaultdict
 
 from common import (
     LINKEDIN_MAX_CHARS,
-    build_canonical_summary,
     build_linkedin_post_text,
-    join_summary_parts,
+    build_weekly_summary_artifact,
+    get_week_dates,
     normalize_platform_post,
+    post_recap,
     load_prompt,
     load_format,
     get_env,
@@ -36,18 +35,16 @@ from common import (
     generate_image,
     generate_platform_post,
     commit_image_to_branch,
-    read_gists_for_date,
+    read_gists_for_week,
     filter_daily_gists,
     parse_json_response,
     commit_files_to_branch,
+    weekly_digest_input,
     GISTS_BRANCH,
     IMAGE_SIZE,
-    NEWS_REL_DIR,
+    WEEKLY_REL_DIR,
 )
 
-# ── Constants ────────────────────────────────────────────────────────
-
-WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
 
 def _weekly_image_context() -> str:
     """Load weekly image identity from weekly.md (everything after '## Weekly Image Identity')."""
@@ -57,132 +54,13 @@ def _weekly_image_context() -> str:
     return "\n\n" + content[idx:] if idx != -1 else ""
 
 
-# ── Helpers ──────────────────────────────────────────────────────────
-
-def get_week_dates(override_start: Optional[str] = None):
-    """Return (week_start, week_end, publish_date) as YYYY-MM-DD strings.
-    Coverage stays Sun→Sat, but weekly artifacts are keyed by the Sunday publish date.
-    When run by cron on Sunday 06:00 UTC:
-      - week_start = today-7 (last Sunday)
-      - week_end = today-1 (Saturday)
-      - publish_date = today (Sunday)
-    """
-    if override_start:
-        start = datetime.strptime(override_start, "%Y-%m-%d").date()
-    else:
-        today = datetime.now(timezone.utc).date()
-        start = today - timedelta(days=7)
-
-    end = start + timedelta(days=6)  # Saturday
-    publish_date = end + timedelta(days=1)  # Sunday
-    return (
-        start.strftime("%Y-%m-%d"),
-        end.strftime("%Y-%m-%d"),
-        publish_date.strftime("%Y-%m-%d"),
-    )
-
-
-
-def build_weekly_summary_artifact(
-    digest: Dict,
-    gists: List[Dict],
-    publish_date: str,
-    week_start: str,
-    week_end: str,
-    generated_at: str,
-) -> Dict:
-    """Build the canonical weekly summary stored on the news branch."""
-    arcs = digest.get("arcs") or []
-    theme = (digest.get("theme") or "").strip()
-    headline = next(
-        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
-        "",
-    )
-    title = headline or theme or f"Week ending {week_end}"
-    arc_summaries = [
-        (arc.get("summary") or "").strip()
-        for arc in arcs[:4]
-        if (arc.get("summary") or "").strip()
-    ]
-    summary_text = join_summary_parts(
-        ([theme] if theme and theme != title else []) + arc_summaries
-    )
-    if not summary_text:
-        summary_text = theme or title
-
-    prs = [
-        {"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]}
-        for gist in gists
-    ]
-
-    return build_canonical_summary(
-        date=publish_date,
-        period_start=week_start,
-        period_end=week_end,
-        title=title,
-        summary=summary_text,
-        prs=prs,
-        generated_at=generated_at,
-    )
-
-
-def read_gists_for_week(week_start: str, week_end: str) -> List[Dict]:
-    """Read all gist JSON files for each day in the week range.
-    Reads directly from local repo gists (no daily summary dependency)."""
-    all_gists = []
-
-    start = datetime.strptime(week_start, "%Y-%m-%d")
-    end = datetime.strptime(week_end, "%Y-%m-%d")
-    current = start
-
-    while current <= end:
-        date_str = current.strftime("%Y-%m-%d")
-        day_gists = read_gists_for_date(date_str)
-        if day_gists:
-            print(f"    {date_str}: {len(day_gists)} gists")
-        all_gists.extend(day_gists)
-        current += timedelta(days=1)
-
-    return all_gists
-
-
 # ── Step 1: Generate weekly summary ─────────────────────────────────
 
 def generate_digest(gists: List[Dict], week_start: str, week_end: str,
                     token: str) -> Optional[Dict]:
     """Synthesize PR gists into weekly summary."""
     system_prompt = load_prompt("weekly")
-
-    # Build context from gists, grouped by date
-    by_date = defaultdict(list)
-    for g in gists:
-        date = g.get("merged_at", "")[:10] or "unknown"
-        ai = g.get("gist", {})
-        by_date[date].append({
-            "pr_number": g.get("pr_number"),
-            "title": g.get("title"),
-            "author": g.get("author"),
-            "category": ai.get("category"),
-            "importance": ai.get("importance"),
-            "summary": ai.get("summary"),
-            "impact": ai.get("impact"),
-            "keywords": ai.get("keywords"),
-        })
-
-    gist_context = []
-    for date in sorted(by_date.keys()):
-        gist_context.append(json.dumps({
-            "date": date,
-            "pr_count": len(by_date[date]),
-            "prs": by_date[date],
-        }, indent=2))
-
-    user_prompt = f"""Week: {week_start} to {week_end}
-Total PRs: {len(gists)}
-Days with PRs: {len(by_date)}
-
-PR gists by date:
-{chr(10).join(gist_context)}"""
+    user_prompt = weekly_digest_input(gists, week_start, week_end)
 
     response = call_pollinations_api(
         system_prompt, user_prompt, token,
@@ -259,14 +137,8 @@ def generate_discord_post(
 ) -> Optional[Dict]:
     """Generate weekly discord.json (special: uses date_str substitution in format)."""
     voice = load_prompt("tone/discord")
-    pr_summary = digest.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in digest.get("arcs", [])])
-    pr_count = digest.get("pr_count", 0)
-
     fmt = load_format("discord").replace("{date_str}", publish_date)
-    task = f"Write a Discord message about the latest updates.\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
-    if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+    task = f"Write a Discord message about the latest updates.\n\n{post_recap(digest)}"
     task += "\n\n" + fmt + _weekly_image_context()
 
     response = call_pollinations_api(voice, task, token, temperature=0.7)

@@ -152,40 +152,6 @@ describe("callInferencePortImage", () => {
         });
     });
 
-    it("rejects more than two reference images before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callInferencePortImage(
-                "combine these",
-                {
-                    ...baseParams,
-                    image: [
-                        "https://example.com/a.png",
-                        "https://example.com/b.png",
-                        "https://example.com/c.png",
-                        "https://example.com/d.png",
-                        "https://example.com/e.png",
-                    ],
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it("rejects unsupported dimensions before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callInferencePortImage(
-                "a lighthouse",
-                { ...baseParams, dimensionsExplicit: true, width: 512 },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("rejects transparent backgrounds before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

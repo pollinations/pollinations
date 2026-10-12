@@ -113,7 +113,7 @@ polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
 polli usage --daily --key polli-harness-claude --days 1   # what one harness key cost in the last day
-polli earnings               # developer earnings (default 30 days, --days up to 90)
+polli earnings               # developer earnings (default 30 days, --days <n>)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
@@ -190,12 +190,15 @@ Linux VMs from E2B, paid from your wallet (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
+polli sandbox create --timeout 0  # runs until you pause or kill it
+polli sandbox create pollinations-large  # 4 vCPU, 8 GB
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox pause <id>
 polli sandbox kill <id>
 ```
 
-The default template comes logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
+The default template, and `pollinations-large`, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

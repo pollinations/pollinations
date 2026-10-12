@@ -5,6 +5,7 @@
 # harnesses (polli-harnesses.sh). Rebuild with the E2B team key:
 #   E2B_API_KEY=... npx -y @e2b/cli@2.20.0 template create pollinations \
 #     --path operations/infrastructure/e2b --cpu-count 2 --memory-mb 2048
+# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192.
 FROM e2bdev/base
 
 USER root
@@ -28,7 +29,7 @@ RUN curl -fsSL -o /usr/local/bin/websocat https://github.com/vi/websocat/release
 # its router runs as a systemd user service, and sandboxes have no systemd.
 RUN npx -y n 24 && rm -rf /usr/local/n \
     && npm install -g @pollinations/cli @anthropic-ai/claude-code \
-        @musistudio/claude-code-router opencode-ai openclaw \
+        opencode-ai openclaw \
     && npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 
 COPY polli-harnesses.sh /etc/profile.d/

@@ -210,7 +210,7 @@ test("rejects a non-ZIP upstream response without billing or caching it", async 
 test("enforces model permissions", async () => {
     const { key } = await createTestApiKey({
         user: { packBalance: 1 },
-        allowedModels: ["elevenlabs/voice-isolator"],
+        allowedModels: ["text"],
     });
     const form = new FormData();
     form.set("file", input());

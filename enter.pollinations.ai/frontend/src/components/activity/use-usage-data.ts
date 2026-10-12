@@ -1,6 +1,6 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
 import { isInActivityBucket } from "./activity-period";
 import type {
@@ -65,7 +65,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const controller = new AbortController();
         request.current = controller;
         setStatus({ key: requestKey, pending: true, error: null });
-        return apiClient.account.usage.daily
+        return accountClient.usage.daily
             .$get(
                 { query: { granularity, period } },
                 { init: { signal: controller.signal } },
@@ -216,7 +216,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 0,
             );
         const paidPollen = selectedRows
-            .filter((r) => r.meter_source !== "tier")
+            .filter((r) => r.meter_source === "pack")
             .reduce(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
@@ -247,7 +247,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             if (r.meter_source === "tier") {
                 cur.tierPollen += r.cost_usd || 0;
                 cur.tierRequests += r.requests || 0;
-            } else {
+            } else if (r.meter_source === "pack") {
                 cur.paidPollen += r.cost_usd || 0;
                 cur.paidRequests += r.requests || 0;
             }
@@ -268,7 +268,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen,
                 paidRequests: selectedRows.reduce(
                     (sum, row) =>
-                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                        sum + (row.meter_source === "pack" ? row.requests : 0),
                     0,
                 ),
                 tierRequests: selectedRows.reduce(

@@ -140,3 +140,37 @@ describe("reasoning_effort model wiring", () => {
         expect(findModelByName("command-a-plus")?.transform).toBeUndefined();
     });
 });
+
+describe("direct Novita Ling reasoning controls", () => {
+    const transform = findModelByName("inclusionai/ling-3.1-flash")?.transform;
+    it("maps explicit off and on requests to the native thinking switch", async () => {
+        const off = await transform?.([], {
+            reasoning_effort: "none",
+            max_tokens: 128,
+        });
+        const on = await transform?.([], { reasoning_effort: "high" });
+        expect(off?.options).toMatchObject({
+            enable_thinking: false,
+            max_tokens: 128,
+            separate_reasoning: true,
+        });
+        expect(on?.options.enable_thinking).toBe(true);
+        expect(off?.options).not.toHaveProperty("reasoning_effort");
+    });
+    it("preserves explicit reasoning visibility and leaves the default thinking mode alone", async () => {
+        const result = await transform?.([], {
+            reasoning: { enabled: false, exclude: true },
+        });
+        expect(result?.options).toMatchObject({
+            enable_thinking: false,
+            separate_reasoning: true,
+            reasoning: { enabled: false, exclude: true },
+        });
+        expect(result?.options.reasoning).toEqual({
+            enabled: false,
+            exclude: true,
+        });
+        const untouched = await transform?.([], {});
+        expect(untouched?.options.enable_thinking).toBeUndefined();
+    });
+});

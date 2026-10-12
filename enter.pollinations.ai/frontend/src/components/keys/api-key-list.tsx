@@ -244,6 +244,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 }
                                 pollenBudget={apiKey.pollenBalance}
                             />
+                            {apiKey.questPollenOnly && (
+                                <span className="text-theme-text-muted">
+                                    Quest Pollen only
+                                </span>
+                            )}
                             <span className="flex items-center gap-1">
                                 <span className="text-theme-text-muted">
                                     Models:

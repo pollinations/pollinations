@@ -336,6 +336,18 @@ describe("json config clients", () => {
 });
 
 describe("hermes yaml client", () => {
+    it("installs into a bare mcp_servers section", async () => {
+        const ctx = freshCtx();
+        const file = join(hermesHome(ctx), "config.yaml");
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, "model:\n  provider: openai-api\nmcp_servers:\n");
+        const client = findClient("hermes");
+        await client?.install(ctx, SERVERS, "sk-test");
+        const config = parse(readFileSync(file, "utf8"));
+        expect(config.model.provider).toBe("openai-api");
+        expect(config.mcp_servers.pollinations.url).toBe(SERVERS[0].url);
+    });
+
     it("preserves comments within foreign MCP entries and skips collisions", async () => {
         const ctx = freshCtx();
         const file = join(hermesHome(ctx), "config.yaml");
@@ -392,6 +404,25 @@ describe("hermes yaml client", () => {
         const removed = await findClient("hermes")?.remove(ctx);
         expect(removed?.removed).toEqual([]);
         expect(readFileSync(file, "utf8")).toBe(original);
+    });
+});
+
+describe("Claude config directory", () => {
+    it("reads servers and the key from CLAUDE_CONFIG_DIR", () => {
+        const ctx = freshCtx();
+        ctx.env.CLAUDE_CONFIG_DIR = join(ctx.home, "custom-claude");
+        writeJsonObject(join(ctx.env.CLAUDE_CONFIG_DIR, ".claude.json"), {
+            mcpServers: {
+                pollinations: {
+                    type: "http",
+                    url: SERVERS[0].url,
+                    headers: { Authorization: "Bearer sk-stored" },
+                },
+            },
+        });
+        const client = findClient("claude-code");
+        expect(client?.status(ctx).installed).toEqual(["pollinations"]);
+        expect(client?.existingKey?.(ctx)).toBe("sk-stored");
     });
 });
 

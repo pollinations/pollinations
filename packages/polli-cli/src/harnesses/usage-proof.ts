@@ -59,6 +59,6 @@ export const waitForKeyUsageIncrease = async (
         }
     }
     throw new Error(
-        "Router smoke test returned, but no request appeared for the dedicated Pollinations key.",
+        "The smoke test returned, but no request appeared for the dedicated Pollinations key.",
     );
 };

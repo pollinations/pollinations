@@ -111,9 +111,6 @@ describe("community endpoint per-user RPM input", () => {
                 promptTextPrice: 0.000002,
                 promptCachedPrice: 0.000001,
             },
-            hidden: false,
-            hiddenReason: null,
-            hiddenAt: null,
             ...communityEndpointPrices({}),
         };
         const form = endpointToForm(endpoint);

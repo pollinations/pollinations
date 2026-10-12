@@ -5,7 +5,10 @@ import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
-import { availableModels } from "../src/text/availableModels.ts";
+import {
+    availableModels,
+    supportsDirectResponses,
+} from "../src/text/availableModels.ts";
 
 afterEach(async () => {
     await resetGenerationModelRegistryCache(env);
@@ -95,37 +98,41 @@ describe("getGenerationModelRegistry", () => {
         }
     });
 
-    it("advertises every configured direct Responses model", async () => {
+    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
         const registry = await getGenerationModelRegistry(env);
-        const configured = availableModels
-            .filter(
-                (model) =>
-                    registry.resolve(model.name)?.visible &&
-                    typeof model.config({ model: model.name })
-                        .responsesEndpoint === "string",
-            )
-            .map((model) => model.name)
-            .sort();
+        const model = registry.resolve("qwen-coder");
 
-        const advertised = registry
-            .visibleEntries()
-            .filter(
-                (entry) =>
-                    !entry.communityEndpoint &&
-                    entry.definition.category === "text" &&
-                    entry.supportedEndpoints.includes("/v1/responses"),
-            )
-            .map((entry) => entry.id)
-            .sort();
-
-        expect(advertised).toEqual(configured);
-        for (const model of advertised) {
-            expect(registry.resolve(model)?.info.supported_endpoints).toContain(
-                "/v1/responses",
-            );
+        expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.paidOnly).toBe(true);
+        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        // Responses runs through its Chat route; there is no native target.
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
+        expect(supportsDirectResponses(model?.id ?? "")).toBe(false);
+        for (const parameter of ["seed", "logprobs", "stop"]) {
+            expect(model?.info.supported_parameters).not.toContain(parameter);
         }
-        expect(advertised).not.toContain("midijourney");
-        expect(advertised).not.toContain("midijourney-large");
+    });
+
+    it("advertises Responses on every text model that serves Chat", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const text = registry
+            .visibleEntries()
+            .filter((entry) => entry.eventType === "generate.text");
+        const chat = text.filter((entry) =>
+            entry.supportedEndpoints.includes("/v1/chat/completions"),
+        );
+
+        expect(chat.length).toBeGreaterThan(0);
+        for (const entry of chat) {
+            expect(entry.info.supported_endpoints).toContain("/v1/responses");
+        }
+        // Native Responses targets stay a subset; the rest are adapted.
+        const native = chat.filter((entry) =>
+            supportsDirectResponses(entry.id),
+        );
+        expect(native.length).toBeGreaterThan(0);
+        expect(native.length).toBeLessThan(chat.length);
     });
 
     it("serves the community catalog from KV without querying D1", async () => {

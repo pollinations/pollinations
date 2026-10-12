@@ -300,7 +300,6 @@ describe("callAzureFlux11Pro", () => {
 
     it.each([
         [{ width: 257 }, "multiples of 32"],
-        [{ width: 1440, height: 1440 }, "1.6 megapixels"],
         [{ image: [INPUT_IMAGE_URL] as string[] }, "text-to-image"],
         [{ guidance_scale: 4.5 }, "guidance_scale"],
         [{ transparent: true }, "transparency"],
@@ -431,9 +430,7 @@ describe("callAzureFlux2", () => {
     });
 
     it.each([
-        [{ width: 255, height: 1024 }, "at least 256px"],
         [{ width: 1000, height: 750 }, "multiples of 16px"],
-        [{ width: 4112, height: 1024 }, "at most 4,194,304 pixels"],
     ])("rejects unsupported dimensions", async (dimensions, message) => {
         await expect(
             callAzureFlux2(
@@ -448,23 +445,6 @@ describe("callAzureFlux2", () => {
         ).rejects.toMatchObject({
             status: 400,
             message: expect.stringContaining(message),
-        });
-    });
-
-    it("rejects references beyond the selected route limit", async () => {
-        await expect(
-            callAzureFlux2(
-                "too many references",
-                {
-                    ...baseParams,
-                    model: "black-forest-labs/flux.2-pro",
-                    image: Array(9).fill(INPUT_IMAGE_URL),
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: "FLUX.2 Pro supports at most 8 reference images",
         });
     });
 

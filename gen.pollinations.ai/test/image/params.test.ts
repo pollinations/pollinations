@@ -96,6 +96,36 @@ describe("ImageParamsSchema", () => {
         }
     });
 
+    it("leaves audio unset when the caller omits it", () => {
+        const parse = (audio?: string) =>
+            ImageParamsSchema.parse({ model: "google/veo-3.1-fast", audio })
+                .audio;
+        expect(parse()).toBeUndefined();
+        expect(parse("false")).toBe(false);
+        expect(parse("true")).toBe(true);
+    });
+
+    it("accepts the same boolean tokens as the text route", () => {
+        const parse = (value: string) =>
+            ImageParamsSchema.parse({
+                model: "google/veo-3.1-fast",
+                audio: value,
+                transparent: value,
+            });
+        for (const value of ["1", "yes", "on", "TRUE"]) {
+            expect(parse(value)).toMatchObject({
+                audio: true,
+                transparent: true,
+            });
+        }
+        for (const value of ["0", "no", "off"]) {
+            expect(parse(value)).toMatchObject({
+                audio: false,
+                transparent: false,
+            });
+        }
+    });
+
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({

@@ -18,6 +18,7 @@ Think: open-source maintainer sharing a progress update with peers. Honest, spec
 - Invite feedback naturally by sharing real technical decisions
 - Include links to repos, code, or docs
 - Write like a human posting on their lunch break, not a brand account
+- Match availability to the source; added or merged work is not automatically live
 
 ### Don't:
 - Sound promotional. at all. Reddit will eat you alive
@@ -25,7 +26,7 @@ Think: open-source maintainer sharing a progress update with peers. Honest, spec
 - Use emojis (Reddit culture is text-first)
 - Use hashtags (not a thing on Reddit)
 - Oversell or use hype language ("game-changing", "revolutionary")
-- Discuss pricing, revenue, or business models
+- Discuss pricing, Pollen balance or Quest/Paid eligibility changes, revenue, business motivations or operational checklists such as credential approvals and deployment instructions
 - Open with a question designed to farm engagement
 - Say "we" in a way that sounds like a corporation — say "we" like a small team
 

@@ -30,7 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
@@ -205,7 +205,7 @@ async function loadQuestData(): Promise<QuestData> {
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            apiClient.quests.rewards.$get(),
+            accountClient.quests.rewards.$get(),
             apiClient.quests.standings.$get(),
         ]);
     if (!catalogResponse.ok) {
@@ -662,7 +662,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -700,7 +700,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
@@ -983,35 +983,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 />
             )}
 
-            {bonusRewardCards.length > 0 && (
-                <Section
-                    title="Bonus rewards"
-                    action={
-                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                            {
-                                bonusRewardCards.filter(
-                                    (card) => card.status === "claimed",
-                                ).length
-                            }{" "}
-                            / {bonusRewardCards.length}
-                        </span>
-                    }
-                >
-                    <div className="flex flex-col gap-2">
-                        {bonusRewardCards.map((card) => (
-                            <QuestRow
-                                key={card.key}
-                                card={card}
-                                icon={SparkleIcon}
-                                claiming={state.claimingRewardIds.includes(
-                                    card.rewardId ?? "",
-                                )}
-                                onClaim={handleClaimReward}
-                            />
-                        ))}
-                    </div>
-                </Section>
-            )}
             {CATEGORIES.map((category) => {
                 const cards = sections[category.key];
                 if (state.loading || cards.length === 0) return null;
@@ -1049,6 +1020,35 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </Section>
                 );
             })}
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
         </>
     );
 }

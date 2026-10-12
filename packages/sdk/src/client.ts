@@ -1206,12 +1206,17 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        // Some providers read the format from the extension, so a File keeps
-        // its own name.
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
         formData.append(
             "file",
             blob,
-            (blob as Partial<File>).name || "audio.mp3",
+            (blob as Partial<File>).name || `audio.${extension}`,
         );
         if (options.model) formData.append("model", options.model);
 

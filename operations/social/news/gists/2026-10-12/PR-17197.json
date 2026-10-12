@@ -1,0 +1,37 @@
+{
+  "pr_number": 17197,
+  "title": "fix(news): retry an empty model answer with a new seed",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17197",
+  "merged_at": "2026-10-12T16:56:48Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "News text calls now treat empty or whitespace-only model answers as failures and retry with a new seed, avoiding a cached empty response. Other retries keep the same request so they can retrieve an answer completed after a timeout. Response logging now handles null content. Tests cover a successful retry with seed 1 and returning None after three empty answers. The change applies to gist creation, per-PR Discord posts, and scheduled posts.",
+    "keywords": [
+      "news pipeline",
+      "empty responses",
+      "retry",
+      "seed",
+      "Discord",
+      "tests"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17197.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli watches a CRT monitor turn a blank news card into a filled one while a tiny code-plant sprouts beside it. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny editor glasses, stays small within the scene, and appears only once. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent soft lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T16:57:54.546474+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "b5913e40b8187de41829ce9d778fd2e4a26e9035",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

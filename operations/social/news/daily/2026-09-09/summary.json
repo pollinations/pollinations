@@ -133,7 +133,8 @@
       "prs": [
         14639
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🤖",

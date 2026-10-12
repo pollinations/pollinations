@@ -49,25 +49,29 @@
       "emoji": "🔗",
       "title": "ComfyUI Nodes",
       "text": "Overtli Studio Suite built custom nodes to route generations through our API directly inside your local ComfyUI workflows. [View repo](https://github.com/OvertliDS/overtli-studio-suite)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Brand Generation",
       "text": "StyleOps joined the showcase, wrapping our image models into a dedicated tool for spitting out cohesive brand assets. [Try it](https://styleops.co)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "💡",
       "title": "The Institute of Everything",
       "text": "A new community app that generates highly detailed, deadpan academic museum exhibits for completely absurd concepts. [Try it](https://rizperdana.github.io/institute-ai/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🌟",
       "title": "Showcase Expansion",
       "text": "Four new community tools just dropped: Pigment, PseudoWrite, Tawer_bot, and JFOAC. The ecosystem grows. [View repos](https://hello.pollinations.ai)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

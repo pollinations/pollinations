@@ -38,7 +38,8 @@
       "emoji": "🔑",
       "title": "Bring Your Own Pollen",
       "text": "The Product Packaging Designer and AI Dungeon Master community apps now support Pollinations SSO. Log in, spend your own Pollen balance, and bypass third-party media hosts with our native upload service. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

@@ -24,7 +24,8 @@
       "emoji": "🎨",
       "title": "New Community App",
       "text": "– Added **CapyIMG** to our showcase, a browser-based AI image generation tool powered by pollinations.ai. [Try it](https://capyuniverse.pages.dev/capyimg.html)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

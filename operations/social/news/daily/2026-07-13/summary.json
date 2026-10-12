@@ -158,13 +158,15 @@
       "emoji": "🎵",
       "title": "Talkti: live voice translation",
       "text": "Speak across languages in real time with a new community-built voice translation app. [Try it](https://talktiweb.web.app)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Turn books into gamebooks",
       "text": "Feed in `txt`, `mobi`, `epub`, `docx`, or `fb2` files and turn static reading into AI-driven interactive fiction. [Try it](https://gelfer1979.itch.io/book-to-game)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🌟",

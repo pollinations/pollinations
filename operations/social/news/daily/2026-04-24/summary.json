@@ -57,7 +57,8 @@
       "emoji": "🌟",
       "title": "Time travel in the Greenhouse",
       "text": "TimeMachine Chat just landed in the community showcase, bringing a unified and secure chat interface for your tech essentials. [Try it](https://timemachinechat.com/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

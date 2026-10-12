@@ -30,7 +30,8 @@
       "emoji": "🌸",
       "title": "Duwit joins the showcase",
       "text": "Another community-built app hits the greenhouse directory. [Try it](https://duwit-45a37.web.app/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

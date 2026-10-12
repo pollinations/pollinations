@@ -109,7 +109,7 @@
         16664
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "emoji": "🎵",
@@ -119,7 +119,7 @@
         16665
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     }
   ]
 }

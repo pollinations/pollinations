@@ -72,7 +72,8 @@
       "emoji": "💡",
       "title": "Descriptly writes alt-text suggestions for PR images",
       "text": "Use Pollinations vision models to spot changed images in pull requests and propose accessible descriptions. [View repo](https://github.com/g33ky00/descriptly)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

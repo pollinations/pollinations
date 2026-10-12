@@ -109,7 +109,8 @@
       "emoji": "🌟",
       "title": "A meadow for every model",
       "text": "Meadows puts Pollinations text, image, video, and audio models in one chat playground for side-by-side experimentation. [Try it](https://meadowy.roboticrobot.xyz)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

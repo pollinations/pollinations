@@ -88,7 +88,7 @@
         14724
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     },
     {
       "emoji": "✨",
@@ -98,7 +98,7 @@
         14733
       ],
       "app": true,
-      "kind": "product"
+      "kind": "app"
     }
   ]
 }

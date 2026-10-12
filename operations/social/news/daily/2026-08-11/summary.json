@@ -29,7 +29,8 @@
       "emoji": "🌟",
       "title": "The app garden got portraits",
       "text": "The community catalog now has visual previews for 762 more retained apps. Browsing strange little inventions is less of a text adventure now. [Try it](https://pollinations.ai)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

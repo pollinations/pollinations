@@ -86,19 +86,22 @@
       "emoji": "💻",
       "title": "PowerShell gets pollinated",
       "text": "Generate AI content directly from your Windows command line with the new PollinationsAiPS module. [View repo](https://github.com/BananaAcid/PollinationsAiPS/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎮",
       "title": "Game engines can talk",
       "text": "'Talking with Unity' brings our voice AI, speech recognition, and text-to-speech directly into Unity projects. [Try it](https://www.ai-ministries.com/apps/talking-unity/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Native iOS multitasking",
       "text": "Vector AI Agent is a free Apple Shortcut that routes requests across multiple models directly from your Mac or iPhone. [Try it](https://routinehub.co/shortcut/24957/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

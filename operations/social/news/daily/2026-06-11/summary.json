@@ -21,7 +21,8 @@
       "emoji": "🌱",
       "title": "Wikimind Joins the Showcase",
       "text": "A new community-built learning tool that wires up translation for interactive messaging. [Try it](https://chpalitom09-bot.github.io/Wikimind-5/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🚀",

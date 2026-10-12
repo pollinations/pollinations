@@ -96,13 +96,15 @@
       "emoji": "🤖",
       "title": "The Mita joins chat",
       "text": "A Roblox character AI for spoken roleplay that keeps the conversation context, now discoverable through Pollinations chat. [Try it](https://www.roblox.com/games/98105867888961/The-Mita)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Make a cursor from a sentence",
       "text": "Cursor Maker turns prompts such as “glowing blue crystal arrow” into custom Windows cursor art using the Pollinations image API. [Try it](https://hk.1r.gs)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

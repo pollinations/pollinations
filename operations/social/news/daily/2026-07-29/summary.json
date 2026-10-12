@@ -45,7 +45,8 @@
       "emoji": "🚀",
       "title": "Polli Agent",
       "text": "Send one OpenAI-compatible streaming request and get coordinated text, images, audio, video, web search, and media stitching back. One prompt, many petals. [Try it](https://polli.pollinations.ai)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "✨",

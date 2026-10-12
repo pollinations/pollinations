@@ -191,7 +191,8 @@
       "emoji": "✨",
       "title": "Words become wireframes",
       "text": "FSChart turns plain-language prompts into browser-based 3D models and function plots. [Try it](https://fastnow.github.io/fschart_pollinations)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

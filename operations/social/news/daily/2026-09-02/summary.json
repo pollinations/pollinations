@@ -109,7 +109,8 @@
       "prs": [
         14331
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "📱",
@@ -118,7 +119,8 @@
       "prs": [
         14330
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

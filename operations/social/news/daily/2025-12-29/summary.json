@@ -156,7 +156,8 @@
       "emoji": "📱",
       "title": "New Community Apps",
       "text": "Try [IDPhotoGen](https://id-photo-gen.thangoffer91.workers.dev), [PromptPi](https://chromewebstore.google.com/detail/promptpi-image-to-prompt/dmcckiclfondnkgncnajmdcblimekgbk), and [Nuvole AI Lite](https://nuvoleai.com).",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎥",

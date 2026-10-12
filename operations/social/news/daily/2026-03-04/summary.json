@@ -67,7 +67,8 @@
       "emoji": "🚀",
       "title": "Six new apps hit the showcase",
       "text": "The community shipped a massive batch of tools this week, including [AiApps](https://connor.ct.ws/aiapps/), [PromptLab Studio](https://promptlabstudio.vercel.app/), and a dedicated AI image gallery.",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

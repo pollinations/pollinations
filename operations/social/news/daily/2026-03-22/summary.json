@@ -30,7 +30,8 @@
       "emoji": "🎨",
       "title": "LND Ai Showcase",
       "text": "LND Ai has been added to the community showcase. Another solid text-to-image tool built entirely by hitting our API. [Try it](https://www.namansoni.in/text-to-image).",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

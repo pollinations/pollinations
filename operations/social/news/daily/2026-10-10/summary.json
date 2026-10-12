@@ -116,7 +116,8 @@
       "prs": [
         16213,
         16985
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "💡",
@@ -124,7 +125,8 @@
       "text": "Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).",
       "prs": [
         16898
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "🤖",
@@ -133,7 +135,8 @@
       "prs": [
         16862,
         16908
-      ]
+      ],
+      "kind": "api"
     },
     {
       "emoji": "📱",
@@ -142,7 +145,8 @@
       "prs": [
         16948
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

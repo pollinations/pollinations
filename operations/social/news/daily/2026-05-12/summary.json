@@ -25,13 +25,15 @@
       "emoji": "🛠️",
       "title": "Pollenforge-CLI",
       "text": "A community-built CLI tool for wrangling Markdown into formatted output just dropped in the showcase. [View repo](https://github.com/ganya002/Pollenforge-CLI/tree/main)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎲",
       "title": "Storytale",
       "text": "Take turns building a shared narrative with friends in this new multiplayer storytelling game powered by our text models. [Try it](https://storytale.net)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

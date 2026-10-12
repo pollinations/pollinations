@@ -66,19 +66,22 @@
       "emoji": "✨",
       "title": "Story seeds, illustrated",
       "text": "Turn a theme into a multi-page story with AI-written text, images, and optional narration. [Try it](https://eiigen.github.io/storystudio-app)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Pixels, meet paths",
       "text": "Convert raster artwork into scalable SVG paths for reuse at any size. [Try it](https://vtrace-two.vercel.app)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🚀",
       "title": "A studio grew in the garden",
       "text": "One community workspace for switching between GPT, Claude, Gemini, and DeepSeek, then generating images with Pollinations. [Try it](https://sashafilipov.github.io/pollinations-ai-studio)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

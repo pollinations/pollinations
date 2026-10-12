@@ -76,7 +76,8 @@
       "prs": [
         16896,
         17115
-      ]
+      ],
+      "kind": "product"
     },
     {
       "emoji": "🎨",
@@ -85,7 +86,8 @@
       "prs": [
         17034
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "💡",
@@ -94,7 +96,8 @@
       "prs": [
         17035
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🎵",
@@ -103,7 +106,8 @@
       "prs": [
         17108
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🤖",
@@ -111,7 +115,8 @@
       "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
       "prs": [
         17125
-      ]
+      ],
+      "kind": "product"
     }
   ]
 }

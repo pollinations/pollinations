@@ -58,13 +58,15 @@
       "emoji": "🌸",
       "title": "YSOAI Image Generator",
       "text": "A new community-built image generation interface joins the showcase. [Try it](https://huggingface.co/spaces/yassinovich/YSOAI)",
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "✨",
       "title": "LAHgen",
       "text": "Another text-to-image creation tool takes root in the community directory. [Try it](https://image.khminds.com/)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

@@ -89,7 +89,8 @@
         14372,
         14417
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "✨",
@@ -114,7 +115,8 @@
       "prs": [
         14377
       ],
-      "app": true
+      "app": true,
+      "kind": "app"
     },
     {
       "emoji": "🔗",

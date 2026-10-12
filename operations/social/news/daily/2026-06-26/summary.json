@@ -29,7 +29,8 @@
       "emoji": "🤖",
       "title": "REKTY AI",
       "text": "The community app directory grows by one. REKTY AI is now live in the [showcase](https://pollinations.ai). [View repo](https://github.com/rekty/Rekty-AI)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

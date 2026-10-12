@@ -92,7 +92,8 @@
       "emoji": "📱",
       "title": "Chat from the shell",
       "text": "FreeChat CLI brings zero-config, multi-model Pollinations chat, streaming, and saved conversations to the terminal. [View repo](https://github.com/xiaotian1171/freechat-cli)",
-      "app": true
+      "app": true,
+      "kind": "app"
     }
   ]
 }

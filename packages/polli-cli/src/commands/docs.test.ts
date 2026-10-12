@@ -1,15 +1,12 @@
-import chalk from "chalk";
 import { afterEach, expect, it, vi } from "vitest";
 import { setOutputMode } from "../lib/output.js";
 import { docsCommand } from "./docs.js";
 
-const originalLevel = chalk.level;
 const originalTTY = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
 
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    chalk.level = originalLevel;
     setOutputMode("human");
     if (originalTTY)
         Object.defineProperty(process.stdout, "isTTY", originalTTY);

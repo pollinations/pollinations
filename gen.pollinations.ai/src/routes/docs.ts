@@ -942,6 +942,14 @@ export async function buildMergedOpenApiSpec(
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,

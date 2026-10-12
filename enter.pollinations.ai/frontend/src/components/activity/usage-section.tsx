@@ -1,5 +1,6 @@
 import {
     InlineLink,
+    TabButton,
     Table,
     TableBody,
     TableCell,
@@ -22,7 +23,7 @@ import {
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import type { FilterState, Metric } from "./types";
+import type { FilterState, Metric, UsageGroupBy } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -31,6 +32,8 @@ type UsageSectionProps = {
     period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     selectedKeyIds: string[];
     selectedModels: string[];
     onMetricChange: (metric: Metric) => void;
@@ -42,6 +45,8 @@ export const UsageSection: FC<UsageSectionProps> = ({
     period,
     onPeriodChange,
     metric,
+    groupBy,
+    onGroupByChange,
     selectedKeyIds,
     selectedModels,
     onMetricChange,
@@ -65,7 +70,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
         hasData,
         stats,
         hasPeriodData,
-    } = useUsageData(filters);
+    } = useUsageData(filters, groupBy);
 
     const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
@@ -150,6 +155,8 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 metric={metric}
                 hasData={hasData}
                 stats={stats}
+                groupBy={groupBy}
+                onGroupByChange={onGroupByChange}
                 period={period}
                 onPeriodChange={onPeriodChange}
             />
@@ -162,6 +169,8 @@ type UsageChartViewProps = Pick<
     "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
 > & {
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
 };
@@ -174,6 +183,8 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     metric,
     hasData,
     stats,
+    groupBy,
+    onGroupByChange,
     period,
     onPeriodChange,
 }) => {
@@ -201,7 +212,12 @@ const UsageChartView: FC<UsageChartViewProps> = ({
             </SectionContent>
 
             {!loading && hasData && (
-                <ModelBreakdownTable stats={stats} metric={metric} />
+                <UsageBreakdownTable
+                    stats={stats}
+                    metric={metric}
+                    groupBy={groupBy}
+                    onGroupByChange={onGroupByChange}
+                />
             )}
         </>
     );
@@ -215,29 +231,49 @@ const UsageEmptyState: FC = () => (
     </ActivityEmptyState>
 );
 
-type ModelBreakdownTableProps = {
+type UsageBreakdownTableProps = {
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
+const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
     stats,
     metric,
+    groupBy,
+    onGroupByChange,
 }) => {
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     return (
         <div className="min-w-0 max-w-full overflow-x-auto">
             <Table
-                aria-label="Usage by model"
+                aria-label={`Usage by ${groupBy}`}
                 className="min-w-[340px] [&_tr:hover]:bg-transparent"
             >
                 <TableHead>
                     <TableRow>
                         <TableHeaderCell
                             scope="col"
+                            aria-label={groupBy === "model" ? "Model" : "Key"}
                             className="px-2 py-1 font-normal"
                         >
-                            Model
+                            <fieldset
+                                aria-label="Group usage by"
+                                className="flex items-center gap-1"
+                            >
+                                {(["model", "key"] as const).map((group) => (
+                                    <TabButton
+                                        key={group}
+                                        active={groupBy === group}
+                                        onClick={() => onGroupByChange(group)}
+                                        size="xs"
+                                        className="min-h-8"
+                                    >
+                                        {group === "model" ? "Models" : "Keys"}
+                                    </TabButton>
+                                ))}
+                            </fieldset>
                         </TableHeaderCell>
                         <TableHeaderCell
                             scope="col"
@@ -256,10 +292,10 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                     </TableRow>
                 </TableHead>
                 <TableBody divider="neutral">
-                    {stats.modelBreakdowns.map((model) => (
-                        <TableRow key={model.model}>
+                    {stats.breakdowns.map((row) => (
+                        <TableRow key={row.id}>
                             <TableCell className="max-w-64 break-words text-xs">
-                                {model.label}
+                                {row.label}
                             </TableCell>
                             <TableCell
                                 align="right"
@@ -267,7 +303,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                 className="text-xs"
                             >
                                 {total > 0
-                                    ? ((model[metric] / total) * 100).toFixed(1)
+                                    ? ((row[metric] / total) * 100).toFixed(1)
                                     : "0.0"}
                                 %
                             </TableCell>
@@ -276,7 +312,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                                 numeric
                                 className="text-xs"
                             >
-                                <PollenUsageBadges {...model} metric={metric} />
+                                <PollenUsageBadges {...row} metric={metric} />
                             </TableCell>
                         </TableRow>
                     ))}

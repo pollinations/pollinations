@@ -259,7 +259,11 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toBe("text/plain");
-        await expect(response.text()).resolves.toContain("Disallow: /api/");
+        const body = await response.text();
+        expect(body).toContain("Disallow: /api/");
+        expect(body).toContain(
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+        );
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {

@@ -8,7 +8,7 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { type FC, useState } from "react";
+import type { FC } from "react";
 import { accountClient } from "../../api.ts";
 import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
 import {
@@ -32,6 +32,8 @@ type UsageSectionProps = {
     period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
+    groupBy: UsageGroupBy;
+    onGroupByChange: (groupBy: UsageGroupBy) => void;
     selectedKeyIds: string[];
     selectedModels: string[];
     onMetricChange: (metric: Metric) => void;
@@ -43,13 +45,14 @@ export const UsageSection: FC<UsageSectionProps> = ({
     period,
     onPeriodChange,
     metric,
+    groupBy,
+    onGroupByChange,
     selectedKeyIds,
     selectedModels,
     onMetricChange,
     onSelectedKeyIdsChange,
     onSelectedModelsChange,
 }) => {
-    const [groupBy, setGroupBy] = useState<UsageGroupBy>("model");
     const filters: FilterState = {
         period,
         metric,
@@ -153,7 +156,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
                 hasData={hasData}
                 stats={stats}
                 groupBy={groupBy}
-                onGroupByChange={setGroupBy}
+                onGroupByChange={onGroupByChange}
                 period={period}
                 onPeriodChange={onPeriodChange}
             />
@@ -252,6 +255,7 @@ const UsageBreakdownTable: FC<UsageBreakdownTableProps> = ({
                     <TableRow>
                         <TableHeaderCell
                             scope="col"
+                            aria-label={groupBy === "model" ? "Model" : "Key"}
                             className="px-2 py-1 font-normal"
                         >
                             <fieldset

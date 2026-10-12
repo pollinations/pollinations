@@ -13,6 +13,7 @@ import {
     toggleActivityBucket,
 } from "../frontend/src/components/activity/activity-period";
 import { useUsageData } from "../frontend/src/components/activity/use-usage-data";
+import { Route as ActivityRoute } from "../frontend/src/routes/_dashboard.activity";
 
 vi.mock("../frontend/src/api.ts", () => ({ apiClient: {} }));
 vi.mock("react", async (importOriginal) => {
@@ -44,12 +45,15 @@ it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
         vi.fn(),
     ]);
     function Summary() {
-        const { stats } = useUsageData({
-            period: { granularity: "day", period: "2026-08-08" },
-            metric: "requests",
-            selectedKeyIds: [],
-            selectedModels: [],
-        });
+        const { stats } = useUsageData(
+            {
+                period: { granularity: "day", period: "2026-08-08" },
+                metric: "requests",
+                selectedKeyIds: [],
+                selectedModels: [],
+            },
+            "model",
+        );
         expect([stats.totalRequests, stats.totalPollen]).toEqual([10, 20]);
         expect(stats.breakdowns[0]).toMatchObject({
             requests: 10,
@@ -67,10 +71,24 @@ it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
     renderToStaticMarkup(React.createElement(Summary));
 });
 
-it.each([
-    "pollen",
-    "requests",
-] as const)("groups key usage by ID and ranks by %s while preserving filters and chart totals", (metric) => {
+it("preserves grouping in URL search and ignores unsupported values", () => {
+    const validate = ActivityRoute.options.validateSearch;
+    expect(
+        validate?.({
+            usageGroup: "key",
+            usageMetric: "requests",
+            usageKeys: ["a"],
+        }),
+    ).toMatchObject({
+        usageGroup: "key",
+        usageMetric: "requests",
+        usageKeys: ["a"],
+    });
+    for (const usageGroup of [undefined, "model", "invalid", ["key"]])
+        expect(validate?.({ usageGroup }).usageGroup).toBeUndefined();
+});
+
+it("groups usage with consistent labels, complete totals, filters and metric sorting", () => {
     const rows = [
         {
             api_key_id: "a",
@@ -105,7 +123,9 @@ it.each([
             cost_usd: 1,
         },
     ].map((row) => ({ date: "2026-08-08", ...row }));
-    rows.push({ ...rows[0], date: "2026-08-09", cost_usd: 100 });
+    rows.unshift({ ...rows[0], date: "2026-08-09", cost_usd: 100 });
+    rows[1] = { ...rows[1], api_key: "Old name" };
+    rows[2] = { ...rows[2], api_key: "Old name" };
     function Summary() {
         const filters = {
             period: {
@@ -113,22 +133,51 @@ it.each([
                 period: "2026-08",
                 bucket: "2026-08-08",
             },
-            metric,
+            metric: "pollen" as const,
             selectedKeyIds: [],
             selectedModels: [],
         };
         const usage = useUsageData(filters, "key");
-        const models = useUsageData(filters);
+        const models = useUsageData(filters, "model");
         expect(usage.chartData).toEqual(models.chartData);
         expect(usage.stats.totalPollen).toBe(15);
         expect(usage.stats.totalRequests).toBe(16);
-        expect(usage.stats.breakdowns.map((row) => row.id)).toEqual(
-            metric === "pollen" ? ["a", "b", "deleted"] : ["b", "a", "deleted"],
+        expect(usage.stats.breakdowns.map((row) => row.id)).toEqual([
+            "a",
+            "b",
+            "deleted",
+        ]);
+        const requests = useUsageData(
+            { ...filters, metric: "requests" },
+            "key",
         );
+        expect(requests.stats.breakdowns.map((row) => row.id)).toEqual([
+            "b",
+            "a",
+            "deleted",
+        ]);
+        expect(
+            models.stats.breakdowns.reduce((sum, row) => sum + row.pollen, 0),
+        ).toBe(15);
+        expect(
+            models.stats.breakdowns.find((row) => row.id === ""),
+        ).toMatchObject({ label: "Unknown model", pollen: 1 });
+        expect(models.usedModels).toContainEqual({
+            id: "",
+            label: "Unknown model",
+        });
+        expect(usage.usedApiKeys).toContainEqual({
+            id: "a",
+            label: "Same name (a)",
+        });
+        expect(usage.usedApiKeys).toContainEqual({
+            id: "b",
+            label: "Same name (b)",
+        });
         expect(
             usage.stats.breakdowns.find((row) => row.id === "a"),
         ).toMatchObject({
-            label: "Same name",
+            label: "Same name (a)",
             pollen: 12,
             requests: 5,
             paidPollen: 8,
@@ -151,14 +200,21 @@ it.each([
         expect(filtered.stats.breakdowns).toHaveLength(1);
         expect(filtered.stats.breakdowns[0]).toMatchObject({
             id: "a",
+            label: "Same name (a)",
             pollen: 4,
             requests: 3,
         });
         expect(filtered.stats.totalPollen).toBe(4);
+        const unknown = useUsageData(
+            { ...filters, selectedModels: [""] },
+            "model",
+        );
+        expect(unknown.stats.breakdowns).toHaveLength(1);
+        expect(unknown.stats.totalPollen).toBe(1);
         return null;
     }
     // The existing server-render harness seeds the hook's fetched rows.
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
         vi.mocked(React.useState)
             .mockReturnValueOnce([{ key: "month:2026-08", rows }, vi.fn()])
             .mockReturnValueOnce([

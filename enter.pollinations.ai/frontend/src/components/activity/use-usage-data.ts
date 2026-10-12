@@ -7,11 +7,14 @@ import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
-    UsageBreakdown,
     UsageGroupBy,
 } from "./types";
 
-type UsageTotals = UsageBreakdown & {
+type UsageTotals = {
+    id: string;
+    label: string;
+    requests: number;
+    pollen: number;
     paidPollen: number;
     tierPollen: number;
     paidRequests: number;
@@ -43,7 +46,7 @@ const EMPTY_USAGE: DailyUsageRecord[] = [];
 
 export function useUsageData(
     filters: FilterState,
-    groupBy: UsageGroupBy = "model",
+    groupBy: UsageGroupBy,
 ): UsageDataResult {
     const { granularity, period } = filters.period;
     const requestKey = `${granularity}:${period}`;
@@ -101,11 +104,11 @@ export function useUsageData(
     const usedModels = useMemo(() => {
         const modelIds = new Set<string>();
         for (const r of dailyUsage) {
-            if (r.model) modelIds.add(r.model);
+            modelIds.add(r.model || "");
         }
 
         return Array.from(modelIds)
-            .map((id) => ({ id, label: id }))
+            .map((id) => ({ id, label: id || "Unknown model" }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
@@ -116,8 +119,18 @@ export function useUsageData(
             apiKeyLabels.set(r.api_key_id, r.api_key || "Unnamed key");
         }
 
+        const labelCounts = new Map<string, number>();
+        for (const label of apiKeyLabels.values()) {
+            labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+        }
         return Array.from(apiKeyLabels.entries())
-            .map(([id, label]) => ({ id, label }))
+            .map(([id, label]) => ({
+                id,
+                label:
+                    (labelCounts.get(label) ?? 0) > 1
+                        ? `${label} (${id})`
+                        : label,
+            }))
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
@@ -225,13 +238,18 @@ export function useUsageData(
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
+        const keyLabels = new Map(
+            usedApiKeys.map(({ id, label }) => [id, label]),
+        );
         const totalsByGroup = new Map<string, UsageTotals>();
         for (const r of selectedRows) {
-            if (groupBy === "model" && !r.model) continue;
             const id = groupBy === "key" ? r.api_key_id : (r.model ?? "");
             const cur = totalsByGroup.get(id) || {
                 id,
-                label: groupBy === "key" ? r.api_key || "Unnamed key" : id,
+                label:
+                    groupBy === "key"
+                        ? (keyLabels.get(id) ?? id)
+                        : id || "Unknown model",
                 requests: 0,
                 pollen: 0,
                 paidPollen: 0,
@@ -276,6 +294,7 @@ export function useUsageData(
         };
     }, [
         dailyUsage,
+        usedApiKeys,
         groupBy,
         filters.selectedKeyIds,
         filters.selectedModels,

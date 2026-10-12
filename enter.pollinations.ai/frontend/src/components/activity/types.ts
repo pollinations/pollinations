@@ -21,13 +21,6 @@ export type FilterState = {
 
 export type UsageGroupBy = "model" | "key";
 
-export type UsageBreakdown = {
-    id: string;
-    label: string;
-    requests: number;
-    pollen: number;
-};
-
 export type DataPoint = {
     label: string;
     value: number;

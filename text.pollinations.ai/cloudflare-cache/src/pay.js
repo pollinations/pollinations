@@ -12,8 +12,10 @@ import { CORS, etag } from "./origin.js";
 // The VM's payment challenges name its origin host and the path, without the
 // caller's host or query (which can hold a token)
 const RESOURCE_ORIGIN = "https://text-origin.pollinations.ai";
-// The seller identity the facilitator saw from the VM's Express middleware
-const SELLER_HEADERS = { "User-Agent": "weft-sdk-express/0.27.1" };
+// The User-Agent the facilitator saw from the VM: the Express middleware's on
+// /supported, Node 22 fetch's default on /verify and /settle
+const SUPPORTED_HEADERS = { "User-Agent": "weft-sdk-express/0.27.1" };
+const PAYMENT_HEADERS = { "User-Agent": "node" };
 
 let app;
 
@@ -35,9 +37,9 @@ function paywallApp(env) {
             facilitator: {
                 url: env.WEFT_FACILITATOR_URL,
                 createAuthHeaders: () => ({
-                    supported: SELLER_HEADERS,
-                    verify: SELLER_HEADERS,
-                    settle: SELLER_HEADERS,
+                    supported: SUPPORTED_HEADERS,
+                    verify: PAYMENT_HEADERS,
+                    settle: PAYMENT_HEADERS,
                 }),
             },
             name: "Pollinations legacy text",

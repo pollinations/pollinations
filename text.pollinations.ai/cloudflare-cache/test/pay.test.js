@@ -374,10 +374,10 @@ test("a paid GET verifies, generates, then settles; it is private and never stor
     );
     expect(paid.response.headers.get("x-powered-by")).toBe("Pollinations.AI");
     expect(await storedAt("/paid%20get")).toBeNull();
-    // The seller identity on the payment calls too
+    // The payment calls carried the VM's Node fetch User-Agent
     for (const path of ["/verify", "/settle"]) {
         const headers = facilitatorHeaders[path].at(-1);
-        expect(headers.get("user-agent"), path).toBe("weft-sdk-express/0.27.1");
+        expect(headers.get("user-agent"), path).toBe("node");
         expect(headers.get("x-api-key"), path).toBe("test-seller-key");
     }
 });

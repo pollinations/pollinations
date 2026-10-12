@@ -678,7 +678,7 @@ test("the pollinations templates come logged in with a key from enter's key API"
         body: {
             name: `polli-sandbox-${sandboxID}`,
             type: "secret",
-            accountPermissions: ["profile", "usage", "keys", "machines"],
+            accountPermissions: ["profile", "usage", "machines"],
         },
     });
 

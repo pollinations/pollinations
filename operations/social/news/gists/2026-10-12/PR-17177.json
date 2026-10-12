@@ -1,0 +1,37 @@
+{
+  "pr_number": 17177,
+  "title": "chore(news): rename the news scripts and remove leftovers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17177",
+  "merged_at": "2026-10-12T16:31:01Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Renamed the news pipeline scripts and README-sync workflow, and folded model announcement and API-change handling into gist.py. Moved the per-PR Discord prompt to prompts/posts/discord-pr.md, removed the unused format prompt, six uncalled common.py functions, an unused per-PR crosspost, and the outdated social README; rewrote PIPELINE.md. CI now runs news tests when social prompts change. Checks against existing news data found identical per-PR Discord requests for 15 gists, identical index and README output, and an identical 221-model catalog.",
+    "keywords": [
+      "news pipeline",
+      "Discord",
+      "gists",
+      "model catalog",
+      "CI",
+      "refactor"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17177.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and tidies labeled news-script folders beside a lime green (#ecf874) glowing terminal and potted code-plants; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small within the scene, strictly pixel art and never realistic, against a soft pastel gradient with warm lighting: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T16:32:19.713759+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "f5a99892d355804c8aff447389837ead96d12692",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

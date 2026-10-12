@@ -1,23 +1,19 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 import {
     currentDashboards,
     DEFAULT_DASHBOARD_UID,
     dashboardSrc,
     readDashboardUid,
+    readRange,
 } from "../frontend/src/dashboards.ts";
 
-test("keeps top-level dashboards and drops foldered legacy ones", () => {
+test("lists dashboards sorted by title", () => {
     assert.deepEqual(
         currentDashboards([
             { uid: "users-balances-rebuild", title: "Users & Balances" },
             { uid: "core-api-rebuild", title: "Direct API" },
-            {
-                uid: "pollen-flow",
-                title: "Pollen Flow",
-                folderUid: "legacy-folder",
-            },
         ]),
         [
             { uid: "core-api-rebuild", title: "Direct API" },
@@ -39,11 +35,22 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
     assert.equal(readDashboardUid("?d=core-api-rebuild"), "core-api-rebuild");
 });
 
-test("keeps kiosk mode on the embedded dashboard url", () => {
+test("keeps kiosk mode and the chosen range on the embedded dashboard url", () => {
     assert.equal(
-        dashboardSrc("core-api-rebuild"),
-        "/grafana/d/core-api-rebuild?kiosk",
+        dashboardSrc("core-api-rebuild", "30d"),
+        "/grafana/d/core-api-rebuild?kiosk&hideLogo&from=now-30d/d&to=now-1d/d",
     );
+    assert.equal(
+        dashboardSrc("core-api-rebuild", "90d"),
+        "/grafana/d/core-api-rebuild?kiosk&hideLogo&from=now-90d/d&to=now-1d/d",
+    );
+});
+
+test("falls back to 30 days for a missing or unknown range", () => {
+    assert.equal(readRange(""), "30d");
+    assert.equal(readRange("?range=7d"), "7d");
+    assert.equal(readRange("?range=1y"), "30d");
+    assert.equal(readRange("?range=toString"), "30d");
 });
 
 test("starts every linear time-series y-axis at zero", () => {
@@ -65,4 +72,34 @@ test("starts every linear time-series y-axis at zero", () => {
                 .map((panel) => `${file}: ${panel.title}`),
         );
     assert.deepEqual(missing, []);
+});
+
+test("never reads internal Tinybird pipes, which Grafana's token cannot read", () => {
+    const pipesDir = new URL(
+        "../../../enter.pollinations.ai/observability/pipes/",
+        import.meta.url,
+    );
+    // No internal pipes left means nothing to guard, not a broken deploy.
+    const pipes = (existsSync(pipesDir) ? readdirSync(pipesDir) : [])
+        .filter((file) => file.endsWith(".pipe"))
+        .map((file) => file.slice(0, -".pipe".length));
+    const dir = new URL("../provisioning/dashboards/", import.meta.url);
+    const reads = readdirSync(dir)
+        .filter((file) => file.endsWith(".json"))
+        .flatMap((file) =>
+            JSON.parse(readFileSync(new URL(file, dir), "utf8")).panels.flatMap(
+                (panel) =>
+                    (panel.targets ?? []).flatMap(({ rawSql = "" }) =>
+                        pipes
+                            .filter((pipe) =>
+                                new RegExp(`\\b${pipe}\\b`).test(rawSql),
+                            )
+                            .map(
+                                (pipe) =>
+                                    `${file}: ${panel.title} reads ${pipe}`,
+                            ),
+                    ),
+            ),
+        );
+    assert.deepEqual(reads, []);
 });

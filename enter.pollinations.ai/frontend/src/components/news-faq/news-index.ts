@@ -11,7 +11,7 @@ const NEWS_INDEX_URL =
 
 type Change = { before: unknown; after: unknown };
 
-/** One official model change, built from PR gists by build_news_index.py. */
+/** One official model change, built from PR gists by news_index.py. */
 export type ModelNews = {
     id: string;
     model_id: string;
@@ -46,17 +46,15 @@ export type Highlight = {
     date: string;
     title: string;
     text: string;
-    app?: boolean;
     /** PRs the highlight comes from; older backfilled highlights have none. */
     prs?: number[];
+    /** Set by the daily summary: models and API changes belong to the Changelog, apps to the README. */
+    kind?: "model" | "api" | "app" | "product";
 };
 
-/** Highlights for News: not apps (README only) and not PRs the Changelog already lists. */
+/** Highlights for Updates: product news only. */
 export function newsHighlights(index: NewsIndex): Highlight[] {
-    const listed = new Set([...index.models, ...index.api].map(({ pr }) => pr));
-    return index.highlights.filter(
-        ({ app, prs }) => !app && !prs?.some((pr) => listed.has(pr)),
-    );
+    return index.highlights.filter(({ kind }) => kind === "product");
 }
 
 const LINK = /\[([^\]]+)\]\(([^)\s]+)\)/;

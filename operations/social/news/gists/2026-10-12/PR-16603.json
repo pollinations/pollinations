@@ -1,0 +1,37 @@
+{
+  "pr_number": 16603,
+  "title": "fix: refresh sidebar balance after quest claims",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/16603",
+  "merged_at": "2026-10-12T14:06:07Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "After a successful Quest claim, QuestOverview revalidates the dashboard loader so the sidebar Pollen balance reflects the credited reward without navigation or a page reload. The refresh starts before quest data reloads, so a failed list request does not prevent the balance update. Claim errors and the existing quest-navigation update event are preserved; failed claims do not refresh the balance.",
+    "keywords": [
+      "Quests",
+      "Pollen",
+      "sidebar",
+      "balance",
+      "claim",
+      "dashboard"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16603.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli taps a Quest reward button while a lime green (#ecf874) sidebar counter changes from 10 to 13 beside potted code-flowers. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt, stays small within the scene, and is strictly pixel art, never realistic, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T14:07:30.784719+00:00",
+  "area": "Quests & rewards",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "318cef13638907af851cf01cc1704c527801ac97",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

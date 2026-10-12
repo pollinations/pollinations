@@ -3,7 +3,9 @@ import {
     CardIcon,
     cn,
     InlineLink,
+    RefreshIcon,
     StableLabel,
+    Surface,
     Switch,
     Tooltip,
     WarningIcon,
@@ -12,6 +14,7 @@ import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
+    AUTO_TOP_UP_THRESHOLD_POLLEN,
 } from "@shared/billing/auto-top-up.ts";
 import {
     formatPollenPackValue,
@@ -55,6 +58,8 @@ type TopUpPanelProps = {
     onWalletChange?: () => void;
     /** The pack a link or Stripe's return asked for, selected first. */
     initialPack?: PollenPackKey;
+    /** Stripe's return credited a purchase: offer auto top-up for its pack. */
+    purchaseCredited?: boolean;
 };
 
 // The second line under "Auto top-up": the pack, or what it needs.
@@ -107,6 +112,7 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     returnToTopUp,
     onWalletChange,
     initialPack,
+    purchaseCredited,
 }) => {
     const [billing, setBilling] = useState(initialBilling);
     const [chosenPack, setChosenPack] = useState<PollenPack | null>(
@@ -116,6 +122,9 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const [saving, setSaving] = useState(false);
     // A save or Stripe-portal failure, shown in the status slot.
     const [slotError, setSlotError] = useState<string | null>(null);
+    // The saved-card dialog credited a purchase here.
+    const [boughtHere, setBoughtHere] = useState(false);
+    const [offerDismissed, setOfferDismissed] = useState(false);
 
     useEffect(() => {
         setBilling(initialBilling);
@@ -157,6 +166,14 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         Boolean(billing) && hasDefault && !billing?.billingDetailsComplete;
     const selectedRefillPack =
         selectedPack && isAutoTopUpPack(selectedPack) ? selectedPack : null;
+    // Right after a purchase, offer auto top-up for the pack just bought.
+    const offerPack =
+        (purchaseCredited || boughtHere) &&
+        !offerDismissed &&
+        billing &&
+        !billing.autoTopUp.enabled
+            ? selectedRefillPack
+            : null;
     const packTooSmall = Boolean(
         !billing?.autoTopUp.enabled && selectedPack && !selectedRefillPack,
     );
@@ -440,6 +457,42 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                         )}
                     </div>
                 </div>
+                {offerPack && (
+                    <Surface
+                        variant="card-themed"
+                        className="flex flex-wrap items-center justify-between gap-3"
+                    >
+                        <p className="min-w-64 flex-1 text-sm text-theme-text-muted">
+                            <strong className="font-semibold text-theme-text-strong">
+                                Never run out.
+                            </strong>{" "}
+                            Auto top-up buys{" "}
+                            {formatPollenPackValue(offerPack.amountUsd)} pollen
+                            when your paid balance reaches{" "}
+                            {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen. Turn it off
+                            anytime.
+                        </p>
+                        <div className="flex shrink-0 items-center gap-3">
+                            <InlineLink
+                                as="button"
+                                type="button"
+                                size="sm"
+                                onClick={() => setOfferDismissed(true)}
+                            >
+                                Not now
+                            </InlineLink>
+                            <Button
+                                size="sm"
+                                intent="brand"
+                                icon={<RefreshIcon />}
+                                disabled={saving}
+                                onClick={() => changeAutoTopUp(true)}
+                            >
+                                Turn on auto top-up
+                            </Button>
+                        </div>
+                    </Surface>
+                )}
             </section>
 
             <PackCheckoutDialog
@@ -447,7 +500,10 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                 onOpenChange={setCheckoutOpen}
                 pack={selectedPack ?? (POLLEN_PACKS[0] as PollenPack)}
                 checkoutQuery={checkoutParams.toString()}
-                onCredited={onWalletChange}
+                onCredited={() => {
+                    setBoughtHere(true);
+                    onWalletChange?.();
+                }}
                 onCompleteDetails={() =>
                     openBillingPortal(
                         returnToTopUp,

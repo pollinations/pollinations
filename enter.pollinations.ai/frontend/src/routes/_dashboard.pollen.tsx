@@ -7,7 +7,7 @@ import {
     useNavigate,
     useRouter,
 } from "@tanstack/react-router";
-import { Suspense, useDeferredValue } from "react";
+import { Suspense, useDeferredValue, useState } from "react";
 import { apiClient } from "../api.ts";
 import {
     LoadError,
@@ -60,6 +60,7 @@ function PollenPage() {
     const router = useRouter();
     // Balance and billing both come from loaders; rerun them once credited.
     const reloadWallet = () => void router.invalidate();
+    const [purchaseCredited, setPurchaseCredited] = useState(false);
     const { balance, earnings } = useDeferredValue(
         DashboardRoute.useLoaderData(),
     );
@@ -100,7 +101,10 @@ function PollenPage() {
                     <Surface>
                         <CheckoutConfirmation
                             sessionId={checkoutSessionId}
-                            onCredited={reloadWallet}
+                            onCredited={() => {
+                                setPurchaseCredited(true);
+                                reloadWallet();
+                            }}
                             onRetry={() => void navigate({ search: { pack } })}
                         />
                     </Surface>
@@ -112,6 +116,7 @@ function PollenPage() {
                                 initialBilling={billingState}
                                 onWalletChange={reloadWallet}
                                 initialPack={pack}
+                                purchaseCredited={purchaseCredited}
                             />
                         )}
                     </Await>

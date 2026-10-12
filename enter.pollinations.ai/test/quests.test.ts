@@ -22,6 +22,7 @@ const LEGACY_FIRST_TOP_UP_QUEST_ID = "first_top_up";
 const LEGACY_TOP_UP_100_QUEST_ID = "top_up_100";
 const TOP_UP_SINCE_LAUNCH_QUEST_ID = "top_up_since_launch";
 const TOP_UP_100_SINCE_LAUNCH_QUEST_ID = "top_up_100_since_launch";
+const FIRST_AUTO_TOP_UP_QUEST_ID = "first_auto_top_up";
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS = Date.parse(
     "2026-06-21T00:00:00.000Z",
 );
@@ -1000,6 +1001,38 @@ test("top-up 100 quest sums multiple Stripe checkout rows", async ({
     expect(questIds.has(TOP_UP_100_SINCE_LAUNCH_QUEST_ID)).toBe(true);
     expect(questIds.has(LEGACY_FIRST_TOP_UP_QUEST_ID)).toBe(false);
     expect(questIds.has(LEGACY_TOP_UP_100_QUEST_ID)).toBe(false);
+});
+
+test("first auto top-up quest records only a paid auto top-up", async ({
+    apiKey: _apiKey,
+    mocks,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    await mocks.enable("github", "tinybird");
+    const autoTopUpRewards = () =>
+        db
+            .select({ pollenAmount: schema.rewards.pollenAmount })
+            .from(schema.rewards)
+            .where(eq(schema.rewards.questId, FIRST_AUTO_TOP_UP_QUEST_ID));
+
+    await db.insert(schema.stripeAutoTopUpAttempt).values({
+        id: `attempt_${user.id}_failed`,
+        userId: user.id,
+        amountUsd: 5,
+        status: "failed",
+    });
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([]);
+
+    await db.insert(schema.stripeAutoTopUpAttempt).values({
+        id: `attempt_${user.id}_paid`,
+        userId: user.id,
+        amountUsd: 5,
+        status: "paid",
+    });
+    await checkQuestsForUser(env, user.id);
+    expect(await autoTopUpRewards()).toEqual([{ pollenAmount: 20 }]);
 });
 
 test("POST /account/quests/check throttles a user to once per minute", async ({

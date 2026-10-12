@@ -40,18 +40,17 @@ interface QuestsResponse {
 }
 
 // Derive the display status. Claim state lives on the reward (claimedAt === null
-// means it's earned but not yet banked) and wins over the quest's own lifecycle
-// flags; without a reward, the quest's own state decides.
+// means it's earned but not yet banked); everything else falls back to the
+// quest's own state.
 function questStatus(quest: QuestEntry): QuestStatus {
-    if (quest.reward) {
-        return quest.reward.claimedAt === null ? "claimable" : "claimed";
-    }
     if (quest.state === "coming_soon" || quest.status === "coming_soon") {
         return "coming";
     }
+    if (quest.reward) {
+        return quest.reward.claimedAt === null ? "claimable" : "claimed";
+    }
     if (quest.state === "completed" || quest.status === "completed") {
-        // Closed without this account: the quest was achieved by someone else
-        // (or retired). It must not read as "you claimed this" in your list.
+        // Completed without a reward for this account: closed by someone else.
         return "closed";
     }
     return "open";
@@ -64,7 +63,6 @@ function colorStatus(status: QuestStatus): string {
         case "claimed":
             return chalk.cyan(status);
         case "closed":
-            return chalk.dim(status);
         case "coming":
             return chalk.dim(status);
         default:
@@ -86,7 +84,6 @@ function filterQuests(
     if (opts.open) wanted.add("open");
     if (opts.claimable) wanted.add("claimable");
     if (opts.claimed) wanted.add("claimed");
-    if (opts.closed) wanted.add("closed");
     if (opts.comingSoon) wanted.add("coming");
     if (wanted.size === 0) return quests;
     return quests.filter((quest) => wanted.has(questStatus(quest)));
@@ -121,8 +118,7 @@ export const questsCommand = new Command("quests")
     )
     .option("--open", "Show only open quests")
     .option("--claimable", "Show only quests with a reward ready to claim")
-    .option("--claimed", "Show only quests you already claimed")
-    .option("--closed", "Show only quests closed without you")
+    .option("--claimed", "Show only already-claimed quests")
     .option("--coming-soon", "Show only coming-soon quests")
     .action(async (opts) => {
         try {

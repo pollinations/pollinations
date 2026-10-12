@@ -141,6 +141,19 @@ describe("agent discovery", () => {
             { headers: { "content-type": "text/html; charset=utf-8" } },
         );
 
+    test("adds links when the asset response has immutable headers", async () => {
+        const asset = await fetch("data:text/html,%3Chtml%3Eok%3C%2Fhtml%3E");
+        expect(() => asset.headers.set("Link", "test")).toThrow();
+
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/"),
+            { ASSETS: { fetch: async () => asset } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Link")).toContain("service-desc");
+    });
+
     test.each([
         "/",
         "/apps",

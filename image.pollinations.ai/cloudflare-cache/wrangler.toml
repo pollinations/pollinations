@@ -36,6 +36,12 @@ class_name = "FeedHub"
 tag = "v1"
 new_sqlite_classes = ["IpSlot", "FeedHub"]
 
+# The logo lockups (assets/*.png) are imported as bytes
+[[rules]]
+type = "Data"
+globs = ["**/*.png"]
+fallthrough = true
+
 # Environment variables
 [vars]
 ORIGIN_HOST = "image-origin.pollinations.ai"

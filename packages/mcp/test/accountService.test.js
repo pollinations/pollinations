@@ -86,6 +86,28 @@ for (const [name, args, method, path, body] of REQUESTS) {
     });
 }
 
+test("getBalance preserves the paid balance needed to assess paid-only models", async (t) => {
+    // Paid-only models spend paid Pollen, not the total; pass through the
+    // gateway's breakdown while preserving the existing pollen and note fields.
+    mockFetch(t, () =>
+        Response.json({
+            balance: 12,
+            accountBalance: { total: 12, tier: 12, paid: 0 },
+        }),
+    );
+
+    const result = await tools.getBalance.handler({}, CONTEXT);
+    const balance = JSON.parse(result.content[0].text);
+
+    assert.equal(balance.pollen, 12);
+    assert.deepEqual(balance.accountBalance, { total: 12, tier: 12, paid: 0 });
+    assert.equal(balance.accountBalance.paid, 0);
+    assert.equal(
+        balance.note,
+        "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
+    );
+});
+
 test("getUsage lists 20 requests unless told otherwise", () => {
     assert.equal(tools.getUsage.shape.limit.parse(undefined), 20);
 });

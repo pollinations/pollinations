@@ -330,24 +330,23 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // OpenRouter's standard OpenAI endpoint discounts Azure output more
-        // deeply than input/cache. One third matches its output rate and keeps
-        // the other dimensions below that endpoint under a uniform multiplier.
+        // Preserve the existing one-third customer price multiplier.
         priceMultiplier: 1 / 3,
         paidOnly: false,
+        // Azure Global Standard promotional rates through at least 2026-11-30.
         cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
+            promptTextTokens: perMillion(4.0),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(5.0),
+            completionTextTokens: perMillion(20.0),
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    promptCacheWriteTokens: perMillion(12.5),
-                    completionTextTokens: perMillion(45.0),
+                    promptTextTokens: perMillion(8.0),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(10.0),
+                    completionTextTokens: perMillion(30.0),
                 },
             },
             longContextAbove(272_000),

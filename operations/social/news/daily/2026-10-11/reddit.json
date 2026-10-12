@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-10-11",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-11",
+  "generated_at": "2026-10-12T06:45:57.410600+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-11/images/reddit.jpg"
+    }
+  ],
+  "title": "Sandbox renewals and cache fixes in 15 merged PRs",
+  "text": "A selection of 15 PRs merged today; this isn’t the complete merge log.\n\nSandboxes gained [automatic renewals](https://github.com/pollinations/pollinations/pull/16896) that can carry a session past E2B’s 24-hour limit, subject to the requesting key’s budget. The polli CLI gained a timeout option and pause command (#17091). There’s also an opt-in `pollinations-large` template with 4 vCPU and 8 GB RAM (#17115).\n\nThe app catalog added InkBloom for printable coloring pages, Text Comparison with an Arabic right-to-left interface, and Midi Journey 2 for conversational MIDI work in Ableton Live. [App submissions](https://github.com/pollinations/pollinations/pull/17076) accept raw GitHub repository image URLs and more screenshot shapes. Weekly rankings now read from an hourly snapshot rather than recalculating on every page request (#17028).\n\n[Polli](https://github.com/pollinations/pollinations/pull/17125) switched to GPT-6.1-Sol and gained queued follow-ups, separate or grouped replies, and reactions. Requests from different users remain permission-isolated.\n\nOn `/v1/responses`, [Codex reasoning replay and encrypted-content options](https://github.com/pollinations/pollinations/pull/17123) are accepted. Azure Responses calls use upstream streaming internally so non-streaming client requests can finish beyond the previous roughly 125-second cutoff. The API reference was regenerated from OpenAPI (#17130).\n\nFinally, the legacy text and image caches retain less visitor data and no longer store full prompts alongside responses. They also drop an obsolete address header, treat zero-byte objects as misses, and avoid caching HEAD responses ([cache PR](https://github.com/pollinations/pollinations/pull/17103)). Old caches finding new ways to be surprising remains a dependable software tradition."
+}

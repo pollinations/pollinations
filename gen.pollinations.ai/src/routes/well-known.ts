@@ -3,6 +3,8 @@ import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
+import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 
@@ -10,9 +12,18 @@ import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 // https://github.com/cloudflare/agent-skills-discovery-rfc
 const SKILLS_SCHEMA =
     "https://schemas.agentskills.io/discovery/0.2.0/schema.json";
-const POLLI_SKILL_PATH = "/.well-known/agent-skills/polli/SKILL.md";
-const POLLI_SKILL_DESCRIPTION =
-    CLI_SKILL.match(/^description:\s*(.+)$/m)?.[1].trim() ?? "";
+
+// One entry per published skill; served at /agent-skills/<name>/SKILL.md.
+const AGENT_SKILLS = [
+    { name: "polli", markdown: CLI_SKILL },
+    { name: "pollinations-api", markdown: API_SKILL },
+    { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
+].map((skill) => ({
+    ...skill,
+    path: `/.well-known/agent-skills/${skill.name}/SKILL.md`,
+    description:
+        skill.markdown.match(/^description:\s*(.+)$/m)?.[1].trim() ?? "",
+}));
 
 async function sha256Hex(text: string): Promise<string> {
     const hash = await crypto.subtle.digest(
@@ -49,21 +60,23 @@ export const wellKnownRoutes = new Hono<Env>()
         c.header("Cache-Control", "public, max-age=3600");
         return c.json({
             $schema: SKILLS_SCHEMA,
-            skills: [
-                {
-                    name: "polli",
+            skills: await Promise.all(
+                AGENT_SKILLS.map(async (skill) => ({
+                    name: skill.name,
                     type: "skill-md",
-                    description: POLLI_SKILL_DESCRIPTION,
-                    url: POLLI_SKILL_PATH,
-                    digest: `sha256:${await sha256Hex(CLI_SKILL)}`,
-                },
-            ],
+                    description: skill.description,
+                    url: skill.path,
+                    digest: `sha256:${await sha256Hex(skill.markdown)}`,
+                })),
+            ),
         });
     })
-    .get("/agent-skills/polli/SKILL.md", (c) => {
+    .get("/agent-skills/:name/SKILL.md", (c) => {
+        const skill = AGENT_SKILLS.find((s) => s.name === c.req.param("name"));
+        if (!skill) return c.notFound();
         c.header("Content-Type", "text/markdown; charset=utf-8");
         c.header("Cache-Control", "public, max-age=3600");
-        return c.body(CLI_SKILL);
+        return c.body(skill.markdown);
     })
     .get("/api-catalog", (c) => {
         // RFC 9727 API catalog (linkset): lets agents discover the OpenAPI

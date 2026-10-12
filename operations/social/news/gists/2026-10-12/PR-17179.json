@@ -1,0 +1,68 @@
+{
+  "pr_number": 17179,
+  "title": "fix: correct DeepSeek provider pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17179",
+  "merged_at": "2026-10-12T22:16:08Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "major",
+    "summary": "Corrected DeepSeek V4.1 Flash pricing per million input, cached and output tokens to match its Fireworks primary provider costs. Its Quest + Paid access and OpenRouter → DeepInfra FP8 fallback are unchanged. DeepSeek V4 Pro remains Paid-only at 1.184 / 0.118 / 3.551 Pollen per million input/cached/output tokens. Its OpenRouter → Alibaba primary configuration now uses base rather than us-east-1 costs, matching that price. The OpenRouter → StreamLake fallback cost was corrected to 0.696 / 0.023 / 2.089 per million input/cached/output tokens under a 50% promo with no stated end date; post-promo costs would exceed Pro’s price. Capabilities are unchanged. Primary and forced-fallback checks covered text, streaming, tools and prompt caching for both models, plus vision for Flash.",
+    "keywords": [
+      "DeepSeek",
+      "Flash",
+      "Pro",
+      "model pricing",
+      "provider costs",
+      "fallbacks"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17179.jpg",
+    "prompt": "In a cozy pixel art garden-server room, Polli checks two DeepSeek model price tags beside a lime green (#ecf874) terminal and small code-plants; she wears tiny accountant glasses and shares the frame with a single CRT monitor robot holding a corrected ledger. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T22:18:22.067305+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "937261ceae115a14d6978fa1e50bbd6d9d672b59",
+  "announcements": [
+    {
+      "id": "pr-17179:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000022",
+            "promptCachedTokens": "0.000000007",
+            "completionTextTokens": "0.00000066"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000012"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "937261ceae115a14d6978fa1e50bbd6d9d672b59^1",
+    "after_ref": "937261ceae115a14d6978fa1e50bbd6d9d672b59"
+  }
+}

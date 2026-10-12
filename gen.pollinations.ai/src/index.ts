@@ -82,6 +82,8 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
     );
@@ -109,6 +111,10 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
 
 ## Account
 

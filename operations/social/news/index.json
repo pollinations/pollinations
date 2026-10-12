@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T15:16:28.350311+00:00",
+  "generated_at": "2026-10-12T18:36:06.490298+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -5732,6 +5732,64 @@
             "currency": "pollen",
             "promptTextTokens": "0.00000015825",
             "completionTextTokens": "0.000000633"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16954:anthropic/claude-opus-5.5:fast",
+      "model_id": "anthropic/claude-opus-5.5:fast",
+      "title": "Claude Opus 5.5 Fast",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-12",
+      "pr": 16954,
+      "url": "https://github.com/pollinations/pollinations/pull/16954",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1000000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 20
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000844",
+            "promptCachedTokens": "0.000000422",
+            "promptCacheWriteTokens": "0.00001055",
+            "completionTextTokens": "0.0000422"
           }
         }
       }

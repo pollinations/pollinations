@@ -64,36 +64,35 @@ async function streamEvents(completion: ChatCompletion) {
 }
 
 describe("Chat Completions over Responses", () => {
-    it("maps OpenAI and legacy explicit cache breakpoints", () => {
-        expect(
-            chatToResponsesRequest(
-                [
-                    {
-                        role: "system",
-                        content: "Static agent instructions",
-                        prompt_cache_breakpoint: { mode: "explicit" },
-                    },
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: "Stable context",
-                                prompt_cache_breakpoint: { mode: "explicit" },
-                            },
-                            {
-                                type: "text",
-                                text: "Legacy stable context",
-                                cache_control: { type: "ephemeral" },
-                            },
-                            { type: "text", text: "Dynamic question" },
-                        ],
-                    },
-                ],
-                { model: "provider-model" },
-            ),
-        ).toMatchObject({
-            prompt_cache_options: { mode: "explicit" },
+    it("maps OpenAI and legacy cache breakpoints without forcing explicit mode", () => {
+        const request = chatToResponsesRequest(
+            [
+                {
+                    role: "system",
+                    content: "Static agent instructions",
+                    prompt_cache_breakpoint: { mode: "explicit" },
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Stable context",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                        {
+                            type: "text",
+                            text: "Legacy stable context",
+                            cache_control: { type: "ephemeral" },
+                        },
+                        { type: "text", text: "Dynamic question" },
+                    ],
+                },
+            ],
+            { model: "provider-model" },
+        );
+        expect(request.prompt_cache_options).toBeUndefined();
+        expect(request).toMatchObject({
             input: [
                 {
                     role: "system",

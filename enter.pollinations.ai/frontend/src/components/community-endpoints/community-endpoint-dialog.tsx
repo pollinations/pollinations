@@ -256,6 +256,9 @@ export function CommunityEndpointDialog({
             setForm((current) => ({
                 ...current,
                 imagePricing: detectedImagePricing,
+                ...(current.modality === "text" && {
+                    streaming: body.streaming !== false,
+                }),
                 inputModalities:
                     current.modality === "image" &&
                     body.inputModalities?.includes("image")

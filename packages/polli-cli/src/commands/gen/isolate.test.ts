@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
-import { setOutputMode } from "../../lib/output.js";
+import { ExitSignal, setOutputMode } from "../../lib/output.js";
 import { createIsolateCommand } from "./isolate.js";
 
 const originalCwd = process.cwd();
@@ -46,6 +46,34 @@ describe("gen isolate", () => {
             const meta = JSON.parse(output.join(""));
             expect(meta.path).toBe("isolated.mp3");
             expect([...readFileSync("isolated.mp3")]).toEqual([4, 5, 6]);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
+    it("reports a missing input file as a CLI error instead of a raw ENOENT", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-isolate-missing-"));
+        try {
+            process.chdir(folder);
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const errors: string[] = [];
+            vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+                errors.push(String(value));
+                return true;
+            });
+            const fetch = vi.fn();
+            vi.stubGlobal("fetch", fetch);
+
+            await expect(
+                createIsolateCommand().parseAsync(["nope.mp4"], {
+                    from: "user",
+                }),
+            ).rejects.toThrow(ExitSignal);
+
+            expect(fetch).not.toHaveBeenCalled();
+            expect(errors.join("")).toContain("File not found: nope.mp4");
         } finally {
             process.chdir(originalCwd);
             rmSync(folder, { recursive: true });

@@ -66,7 +66,7 @@ Skip: bug fixes, refactors, CI and deployment work, docs and tests, internal or 
 
 - `emoji`: one of 🚀 ✨ 🎨 🎵 🤖 🔗 📱 💡 🌟 🎯
 - `title`: a short name for the change, 2-6 words
-- `text`: 1-2 sentences on what users can do, with markdown links from the reference links when they help. Use `backticks` for model IDs and code. No PR numbers or authors.
+- `text`: 1-2 sentences on what users can do. Use `backticks` for model IDs and code. No PR numbers or authors. When a link helps, end with one link from the reference links as its own sentence, such as `[Browse models](url).`; never link words inside a sentence. For a new model, link that model on Enter's model page.
 - `prs`: the PR numbers the highlight comes from
 - A gist with `app_name` and `app_url` is an app: always link it, as `[Try it](url)` for a live site or `[View repo](url)` for a GitHub repository, and set `"app": true`.
 

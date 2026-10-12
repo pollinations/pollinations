@@ -452,6 +452,43 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
     }
 });
 
+test("non-array messages get the VM's 500, whose error log failed on messages.map", async () => {
+    const vm = JSON.stringify({
+        error: "messages.map is not a function",
+        status: 500,
+        deprecation_notice: NOTICE,
+    });
+    for (const [path, options] of [
+        [
+            "/v1/chat/completions",
+            {
+                method: "POST",
+                headers: JSON_BODY,
+                body: JSON.stringify({ messages: "pr7e2e" }),
+            },
+        ],
+        [
+            "/openai",
+            {
+                method: "POST",
+                headers: JSON_BODY,
+                body: JSON.stringify({ messages: { role: "user" } }),
+            },
+        ],
+        ["/x?messages=foo", {}],
+        ["/x?messages=foo&stream=true", {}],
+    ]) {
+        const { response, text } = await call(path, options);
+
+        expect(response.status, path).toBe(500);
+        expect(text, path).toBe(vm);
+        // The ETag of the live capture of 2026-10-12
+        expect(response.headers.get("etag"), path).toBe(
+            'W/"14b-2vuwa+PS53/bu4pTjJqib/XYw+M"',
+        );
+    }
+});
+
 test("non-array messages with a system prompt, which crashed the VM, get Express's 500 page and no generation", async () => {
     for (const [path, options] of [
         ["/x?system=hi&messages=foo", {}],

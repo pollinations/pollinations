@@ -420,7 +420,11 @@ const isEmpty = (content) =>
 
 /** The model transform, the empty-message fix and validateAndNormalizeMessages */
 function genMessages(messages) {
-    if (!Array.isArray(messages)) throw new Error("messages must be an array");
+    if (!Array.isArray(messages)) {
+        // The VM's model transform rejected them, then the error log in
+        // generateTextBasedOnModel threw this on messages.map
+        throw new TypeError("messages.map is not a function");
+    }
     const withSystem = messages.some((message) => message.role === "system")
         ? messages
         : [{ role: "system", content: SYSTEM_PROMPT }, ...messages];

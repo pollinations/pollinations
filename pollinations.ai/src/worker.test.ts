@@ -154,13 +154,17 @@ describe("agent discovery", () => {
 
         const link = response.headers.get("Link") ?? "";
         expect(link).toContain(
-            '<https://gen.pollinations.ai/llms.txt>; rel="alternate"',
+            '<https://gen.pollinations.ai/openapi.json>; rel="service-desc"',
         );
-        expect(link).toContain('rel="api-catalog"');
-        expect(link).toContain('rel="ai-catalog"');
-        expect(link).toContain('rel="agent-skills"');
-        expect(link).toContain('rel="service-desc"');
-        expect(link).toContain('rel="service-doc"');
+        expect(link).toContain(
+            '<https://gen.pollinations.ai/docs/llm.txt>; rel="service-doc"',
+        );
+        expect(link).toContain(
+            '<https://gen.pollinations.ai/.well-known/api-catalog>; rel="api-catalog"',
+        );
+        expect(link).toContain(
+            '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
+        );
     });
 
     test("keeps the header off assets and unknown routes", async () => {

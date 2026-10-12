@@ -9,20 +9,17 @@
 import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 /**
- * RFC 8288 Link headers for every page this worker rewrites. An agent that
- * fetches a page is told where the machine-readable surface lives instead of
- * scraping the HTML or guessing URLs. Each target already exists on
- * gen.pollinations.ai; this only points at it.
+ * RFC 8288 Link headers for every page this worker rewrites, so an agent that
+ * fetches a page learns where the machine-readable surface lives. Registered
+ * relations only: service-desc and service-doc (RFC 8631), api-catalog
+ * (RFC 9727) and describedby. Same set as gen.pollinations.ai, with absolute
+ * URLs because the targets live on that host.
  */
 const AGENT_LINKS = [
-    '<https://gen.pollinations.ai/llms.txt>; rel="alternate"; type="text/plain"; title="Agent entry point"',
-    // `api-catalog` is defined by RFC 9727; `service-desc` and `service-doc`
-    // are registered by RFC 6903.
+    '<https://gen.pollinations.ai/openapi.json>; rel="service-desc"',
+    '<https://gen.pollinations.ai/docs/llm.txt>; rel="service-doc"',
     '<https://gen.pollinations.ai/.well-known/api-catalog>; rel="api-catalog"',
-    '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="ai-catalog"',
-    '<https://gen.pollinations.ai/.well-known/agent-skills/index.json>; rel="agent-skills"',
-    '<https://gen.pollinations.ai/openapi.json>; rel="service-desc"; type="application/json"',
-    '<https://gen.pollinations.ai/docs/llm.txt>; rel="service-doc"; type="text/plain"',
+    '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)

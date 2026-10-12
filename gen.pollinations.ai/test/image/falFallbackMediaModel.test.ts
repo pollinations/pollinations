@@ -300,6 +300,42 @@ describe("Fal fallback media models", () => {
         });
     });
 
+    it.each([
+        [
+            "kandinsky/kandinsky-6-lite",
+            [],
+            "fal-ai/kandinsky6-lite/text-to-video",
+            { generate_audio: true, aspect_ratio: "1:1" },
+        ],
+        [
+            "kandinsky/kandinsky-6-pro",
+            ["https://example.com/start.png"],
+            "fal-ai/kandinsky6-pro/image-to-video",
+            {
+                generate_audio: true,
+                image_url: "https://example.com/start.png",
+            },
+        ],
+    ] as const)("sends %s as a 5-second Fal video", async (model, image, endpoint, input) => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("move", {
+            ...baseParams,
+            model,
+            duration: 10,
+            image: [...image],
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+
+        expect(requests[0]).toEqual({
+            url: `https://queue.fal.run/${endpoint}`,
+            body: { prompt: "move", ...input, seed: 42 },
+        });
+        expect(result.durationSeconds).toBe(5);
+    });
+
     it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },

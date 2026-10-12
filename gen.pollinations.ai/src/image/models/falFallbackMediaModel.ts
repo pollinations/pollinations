@@ -147,6 +147,21 @@ type FalVideoConfig = {
     billsRejectedVideos?: boolean;
 };
 
+// Kandinsky 6 renders 5 seconds only; image-to-video follows the source ratio.
+function kandinskyConfig(variant: "lite" | "pro"): FalVideoConfig {
+    return {
+        textEndpoint: `fal-ai/kandinsky6-${variant}/text-to-video`,
+        imageEndpoint: `fal-ai/kandinsky6-${variant}/image-to-video`,
+        duration: () => 5,
+        input: (params, _duration, hasImage) => ({
+            generate_audio: params.audio ?? true,
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, WAN_RATIOS) }
+                : {}),
+        }),
+    };
+}
+
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
     "x-ai/grok-imagine-video": {
         textEndpoint: "xai/grok-imagine-video/text-to-video",
@@ -206,6 +221,8 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             camera_fixed: false,
         }),
     },
+    "kandinsky/kandinsky-6-lite": kandinskyConfig("lite"),
+    "kandinsky/kandinsky-6-pro": kandinskyConfig("pro"),
 };
 
 export async function callFalFallbackVideo(

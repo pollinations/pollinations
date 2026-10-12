@@ -192,6 +192,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 - `summary.json` — the month's summary, from its daily summaries
 - `images/cover.jpg` — the month's cover
+- `contributors.json` — every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it
 
 ### Model post: `operations/social/news/models/`
 
@@ -248,6 +249,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `gist.py` | Per PR: classification, exact model changes (registry revisions, `model_catalog.ts`) and API changes (the docs PR's `APIDOCS.md`) → AI gist → image → news branch |
 | `discord_pr.py` | Per PR: the gist → `prompts/posts/discord-pr.md` → Discord webhook |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
+| `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord, Reddit; the model post from its work folder), `mark` (a person settles a stuck send) |
 | `news_index.py` | `index.json`: model announcements, API changes and daily highlights for Enter `/news` and the README |
 | `readme.py` | README Latest News from `index.json` |

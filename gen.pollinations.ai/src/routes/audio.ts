@@ -851,15 +851,19 @@ export async function transcribeWithAzure(opts: {
             message: "Azure transcription service is not configured",
         });
     }
+    // OpenAI documents only json for gpt-4o-transcribe; text is the same
+    // transcript without the JSON wrapper, so callers that send it get it.
     assertTranscriptionResponseFormat(responseFormat, "openai/gpt-transcribe", [
         "json",
+        "text",
     ]);
 
     const formData = new FormData();
     formData.append("model", "gpt-transcribe");
     if (language) formData.append("language", language);
     if (prompt) formData.append("prompt", prompt);
-    formData.append("response_format", responseFormat);
+    // Only the json answer carries usage.seconds, which the request bills on.
+    formData.append("response_format", "json");
     if (temperature !== undefined) {
         formData.append("temperature", String(temperature));
     }

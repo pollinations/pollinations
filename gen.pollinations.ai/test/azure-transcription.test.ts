@@ -49,6 +49,30 @@ describe("transcribeWithAzure", () => {
         });
     });
 
+    it("answers text from Azure's json, which carries the billed duration", async () => {
+        const fetchMock = vi.fn().mockResolvedValueOnce(
+            Response.json({
+                text: "hello from Azure",
+                usage: { type: "duration", seconds: 60 },
+            }),
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const response = await transcribeWithAzure({
+            file: new File(["audio"], "audio.wav"),
+            responseFormat: "text",
+            apiKey: "test-key",
+        });
+
+        const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect((init.body as FormData).get("response_format")).toBe("json");
+        expect(response.headers.get("content-type")).toBe(
+            "text/plain; charset=utf-8",
+        );
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("60");
+        expect(await response.text()).toBe("hello from Azure");
+    });
+
     it("rejects unsupported response formats before calling Azure", async () => {
         const fetchMock = vi.fn();
         vi.stubGlobal("fetch", fetchMock);

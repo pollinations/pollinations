@@ -134,6 +134,7 @@ function createGenerationMocks() {
     const azureSpeechState: {
         requests: Array<{ url: string; body: Record<string, unknown> }>;
     } = { requests: [] };
+    const ovhWhisperState: { requests: FormData[] } = { requests: [] };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -263,6 +264,35 @@ function createGenerationMocks() {
             },
             reset: () => {
                 azureSpeechState.requests = [];
+            },
+        },
+        ovhWhisper: {
+            state: ovhWhisperState,
+            handlerMap: {
+                "oai.endpoints.kepler.ai.cloud.ovh.net": async (
+                    request: Request,
+                ) => {
+                    ovhWhisperState.requests.push(await request.formData());
+                    // Trimmed from a live OVH verbose_json answer.
+                    return Response.json({
+                        text: " The water cycle starts with evaporation.",
+                        language: "en",
+                        duration: 3.2,
+                        usage: { type: "duration", seconds: 4 },
+                        words: [],
+                        segments: [
+                            {
+                                id: 1,
+                                start: 0,
+                                end: 3.2,
+                                text: " The water cycle starts with evaporation.",
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                ovhWhisperState.requests = [];
             },
         },
         portkeyDirect: {
@@ -1193,6 +1223,42 @@ test("speech without a model, or with the tts alias, uses free OpenAI TTS", asyn
         expect(request.url).toContain("/deployments/tts/audio/speech");
         expect(request.body).toMatchObject({ model: "tts-1" });
     }
+});
+
+test("whisper srt cues are the segments OVH is asked for", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "ovhWhisper");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        OVHCLOUD_API_KEY: "ovh-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const form = new FormData();
+    // Unique bytes so the transcription cache cannot answer instead.
+    form.append("file", new File([crypto.randomUUID()], "clip.wav"));
+    form.append("model", "whisper-1");
+    form.append("response_format", "srt");
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/transcriptions",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toBe(
+        "1\n00:00:00,000 --> 00:00:03,200\nThe water cycle starts with evaporation.\n",
+    );
+    await wait();
+    // OVH answers segments: [] unless segment timings are requested (#13552).
+    expect(
+        mocks.ovhWhisper.state.requests[0].getAll("timestamp_granularities[]"),
+    ).toEqual(["word", "segment"]);
 });
 
 test("chat completions use local text generation with VCR-backed Portkey", async ({

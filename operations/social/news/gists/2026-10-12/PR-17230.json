@@ -1,0 +1,35 @@
+{
+  "pr_number": 17230,
+  "title": "fix: make CatGPT and Opposite Prompt bots mention-only",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17230",
+  "merged_at": "2026-10-12T23:09:17Z",
+  "labels": [
+    "BUG"
+  ],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "CatGPT and Opposite Prompt drop Discord’s Message Content gateway intent, which caused both bots to crash-loop after their privileged-intent access was removed. Both now answer only messages that @mention them; plain messages in their channels are ignored. Opposite Prompt no longer requires OPPOSITE_PROMPT_CHANNEL_ID. CatGPT retains its channel for catch-up and the ask CLI, and its status now reads “Mention me to ask 😾”.",
+    "keywords": [
+      "Discord",
+      "CatGPT",
+      "Opposite Prompt",
+      "mentions",
+      "gateway intents",
+      "bots"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17230.jpg",
+    "prompt": "In a cozy pixel art garden café, Polli wears a tiny headset and points to an @mention glowing on a retro terminal while two small bot screens wait quietly beside potted code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-12T23:10:40.398130+00:00",
+  "area": "Agents & agent tools",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "442bc36ea22dadf649f9248cfa579df132b4b336",
+  "announcements": []
+}

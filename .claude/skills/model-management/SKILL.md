@@ -81,9 +81,10 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 ### 1. Reconcile current state
 
 - Resolve aliases to the canonical registry entry.
-- API keys store model categories, not model IDs, so a rename never touches
-  them. A model that changes category changes which restricted keys reach it;
-  state that in the PR.
+- API keys store model categories and canonical model IDs. A rename keeps
+  working for keys that stored the old ID only while the old ID stays an
+  alias. A model that changes category changes which restricted keys reach
+  it; state that in the PR.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`

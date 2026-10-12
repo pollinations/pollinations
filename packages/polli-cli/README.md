@@ -103,10 +103,12 @@ polli keys create --name mybot --budget 100                    # secret (default
 polli keys create --name myapp --type publishable              # API publishable
 polli keys create --name myapp --type publishable \            # 3rd-party app key
   --redirect-uri https://myapp.com/callback --earnings
+polli keys create --name server --models flux zimage            # only these models
+polli keys update <id> --models text flux                       # change the model list
 polli keys revoke <id>
 ```
 
-Keys can't be edited — to change a name, budget, or model list, revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ```bash
 polli usage                  # pollen balance

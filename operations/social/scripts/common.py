@@ -157,6 +157,67 @@ def post_discord_webhook(
     return resp
 
 
+def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
+    """Split message into chunks at paragraph breaks."""
+    if len(message) <= max_length:
+        return [message]
+
+    chunks = []
+    remaining = message
+    while remaining:
+        if len(remaining) <= max_length:
+            chunks.append(remaining)
+            break
+        chunk = remaining[:max_length]
+        # Split at paragraph break
+        split = chunk.rfind("\n\n")
+        if split >= max_length * 0.5:
+            split_point = split + 2
+        else:
+            split = chunk.rfind("\n")
+            if split >= max_length * 0.5:
+                split_point = split + 1
+            else:
+                split_point = max_length
+        chunks.append(remaining[:split_point].rstrip())
+        remaining = remaining[split_point:].lstrip()
+    return chunks
+
+
+def safe_truncate(text: str, limit: int) -> str:
+    """Truncate to <= limit characters without cutting mid-token.
+
+    - Walks back to the last whitespace before the cut so we don't split a
+      word, URL, or `<@&123>` role mention.
+    - Drops a trailing partial code span (odd count of backticks) by
+      rewinding to before the last backtick.
+    - Drops any trailing partial `<...>` (e.g. `<@&12`) so Discord doesn't
+      render broken markup.
+    - Appends "…" as a visible truncation marker.
+    """
+    if len(text) <= limit:
+        return text
+    cut = limit - 1  # leave room for the ellipsis
+    head = text[:cut]
+    # Prefer a newline boundary, then any whitespace. Always walk back to it
+    # if one exists — a token that spans the cut (URL, role mention, code
+    # span) is far more visible damage than dropping a line of bullet text.
+    boundary = max(head.rfind("\n"), head.rfind(" "))
+    if boundary > 0:
+        head = head[:boundary]
+    head = head.rstrip()
+    # Strip a dangling unmatched '<' (broken mention or HTML-ish tag).
+    last_lt = head.rfind("<")
+    last_gt = head.rfind(">")
+    if last_lt > last_gt:
+        head = head[:last_lt].rstrip()
+    # Close or drop a dangling unmatched code span.
+    if head.count("`") % 2 == 1:
+        last_backtick = head.rfind("`")
+        head = head[:last_backtick].rstrip()
+    return head + "…"
+
+
 def parse_json_response(response: str) -> Optional[Dict]:
     """Parse JSON from AI response, stripping markdown fences."""
     text = response.strip()
@@ -1521,7 +1582,10 @@ def deploy_reddit_news_post(
         return None
 
     print("  Reddit...")
-    return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+    try:
+        return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+    except Exception:  # noqa: BLE001 - the old senders report it as before: False, and go on
+        return False
 
 
 def deploy_reddit_post(
@@ -1540,6 +1604,7 @@ def deploy_reddit_post(
         print("  VPS: Missing required arguments")
         return False
 
+    deploying = False
     try:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1587,6 +1652,7 @@ LINKEOF
         deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
 
         print("  VPS: Running deploy.sh...")
+        deploying = True
         ssh.exec_command(deploy_cmd)  # fire-and-forget by design (nohup)
         ssh.close()
 
@@ -1596,4 +1662,6 @@ LINKEOF
 
     except Exception as e:
         print(f"  VPS: {type(e).__name__}: {e}")
+        if deploying:
+            raise  # deploy.sh may already run: the caller can't treat this as not sent
         return False

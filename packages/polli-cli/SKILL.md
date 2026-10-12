@@ -20,11 +20,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
 
+For agent-assisted login, use `polli --json auth login --no-browser`. Read stderr while the command runs and show the user the verification URL and user code so they can review access. On approval, stdout contains one JSON result: `{"authenticated":true}`. Tokens are stored locally and never included in that result.
+
 ## Quick reference
 
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Agent-assisted login | `polli --json auth login --no-browser` |
 | Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |

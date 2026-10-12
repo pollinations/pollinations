@@ -1,0 +1,34 @@
+{
+  "pr_number": 17236,
+  "title": "chore: pin polli 0.1.44 in the sandbox image",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17236",
+  "merged_at": "2026-10-12T23:21:35Z",
+  "labels": [
+    "INFRA"
+  ],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Pinned polli in the E2B sandbox Dockerfile from 0.1.42 to 0.1.44, bringing in per-model key IDs and the herdr bootstrap. A test image build reported polli 0.1.44; the other pins, including herdr 0.9.3, were unchanged.",
+    "keywords": [
+      "E2B",
+      "sandbox image",
+      "polli",
+      "version pin",
+      "herdr"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17236.jpg",
+    "prompt": "In a cozy pixel art workshop, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Wearing a tiny tool belt, she checks a sandbox image box labeled '0.1.44' beside a glowing terminal and potted code-plants; lime green (#ecf874) glows prominently against a warm cream and soft pastel gradient background, with dark purple (#110518) outlines, chunky sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T23:22:38.970921+00:00",
+  "area": "Agents & agent tools",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "7fa1844ca444681c049fd015092749f6fcb66ae0",
+  "announcements": []
+}

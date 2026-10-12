@@ -1,0 +1,32 @@
+{
+  "pr_number": 17084,
+  "title": "fix(sdk): use pipe delimiter for reference image array in query params",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17084",
+  "merged_at": "2026-10-12T18:05:57Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The SDK now joins arrays passed as the `image` query parameter with `|` instead of `,`, matching the API’s reference-media format. This fixes video start/end keyframe references and image generation with multiple reference images, including URLs whose query parameters contain commas. Tests cover both cases.",
+    "keywords": [
+      "SDK",
+      "reference images",
+      "video keyframes",
+      "query parameters",
+      "image generation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17084.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli connects two tiny image frames to a retro terminal with a glowing lime green (#ecf874) pipe symbol, while code-plants grow beside the desk. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and is small-to-medium sized within the scene, never oversized or dominating the image, in strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T18:07:06.074460+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "a3380eca8c79dd5d47853f7b31c310047a6e955d",
+  "announcements": []
+}

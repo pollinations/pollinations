@@ -1,6 +1,6 @@
 # Data Processing Addendum
 
-**Version: 2026-10-09 — Internal draft; not part of the customer Terms.**
+**Version: 2026-10-12 — Internal draft; not part of the customer Terms.**
 
 This working document is excluded from the website. It is not offered to customers or incorporated into the Terms. Supplier coverage and operational measures have not been established; the public provider disclosure is an inventory, not an approved contractual annex.
 
@@ -92,6 +92,14 @@ The following reflects the published Privacy Policy and must be reconciled with 
 - Restricted backups: published policy states a **30–90-day rotation**; coverage and enforcement must be confirmed.
 
 Image requests may use **POST /v1/images/generations** with a JSON body instead of placing the prompt in the caller's URL. POST does not guarantee that internal routing, provider systems, image metadata, telemetry, or caches contain no prompt-derived data. The standard service offers no verified zero-logging or private-cache guarantee in this draft.
+
+### Gemma 4 route review — 2026-10-12
+
+Gemma 4 26B A4B and 31B exchange the order of existing providers: DeepInfra becomes primary; direct Novita BF16 becomes the 26B fallback, while OpenRouter pinned to Novita BF16 with gateway fallbacks disabled becomes the 31B fallback. Data includes text, images/image URLs, tool definitions/results, settings, outputs, and usage metadata. Remote 26B image URLs are fetched and converted to inline image data by the existing gateway transform. Pollinations cache and billing retention are unchanged.
+
+[DeepInfra’s public privacy policy](https://deepinfra.com/privacy) identifies DeepInfra, Inc., describes US processing, and states inference inputs/outputs are not stored or used for training without consent. [OpenRouter’s provider directory](https://openrouter.ai/providers/) lists Novita with no training and zero prompt retention; [Novita’s privacy policy](https://novita.ai/legal/privacy-policy) separately describes account/technical records and possible international transfers. These published statements do not verify the exact account settings, all processing countries, supplier agreement coverage, or executed transfer safeguards for these routes; those remain unknown pending operator review.
+
+Before production activation, confirm account-specific terms/settings and locations, and assess applicable notice/objection requirements. The published Privacy Policy requires reasonable notice for material changes; the Terms require reasonable prior notice for material adverse changes and preserve separately agreed DPAs. This internal draft’s proposed 14-day notice is not itself an effective customer agreement. No notice delivery or contractual approval is established by this PR.
 
 ## Annex B — Technical and organisational measures
 

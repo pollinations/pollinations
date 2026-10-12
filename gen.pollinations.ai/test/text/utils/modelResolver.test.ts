@@ -741,8 +741,6 @@ describe("resolveModelConfig", () => {
             "mistralai/mistral-small-3.2-24b-instruct",
             "deepinfra/fp8",
         ],
-        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
-        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         ["xiaomi/mimo-v2.6-flash", "xiaomi/mimo-v2.6-flash", "xiaomi/fp8"],
@@ -766,6 +764,45 @@ describe("resolveModelConfig", () => {
             only: [provider],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Gemma 4 26B A4B directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-26b-a4b-it",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-26B-A4B-it");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Gemma 4 31B directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-31b-it",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-31B-it");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Gemma 4 26B A4B fallback directly to Novita with inline images", () => {
+        const result = resolveModelConfig(messages, {
+            model: "google/gemma-4-26b-a4b-it:novita",
+        });
+
+        expect(result.options.model).toBe("google/gemma-4-26b-a4b-it");
+        expect(result.options.modelConfig).toMatchObject({
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            requiresBase64ImageUrls: true,
+        });
+        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {

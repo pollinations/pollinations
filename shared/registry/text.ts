@@ -1200,7 +1200,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-26b-a4b-it": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [
             "gemma-4",
             "gemma-4-26b",
@@ -1208,17 +1208,18 @@ const TEXT_BASE_SERVICES = {
             "gemma-4-26b-a4b-it",
             "gemma",
         ],
-        provider: "openrouter",
+        provider: "deepinfra",
         addedDate: new Date("2026-05-08").getTime(),
         publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
-            promptTextTokens: perMillion(0.13) * 1.055,
-            promptImageTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.4) * 1.055,
+            // DeepInfra google/gemma-4-26B-A4B-it rates (2026-10-12). Accepts
+            // remote image URLs natively, so no edge base64 conversion needed.
+            promptTextTokens: perMillion(0.07),
+            promptImageTokens: perMillion(0.07),
+            completionTextTokens: perMillion(0.34),
         },
         title: "Gemma 4 26B A4B",
         description:
@@ -1231,19 +1232,20 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-31b-it": {
-        supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: ["gemma-large", "gemma-4-31b-it", "gemma-4-31b"],
-        provider: "openrouter",
+        provider: "deepinfra",
         addedDate: new Date("2026-07-18").getTime(),
         publisher: "Google",
         category: "text",
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
-            promptTextTokens: perMillion(0.14) * 1.055,
-            promptImageTokens: perMillion(0.14) * 1.055,
-            completionTextTokens: perMillion(0.4) * 1.055,
+            // DeepInfra google/gemma-4-31B-it rates (2026-10-12). Accepts remote
+            // image URLs natively, so no edge base64 conversion needed.
+            promptTextTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.2),
+            completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
         description: "Dense multimodal reasoning with configurable thinking",

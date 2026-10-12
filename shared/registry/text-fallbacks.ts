@@ -409,26 +409,28 @@ export const TEXT_FALLBACKS = {
         },
     },
     "google/gemma-4-26b-a4b-it": {
-        "google/gemma-4-26b-a4b-it:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
+        "google/gemma-4-26b-a4b-it:novita": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+            provider: "novita",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.07),
-                promptImageTokens: perMillion(0.07),
-                completionTextTokens: perMillion(0.34),
+                // Direct Novita BF16; image URLs are converted to inline data.
+                promptTextTokens: perMillion(0.13),
+                promptImageTokens: perMillion(0.13),
+                completionTextTokens: perMillion(0.4),
             },
         },
     },
     "google/gemma-4-31b-it": {
-        "google/gemma-4-31b-it:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
+        "google/gemma-4-31b-it:openrouter:novita-bf16": {
+            supportedParameters: CHAT_PARAMETERS.openRouterGemma,
+            provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.13),
-                promptImageTokens: perMillion(0.13),
-                completionTextTokens: perMillion(0.38),
+                // OpenRouter Novita BF16 endpoint.
+                promptTextTokens: perMillion(0.14) * 1.055,
+                promptImageTokens: perMillion(0.14) * 1.055,
+                completionTextTokens: perMillion(0.4) * 1.055,
             },
         },
     },

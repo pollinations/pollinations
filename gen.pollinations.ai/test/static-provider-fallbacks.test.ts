@@ -20,6 +20,7 @@ import {
     textCapabilityError,
 } from "../src/text/fallbackCompatibility.ts";
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
+import { resolveModelConfig } from "../src/text/utils/modelResolver.ts";
 
 const OPENROUTER_ROUTES = [
     [
@@ -35,6 +36,11 @@ const OPENROUTER_ROUTES = [
     [
         "meta/llama-4-scout:openrouter:novita-bf16",
         "meta-llama/llama-4-scout",
+        "novita/bf16",
+    ],
+    [
+        "google/gemma-4-31b-it:openrouter:novita-bf16",
+        "google/gemma-4-31b-it",
         "novita/bf16",
     ],
     ["x-ai/grok-4.20:openrouter:xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
@@ -1243,7 +1249,30 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("preserves the Gemma31B Novita pin against caller routing overrides", async () => {
+        const model = "google/gemma-4-31b-it:openrouter:novita-bf16";
+        const route = findModelByName(model);
+        const transformed = await route?.transform?.([], {
+            model,
+            provider: { only: ["unselected-provider"], allow_fallbacks: true },
+        });
+        if (!transformed) throw new Error("Gemma fallback transform missing");
+        expect(
+            resolveModelConfig([], transformed.options).options.provider,
+        ).toEqual({
+            only: ["novita/bf16"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("binds fallback-only text ids to their exact provider routes", () => {
+        expect(
+            findModelByName("google/gemma-4-26b-a4b-it:novita")?.config(),
+        ).toMatchObject({
+            model: "google/gemma-4-26b-a4b-it",
+            directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+            requiresBase64ImageUrls: true,
+        });
         expect(
             findModelByName("x-ai/grok-4.6:azure:sweden")?.config(),
         ).toMatchObject({

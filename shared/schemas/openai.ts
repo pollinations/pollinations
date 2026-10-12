@@ -674,19 +674,19 @@ export const ContentFilterResultSchema = z
     .object({
         hate: z.object({
             filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
+            severity: ContentFilterSeveritySchema.optional(),
         }),
         self_harm: z.object({
             filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
+            severity: ContentFilterSeveritySchema.optional(),
         }),
         sexual: z.object({
             filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
+            severity: ContentFilterSeveritySchema.optional(),
         }),
         violence: z.object({
             filtered: z.boolean(),
-            severity: ContentFilterSeveritySchema,
+            severity: ContentFilterSeveritySchema.optional(),
         }),
         jailbreak: z.object({
             filtered: z.boolean(),

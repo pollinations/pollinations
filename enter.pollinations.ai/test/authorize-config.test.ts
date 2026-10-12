@@ -37,19 +37,6 @@ describe("getAuthorizeInitialPermissions", () => {
         });
     });
 
-    it("leaves keys and machines unchecked for metadata-document clients", () => {
-        const permissions = ["profile", "usage", "keys", "machines"];
-        expect(
-            getAuthorizeInitialPermissions({
-                permissions,
-                metadataClient: true,
-            }).accountPermissions,
-        ).toEqual(["profile", "usage"]);
-        expect(
-            getAuthorizeInitialPermissions({ permissions }).accountPermissions,
-        ).toEqual(permissions);
-    });
-
     it("drops legacy balance scope after the merge with usage", () => {
         expect(
             getAuthorizeInitialPermissions({

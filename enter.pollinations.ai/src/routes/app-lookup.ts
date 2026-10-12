@@ -4,7 +4,6 @@ import {
 } from "@shared/auth/api-key-metadata.ts";
 import { isClientMetadataUrl } from "@shared/auth/authorize-config.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
-import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -36,32 +35,6 @@ async function resolveAttribution(
         appName: keyRow.name,
         redirectUris,
         earningsEnabled: meta.earningsEnabled === true,
-    };
-}
-
-/**
- * A Client ID Metadata Document client has no pk_ owner: its identity is the
- * host serving the document. These clients only use the code flow, so the
- * redirect must be present and match exactly.
- */
-async function resolveMetadataClient(clientId: string, redirectUri?: string) {
-    const metadata = await fetchClientMetadata(clientId);
-    if (!metadata) return { found: false as const };
-    if (
-        !redirectUri ||
-        !redirectUriMatchesAllowlistExact(redirectUri, metadata.redirectUris)
-    ) {
-        return {
-            found: false as const,
-            error: "redirect_uri_mismatch" as const,
-        };
-    }
-    return {
-        found: true as const,
-        clientId,
-        clientHost: new URL(clientId).hostname,
-        appName: metadata.clientName,
-        redirectUris: metadata.redirectUris,
     };
 }
 
@@ -116,9 +89,18 @@ export const appLookupRoutes = new Hono<Env>().get(
             return c.json({ found: false });
         }
         if (isClientMetadataUrl(resolvedAppKey)) {
-            return c.json(
-                await resolveMetadataClient(resolvedAppKey, redirectUri),
-            );
+            // A metadata-document client has no pk_ owner: the host serving
+            // the document vouches for it. The document is public, so no
+            // redirect check here; the consent page and POST /api/oauth/code
+            // match the redirect exactly.
+            const metadata = await fetchClientMetadata(resolvedAppKey);
+            if (!metadata) return c.json({ found: false });
+            return c.json({
+                found: true,
+                clientHost: new URL(resolvedAppKey).hostname,
+                appName: metadata.clientName,
+                redirectUris: metadata.redirectUris,
+            });
         }
 
         const db = drizzle(c.env.DB, { schema });

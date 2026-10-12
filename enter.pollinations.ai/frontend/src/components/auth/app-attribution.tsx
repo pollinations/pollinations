@@ -34,8 +34,6 @@ export function AppAttribution({
     const unknown = !attribution?.appName;
     const displayName = attribution?.appName || "Unknown app";
     const owner = attribution?.githubUsername;
-    // A metadata-document client is vouched for by the host serving it.
-    const clientHost = attribution?.clientHost;
     const hostname = redirectUrl?.hostname ?? "";
     // Link the site itself, never the redirect URL and its OAuth parameters.
     // Native app schemes have no site to open.
@@ -72,7 +70,7 @@ export function AppAttribution({
                         </Text>
                     </Line>
                 )}
-                {(owner || clientHost) && (
+                {(owner || attribution?.clientHost) && (
                     <li className="flex min-h-6 items-center gap-3">
                         {/* "by" takes the icon column, so the pill starts with the other lines' text. */}
                         <Text
@@ -96,7 +94,7 @@ export function AppAttribution({
                                 tone="strong"
                                 className="break-all font-mono"
                             >
-                                {clientHost}
+                                {attribution?.clientHost}
                             </Text>
                         )}
                     </li>

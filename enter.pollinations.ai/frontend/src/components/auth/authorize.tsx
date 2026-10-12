@@ -105,7 +105,6 @@ export function Authorize() {
             budget,
             expiry,
             permissions: urlScope,
-            metadataClient: isMetadataClient,
         }),
     );
     const { setAccountPermissions } = keyPermissions;

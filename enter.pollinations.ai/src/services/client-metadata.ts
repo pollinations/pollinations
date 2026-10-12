@@ -16,11 +16,6 @@ const ClientMetadataSchema = z.object({
     token_endpoint_auth_method: z.literal("none").optional(),
 });
 
-export type ClientMetadata = {
-    clientName: string;
-    redirectUris: string[];
-};
-
 /**
  * OAuth Client ID Metadata Document (draft-ietf-oauth-client-id-metadata-document,
  * MCP 2026-07-28): the client_id is an https URL serving the client's name
@@ -30,7 +25,7 @@ export type ClientMetadata = {
  */
 export async function fetchClientMetadata(
     clientId: string,
-): Promise<ClientMetadata | null> {
+): Promise<{ clientName: string; redirectUris: string[] } | null> {
     try {
         const url = new URL(clientId);
         // href equality rejects dot segments, a missing path and other

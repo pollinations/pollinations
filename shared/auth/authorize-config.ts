@@ -17,7 +17,6 @@ type AuthorizeDefaultsInput = {
     budget?: number | null;
     expiry?: number | null;
     permissions?: string[] | null;
-    metadataClient?: boolean;
 };
 
 /**
@@ -27,12 +26,6 @@ type AuthorizeDefaultsInput = {
 export function isClientMetadataUrl(clientId: string | undefined): boolean {
     return !!clientId?.startsWith("https://");
 }
-
-/**
- * Anyone can publish a metadata document, so these scopes stay unchecked for
- * metadata clients even when requested. The user can still tick them.
- */
-export const METADATA_CLIENT_UNCHECKED_SCOPES = ["keys", "machines"];
 
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
@@ -104,18 +97,11 @@ export function getAuthorizeInitialPermissions({
     budget,
     expiry,
     permissions,
-    metadataClient,
 }: AuthorizeDefaultsInput) {
     return {
         allowedModels: models,
         pollenBudget: budget ?? DEFAULT_CONSENT_BUDGET,
         expiryDays: expiry ?? DEFAULT_CONSENT_EXPIRY_DAYS,
-        accountPermissions: sanitizeAuthorizeAccountPermissions(
-            metadataClient
-                ? permissions?.filter(
-                      (p) => !METADATA_CLIENT_UNCHECKED_SCOPES.includes(p),
-                  )
-                : permissions,
-        ),
+        accountPermissions: sanitizeAuthorizeAccountPermissions(permissions),
     };
 }

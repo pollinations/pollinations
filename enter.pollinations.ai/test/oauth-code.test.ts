@@ -563,20 +563,13 @@ describe("Client ID Metadata Document clients", () => {
         expect(codeRes.status).toBe(400);
     }, 30000);
 
-    test("app-lookup names the client and its host, bound to the redirect", async () => {
+    test("app-lookup names the client and its host", async () => {
         serveClientMetadata();
-        const lookup = (redirectUri: string) =>
-            SELF.fetch(
-                `${BASE}/api/app-lookup?client_id=${encodeURIComponent(CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}`,
-            ).then((res) => res.json());
-
-        expect(await lookup("http://localhost:8080/callback")).toEqual({
-            found: false,
-            error: "redirect_uri_mismatch",
-        });
-        expect(await lookup("http://127.0.0.1:8080/callback")).toEqual({
+        const res = await SELF.fetch(
+            `${BASE}/api/app-lookup?client_id=${encodeURIComponent(CLIENT_ID)}`,
+        );
+        expect(await res.json()).toEqual({
             found: true,
-            clientId: CLIENT_ID,
             clientHost: "client.example",
             appName: "Example MCP Client",
             redirectUris: ["http://127.0.0.1/callback"],

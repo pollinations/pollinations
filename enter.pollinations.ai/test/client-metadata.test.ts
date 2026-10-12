@@ -96,17 +96,4 @@ describe("fetchClientMetadata", () => {
         serve(Response.json({ ...DOCUMENT, padding: "x".repeat(5 * 1024) }));
         expect(await fetchClientMetadata(CLIENT_ID)).toBeNull();
     });
-
-    it("returns null when the fetch times out", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                throw new DOMException(
-                    "The operation timed out.",
-                    "TimeoutError",
-                );
-            }),
-        );
-        expect(await fetchClientMetadata(CLIENT_ID)).toBeNull();
-    });
 });

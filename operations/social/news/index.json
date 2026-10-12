@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-11T21:41:22.007531+00:00",
+  "generated_at": "2026-10-12T00:51:01.685206+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -8886,58 +8886,6 @@
       "text": "Chat with Pollinations text models, including OpenAI, Mistral, and Gemini options. [Try it](https://pollinations-chatbot.vercel.app).",
       "prs": [
         14750
-      ],
-      "app": true,
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-11",
-      "emoji": "🤖",
-      "title": "Managed code agents",
-      "text": "Create a managed code agent from a public GitHub repository’s root `agent.ts`, with a commit-pinned runtime and caller-funded AI SDK helpers.",
-      "prs": [
-        14622
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-11",
-      "emoji": "🎯",
-      "title": "Check model parameter support",
-      "text": "Chat model listings now show verified `supported_parameters`, so you can check a model’s options before sending a request. [Browse models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        14640
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-09-11",
-      "emoji": "🎨",
-      "title": "Polli Visual Studio",
-      "text": "Polli gained Visual Studio rendering, complexity-based model routing, and full-page image capture.",
-      "prs": [
-        14722
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-11",
-      "emoji": "📱",
-      "title": "Build apps with NewEra",
-      "text": "Turn a plain-English app idea into a planned, coded, built, and deployed application with NewEra AI Agent. [Try it](https://newera.namansoni.in).",
-      "prs": [
-        14724
-      ],
-      "app": true,
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-11",
-      "emoji": "✨",
-      "title": "Explore looks with Ziban",
-      "text": "Use AI to visualize how fashion items might fit your personal style before buying. [Try it](https://ziban.pages.dev).",
-      "prs": [
-        14733
       ],
       "app": true,
       "kind": "product"

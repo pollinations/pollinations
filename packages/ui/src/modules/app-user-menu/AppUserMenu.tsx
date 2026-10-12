@@ -5,7 +5,7 @@ import {
     useAuthActions,
     useAuthState,
 } from "@pollinations/sdk/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { cn } from "../../lib/cn.ts";
 import { BrandMark } from "../../primitives/BrandMark.tsx";
@@ -28,6 +28,8 @@ export type AppUserMenuLabels = {
     permissions: string;
     buyPollen: string;
     logout: string;
+    disconnecting: string;
+    disconnected: string;
 };
 
 export type AppUserMenuProps = {
@@ -44,6 +46,8 @@ const defaultLabels: AppUserMenuLabels = {
     permissions: "Permissions",
     buyPollen: "Buy Pollen",
     logout: "Disconnect",
+    disconnecting: "Disconnecting…",
+    disconnected: "App disconnected.",
 };
 
 const CONNECT_SIZES = {
@@ -64,8 +68,11 @@ export function AppUserMenu({
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const size = CONNECT_SIZES[connectSize];
-    const { logout, enterUrl } = useAuthActions();
+    const { disconnect, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
+    const [disconnecting, setDisconnecting] = useState(false);
+    const [disconnectError, setDisconnectError] = useState<string | null>(null);
+    const [disconnected, setDisconnected] = useState(false);
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const key = useAccountKey({ enabled: isLoggedIn });
     // The wallet is shown only for an unlimited key that may read it; ask only then.
@@ -117,7 +124,7 @@ export function AppUserMenu({
     return (
         <div
             data-theme="accent"
-            className="polli:flex polli:shrink-0 polli:justify-end"
+            className="polli:flex polli:shrink-0 polli:flex-col polli:items-end polli:gap-2"
         >
             {!isLoggedIn ? (
                 <LoginButton
@@ -190,20 +197,45 @@ export function AppUserMenu({
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"
-                                onClick={() => {
-                                    close();
-                                    logout();
+                                disabled={disconnecting}
+                                onClick={async () => {
+                                    setDisconnecting(true);
+                                    setDisconnectError(null);
+                                    setDisconnected(false);
+                                    try {
+                                        await disconnect();
+                                        setDisconnected(true);
+                                    } catch (error) {
+                                        setDisconnectError(
+                                            error instanceof Error
+                                                ? error.message
+                                                : "Could not disconnect this app. Try again.",
+                                        );
+                                    } finally {
+                                        setDisconnecting(false);
+                                        close();
+                                    }
                                 }}
                             >
                                 <PowerIcon
                                     className="polli:h-4 polli:w-4 polli:shrink-0"
                                     aria-hidden="true"
                                 />
-                                {labels.logout}
+                                {disconnecting
+                                    ? labels.disconnecting
+                                    : labels.logout}
                             </DropdownItem>
                         </>
                     )}
                 </AccountMenu>
+            )}
+            {disconnectError && (
+                <p role="alert" className="polli:max-w-80 polli:text-sm">
+                    {disconnectError}
+                </p>
+            )}
+            {disconnected && !isLoggedIn && (
+                <output className="polli:text-sm">{labels.disconnected}</output>
             )}
         </div>
     );

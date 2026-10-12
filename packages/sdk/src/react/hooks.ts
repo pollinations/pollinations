@@ -61,13 +61,13 @@ export function useAuthState(): AuthStateValue {
     );
 }
 
-/** Login/logout actions and provider settings. */
+/** Login, local logout, key revocation, and provider settings. */
 export function useAuthActions(): AuthActionsValue {
-    const { login, logout, setApiKey, enterUrl, apiBaseUrl } =
+    const { login, logout, disconnect, setApiKey, enterUrl, apiBaseUrl } =
         useRequiredAuth();
     return useMemo(
-        () => ({ login, logout, setApiKey, enterUrl, apiBaseUrl }),
-        [login, logout, setApiKey, enterUrl, apiBaseUrl],
+        () => ({ login, logout, disconnect, setApiKey, enterUrl, apiBaseUrl }),
+        [login, logout, disconnect, setApiKey, enterUrl, apiBaseUrl],
     );
 }
 

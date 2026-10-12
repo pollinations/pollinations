@@ -15,6 +15,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
   of throwing a JSON `SyntaxError`.
 
+## [5.1.0-alpha.15] - 2026-10-12
+
+### Added
+- React auth `disconnect()` revokes the current secret key before clearing the
+  saved connection; `logout()` remains local cleanup only.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

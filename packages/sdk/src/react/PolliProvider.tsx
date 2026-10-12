@@ -6,6 +6,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { pollinationsErrorFromResponse } from "../error-response.js";
 import type { AccountPermission } from "../types.js";
 import {
     AuthContext,
@@ -253,6 +254,7 @@ export function PolliProvider({
             }
             setApiKey(nextApiKey);
             setError(storageError);
+            return storageError;
         },
         [storage, storageKey],
     );
@@ -403,6 +405,27 @@ export function PolliProvider({
         updateApiKey(null);
     }, [updateApiKey]);
 
+    const disconnect = useCallback(async () => {
+        if (!apiKey) return;
+        const response = await fetch(
+            `${resolvedApiBaseUrl.replace(/\/$/, "")}/account/key`,
+            {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${apiKey}` },
+                signal: AbortSignal.timeout(15_000),
+            },
+        );
+        // An expired or previously revoked key already has no access.
+        if (!response.ok && response.status !== 401) {
+            throw await pollinationsErrorFromResponse(response);
+        }
+        if (updateApiKey(null)) {
+            throw new Error(
+                "App access removed, but the saved key could not be cleared from this browser.",
+            );
+        }
+    }, [apiKey, resolvedApiBaseUrl, updateApiKey]);
+
     const authValue = useMemo<AuthContextValue>(
         () => ({
             apiKey,
@@ -411,6 +434,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            disconnect,
             setApiKey: updateApiKey,
             enterUrl,
             apiBaseUrl: resolvedApiBaseUrl,
@@ -421,6 +445,7 @@ export function PolliProvider({
             error,
             login,
             logout,
+            disconnect,
             updateApiKey,
             enterUrl,
             resolvedApiBaseUrl,

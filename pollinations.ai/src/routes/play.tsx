@@ -49,7 +49,8 @@ function PlayPage() {
 
 /**
  * Before connecting, the sentence itself connects (the playground's Generate
- * button does too); once connected, the account menu shows below it.
+ * button does too). Keep the menu mounted after hydration so disconnect
+ * feedback stays visible after the connection is cleared.
  */
 function PlayHero() {
     const { isLoggedIn, isHydrated } = useAuthState();
@@ -84,7 +85,7 @@ function PlayHero() {
                 }
                 variant="page"
             />
-            {isLoggedIn && (
+            {isHydrated && (
                 <div className="self-start">
                     <AppUserMenu labels={{ logout: "Disconnect app" }} />
                 </div>

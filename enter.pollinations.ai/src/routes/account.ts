@@ -1896,6 +1896,33 @@ export const accountRoutes = new Hono<Env>()
             return c.json({ success: true });
         },
     )
+    .delete(
+        "/key",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Disconnect Current Key",
+            description:
+                "Revoke the secret API key authenticating this request. No account permissions are required. Only that key is deleted; other keys and the account remain unchanged. Publishable keys, session tokens, and agent run tokens cannot use this endpoint.",
+            responses: {
+                200: { description: "Current key revoked" },
+                401: { description: "Unauthorized" },
+                403: { description: "A secret API key is required" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const { apiKey, rawApiKey } = c.var.auth;
+            if (!apiKey || !rawApiKey?.startsWith("sk_")) {
+                throw new HTTPException(403, {
+                    message: "Only a secret API key can disconnect itself",
+                });
+            }
+            await drizzle(c.env.DB)
+                .delete(apikeyTable)
+                .where(eq(apikeyTable.id, apiKey.id));
+            return c.json({ success: true });
+        },
+    )
     .get(
         "/key",
         describeRoute({

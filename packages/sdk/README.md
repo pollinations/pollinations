@@ -201,6 +201,10 @@ return `{ data, isLoading, error, refresh }`.
   hook's `error`; call `refresh()` to try again.
 - `useAuth().error` reports storage and login failures. You can call `login()`
   again after a failed attempt. A key that could not be saved works until reload.
+- `await disconnect()` revokes the current secret key, then clears the local
+  connection. Failed revocation rejects and keeps the key for retry. An already
+  invalid key (`401`) is cleared locally. Browser cleanup failures also reject,
+  but the revoked key no longer grants access.
 - `logout()` clears the local connection without revoking the key. If deleting
   the saved key fails, `error` reports it and the key may return after a reload.
 

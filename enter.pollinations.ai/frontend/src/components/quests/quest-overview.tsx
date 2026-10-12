@@ -21,7 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -30,7 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
@@ -205,7 +205,7 @@ async function loadQuestData(): Promise<QuestData> {
     const [catalogResponse, rewardsResponse, standingsResponse] =
         await Promise.all([
             apiClient.quests.catalog.$get(),
-            apiClient.quests.rewards.$get(),
+            accountClient.quests.rewards.$get(),
             apiClient.quests.standings.$get(),
         ]);
     if (!catalogResponse.ok) {
@@ -444,8 +444,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned
@@ -603,6 +605,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -662,7 +665,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -700,7 +703,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
@@ -708,6 +711,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            void router.invalidate({
+                filter: (match) => match.routeId === "/_dashboard",
+            });
             const questData = await loadQuestData();
             setState((current) => ({
                 ...current,

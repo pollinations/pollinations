@@ -54,7 +54,6 @@ const PVIDEO_ASPECT_RATIOS = [
     "2:3",
     "1:1",
 ] as const;
-type PVideoAspectRatio = (typeof PVIDEO_ASPECT_RATIOS)[number];
 
 interface PImageInput {
     prompt: string;
@@ -83,7 +82,7 @@ interface PVideoInput {
     resolution: "720p" | "1080p";
     duration: number;
     image?: string;
-    aspect_ratio?: PVideoAspectRatio;
+    aspect_ratio?: string;
     fps?: 24 | 48;
     seed?: number;
 }
@@ -306,12 +305,15 @@ async function generatePrunaVideo(
         // ignored by the upstream in this mode.
         input.image = await toDataUri(images[0]);
     } else {
-        // Text-to-video: pick the closest supported aspect ratio.
-        input.aspect_ratio = closestRatioLogSpace(
-            safeParams.width || 1024,
-            safeParams.height || 1024,
-            PVIDEO_ASPECT_RATIOS,
-        );
+        // Text-to-video: the requested aspect ratio as-is (Replicate rejects
+        // unsupported ones), else the closest supported one to width/height.
+        input.aspect_ratio =
+            safeParams.aspectRatio ??
+            closestRatioLogSpace(
+                safeParams.width || 1024,
+                safeParams.height || 1024,
+                PVIDEO_ASPECT_RATIOS,
+            );
     }
 
     if (safeParams.fps) input.fps = safeParams.fps >= 36 ? 48 : 24;

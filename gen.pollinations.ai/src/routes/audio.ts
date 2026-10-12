@@ -4113,11 +4113,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        assertTranscriptionResponseFormat(
-            responseFormat,
-            "whisper model",
-            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-        );
+        assertTranscriptionResponseFormat(responseFormat, "whisper model", [
+            ...UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            "srt",
+            "vtt",
+        ]);
 
         const whisperFormData = new FormData();
         const filename =
@@ -4129,12 +4129,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "model",
             isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
         );
-        whisperFormData.append(
-            isDeepInfra
-                ? "timestamp_granularities"
-                : "timestamp_granularities[]",
-            "word",
-        );
+        if (isDeepInfra) {
+            // DeepInfra returns segments either way, and drops words when
+            // both granularities are requested.
+            whisperFormData.append("timestamp_granularities", "word");
+        } else {
+            // OVH leaves segments empty unless asked; srt/vtt cues are those.
+            whisperFormData.append("timestamp_granularities[]", "word");
+            whisperFormData.append("timestamp_granularities[]", "segment");
+        }
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4660,7 +4663,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",

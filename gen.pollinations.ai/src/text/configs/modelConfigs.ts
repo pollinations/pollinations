@@ -290,6 +290,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
     }),
     "grok-4.7": () => ({
         provider: "openai",

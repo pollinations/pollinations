@@ -1,4 +1,4 @@
-name: Data / Snapshot GitHub stars
+name: Data / Snapshot GitHub stars and app submissions
 
 on:
   schedule:
@@ -22,6 +22,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
-      - run: node operations/kpi/scripts/snapshot-stars.mjs
+      - run: node operations/kpi/scripts/snapshot-github.mjs
         env:
           GH_TOKEN: ${{ github.token }}

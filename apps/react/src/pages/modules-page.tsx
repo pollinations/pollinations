@@ -626,7 +626,7 @@ export function ModulesPage() {
                     </section>
 
                     <InlineLink
-                        href="https://playground.pollinations.ai"
+                        href="https://pollinations.ai/play"
                         size="sm"
                         className="self-start"
                     >

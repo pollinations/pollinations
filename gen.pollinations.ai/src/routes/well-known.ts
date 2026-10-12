@@ -3,8 +3,8 @@ import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
-import API_SKILL from "../../../packages/polli-cli/SKILL-API.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 
 // Agent Skills discovery (RFC 8615 well-known URI), schema v0.2.0:

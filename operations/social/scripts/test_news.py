@@ -20,6 +20,7 @@ import deliver
 import posts
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
                     monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+from contributors import github_account, rank_contributors
 from discord_pr import generate_snippet
 from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
                   enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
@@ -457,6 +458,70 @@ def gist(number, merged_at, tier="daily"):
                      "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
 
 
+class ContributorsTest(unittest.TestCase):
+    def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        user = lambda user_id, login, kind="User", created="2020-01-01T00:00:00Z": {
+            "id": user_id, "login": login, "type": kind, "created_at": created,
+            "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        github = {
+            "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
+            "user/1": user(1, "voodoohop"),
+            "user/555": user(555, "art-otakus", "Organization"),  # an agent guessed someone else's id...
+            "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
+            "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
+            "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+            "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
+            "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
+            "users/Tolerable": user(2303, "Tolerable"),           # an app submitter named by login only
+            "users/pixArt": user(4040, "pixArt", created="2026-08-17T00:00:00Z"),  # the name taken later
+            "users/voodoohop": user(1, "voodoohop"),
+            "users/thomash": user(1145, "ThomasH"),               # a stranger: thomash is Thomas's git alias
+        }
+        prs = [
+            {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             # Thomas's own git alias: credits voodoohop, who already has this PR, not the stranger.
+             "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
+            {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+                        "url": "https://github.com/apps/pollinations-ai"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             "mergeCommit": {"message": (
+                 "Co-authored-by: Pix <pixArt@users.noreply.github.com>\n"
+                 "Add app\n\n"
+                 "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
+                 "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
+                 "Co-authored-by: Claude <noreply@anthropic.com>\n"
+                 "Co-authored-by: Tolerable <Tolerable@users.noreply.github.com>\n"  # the bot's submitter
+                 "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
+                 "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
+                 "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
+                 "Co-authored-by: MentatBot <160+MentatBot@users.noreply.github.com>\n"
+             )}},
+            # The same account under an earlier login still counts once, by its id.
+            {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
+            {"author": None, "mergeCommit": None},
+        ]
+        with patch("contributors.github_account", side_effect=lambda path, _token: github.get(path)):
+            ranked = rank_contributors(prs, "test")
+        # No credit: pixArt (the account did not exist yet), the placeholder account (sharktide's
+        # 909) and the app's own bot as a co-author (bots count as PR authors only).
+        self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "av12345")
+        self.assertEqual(ranked[4]["url"], "gh/TechMitten")
+        self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
+
+        # A rate limit or outage stops the count; only a 404 means the account is gone.
+        with patch("contributors.github_api_request") as api:
+            api.return_value.status_code = 403
+            with self.assertRaises(RuntimeError):
+                github_account("user/403-test", "test")
+            api.return_value.status_code = 404
+            self.assertIsNone(github_account("user/404-test", "test"))
+
+
 class PostsTest(unittest.TestCase):
     """posts.py on fixtures: its model calls and pictures, and the files it saves."""
 
@@ -468,6 +533,8 @@ class PostsTest(unittest.TestCase):
         for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
                                                 "GITHUB_REPOSITORY": "pollinations/pollinations",
                                                 "DISCORD_MODELS_ROLE_ID": "42"}),
+                        patch("posts.month_counts", side_effect=lambda month, token, repository: {
+                            "month": month, "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]}),
                         patch("time.sleep")):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -578,11 +645,16 @@ class PostsTest(unittest.TestCase):
                                                            "prs": [{"number": 1, "date": day}]})
                 calls, images, saved = self.new("monthly", "2026-09", **reply)
                 base = f"{NEWS_REL_DIR}/monthly/2026-09"
-                self.assertEqual(sorted(saved), [f"{base}/images/cover.jpg", f"{base}/summary.json"])
+                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/images/cover.jpg",
+                                                 f"{base}/summary.json"])
+                self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
+                                 {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
                 self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7])
                 self.assertIn("Day 2026-09-30", calls[0][1])
                 self.assertNotIn("Day 2026-10-01", calls[0][1])
                 self.assertEqual([image[0] for image in images], [picture])
+        # A month without daily summaries writes no page but still has its counts.
+        self.assertEqual(sorted(self.new("monthly", "2026-08")[2]), [f"{NEWS_REL_DIR}/monthly/2026-08/contributors.json"])
 
     def test_model_post_and_a_week_without_changes_saves_only_the_snapshot(self):
         previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],

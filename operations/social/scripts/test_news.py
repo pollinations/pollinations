@@ -18,15 +18,14 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
 import posts
-from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
-                    monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
-from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from api_changes import api_changes, api_changes_for_pr, api_surface
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
+                    filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
 from contributors import github_account, rank_contributors
-from build_news_index import api_entries, build_index, highlight_entries, model_entries
-from publish_realtime import generate_snippet
-from model_announcements import announced_retirements, model_changes, pr_comparison_refs
-from update_readme import get_top_highlights
+from discord_pr import generate_snippet
+from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
+                  enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
+from news_index import api_entries, build_index, highlight_entries, model_entries
+from readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
@@ -77,10 +76,10 @@ class GistEnrichmentTest(unittest.TestCase):
             if args[0] == sys.executable:
                 Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
                     {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=run) as commands, \
+        with patch("gist.subprocess.run", side_effect=run) as commands, \
              patch.object(Path, "is_dir", return_value=False), \
-             patch("model_announcements.pr_comparison_refs", return_value=("before", "after")), \
-             patch("model_announcements.announcements_for_pr", return_value=[]):
+             patch("gist.pr_comparison_refs", return_value=("before", "after")), \
+             patch("gist.announcements_for_pr", return_value=[]):
             enrich_gist({}, pr, ["README.md"], "test")
             self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
             commands.reset_mock()
@@ -88,7 +87,7 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
 
-    def test_enrichment_preserves_social_payload_and_records_failure(self):
+    def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
               "body": "Existing description", "merge_commit_sha": "abc", "labels": []}
         ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
@@ -96,21 +95,20 @@ class GistEnrichmentTest(unittest.TestCase):
         gist = build_full_gist(pr, ai, [])
         original = copy.deepcopy(gist)
         def classification(args, **kwargs):
-            Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
-                {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=classification):
+            if args[0] == sys.executable:  # not `npm ci`, which runs when tsx isn't installed
+                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
+                    {"area": "Models", "type": "Feature", "source": "Team"}))
+        with patch("gist.subprocess.run", side_effect=classification):
             enrich_gist(gist, pr, [], "test")
         self.assertEqual(gist["gist"], original["gist"])
         self.assertEqual(gist["image"], original["image"])
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.subprocess.run", side_effect=OSError()), \
-             patch("model_announcements.pr_comparison_refs", side_effect=ValueError()):
-            enrich_gist(gist, pr, ["shared/registry/text.ts"], "test")
-        self.assertEqual(gist["enrichment"], {"classification": "failed", "models": "failed"})
-        self.assertIsNone(gist["type"])
-        self.assertEqual(gist["gist"], original["gist"])
-        self.assertEqual(validate_gist(gist), [])
-        gist["enrichment"]["classification"] = "complete"
+        # A failed classification or model-change lookup stops the gist: nothing is saved or posted.
+        with patch("gist.subprocess.run", side_effect=OSError()), self.assertRaises(OSError):
+            enrich_gist(copy.deepcopy(original), pr, [], "test")
+        with patch("gist.subprocess.run", side_effect=classification), \
+             patch("gist.pr_comparison_refs", side_effect=ValueError()), self.assertRaises(ValueError):
+            enrich_gist(copy.deepcopy(original), pr, ["shared/registry/text.ts"], "test")
         gist.update(area="Models", type="Question", source="Team")
         self.assertIn("invalid type", validate_gist(gist))
 
@@ -126,17 +124,16 @@ class GistEnrichmentTest(unittest.TestCase):
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "1"}}],
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
-            context = {**gist, "merge_commit_sha": "unused-commit", "enrichment": {"models": "complete"}}
+        with patch("gist.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
+            context = {**gist, "merge_commit_sha": "unused-commit"}
             self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
             self.assertIn('"image": "2"', analysis.call_args.args[1])
             self.assertNotIn("unused-commit", analysis.call_args.args[1])
-            self.assertNotIn('"enrichment"', analysis.call_args.args[1])
         self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
         self.assertNotIn("image_prompt", gist["gist"])
         self.assertNotIn("pr_body_excerpt", gist)
-        with patch("generate_realtime.generate_image", return_value=(b"image", None)) as image, \
-             patch("generate_realtime.commit_image_to_branch", return_value="https://example.com/image.jpg"):
+        with patch("gist.generate_image", return_value=(b"image", None)) as image, \
+             patch("gist.commit_image_to_branch", return_value="https://example.com/image.jpg"):
             self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
                              "https://example.com/image.jpg")
             image.assert_called_once_with(ai["image_prompt"], "test")
@@ -145,13 +142,13 @@ class GistEnrichmentTest(unittest.TestCase):
         old["pr_body_excerpt"] = "Old excerpt"
         self.assertEqual(filter_daily_gists([gist, old]), [gist, old])
         def realtime(g):
-            with patch("publish_realtime.call_pollinations_api", return_value='{"arcs": []}') as api:
+            with patch("discord_pr.call_pollinations_api", return_value='{"arcs": []}') as api:
                 generate_snippet(g, "test")
             return api.call_args.args[1]
         for module, prompt in (
             ("daily", lambda g: daily_summary_input([g], "2026-10-07")),
             ("weekly", lambda g: weekly_digest_input([g], "2026-10-01", "2026-10-07")),
-            ("publish_realtime", realtime),
+            ("discord_pr", realtime),
         ):
             new_prompt = prompt(gist)
             self.assertEqual(prompt(old), new_prompt)
@@ -160,7 +157,7 @@ class GistEnrichmentTest(unittest.TestCase):
                 self.assertIn(fact, new_prompt)
             self.assertNotIn("Old excerpt", new_prompt)
             # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
-            check = self.assertIn if module == "publish_realtime" else self.assertNotIn
+            check = self.assertIn if module == "discord_pr" else self.assertNotIn
             for value in ('"announcements"', '"image": "2"'):
                 check(value, new_prompt)
         broken = copy.deepcopy(gist)
@@ -457,6 +454,17 @@ def gist(number, merged_at, tier="daily"):
             "area": "Models", "type": "Feature", "source": "Team", "image": {"prompt": "Bee"},
             "gist": {"category": "feature", "user_facing": True, "publish_tier": tier, "importance": "major",
                      "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
+
+
+class TextCallTest(unittest.TestCase):
+    def test_a_failed_or_empty_answer_is_asked_once_and_stops_the_caller(self):
+        answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
+        for response, expected in ((answer("Hello"), "Hello"), (answer(""), None), (answer(None), None),
+                                   (reply(503), None)):
+            with self.subTest(response=response.status_code), \
+                 patch("common.requests.post", return_value=response) as post:
+                self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
+                self.assertEqual(post.call_count, 1)
 
 
 class ContributorsTest(unittest.TestCase):

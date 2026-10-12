@@ -404,6 +404,39 @@ test("the public feed gets each public generation as the VM sent it, and nothing
     expect(head.text).toBe("");
 });
 
+test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its events", async () => {
+    const hub = env.FEED_HUB.getByName("backlog");
+    const stalled = (
+        await hub.fetch("https://feed-hub.invalid/")
+    ).body.getReader();
+    const reading = (
+        await hub.fetch("https://feed-hub.invalid/")
+    ).body.getReader();
+    const event = `data: ${"x".repeat(400_000)}\n\n`;
+    const readEvent = async () => {
+        let bytes = 0;
+        while (bytes < event.length)
+            bytes += (await reading.read()).value.byteLength;
+        return bytes;
+    };
+    // The fifth event finds more than 1 MB still waiting for the stalled one
+    for (let i = 0; i < 5; i++) {
+        await hub.publish(event);
+        expect(await readEvent()).toBe(event.length);
+    }
+    // The stalled listener's stream ends in an error once it is cut off
+    await expect(
+        (async () => {
+            while (!(await stalled.read()).done);
+        })(),
+    ).rejects.toThrow();
+    const count = () =>
+        runInDurableObject(hub, (feedHub) => feedHub.writers.size);
+    expect(await count()).toBe(1);
+    await reading.cancel();
+    await hub.publish("data: after\n\n");
+    await expect.poll(count).toBe(0);
+});
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
     const etag = 'W/"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"';
     // The live 304 of 2026-10-12, without the edge's headers

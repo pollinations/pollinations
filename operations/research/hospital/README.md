@@ -75,22 +75,22 @@ Iteration 3 harness:
 - the box key can't change key budgets;
 - a free version-bump check runs at admission.
 
-The run stopped early when the account ran out of paid Pollen. See
-`runs/3/REPORT.md`.
+See `runs/3/REPORT.md`.
 
 | Case | Kind | Outcome | Pollen |
 |---|---|---|---:|
 | #17200 | PR review | changes requested at admission: no `polli-cli` version bump | 0 |
 | #17201 | PR review | changes requested at admission: no `ui` version bump | 0 |
-| #17045 | PR review | plan review asked for a rework, because the red run would reach the live provider; the reworked workup was refused when the account ran out of paid Pollen | 2.56 |
+| #17045 | PR review | discharged after one rework: plan review blocked a red run that would reach the live provider, and the rework stubbed it offline | 8.00 |
 
-- Cost: about 2.7 Pollen.
+- Cost: about 8.2 Pollen. The account ran out of paid Pollen mid-run; Thomas
+  had 100 credited, and the case was reopened.
 - The same version-bump check flags 22 of 26 open non-draft package PRs.
 
 ## Next questions
 
-- Is about 3.7 Pollen per discharged one-line PR worth it, compared with one
-  independent review pass?
+- Is 3.7 to 8 Pollen per discharged small PR worth it, compared with one
+  independent review pass? One rework doubles the cost.
 - Should the driver check the account's paid balance before a run, and list
   PRs that fix the same issue at admission?
 - Is the #17082 review worth posting on the PR? The runs are dry runs, so

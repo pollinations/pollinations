@@ -80,6 +80,7 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
         ...overrides,
     });
 }
@@ -139,6 +140,17 @@ export function createOpenRouterModelConfig(
         directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         responsesEndpoint: "https://openrouter.ai/api/v1/responses",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        ...overrides,
+    };
+}
+
+export function createNovitaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        authKey: textEnvironmentValue("NOVITA_API_KEY"),
         ...overrides,
     };
 }

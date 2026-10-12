@@ -141,6 +141,8 @@ export type BillingAdjustmentRule = BillingRateDefinition & {
 
 export type BillingRules = {
     adjustments?: BillingAdjustmentRule[];
+    /** Complete provider charge, including tools, when token details cannot reproduce it. */
+    resolveTotalCost?: (output: unknown) => number | undefined;
 };
 
 // Per-rule billing breakdown, returned in parallel to the numeric usage maps.
@@ -197,11 +199,6 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
-    // When this model or route stops being served (ms epoch), set only when
-    // known: a provider's published retirement, or our own decision to retire
-    // it. Exact cutoff when the provider gives one, else the start of the day.
-    // Fallback routes never inherit it.
-    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
@@ -220,7 +217,9 @@ export type ModelDefinition = {
     contextLength?: number;
     voices?: string[];
     isSpecialized?: boolean;
-    paidOnly?: boolean; // Models that require paid balance only
+    // True when callers may only spend Paid Pollen; false when Quest Pollen
+    // also works. Required on every model — there is no implicit default.
+    paidOnly: boolean;
     alpha?: boolean; // Experimental models with potential instability
     // Flat per-generation pricing (one fee per request, independent of output
     // size/length). Lets the pricing UI show a "/gen" badge instead of guessing
@@ -237,10 +236,10 @@ export type ModelDefinition = {
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
     videoCapabilities?: VideoCapability[]; // Video-only: which frame controls the provider supports
-    minDuration?: number; // Video-only: minimum accepted duration in seconds
-    maxDuration?: number; // Video-only: maximum accepted duration in seconds
+    minDuration?: number; // Video and audio: minimum accepted duration in seconds
+    maxDuration?: number; // Video and audio: maximum accepted duration in seconds
     defaultDuration?: number; // Video-only: duration when caller omits the param
-    allowedDurations?: number[]; // Video-only: explicit set of valid durations (overrides min/max range)
+    allowedDurations?: number[]; // Video and audio: explicit set of valid durations (overrides min/max range)
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
@@ -250,6 +249,8 @@ export type ModelDefinition = {
     supportsStructuredOutput?: boolean;
     /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
     supportsJsonMode?: boolean;
+    /** False when the upstream has no SSE; Gen buffers `stream: true` calls. */
+    supportsStreaming?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -480,9 +481,19 @@ function rateAgainst(
         totalPrice: roundPollenLedgerAmount(tokenTotalPrice + adjustmentPrice),
     };
 
+    // Opt-in provider totals include search; adjustments remain an informational breakdown.
+    const reportedCost = svc.billing?.resolveTotalCost?.(output);
+
     return {
-        cost,
-        price,
+        cost: reportedCost === undefined ? cost : { totalCost: reportedCost },
+        price:
+            reportedCost === undefined
+                ? price
+                : {
+                      totalPrice: roundPollenLedgerAmount(
+                          reportedCost * svc.priceMultiplier,
+                      ),
+                  },
         adjustments,
         priceDefinition: derivePrice(effectiveCost, svc.priceMultiplier),
         costVariant,

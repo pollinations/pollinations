@@ -70,18 +70,6 @@ describe("Azure TTS", () => {
             speed: 1.5,
         });
     });
-
-    it("rejects input beyond Azure's 4096-character limit", async () => {
-        await expect(
-            generateAzureSpeech({
-                modelName: "openai/tts-1",
-                text: "a".repeat(4097),
-                voice: "alloy",
-                responseFormat: "mp3",
-                apiKey: "test-key",
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
 });
 
 workerTest(

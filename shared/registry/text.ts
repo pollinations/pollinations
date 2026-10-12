@@ -6,7 +6,8 @@ import {
 } from "./cost-variants";
 import {
     GEMINI_3_SEARCH_BILLING,
-    GEMINI_25_GROUNDING_BILLING,
+    openRouterGeminiBilling,
+    reportedTextCost,
     withVertexCacheStorage,
 } from "./gemini-billing";
 import { mergeFallbacks } from "./merge-fallbacks";
@@ -44,8 +45,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -69,8 +71,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-02-09").getTime(),
+        // Provider retires this route on 2027-02-09.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.05),
             promptCachedTokens: perMillion(0.005),
@@ -95,6 +98,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.05),
             completionTextTokens: perMillion(0.18),
@@ -143,8 +147,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(1.75),
             promptCachedTokens: perMillion(0.175),
@@ -177,8 +182,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-09-02").getTime(),
+        // Provider retires this route on 2027-09-02.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.5),
             promptCachedTokens: perMillion(0.25),
@@ -235,8 +241,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-15").getTime(),
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -265,8 +272,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-05-02").getTime(),
-        retirementDate: new Date("2027-10-26").getTime(),
+        // Provider retires this route on 2027-10-26.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -321,11 +329,12 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         // OpenRouter's standard OpenAI endpoint discounts Azure output more
         // deeply than input/cache. One third matches its output rate and keeps
         // the other dimensions below that endpoint under a uniform multiplier.
         priceMultiplier: 1 / 3,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -379,8 +388,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -434,8 +444,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.02),
@@ -489,8 +500,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-09-04").getTime(),
-        retirementDate: new Date("2028-01-11").getTime(),
+        // Provider retires this route on 2028-01-11.
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(10.0),
             promptCachedTokens: perMillion(1.0),
@@ -768,9 +780,11 @@ const TEXT_BASE_SERVICES = {
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Azure model catalog; the retirement schedule says 2026-10-16.
-        retirementDate: new Date("2026-10-13").getTime(),
+        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
+        // 2026-10-13 and its retirement schedule 2026-10-16.
+        // Provider retires this route on 2026-10-09.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.8),
             completionTextTokens: perMillion(3.2),
@@ -882,8 +896,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        retirementDate: new Date("2027-06-15").getTime(),
+        // Provider retires this route on 2027-06-15.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.6),
             completionTextTokens: perMillion(2.4),
@@ -912,8 +927,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "text",
         addedDate: new Date("2026-04-02").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             // Azure GPT Audio 1.5 Global meters, verified against account
             // usage and Retail Prices on 2026-08-24.
@@ -1069,24 +1085,21 @@ const TEXT_BASE_SERVICES = {
     "google/gemini-2.5-flash-lite": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini25,
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
-        provider: "google",
+        provider: "vercel",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-12-18").getTime(),
-        // Vertex AI model versions.
-        retirementDate: new Date("2026-10-20").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.1), // per 1M tokens
             promptCachedTokens: perMillion(0.01), // per 1M tokens
             promptCacheWriteTokens: perMillion(0.1), // per 1M tokens
-            promptAudioTokens: perMillion(0.3), // per 1M tokens
+            promptAudioTokens: perMillion(0.1), // per 1M tokens
             promptImageTokens: perMillion(0.1), // per 1M tokens
             promptVideoTokens: perMillion(0.1), // per 1M tokens
             completionTextTokens: perMillion(0.4), // per 1M tokens
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
         title: "Gemini 2.5 Flash Lite",
         description:
             "Cheapest way to handle everyday multimodal tasks; trades depth for speed",
@@ -1095,7 +1108,7 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
         maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
         tools: true,
-        search: true,
+        search: false,
         contextLength: 1048576,
         isSpecialized: false,
     },
@@ -1114,8 +1127,9 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         // Azure model catalog and retirement schedule (Preview).
-        retirementDate: new Date("2026-12-03").getTime(),
+        // Provider retires this route on 2026-12-03.
         priceMultiplier: 0.75,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             // Azure Global Standard "V4 Flash 0731" meters (2026-09-23).
@@ -1140,6 +1154,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
@@ -1287,8 +1302,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
-        retirementDate: new Date("2027-04-06").getTime(),
+        // Provider retires this route on 2027-04-06.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0),
             promptCachedTokens: perMillion(0.2),
@@ -1311,8 +1327,9 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-05-26").getTime(),
-        retirementDate: new Date("2027-05-12").getTime(),
+        // Provider retires this route on 2027-05-12.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(1.25),
             promptCachedTokens: perMillion(0.2),
@@ -1338,7 +1355,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        retirementDate: new Date("2027-08-24").getTime(),
+        // Provider retires this route on 2027-08-24.
         paidOnly: false,
         priceMultiplier: 0.75,
         // Microsoft Foundry Global Standard rates, published August 26, 2026.
@@ -1420,7 +1437,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {
-        supportedParameters: CHAT_PARAMETERS.vertexGeminiSearch,
+        supportedParameters: [...CHAT_PARAMETERS.gemini25, "reasoning_effort"],
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -1432,25 +1449,29 @@ const TEXT_BASE_SERVICES = {
             "gemini-3.5-flash-search",
             "gemini-search",
         ],
-        provider: "google",
+        provider: "openrouter",
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
-        // Vertex AI model versions.
-        retirementDate: new Date("2026-10-20").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Vertex base rates for Gemini 2.5 Flash Lite.
+        // AI Studio rates plus the OpenRouter credit-purchase fee.
         cost: {
-            promptTextTokens: perMillion(0.1),
-            promptCachedTokens: perMillion(0.01),
-            promptCacheWriteTokens: perMillion(0.1),
-            promptAudioTokens: perMillion(0.3),
-            promptImageTokens: perMillion(0.1),
-            promptVideoTokens: perMillion(0.1),
-            completionTextTokens: perMillion(0.4),
+            promptTextTokens: perMillion(0.1) * 1.055,
+            promptCachedTokens: perMillion(0.01) * 1.055,
+            promptCacheWriteTokens: perMillion(0.1) * 1.055,
+            promptAudioTokens: perMillion(0.3) * 1.055,
+            promptImageTokens: perMillion(0.1) * 1.055,
+            promptVideoTokens: perMillion(0.1) * 1.055,
+            completionTextTokens: perMillion(0.4) * 1.055,
         },
-        billing: withVertexCacheStorage(GEMINI_25_GROUNDING_BILLING, 1.0),
+        billing: {
+            ...openRouterGeminiBilling({
+                searchCostPerThousandRequests: 7 * 1.055,
+                storageCostPerMillionTokenHours: 1 * 1.055,
+            }),
+            resolveTotalCost: reportedTextCost(1.055),
+        },
         title: "Google Gemini 2.5 Flash Lite Search",
         description:
             "Answers grounded in live web search; fast and cheap, not a deep reasoner",
@@ -1591,6 +1612,61 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "openai/gpt-6-luna-decisions": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        priceMultiplier: 1, // Public pricing follows the direct OpenAI rate.
+        paidOnly: true,
+        cost: {
+            // Direct OpenAI Decisions: $0.10/M input through 272K tokens.
+            // Output and cache are free; the long-context tier is below.
+            promptTextTokens: perMillion(0.1),
+            completionTextTokens: perMillion(0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.2),
+                    completionTextTokens: perMillion(0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 input tokens; OpenAI doubles the input rate for the full request.",
+                },
+            },
+            "≤272K context",
+            [
+                {
+                    key: "context",
+                    label: "Context",
+                    unit: "tokens",
+                    values: { "": "≤272K", long_context: ">272K" },
+                },
+            ],
+        ),
+        title: "GPT-6 Luna Decisions",
+        description:
+            "Typed answers with probabilities and confidence instead of " +
+            "generated text, billed on input tokens only; post state and " +
+            "questions to /alpha/decisions, or send the same JSON in the " +
+            "last user message on /v1/chat/completions. Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 1050000,
+        isSpecialized: true,
+    },
     "pollinations/midijourney": {
         supportedParameters: CHAT_PARAMETERS.azureGptMini,
         aliases: ["midijourney"],
@@ -1599,8 +1675,9 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         // Its Azure gpt-5.4-mini route.
-        retirementDate: new Date("2027-09-21").getTime(),
+        // Provider retires this route on 2027-09-21.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.75),
             promptCachedTokens: perMillion(0.075),
@@ -1621,8 +1698,9 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         // Its Azure gpt-5.5 route.
-        retirementDate: new Date("2027-10-26").getTime(),
+        // Provider retires this route on 2027-10-26.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(5.0),
             promptCachedTokens: perMillion(0.5),
@@ -1690,6 +1768,66 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
         contextLength: 200000,
+        isSpecialized: false,
+    },
+    "anthropic/claude-haiku-5.5": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "aws",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global standard rates (prompts up to 100K tokens);
+            // 5-minute cache writes.
+            promptTextTokens: perMillion(0.1),
+            promptCachedTokens: perMillion(0.01),
+            promptCacheWriteTokens: perMillion(0.125),
+            completionTextTokens: perMillion(0.5),
+        },
+        // Prompts over 100K tokens bill every token of the request at 5x
+        // input and cache rates and 5x output.
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(0.5),
+                    promptCachedTokens: perMillion(0.05),
+                    promptCacheWriteTokens: perMillion(0.625),
+                    completionTextTokens: perMillion(2.5),
+                },
+            },
+            longContextAbove(100_000),
+            {
+                long_context: {
+                    label: "Long context (>100K)",
+                    description:
+                        "More than 100,000 prompt tokens; the higher rates apply to the whole request.",
+                },
+            },
+            "≤100K context",
+            [
+                {
+                    "key": "context",
+                    "label": "Context",
+                    "unit": "tokens",
+                    "values": {
+                        "": "≤100K",
+                        "long_context": ">100K",
+                    },
+                },
+            ],
+        ),
+        title: "Claude Haiku 5.5",
+        description:
+            "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-4.6": {
@@ -1881,6 +2019,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-opus-5.5:fast": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Research preview: Anthropic's fast mode for Opus 5.5 at 2x standard
+        // rates, served by OpenRouter's anthropic/fast endpoint (2026-10-10).
+        // Costs include OpenRouter's 5.5% credit fee. Cache writes use the
+        // 5-minute rate.
+        cost: {
+            promptTextTokens: perMillion(8) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            promptCacheWriteTokens: perMillion(10) * 1.055,
+            completionTextTokens: perMillion(40) * 1.055,
+        },
+        title: "Claude Opus 5.5 Fast",
+        description:
+            "Higher output speed for interactive coding and agentic work, at premium pricing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Same image limit as Opus 5.5.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "anthropic/claude-fable-5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoSampling,
         aliases: ["claude-fable-5"],
@@ -1996,8 +2163,9 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
         // Azure model catalog and retirement schedule (Preview).
-        retirementDate: new Date("2027-04-16").getTime(),
+        // Provider retires this route on 2027-04-16.
         priceMultiplier: 1,
+        paidOnly: false,
         // Azure Global Standard "K2.6 Thinking" meters (2026-09-23).
         cost: {
             promptTextTokens: perMillion(0.95),
@@ -2164,16 +2332,16 @@ const TEXT_BASE_SERVICES = {
     "inclusionai/ling-3.1-flash": {
         supportedParameters: CHAT_PARAMETERS.openRouterLing31,
         aliases: [],
-        provider: "openrouter",
+        provider: "novita",
+        perUserRpm: 8,
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
         cost: {
-            // Free on OpenRouter's Novita endpoint at launch (verified
-            // 2026-10-02: usage.cost 0 on prompt, reasoning and tool calls).
-            // Set real rates once OpenRouter publishes them.
+            // Free during the launch promotion on direct Novita and both
+            // gateway routes. Paid pricing belongs in a separate cutover PR.
             promptTextTokens: perMillion(0),
             promptCachedTokens: perMillion(0),
             completionTextTokens: perMillion(0),
@@ -2182,6 +2350,58 @@ const TEXT_BASE_SERVICES = {
         description:
             "Hybrid reasoning mixture-of-experts for agentic workflows with tool use and long context",
         inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-mini": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexMini,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.025) * 1.055,
+            promptCachedTokens: perMillion(0.0025) * 1.055,
+            completionTextTokens: perMillion(0.1) * 1.055,
+        },
+        title: "Nex N2.5 Mini",
+        description:
+            "Compact agentic coding model with image input and switchable reasoning",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: true,
+        contextLength: 262144,
+        isSpecialized: false,
+    },
+    "nex-agi/nex-n2.5-pro": {
+        supportedParameters: CHAT_PARAMETERS.openRouterNexPro,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Nex AGI",
+        category: "text",
+        addedDate: new Date("2026-10-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter Nex AGI endpoint rates (2026-10-03), including the
+            // mandatory 5.5% OpenRouter credit fee.
+            promptTextTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.015) * 1.055,
+            completionTextTokens: perMillion(0.25) * 1.055,
+        },
+        title: "Nex N2.5 Pro",
+        description:
+            "Agentic coding model with a visual feedback loop for multi-file changes, tool use and image input",
+        inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
@@ -2527,6 +2747,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.035),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2552,6 +2773,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.33),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2563,7 +2785,7 @@ const TEXT_BASE_SERVICES = {
         title: "Nova 2 Lite",
         description:
             "Budget-friendly reasoning with room for very long documents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -2690,6 +2912,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-05-01").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.71),
             completionTextTokens: perMillion(0.71),
@@ -2802,6 +3025,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
@@ -2878,6 +3102,33 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "mistralai/mistral-large-4": {
+        supportedParameters: CHAT_PARAMETERS.mistralLarge4,
+        aliases: [],
+        provider: "mistral",
+        publisher: "Mistral",
+        category: "text",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Mistral direct API launch rates (docs.mistral.ai, 2026-10-06):
+            // list price is $1.36 / $0.14 cached / $4.18 per million, shown
+            // at half until the discount ends.
+            promptTextTokens: perMillion(0.68),
+            promptCachedTokens: perMillion(0.07),
+            completionTextTokens: perMillion(2.09),
+        },
+        title: "Mistral Large 4",
+        description:
+            "Frontier multimodal model for reasoning, coding and agentic workloads with a 512K context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 524288,
+        isSpecialized: false,
+    },
     "mistralai/mistral-large-3": {
         supportedParameters: CHAT_PARAMETERS.azureOpenModels,
         aliases: ["mistral-large-3", "mistral-large"],
@@ -2886,6 +3137,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-04-09").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.5),
             promptCachedTokens: perMillion(0.05),
@@ -3317,8 +3569,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.52) * 1.055,
+            promptTextTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:
@@ -3343,7 +3595,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Qwen",
         addedDate: new Date("2026-05-15").getTime(),
         // Alibaba Model Studio notice on postponed legacy retirements.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        // Provider retires this route on 2026-10-10T00:00:00+08:00.
         paidOnly: true,
         priceMultiplier: 1,
         category: "text",
@@ -3362,6 +3614,34 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         reasoning: true,
         contextLength: 131072,
+        isSpecialized: false,
+    },
+    "stepfun/step-5-preview": {
+        supportedParameters: CHAT_PARAMETERS.step5,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "StepFun",
+        category: "text",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1, // Billed at cost, no margin.
+        cost: {
+            // OpenRouter stepfun/step-5-preview posted rates (2026-10-08):
+            // prompt $1.00/M, cache read $0.05/M, completion $2.70/M, plus
+            // OpenRouter's 5.5% credit fee.
+            promptTextTokens: perMillion(1) * 1.055,
+            promptCachedTokens: perMillion(0.05) * 1.055,
+            completionTextTokens: perMillion(2.7) * 1.055,
+        },
+        title: "StepFun Step 5 Preview",
+        description:
+            "Agentic coding and long-document analysis with tool calling and image input",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        // Reasoning is mandatory, at low, medium or high effort (default medium).
+        reasoning: true,
+        contextLength: 1000000,
         isSpecialized: false,
     },
     "stepfun/step-3.7-flash": {
@@ -3429,6 +3709,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.01),
             completionTextTokens: perMillion(0.01),

@@ -120,10 +120,11 @@ async function generateText(params, context) {
         }
 
         if (assistantMessage?.audio) {
+            const format = audio?.format || "mp3";
             responseContent.push({
                 type: "audio",
                 data: assistantMessage.audio.data,
-                mimeType: `audio/${audio?.format || "mp3"}`,
+                mimeType: format === "mp3" ? "audio/mpeg" : `audio/${format}`,
             });
             if (assistantMessage.audio.transcript) {
                 responseContent.push(
@@ -154,6 +155,7 @@ async function generateText(params, context) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
+                    logprobs: choice?.logprobs,
                 },
                 true,
             ),
@@ -174,8 +176,9 @@ const messageSchema = z.object({
         ),
     content: z
         .union([z.string(), z.array(z.any())])
+        .nullish()
         .describe(
-            "Message content. String for text, or array for multimodal (images, audio, video)",
+            "Message content. String for text, or array for multimodal (images, audio, video). May be null or omitted for assistant tool calls",
         ),
     name: z
         .string()

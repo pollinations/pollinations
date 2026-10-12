@@ -1,13 +1,35 @@
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { rewards as rewardsTable } from "@shared/db/better-auth.ts";
-import { and, eq, gte, inArray, isNotNull, like, sql } from "drizzle-orm";
+import {
+    and,
+    eq,
+    gte,
+    inArray,
+    isNotNull,
+    lt,
+    notInArray,
+    sql,
+} from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
+import { ADMIN_USER_IDS } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { TOP_UP_QUEST_IDS } from "../services/quests/groups/account-setup.ts";
+import { BYOM_QUEST_IDS } from "../services/quests/groups/agent-usage.ts";
+import { BYOP_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
+
+// Every quest reward counts except the BYOP app-growth and BYOM model/agent
+// rewards, which pay for other people using what you built.
+const EXCLUDED_QUEST_IDS = [...BYOP_QUEST_IDS, ...BYOM_QUEST_IDS];
+
+// Admins don't compete (see isAdminUser in auth.ts).
+const NOT_ADMIN = and(
+    notInArray(schema.user.id, ADMIN_USER_IDS),
+    sql`coalesce(${schema.user.role}, '') not like '%admin%'`,
+);
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
 const LEADERBOARD_CACHE_TTL = 60;
@@ -39,7 +61,7 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
         summary: "Get Quest Leaderboard",
         security: [],
         description:
-            "Returns public aggregate totals and top contributors for completed GitHub POLLEN-QUEST issue rewards.",
+            "Returns public aggregate totals and top contributors for quest rewards, except BYOP app-growth and BYOM model and agent rewards.",
         responses: {
             200: {
                 description: "Quest leaderboard",
@@ -67,9 +89,9 @@ export const questLeaderboardRoutes = new Hono<Env>().get(
 );
 
 /**
- * Aggregate every completed public GitHub quest first, then cap only the
- * returned ranking. This keeps the public totals global even after the board
- * grows beyond the presentation limit.
+ * Aggregate every counted reward first, then cap only the returned ranking.
+ * This keeps the public totals global even after the board grows beyond the
+ * presentation limit.
  */
 async function buildQuestLeaderboard(
     env: CloudflareBindings,
@@ -92,24 +114,19 @@ async function buildQuestLeaderboard(
         .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
         .where(
             and(
-                like(rewardsTable.questId, "github:issue:%"),
+                notInArray(rewardsTable.questId, EXCLUDED_QUEST_IDS),
                 isNotNull(schema.user.githubUsername),
+                NOT_ADMIN,
             ),
         )
         .groupBy(githubLogin);
 
     const contributors = rows
-        .flatMap((row) =>
-            row.githubLogin
-                ? [
-                      {
-                          githubLogin: row.githubLogin,
-                          completedQuests: row.completedQuests,
-                          totalPollen: roundPollenLedgerAmount(row.totalPollen),
-                      },
-                  ]
-                : [],
-        )
+        .map((row) => ({
+            githubLogin: row.githubLogin,
+            completedQuests: row.completedQuests,
+            totalPollen: roundPollenLedgerAmount(row.totalPollen),
+        }))
         .sort(
             (a, b) =>
                 b.totalPollen - a.totalPollen ||
@@ -141,6 +158,9 @@ export const questStandingRowSchema = z.object({
     githubLogin: z.string(),
     totalPollen: z.number().nonnegative(),
     supporter: z.boolean(),
+    // Places gained (+) or lost (-) since the start of today (UTC); null when
+    // the row was not on the board yet.
+    movement: z.number().int().nullable(),
 });
 
 export const questStandingsResponseSchema = z.object({
@@ -165,6 +185,8 @@ export type QuestStandingsResponse = z.infer<
  * This calendar month's (UTC) Quest Pollen race, cut down to what one viewer
  * needs: the podium plus the rows just above and below them. Every quest
  * reward counts. Supporters are earners of a top-up quest at any time.
+ * Movement compares each rank with the same race replayed up to the start of
+ * today (UTC), so it comes straight from the reward ledger.
  */
 export async function buildQuestStandings(
     env: CloudflareBindings,
@@ -177,6 +199,9 @@ export async function buildQuestStandings(
     const monthEnd = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
     );
+    const todayStart = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
     const db = drizzle(env.DB);
     const githubLogin = sql<string>`lower(${schema.user.githubUsername})`;
     const rows = await db
@@ -185,6 +210,10 @@ export async function buildQuestStandings(
             totalPollen: sql<number>`sum(${rewardsTable.pollenAmount})`.mapWith(
                 Number,
             ),
+            yesterdayPollen:
+                sql<number>`coalesce(sum(case when ${lt(rewardsTable.earnedAt, todayStart)} then ${rewardsTable.pollenAmount} end), 0)`.mapWith(
+                    Number,
+                ),
         })
         .from(rewardsTable)
         .innerJoin(schema.user, eq(rewardsTable.userId, schema.user.id))
@@ -192,21 +221,30 @@ export async function buildQuestStandings(
             and(
                 gte(rewardsTable.earnedAt, monthStart),
                 isNotNull(schema.user.githubUsername),
+                NOT_ADMIN,
             ),
         )
         .groupBy(githubLogin);
 
-    const ranking = rows
-        .map((row) => ({
-            githubLogin: row.githubLogin,
-            totalPollen: roundPollenLedgerAmount(row.totalPollen),
-        }))
-        .filter((row) => row.totalPollen > 0)
-        .sort(
-            (a, b) =>
-                b.totalPollen - a.totalPollen ||
-                a.githubLogin.localeCompare(b.githubLogin),
-        );
+    const rankBy = (pollen: (row: (typeof rows)[number]) => number) =>
+        rows
+            .map((row) => ({
+                githubLogin: row.githubLogin,
+                totalPollen: roundPollenLedgerAmount(pollen(row)),
+            }))
+            .filter((row) => row.totalPollen > 0)
+            .sort(
+                (a, b) =>
+                    b.totalPollen - a.totalPollen ||
+                    a.githubLogin.localeCompare(b.githubLogin),
+            );
+    const ranking = rankBy((row) => row.totalPollen);
+    const yesterdayRank = new Map(
+        rankBy((row) => row.yesterdayPollen).map((row, index) => [
+            row.githubLogin,
+            index + 1,
+        ]),
+    );
 
     const viewer = viewerGithubLogin?.toLowerCase() ?? null;
     const viewerIndex = ranking.findIndex((row) => row.githubLogin === viewer);
@@ -247,10 +285,14 @@ export async function buildQuestStandings(
         month: monthStart.toISOString().slice(0, 7),
         endsAt: monthEnd.toISOString(),
         participants: ranking.length,
-        rows: shown.map((row) => ({
-            ...row,
-            supporter: supporters.has(row.githubLogin),
-        })),
+        rows: shown.map((row) => {
+            const before = yesterdayRank.get(row.githubLogin);
+            return {
+                ...row,
+                supporter: supporters.has(row.githubLogin),
+                movement: before === undefined ? null : before - row.rank,
+            };
+        }),
         you: viewer
             ? {
                   githubLogin: viewer,

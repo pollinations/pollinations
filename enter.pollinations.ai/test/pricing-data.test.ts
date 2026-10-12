@@ -16,6 +16,7 @@ import {
     calculateBillingAdjustments,
     calculateCost,
     calculatePrice,
+    calculateUsageBilling,
     getCostDefinition,
     getModels,
     getPriceDefinition,
@@ -481,7 +482,6 @@ test.each([
     const models = getCatalogModelPrices();
     for (const [kind, unit] of [
         ["search_query", "/K queries"],
-        ["grounded_prompt", "/K prompts"],
         ["search_request", "/K req"],
     ]) {
         const model = models.find((item) =>
@@ -865,24 +865,15 @@ test("Gemini search cost follows each route's provider metadata", () => {
             },
         ],
     };
-    const vertex25SearchOutput = {
-        choices: [
-            {
-                groundingMetadata: {
-                    webSearchQueries: ["query one", "query two"],
-                },
-            },
-        ],
-    };
     const geminiSearchCost = calculateCost(
         "google/gemini-2.5-flash-lite:search",
         usage,
-        vertex25SearchOutput,
+        openRouterSearchOutput,
     );
     const geminiSearchPrice = calculatePrice(
         "google/gemini-2.5-flash-lite:search",
         usage,
-        vertex25SearchOutput,
+        openRouterSearchOutput,
     );
     const gemini3FlashCost = calculateCost(
         "google/gemini-3-flash-preview",
@@ -910,9 +901,9 @@ test("Gemini search cost follows each route's provider metadata", () => {
         { choices: [] },
     );
 
-    // Vertex 2.5 bills once per grounded prompt. priceMultiplier is 1×.
-    expect(geminiSearchCost.totalCost).toBeCloseTo(0.535, 8);
-    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.535, 8);
+    // Exa search costs $7 / 1K calls; all OpenRouter rates include 5.5%.
+    expect(geminiSearchCost.totalCost).toBeCloseTo(0.514 * 1.055, 8);
+    expect(geminiSearchPrice.totalPrice).toBeCloseTo(0.514 * 1.055, 8);
 
     // Direct Vertex costs exclude the public multiplier; OpenRouter fallback
     // costs include its 5.5% fee while keeping the same public quote.
@@ -1022,7 +1013,66 @@ test("Perplexity bills each web search it reports", () => {
     }
 });
 
-test("dedicated Vertex Gemini Search detects streamed grounding", () => {
+test("search fallback bills Vercel counters once and retains the OpenRouter quote", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const metadata = { gateway: { gatewayToolCalls: { exa_search: 2 } } };
+    for (const output of [
+        { choices: [{ message: { provider_metadata: metadata } }] },
+        {
+            streamEvents: [
+                { choices: [{ delta: { provider_metadata: metadata } }] },
+                { choices: [{ delta: { provider_metadata: metadata } }] },
+                { usage: { prompt_tokens: 100 } },
+            ],
+        },
+    ]) {
+        const billed = calculateUsageBilling({
+            model,
+            usage: {
+                promptTextTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+            servedBy: getRegistryModelDefinition(`${model}:vercel`),
+            quotedBy: getRegistryModelDefinition(model),
+            output,
+        });
+        expect(billed.cost.totalCost).toBeCloseTo(0.514, 8);
+        expect(billed.price.totalPrice).toBeCloseTo(0.514 * 1.055, 8);
+        expect(billed.adjustments).toMatchObject([{ units: 2, cost: 0.014 }]);
+    }
+});
+
+test("search routes use provider charges when video counters differ", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const terminal = {
+        usage: {
+            cost: 0.00734651,
+            server_tool_use_details: { web_search_requests: 1 },
+        },
+    };
+    for (const serving of [model, `${model}:vercel`] as const) {
+        for (const output of [terminal, { streamEvents: [{}, terminal] }]) {
+            const billed = calculateUsageBilling({
+                model,
+                usage: {
+                    promptTextTokens: 2990,
+                    promptCachedTokens: 1951,
+                    completionTextTokens: 55,
+                },
+                servedBy: getRegistryModelDefinition(serving),
+                quotedBy: getRegistryModelDefinition(model),
+                output,
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(
+                0.00734651 * (serving === model ? 1.055 : 1),
+                10,
+            );
+            expect(billed.price.totalPrice).toBeCloseTo(0.00734651 * 1.055, 7);
+        }
+    }
+});
+
+test("dedicated OpenRouter Gemini Search bills terminal search usage", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -1031,32 +1081,31 @@ test("dedicated Vertex Gemini Search detects streamed grounding", () => {
         streamEvents: [
             { choices: [{ delta: { content: "searching" } }] },
             {
+                usage: { server_tool_use_details: { web_search_requests: 2 } },
                 choices: [
                     {
-                        groundingMetadata: {
-                            webSearchQueries: ["query one", "query two"],
-                        },
+                        groundingMetadata: {},
                     },
                 ],
             },
         ],
     };
 
-    // Vertex reports grounding metadata on a streamed response event.
+    // OpenRouter reports cumulative search usage in its terminal event.
     expect(
         calculateCost(
             "google/gemini-2.5-flash-lite:search",
             usage,
             vertexStreamOutput,
         ).totalCost,
-    ).toBeCloseTo(0.535, 8);
+    ).toBeCloseTo(0.514 * 1.055, 8);
     expect(
         calculatePrice(
             "google/gemini-2.5-flash-lite:search",
             usage,
             vertexStreamOutput,
         ).totalPrice,
-    ).toBeCloseTo(0.535, 8);
+    ).toBeCloseTo(0.514 * 1.055, 8);
 });
 
 // Executable billing stays private; the public catalog receives only the
@@ -1163,22 +1212,27 @@ test("Google text model providers match their configured routes", () => {
         "google/gemini-3.7-flash",
         "google/gemini-3.8-flash",
         "google/gemini-3.5-flash-lite",
-        "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
-        "google/gemini-2.5-flash-lite:search",
     ] as const;
     const openRouterModels = [
+        "google/gemini-2.5-flash-lite:search",
         "google/gemini-3-flash-preview:openrouter:vertex-global",
         "google/gemini-3.7-flash:openrouter:vertex-global",
         "google/gemini-3.8-flash:openrouter:vertex-global",
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-3.1-pro-preview:openrouter:vertex-global",
     ] as const;
     const publicModels = new Map(
         getTextModelsInfo().map((model) => [model.name, model]),
     );
 
+    expect(
+        getRegistryModelDefinition("google/gemini-2.5-flash-lite").provider,
+    ).toBe("vercel");
+    expect(
+        getRegistryModelDefinition("google/gemini-2.5-flash-lite").search,
+    ).toBe(false);
     for (const model of openRouterModels) {
         const definition = getRegistryModelDefinition(model);
         expect(definition.provider, `${model} provider`).toBe("openrouter");
@@ -1203,7 +1257,6 @@ const OPENROUTER_QUEST_POLLEN_MODELS = new Set([
     "typesafe/jev-1.13",
     "jaredpalmer/kev-4b",
     "respan/span-01-lite",
-    "inclusionai/ling-3.1-flash",
 ]);
 
 test("caller-selectable OpenRouter models require paid balance", () => {
@@ -1280,7 +1333,7 @@ test("bedrock nova models price cache writes free and reads at 25% of input", ()
 
 test("OpenRouter Gemini adjustments use provider-reported cache and search usage", () => {
     const flashLiteFallback =
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu" as const;
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio" as const;
     const cacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition(flashLiteFallback),
         {
@@ -1340,7 +1393,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     for (const model of [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
         "google/gemini-3.5-flash-lite:openrouter:vertex-global",
-        "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+        "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-3.1-pro-preview:openrouter:vertex-global",
     ] as const) {
         expect(
@@ -1441,49 +1494,43 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     }
 });
 
-test("Vertex Gemini Search adjustments use grounding metadata", () => {
+test("OpenRouter Gemini Search adjustments include the credit fee", () => {
     const model = "google/gemini-2.5-flash-lite:search";
     const groundedPrompt = calculateBillingAdjustments(
         getRegistryModelDefinition(model),
         {
-            choices: [
-                {
-                    groundingMetadata: {
-                        webSearchQueries: ["query one", "query two"],
-                    },
-                },
-            ],
+            usage: { server_tool_use_details: { web_search_requests: 2 } },
         },
         model,
     );
     expect(groundedPrompt).toEqual([
         {
-            ruleId: "google.gemini_2.grounded_prompt.v1",
-            kind: "grounded_prompt",
-            unit: "prompt",
-            units: 1,
-            unitCost: 0.035,
-            cost: 0.035,
-            price: 0.035,
+            ruleId: "openrouter.google.web_search.v1",
+            kind: "search_request",
+            unit: "request",
+            units: 2,
+            unitCost: 0.007 * 1.055,
+            cost: 0.014 * 1.055,
+            price: 0.014 * 1.055,
         },
     ]);
 
     const cacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition(model),
         {
-            usage: { cache_creation_input_tokens: 1_000_000 },
+            usage: { prompt_tokens_details: { cache_write_tokens: 1_000_000 } },
         },
         model,
     );
     expect(cacheWrite).toEqual([
         {
-            ruleId: "google.vertex.cache_storage.v1",
+            ruleId: "openrouter.google.cache_storage.v1",
             kind: "cache_storage",
             unit: "token_hour",
             units: 1_000_000,
-            unitCost: 0.000001,
-            cost: 1,
-            price: 1,
+            unitCost: (1.055 / 1_000_000) * (5 / 60),
+            cost: (1.055 / 1_000_000) * (5 / 60) * 1_000_000,
+            price: (1.055 / 1_000_000) * (5 / 60) * 1_000_000,
         },
     ]);
 });
@@ -1510,29 +1557,23 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
-    const vertexModel = "google/gemini-2.5-flash-lite:search";
-    const vertexGeminiSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition(vertexModel),
+    const searchModel = "google/gemini-2.5-flash-lite:search";
+    const openRouterGeminiSearch = calculateBillingAdjustments(
+        getRegistryModelDefinition(searchModel),
         {
-            choices: [
-                {
-                    groundingMetadata: {
-                        webSearchQueries: ["current news"],
-                    },
-                },
-            ],
+            usage: { server_tool_use_details: { web_search_requests: 1 } },
         },
-        vertexModel,
+        searchModel,
     );
-    expect(vertexGeminiSearch).toEqual([
+    expect(openRouterGeminiSearch).toEqual([
         {
-            ruleId: "google.gemini_2.grounded_prompt.v1",
-            kind: "grounded_prompt",
-            unit: "prompt",
+            ruleId: "openrouter.google.web_search.v1",
+            kind: "search_request",
+            unit: "request",
             units: 1,
-            unitCost: 0.035,
-            cost: 0.035,
-            price: 0.035,
+            unitCost: 0.007 * 1.055,
+            cost: 0.007 * 1.055,
+            price: 0.007 * 1.055,
         },
     ]);
 
@@ -1557,9 +1598,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     // No grounding evidence → no adjustment entries.
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition(vertexModel),
+            getRegistryModelDefinition(searchModel),
             { choices: [] },
-            vertexModel,
+            searchModel,
         ),
     ).toEqual([]);
 });

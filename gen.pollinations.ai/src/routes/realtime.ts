@@ -34,7 +34,6 @@ import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
-import { keyPermissionsLink } from "@/middleware/auth.ts";
 import {
     reduceAdjustmentsToEventFields,
     requestIdentity,
@@ -43,8 +42,8 @@ import {
 import { RealtimeUsageSchema } from "@/schemas/realtime.ts";
 import { generateRandomId } from "@/util.ts";
 import {
-    checkBalance,
     releaseApiKeyBudgetReservation,
+    requireGenerationAccess,
     reserveApiKeyBudget,
 } from "@/utils/generation-access.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
@@ -56,7 +55,15 @@ type AzureRealtimeApiKey =
 // Deployment names are independent of the public model ids. Mini is in East
 // US 2 because Azure's Sweden Central control plane accepts the deployment but
 // its Realtime data plane currently rejects the exact model.
+const MAI_STREAMING_MODEL = "microsoft/mai-transcribe-2-streaming";
 const REALTIME_ROUTES = {
+    [MAI_STREAMING_MODEL]: {
+        endpoint:
+            "https://myceli-prod-swedencentral.services.ai.azure.com/mai/v1/realtime",
+        deployment: "mai-transcribe-2-streaming",
+        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+        intent: "transcription",
+    },
     "openai/gpt-realtime-2.1": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
@@ -100,6 +107,7 @@ type RealtimeBillingContext = {
     // reaches a realtime row without touching this file.
     identity: UserData & { userId: string };
     apiKeyPollenBalance?: number | null;
+    questPollenOnly?: boolean;
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelRequested: string;
@@ -125,17 +133,6 @@ type RealtimeBillingContext = {
     deductionAttempted: boolean;
     rateLimitConsumed: boolean;
 };
-
-function requireAllowedModel(c: Context<Env>, model: string): void {
-    const apiKey = c.var.auth.apiKey;
-    const allowedModels = apiKey?.permissions?.models;
-    if (apiKey && allowedModels && !allowedModels.includes(model)) {
-        const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
-        throw new HTTPException(403, {
-            message: `Model '${model}' is not allowed for this API key. Manage key permissions at ${link}`,
-        });
-    }
-}
 
 async function createSafetyIdentifier(
     userId: string,
@@ -326,7 +323,10 @@ function forwardMessage(
             onReject?.();
             return;
         }
-        if (isOpen(target)) target.send(transform?.(event.data) ?? event.data);
+        if (isOpen(target)) {
+            const payload = transform ? transform(event.data) : event.data;
+            if (payload !== null) target.send(payload ?? event.data);
+        }
     });
 }
 
@@ -860,6 +860,7 @@ async function settleRealtimeSession(
             apiKeyReservedAmount: tracking.apiKeyReservedAmount,
             byopClientKeyId: tracking.byopClientKeyId,
             modelPaidOnly: tracking.modelDefinition.paidOnly,
+            questPollenOnly: tracking.questPollenOnly,
         });
         c.var.balance.apiKeyReservation = undefined;
     }
@@ -1017,23 +1018,85 @@ function proxyRealtimeWebSockets(
 ): Response {
     const pair = new WebSocketPair();
     const [client, downstream] = Object.values(pair) as [WebSocket, WebSocket];
+    const mai = tracking.resolvedModelRequested === MAI_STREAMING_MODEL;
     const allowTranscription =
-        tracking.resolvedModelRequested === "openai/gpt-live-transcribe";
+        mai || tracking.resolvedModelRequested === "openai/gpt-live-transcribe";
+    const transcriptionModel = mai
+        ? MAI_STREAMING_MODEL
+        : "openai/gpt-live-transcribe";
+    const deployment = REALTIME_ROUTES[transcriptionModel].deployment;
+    let maiStarted = false;
+    let maiConfigured = false;
 
     downstream.binaryType = "arraybuffer";
     collectBillingEvents(c, upstream, tracking);
     forwardMessage(
         downstream,
         upstream,
-        (data) => validateClientRealtimeEvent(data, allowTranscription),
+        (data) => {
+            if (!mai)
+                return validateClientRealtimeEvent(data, allowTranscription);
+            const event = asRecord(parseEventData(data));
+            if (event.type === "session.update") {
+                if (maiStarted)
+                    return "MAI settings cannot change after audio starts.";
+                const session = asRecord(event.session);
+                const input = asRecord(asRecord(session.audio).input);
+                const format = asRecord(input.format);
+                const transcription = asRecord(input.transcription);
+                if (
+                    transcription.model !== undefined &&
+                    transcription.model !== MAI_STREAMING_MODEL
+                )
+                    return "MAI sessions cannot select another transcription model.";
+                if (
+                    session.type !== "transcription" ||
+                    format.type !== "audio/pcm" ||
+                    ![16000, 24000].includes(numeric(format.rate))
+                )
+                    return "MAI requires a transcription session and mono 16-bit PCM at 16000 or 24000 Hz.";
+                if (
+                    (input.turn_detection !== undefined &&
+                        input.turn_detection !== null) ||
+                    (input.noise_reduction !== undefined &&
+                        input.noise_reduction !== null)
+                )
+                    return "MAI supports manual commits; turn_detection and noise_reduction must be null.";
+                maiConfigured = true;
+                return null;
+            }
+            if (event.type === "input_audio_buffer.append") {
+                if (!maiConfigured)
+                    return "Send session.update before MAI audio.";
+                const inspected = inspectAudioBase64(event.audio, "pcm_24000");
+                if ("error" in inspected) return inspected.error;
+                if (inspected.audioSeconds <= 0)
+                    return "MAI requires nonempty PCM audio.";
+                return null;
+            }
+            return event.type === "input_audio_buffer.commit"
+                ? null
+                : "MAI supports session.update, input_audio_buffer.append and input_audio_buffer.commit.";
+        },
         () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
-                  rewriteLiveTranscriptionModel(
-                      data,
-                      ["openai/gpt-live-transcribe", "gpt-live-transcribe"],
-                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
-                  )
+                  (() => {
+                      if (mai) {
+                          const event = asRecord(parseEventData(data));
+                          if (event.type === "input_audio_buffer.append") {
+                              maiStarted = true;
+                          }
+                      }
+                      return rewriteLiveTranscriptionModel(
+                          data,
+                          [
+                              transcriptionModel,
+                              ...(mai ? [] : ["gpt-live-transcribe"]),
+                          ],
+                          deployment,
+                      );
+                  })()
             : undefined,
     );
     forwardMessage(
@@ -1043,11 +1106,21 @@ function proxyRealtimeWebSockets(
         () => scheduleRealtimeSettlement(c, tracking),
         allowTranscription
             ? (data) =>
-                  rewriteLiveTranscriptionModel(
-                      data,
-                      REALTIME_ROUTES["openai/gpt-live-transcribe"].deployment,
-                      "openai/gpt-live-transcribe",
-                  )
+                  (() => {
+                      const event = asRecord(parseEventData(data));
+                      // MAI provisional revisions are not OpenAI events. Forward only finalized deltas/completions.
+                      if (
+                          mai &&
+                          event.type ===
+                              "conversation.item.input_audio_transcription.intermediate"
+                      )
+                          return null;
+                      return rewriteLiveTranscriptionModel(
+                          data,
+                          deployment,
+                          transcriptionModel,
+                      );
+                  })()
             : undefined,
     );
     wireClose(c, downstream, upstream, tracking);
@@ -1401,6 +1474,7 @@ async function createRealtimeBillingContext(
         // requireUser() above proves the id, which the optional field cannot.
         identity: { ...requestIdentity(c.var.auth), userId: user.id },
         apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
+        questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
         modelRequested: modelInfo.requested,
         resolvedModelRequested: modelInfo.resolved,
@@ -1426,16 +1500,10 @@ async function createRealtimeBillingContext(
 }
 
 async function authorizeRealtimeSession(c: Context<Env>): Promise<string> {
-    const user = c.var.auth.requireUser();
-
-    const resolvedModel = c.var.model.resolved;
-    requireAllowedModel(c, resolvedModel);
-
-    // Same model-independent, estimated-price balance gate as every other
-    // generation route (tier or pack balance, paidOnly handled by the resolved
-    // model definition). checkBalance reads c.var.model.
-    await checkBalance(c.var, c.env);
-    return user.id;
+    // Same user, key model and estimated-price balance gates as every other
+    // generation route (paidOnly handled by the resolved model definition).
+    await requireGenerationAccess(c.var, c.env);
+    return c.var.auth.requireUser().id;
 }
 
 export async function handleRealtimeWebSocket(

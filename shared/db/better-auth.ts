@@ -147,6 +147,9 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  questPollenOnly: integer("quest_pollen_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   byopClientKeyId: text("byop_client_key_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),

@@ -83,7 +83,8 @@ IMAGE_STYLE_SUFFIX = (
     "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
     "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
     "proportions, and art style consistency. Do NOT copy the layout or background from it. "
-    "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
+    "Only draw the characters mentioned in the prompt above, not all characters from the sheet. "
+    "Polli is the bee mascot: draw exactly one Polli, and at most one robot and one Nomnom."
 )
 
 # Discord-specific

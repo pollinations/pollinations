@@ -3432,55 +3432,87 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.modelUsed).toBeUndefined();
     });
 
-    it("prices an Alibaba explicit-cache hit from response metadata", async () => {
+    it("keeps Qwen Max's OpenRouter fallback cost separate from the direct explicit-cache quote", async () => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
+            requestTrackingFixture(false, "qwen/qwen3.8-max"),
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash",
+                        "x-model-used": "qwen/qwen3.8-max:openrouter:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash"),
+            candidateFixture("qwen/qwen3.8-max:openrouter:alibaba"),
         );
-
-        // Both the quote and serving cost use the direct explicit-cache rate.
-        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.25 * 1.055, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.17, 12);
     });
 
-    it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)("prices %s explicit-cache hits from response metadata", async (model, variant, explicitRate, _implicitRate) => {
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(false, "qwen/qwen3.7-flash"),
+            requestTrackingFixture(false, model),
             Response.json(
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash",
+                        "x-model-used": model,
+                        "x-usage-prompt-cached-tokens": "1000000",
+                        "x-usage-prompt-cache-type": "ephemeral",
+                    },
+                },
+            ),
+            candidateFixture(model),
+        );
+
+        // Both the quote and serving cost use the direct explicit-cache rate.
+        expect(tracking.costVariant).toBe(variant);
+        expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
+    });
+
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)("uses %s implicit rate unless the response confirms an explicit hit", async (model, _variant, _explicitRate, implicitRate) => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, model),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": model,
                         "x-usage-prompt-cached-tokens": "1000000",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash"),
+            candidateFixture(model),
             // Even a stale request-side hint must not override what the
             // provider actually reported on the response.
             { hasExplicitCacheHit: true },
         );
 
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+        expect(tracking.cost?.totalCost).toBeCloseTo(implicitRate, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(implicitRate, 12);
     });
 
-    it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
+    it.each([
+        ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
+        ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
+        ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
+    ] as const)("prices streamed %s explicit-cache hits from terminal usage", async (model, variant, explicitRate, _implicitRate) => {
         const usageEvent = JSON.stringify({
-            model: "qwen/qwen3.7-flash",
+            model: model,
             choices: [],
             usage: {
                 prompt_tokens: 1_000_000,
@@ -3494,19 +3526,19 @@ describe("trackResponse modelUsed", () => {
         });
         const tracking = await trackResponse(
             "generate.text",
-            requestTrackingFixture(true, "qwen/qwen3.7-flash"),
+            requestTrackingFixture(true, model),
             new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
                 headers: {
                     "content-type": "text/event-stream",
-                    "x-model-used": "qwen/qwen3.7-flash",
+                    "x-model-used": model,
                 },
             }),
-            candidateFixture("qwen/qwen3.7-flash"),
+            candidateFixture(model),
         );
 
-        expect(tracking.costVariant).toBe("context_256k_explicit_cache");
-        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(0.02, 12);
+        expect(tracking.costVariant).toBe(variant);
+        expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
     });
 });
 

@@ -1,4 +1,6 @@
 import { UpstreamError } from "@shared/error.ts";
+import { totalPromptTokens } from "@shared/registry/cost-variants.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
@@ -286,16 +288,17 @@ export function responsesToChatRequest(
 }
 
 /**
- * Responses usage carrying exactly the Chat counts: Chat's top-level cache and
- * reasoning fields move into the detail objects `responsesUsageToUsage` reads.
+ * Responses headline counts include their detail tokens, including providers
+ * such as Grok whose Chat completion count excludes reasoning.
  */
 export function chatUsageToResponsesUsage(
     usage: CompletionUsage,
 ): ResponseUsage {
     const prompt = usage.prompt_tokens_details ?? {};
     const completion = usage.completion_tokens_details ?? {};
+    const inputTokens = totalPromptTokens(openaiUsageToUsage(usage));
     return {
-        input_tokens: usage.prompt_tokens,
+        input_tokens: inputTokens,
         input_tokens_details: {
             ...prompt,
             cached_tokens:
@@ -309,7 +312,7 @@ export function chatUsageToResponsesUsage(
                 usage.cache_creation_input_tokens ??
                 0,
         },
-        output_tokens: usage.completion_tokens,
+        output_tokens: usage.total_tokens - inputTokens,
         output_tokens_details: {
             ...completion,
             reasoning_tokens:

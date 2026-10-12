@@ -3882,6 +3882,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "long_context": {
         "completionTextTokens": 0.000012,
         "promptCachedTokens": 0.000001,
+        "promptImageTokens": 0.000004,
         "promptTextTokens": 0.000004,
       },
     },
@@ -3892,25 +3893,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "x-ai/grok-4.7:xai": {
+  "x-ai/grok-4.7:openrouter:xai-zdr": {
     "cost": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000005,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.0000005275,
+      "promptImageTokens": 0.00000211,
+      "promptTextTokens": 0.00000211,
     },
     "costVariants": {
       "long_context": {
-        "completionTextTokens": 0.000012,
-        "promptCachedTokens": 0.000001,
-        "promptTextTokens": 0.000004,
+        "completionTextTokens": 0.00001266,
+        "promptCachedTokens": 0.000001055,
+        "promptImageTokens": 0.00000422,
+        "promptTextTokens": 0.00000422,
       },
     },
     "price": {
-      "completionTextTokens": 0.000006,
-      "promptCachedTokens": 0.0000005,
-      "promptImageTokens": 0.000002,
-      "promptTextTokens": 0.000002,
+      "completionTextTokens": 0.00000633,
+      "promptCachedTokens": 0.0000005275,
+      "promptImageTokens": 0.00000211,
+      "promptTextTokens": 0.00000211,
     },
   },
   "x-ai/grok-imagine-image": {

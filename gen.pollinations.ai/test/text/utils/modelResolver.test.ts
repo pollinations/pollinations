@@ -290,6 +290,18 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins the Grok 4.7 fallback to xAI ZDR on OpenRouter", () => {
+        const result = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7:openrouter:xai-zdr",
+        });
+        expect(result.options.model).toBe("x-ai/grok-4.7");
+        expect(result.options.provider).toEqual({
+            only: ["xai/zdr"],
+            allow_fallbacks: false,
+            zdr: true,
+        });
+    });
+
     it("routes Grok 4.7 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",
@@ -301,6 +313,7 @@ describe("resolveModelConfig", () => {
             directEndpoint:
                 "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.7/chat/completions?api-version=2024-12-01-preview",
             directAuthHeader: "api-key",
+            requiresBase64ImageUrls: true,
             model: "grok-4.7",
         });
         expect(result.options.provider).toBeUndefined();

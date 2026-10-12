@@ -79,6 +79,16 @@ export const CHAT_PARAMETERS = {
         "parallel_tool_calls",
         "reasoning_effort",
     ],
+    grok47: [
+        ...TOOL_CHAT,
+        ...SAMPLING,
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "seed",
+        "structured_outputs",
+        "reasoning_effort",
+        "parallel_tool_calls",
+    ],
     azureGrok46: [
         ...CHAT,
         ...SAMPLING,

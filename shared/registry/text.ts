@@ -1378,7 +1378,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.7": {
-        supportedParameters: CHAT_PARAMETERS.azureGrok46,
+        supportedParameters: CHAT_PARAMETERS.grok47,
         aliases: [],
         provider: "azure",
         publisher: "xAI",
@@ -1386,22 +1386,22 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-21").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // Provisional until Azure publishes a Grok 4.7 meter. Uses the Grok 4.6
-        // Global Standard meters (eastus, effective 2026-09-01); image inputs bill
-        // at the text input rate.
+        // Azure Retail Prices API: Grok 4.7 Global Standard in eastus,
+        // effective 2026-10-01. Image inputs bill at the text input rate.
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.5),
             promptImageTokens: perMillion(2),
             completionTextTokens: perMillion(6),
         },
-        // Provisional long-context tier: the Grok 4.6 Azure "L" meters, assumed to
-        // apply from 200K prompt tokens.
+        // Grok 4.7 Global Standard "L" meters. The 200K boundary still needs
+        // verification against the deployed Azure route before activation.
         ...defineCostVariants(
             {
                 long_context: {
                     promptTextTokens: perMillion(4),
                     promptCachedTokens: perMillion(1),
+                    promptImageTokens: perMillion(4),
                     completionTextTokens: perMillion(12),
                 },
             },
@@ -1410,7 +1410,7 @@ const TEXT_BASE_SERVICES = {
                 long_context: {
                     label: "Long context (200K+)",
                     description:
-                        "At least 200,000 prompt tokens; text, cached, and output rates double.",
+                        "At least 200,000 prompt tokens; text, image, cached, and output rates double.",
                 },
             },
             "<200K context",

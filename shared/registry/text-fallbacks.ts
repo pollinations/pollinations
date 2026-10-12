@@ -163,23 +163,24 @@ export const TEXT_FALLBACKS = {
         },
     },
     "x-ai/grok-4.7": {
-        "x-ai/grok-4.7:xai": {
-            provider: "xai",
+        "x-ai/grok-4.7:openrouter:xai-zdr": {
+            provider: "openrouter",
             addedDate: new Date("2026-10-09").getTime(),
-            // xAI pricing table for grok-4.7 (2026-10-09). Image tokens bill at the
-            // text input rate, as on Grok 4.6.
+            // OpenRouter xai/zdr rates (2026-10-12), including its credit fee.
+            // The Azure public quote remains unchanged on fallback.
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.5),
-                promptImageTokens: perMillion(2),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.5) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
             ...defineCostVariants(
                 {
                     long_context: {
-                        promptTextTokens: perMillion(4),
-                        promptCachedTokens: perMillion(1),
-                        completionTextTokens: perMillion(12),
+                        promptTextTokens: perMillion(4) * 1.055,
+                        promptCachedTokens: perMillion(1) * 1.055,
+                        promptImageTokens: perMillion(4) * 1.055,
+                        completionTextTokens: perMillion(12) * 1.055,
                     },
                 },
                 longContextAtLeast(200_000),
@@ -187,7 +188,7 @@ export const TEXT_FALLBACKS = {
                     long_context: {
                         label: "Long context (≥200K)",
                         description:
-                            "xAI doubles text, cached, and output rates for the whole request.",
+                            "xAI doubles text, image, cached, and output rates for the whole request.",
                     },
                 },
                 "<200K context",

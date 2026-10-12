@@ -496,6 +496,16 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.7",
         config: portkeyConfig["grok-4.7"],
+        transform: (messages, options) => ({
+            messages,
+            options: {
+                ...options,
+                reasoning_effort:
+                    options.reasoning_effort ??
+                    (options.reasoning as { effort?: string } | undefined)
+                        ?.effort,
+            },
+        }),
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",
@@ -506,8 +516,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6-xai"],
     },
     {
-        name: "x-ai/grok-4.7:xai",
-        config: portkeyConfig["grok-4.7-xai"],
+        name: "x-ai/grok-4.7:openrouter:xai-zdr",
+        config: portkeyConfig["grok-4.7-openrouter-xai-zdr"],
+        // Keep the approved ZDR route even when callers supply routing options.
+        transform: omitParameters("provider"),
     },
     {
         name: "openai/gpt-audio-mini",

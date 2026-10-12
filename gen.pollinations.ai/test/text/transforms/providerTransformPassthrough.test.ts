@@ -15,6 +15,37 @@ const messages = [
 ];
 
 describe("provider transform passthrough", () => {
+    it("keeps Grok's ZDR fallback provider selection server-owned", async () => {
+        const transform = findModelByName(
+            "x-ai/grok-4.7:openrouter:xai-zdr",
+        )?.transform;
+        if (!transform) throw new Error("Grok fallback transform missing");
+        const result = await transform(messages, {
+            provider: { only: ["other"], zdr: false },
+            temperature: 0.2,
+        });
+        expect(result.options).toEqual({ temperature: 0.2 });
+        expect(result.messages).toEqual(messages);
+    });
+
+    it("preserves Grok reasoning effort and visibility through the Azure migration", async () => {
+        const transform = findModelByName("x-ai/grok-4.7")?.transform;
+        if (!transform) throw new Error("Grok transform missing");
+        const options = { reasoning: { effort: "low", exclude: true } };
+        expect(await transform(messages, options)).toEqual({
+            messages,
+            options: { ...options, reasoning_effort: "low" },
+        });
+        expect(
+            (
+                await transform(messages, {
+                    ...options,
+                    reasoning_effort: "high",
+                })
+            ).options.reasoning_effort,
+        ).toBe("high");
+    });
+
     it.each([
         "mistral-small-3.2",
         "grok",

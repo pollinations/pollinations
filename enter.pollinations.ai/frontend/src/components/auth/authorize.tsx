@@ -1,16 +1,13 @@
 import {
-    AccountIcon,
     ArrowLeftIcon,
     Button,
-    InfoTip,
     KeyIcon,
-    SproutIcon,
     Surface,
     Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -23,6 +20,7 @@ import { useEffect, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
@@ -566,23 +564,9 @@ export function Authorize() {
                     accessContext={isDeviceMode ? undefined : "app"}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
-                    lead={
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            <span className="inline-flex items-center">
-                                Username and picture
-                                <InfoTip
-                                    text="This app can also see this key’s budget and usage."
-                                    label="Username and picture information"
-                                />
-                            </span>
-                        </AuthAccessItem>
-                    }
-                    accountAfter={
+                    permissionsAfter={
                         attribution?.earningsEnabled ? (
-                            <AuthAccessItem icon={<SproutIcon />}>
-                                20% of the Pollen you spend in this app goes to
-                                its developer.
-                            </AuthAccessItem>
+                            <AppEarningsRow />
                         ) : undefined
                     }
                     disabled={isAuthorizing}

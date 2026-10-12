@@ -241,6 +241,7 @@ export function AuthAccessItem({
     onChange,
     ariaLabel,
     disabled = false,
+    className,
 }: {
     children: ReactNode;
     control?: ReactNode;
@@ -253,6 +254,7 @@ export function AuthAccessItem({
     onChange?: (checked: boolean) => void;
     ariaLabel?: string;
     disabled?: boolean;
+    className?: string;
 }) {
     // A required row has no input to label.
     const Row = icon != null ? "div" : "label";
@@ -260,6 +262,7 @@ export function AuthAccessItem({
         <li
             className={cn(
                 info != null && "polli:flex polli:flex-wrap polli:items-center",
+                className,
             )}
         >
             <Row

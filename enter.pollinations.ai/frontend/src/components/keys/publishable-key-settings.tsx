@@ -37,12 +37,12 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
 
     return (
         <AuthInfoCard title={null}>
-            <div className="space-y-3">
+            <div className="space-y-2">
                 <div className="flex items-center">
                     <Text
-                        size="sm"
-                        weight="semibold"
-                        tone="strong"
+                        size="xs"
+                        weight="medium"
+                        tone="muted"
                         className="polli:leading-5"
                     >
                         Redirect URLs

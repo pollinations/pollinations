@@ -1,6 +1,7 @@
-import { AuthAccessItem } from "@pollinations/ui/auth";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { AppEarningsRow } from "../frontend/src/components/keys/app-earnings-row.tsx";
+import { KeyNameField } from "../frontend/src/components/keys/key-name-field.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
@@ -8,24 +9,28 @@ import {
 
 function Editor(props: {
     visiblePermissions?: ReadonlySet<string>;
-    accountAfter?: boolean;
+    permissionsAfter?: boolean;
+    withName?: boolean;
+    allowedModels?: string[] | null;
 }) {
-    const value = useKeyPermissions();
+    const value = useKeyPermissions({ allowedModels: props.allowedModels });
     return (
         <KeyPermissionsInputs
             value={value}
-            visiblePermissions={props.visiblePermissions}
-            lead={
-                <AuthAccessItem icon={<span />}>
-                    Username and picture
-                </AuthAccessItem>
-            }
-            accountAfter={
-                props.accountAfter ? (
-                    <AuthAccessItem icon={<span />}>
-                        Developer share
-                    </AuthAccessItem>
+            nameField={
+                props.withName ? (
+                    <KeyNameField
+                        app={false}
+                        publishable={false}
+                        value="Example key"
+                        onChange={() => {}}
+                        disabled={false}
+                    />
                 ) : undefined
+            }
+            visiblePermissions={props.visiblePermissions}
+            permissionsAfter={
+                props.permissionsAfter ? <AppEarningsRow /> : undefined
             }
         />
     );
@@ -38,31 +43,110 @@ function lists(html: string) {
 }
 
 describe("key permissions layout", () => {
-    it("puts the limits on one wrapping row and the grants in the same card", () => {
+    it("disables category selectors when generation is off and has no All control", () => {
+        for (const allowedModels of [null, []]) {
+            const html = renderToStaticMarkup(
+                <Editor allowedModels={allowedModels} />,
+            );
+            expect(html).not.toContain(">All<");
+            const textButton = html.match(/<button[^>]*>Text<\/button>/)?.[0];
+            expect(textButton).toBeDefined();
+            expect(textButton?.includes('disabled=""')).toBe(
+                allowedModels !== null,
+            );
+            expect(textButton).toContain(
+                `aria-pressed="${allowedModels === null}"`,
+            );
+        }
+    });
+    it("keeps the key name and limits in the same first card", () => {
+        const html = renderToStaticMarkup(<Editor withName />);
+        const cards = [...html.matchAll(/polli-surface-card/g)];
+        expect(cards).toHaveLength(2);
+        expect(html).toContain(">Settings<");
+        expect(html).toContain(">Permissions<");
+        expect(html).not.toContain(">Limits<");
+        expect(html.indexOf("Example key")).toBeLessThan(
+            html.indexOf("Expiry"),
+        );
+        expect(html.indexOf("Quest pollen only")).toBeLessThan(cards[1].index);
+        expect(html).not.toContain("paid Pollen");
+        expect(html).not.toContain("Quest Pollen");
+    });
+    it("stacks limits above account grants at every width", () => {
         const html = renderToStaticMarkup(<Editor />);
-        // One card for limits and account grants, one for model access.
         expect(html.match(/polli-surface-card/g)).toHaveLength(2);
 
         const [limits, grants] = lists(html);
-        expect(limits.className).toContain("flex-wrap");
+        expect(limits.className).toContain("grid-cols-1");
+        expect(limits.className).not.toContain("sm:");
         expect(limits.body).toContain("Expiry");
         expect(limits.body).toContain("Budget");
-        expect(limits.body).toContain("Quest Pollen only");
-        expect(limits.body).not.toContain("Username and picture");
+        expect(limits.body).toContain("Quest pollen only");
+        expect(limits.body).not.toContain("See your username and picture");
 
-        expect(grants.className).toContain("sm:grid-cols-2");
-        expect(grants.body).toContain("Username and picture");
-        expect(grants.body).toContain("See your name and email.");
+        expect(grants.className).toContain("grid-cols-1");
+        expect(grants.className).not.toContain("sm:");
+        expect(grants.body).toContain("See your username and picture");
+        expect(grants.body).toContain("See your name and email");
     });
 
-    it("keeps the consent screen's fixed developer row after the grants", () => {
+    it("keeps identity first without responsive reordering", () => {
+        const [limits, grants] = lists(renderToStaticMarkup(<Editor />));
+        expect(
+            grants.body.indexOf("See your username and picture"),
+        ).toBeLessThan(grants.body.indexOf("See your name and email"));
+        expect(grants.className).not.toContain("order-");
+        expect(limits.className).not.toContain("order-");
+        expect(limits.body).toContain("Expiry");
+    });
+
+    it("keeps the consent earnings disclosure last, after generation", () => {
         const html = renderToStaticMarkup(
-            <Editor visiblePermissions={new Set(["profile"])} accountAfter />,
+            <Editor
+                visiblePermissions={new Set(["profile"])}
+                permissionsAfter
+            />,
         );
         expect(html.match(/polli-surface-card/g)).toHaveLength(2);
-        expect(html).not.toContain("Manage keys, agents and models.");
-        expect(html.indexOf("See your name and email.")).toBeLessThan(
-            html.indexOf("Developer share"),
+        expect(html).toContain(">Limits<");
+        expect(html).toContain(">Permissions<");
+        expect(html).not.toContain(">Settings<");
+        expect(html).not.toContain("Manage keys, agents and models");
+        expect(html).not.toContain("Run hosted sandboxes");
+        expect(html.indexOf("Generate")).toBeLessThan(
+            html.indexOf("20% of the pollen"),
         );
+    });
+
+    it("groups sandbox execution with generation and keeps administration in account access", () => {
+        const html = renderToStaticMarkup(<Editor />);
+        const [, account, models, sandboxes] = lists(html);
+        expect(account.body).toContain("Manage keys, agents and models");
+        expect(account.body).not.toContain("Run hosted sandboxes");
+        expect(models.body).toContain("Generate");
+        expect(sandboxes.body).toContain("Run hosted sandboxes");
+        expect(sandboxes.body).toContain("Sandboxes are in alpha");
+        expect(sandboxes.body).not.toContain("Manage keys, agents and models");
+        expect(html).not.toContain(">Account access<");
+        expect(html).not.toContain(">AI &amp; tools<");
+        const cards = [...html.matchAll(/polli-surface-card/g)];
+        expect(cards).toHaveLength(2);
+        expect(html.indexOf("See your username and picture")).toBeGreaterThan(
+            cards[1].index,
+        );
+        expect(html.indexOf("Generate")).toBeGreaterThan(cards[1].index);
+        expect(html.indexOf("Run hosted sandboxes")).toBeGreaterThan(
+            cards[1].index,
+        );
+    });
+
+    it("shows requested sandbox access without adding unrequested account grants", () => {
+        const html = renderToStaticMarkup(
+            <Editor visiblePermissions={new Set(["machines"])} />,
+        );
+        expect(html).toContain("Run hosted sandboxes");
+        expect(html).not.toContain("See your name and email");
+        expect(html).not.toContain("Manage keys, agents and models");
     });
 });

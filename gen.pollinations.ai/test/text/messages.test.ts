@@ -995,7 +995,7 @@ describe("POST /v1/messages", () => {
         });
     });
 
-    it("sends a PDF document to the provider as a Chat file part", async () => {
+    it("sends a PDF document to Azure OpenAI as a Chat file part", async () => {
         const caller = await createTestApiKey({ user: { tierBalance: 100 } });
         const { providerBodies } = mockUpstream();
         const { response, text } = await call(
@@ -1031,6 +1031,8 @@ describe("POST /v1/messages", () => {
                         type: "file",
                         file: {
                             file_data: "data:application/pdf;base64,JVBERi0x",
+                            // Azure reports a missing file_id without it.
+                            filename: "document.pdf",
                         },
                     },
                     { type: "text", text: "What word is in this PDF?" },

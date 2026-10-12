@@ -2756,7 +2756,7 @@ const TEXT_BASE_SERVICES = {
         title: "Nova 2 Lite",
         description:
             "Budget-friendly reasoning with room for very long documents",
-        inputModalities: ["text", "image"],
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
@@ -3540,8 +3540,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.13) * 1.055,
-            completionTextTokens: perMillion(0.52) * 1.055,
+            promptTextTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(0.6) * 1.055,
         },
         title: "Qwen3 VL 30B A3B Instruct",
         description:

@@ -290,6 +290,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
     }),
 
     "grok-4.6-azure-sweden": () => ({
@@ -1023,7 +1024,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-30b-a3b-instruct",
-        "alibaba",
+        "deepinfra/fp8",
     ),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({

@@ -217,6 +217,10 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
+- Adding or removing a registry `provider` changes the public
+  [Service Providers](../../../pollinations.ai/public/legal/SUBPROCESSORS.md)
+  page. Update its model-provider line in the same PR;
+  `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
 
 ### 5. Verify end to end
 
@@ -236,6 +240,15 @@ Before publishing:
 - Review the complete diff for unrelated changes and dead code.
 - Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
+
+#### Scheduled merges and holds
+
+- Apply the repository's `MERGE-HOLD` label and keep the PR draft whenever a model change must wait for a date, provider confirmation, or another unresolved prerequisite. Do not enable auto-merge while held.
+- Start every held model PR title with `🕒 YYYY-MM-DD | <type>: <change>` using the earliest planned merge date. If that date is unconfirmed, use `🕒 DATE TBD | <type>: <change>`. Never put the clock/date only at the end or infer a date from an older model's promotion.
+- Put the earliest merge date, provider source, exact cutoff/timezone (or explicitly unknown), hold reason, and release conditions at the top of the description. Distinguish the merge date from the production effective date; a date alone does not authorize merging or deployment.
+- Verify successor prices for the exact model and each serving route. Mark unconfirmed rates as unconfirmed; do not present an older model's rates or a free placeholder as verified future pricing.
+- Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
+- Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
 
 The PR description must include a user-visible change table for each affected model, using its public model ID:
 

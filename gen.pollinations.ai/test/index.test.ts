@@ -334,6 +334,49 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
+        const catalog = await fetchWorker("/.well-known/api-catalog");
+        expect(catalog.status).toBe(200);
+        expect(catalog.headers.get("Content-Type")).toContain(
+            "application/linkset+json",
+        );
+        const body = (await catalog.json()) as {
+            linkset: {
+                anchor: string;
+                "service-desc": { href: string; type: string }[];
+                "service-doc": { href: string; type: string }[];
+            }[];
+        };
+        expect(body.linkset).toHaveLength(1);
+        const [linkset] = body.linkset;
+        // The origin follows the serving host (the test worker serves staging).
+        const origin = "https://staging.gen.pollinations.ai";
+        expect(linkset.anchor).toBe(origin);
+        expect(linkset["service-desc"]).toEqual([
+            { href: `${origin}/openapi.json`, type: "application/json" },
+        ]);
+        expect(linkset["service-doc"]).toEqual([
+            { href: `${origin}/docs/llm.txt`, type: "text/plain" },
+        ]);
+        expect(catalog.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(catalog.headers.get("Access-Control-Allow-Origin")).toBe("*");
+
+        const head = await fetchWorker(
+            "/.well-known/api-catalog",
+            envWithEnter(),
+            { method: "HEAD" },
+        );
+        expect(head.status).toBe(200);
+        expect(head.headers.get("Link")).toBe(
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/.well-known/api-catalog");
+    });
+
     it("does not expose /api routes on gen", async () => {
         const response = await fetchWorker("/api/generate/v1/chat/completions");
 
@@ -544,6 +587,24 @@ describe("gen worker routing", () => {
                     ?.supported_endpoints,
             ).toEqual(["/v1/audio/transcriptions"]);
         }
+    });
+
+    it("marks paid-only models on the OpenAI-compatible model list", async () => {
+        const response = await fetchWorker("/v1/models", envWithEnter());
+        const models = (await response.json()) as {
+            data: { id: string; paid_only: boolean }[];
+        };
+        const paidOnly = (id: string) =>
+            models.data.find((model) => model.id === id)?.paid_only;
+
+        expect(paidOnly("anthropic/claude-haiku-5.5")).toBe(true);
+        expect(paidOnly("openai/gpt-6-luna")).toBe(false);
+
+        const retrieved = await fetchWorker(
+            "/v1/models/anthropic/claude-haiku-5.5",
+            envWithEnter(),
+        );
+        expect(await retrieved.json()).toMatchObject({ paid_only: true });
     });
 
     it.each([

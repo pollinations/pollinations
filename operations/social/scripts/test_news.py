@@ -87,7 +87,7 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
 
-    def test_enrichment_preserves_social_payload_and_records_failure(self):
+    def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
               "body": "Existing description", "merge_commit_sha": "abc", "labels": []}
         ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
@@ -102,14 +102,12 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(gist["gist"], original["gist"])
         self.assertEqual(gist["image"], original["image"])
         self.assertEqual(validate_gist(gist), [])
-        with patch("gist.subprocess.run", side_effect=OSError()), \
-             patch("gist.pr_comparison_refs", side_effect=ValueError()):
-            enrich_gist(gist, pr, ["shared/registry/text.ts"], "test")
-        self.assertEqual(gist["enrichment"], {"classification": "failed", "models": "failed"})
-        self.assertIsNone(gist["type"])
-        self.assertEqual(gist["gist"], original["gist"])
-        self.assertEqual(validate_gist(gist), [])
-        gist["enrichment"]["classification"] = "complete"
+        # A failed classification or model-change lookup stops the gist: nothing is saved or posted.
+        with patch("gist.subprocess.run", side_effect=OSError()), self.assertRaises(OSError):
+            enrich_gist(copy.deepcopy(original), pr, [], "test")
+        with patch("gist.subprocess.run", side_effect=classification), \
+             patch("gist.pr_comparison_refs", side_effect=ValueError()), self.assertRaises(ValueError):
+            enrich_gist(copy.deepcopy(original), pr, ["shared/registry/text.ts"], "test")
         gist.update(area="Models", type="Question", source="Team")
         self.assertIn("invalid type", validate_gist(gist))
 
@@ -126,11 +124,10 @@ class GistEnrichmentTest(unittest.TestCase):
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
         self.assertEqual(validate_gist(gist), [])
         with patch("gist.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
-            context = {**gist, "merge_commit_sha": "unused-commit", "enrichment": {"models": "complete"}}
+            context = {**gist, "merge_commit_sha": "unused-commit"}
             self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
             self.assertIn('"image": "2"', analysis.call_args.args[1])
             self.assertNotIn("unused-commit", analysis.call_args.args[1])
-            self.assertNotIn('"enrichment"', analysis.call_args.args[1])
         self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
         self.assertNotIn("image_prompt", gist["gist"])
         self.assertNotIn("pr_body_excerpt", gist)
@@ -459,15 +456,14 @@ def gist(number, merged_at, tier="daily"):
 
 
 class TextCallTest(unittest.TestCase):
-    def test_an_empty_answer_is_asked_again_with_a_seed(self):
-        """The API saves an empty answer under its request; asking the same again gets it back."""
+    def test_a_failed_or_empty_answer_is_asked_once_and_stops_the_caller(self):
         answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
-        for answers, expected in ((["", "Hello"], "Hello"), (["", None, "  "], None)):
-            with self.subTest(answers=answers), patch("time.sleep"), \
-                 patch("common.requests.post", side_effect=[answer(text) for text in answers]) as post:
+        for response, expected in ((answer("Hello"), "Hello"), (answer(""), None), (answer(None), None),
+                                   (reply(503), None)):
+            with self.subTest(response=response.status_code), \
+                 patch("common.requests.post", return_value=response) as post:
                 self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
-                self.assertEqual([call.kwargs["json"].get("seed") for call in post.call_args_list],
-                                 [None, 1, 2][:len(answers)])
+                self.assertEqual(post.call_count, 1)
 
 
 class ContributorsTest(unittest.TestCase):

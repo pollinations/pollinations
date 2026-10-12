@@ -321,64 +321,48 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
 
 
 def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
-    """Keep social publication independent of classification/catalog failures."""
+    """Classification and the PR's exact model and API changes. Any failure stops the gist:
+    nothing is saved or posted, and a person reruns it."""
     root = Path(get_repo_root())
     gist.update({"area": None, "type": None, "source": None,
                  "merge_commit_sha": pr["merge_commit_sha"], "announcements": []})
-    status = gist["enrichment"] = {}
-    try:
-        with tempfile.TemporaryDirectory(prefix="gist-classification-") as directory:
-            output = Path(directory) / "classification.json"
-            subprocess.run(
-                [sys.executable, str(root / "operations/github/project_manager.py")],
-                env={**os.environ, "GITHUB_TOKEN": token,
-                     "GITHUB_EVENT": json.dumps({"action": "closed", "pull_request": pr}),
-                     "CLASSIFICATION_OUTPUT": str(output)}, check=True,
-            )
-            gist.update(json.loads(output.read_text()))
-        status["classification"] = "complete"
-    except (OSError, ValueError, subprocess.CalledProcessError):
-        print("  WARNING: Merge-time classification failed; gist classification remains unknown")
-        status["classification"] = "failed"
-    try:
-        changed = any(path.startswith("shared/") for path in files)
-        if changed or announces_retirement(pr):
-            if not (root / "node_modules/tsx").is_dir():
-                subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
-            # Rebase detection needs original commits as well as the merged history.
-            if changed and pr.get("commits", 1) > 1:
-                commits = []
-                page = 1
-                while True:
-                    response = github_api_request("GET",
-                        f"{GITHUB_API_BASE}/repos/{os.environ['REPO_FULL_NAME']}/pulls/{pr['number']}/commits",
-                        headers={"Authorization": f"Bearer {token}"},
-                        params={"per_page": 100, "page": page})
-                    response.raise_for_status()
-                    batch = response.json()
-                    commits.extend(commit["sha"] for commit in batch)
-                    if len(batch) < 100:
-                        break
-                    page += 1
-                pr = {**pr, "_commit_shas": commits}
-                subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
-            refs = pr_comparison_refs(pr, root) if changed else None
-            gist["announcements"] = announcements_for_pr(pr, files, root, refs)
-            if refs:
-                gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
-        status["models"] = "complete"
-    except Exception as error:
-        # Preserve the established social pipeline, with a visible retryable gap.
-        print(f"  WARNING: Model enrichment failed ({type(error).__name__}); values remain unknown")
-        status["models"] = "failed"
+    with tempfile.TemporaryDirectory(prefix="gist-classification-") as directory:
+        output = Path(directory) / "classification.json"
+        subprocess.run(
+            [sys.executable, str(root / "operations/github/project_manager.py")],
+            env={**os.environ, "GITHUB_TOKEN": token,
+                 "GITHUB_EVENT": json.dumps({"action": "closed", "pull_request": pr}),
+                 "CLASSIFICATION_OUTPUT": str(output)}, check=True,
+        )
+        gist.update(json.loads(output.read_text()))
+    changed = any(path.startswith("shared/") for path in files)
+    if changed or announces_retirement(pr):
+        if not (root / "node_modules/tsx").is_dir():
+            subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
+        # Rebase detection needs original commits as well as the merged history.
+        if changed and pr.get("commits", 1) > 1:
+            commits = []
+            page = 1
+            while True:
+                response = github_api_request("GET",
+                    f"{GITHUB_API_BASE}/repos/{os.environ['REPO_FULL_NAME']}/pulls/{pr['number']}/commits",
+                    headers={"Authorization": f"Bearer {token}"},
+                    params={"per_page": 100, "page": page})
+                response.raise_for_status()
+                batch = response.json()
+                commits.extend(commit["sha"] for commit in batch)
+                if len(batch) < 100:
+                    break
+                page += 1
+            pr = {**pr, "_commit_shas": commits}
+            subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
+        refs = pr_comparison_refs(pr, root) if changed else None
+        gist["announcements"] = announcements_for_pr(pr, files, root, refs)
+        if refs:
+            gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
     # The docs PR regenerated after each production deploy carries the live API changes.
     if API_DOCS in files:
-        try:
-            gist["api_changes"] = api_changes_for_pr(pr, root)
-            status["api"] = "complete"
-        except Exception as error:
-            print(f"  WARNING: API enrichment failed ({type(error).__name__}); values remain unknown")
-            status["api"] = "failed"
+        gist["api_changes"] = api_changes_for_pr(pr, root)
 
 # ── App catalog lookup ──────────────────────────────────────────────
 

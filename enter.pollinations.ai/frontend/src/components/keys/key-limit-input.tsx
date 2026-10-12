@@ -36,20 +36,24 @@ export function KeyLimitInput({
     onChange,
     disabled = false,
     accessContext,
+    expiresAt,
 }: {
     kind: keyof typeof limits;
     value: number | null;
     onChange: (value: number | null) => void;
     disabled?: boolean;
     accessContext?: "app" | "device";
+    expiresAt?: string | null;
 }) {
     const inputId = useId();
     const limit = limits[kind];
     const [draft, setDraft] = useState(value === null ? "" : String(value));
-    // A spent key may already be below zero. Preserve that balance on edit,
-    // while new budgets and further reductions still have a lower bound.
+    // Existing spent budgets or expired keys must not block unrelated edits.
+    // New values and further reductions still have a lower bound.
     const [min] = useState(() =>
-        kind === "budget" ? Math.min(0, value ?? 0) : limit.min,
+        kind === "budget"
+            ? Math.min(0, value ?? 0)
+            : Math.min(limit.min, value ?? limit.min),
     );
 
     useEffect(() => {
@@ -59,6 +63,19 @@ export function KeyLimitInput({
     return (
         <AuthAccessItem
             icon={limit.icon}
+            details={
+                kind === "expiry" && expiresAt ? (
+                    <span>
+                        Current expiry:{" "}
+                        <time dateTime={expiresAt}>
+                            {new Date(expiresAt).toLocaleString(undefined, {
+                                dateStyle: "medium",
+                                timeStyle: "long",
+                            })}
+                        </time>
+                    </span>
+                ) : undefined
+            }
             control={
                 <label htmlFor={inputId} className="flex items-center gap-2">
                     <span className="sr-only">{limit.label} value</span>

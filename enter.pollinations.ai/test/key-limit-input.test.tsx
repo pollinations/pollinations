@@ -32,6 +32,22 @@ describe("key budget form constraints", () => {
         expect(html).toContain('min="0"');
     });
 
+    it("shows the persisted expiry and allows an unchanged expired key to be saved", () => {
+        const expiresAt = "2030-01-01T12:34:56.000Z";
+        const html = renderToStaticMarkup(
+            <KeyLimitInput
+                kind="expiry"
+                value={0}
+                expiresAt={expiresAt}
+                onChange={() => {}}
+            />,
+        );
+        expect(html).toContain('min="0"');
+        expect(html).toContain('value="0"');
+        expect(html).toContain("Current expiry:");
+        expect(html).toContain(`dateTime="${expiresAt}"`);
+    });
+
     it("keeps the expiry minimum positive", () => {
         const html = renderToStaticMarkup(
             <KeyLimitInput kind="expiry" value={null} onChange={() => {}} />,

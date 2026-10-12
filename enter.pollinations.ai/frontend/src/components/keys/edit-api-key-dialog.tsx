@@ -4,8 +4,9 @@ import { useState } from "react";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { ResourceDialog } from "../layout/resource-dialog.tsx";
 import { KeyDialogContent } from "./key-dialog-content.tsx";
+import { initialKeyEditValues, keyEditUpdates } from "./key-edit-values.ts";
 import { useKeyPermissions } from "./key-permissions.tsx";
-import { isAppKey, isPublishableKey, readRedirectUris } from "./key-type.ts";
+import { isAppKey, isPublishableKey } from "./key-type.ts";
 import type { ApiKey, ApiKeyUpdateParams } from "./types.ts";
 
 interface EditApiKeyDialogProps {
@@ -33,50 +34,38 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
     footnote,
 }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [name, setName] = useState(apiKey.name || "");
+    const [initialValues] = useState(() => initialKeyEditValues(apiKey));
+    const [name, setName] = useState(initialValues.name ?? "");
     const [error, setError] = useState<string | null>(null);
 
     const isPublishable = isPublishableKey(apiKey);
     const appKey = isAppKey(apiKey);
     const plaintextKey = apiKey.metadata?.plaintextKey as string | undefined;
 
-    const initialRedirectUris = readRedirectUris(apiKey.metadata);
-    const initialEarningsEnabled = apiKey.metadata?.earningsEnabled === true;
-    const [redirectUris, setRedirectUris] =
-        useState<string[]>(initialRedirectUris);
-    const [earningsEnabled, setEarningsEnabled] = useState(
-        initialEarningsEnabled,
+    const [redirectUris, setRedirectUris] = useState(
+        initialValues.redirectUris ?? [],
     );
-
-    const expiryDays = apiKey.expiresAt
-        ? (new Date(apiKey.expiresAt).getTime() - Date.now()) /
-          (1000 * 60 * 60 * 24)
-        : null;
-
-    const keyPermissions = useKeyPermissions({
-        allowedModels: apiKey.permissions?.models ?? null,
-        pollenBudget: apiKey.pollenBalance ?? null,
-        accountPermissions: apiKey.permissions?.account ?? null,
-        questPollenOnly: apiKey.questPollenOnly ?? false,
-        expiryDays,
-    });
+    const [earningsEnabled, setEarningsEnabled] = useState(
+        initialValues.earningsEnabled ?? false,
+    );
+    const keyPermissions = useKeyPermissions(initialValues);
 
     async function handleSave() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const { expiryDays, ...permissions } = keyPermissions.permissions;
-            await onUpdate(apiKey.id, {
+            const updates = keyEditUpdates(initialValues, {
                 name,
-                ...permissions,
-                ...(isPublishable && {
-                    redirectUris: cleanRedirectUris(redirectUris),
-                    earningsEnabled,
-                }),
-                expiresAt: expiryDays
-                    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
-                    : null,
+                ...(isPublishable
+                    ? {
+                          redirectUris: cleanRedirectUris(redirectUris),
+                          earningsEnabled,
+                      }
+                    : keyPermissions.permissions),
             });
+            if (Object.keys(updates).length > 0) {
+                await onUpdate(apiKey.id, updates);
+            }
 
             onClose();
         } catch (error) {
@@ -111,6 +100,7 @@ export const EditApiKeyDialog: FC<EditApiKeyDialogProps> = ({
                 name={name}
                 onNameChange={setName}
                 permissions={keyPermissions}
+                expiresAt={apiKey.expiresAt}
                 redirectUris={redirectUris}
                 onRedirectUrisChange={setRedirectUris}
                 earningsEnabled={earningsEnabled}

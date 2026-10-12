@@ -1,0 +1,37 @@
+{
+  "pr_number": 17134,
+  "title": "feat(news): deliver.py schedules and sends the news posts once",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17134",
+  "merged_at": "2026-10-12T00:49:14Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Added deliver.py to schedule X, LinkedIn and Instagram posts in Buffer at today's slots, send weekly and model posts to Discord, and start Reddit posts using the existing senders' requests. Each post folder gets a delivery.json record on the news branch, updated through the Contents API with the file's SHA to prevent duplicate sends; unclear results stop for manual resolution with deliver.py mark. Moved chunk_message and safe_truncate into common.py, split check_date and model_post out of posts.py, and made deploy_reddit_post re-raise deploy failures while its existing sender wrapper still returns False. Added tests for duplicate prevention, Buffer-only scheduling, slots and text limits, unclear results, start dates, and model posts.",
+    "keywords": [
+      "news pipeline",
+      "social publishing",
+      "Buffer",
+      "Discord",
+      "Reddit",
+      "duplicate prevention"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17134.jpg",
+    "prompt": "In a cozy pixel-art garden newsroom, Polli wears a tiny mail carrier hat and sorts sealed news envelopes beside a CRT calendar, while a chunky monitor robot stamps a delivery ledger only once. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) code-plants, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-12T00:50:18.425742+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "61e02ae8e17f8d9a4718bc38c3bcafb2e9190eec",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

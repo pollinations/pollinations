@@ -80,7 +80,7 @@ Example `code-agent.json`:
 }
 ```
 
-Create it with `npx @pollinations/cli agents create --config code-agent.json`. Add `--visibility public` to publish after your account has community publisher access. The API stores the GitHub-derived listing fields, repository, and deployed commit SHA—not the source code. The repository binding and model ID are fixed after creation; syncing refreshes the code, title, and description.
+Create it with `npx @pollinations/cli agents create --config code-agent.json`. Add `--visibility public` to publish after your account has community publisher access. The API stores the GitHub-derived listing fields, repository, and deployed commit SHA. It does not store the source code. The repository binding and model ID are fixed after creation; syncing refreshes the code, title, and description.
 
 To deploy the newest default-branch revision after a push, add this step to a GitHub Action (replace `AGENT_ID`):
 
@@ -94,9 +94,9 @@ The sync route needs no secret and cannot change which repository is deployed. I
 
 Fork an example, then enter **your fork's URL** when creating a code agent in the dashboard. Each example is a separate repository with `agent.ts` at its root:
 
-- [MCP tool loop](https://github.com/pollinations/pollinations-code-agent-example) — a model that can call Pollinations MCP tools using the AI SDK.
-- [Model router](https://github.com/pollinations/pollinations-router-agent) — selects a model for each request and forwards the conversation unchanged.
-- [Streaming timer](https://github.com/pollinations/pollinations-timer-agent) — streams a countdown without calling an AI model.
+- [MCP tool loop](https://github.com/pollinations/pollinations-code-agent-example): a model that can call Pollinations MCP tools using the AI SDK.
+- [Model router](https://github.com/pollinations/pollinations-router-agent): selects a model for each request and forwards the conversation unchanged.
+- [Streaming timer](https://github.com/pollinations/pollinations-timer-agent): streams a countdown without calling an AI model.
 
 [Browse the example repositories](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example).
 

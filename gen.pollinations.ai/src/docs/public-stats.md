@@ -1,7 +1,7 @@
 ## Public Stats
 
 Anonymous, read-only platform statistics served directly from Tinybird. No
-account or API key needed — pass the shared public read token as a query param.
+account or API key is needed. Pass the shared public read token as a query param.
 
 Base URL: `https://api.europe-west2.gcp.tinybird.co`
 

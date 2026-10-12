@@ -968,15 +968,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     <p className="flex items-start gap-1.5">
                         <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Quests can be retroactive — if you qualify under a
-                            quest's rules, just claim the reward.
+                            Past activity may count. If you meet a quest's
+                            requirements, you can claim its reward.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <BeakerIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Early days — quests are in alpha, with more coming
-                            and rewards still evolving.
+                            Quests are in alpha. Availability and rewards may
+                            change.
                         </span>
                     </p>
                 </div>

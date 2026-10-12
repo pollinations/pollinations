@@ -1,6 +1,6 @@
 # Connect User Wallets
 
-Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -16,11 +16,11 @@ Set the **Name** (shows on the consent screen). For web apps, add at least one *
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize — signed out" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize (signed out)" width="420"></p>
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize (signed in)" width="420"></p>
 
 ## Developer Earnings
 
@@ -75,8 +75,8 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 
 | Param | What it does | Example |
 |-------|-------------|---------|
-| `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing — must exactly match a Redirect URI on the App Key, query string included (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
+| `client_id` | Your publishable key. Shows the app name and author on the consent screen and tracks traffic and developer earnings | `pk_abc123` |
+| `redirect_uri` | Where users return after authorizing. Must exactly match a Redirect URI on the App Key, including the query string (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
 | `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
@@ -113,7 +113,7 @@ curl -X POST https://enter.pollinations.ai/api/oauth/token \
 
 The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
 
-Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin: create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope. The approved budget and expiry limit spending. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time. Revocation is immediate.
 
 **Browser-only apps.** The same request works from `fetch`:
 
@@ -163,7 +163,7 @@ User comes back with the key in the URL fragment:
 https://myapp.com/callback#api_key=sk_abc123xyz
 ```
 
-Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
+The key is returned in the URL fragment, which is not sent to the server. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
 ### Code
 

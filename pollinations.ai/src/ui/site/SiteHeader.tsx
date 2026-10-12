@@ -91,7 +91,7 @@ function MenuUtilities({
                 aria-label={
                     discordOnline === null
                         ? "Discord"
-                        : `Discord — ${discordOnline.toLocaleString()} users online now`
+                        : `Discord: ${discordOnline.toLocaleString()} users online now`
                 }
                 className="site-drawer-social-link"
             >
@@ -130,7 +130,7 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
     if (stars === null) return null;
 
     const displayedStars = compact(stars);
-    const label = `Star us on GitHub — ${stars.toLocaleString()} stars`;
+    const label = `Star us on GitHub (${stars.toLocaleString()} stars)`;
 
     return (
         <SocialCount
@@ -150,7 +150,7 @@ function GitHubStarsButton({ stars }: { stars: number | null }) {
 function DiscordLiveButton({ online }: { online: number | null }) {
     if (online === null) return null;
 
-    const label = `Join the Discord — ${online.toLocaleString()} users online now`;
+    const label = `Join the Discord (${online.toLocaleString()} users online now)`;
 
     return (
         <SocialCount
@@ -201,7 +201,7 @@ export function SiteHeader() {
                         <Link
                             to="/"
                             className="site-home-logo hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[880px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-                            aria-label="pollinations.ai — home"
+                            aria-label="pollinations.ai home"
                         >
                             <BrandMark className="size-8" />
                         </Link>

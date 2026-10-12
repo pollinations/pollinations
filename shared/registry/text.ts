@@ -1401,6 +1401,7 @@ const TEXT_BASE_SERVICES = {
                 long_context: {
                     promptTextTokens: perMillion(4),
                     promptCachedTokens: perMillion(1),
+                    promptImageTokens: perMillion(4),
                     completionTextTokens: perMillion(12),
                 },
             },

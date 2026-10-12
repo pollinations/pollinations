@@ -21,7 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -444,8 +444,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned
@@ -603,6 +605,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -708,6 +711,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            void router.invalidate({
+                filter: (match) => match.routeId === "/_dashboard",
+            });
             const questData = await loadQuestData();
             setState((current) => ({
                 ...current,

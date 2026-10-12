@@ -3,6 +3,7 @@ import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
@@ -15,6 +16,7 @@ const SKILLS_SCHEMA =
 // One entry per published skill; served at /agent-skills/<name>/SKILL.md.
 const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
+    { name: "pollinations-api", markdown: API_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
 ].map((skill) => ({
     ...skill,

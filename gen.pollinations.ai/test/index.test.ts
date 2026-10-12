@@ -259,7 +259,11 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toBe("text/plain");
-        await expect(response.text()).resolves.toContain("Disallow: /api/");
+        const body = await response.text();
+        expect(body).toContain("Disallow: /api/");
+        expect(body).toContain(
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+        );
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {
@@ -306,31 +310,17 @@ describe("gen worker routing", () => {
         expect(body.$schema).toBe(
             "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         );
-        // Entries are unique and each one is actually served.
-        expect(new Set(body.skills.map((s) => s.name)).size).toBe(
-            body.skills.length,
-        );
-        expect(new Set(body.skills.map((s) => s.url)).size).toBe(
-            body.skills.length,
-        );
-        expect(body.skills).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    name: "polli",
-                    type: "skill-md",
-                    url: "/.well-known/agent-skills/polli/SKILL.md",
-                }),
-                expect.objectContaining({
-                    name: "quest-contributor",
-                    type: "skill-md",
-                    url: "/.well-known/agent-skills/quest-contributor/SKILL.md",
-                }),
-            ]),
-        );
-        const polli = body.skills.find((s) => s.name === "polli");
-        expect(polli?.description).toMatch(/^Generate images/);
+        expect(body.skills.map((s) => s.name)).toEqual([
+            "polli",
+            "pollinations-api",
+            "quest-contributor",
+        ]);
+        const [polli, apiSkill] = body.skills;
+        expect(polli.description).toMatch(/^Generate images/);
+        expect(apiSkill.description).toMatch(/without installing/);
 
         for (const skill of body.skills) {
+            expect(skill.type).toBe("skill-md");
             expect(skill.url).toBe(
                 `/.well-known/agent-skills/${skill.name}/SKILL.md`,
             );
@@ -359,10 +349,14 @@ describe("gen worker routing", () => {
         );
         expect(missing.status).toBe(404);
 
-        const llms = await fetchWorker("/llms.txt");
-        expect(await llms.text()).toContain(
-            "/.well-known/agent-skills/index.json",
-        );
+        const llms = await (await fetchWorker("/llms.txt")).text();
+        for (const path of [
+            "index.json",
+            "pollinations-api/SKILL.md",
+            "quest-contributor/SKILL.md",
+        ]) {
+            expect(llms).toContain(`/.well-known/agent-skills/${path}`);
+        }
     });
 
     it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
@@ -406,6 +400,24 @@ describe("gen worker routing", () => {
 
         const llms = await fetchWorker("/llms.txt");
         expect(await llms.text()).toContain("/.well-known/api-catalog");
+    });
+
+    it("serves Markdown at the docs landing for agents that ask for it", async () => {
+        const agentHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown" },
+        });
+        expect(agentHome.status).toBe(200);
+        expect(agentHome.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(agentHome.headers.get("Vary")).toBe("Accept");
+        expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
+
+        const browserHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
+        });
+        expect(browserHome.headers.get("Content-Type")).toContain("text/html");
+        expect(browserHome.headers.get("Vary")).toBe("Accept");
     });
 
     it("does not expose /api routes on gen", async () => {

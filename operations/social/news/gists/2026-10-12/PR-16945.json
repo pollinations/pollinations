@@ -1,0 +1,37 @@
+{
+  "pr_number": 16945,
+  "title": "Fixes #16856 — pollinations-api REST skill for agents without CLI install",
+  "author": "aikhusus2025-ctrl",
+  "url": "https://github.com/pollinations/pollinations/pull/16945",
+  "merged_at": "2026-10-12T15:22:54Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added the `pollinations-api` Agent Skill so agents in sandboxes without npm install permission can call Pollinations directly, without installing `polli` or completing browser-based CLI login. The skill starts with keyless `GET /image/{prompt}`, documents OpenAI-compatible `POST /v1/chat/completions` using `Authorization: Bearer $KEY`, and points agents to `/v1/models`, `openapi.json`, and `docs/llm.txt`. It uses the existing `/.well-known/agent-skills/index.json` discovery mechanism; the index now lists both skills, and `/llms.txt` links to the new one. Tests verify both indexed skill digests against the served files.",
+    "keywords": [
+      "agent skills",
+      "REST API",
+      "sandbox agents",
+      "image generation",
+      "chat completions",
+      "skill discovery"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-16945.jpg",
+    "prompt": "In a cozy garden hackerspace, a small bee guides a curious CRT monitor robot from a pixel sign marked 'SKILLS' to a glowing lime green (#ecf874) image URL, with code-plants growing around the terminal. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and shares the frame with the robot. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T15:24:14.460053+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "0511484c993a232bec3d6b3591a2fff2e62e1d6a",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

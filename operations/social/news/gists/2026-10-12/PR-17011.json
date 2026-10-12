@@ -1,0 +1,32 @@
+{
+  "pr_number": 17011,
+  "title": "feat(gen): declare Content Signals in robots.txt",
+  "author": "kreggscode",
+  "url": "https://github.com/pollinations/pollinations/pull/17011",
+  "merged_at": "2026-10-12T18:43:12Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added `Content-Signal: search=yes, ai-input=yes, ai-train=no` inside the existing `User-agent: *` group on both public hosts: the generated robots.txt for `gen.pollinations.ai` and the static robots.txt for `pollinations.ai`. The directive expresses a preference to allow search and AI input but not AI training; it does not change existing crawler rules or add HTTP response headers. Extended the gen robots.txt test to check the directive and its placement.",
+    "keywords": [
+      "robots.txt",
+      "Content Signals",
+      "search",
+      "AI training",
+      "crawler preferences"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17011.jpg",
+    "prompt": "In a cozy pixel garden, Polli pins a small Content-Signal sign between two flower-framed robots.txt boards, with lime green (#ecf874) vines curling around them. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and stays small within the scene. Strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-12T18:44:37.961671+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "9982f3101dab0d86d95d02c46ed1dffcea2a5ec3",
+  "announcements": []
+}

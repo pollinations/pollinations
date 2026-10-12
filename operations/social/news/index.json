@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T00:51:01.685206+00:00",
+  "generated_at": "2026-10-12T06:47:03.775912+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -7555,6 +7555,55 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-11",
+      "emoji": "🚀",
+      "title": "Longer, larger sandboxes",
+      "text": "Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.",
+      "prs": [
+        16896,
+        17115
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "emoji": "🎨",
+      "title": "InkBloom coloring pages",
+      "text": "Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).",
+      "prs": [
+        17034
+      ],
+      "app": true
+    },
+    {
+      "date": "2026-10-11",
+      "emoji": "💡",
+      "title": "Text Comparison joins Learn",
+      "text": "Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).",
+      "prs": [
+        17035
+      ],
+      "app": true
+    },
+    {
+      "date": "2026-10-11",
+      "emoji": "🎵",
+      "title": "Compose with Midi Journey",
+      "text": "Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).",
+      "prs": [
+        17108
+      ],
+      "app": true
+    },
+    {
+      "date": "2026-10-11",
+      "emoji": "🤖",
+      "title": "Polli keeps the conversation going",
+      "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
+      "prs": [
+        17125
+      ]
+    },
     {
       "date": "2026-10-10",
       "emoji": "🎨",

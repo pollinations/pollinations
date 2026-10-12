@@ -7,10 +7,11 @@ import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
-    ModelBreakdown,
+    UsageBreakdown,
+    UsageGroupBy,
 } from "./types";
 
-type UsageModelBreakdown = ModelBreakdown & {
+type UsageTotals = UsageBreakdown & {
     paidPollen: number;
     tierPollen: number;
     paidRequests: number;
@@ -34,13 +35,16 @@ type UsageDataResult = {
         paidPollen: number;
         paidRequests: number;
         tierRequests: number;
-        modelBreakdowns: UsageModelBreakdown[];
+        breakdowns: UsageTotals[];
     };
 };
 
 const EMPTY_USAGE: DailyUsageRecord[] = [];
 
-export function useUsageData(filters: FilterState): UsageDataResult {
+export function useUsageData(
+    filters: FilterState,
+    groupBy: UsageGroupBy = "model",
+): UsageDataResult {
     const { granularity, period } = filters.period;
     const requestKey = `${granularity}:${period}`;
     const [result, setResult] = useState<{
@@ -221,20 +225,13 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
-        const modelTotals = new Map<
-            string,
-            {
-                requests: number;
-                pollen: number;
-                paidPollen: number;
-                tierPollen: number;
-                paidRequests: number;
-                tierRequests: number;
-            }
-        >();
+        const totalsByGroup = new Map<string, UsageTotals>();
         for (const r of selectedRows) {
-            if (!r.model) continue;
-            const cur = modelTotals.get(r.model) || {
+            if (groupBy === "model" && !r.model) continue;
+            const id = groupBy === "key" ? r.api_key_id : (r.model ?? "");
+            const cur = totalsByGroup.get(id) || {
+                id,
+                label: groupBy === "key" ? r.api_key || "Unnamed key" : id,
                 requests: 0,
                 pollen: 0,
                 paidPollen: 0,
@@ -251,13 +248,11 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 cur.paidPollen += r.cost_usd || 0;
                 cur.paidRequests += r.requests || 0;
             }
-            modelTotals.set(r.model, cur);
+            totalsByGroup.set(id, cur);
         }
-        const modelBreakdowns: UsageModelBreakdown[] = Array.from(
-            modelTotals.entries(),
-        )
-            .map(([model, totals]) => ({ model, label: model, ...totals }))
-            .sort((a, b) => b[filters.metric] - a[filters.metric]);
+        const breakdowns = Array.from(totalsByGroup.values()).sort(
+            (a, b) => b[filters.metric] - a[filters.metric],
+        );
         return {
             chartData: sorted,
             hasData: filtered.length > 0,
@@ -276,11 +271,12 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                         sum + (row.meter_source === "tier" ? row.requests : 0),
                     0,
                 ),
-                modelBreakdowns,
+                breakdowns,
             },
         };
     }, [
         dailyUsage,
+        groupBy,
         filters.selectedKeyIds,
         filters.selectedModels,
         filters.metric,

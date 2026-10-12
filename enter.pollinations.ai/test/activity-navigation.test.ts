@@ -51,11 +51,11 @@ it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
             selectedModels: [],
         });
         expect([stats.totalRequests, stats.totalPollen]).toEqual([10, 20]);
-        expect(stats.modelBreakdowns[0]).toMatchObject({
+        expect(stats.breakdowns[0]).toMatchObject({
             requests: 10,
             pollen: 20,
         });
-        for (const usage of [stats, stats.modelBreakdowns[0]])
+        for (const usage of [stats, stats.breakdowns[0]])
             expect(usage).toMatchObject({
                 paidRequests: 3,
                 paidPollen: 6,
@@ -63,6 +63,108 @@ it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
                 tierPollen: 8,
             });
         return null;
+    }
+    renderToStaticMarkup(React.createElement(Summary));
+});
+
+it.each([
+    "pollen",
+    "requests",
+] as const)("groups key usage by ID and ranks by %s while preserving filters and chart totals", (metric) => {
+    const rows = [
+        {
+            api_key_id: "a",
+            api_key: "Same name",
+            model: "image",
+            meter_source: "pack",
+            requests: 2,
+            cost_usd: 8,
+        },
+        {
+            api_key_id: "a",
+            api_key: "Same name",
+            model: "text",
+            meter_source: "tier",
+            requests: 3,
+            cost_usd: 4,
+        },
+        {
+            api_key_id: "b",
+            api_key: "Same name",
+            model: "text",
+            meter_source: "pack",
+            requests: 10,
+            cost_usd: 2,
+        },
+        {
+            api_key_id: "deleted",
+            api_key: null,
+            model: null,
+            meter_source: "unknown",
+            requests: 1,
+            cost_usd: 1,
+        },
+    ].map((row) => ({ date: "2026-08-08", ...row }));
+    rows.push({ ...rows[0], date: "2026-08-09", cost_usd: 100 });
+    function Summary() {
+        const filters = {
+            period: {
+                granularity: "month" as const,
+                period: "2026-08",
+                bucket: "2026-08-08",
+            },
+            metric,
+            selectedKeyIds: [],
+            selectedModels: [],
+        };
+        const usage = useUsageData(filters, "key");
+        const models = useUsageData(filters);
+        expect(usage.chartData).toEqual(models.chartData);
+        expect(usage.stats.totalPollen).toBe(15);
+        expect(usage.stats.totalRequests).toBe(16);
+        expect(usage.stats.breakdowns.map((row) => row.id)).toEqual(
+            metric === "pollen" ? ["a", "b", "deleted"] : ["b", "a", "deleted"],
+        );
+        expect(
+            usage.stats.breakdowns.find((row) => row.id === "a"),
+        ).toMatchObject({
+            label: "Same name",
+            pollen: 12,
+            requests: 5,
+            paidPollen: 8,
+            tierPollen: 4,
+            paidRequests: 2,
+            tierRequests: 3,
+        });
+        expect(
+            usage.stats.breakdowns.find((row) => row.id === "deleted"),
+        ).toMatchObject({
+            label: "Unnamed key",
+            pollen: 1,
+            paidPollen: 0,
+            tierPollen: 0,
+        });
+        const filtered = useUsageData(
+            { ...filters, selectedKeyIds: ["a"], selectedModels: ["text"] },
+            "key",
+        );
+        expect(filtered.stats.breakdowns).toHaveLength(1);
+        expect(filtered.stats.breakdowns[0]).toMatchObject({
+            id: "a",
+            pollen: 4,
+            requests: 3,
+        });
+        expect(filtered.stats.totalPollen).toBe(4);
+        return null;
+    }
+    // The existing server-render harness seeds the hook's fetched rows.
+    for (let i = 0; i < 3; i++) {
+        vi.mocked(React.useState)
+            .mockReturnValueOnce([{ key: "month:2026-08", rows }, vi.fn()])
+            .mockReturnValueOnce([
+                { key: "month:2026-08", pending: false, error: null },
+                vi.fn(),
+            ]);
     }
     renderToStaticMarkup(React.createElement(Summary));
 });

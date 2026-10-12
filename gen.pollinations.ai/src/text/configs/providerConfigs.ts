@@ -80,6 +80,7 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
         ...overrides,
     });
 }

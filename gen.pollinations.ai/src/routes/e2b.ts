@@ -54,14 +54,18 @@ const PRICE_MULTIPLIER = 0.25;
 // E2B's lease when connect omits `timeout`.
 const DEFAULT_TIMEOUT_SECONDS = 300;
 // Templates the dashboard offers: the template sets the size.
-const TEMPLATES = ["pollinations", "claude", "codex", "opencode", "amp"].map(
-    (id) => ({ id, cpuCount: 2, memoryMB: 2048 }),
-);
-// Gen logs polli in inside this template, which has polli and the coding
-// harnesses, with a key of the sandbox's own.
-const LOGGED_IN_TEMPLATE = "pollinations";
-// What `polli auth login` asks for.
-const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
+const TEMPLATES = [
+    { id: "pollinations", cpuCount: 2, memoryMB: 2048 },
+    { id: "pollinations-large", cpuCount: 4, memoryMB: 8192 },
+];
+// Gen logs polli in inside these templates, one image with polli and the
+// coding harnesses in two sizes, with a key of the sandbox's own. Exact names
+// only: E2B resolves them to our team's templates.
+const LOGGED_IN_TEMPLATES = ["pollinations", "pollinations-large"];
+// What `polli auth login` asks for, except `keys`: every process in the box can
+// read the login, and `keys` would let it raise any key's budget. polli's
+// harnesses then use the login itself instead of keys of their own.
+const POLLI_PERMISSIONS = ["profile", "usage", "machines"];
 // E2B takes a timeout as 32-bit seconds.
 const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
 // A timeout past the 24-hour run keeps the sandbox, as on an E2B team with a
@@ -482,7 +486,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 throw error;
             }
             await charge(c, bill, startTime);
-            if (body.templateID === LOGGED_IN_TEMPLATE) {
+            if (LOGGED_IN_TEMPLATES.includes(body.templateID ?? "")) {
                 try {
                     await logIn(c, created);
                 } catch (error) {

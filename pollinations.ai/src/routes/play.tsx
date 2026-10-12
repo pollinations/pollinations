@@ -20,9 +20,9 @@ export const Route = createFileRoute("/play")({
 });
 
 /**
- * The playground, lifted from apps/playground with its UX intact but its own
- * page chrome removed — the heading, subtitle and sheet come from the same
- * pattern as /apps and /community so it reads as one site, not an embed.
+ * The playground (formerly playground.pollinations.ai, which now redirects
+ * here). The heading, subtitle and sheet come from the same pattern as /apps
+ * and /community so it reads as one site, not an embed.
  *
  * PolliProvider mounts here rather than at the root: route code-splitting
  * keeps @pollinations/sdk inside this chunk, so every other page stays as

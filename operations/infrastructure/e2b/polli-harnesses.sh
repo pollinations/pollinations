@@ -1,7 +1,8 @@
 # Sourced by login shells in the `pollinations` template. Gen writes polli's
 # login into each new sandbox (gen.pollinations.ai/src/routes/e2b.ts), a
 # staging gen a staging one; the first interactive login then connects the
-# coding harnesses to Pollinations with that key.
+# coding harnesses to Pollinations with that key. The login can't create keys,
+# so every harness shares it.
 
 if [ ! -f ~/.pollinations/credentials.json ] &&
     [ -f ~/.pollinations/credentials.staging.json ]; then

@@ -693,7 +693,7 @@ test("the account owner's session token runs sandboxes without a key scope", asy
     expect((await createSandbox(token)).status).toBe(201);
 });
 
-test("the pollinations template comes logged in with a key from enter's key API", async () => {
+test("the pollinations templates come logged in with a key from enter's key API", async () => {
     const e2b = stubE2b();
     const owner = await createTestApiKey({
         accountPermissions: ["machines", "keys"],
@@ -723,7 +723,17 @@ test("the pollinations template comes logged in with a key from enter's key API"
         body: {
             name: `polli-sandbox-${sandboxID}`,
             type: "secret",
-            accountPermissions: ["profile", "usage", "keys", "machines"],
+            accountPermissions: ["profile", "usage", "machines"],
         },
     });
+
+    // The large size is the same image, so it comes logged in too.
+    const large = await createSandbox(owner.key, {
+        templateID: "pollinations-large",
+    });
+    const { sandboxID: largeID } = await large.json<{ sandboxID: string }>();
+    expect(e2b.files.map((file) => file.sandboxID)).toEqual([
+        sandboxID,
+        largeID,
+    ]);
 });

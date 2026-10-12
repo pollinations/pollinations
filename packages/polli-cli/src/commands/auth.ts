@@ -9,6 +9,7 @@ import {
 } from "../lib/config.js";
 import {
     ExitSignal,
+    fail,
     printError,
     printInfo,
     printResult,
@@ -30,10 +31,6 @@ interface ProfileResponse {
 interface BalanceResponse {
     balance?: number;
     accountBalance?: { total: number };
-}
-
-interface KeyInfoResponse {
-    valid: boolean;
 }
 
 interface DeviceCodeResponse {
@@ -112,26 +109,25 @@ async function readStdinToken(): Promise<string> {
     return text.trim();
 }
 
-async function authenticateWithKey(key: string): Promise<void> {
+// gen's response cache can answer an unauthenticated prompt, so a chat
+// completion proves nothing — check the key itself.
+export const keyIsValid = async (key: string) => {
     try {
-        const info = await gen<KeyInfoResponse>("/account/key", {
+        const info = await gen<{ valid: boolean }>("/account/key", {
             apiKey: key,
         });
-        if (info.valid !== true) {
-            printError("Invalid API key. Nothing was saved.");
-            throw new ExitSignal(1);
-        }
+        return info.valid === true;
     } catch (error) {
-        if (error instanceof ExitSignal) throw error;
-        const invalid = error instanceof ApiError && error.status === 401;
-        printError(
-            invalid
-                ? "Invalid API key. Nothing was saved."
-                : `Could not verify API key. Nothing was saved: ${error instanceof Error ? error.message : "unknown error"}`,
-        );
-        throw new ExitSignal(1);
+        if (error instanceof ApiError && error.status === 401) return false;
+        throw error;
     }
+};
 
+async function authenticateWithKey(key: string): Promise<void> {
+    const valid = await keyIsValid(key).catch((error) =>
+        fail("Could not verify API key. Nothing was saved", error),
+    );
+    if (!valid) fail("Invalid API key. Nothing was saved.");
     storeKey(key);
     printSuccess("Authenticated. Key stored.");
 

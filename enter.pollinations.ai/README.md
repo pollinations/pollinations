@@ -22,3 +22,5 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 4. Run migrations: `npm run migrate:development`
 5. Run the dev server: `npm run dev`
 6. **Local Pollen**: after signing in, run `npm run seed:local` in `gen.pollinations.ai` to give every local account Quest Pollen.
+
+**Frontend only**: `npm install`, then `npm run dev:frontend:production` serves the dashboard on port 3000 against production Enter and gen, with no secrets, migrations or local workers. You stay signed out (GitHub sign-in returns to enter.pollinations.ai, not localhost), so use it for public pages such as News, Models and sign-in.

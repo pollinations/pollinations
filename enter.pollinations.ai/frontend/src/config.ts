@@ -14,7 +14,8 @@ const environmentConfig = {
     development: {
         baseUrl: developmentBaseUrl,
         apiBaseUrl: configuredApiBaseUrl ?? "/api",
-        genBaseUrl: "http://localhost:8788",
+        genBaseUrl:
+            import.meta.env.VITE_GEN_BASE_URL ?? "http://localhost:8788",
         authPath: "/api/auth",
     },
     staging: {

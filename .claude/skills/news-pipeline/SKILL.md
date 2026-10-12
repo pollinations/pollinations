@@ -16,7 +16,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 ## Find what happened
 
 - Runs: `gh run list --workflow news-posts.yml` (or `news-create-pr-gist.yml`, `news-build-index.yml`, `news-sync-readme.yml`); `gh run view <id> --log`.
-- Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Reddit has failed every day since July 2026, so the delivery run is red at 15:00 / Sunday 18:00 for that alone.
+- Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Reddit sending is broken (draft fix #14651), but read every failed run: another post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/<daily|weekly|monthly|models>/<date>/` — `summary.json`, the post files, `images/`, `delivery.json`.
 - `delivery.json` states: `done` (sent, never again), `failed` (nothing sent; the next delivery retries), `attempt` (unknown: the run stays red until a person decides), `started` (Reddit: handed to the server, never retried).
 
@@ -31,16 +31,20 @@ gh workflow run news-posts.yml -f job=daily -f date=2026-10-12 -f run=preview
 | What a 06:00 run does on day T (T−1's daily, Sunday's week, the 1st's month, their Buffer posts) | `job=morning date=T` |
 | What a 15:00 / Sunday 18:00 run does on day T (Reddit, the week's Discord) | `job=afternoon date=T` |
 | One post | `job=daily date=DAY`, `job=weekly date=SUNDAY`, `job=monthly date=YYYY-MM`, `job=models date=WEDNESDAY` |
-| Write and save only | `run="write + save"` |
-| Deliver only | `run=deliver` (not for `models`: the model post is written, sent and saved in one run) |
+| Write and save only | `run="write + save"` (for `models` this only writes: nothing is saved before Discord has the post) |
+| Deliver only | `run=deliver`. With `job=daily` or `weekly` it schedules Buffer only; Reddit and the week's Discord post go with `job=afternoon`. Not for `models` (below) |
 | Rewrite a saved date | add `overwrite=true`; its `delivery.json` is kept, so posts already `done` are not sent again, and a saved model post is never replaced |
 
 `deliver.py` refuses dates before its `START`; those went out with the previous senders. Download a preview's texts and pictures with `gh run download <id> -n preview`.
 
 ## Settle a stuck send (`attempt`)
 
-1. Look in the channel itself: Buffer's queue, the Discord channel, Reddit.
-2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin.json done`. Not there: `… failed`, then deliver again. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
+1. Look everywhere it could be: in Buffer both the Queue and the Sent tab (a post whose answer was lost may already be published), and the destination itself (X, LinkedIn, Instagram, the Discord channel, Reddit).
+2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin.json done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
+
+## Recover a model post
+
+The model post is written, sent to Discord and saved in one run; the run saves only if its text is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `models` artifact, so the same text is saved. A new run writes a new text, which the record rejects, and the snapshot stays unsaved.
 
 ## A missing or wrong gist
 

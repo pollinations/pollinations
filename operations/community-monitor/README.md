@@ -220,7 +220,7 @@ Owners use Private to remove a model from public access; key permissions and
 paid access still apply to public models.
 No stored health flag, daily audit, hide/relist writes or recovery streaks.
 The monitor retains requested diagnostics, protocol warnings, served-model and
-fallback notices, official-model alerts and daily leaderboards. After a daily
+fallback notices, official-model and legacy bridge alerts and daily leaderboards. After a daily
 leaderboard posts, it reports only community models newly filtered from
 discovery and those back in listings since the previous check, with their
 current success rates. The first check records a baseline without posting a

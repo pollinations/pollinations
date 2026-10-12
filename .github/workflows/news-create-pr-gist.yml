@@ -1,10 +1,14 @@
 name: News / Create PR gist
 
 on:
+  # pull_request_target always runs this file from main, so listing master
+  # here gives merged PRs into master (the legacy APIs) the same news gist
+  # and Discord post.
   pull_request_target:
     types: [closed]
     branches:
       - main
+      - master
   workflow_dispatch:
     inputs:
       pr_number:

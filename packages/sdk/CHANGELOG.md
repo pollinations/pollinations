@@ -20,6 +20,9 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   of throwing a JSON `SyntaxError`.
 - `chatStream()` rejects prematurely closed responses without a terminal
   finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
 
 ## [5.1.0-alpha.14] - 2026-10-08
 

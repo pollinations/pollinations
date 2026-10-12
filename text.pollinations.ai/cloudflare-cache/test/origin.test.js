@@ -331,9 +331,30 @@ test("the VM's other routes: redirect, models, crossdomain, feed and preflight",
     expect(preflight.response.headers.get("x-legacy-path")).toBe("worker");
 });
 
-/** Express's finalhandler page, as the VM's production process sent it */
+/** Express's finalhandler page, as the VM sent it without its stack lines */
 const errorPage = (message) =>
     `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${message}</pre>\n</body>\n</html>\n`;
+// The headers of an Express error page, with the CORS of the routes after cors()
+const pageHeaders = (cors) => ({
+    ...(cors && {
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Payment-Required,Payment-Response",
+    }),
+    "content-security-policy": "default-src 'none'",
+    "content-type": "text/html; charset=utf-8",
+    "x-content-type-options": "nosniff",
+    "x-legacy-path": "worker",
+    "x-powered-by": "Express",
+});
+// What the cache code adds to a chunked response below 401
+const CACHE_MISS = {
+    "access-control-allow-origin": "*",
+    "access-control-allow-headers":
+        "Content-Type, X-Turnstile-Token, Payment-Signature, X-PAYMENT",
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "x-cache": "MISS",
+    "x-cache-key": expect.stringMatching(/^[0-9a-f]{64}$/),
+};
 
 test("an invalid messages array gets the route's JSON 400", async () => {
     const { response, text } = await call("/", {
@@ -345,28 +366,38 @@ test("an invalid messages array gets the route's JSON 400", async () => {
     expect(text).toBe('{"error":"Invalid messages array"}');
 });
 
-test("bad bodies, malformed % and unknown routes get Express's HTML error page", async () => {
+test("bad bodies, malformed % and unknown routes get Express's HTML error page with the error line", async () => {
     const cases = [
-        // body-parser ran before cors(): no CORS headers
+        // body-parser ran before cors(): no CORS headers. The VM's chunked
+        // 400 pages got the cache code's headers, as in the live captures.
         [
             { method: "POST", headers: JSON_BODY, body: "{bad" },
             "/",
             400,
-            "Bad Request",
+            "SyntaxError: Expected property name or &#39;}&#39; in JSON at position 1 (line 1 column 2)",
             false,
         ],
         [
             { method: "POST", headers: JSON_BODY, body: " " },
             "/",
             400,
-            "Bad Request",
+            "SyntaxError: Unexpected end of JSON input",
             false,
         ],
         [
-            { method: "POST", headers: JSON_BODY, body: "1" },
+            { method: "POST", headers: JSON_BODY, body: '"pr7e2e-r1"' },
+            "/v1/chat/completions",
+            400,
+            "SyntaxError: Unexpected token &#39;&quot;&#39;, &quot;&quot;pr7e2e-r1&quot;&quot; is not valid JSON",
+            false,
+        ],
+        [
+            // The message quotes the body, line breaks and double spaces
+            // as finalhandler wrote them
+            { method: "POST", headers: JSON_BODY, body: '{\n  "a": x\n}' },
             "/",
             400,
-            "Bad Request",
+            "SyntaxError: Unexpected token &#39;x&#39;, &quot;{<br> &nbsp;&quot;a&quot;: x<br>}&quot; is not valid JSON",
             false,
         ],
         [
@@ -374,12 +405,24 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page",
             { method: "POST", headers: JSON_BODY, body: " ".repeat(20971521) },
             "/",
             413,
-            "Payload Too Large",
+            "PayloadTooLargeError: request entity too large",
             false,
         ],
         // The router's errors came after cors()
-        [{}, "/%E0%A4%A", 400, "Bad Request", true],
-        [{ method: "POST" }, "/openai%E0%A4%A", 400, "Bad Request", true],
+        [
+            {},
+            "/pr7e2e-r1-bad%E0%A4-x",
+            400,
+            "URIError: Failed to decode param &#39;pr7e2e-r1-bad%E0%A4-x&#39;",
+            true,
+        ],
+        [
+            { method: "POST" },
+            "/openai/pr7e2e-r1-bad%C3-x",
+            400,
+            "URIError: Failed to decode param &#39;/pr7e2e-r1-bad%C3-x&#39;",
+            true,
+        ],
         [{ method: "PUT" }, "/nothing", 404, "Cannot PUT /nothing", true],
         [
             { method: "DELETE" },
@@ -399,18 +442,11 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page",
 
         expect(response.status, label).toBe(status);
         expect(text, label).toBe(errorPage(message));
+        // Chunked, without Content-Length; below 401 the cache code adds
+        // its headers and stores the page, as it did the VM's
         expect(Object.fromEntries(response.headers), label).toEqual({
-            ...(cors && {
-                "access-control-allow-origin": "*",
-                "access-control-expose-headers":
-                    "Payment-Required,Payment-Response",
-            }),
-            "content-length": String(text.length),
-            "content-security-policy": "default-src 'none'",
-            "content-type": "text/html; charset=utf-8",
-            "x-content-type-options": "nosniff",
-            "x-legacy-path": "worker",
-            "x-powered-by": "Express",
+            ...pageHeaders(cors),
+            ...(status < 401 && CACHE_MISS),
         });
         expect(gen.bodies, label).toHaveLength(0);
     }

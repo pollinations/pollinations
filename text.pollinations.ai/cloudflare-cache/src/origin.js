@@ -108,13 +108,28 @@ const encodeUrl = (url) =>
         encodeURI,
     );
 
+/** A body without Content-Length, which the client gets chunked */
+const chunked = (text) =>
+    new ReadableStream({
+        start(controller) {
+            if (text) controller.enqueue(new TextEncoder().encode(text));
+            controller.close();
+        },
+    });
+
 /**
- * Express's finalhandler page in production: body-parser's errors came
- * before cors(), the router's after it
+ * Express's finalhandler page as the VM sent it without NODE_ENV: the error's
+ * "<name>: <message>", here without the stack lines that followed it.
+ * body-parser's errors came before cors(), the router's after it.
  */
 function errorPage(status, message, cors) {
-    const body = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${escapeHtml(message)}</pre>\n</body>\n</html>\n`;
-    return new Response(body, {
+    const text = escapeHtml(message)
+        .replaceAll("\n", "<br>")
+        .replaceAll("  ", " &nbsp;");
+    const body = `<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>${text}</pre>\n</body>\n</html>\n`;
+    // No Content-Length, as the page reached the cache code, which adds its
+    // CORS and X-Cache headers to a 400
+    return new Response(chunked(body), {
         status,
         headers: {
             ...(cors && CORS),
@@ -122,8 +137,6 @@ function errorPage(status, message, cors) {
             "Content-Security-Policy": "default-src 'none'",
             "X-Content-Type-Options": "nosniff",
             "Content-Type": "text/html; charset=utf-8",
-            // The message is ASCII: status phrases, the method and an encoded path
-            "Content-Length": String(body.length),
         },
     });
 }
@@ -171,7 +184,8 @@ export async function origin(request, env, ctx) {
         try {
             prompt = decodeURIComponent(param);
         } catch {
-            return errorPage(400, "Bad Request", true);
+            const line = `URIError: Failed to decode param '${param}'`;
+            return errorPage(400, line, true);
         }
         return generate(prompt, format, route);
     };
@@ -237,7 +251,8 @@ function headSize(request, { pathname, search }) {
 async function readBody(request) {
     const type = request.headers.get("content-type") ?? "";
     if (!/^application\/json\s*(;|$)/i.test(type) || !request.body) return {};
-    const tooLarge = () => errorPage(413, "Payload Too Large", false);
+    const tooLarge = () =>
+        errorPage(413, "PayloadTooLargeError: request entity too large", false);
     if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) {
         return tooLarge();
     }
@@ -246,11 +261,32 @@ async function readBody(request) {
     const text = new TextDecoder().decode(bytes);
     if (!text) return {};
     try {
-        const parsed = JSON.parse(text);
-        // body-parser's strict mode accepts only objects and arrays
-        if (parsed !== null && typeof parsed === "object") return parsed;
-    } catch {}
-    return errorPage(400, "Bad Request", false);
+        return parseStrict(text);
+    } catch (error) {
+        return errorPage(400, `${error.name}: ${error.message}`, false);
+    }
+}
+
+/**
+ * body-parser's strict JSON.parse: only an object or array, and otherwise
+ * JSON.parse's own error for the first character
+ */
+function parseStrict(text) {
+    const first = text.match(/^[ \t\n\r]*([^ \t\n\r])/)?.[1];
+    if (first === "{" || first === "[") return JSON.parse(text);
+    // createStrictSyntaxError: parse the text with "#" from its first
+    // character on, then put the text back into the message
+    const at = text.indexOf(first);
+    try {
+        JSON.parse(
+            at === -1 ? "" : text.slice(0, at) + "#".repeat(text.length - at),
+        );
+    } catch (error) {
+        error.message = error.message.replace(/#+/g, (run) =>
+            text.substring(at, at + run.length),
+        );
+        throw error;
+    }
 }
 
 /** cors() answering a preflight */

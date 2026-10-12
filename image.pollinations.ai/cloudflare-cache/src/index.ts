@@ -20,7 +20,11 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
         allowHeaders: ["*"],
-        exposeHeaders: [...Object.keys(ATTRIBUTION_HEADERS), "Payment-Required", "Payment-Response"],
+        exposeHeaders: [
+            ...Object.keys(ATTRIBUTION_HEADERS),
+            "Payment-Required",
+            "Payment-Response",
+        ],
     }),
 );
 
@@ -56,12 +60,15 @@ app.delete("/delete/prompt/:prompt", async (c) => {
             r2Deleted,
         });
     } else {
-        return c.json({
-            success: false,
-            cacheKey,
-            message: "Cache entry not found or already deleted",
-            r2Deleted,
-        }, 404);
+        return c.json(
+            {
+                success: false,
+                cacheKey,
+                message: "Cache entry not found or already deleted",
+                r2Deleted,
+            },
+            404,
+        );
     }
 });
 
@@ -93,11 +100,24 @@ app.all("*", setConnectingIp, async (c) => {
     const pathname = url.pathname;
 
     // Known utility paths pass through directly
-    const utilityPaths = ["/models", "/about", "/register", "/feed", "/crossdomain.xml", "/.well-known"];
-    const isUtility = utilityPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
+    const utilityPaths = [
+        "/models",
+        "/about",
+        "/register",
+        "/feed",
+        "/crossdomain.xml",
+        "/.well-known",
+    ];
+    const isUtility = utilityPaths.some(
+        (p) => pathname === p || pathname.startsWith(p + "/"),
+    );
 
     // Everything else gets rewritten to /prompt/
-    if (!isUtility && !pathname.startsWith("/prompt") && !pathname.startsWith("/delete")) {
+    if (
+        !isUtility &&
+        !pathname.startsWith("/prompt") &&
+        !pathname.startsWith("/delete")
+    ) {
         url.pathname = `/prompt${pathname}`;
     }
 
@@ -109,5 +129,9 @@ app.all("*", setConnectingIp, async (c) => {
         headers: originHeaders(c.req.header(), clientIP),
     });
 });
+
+// Durable Object classes, unused until the adapter moves in
+export { FeedHub } from "../../../shared/feed-hub.js";
+export { IpSlot } from "../../../shared/ip-slot.js";
 
 export default app;

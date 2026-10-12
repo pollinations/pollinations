@@ -335,15 +335,20 @@ async function readBody(request) {
     // raw-body checked the declared length only for an uncompressed body
     const length = Number.parseInt(request.headers.get("content-length"), 10);
     if (!inflate && length > MAX_BODY_BYTES) return tooLarge();
-    if (!iconv.encodingExists(charset)) {
+    // iconv-lite 0.6.3 bundles for Workers; it decodes as the VM's 0.4.24
+    // except that it added UTF-32, which the VM rejected
+    const utf32 = /^utf32/.test(charset.replace(/[^0-9a-z]/g, ""));
+    if (utf32 || !iconv.encodingExists(charset)) {
         return unsupported(`charset "${charset.toUpperCase()}"`);
     }
     let bytes = Buffer.from(await request.arrayBuffer());
     if (inflate) {
         try {
-            bytes = inflate(bytes, { maxOutputLength: MAX_BODY_BYTES + 1 });
+            // workerd stops at the limit only within about 16 KB, so it gets
+            // room and the size check below decides
+            bytes = inflate(bytes, { maxOutputLength: 2 * MAX_BODY_BYTES });
         } catch (error) {
-            // maxOutputLength: workerd throws a RangeError without Node's code
+            // Past maxOutputLength workerd throws a RangeError without Node's code
             if (error instanceof RangeError) return tooLarge();
             return errorPage(400, `Error: ${error.message}`, false);
         }

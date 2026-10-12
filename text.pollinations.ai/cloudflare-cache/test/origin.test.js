@@ -793,7 +793,23 @@ test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media typ
                 "UnsupportedMediaTypeError: unsupported charset &quot;LATIN1&quot;",
             ],
         ],
+        // The VM's iconv-lite had no UTF-32
+        [
+            "utf-32",
+            { "content-type": `${json}; charset=utf-32le` },
+            "{}",
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported charset &quot;UTF-32LE&quot;",
+            ],
+        ],
         // The 20 MB limit applies to the inflated body
+        [
+            "gzip of exactly 20 MB",
+            { "content-encoding": "gzip" },
+            gzipSync(messages("exact").padEnd(20 * 1024 * 1024)),
+            "exact",
+        ],
         [
             "gzip over 20 MB",
             { "content-encoding": "gzip" },

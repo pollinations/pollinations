@@ -1,0 +1,37 @@
+{
+  "pr_number": 17163,
+  "title": "feat(news): switch the daily, Sunday and monthly posts to posts.py and deliver.py",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17163",
+  "merged_at": "2026-10-12T15:44:57Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The daily, Sunday and monthly news posts switch to `posts.py` for writing and `deliver.py` for delivery, replacing the old generators, senders, prompts and workflows. The schedule stays at 06:00 daily, 15:00 Monday–Saturday and 18:00 Sunday, with the same posts and channels. `deliver.py` takes over daily posts from 2026-10-12 and weekly posts from 2026-10-18; the first new 06:00 run is 2026-10-13. Posts are saved and pushed one at a time before the next is written. Delivery holds the Buffer, Discord and Reddit keys and runs even if writing fails; failure issues identify whether writing or delivery failed. Manual runs default to preview and keep their texts and pictures for comparison. The index rebuild follows News / Posts. Checks matched saved daily and weekly texts word for word, reproduced the old Buffer, Discord and Reddit requests for 18 saved posts, and rehearsed the save-and-push loop against a racing writer.",
+    "keywords": [
+      "news pipeline",
+      "posts.py",
+      "deliver.py",
+      "social delivery",
+      "GitHub Actions",
+      "preview"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17163.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli wears a tiny editor’s visor and guides one stack of pixel post cards from a writing desk to a delivery tray beside a lime green (#ecf874) glowing CRT, with little code-flowers growing nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic, in a cozy pixel art, 8-bit aesthetic scene with soft pastel gradients, warm lighting, retro gaming vibes and a warm cream background."
+  },
+  "generated_at": "2026-10-12T15:46:17.365444+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "876d8f1815508852cfd0ceed52498f147a66dc39",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

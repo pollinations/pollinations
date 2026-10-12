@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "SPOT AI",
+    "url": "https://spotai-gold.vercel.app",
+    "description": "Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two ",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "07mrbeastofficial",
+    "githubUserId": "287780093",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17070",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/6e13c142-1e01-4525-9ffc-b5db02d86d7b"
+  },
+  {
+    "emoji": "🎮",
     "name": "Pollinations NPC for Roblox",
     "url": null,
     "description": "Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith.",

@@ -288,7 +288,7 @@ describe("gen worker routing", () => {
         }
     });
 
-    it("publishes the polli skill through Agent Skills well-known discovery", async () => {
+    it("publishes agent skills through Agent Skills well-known discovery", async () => {
         const index = await fetchWorker("/.well-known/agent-skills/index.json");
         expect(index.status).toBe(200);
         expect(index.headers.get("Content-Type")).toContain("application/json");
@@ -306,27 +306,58 @@ describe("gen worker routing", () => {
         expect(body.$schema).toBe(
             "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         );
-        expect(body.skills).toHaveLength(1);
-        const [skill] = body.skills;
-        expect(skill).toMatchObject({
-            name: "polli",
-            type: "skill-md",
-            url: "/.well-known/agent-skills/polli/SKILL.md",
-        });
-        expect(skill.description).toMatch(/^Generate images/);
-
-        const skillFile = await fetchWorker(skill.url);
-        expect(skillFile.status).toBe(200);
-        expect(skillFile.headers.get("Content-Type")).toContain(
-            "text/markdown",
+        // Entries are unique and each one is actually served.
+        expect(new Set(body.skills.map((s) => s.name)).size).toBe(
+            body.skills.length,
         );
-        const bytes = new Uint8Array(await skillFile.arrayBuffer());
-        expect(new TextDecoder().decode(bytes)).toMatch(/^---\nname: polli\n/);
-        const hash = await crypto.subtle.digest("SHA-256", bytes);
-        const hex = [...new Uint8Array(hash)]
-            .map((byte) => byte.toString(16).padStart(2, "0"))
-            .join("");
-        expect(skill.digest).toBe(`sha256:${hex}`);
+        expect(new Set(body.skills.map((s) => s.url)).size).toBe(
+            body.skills.length,
+        );
+        expect(body.skills).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: "polli",
+                    type: "skill-md",
+                    url: "/.well-known/agent-skills/polli/SKILL.md",
+                }),
+                expect.objectContaining({
+                    name: "quest-contributor",
+                    type: "skill-md",
+                    url: "/.well-known/agent-skills/quest-contributor/SKILL.md",
+                }),
+            ]),
+        );
+        const polli = body.skills.find((s) => s.name === "polli");
+        expect(polli?.description).toMatch(/^Generate images/);
+
+        for (const skill of body.skills) {
+            expect(skill.url).toBe(
+                `/.well-known/agent-skills/${skill.name}/SKILL.md`,
+            );
+            expect(skill.description.length).toBeGreaterThan(0);
+            const skillFile = await fetchWorker(skill.url);
+            expect(skillFile.status).toBe(200);
+            expect(skillFile.headers.get("Content-Type")).toContain(
+                "text/markdown",
+            );
+            expect(skillFile.headers.get("Cache-Control")).toBe(
+                "public, max-age=3600",
+            );
+            const bytes = new Uint8Array(await skillFile.arrayBuffer());
+            expect(new TextDecoder().decode(bytes)).toMatch(
+                new RegExp(`^---\\nname: ${skill.name}\\n`),
+            );
+            const hash = await crypto.subtle.digest("SHA-256", bytes);
+            const hex = [...new Uint8Array(hash)]
+                .map((byte) => byte.toString(16).padStart(2, "0"))
+                .join("");
+            expect(skill.digest).toBe(`sha256:${hex}`);
+        }
+
+        const missing = await fetchWorker(
+            "/.well-known/agent-skills/no-such-skill/SKILL.md",
+        );
+        expect(missing.status).toBe(404);
 
         const llms = await fetchWorker("/llms.txt");
         expect(await llms.text()).toContain(

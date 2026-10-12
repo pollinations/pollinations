@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T22:18:55.440578+00:00",
+  "generated_at": "2026-10-12T23:55:53.754569+00:00",
   "models": [
     {
       "id": "pr-14736:deepseek/deepseek-v4.1-flash",
@@ -5821,6 +5821,33 @@
             "promptTextTokens": "0.0000003",
             "promptCachedTokens": "0.000000006",
             "completionTextTokens": "0.0000012"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17189:qwen/qwen3guard-gen-8b",
+      "model_id": "qwen/qwen3guard-gen-8b",
+      "title": "Qwen3Guard 8B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-12",
+      "pr": 17189,
+      "url": "https://github.com/pollinations/pollinations/pull/17189",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000001",
+            "completionTextTokens": "0.00000001"
+          },
+          "after": {
+            "currency": "pollen"
           }
         }
       }

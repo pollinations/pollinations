@@ -11,6 +11,12 @@
  *
  *   page_views  one response per day: HTML pages of pollinations.ai, www and
  *               enter by page, status, country, device, browser
+ *   page_referrers
+ *               one response per day: the same pages by page, referring host,
+ *               status, browser. Only the referrer's hostname
+ *               (clientRefererHost, with any port) is requested, never its
+ *               path or query. A malformed Referer can leave query text in
+ *               that host; those few requests (0–5 a day) are left out.
  *   host_views  one response per host and day: all requests to that host by
  *               status, content type, country, device, browser, without the
  *               path. A host with more groups than one query returns is
@@ -26,9 +32,14 @@
  * Reruns append the same day and host again: consumers must select the latest
  * fetched_at per (dataset, date, host) before aggregating.
  *
- * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dry-run]
+ * Usage: node operations/cloudflare/sync-traffic-to-tinybird.mjs [--days 1] [--dataset all] [--dry-run]
  *
- * --days fetches the last N complete UTC days (1–7, for a missed run).
+ * --days fetches the last N complete UTC days, for a missed run or a backfill:
+ * up to 7 for all datasets or host_views (a day of everything takes ~2 min),
+ * 30 for page_views and 89 for page_referrers. The zone serves about 90 days:
+ * full detail for ~34 days, then sampled about 10x. --dataset fetches one
+ * dataset only, so a backfill of a new dataset does not append the others
+ * again.
  *
  * Env vars:
  *   CLOUDFLARE_API_TOKEN  Required — Analytics read on the pollinations.ai zone
@@ -41,9 +52,9 @@ const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
-const MAX_DAYS = 7;
+const MAX_DAYS = { all: 7, host_views: 7, page_views: 30, page_referrers: 89 };
 const MAX_RETRIES = 3;
-// Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~47.
+// Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~60.
 const QUERY_INTERVAL_MS = 1100;
 
 // Page routes of the website and Enter page lists in
@@ -100,14 +111,25 @@ const groupsQuery = (
 const PAGE_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost clientRequestPath edgeResponseStatus clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
+// About 1,200 groups a day (Oct 2026), well under LIMIT, so it needs no split.
+const PAGE_REFERRERS_QUERY = groupsQuery(
+    "date clientRequestHTTPHost clientRequestPath clientRefererHost edgeResponseStatus userAgentBrowser verifiedBotCategory",
+);
+// Leaves out referrer hosts with a character no bare host (with port) has,
+// such as the query text a malformed Referer leaves there.
+const BARE_REFERRER_HOST = ["?", "#", "@", "/", "=", "&", " "].map((c) => ({
+    clientRefererHost_notlike: `%${c}%`,
+}));
 const HOST_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost edgeResponseStatus edgeResponseContentTypeName clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
 const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
+const DATASETS = ["page_views", "page_referrers", "host_views"];
 
 const { values: args } = parseArgs({
     options: {
         days: { type: "string", default: "1" },
+        dataset: { type: "string", default: "all" },
         "dry-run": { type: "boolean", default: false },
     },
 });
@@ -199,32 +221,52 @@ async function hostViews(filter) {
     });
 }
 
-async function* fromApi(days) {
-    for (const date of lastDays(days)) {
-        const real = { date, requestSource: "eyeball" };
-        const pageViews = await complete(PAGE_VIEWS_QUERY, {
-            ...real,
-            edgeResponseContentTypeName: "html",
-            OR: Object.entries(PAGES).map(([host, paths]) => ({
-                clientRequestHTTPHost: host,
-                clientRequestPath_in: paths,
-            })),
-        });
-        yield { dataset: "page_views", date, host: "", body: pageViews };
+// Our own HTML page loads on one UTC day, from real visitors.
+function pageLoads(date) {
+    return {
+        date,
+        requestSource: "eyeball",
+        edgeResponseContentTypeName: "html",
+        OR: Object.entries(PAGES).map(([host, paths]) => ({
+            clientRequestHTTPHost: host,
+            clientRequestPath_in: paths,
+        })),
+    };
+}
 
-        const hosts = groupsOf(
-            await complete(HOSTS_QUERY, {
-                ...real,
-                clientRequestHTTPHost_like: "%pollinations.ai",
-            }),
-        ).map((g) => g.dimensions.clientRequestHTTPHost);
-        for (const host of hosts) {
-            const body = await hostViews({
-                ...real,
-                clientRequestHTTPHost: host,
-            });
-            yield { dataset: "host_views", date, host, body };
+async function* fromApi(days, dataset) {
+    const wanted = (name) => dataset === "all" || dataset === name;
+    for (const date of lastDays(days)) {
+        if (wanted("page_views")) {
+            const body = await complete(PAGE_VIEWS_QUERY, pageLoads(date));
+            yield { dataset: "page_views", date, host: "", body };
         }
+        if (wanted("host_views")) {
+            const real = { date, requestSource: "eyeball" };
+            const hosts = groupsOf(
+                await complete(HOSTS_QUERY, {
+                    ...real,
+                    clientRequestHTTPHost_like: "%pollinations.ai",
+                }),
+            ).map((g) => g.dimensions.clientRequestHTTPHost);
+            for (const host of hosts) {
+                const body = await hostViews({
+                    ...real,
+                    clientRequestHTTPHost: host,
+                });
+                yield { dataset: "host_views", date, host, body };
+            }
+        }
+    }
+    // After every day of the established datasets, so a failure in the newest
+    // one cannot cost any of their days.
+    if (!wanted("page_referrers")) return;
+    for (const date of lastDays(days)) {
+        const body = await complete(PAGE_REFERRERS_QUERY, {
+            ...pageLoads(date),
+            AND: BARE_REFERRER_HOST,
+        });
+        yield { dataset: "page_referrers", date, host: "", body };
     }
 }
 
@@ -256,15 +298,21 @@ async function main() {
         throw new Error("TINYBIRD_SYNC_TOKEN env var is required");
     }
     const days = Number(args.days);
-    if (!Number.isInteger(days) || days < 1 || days > MAX_DAYS) {
+    if (args.dataset !== "all" && !DATASETS.includes(args.dataset)) {
         throw new Error(
-            `--days must be a whole number from 1 to ${MAX_DAYS}, got ${args.days}`,
+            `--dataset must be all or one of ${DATASETS.join(", ")}, got ${args.dataset}`,
+        );
+    }
+    const maxDays = MAX_DAYS[args.dataset];
+    if (!Number.isInteger(days) || days < 1 || days > maxDays) {
+        throw new Error(
+            `--days must be a whole number from 1 to ${maxDays} for ${args.dataset}, got ${args.days}`,
         );
     }
 
     const fetched_at = toDateTime(new Date());
     let count = 0;
-    for await (const row of fromApi(days)) {
+    for await (const row of fromApi(days, args.dataset)) {
         console.log(
             `${row.date} ${row.dataset} ${row.host}: ${groupsOf(row.body).length} groups, ${row.body.length} bytes`,
         );

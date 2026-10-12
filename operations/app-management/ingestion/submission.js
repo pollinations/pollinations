@@ -78,12 +78,26 @@ function normalizeLanguage(value) {
     return /^[a-z]{2,3}(?:-[A-Za-z]{2,4})?$/.test(language) ? language : "";
 }
 
-// Issue-form uploads (and images dragged in when editing) are hosted by GitHub.
+// Accept GitHub uploads and raw repository images in Markdown, HTML or plain text.
 function parseScreenshotUrl(value) {
-    const match = value.match(
-        /https:\/\/github\.com\/user-attachments\/(?:assets|files)\/[A-Za-z0-9._/-]+/,
-    );
-    return match ? match[0] : "";
+    for (const candidate of value.match(/https:\/\/[^\s<>"')]+/g) || []) {
+        try {
+            const url = new URL(candidate);
+            if (url.username || url.password || url.port) continue;
+            const attachment =
+                url.hostname === "github.com" &&
+                /^\/user-attachments\/(?:assets|files)\/[^/]+/.test(
+                    url.pathname,
+                );
+            const repositoryImage =
+                url.hostname === "raw.githubusercontent.com" &&
+                /^\/[^/]+\/[^/]+\/[^/]+\/.+/.test(url.pathname);
+            if (attachment || repositoryImage) return url.href;
+        } catch {
+            // Ignore malformed links and continue looking for a supported image.
+        }
+    }
+    return "";
 }
 
 function parseSubmission(body) {
@@ -126,7 +140,7 @@ function validateSubmission(submission) {
         );
     if (!submission.screenshotUrl)
         errors.push(
-            "Screenshot is required: upload an image of the app in the Screenshot field.",
+            "Screenshot needs a supported GitHub image URL: upload an image in the Screenshot field or link to a raw.githubusercontent.com repository image.",
         );
     if (!CATEGORIES.has(submission.category))
         errors.push("App Category must be selected from the submission form.");

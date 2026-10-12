@@ -2,6 +2,8 @@
 const repo = "pollinations/pollinations";
 const branch = "kpi-data";
 const path = "github-stars.json";
+const submissionsPath = "github-app-submissions.json";
+const submissionsSince = "2025-10-01";
 const token = process.env.GH_TOKEN;
 if (!token) throw new Error("GH_TOKEN is required");
 
@@ -57,4 +59,40 @@ if (!snapshots.some((snapshot) => snapshot.date === date)) {
         ).toString("base64"),
     });
     console.log(`Recorded ${stars} stars on ${date}`);
+}
+
+// Weekly APP-SUBMISSION issues, recounted each run because a label can be
+// added after an issue opens. The file changes only when a count does.
+const weekly = {};
+for (let page = 1; ; page++) {
+    const issues = await github(
+        `issues?state=all&labels=APP-SUBMISSION&since=${submissionsSince}T00:00:00Z&per_page=100&page=${page}`,
+    );
+    for (const issue of issues) {
+        if (issue.pull_request || issue.created_at < submissionsSince) continue;
+        const monday = new Date(issue.created_at.slice(0, 10));
+        monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+        const week = monday.toISOString().slice(0, 10);
+        weekly[week] = (weekly[week] ?? 0) + 1;
+    }
+    if (issues.length < 100) break;
+}
+const submissions = Object.entries(weekly)
+    .map(([week, submitted]) => ({ week, submitted }))
+    .sort((a, b) => a.week.localeCompare(b.week));
+const content = `${JSON.stringify(submissions, null, 2)}\n`;
+const submissionsFile = await github(
+    `contents/${submissionsPath}?ref=${branch}`,
+);
+const stored =
+    submissionsFile &&
+    Buffer.from(submissionsFile.content, "base64").toString("utf8");
+if (stored !== content) {
+    await github(`contents/${submissionsPath}`, "PUT", {
+        branch,
+        sha: submissionsFile?.sha,
+        message: `chore: snapshot app submissions ${date}`,
+        content: Buffer.from(content).toString("base64"),
+    });
+    console.log(`Recorded app submissions for ${submissions.length} weeks`);
 }

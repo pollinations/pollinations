@@ -57,23 +57,54 @@ it.each([
     });
 });
 
-it("prints raw Markdown without styling when documentation is piped", async () => {
+it("keeps raw Markdown when piped", async () => {
     const markdown = "## Chat\nUse `model` to select a model.\n";
-    vi.stubGlobal(
-        "fetch",
-        vi.fn(async () => new Response(markdown)),
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(markdown)));
     Object.defineProperty(process.stdout, "isTTY", {
         configurable: true,
         value: false,
     });
-    chalk.level = 0;
-    setOutputMode("human");
     const write = vi
         .spyOn(process.stdout, "write")
         .mockImplementation(() => true);
+
     await docsCommand.parseAsync([], { from: "user" });
-    expect(write.mock.calls.map(([value]) => String(value)).join("")).toBe(
-        `${markdown}\n`,
+
+    expect(write.mock.calls[0][0]).toBe(markdown);
+});
+
+it.each([
+    ["/image", "### Image (URL)\nimage example\n"],
+    ["/text", "### Text (Python)\ntext example\n"],
+    ["/audio", "### Audio (cURL)\naudio example\n"],
+])("does not print the preamble for %s", async (endpoint, section) => {
+    vi.stubGlobal(
+        "fetch",
+        vi
+            .fn()
+            .mockResolvedValue(
+                new Response(
+                    [
+                        "> Generate text, images, video, audio, and embeddings.",
+                        "",
+                        "**Base URL:** https://gen.pollinations.ai",
+                        "",
+                        "## Quick Start",
+                        "",
+                        "### Image (URL)\nimage example",
+                        "### Text (Python)\ntext example",
+                        "### Audio (cURL)\naudio example",
+                        "",
+                    ].join("\n"),
+                ),
+            ),
     );
+    const write = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
+    setOutputMode("json");
+
+    await docsCommand.parseAsync([endpoint], { from: "user" });
+
+    expect(JSON.parse(String(write.mock.calls[0][0])).content).toBe(section);
 });

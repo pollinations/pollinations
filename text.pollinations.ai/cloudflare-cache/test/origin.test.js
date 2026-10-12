@@ -636,7 +636,7 @@ test("a blocked /24 gets an empty 403 without CORS, but cache hits are still ser
     expect(miss.response.headers.get("access-control-allow-origin")).toBeNull();
 });
 
-test("a request line plus headers over 16 KB gets Node's empty 431, but a stored answer is still served", async () => {
+test("a head over 16 KB gets Node's empty chunked 431, but a stored answer is still served", async () => {
     const filler = { "x-filler": "a".repeat(17_000) };
     await call("/long%20headers");
     const hit = await call("/long%20headers", { headers: filler });
@@ -650,9 +650,38 @@ test("a request line plus headers over 16 KB gets Node's empty 431, but a stored
 
     expect(miss.response.status).toBe(431);
     expect(miss.text).toBe("");
-    expect(miss.response.headers.get("x-powered-by")).toBeNull();
+    // An empty body without Content-Length, sent chunked as the VM's was
+    expect(miss.response.body).not.toBeNull();
+    expect(Object.fromEntries(miss.response.headers)).toEqual({
+        "x-legacy-path": "worker",
+    });
     expect(gen.bodies).toHaveLength(0);
     expect(await storedAt("/long%20headers%20miss")).toBeNull();
+});
+
+test("the 431 starts where it did for the production measurement of GET /models", async () => {
+    // The headers that request had at the Worker: curl's, the fillers and
+    // the edge's
+    // An IPv4 address as long as the one measured from
+    const ip = "203.0.113.4";
+    const headers = (filler) => ({
+        "user-agent": "curl/8.7.1",
+        accept: "*/*",
+        "x-filler-a": "a".repeat(8000),
+        "x-filler-b": "b".repeat(filler),
+        "accept-encoding": "br, gzip",
+        "cf-ipcountry": "DE",
+        "cf-ray": "a492358f6dd5e506",
+        "cf-visitor": '{"scheme":"https"}',
+        connection: "Keep-Alive",
+        "x-forwarded-proto": "https",
+        "x-real-ip": ip,
+    });
+
+    const below = await call("/models", { ip, headers: headers(7975) });
+    expect(below.response.status).toBe(200);
+    const at = await call("/models", { ip, headers: headers(7976) });
+    expect(at.response.status).toBe(431);
 });
 
 test("while a free generation runs, a stream from the same IP gets the VM's 429", async () => {

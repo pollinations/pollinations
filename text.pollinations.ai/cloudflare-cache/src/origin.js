@@ -1,5 +1,7 @@
 import { takeSlot } from "../../../shared/ip-slot.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
+// index.js imports this module too; the function is only called per request
+import { prepareForwardedHeaders } from "./index.js";
 
 // The legacy text API that ran on the OVH VM (text.pollinations.ai/server.js and
 // the modules it imports, on master), answered in the Worker: same routes,
@@ -10,8 +12,22 @@ const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
 const FREE_INTERVAL_MS = 30_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 const MAX_TOKENS = 1500;
-// Node's default --max-http-header-size on the VM
+// Node's default --max-http-header-size on the VM. Node 22 counts the request
+// target and each header name and value (no method, separators or line ends)
+// and answers 431 from this size on.
 const MAX_HEAD_BYTES = 16 * 1024;
+// The Host that proxyRequest's fetch sent to the VM
+const VM_HOST = "text-origin.pollinations.ai";
+// What the edge and the tunnel added on the way to the VM. Measured on
+// 2026-10-12 with production GET /models (it never generates), by a binary
+// search on a filler header in 13 requests, boundary rechecked: curl's
+// User-Agent and Accept plus fillers of 8,000 and 7,976 bytes got 431, and
+// 8,000 and 7,975 bytes got 200. headSize counts 16,265 bytes for the 7,976
+// request, so the VM counted 119 more. That count takes the headers a Worker
+// gets from the edge as accept-encoding "br, gzip", cf-connecting-ip,
+// cf-ipcountry, cf-ray (16 hex digits), cf-visitor, connection,
+// x-forwarded-proto and x-real-ip.
+const TUNNEL_HEAD_BYTES = 119;
 // openai-fast and its registry aliases; gen serves them all as gpt-oss
 const MODELS = new Set([
     "openai-fast",
@@ -186,8 +202,10 @@ function notModified({ method, headers }, response) {
 async function answer(request, env, ctx) {
     const url = new URL(request.url);
     // Node answered an empty 431 before Express ran
-    if (headSize(request, url) > MAX_HEAD_BYTES) {
-        return new Response(null, { status: 431 });
+    if (headSize(request, url) >= MAX_HEAD_BYTES) {
+        // Node's 431 had no body and no Content-Length, so the client gets
+        // it chunked
+        return new Response(chunked(""), { status: 431 });
     }
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
     // The VM's blocklist ran first and answered an empty 403 without CORS
@@ -272,11 +290,16 @@ async function answer(request, env, ctx) {
     return errorPage(404, `Cannot ${method} ${encodeUrl(url.pathname)}`, true);
 }
 
-/** The request line and header lines, as sent to the VM over HTTP/1.1 */
-function headSize(request, { pathname, search }) {
-    let size = `${request.method} ${pathname}${search} HTTP/1.1\r\n`.length;
-    for (const [name, value] of request.headers) {
-        size += `${name}: ${value}\r\n`.length;
+/**
+ * The head size Node counted on the VM for this request as proxyRequest
+ * forwarded it: target, header names and values, its Host, and what the edge
+ * and the tunnel added
+ */
+function headSize(request, url) {
+    const target = url.pathname.length + url.search.length;
+    let size = target + "host".length + VM_HOST.length + TUNNEL_HEAD_BYTES;
+    for (const [name, value] of prepareForwardedHeaders(request.headers, url)) {
+        if (name !== "host") size += name.length + value.length;
     }
     return size;
 }

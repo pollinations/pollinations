@@ -3576,12 +3576,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3guard-gen-8b": {
     "cost": {
-      "completionTextTokens": 0.00000001,
-      "promptTextTokens": 0.00000001,
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
     "price": {
-      "completionTextTokens": 0.00000001,
-      "promptTextTokens": 0.00000001,
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
   },
   "recraft/recraft-v4.1-flash": {

@@ -43,8 +43,8 @@ function fallbackBill(
 
 describe("long-context cost variants", () => {
     it.each([
-        [198_999, undefined, 0.42168139],
-        [199_000, "long_context", 0.843367],
+        [198_999, undefined, 0.399698],
+        [199_000, "long_context", 0.7994],
     ] as const)("Grok reprices all billed tokens at %s uncached prompt tokens", (prompt, variant, price) => {
         const billing = bill("x-ai/grok-4.7", {
             promptTextTokens: prompt,

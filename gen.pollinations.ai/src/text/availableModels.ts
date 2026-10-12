@@ -495,11 +495,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "x-ai/grok-4.7",
-        config: portkeyConfig["x-ai/grok-4.7"],
+        config: portkeyConfig["grok-4.7-xai"],
     },
     {
-        name: "x-ai/grok-4.7:xai",
-        config: portkeyConfig["grok-4.7-xai"],
+        name: "x-ai/grok-4.7:openrouter",
+        config: portkeyConfig["grok-4.7-openrouter"],
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",

@@ -163,23 +163,22 @@ export const TEXT_FALLBACKS = {
         },
     },
     "x-ai/grok-4.7": {
-        "x-ai/grok-4.7:xai": {
-            provider: "xai",
+        "x-ai/grok-4.7:openrouter": {
+            provider: "openrouter",
             addedDate: new Date("2026-10-12").getTime(),
-            // xAI /v1/language-models/grok-4.7 rates (2026-10-12). Image tokens
-            // bill at the text input rate; reasoning bills as output.
+            // OpenRouter base xAI rates (2026-10-12), including the account's
+            // 5.5% credit-purchase fee. Images are tokenized into text tokens.
             cost: {
-                promptTextTokens: perMillion(2),
-                promptCachedTokens: perMillion(0.5),
-                promptImageTokens: perMillion(2),
-                completionTextTokens: perMillion(6),
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.5) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
             },
             ...defineCostVariants(
                 {
                     long_context: {
-                        promptTextTokens: perMillion(4),
-                        promptCachedTokens: perMillion(1),
-                        completionTextTokens: perMillion(12),
+                        promptTextTokens: perMillion(4) * 1.055,
+                        promptCachedTokens: perMillion(1) * 1.055,
+                        completionTextTokens: perMillion(12) * 1.055,
                     },
                 },
                 longContextAtLeast(200_000),

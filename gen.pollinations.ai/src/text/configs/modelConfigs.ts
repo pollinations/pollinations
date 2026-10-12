@@ -651,7 +651,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     // The base slug "xai" also matches xai/zdr/us and the priority tiers,
     // which bill above the quoted rate, so they are excluded explicitly.
-    "x-ai/grok-4.7": () =>
+    "grok-4.7-openrouter": () =>
         createOpenRouterModelConfig({
             model: "x-ai/grok-4.7",
             defaultOptions: {

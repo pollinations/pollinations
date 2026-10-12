@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Stickman Image Maker",
+    "url": "https://lotxo1.github.io/stickman-image-maker",
+    "description": "Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "lotxo1",
+    "githubUserId": "338330353",
+    "repositoryUrl": "https://github.com/lotxo1/stickman-image-maker",
+    "repositoryStars": null,
+    "discordUsername": "nemoleo.",
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17067",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/a7fe2b8e-d585-4f70-bdd8-8ffcb176a80d"
+  },
+  {
     "emoji": "💼",
     "name": "RankNest YouTube Research & Strategy Tool",
     "url": "https://ranknest.tech/youtube-research",

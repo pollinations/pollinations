@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
 | [💼 RankNest YouTube Research & Strategy Tool](https://ranknest.tech/youtube-research) | RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas. | [@asiasi44](https://github.com/asiasi44) |
 | [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
 | [📚 Text Comparison](https://mahmoudpov373-star.github.io/Comart) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@mahmoudpov373-star](https://github.com/mahmoudpov373-star) |
@@ -37,7 +38,6 @@
 | [✍️ Fable Finder](https://mhmdrizki803-boop.github.io/fable-finder) | Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
 | [🖼️ Create 3D (newapp)](https://ghiygren-code.github.io/Mahoraga-) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@ghiygren-code](https://github.com/ghiygren-code) |
 | [🎬 Video](https://mahmoudakrman97-lgtm.github.io/Video) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@mahmoudakrman97-lgtm](https://github.com/mahmoudakrman97-lgtm) |
-| [✍️ Keigo Formatter](https://ucalis-uma.github.io/keigo-formatter) | Rough Japanese memos to polite business Japanese. Single-page static app (no build, GitHub Pages). Uses Pollinations text API ( POST /v1/chat/completions , default deepseek/deepseek-v4.1-flash ). BYOP | [@ucalis-uma](https://github.com/ucalis-uma) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

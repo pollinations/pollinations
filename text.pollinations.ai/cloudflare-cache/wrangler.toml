@@ -56,7 +56,7 @@ fallthrough = true
 [vars]
 ORIGIN_HOST = "text-origin.pollinations.ai"
 # Percent of cache misses served by src/origin.js; the rest go to the VM
-ADAPTER_SHARE = "10"
+ADAPTER_SHARE = "50"
 # x402 paywall, as on the VM; WEFT_SELLER_API_KEY is a secret. Without all
 # four values the paywall is off and rate-limited requests wait instead
 WEFT_PAY_TO = "0xF04da999947454410d2Dec7eE01cD13f7FaD6fbE"

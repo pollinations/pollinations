@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
 | [💼 RankNest YouTube Research & Strategy Tool](https://ranknest.tech/youtube-research) | RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas. | [@asiasi44](https://github.com/asiasi44) |
 | [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
@@ -37,7 +38,6 @@
 | [✍️ Nice No](https://nice-no.maxtoms21.chatgpt.site) | Nice No helps people turn awkward everyday requests into kind, clear boundary messages. Describe a situation, choose Gentle, Firm, or Brief, then copy a suggested reply and a follow-up for pushback. I | [@maxtoms](https://github.com/maxtoms) |
 | [✍️ Fable Finder](https://mhmdrizki803-boop.github.io/fable-finder) | Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
 | [🖼️ Create 3D (newapp)](https://ghiygren-code.github.io/Mahoraga-) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@ghiygren-code](https://github.com/ghiygren-code) |
-| [🎬 Video](https://mahmoudakrman97-lgtm.github.io/Video) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@mahmoudakrman97-lgtm](https://github.com/mahmoudakrman97-lgtm) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

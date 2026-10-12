@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Pollen Village - Roblox NPC dialogue",
+    "url": null,
+    "description": "Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage.",
+    "language": "en",
+    "category": "games",
+    "platform": "library",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-29",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15708",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1ea19d64-8844-414a-b3b8-ff6dff9df880"
+  },
+  {
     "emoji": "🖼️",
     "name": "Stickman Image Maker",
     "url": "https://lotxo1.github.io/stickman-image-maker",

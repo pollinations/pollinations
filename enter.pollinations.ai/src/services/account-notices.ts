@@ -1,0 +1,181 @@
+import { getLogger } from "@logtape/logtape";
+
+// Account emails: facts about the user's own account, sent through the
+// Cloudflare Email Service binding. A user gets at most one balance email
+// (running low or auto top-up off) per 30 days.
+
+const log = getLogger(["enter", "account-notices"]);
+
+const FROM = {
+    email: "notifications@notify.pollinations.ai",
+    name: "Pollinations",
+};
+const REPLY_TO = "billing@pollinations.ai";
+const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
+const NOTICE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type Link = { label: string; path: string };
+
+type Notice = {
+    id: "running_low" | "auto_top_up_off";
+    subject: string;
+    paragraphs: string[];
+    button: Link;
+    footnote?: { text: string; link: Link };
+};
+
+const pollen = (amount: number) => `${Math.max(0, amount).toFixed(2)} Pollen`;
+
+export function runningLowNotice(
+    balance: number,
+    lastPack: { pollen: number; days: number } | null,
+): Notice {
+    return {
+        id: "running_low",
+        subject: "Your paid Pollen is running low",
+        paragraphs: [
+            `You have ${pollen(balance)} left in your paid balance. When it runs out, requests that need paid Pollen will fail.`,
+            ...(lastPack
+                ? [
+                      `Your last pack of ${pollen(lastPack.pollen)} lasted ${lastPack.days === 1 ? "1 day" : `${lastPack.days} days`}.`,
+                  ]
+                : []),
+            "Top up now, or turn on auto top-up in your wallet so it refills by itself.",
+        ],
+        button: { label: "Top up", path: "/top-up" },
+        footnote: {
+            text: "You can also earn Quest Pollen:",
+            link: { label: "see quests", path: "/quests" },
+        },
+    };
+}
+
+export function autoTopUpOffNotice(balance: number): Notice {
+    return {
+        id: "auto_top_up_off",
+        subject: "Auto top-up is off",
+        paragraphs: [
+            "We couldn't use your saved payment details, so auto top-up is now off.",
+            `Your keys keep working until your paid balance of ${pollen(balance)} runs out. You can update your card and turn it back on in your wallet.`,
+        ],
+        button: { label: "Open wallet", path: "/pollen" },
+    };
+}
+
+/** One notice as a short HTML email plus its plain-text twin. */
+export function renderNotice(
+    notice: Notice,
+    baseUrl: string,
+): { html: string; text: string } {
+    const href = (link: Link) => new URL(link.path, baseUrl).toString();
+    const footer =
+        "You're getting this email because it's about your Pollinations account. Questions? Reply to this email.";
+    const p = (text: string) =>
+        `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${text}</p>`;
+    const footnote = notice.footnote
+        ? `<p style="margin:20px 0 0;font-size:14px;line-height:20px;color:#6b6359">${notice.footnote.text} <a href="${href(notice.footnote.link)}" style="color:#1d1420">${notice.footnote.link.label}</a></p>`
+        : "";
+
+    const html = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:24px 16px;background:#f4efe6;color:#1d1420;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+<div style="max-width:520px;margin:0 auto;background:#fffaf0;border-radius:16px;padding:28px">
+<p style="margin:0 0 20px;font-size:14px;font-weight:700">pollinations.ai</p>
+<h1 style="margin:0 0 16px;font-size:22px;line-height:28px">${notice.subject}</h1>
+${notice.paragraphs.map(p).join("\n")}
+<a href="${href(notice.button)}" style="display:inline-block;margin-top:4px;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
+${footnote}
+</div>
+<p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">${footer}<br>${ADDRESS}</p>
+</body></html>`;
+
+    const text = [
+        notice.subject,
+        "",
+        ...notice.paragraphs.flatMap((paragraph) => [paragraph, ""]),
+        `${notice.button.label}: ${href(notice.button)}`,
+        ...(notice.footnote
+            ? ["", `${notice.footnote.text} ${href(notice.footnote.link)}`]
+            : []),
+        "",
+        "--",
+        footer,
+        ADDRESS,
+    ].join("\n");
+
+    return { html, text };
+}
+
+/** Send one notice. False when sending failed; the failure is logged. */
+export async function sendNotice(
+    env: CloudflareBindings,
+    to: string,
+    notice: Notice,
+): Promise<boolean> {
+    try {
+        await env.EMAIL.send({
+            to,
+            from: FROM,
+            replyTo: REPLY_TO,
+            subject: notice.subject,
+            ...renderNotice(notice, env.BETTER_AUTH_URL),
+        });
+        return true;
+    } catch (error) {
+        log.error("Account notice {id} failed: {code} {error}", {
+            id: notice.id,
+            code: (error as { code?: string }).code ?? "unknown",
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return false;
+    }
+}
+
+/**
+ * Called when a charge takes the paid balance of a user without auto top-up
+ * below the threshold. Sends at most one balance email per 30 days.
+ */
+export async function sendRunningLowNotice(
+    env: CloudflareBindings,
+    userId: string,
+): Promise<void> {
+    const now = Date.now();
+    // Claim the slot first, so parallel triggers send a single email.
+    const user = await env.DB.prepare(
+        `UPDATE user SET low_balance_notified_at = ?
+            WHERE id = ?
+                AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
+            RETURNING email, COALESCE(pack_balance, 0) AS balance`,
+    )
+        .bind(now, userId, now - NOTICE_COOLDOWN_MS)
+        .first<{ email: string; balance: number }>();
+    if (!user) return;
+
+    // created_at holds seconds on old rows and milliseconds on new ones.
+    const lastPack = await env.DB.prepare(
+        `SELECT pollen_credited AS pollen,
+                CASE WHEN created_at < 100000000000 THEN created_at * 1000 ELSE created_at END AS createdMs
+            FROM stripe_checkout_credits
+            WHERE user_id = ?
+            ORDER BY createdMs DESC
+            LIMIT 1`,
+    )
+        .bind(userId)
+        .first<{ pollen: number; createdMs: number }>();
+
+    const notice = runningLowNotice(
+        user.balance,
+        lastPack && {
+            pollen: lastPack.pollen,
+            days: Math.max(1, Math.round((now - lastPack.createdMs) / DAY_MS)),
+        },
+    );
+    if (await sendNotice(env, user.email, notice)) return;
+    // A failed send frees the slot for the next crossing.
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = NULL WHERE id = ?",
+    )
+        .bind(userId)
+        .run();
+}

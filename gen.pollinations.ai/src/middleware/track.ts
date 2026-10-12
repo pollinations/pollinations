@@ -431,13 +431,18 @@ export const track = (eventType: EventType) =>
                     payerBucket = deduction.payerBucket;
                     billedPrice = deduction.billedPrice;
                     const totalPrice = responseTracking.price?.totalPrice ?? 0;
+                    const packBalance = deduction.postDeductionPackBalance;
+                    // Enter refills the balance when auto top-up is on and
+                    // otherwise emails the user, so also call it on the
+                    // charge that takes the balance below the threshold.
                     if (
                         totalPrice > 0 &&
                         payerBucket === "pack" &&
-                        deduction.postDeductionPackBalance != null &&
-                        deduction.postDeductionPackBalance <=
-                            AUTO_TOP_UP_THRESHOLD_POLLEN &&
-                        (await isAutoTopUpConfigured(db, userId))
+                        packBalance != null &&
+                        packBalance <= AUTO_TOP_UP_THRESHOLD_POLLEN &&
+                        (packBalance + billedPrice >
+                            AUTO_TOP_UP_THRESHOLD_POLLEN ||
+                            (await isAutoTopUpConfigured(db, userId)))
                     ) {
                         shouldRunAutoTopUp = true;
                     }

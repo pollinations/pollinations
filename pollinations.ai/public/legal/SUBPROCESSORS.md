@@ -1,6 +1,6 @@
 # Service Providers
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-10-13**
 
 These providers process personal data for us. Some process it outside the EEA, including in the United States; see the [Privacy Policy](/privacy) for transfer safeguards.
 
@@ -8,7 +8,7 @@ These providers process personal data for us. Some process it outside the EEA, i
 
 | Provider | Purpose |
 | --- | --- |
-| Cloudflare | Hosting, storage, caching, and tool containers |
+| Cloudflare | Hosting, storage, caching, tool containers, and account email delivery |
 | Tinybird | Usage and billing analytics |
 | Amazon Bedrock | Prompt safety checks |
 | Stripe | Payments and invoices |

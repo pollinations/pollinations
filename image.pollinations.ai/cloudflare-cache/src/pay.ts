@@ -4,7 +4,7 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
 import art from "../../../shared/assets/weft-paywall.webp";
 import { createWeftPaywall } from "../../../shared/weft-paywall.js";
-import { etag, expressPage, VM_CORS } from "./origin.ts";
+import { expressPage, VM_CORS } from "./origin.ts";
 
 // The $0.01 x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
 // for GET requests outside the free limit. origin.ts loads this module only
@@ -105,6 +105,13 @@ export async function pay(
     // A buyer who disconnects still gets the generation and pays, as on the VM
     ctx.waitUntil(paid);
     return expressHeaders(await paid);
+}
+
+/** Express's weak ETag: body length in hex and the start of its base64 SHA-1 */
+async function etag(bytes: ArrayBuffer) {
+    const hash = new Uint8Array(await crypto.subtle.digest("SHA-1", bytes));
+    const base64 = btoa(String.fromCharCode(...hash));
+    return `W/"${bytes.byteLength.toString(16)}-${base64.slice(0, 27)}"`;
 }
 
 /**

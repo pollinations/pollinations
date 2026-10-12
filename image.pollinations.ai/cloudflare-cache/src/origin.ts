@@ -85,13 +85,6 @@ const vmResponse = (
         headers: { ...VM_CORS, ...headers },
     });
 
-/** Express's weak ETag: body length in hex and the start of its base64 SHA-1 */
-export async function etag(bytes: ArrayBuffer | Uint8Array) {
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-1", bytes));
-    const base64 = btoa(String.fromCharCode(...hash));
-    return `W/"${bytes.byteLength.toString(16)}-${base64.slice(0, 27)}"`;
-}
-
 const HTML_ESCAPES = {
     '"': "&quot;",
     "&": "&amp;",
@@ -129,10 +122,7 @@ const encodeUrl = (url: string) =>
 /** preMiddleware's 404 for paths outside /prompt and /feed */
 function notFound(pathname: string) {
     // Node's url.parse escaped these, which a Worker's URL keeps
-    const path = pathname.replace(
-        /['^|]/g,
-        (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-    );
+    const path = pathname.replace(/'/g, "%27").replace(/\|/g, "%7C");
     const body = {
         error: "Not Found",
         message: "The requested endpoint was not found",

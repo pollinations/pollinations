@@ -445,9 +445,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
         "qwen/qwen3.8-27b",
-        "akashml/fp8",
+        "reka/fp8",
         64000,
     ),
     "qwen/qwen3.8-max": () =>

@@ -22,11 +22,7 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
-    [
-        "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        "qwen/qwen3.8-27b",
-        "akashml/fp8",
-    ],
+    ["qwen/qwen3.8-27b:openrouter:reka-fp8", "qwen/qwen3.8-27b", "reka/fp8"],
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
@@ -814,20 +810,20 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.42 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
-            promptTextTokens: (0.24 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.024 / 1_000_000) * 1.055,
-            promptImageTokens: (0.24 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.24 / 1_000_000) * 1.055,
-            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+            promptTextTokens: (0.039 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.0039 / 1_000_000) * 1.055,
+            promptImageTokens: (0.039 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.039 / 1_000_000) * 1.055,
+            completionTextTokens: (1.25 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
+            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:reka-fp8"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.225 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.05 / 1_000_000) * 1.055,
-            promptImageTokens: (0.225 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.225 / 1_000_000) * 1.055,
-            completionTextTokens: (1.98 / 1_000_000) * 1.055,
+            promptTextTokens: (0.04 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            promptImageTokens: (0.04 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.04 / 1_000_000) * 1.055,
+            completionTextTokens: (2.2 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES[

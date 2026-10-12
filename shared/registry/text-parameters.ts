@@ -494,10 +494,10 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    qwen38Akash: [
+    qwen38Reka: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,
-        "repetition_penalty",
+        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],

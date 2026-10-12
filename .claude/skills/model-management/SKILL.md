@@ -238,7 +238,7 @@ Before publishing:
 - Format changed files with the repository formatter.
 - Run focused tests and type checks for every touched service.
 - Review the complete diff for unrelated changes and dead code.
-- Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
+- Write the description in the decision format below.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
 #### Scheduled merges and holds
@@ -250,19 +250,43 @@ Before publishing:
 - Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
 - Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
 
-The PR description must include a user-visible change table for each affected model, using its public model ID:
+#### Decision format
+
+The description is a lean decision read of at most ~150 words. Start with one line:
+
+**Decision:** `ready to merge`, or `needs your call:` and one question.
+
+Then one table per affected public model ID, headed by its ID and effective date:
+
+`<public ID>` · effective on production deployment (not live yet), or `YYYY-MM-DD HH:MM UTC`
+
+| | Before | After |
+| --- | --- | --- |
+| Access | Quest + Paid / Paid only | `same` or new value |
+| Price (pollen per <unit>) | exact rates | exact rates |
+| Primary · cost | provider → host · upstream ID · rates · vs price | same shape |
+| Fallback · cost | same shape, or `none` | same shape, or `none` |
+| Promo | promo rate, end date, post-promo cost vs price, or `none` | same shape |
+| Capabilities | | `unchanged`, or what is added or lost |
+
+End with:
+
+**Verified:** routes × capabilities run end to end · provider charge = our cost · wallet = price
+**Flags:** only what needs a decision or a follow-up; omit the line when there is none.
+
+- Read every value from the base and proposed code, catalog and live provider; never infer it from the title. Write `same` for an unchanged value and keep units in the row label.
+- Compare every route's cost with the customer price as `= price`, `below price` or `above price ⚠`. A primary that can cost more than the price is a flag.
+- A new model shows `Unavailable` before. A provider-only change still fills the Primary and Fallback rows.
+- Leave test counts, probe logs and narrative out of the description.
+
+A retirement also adds this row, which the news pipeline reads:
 
 | Model | Action | Change | Before | After | Effective |
 | --- | --- | --- | --- | --- | --- |
-| `<public ID>` | NEW / UPDATE / RETIRE | Price / Balance / Capability / Availability | Exact previous value | Exact new value | Production deployment or scheduled date with timezone |
+| `<public ID>` | RETIRE | Availability | Available | Retired | `YYYY-MM-DD HH:MM UTC` |
 
-- Use `NEW` for a newly available public model ID, `UPDATE` for changes to an existing model, and `RETIRE` for removal from availability, in the PR that removes the model. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
-- Announce a retirement only once it is decided (no other provider will keep the model): merge a PR whose table has a `RETIRE` row with the future date and timezone in `Effective`, e.g. `2026-11-02 00:00 UTC`. News shows it as upcoming until the removal PR merges. To postpone, merge a new `RETIRE` row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
-- Include only changes. Read values from the base and proposed code/catalog; do not infer them from the PR title or invent missing values.
-- For prices, include currency, billing unit, and each changed rate (for example input/output per million tokens). For balance access, say `Quest + Paid` or `Paid only`. For capabilities, name what was added or removed.
-- For a new model, use `Unavailable` before and include its initial prices, balance access, and capabilities after. For retirement, show `Available → Retired`; include a replacement only when explicitly configured or approved.
-- A merge is not a deployment. Use `On production deployment (not live yet)` unless a scheduled date or verified deployment is known. Link an existing notice and its `notice_id` when applicable.
-- For a provider-only change with no user-visible difference, state that price, balance access, capabilities, and availability are unchanged instead of adding status rows. Keep provider and verification evidence separately below the summary.
+- Announce a retirement only once it is decided (no other provider will keep the model). Merge the row with the future date; to postpone, merge a new row with the new date; to withdraw, use `Cancelled` as `Effective`. Avoid moving a date earlier.
+- The removal PR uses the same row with its deployment as `Effective`. The registry keeps no retirement dates; note a provider's deadline as a code comment on the affected route.
 
 ## Completion gate
 

@@ -1,0 +1,36 @@
+{
+  "pr_number": 17157,
+  "title": "chore: serve 50% of legacy text cache misses from the worker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17157",
+  "merged_at": "2026-10-12T11:36:58Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Raises the legacy text API canary from 10% to 50% of Cloudflare cache misses routed to the Worker, continuing the move off the OVH VM. `/feed` remains on the VM until the canary reaches 100%. In a 45-minute run at 10%, the Worker handled about 5,000 misses out of 65,000 requests without exceptions; it passed through gen's 400/422 responses, and its 402 challenges, bodies, and headers matched the VM's.",
+    "keywords": [
+      "legacy text API",
+      "Cloudflare Worker",
+      "cache misses",
+      "canary",
+      "OVH VM"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17157.jpg",
+    "prompt": "In a cozy pixel art garden server room, Polli wears a tiny tool belt and adjusts a sign sending half the cache-miss paths toward a glowing Worker terminal, while a separate `/feed` path still leads to an old VM. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, code-plants, and prominent lime green (#ecf874) glow."
+  },
+  "generated_at": "2026-10-12T11:38:50.233998+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "15c3122b68a91d2e2f30aa25a288ef4d36b7b49d",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

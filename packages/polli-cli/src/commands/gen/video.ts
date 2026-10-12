@@ -31,18 +31,12 @@ export function createVideoCommand() {
 
             const params = new URLSearchParams();
             if (opts.model) params.set("model", opts.model);
+            if (opts.width) params.set("width", opts.width);
+            if (opts.height) params.set("height", opts.height);
             if (opts.duration) params.set("duration", opts.duration);
             if (opts.aspectRatio) params.set("aspectRatio", opts.aspectRatio);
             if (opts.audio) params.set("audio", "true");
             if (opts.seed) params.set("seed", opts.seed);
-
-            if (opts.width) params.set("width", opts.width);
-            if (opts.height) params.set("height", opts.height);
-            if (!opts.aspectRatio && !opts.width && !opts.height) {
-                params.set("width", "1024");
-                params.set("height", "1024");
-            }
-
             if (opts.image?.length) {
                 const bad = opts.image.find(
                     (u: string) => !/^https?:\/\//i.test(u),

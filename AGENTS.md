@@ -151,7 +151,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
-- Run `npx biome check --write <file>` after edits and before commits.
+- Run `npx -y @biomejs/biome@2.3.10 check --write <file>` after edits and before commits. It matches the version CI uses; a bare `npx biome` can run an unrelated npm package or a newer Biome.
 - Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.

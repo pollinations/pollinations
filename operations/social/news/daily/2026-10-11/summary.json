@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-11",
+  "period_start": "2026-10-11",
+  "period_end": "2026-10-11",
+  "title": "Sandboxes can run longer and get more room",
+  "summary": "Longer and larger sandboxes, three community apps, more capable Polli replies, and sturdier API and cache paths.\n\nSandbox timeouts can now extend past E2B’s 24-hour limit through automatic renewals, subject to the requesting key’s budget. The polli CLI gained a timeout option and a pause command, while the new opt-in `pollinations-large` template offers 4 vCPU and 8 GB RAM for heavier work.\n\nCommunity additions include InkBloom for printable coloring pages, Text Comparison with an Arabic right-to-left interface, and Midi Journey 2 for conversational MIDI work in Ableton Live. App submissions now accept raw GitHub repository images and more screenshot shapes. Weekly app rankings also read from an hourly snapshot instead of recalculating on every page request.\n\nPolli switched to GPT-6.1-Sol and can queue follow-ups, address requests separately or together, and respond with emoji reactions. Requests from different users remain permission-isolated.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 16896,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17028,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17034,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17035,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17050,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17071,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17076,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17091,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17103,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17107,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17108,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17115,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17123,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17125,
+      "date": "2026-10-11"
+    },
+    {
+      "number": 17130,
+      "date": "2026-10-11"
+    }
+  ],
+  "generated_at": "2026-10-12T06:45:57.410600+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Longer, larger sandboxes",
+      "text": "Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.",
+      "prs": [
+        16896,
+        17115
+      ]
+    },
+    {
+      "emoji": "🎨",
+      "title": "InkBloom coloring pages",
+      "text": "Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).",
+      "prs": [
+        17034
+      ],
+      "app": true
+    },
+    {
+      "emoji": "💡",
+      "title": "Text Comparison joins Learn",
+      "text": "Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).",
+      "prs": [
+        17035
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🎵",
+      "title": "Compose with Midi Journey",
+      "text": "Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).",
+      "prs": [
+        17108
+      ],
+      "app": true
+    },
+    {
+      "emoji": "🤖",
+      "title": "Polli keeps the conversation going",
+      "text": "Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).",
+      "prs": [
+        17125
+      ]
+    }
+  ]
+}

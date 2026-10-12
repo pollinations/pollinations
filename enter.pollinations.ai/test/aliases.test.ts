@@ -249,7 +249,7 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": false,
-        "deepseek/deepseek-v4.1-flash": false,
+        "deepseek/deepseek-v4.1-flash": true,
         "deepseek/deepseek-v4-pro": true,
     } as const;
     const expectedMultipliers = {

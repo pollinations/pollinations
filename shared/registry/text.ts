@@ -1154,7 +1154,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         perUserRpm: 60,
         cost: {
             // DeepInfra list rates (2026-10-12); its open-ended 30% discount

@@ -17,22 +17,15 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
-import generate_daily
-import generate_models_news
-import generate_monthly
-import generate_weekly
 import posts
-from common import (NEWS_REL_DIR, build_daily_summary_artifact, filter_daily_gists, generate_platform_post,
-                    models_news_staged_files, validate_gist)
-from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from api_changes import api_changes, api_changes_for_pr, api_surface
-from build_news_index import api_entries, build_index, highlight_entries, model_entries
-from generate_daily import generate_summary
-from generate_monthly import generate_digest as generate_monthly_digest
-from generate_weekly import generate_digest, generate_discord_post
-from publish_realtime import generate_snippet
-from model_announcements import announced_retirements, model_changes, pr_comparison_refs
-from update_readme import get_top_highlights
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
+                    monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+from contributors import github_account, rank_contributors
+from discord_pr import generate_snippet
+from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
+                  enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
+from news_index import api_entries, build_index, highlight_entries, model_entries
+from readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
@@ -83,10 +76,10 @@ class GistEnrichmentTest(unittest.TestCase):
             if args[0] == sys.executable:
                 Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
                     {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=run) as commands, \
+        with patch("gist.subprocess.run", side_effect=run) as commands, \
              patch.object(Path, "is_dir", return_value=False), \
-             patch("model_announcements.pr_comparison_refs", return_value=("before", "after")), \
-             patch("model_announcements.announcements_for_pr", return_value=[]):
+             patch("gist.pr_comparison_refs", return_value=("before", "after")), \
+             patch("gist.announcements_for_pr", return_value=[]):
             enrich_gist({}, pr, ["README.md"], "test")
             self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
             commands.reset_mock()
@@ -104,13 +97,13 @@ class GistEnrichmentTest(unittest.TestCase):
         def classification(args, **kwargs):
             Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
                 {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=classification):
+        with patch("gist.subprocess.run", side_effect=classification):
             enrich_gist(gist, pr, [], "test")
         self.assertEqual(gist["gist"], original["gist"])
         self.assertEqual(gist["image"], original["image"])
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.subprocess.run", side_effect=OSError()), \
-             patch("model_announcements.pr_comparison_refs", side_effect=ValueError()):
+        with patch("gist.subprocess.run", side_effect=OSError()), \
+             patch("gist.pr_comparison_refs", side_effect=ValueError()):
             enrich_gist(gist, pr, ["shared/registry/text.ts"], "test")
         self.assertEqual(gist["enrichment"], {"classification": "failed", "models": "failed"})
         self.assertIsNone(gist["type"])
@@ -132,7 +125,7 @@ class GistEnrichmentTest(unittest.TestCase):
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "1"}}],
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
+        with patch("gist.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
             context = {**gist, "merge_commit_sha": "unused-commit", "enrichment": {"models": "complete"}}
             self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
             self.assertIn('"image": "2"', analysis.call_args.args[1])
@@ -141,8 +134,8 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
         self.assertNotIn("image_prompt", gist["gist"])
         self.assertNotIn("pr_body_excerpt", gist)
-        with patch("generate_realtime.generate_image", return_value=(b"image", None)) as image, \
-             patch("generate_realtime.commit_image_to_branch", return_value="https://example.com/image.jpg"):
+        with patch("gist.generate_image", return_value=(b"image", None)) as image, \
+             patch("gist.commit_image_to_branch", return_value="https://example.com/image.jpg"):
             self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
                              "https://example.com/image.jpg")
             image.assert_called_once_with(ai["image_prompt"], "test")
@@ -150,22 +143,23 @@ class GistEnrichmentTest(unittest.TestCase):
         old["gist"].update(headline="Old headline", blurb="Old blurb", impact="Old impact")
         old["pr_body_excerpt"] = "Old excerpt"
         self.assertEqual(filter_daily_gists([gist, old]), [gist, old])
-        for module, generate in (
-            ("generate_daily", lambda g: generate_summary([g], "2026-10-07", "test")),
-            ("generate_weekly", lambda g: generate_digest([g], "2026-10-01", "2026-10-07", "test")),
-            ("publish_realtime", lambda g: generate_snippet(g, "test")),
+        def realtime(g):
+            with patch("discord_pr.call_pollinations_api", return_value='{"arcs": []}') as api:
+                generate_snippet(g, "test")
+            return api.call_args.args[1]
+        for module, prompt in (
+            ("daily", lambda g: daily_summary_input([g], "2026-10-07")),
+            ("weekly", lambda g: weekly_digest_input([g], "2026-10-01", "2026-10-07")),
+            ("discord_pr", realtime),
         ):
-            with patch(f"{module}.call_pollinations_api", return_value='{"arcs": []}') as api:
-                generate(gist)
-                new_prompt = api.call_args.args[1]
-                generate(old)
-                self.assertEqual(api.call_args.args[1], new_prompt)
+            new_prompt = prompt(gist)
+            self.assertEqual(prompt(old), new_prompt)
             for fact in ("Account balance deduction is fixed.", '"area": "Models"',
                          '"type": "Task"', '"source": "Team"'):
                 self.assertIn(fact, new_prompt)
             self.assertNotIn("Old excerpt", new_prompt)
             # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
-            check = self.assertIn if module == "publish_realtime" else self.assertNotIn
+            check = self.assertIn if module == "discord_pr" else self.assertNotIn
             for value in ('"announcements"', '"image": "2"'):
                 check(value, new_prompt)
         broken = copy.deepcopy(gist)
@@ -174,9 +168,7 @@ class GistEnrichmentTest(unittest.TestCase):
         broken["gist"]["summary"] = ""
         self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
         gist.update(app_name="Example app", app_url="https://example.com/app")
-        with patch("generate_daily.call_pollinations_api", return_value="{}") as api:
-            generate_summary([gist], "2026-10-07", "test")
-        self.assertEqual(api.call_args.args[1].count("https://example.com/app"), 1)
+        self.assertEqual(daily_summary_input([gist], "2026-10-07").count("https://example.com/app"), 1)
 
     def test_daily_summary_stores_its_highlights_for_the_index(self):
         summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
@@ -351,7 +343,7 @@ class GistEnrichmentTest(unittest.TestCase):
 
     def test_index_highlights_cover_the_readme_and_feed_it(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
-            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"app": True} if day == 3 else {})}]}
+            {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"kind": "app"} if day == 3 else {})}]}
             for day in range(1, 13)]
         self.assertEqual(len(highlight_entries(summaries, "2026-09-11")), 10)
         self.assertEqual(highlight_entries(summaries, "2026-09-11")[0]["title"], "Item 12")
@@ -373,20 +365,14 @@ class GistEnrichmentTest(unittest.TestCase):
                 "summary": "Uploads increase from 32 MiB to 100 MiB.",
             }],
         }
-        for module, generate in (
-            ("common", lambda: generate_platform_post("twitter", digest, "test", "Write a recap")),
-            ("generate_weekly", lambda: generate_discord_post(digest, "test", "2026-10-04")),
-        ):
-            with patch(f"{module}.call_pollinations_api", return_value='{"message": "Recap"}') as api:
-                generate()
-                task = api.call_args.args[1]
-            self.assertIn("32 MiB to 100 MiB", task)
-            self.assertIn("PRs selected for this recap: 1", task)
-            self.assertNotIn("Total PRs merged:", task)
-        with patch("generate_monthly.call_pollinations_api", return_value='{"arcs": []}') as api:
-            generate_monthly_digest([{"date": "2026-10-01", "summary": "One selected update", "pr_count": 1}], "2026-10", "test")
-        self.assertIn("PRs selected for daily recaps: 1", api.call_args.args[1])
-        self.assertNotIn("Merged PRs:", api.call_args.args[1])
+        # Every platform post is written from this recap.
+        recap = post_recap(digest)
+        self.assertIn("32 MiB to 100 MiB", recap)
+        self.assertIn("PRs selected for this recap: 1", recap)
+        self.assertNotIn("Total PRs merged:", recap)
+        month = monthly_digest_input([{"date": "2026-10-01", "summary": "One selected update", "pr_count": 1}], "2026-10")
+        self.assertIn("PRs selected for daily recaps: 1", month)
+        self.assertNotIn("Merged PRs:", month)
 
     def test_squash_after_syncing_main_excludes_unrelated_changes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -451,7 +437,7 @@ class GistEnrichmentTest(unittest.TestCase):
                 pr_comparison_refs(pr, root)
 
 
-# One reply carrying every field any post reads, so old and new runs see the same recap.
+# One reply carrying every field any post reads.
 REPLY = {
     "pr_summary": "#1: Larger media inputs", "pr_count": 2, "one_liner": "Uploads grow.", "theme": "Bigger inputs.",
     "arcs": [{"headline": "Larger uploads", "summary": "Uploads increase from 32 MiB to 100 MiB — größer."}],
@@ -472,8 +458,72 @@ def gist(number, merged_at, tier="daily"):
                      "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
 
 
+class ContributorsTest(unittest.TestCase):
+    def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        user = lambda user_id, login, kind="User", created="2020-01-01T00:00:00Z": {
+            "id": user_id, "login": login, "type": kind, "created_at": created,
+            "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        github = {
+            "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
+            "user/1": user(1, "voodoohop"),
+            "user/555": user(555, "art-otakus", "Organization"),  # an agent guessed someone else's id...
+            "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
+            "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
+            "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+            "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
+            "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
+            "users/Tolerable": user(2303, "Tolerable"),           # an app submitter named by login only
+            "users/pixArt": user(4040, "pixArt", created="2026-08-17T00:00:00Z"),  # the name taken later
+            "users/voodoohop": user(1, "voodoohop"),
+            "users/thomash": user(1145, "ThomasH"),               # a stranger: thomash is Thomas's git alias
+        }
+        prs = [
+            {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             # Thomas's own git alias: credits voodoohop, who already has this PR, not the stranger.
+             "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
+            {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+                        "url": "https://github.com/apps/pollinations-ai"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             "mergeCommit": {"message": (
+                 "Co-authored-by: Pix <pixArt@users.noreply.github.com>\n"
+                 "Add app\n\n"
+                 "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
+                 "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
+                 "Co-authored-by: Claude <noreply@anthropic.com>\n"
+                 "Co-authored-by: Tolerable <Tolerable@users.noreply.github.com>\n"  # the bot's submitter
+                 "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
+                 "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
+                 "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
+                 "Co-authored-by: MentatBot <160+MentatBot@users.noreply.github.com>\n"
+             )}},
+            # The same account under an earlier login still counts once, by its id.
+            {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
+            {"author": None, "mergeCommit": None},
+        ]
+        with patch("contributors.github_account", side_effect=lambda path, _token: github.get(path)):
+            ranked = rank_contributors(prs, "test")
+        # No credit: pixArt (the account did not exist yet), the placeholder account (sharktide's
+        # 909) and the app's own bot as a co-author (bots count as PR authors only).
+        self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "av12345")
+        self.assertEqual(ranked[4]["url"], "gh/TechMitten")
+        self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
+
+        # A rate limit or outage stops the count; only a 404 means the account is gone.
+        with patch("contributors.github_api_request") as api:
+            api.return_value.status_code = 403
+            with self.assertRaises(RuntimeError):
+                github_account("user/403-test", "test")
+            api.return_value.status_code = 404
+            self.assertIsNone(github_account("user/404-test", "test"))
+
+
 class PostsTest(unittest.TestCase):
-    """posts.py against the old generators: the same model calls and pictures, the same saved files."""
+    """posts.py on fixtures: its model calls and pictures, and the files it saves."""
 
     def setUp(self):
         directory = tempfile.TemporaryDirectory()
@@ -483,6 +533,8 @@ class PostsTest(unittest.TestCase):
         for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
                                                 "GITHUB_REPOSITORY": "pollinations/pollinations",
                                                 "DISCORD_MODELS_ROLE_ID": "42"}),
+                        patch("posts.month_counts", side_effect=lambda month, token, repository: {
+                            "month": month, "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]}),
                         patch("time.sleep")):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -520,70 +572,91 @@ class PostsTest(unittest.TestCase):
             posts.save(job, date, self.news, self.work, overwrite)
         return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
 
-    def old(self, module, env, **options):
-        calls, images, model, image = self.fakes(**options)
-        committed = {}
-        def commit_image(data, path, branch, token, owner, repo):
-            committed[path] = data
-            return f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}"
-        def commit_files(files, *args, **kwargs):
-            committed.update({path: json.dumps(data, indent=2, ensure_ascii=False).encode() for path, data in files})
-            return True
-        name = module.__name__
-        with patch.dict(os.environ, env), patch("common.get_repo_root", return_value=str(self.news)), \
-             patch("common.call_pollinations_api", model), patch(f"{name}.call_pollinations_api", model), \
-             patch(f"{name}.generate_image", image), patch(f"{name}.commit_image_to_branch", commit_image), \
-             patch(f"{name}.commit_files_to_branch", commit_files):
-            module.main()
-        return calls, images, committed
+    def assertDeliverable(self, job, base, saved):
+        """Each file deliver.py sends is saved with its text and its pictures' saved urls."""
+        for name in deliver.POSTS[job]:
+            post = json.loads(saved[f"{base}/{name}"])
+            self.assertTrue(post["text"].strip())
+            pictures = deliver.get_post_image_urls(post)
+            self.assertTrue(pictures)
+            for url in pictures:
+                self.assertIn(url.split("/news/", 1)[1], saved)
 
-    def assertSameRun(self, old, new, calls, files):
-        stamp = lambda saved: {path: re.sub(rb'"generated_at": "[^"]*"', b'"generated_at": ""', data)
-                               for path, data in saved.items()}
-        self.assertEqual(sorted(new[0]), sorted(old[0]))
-        self.assertEqual(sorted(new[1]), sorted(old[1]))
-        self.assertEqual(stamp(new[2]), stamp(old[2]))
-        self.assertEqual((len(new[0]), len(new[2])), (calls, files))
-
-    def test_daily_matches_today(self):
+    def test_daily(self):
         for number in (1, 2):
             self.put(f"gists/2026-10-06/PR-{number}.json", gist(number, "2026-10-06T10:00:00Z"))
         self.put("gists/2026-10-06/PR-3.json", gist(3, "2026-10-06T11:00:00Z", tier="discord_only"))
         self.put("gists/2026-10-07/PR-4.json", gist(4, "2026-10-07T11:00:00Z", tier="discord_only"))
-        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-06"})
-        self.assertSameRun(old, self.new("daily", "2026-10-06"), calls=3, files=5)
-        # A day without daily-tier gists writes and saves nothing, as today.
-        old = self.old(generate_daily, {"TARGET_DATE": "2026-10-07"})
-        self.assertSameRun(old, self.new("daily", "2026-10-07"), calls=0, files=0)
+        calls, images, saved = self.new("daily", "2026-10-06")
+        base = f"{NEWS_REL_DIR}/daily/2026-10-06"
+        self.assertEqual(sorted(saved), [f"{base}/{name}" for name in (
+            "images/reddit.jpg", "images/twitter.jpg", "reddit.json", "summary.json", "twitter.json")])
+        self.assertDeliverable("daily", base, saved)
+        # The summary, then the Reddit and X posts, from the day's daily-tier gists only.
+        self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7, 0.8])
+        self.assertIn("PR 2", calls[0][1])
+        self.assertNotIn("PR 3", calls[0][1])
+        self.assertEqual(images, [("Bee carrying a big box", 2048, 2048, 0)] * 2)
+        twitter = json.loads(saved[f"{base}/twitter.json"])
+        self.assertEqual((twitter["text"], twitter["images"][0]["url"]), (
+            "Uploads now take 100 MiB.",
+            f"https://raw.githubusercontent.com/pollinations/pollinations/news/{base}/images/twitter.jpg"))
+        self.assertEqual(json.loads(saved[f"{base}/summary.json"])["pr_count"], 2)
+        # A day without daily-tier gists writes and saves nothing.
+        self.assertEqual(self.new("daily", "2026-10-07"), ([], [], {}))
         # A post whose text is missing stops the run instead of being saved empty.
         with self.assertRaisesRegex(SystemExit, "missing tweet"):
             self.new("daily", "2026-10-06", overwrite=True, tweet=None)
 
-    def test_weekly_matches_today_with_and_without_the_linkedin_rewrite(self):
-        for long_linkedin, calls in ((False, 6), (True, 7)):
+    def test_weekly_with_and_without_the_linkedin_rewrite(self):
+        for long_linkedin, temperatures in ((False, [0.3, 0.7, 0.7, 0.7, 0.7, 0.8]),
+                                            (True, [0.3, 0.7, 0.7, 0.7, 0.7, 0.7, 0.8])):
             with self.subTest(long_linkedin=long_linkedin):
                 self.checkout(f"news-{long_linkedin}")
                 for number, day in ((1, "2026-09-27"), (2, "2026-09-30"), (3, "2026-10-03"), (4, "2026-10-04")):
                     self.put(f"gists/{day}/PR-{number}.json", gist(number, f"{day}T10:00:00Z"))
-                old = self.old(generate_weekly, {"WEEK_START_DATE": "2026-09-27"}, long_linkedin=long_linkedin)
-                new = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
-                self.assertSameRun(old, new, calls=calls, files=13)
+                calls, images, saved = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
+                base = f"{NEWS_REL_DIR}/weekly/2026-10-04"
+                self.assertEqual(len(saved), 13)
+                self.assertDeliverable("weekly", base, saved)
+                self.assertLessEqual(len(json.loads(saved[f"{base}/linkedin.json"])["text"]), 1248)
+                self.assertEqual([temperature for _, _, temperature in calls], temperatures)
+                summary = json.loads(saved[f"{base}/summary.json"])
+                self.assertEqual((summary["period_start"], summary["period_end"]), ("2026-09-27", "2026-10-03"))
                 # The Sunday's own gist belongs to the next week.
-                self.assertNotIn("PR 4", "".join(user for _, user, _ in new[0]))
+                self.assertIn("PR 3", calls[0][1])
+                self.assertNotIn("PR 4", "".join(user for _, user, _ in calls))
+                self.assertEqual([image for image in images if image[0].startswith("Bee scene")],
+                                 [(f"Bee scene {n}", 2048, 2048, n - 1) for n in (1, 2, 3)])
+                self.assertEqual(len(json.loads(saved[f"{base}/instagram.json"])["images"]), 3)
+                # An overlong LinkedIn draft is rewritten once.
+                linkedin = [user for _, user, _ in calls if "Create a LinkedIn post" in user]
+                self.assertEqual(["The previous draft" in user for user in linkedin],
+                                 [False, True] if long_linkedin else [False])
 
-    def test_monthly_matches_today(self):
-        # The cover's picture prompt is trimmed, as today; the other posts' prompts never were.
-        for reply in ({}, {"image_prompt": "  Bee at a desk \n"}):
+    def test_monthly(self):
+        # The cover's picture prompt is trimmed; the other posts' prompts never are.
+        for reply, picture in (({}, "Bee carrying a big box"), ({"image_prompt": "  Bee at a desk \n"}, "Bee at a desk")):
             with self.subTest(reply=reply):
                 self.checkout(f"news-{len(reply)}")
                 for day in ("2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
                     self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {day}", "pr_count": 2,
                                                            "summary": "Things shipped.",
                                                            "prs": [{"number": 1, "date": day}]})
-                old = self.old(generate_monthly, {"TARGET_MONTH": "2026-09"}, **reply)
-                self.assertSameRun(old, self.new("monthly", "2026-09", **reply), calls=2, files=2)
+                calls, images, saved = self.new("monthly", "2026-09", **reply)
+                base = f"{NEWS_REL_DIR}/monthly/2026-09"
+                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/images/cover.jpg",
+                                                 f"{base}/summary.json"])
+                self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
+                                 {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
+                self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7])
+                self.assertIn("Day 2026-09-30", calls[0][1])
+                self.assertNotIn("Day 2026-10-01", calls[0][1])
+                self.assertEqual([image[0] for image in images], [picture])
+        # A month without daily summaries writes no page but still has its counts.
+        self.assertEqual(sorted(self.new("monthly", "2026-08")[2]), [f"{NEWS_REL_DIR}/monthly/2026-08/contributors.json"])
 
-    def test_model_post_matches_today_and_a_week_without_changes_saves_only_the_snapshot(self):
+    def test_model_post_and_a_week_without_changes_saves_only_the_snapshot(self):
         previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
                     "embeddings": []}
         current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
@@ -591,33 +664,22 @@ class PostsTest(unittest.TestCase):
         self.put("models/snapshots/2026-10-07.json", previous)
         self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
         self.put("models/models.md", changelog)
-        staging = self.root / "staging"
-        staging.mkdir()
-        for date, baseline, snapshot, calls, files in (("2026-10-14", previous, "2026-10-07", 1, 4),
-                                                       ("2026-10-28", current, "2026-10-21", 0, 1)):
-            with self.subTest(date=date):
-                old_calls, _, model, _ = self.fakes()
-                committed = {}
-                def commit_text(token, owner, repo, path, content, message, committed=committed):
-                    committed[path] = content.encode()
-                    return True
-                with patch.dict(os.environ, {"TARGET_DATE": date}), \
-                     patch("generate_models_news._path_exists_on_news", return_value=False), \
-                     patch("generate_models_news.fetch_all_snapshots", return_value=copy.deepcopy(current)), \
-                     patch("generate_models_news.find_previous_snapshot_date", return_value=snapshot), \
-                     patch("generate_models_news.load_snapshot_from_news", return_value=copy.deepcopy(baseline)), \
-                     patch("generate_models_news.load_models_md", return_value=changelog), \
-                     patch("generate_models_news.models_news_staging_dir", return_value=str(staging)), \
-                     patch("generate_models_news.commit_text_to_news", commit_text), \
-                     patch("generate_models_news.call_pollinations_api", model):
-                    self.assertEqual(generate_models_news.main(), 0)
-                if calls:
-                    committed = {path: (staging / name).read_bytes() for name, path in models_news_staged_files(date)}
-                with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
-                    new = self.new("models", date)
-                self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
-                if calls:
-                    self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
+        models = f"{NEWS_REL_DIR}/models"
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, images, saved = self.new("models", "2026-10-14")
+        # One call compares with the last snapshot before the post, and four files are saved together.
+        self.assertEqual([temperature for _, _, temperature in calls], [0.4])
+        self.assertIn("2026-10-07", calls[0][1])
+        self.assertEqual(sorted(saved), [f"{models}/2026-10-14/discord.json", f"{models}/diffs/2026-10-14.json",
+                                         f"{models}/models.md", f"{models}/snapshots/2026-10-14.json"])
+        self.assertIn('"text": "<@&42> Model updates"', saved[f"{models}/2026-10-14/discord.json"].decode())
+        self.assertEqual(json.loads(saved[f"{models}/snapshots/2026-10-14.json"]), current)
+        self.assertLess(saved[f"{models}/models.md"].decode().index("## 2026-10-14"),
+                        saved[f"{models}/models.md"].decode().index("## 2026-10-07"))
+        # A week without changes makes no call and saves only the snapshot.
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, _, saved = self.new("models", "2026-10-28")
+        self.assertEqual((calls, list(saved)), ([], [f"{models}/snapshots/2026-10-28.json"]))
         # A saved model post is never replaced; a week without changes can be taken again.
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
             with self.assertRaisesRegex(SystemExit, "has a saved model post"):

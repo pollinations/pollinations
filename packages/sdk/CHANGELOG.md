@@ -14,6 +14,8 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 - `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
   `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
   of throwing a JSON `SyntaxError`.
+- `chatStream()` rejects prematurely closed responses without a terminal
+  finish event or `[DONE]` instead of silently returning partial text.
 
 ## [5.1.0-alpha.14] - 2026-10-08
 

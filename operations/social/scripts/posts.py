@@ -63,6 +63,7 @@ from common import (
     read_gists_for_week,
     weekly_digest_input,
 )
+from contributors import month_counts
 
 POSTS_DIR = PROMPTS_DIR / "posts"
 JOB_DIRS = {
@@ -234,8 +235,14 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
         }
     if job == "monthly":
         summaries = read_daily_summaries(date, news)
+        repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
+        counts = month_counts(date, get_env("GITHUB_TOKEN"), repository)
+        print(
+            f"  {counts['merged_prs']} merged PRs, {len(counts['contributors'])} contributors"
+        )
         return (monthly_digest_input(summaries, date) if summaries else None), {
-            "inputs": summaries
+            "inputs": summaries,
+            "counts": counts,
         }
     if job == "weekly":
         start, end = period(job, date)
@@ -381,6 +388,8 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
     if (raw["job"], raw["date"]) != (job, date):
         sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
     files = model_files(raw, news) if job == "models" else post_files(raw, work)
+    if job == "monthly":  # every month has its counts, even one with nothing to write
+        files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
     for path, content in files.items():
         (news / path).parent.mkdir(parents=True, exist_ok=True)
         (news / path).write_bytes(content)

@@ -100,7 +100,7 @@ export function createAudioCommand() {
         .action(async (textArg, opts) => {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
-            const inputText = textArg || (await readStdin());
+            const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",

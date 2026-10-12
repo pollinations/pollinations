@@ -1,0 +1,32 @@
+{
+  "pr_number": 17234,
+  "title": "chore: serve 50% of legacy image cache misses from the worker",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17234",
+  "merged_at": "2026-10-12T23:09:36Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Raised the share of legacy image cache misses routed through the Cloudflare Worker from 10% to 50%; `/feed` remains on the VM until the migration reaches 100%. At 10%, checks found no Worker exceptions and matching 402 responses, image sizes, headers and EXIF layouts across paths. Gen rejected requests at the same rate on both paths. The VM path’s 500 rate was about 8%, including three errors from unchanged proxy handling of query names containing spaces.",
+    "keywords": [
+      "legacy image API",
+      "Cloudflare Worker",
+      "cache misses",
+      "canary",
+      "VM migration"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17234.jpg",
+    "prompt": "In a cozy pixel art server garden, Polli wears a tiny tool belt and watches image postcards split evenly between a glowing Cloudflare Worker terminal and an older VM, while a small `/feed` sign stays beside the VM. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) glow, warm cream background, dark purple (#110518) outlines, chunky sprites and code-plants."
+  },
+  "generated_at": "2026-10-12T23:10:50.054224+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "bb5eb42928be4227538d5228b68c061ecc537b66",
+  "announcements": []
+}

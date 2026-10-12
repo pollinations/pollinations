@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💼",
+    "name": "RankNest YouTube Research & Strategy Tool",
+    "url": "https://ranknest.tech/youtube-research",
+    "description": "RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas.",
+    "language": "en",
+    "category": "business",
+    "platform": "web",
+    "githubUsername": "asiasi44",
+    "githubUserId": "109773529",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-12",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17138",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/1e4546ef-7068-49ff-a35c-c6b3199b12dd"
+  },
+  {
     "emoji": "🎬",
     "name": "MIDI Journey 2",
     "url": null,

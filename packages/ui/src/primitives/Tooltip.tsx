@@ -137,8 +137,11 @@ export const Tooltip: FC<TooltipProps> = ({
     };
 
     // Informational triggers use help; action wrappers can override the cursor.
+    // A plain span wrapper gets no tap area: on touch screens its 44px area
+    // would sit over the control it wraps and take the tap.
     const triggerClassName = cn(
-        "polli-control polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
+        (triggerAs === "button" || tapEnabled) && "polli-control",
+        "polli:relative polli:cursor-help polli:text-left polli:inline-flex polli:items-center",
         className,
     );
 

@@ -13,6 +13,8 @@ describe("Tooltip", () => {
         expect(markup).toContain('role="tooltip"');
         expect(markup).not.toContain('role="button"');
         expect(markup).not.toContain('tabindex="0"');
+        // Its touch tap area would cover the control it wraps.
+        expect(markup).not.toContain("polli-control");
     });
 
     it("makes explicitly tap-enabled span triggers operable", () => {
@@ -24,5 +26,6 @@ describe("Tooltip", () => {
 
         expect(markup).toContain('role="button"');
         expect(markup).toContain('tabindex="0"');
+        expect(markup).toContain("polli-control");
     });
 });

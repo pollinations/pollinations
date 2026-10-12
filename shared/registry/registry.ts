@@ -199,11 +199,6 @@ export type ModelDefinition = {
     billing?: BillingRules;
     // Date the model was added to the registry (ms epoch). Set once, never updated.
     addedDate: number;
-    // When this model or route stops being served (ms epoch), set only when
-    // known: a provider's published retirement, or our own decision to retire
-    // it. Exact cutoff when the provider gives one, else the start of the day.
-    // Fallback routes never inherit it.
-    retirementDate?: number;
     // User-facing metadata
     title: string; // Human display name, e.g. "FLUX.1 Kontext"
     brandUrl?: string;
@@ -254,6 +249,8 @@ export type ModelDefinition = {
     supportsStructuredOutput?: boolean;
     /** False when the model answers JSON mode (json_object) with no content but honors json_schema. */
     supportsJsonMode?: boolean;
+    /** False when the upstream has no SSE; Gen buffers `stream: true` calls. */
+    supportsStreaming?: boolean;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

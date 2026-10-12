@@ -291,6 +291,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("full flow: register client, create code, exchange for token", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
@@ -299,7 +300,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
@@ -313,7 +314,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
             },
@@ -380,6 +381,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
@@ -387,7 +389,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
@@ -414,6 +416,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("rejects extra query params on a registered redirect_uri (exact match)", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
@@ -421,7 +424,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
@@ -430,7 +433,7 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
         });
@@ -496,8 +499,8 @@ describe("GET /api/oauth/userinfo", () => {
     }, 30000);
 
     test("name/email require the profile permission for API keys", async ({
-        sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
         const mint = async (accountPermissions?: string[]) => {
@@ -505,7 +508,7 @@ describe("GET /api/oauth/userinfo", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     name: "userinfo-scope-test",

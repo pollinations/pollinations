@@ -1,0 +1,242 @@
+name: News / Posts
+
+# Writes, saves and delivers the daily, weekly and monthly news posts at today's
+# times. 06:00 writes yesterday's daily (on Sunday also the week, on the 1st also
+# last month) and schedules their Buffer posts; Mon–Sat 15:00 sends yesterday's
+# Reddit post, Sunday 18:00 the week's Reddit and Discord posts. A run started by
+# hand practises by default: it shows what it would save, and saves and delivers
+# nothing.
+on:
+  schedule:
+    - cron: '0 6 * * *'
+    - cron: '0 15 * * 1-6'
+    - cron: '0 18 * * 0'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'morning = what the 06:00 run does on that day; afternoon = its 15:00 (Sunday 18:00) run'
+        required: true
+        type: choice
+        options:
+          - morning
+          - afternoon
+          - daily
+          - weekly
+          - monthly
+      date:
+        description: 'The day (morning, afternoon, daily), the Sunday (weekly) or the month, YYYY-MM (monthly)'
+        required: true
+        type: string
+      run:
+        description: 'preview saves and delivers nothing; write + save never delivers'
+        required: true
+        type: choice
+        options:
+          - preview
+          - all
+          - write + save
+          - deliver
+      overwrite:
+        description: 'Write and save a date that is already saved again (its delivery record is kept)'
+        type: boolean
+        default: false
+
+permissions: {}
+
+# One run at a time; none is cancelled.
+concurrency:
+  group: news-posts
+  queue: max
+  cancel-in-progress: false
+
+env:
+  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || 'afternoon') }}
+  RUN: ${{ inputs.run || 'all' }}
+
+jobs:
+  posts:
+    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Choose the posts
+        id: posts
+        env:
+          DATE: ${{ inputs.date }}
+          GH_TOKEN: ${{ github.token }}
+        # A scheduled run is for the day it was created, so a rerun keeps it.
+        # The 06:00 run on day T writes T−1's daily, on Sunday also the week
+        # ending T, and on the 1st also last month, in that order.
+        run: |
+          DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
+          python - "$JOB" "$DATE" >> "$GITHUB_OUTPUT" <<'EOF'
+          import sys
+          from datetime import date, timedelta
+          sys.path.insert(0, "operations/social/scripts")
+          from posts import check_date
+          job, day = sys.argv[1:]
+          posts = [(job, day)]
+          if job == "morning":
+              check_date("daily", day)
+              today = date.fromisoformat(day)
+              yesterday = today - timedelta(days=1)
+              posts = [("daily", yesterday.isoformat())]
+              if today.isoweekday() == 7:
+                  posts.append(("weekly", today.isoformat()))
+              if today.day == 1:
+                  posts.append(("monthly", yesterday.strftime("%Y-%m")))
+          for job, day in posts:
+              check_date(job, day)
+          print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
+          print("folders<<FOLDERS")
+          for job, day in posts:
+              print(f"/operations/social/news/{job}/{day}/")
+          print("FOLDERS")
+          EOF
+
+      - name: Checkout news
+        uses: actions/checkout@v5
+        with:
+          ref: news
+          path: news
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            operations/social/news/gists/**/*.json
+            operations/social/news/*/*/summary.json
+            ${{ steps.posts.outputs.folders }}
+
+      - name: Write and save
+        env:
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          POSTS: ${{ steps.posts.outputs.posts }}
+          OVERWRITE: ${{ inputs.overwrite || env.RUN == 'preview' }}
+        # Each post is saved and pushed before the next is written. A preview
+        # saves without committing, for the next step to show.
+        run: |
+          git -C news config user.name "github-actions[bot]"
+          git -C news config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          flag=
+          [ "$OVERWRITE" = true ] && flag=--overwrite
+          set -- $POSTS
+          while [ $# -gt 0 ]; do
+            if [ -z "$flag" ] && [ -e "news/operations/social/news/$1/$2/summary.json" ]; then
+              echo "$1 $2 is already saved"
+            else
+              for command in write save; do
+                python operations/social/scripts/posts.py "$command" "$1" "$2" --news news --work "work/$1" $flag
+              done
+              git -C news add --all
+              if [ "$RUN" != preview ] && ! git -C news diff --cached --quiet; then
+                git -C news commit -qm "news: add $1 $2"
+                for try in 1 2 3; do
+                  git -C news push -q origin HEAD:news && break
+                  [ "$try" = 3 ] && exit 1
+                  git -C news pull -q --rebase origin news
+                done
+              fi
+            fi
+            shift 2
+          done
+
+      - name: Show what would be saved
+        # Also after a failed post, to show the ones saved before it.
+        if: ${{ !cancelled() && env.RUN == 'preview' }}
+        run: |
+          git -C news add --all
+          git -C news diff --cached --stat
+          git -C news diff --cached -- '*.json'
+
+      - name: Keep what would be saved
+        # The texts and pictures, to compare with what is on news.
+        if: ${{ !cancelled() && env.RUN == 'preview' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: preview
+          path: work/
+          if-no-files-found: ignore
+
+      - name: Report failure as an issue
+        if: ${{ failure() && env.RUN != 'preview' }}
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}
+          title: News / Posts — writing
+
+  deliver:
+    needs: posts
+    # After the posts, even when one failed, so a failed month never stops the day's posts.
+    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests paramiko
+
+      - name: Deliver
+        env:
+          DATE: ${{ inputs.date }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          BUFFER_ACCESS_TOKEN: ${{ secrets.BUFFER_ACCESS_TOKEN }}
+          DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
+          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
+          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
+          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
+        # The morning schedules the Buffer posts of what it wrote; the afternoon
+        # sends Reddit, and on Sunday the week's Discord post. Every delivery is
+        # tried, then the run fails if one did.
+        run: |
+          DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
+          commands=()
+          case "$JOB" in
+            morning|afternoon)
+              yesterday=$(date -ud "$DATE -1 day" +%F)
+              weekday=$(date -ud "$DATE" +%u) ;;
+          esac
+          case "$JOB" in
+            morning)
+              commands=("schedule daily $yesterday")
+              [ "$weekday" = 7 ] && commands+=("schedule weekly $DATE") ;;
+            afternoon)
+              if [ "$weekday" = 7 ]; then commands=("send weekly $DATE"); else commands=("send daily $yesterday"); fi ;;
+            daily|weekly)
+              commands=("schedule $JOB $DATE") ;;
+          esac
+          failed=0
+          for command in "${commands[@]}"; do
+            python operations/social/scripts/deliver.py $command || failed=1
+          done
+          exit $failed
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}
+          title: News / Posts — delivery

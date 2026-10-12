@@ -312,7 +312,7 @@ const result2 = await editImage('Combine these two scenes', {
 
 ## Image Generation (OpenAI-compatible)
 
-The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
+The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `responseFormat`). It returns one image per call.
 
 ```javascript
 import { imageGenerate } from '@pollinations/sdk';
@@ -418,8 +418,15 @@ await video.saveToFile('clouds.mp4');
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
-| `referenceImage` | string | - | URL for image-to-video |
+| `referenceImage` | string or string[] | - | Frame URL(s): first is the start frame, second is the optional end frame |
+| `referenceImages` | string or string[] | - | Image URL(s) for visual guidance, separate from frame controls |
+| `referenceVideos` | string or string[] | - | Video URL(s) for motion or style guidance |
+| `referenceAudios` | string or string[] | - | Audio URL(s) for audio-driven generation |
 | `safe` | boolean | `false` | Safety filter |
+
+Reference media must use public HTTP(S) URLs. See `video_capabilities` in
+[`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
+controls and guidance media can be combined depends on the selected model.
 
 ## Audio (Text-to-Speech & Music)
 

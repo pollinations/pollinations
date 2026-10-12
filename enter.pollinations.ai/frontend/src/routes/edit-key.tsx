@@ -2,7 +2,7 @@ import { KeyChip, Surface, Text } from "@pollinations/ui";
 import { AuthModalHeader, AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AuthAccountIdentity } from "../components/auth/auth-account-identity.tsx";
 import {
@@ -87,7 +87,7 @@ function EditKeyPage() {
 
     useEffect(() => {
         if (!user || !id) return;
-        apiClient.account.keys
+        accountClient.keys
             .$get()
             .then((response) => (response.ok ? response.json() : null))
             .then((result) => {

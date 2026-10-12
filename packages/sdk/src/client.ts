@@ -322,7 +322,12 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
-    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
@@ -330,7 +335,7 @@ export class Pollinations {
             signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return response.json() as Promise<T>;
+                return read(response);
             },
         );
     }
@@ -345,7 +350,14 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -666,6 +678,9 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 
@@ -787,10 +802,15 @@ export class Pollinations {
         options: Omit<ChatOptions, "stream">,
         stream: boolean,
     ): Record<string, unknown> {
+        // Router agents read overrides from `metadata`, where `text` is `model`.
+        const { text, ...routing } = options.routing ?? {};
         return this.stripUndefined({
             messages,
             model: options.model,
-            routing: options.routing,
+            metadata: options.routing && {
+                ...(text !== undefined && { model: text }),
+                ...routing,
+            },
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -911,6 +931,7 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
+        let completed = false;
         let events: string[] = [];
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
@@ -929,10 +950,20 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) yield parseChatStreamData(data);
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
+                    yield chunk;
                 }
                 events = [];
-                if (done) return;
+                if (done) {
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
+                }
             }
         } catch (error) {
             if (options.signal?.aborted) {
@@ -1354,7 +1385,13 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
         }
@@ -1609,9 +1646,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1623,6 +1669,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<UsageResponse>(url);
     }
 
@@ -1636,8 +1684,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1649,6 +1703,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<DailyUsageResponse>(url);
     }
 

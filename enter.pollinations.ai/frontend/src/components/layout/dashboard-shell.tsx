@@ -37,7 +37,7 @@ import type {
     SetStateAction,
 } from "react";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
@@ -70,6 +70,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    signInBanner?: ReactNode;
     showFooterLinks?: boolean;
     showQuestStatus?: boolean;
 }>;
@@ -154,6 +155,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    signInBanner,
     showFooterLinks = true,
     showQuestStatus = false,
     children,
@@ -383,9 +385,13 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     )}
                     <ScrollArea
                         ref={mainScrollRef}
-                        className="min-h-0 min-w-0 flex-1 overscroll-contain px-0 pt-16 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                        className={cn(
+                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                            signInBanner ? "pt-3" : "pt-16",
+                        )}
                     >
                         <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {signInBanner}
                             {children}
                         </main>
                     </ScrollArea>
@@ -411,7 +417,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
             try {
                 const [catalogResponse, rewardsResponse] = await Promise.all([
                     apiClient.quests.catalog.$get(),
-                    apiClient.account.quests.rewards.$get(),
+                    accountClient.quests.rewards.$get(),
                 ]);
                 if (!catalogResponse.ok || !rewardsResponse.ok) {
                     throw new Error("Quest status unavailable");

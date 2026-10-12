@@ -101,6 +101,14 @@ describe("modelBody", () => {
         });
     });
 
+    it("declares a text endpoint without SSE only for --no-streaming", () => {
+        expect(modelBody({ streaming: false }, false)).toEqual({
+            advertised: { streaming: false },
+        });
+        expect(modelBody({ streaming: true }, false)).toEqual({});
+        expect(modelBody({}, false)).toEqual({});
+    });
+
     it("sends the paid-only choice only when the flag is given", () => {
         expect(modelBody({ visibility: "public" }, false)).toEqual({
             visibility: "public",

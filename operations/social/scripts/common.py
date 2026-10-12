@@ -8,14 +8,19 @@ import os
 import sys
 import time
 import json
+import calendar
 import random
 import requests
-from typing import Dict, List, Optional
+from collections import defaultdict
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 from pathlib import Path
 
 # API Endpoints
 GITHUB_API_BASE = "https://api.github.com"
+GEN_BASE = "https://gen.pollinations.ai"
 POLLINATIONS_API_BASE = "https://gen.pollinations.ai/v1/chat/completions"
 POLLINATIONS_IMAGE_BASE = "https://gen.pollinations.ai/image"
 
@@ -35,6 +40,9 @@ OWNER = "pollinations"
 REPO = "pollinations"
 GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
 NEWS_REL_DIR = "operations/social/news"
+DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
+WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
+MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
 
 
 # Models-weekly staging
@@ -75,7 +83,9 @@ IMAGE_STYLE_SUFFIX = (
     "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
     "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
     "proportions, and art style consistency. Do NOT copy the layout or background from it. "
-    "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
+    "Only draw the characters mentioned in the prompt above, not all characters from the sheet. "
+    "Polli (the bee), the monitor robot and Nomnom are each one unique individual: "
+    "each appears at most once, never twice in the same picture."
 )
 
 # Discord-specific
@@ -147,6 +157,67 @@ def post_discord_webhook(
         if attempt < MAX_RETRIES - 1:
             time.sleep(INITIAL_RETRY_DELAY * (2 ** attempt))
     return resp
+
+
+def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
+    """Split message into chunks at paragraph breaks."""
+    if len(message) <= max_length:
+        return [message]
+
+    chunks = []
+    remaining = message
+    while remaining:
+        if len(remaining) <= max_length:
+            chunks.append(remaining)
+            break
+        chunk = remaining[:max_length]
+        # Split at paragraph break
+        split = chunk.rfind("\n\n")
+        if split >= max_length * 0.5:
+            split_point = split + 2
+        else:
+            split = chunk.rfind("\n")
+            if split >= max_length * 0.5:
+                split_point = split + 1
+            else:
+                split_point = max_length
+        chunks.append(remaining[:split_point].rstrip())
+        remaining = remaining[split_point:].lstrip()
+    return chunks
+
+
+def safe_truncate(text: str, limit: int) -> str:
+    """Truncate to <= limit characters without cutting mid-token.
+
+    - Walks back to the last whitespace before the cut so we don't split a
+      word, URL, or `<@&123>` role mention.
+    - Drops a trailing partial code span (odd count of backticks) by
+      rewinding to before the last backtick.
+    - Drops any trailing partial `<...>` (e.g. `<@&12`) so Discord doesn't
+      render broken markup.
+    - Appends "…" as a visible truncation marker.
+    """
+    if len(text) <= limit:
+        return text
+    cut = limit - 1  # leave room for the ellipsis
+    head = text[:cut]
+    # Prefer a newline boundary, then any whitespace. Always walk back to it
+    # if one exists — a token that spans the cut (URL, role mention, code
+    # span) is far more visible damage than dropping a line of bullet text.
+    boundary = max(head.rfind("\n"), head.rfind(" "))
+    if boundary > 0:
+        head = head[:boundary]
+    head = head.rstrip()
+    # Strip a dangling unmatched '<' (broken mention or HTML-ish tag).
+    last_lt = head.rfind("<")
+    last_gt = head.rfind(">")
+    if last_lt > last_gt:
+        head = head[:last_lt].rstrip()
+    # Close or drop a dangling unmatched code span.
+    if head.count("`") % 2 == 1:
+        last_backtick = head.rfind("`")
+        head = head[:last_backtick].rstrip()
+    return head + "…"
 
 
 def parse_json_response(response: str) -> Optional[Dict]:
@@ -263,8 +334,11 @@ def load_prompt(name: str) -> str:
         return ""
     
     with open(prompt_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    
+        return prompt_text(f.read())
+
+
+def prompt_text(content: str) -> str:
+    """Prompt text as sent: without its markdown title, brand components injected."""
     # Remove the markdown title (first line starting with #)
     lines = content.split("\n")
     if lines and lines[0].startswith("#"):
@@ -554,7 +628,7 @@ _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
 
 # Required keys inside gist.gist (the AI-generated analysis)
 _GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "headline", "blurb", "summary", "impact", "keywords", "image_prompt"}
+                 "summary", "keywords"}
 
 VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
 VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
@@ -589,6 +663,11 @@ def validate_gist(gist: Dict) -> List[str]:
     if "keywords" in ai and not isinstance(ai["keywords"], list):
         errors.append("keywords must be a list")
 
+    if not isinstance(ai.get("summary"), str) or not ai["summary"].strip():
+        errors.append("gist.summary must be non-empty text")
+    if not gist.get("image", {}).get("prompt"):
+        errors.append("missing image.prompt")
+
     if "enrichment" in gist:
         for field in ("classification", "models"):
             if gist["enrichment"].get(field) not in {"complete", "failed"}:
@@ -611,6 +690,19 @@ def validate_gist(gist: Dict) -> List[str]:
                 errors.append("invalid announcement effective_status")
 
     return errors
+
+
+def gist_context(gist: Dict) -> Dict:
+    """The shared factual input for realtime, daily, weekly and highlights."""
+    ai = gist.get("gist", {})
+    return {
+        **{key: gist.get(key) for key in (
+            "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url"
+        )},
+        **{key: ai.get(key) for key in (
+            "summary", "category", "importance", "user_facing", "keywords"
+        )},
+    }
 
 
 def apply_publish_tier_rules(gist: Dict) -> str:
@@ -706,6 +798,62 @@ def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
     return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
 
 
+def read_gists_for_week(week_start: str, week_end: str, repo_root: Optional[str] = None) -> List[Dict]:
+    """Read all gist JSON files for each day in the week range.
+    Reads directly from local repo gists (no daily summary dependency)."""
+    all_gists = []
+
+    start = datetime.strptime(week_start, "%Y-%m-%d")
+    end = datetime.strptime(week_end, "%Y-%m-%d")
+    current = start
+
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+        day_gists = read_gists_for_date(date_str, repo_root)
+        if day_gists:
+            print(f"    {date_str}: {len(day_gists)} gists")
+        all_gists.extend(day_gists)
+        current += timedelta(days=1)
+
+    return all_gists
+
+
+def daily_summary_input(gists: List[Dict], date_str: str) -> str:
+    """The daily summary call's user message: the day's gists."""
+    gist_lines = []
+    for g in gists:
+        gist_lines.append(json.dumps(gist_context(g), indent=2))
+
+    return f"""Date: {date_str}
+Number of PRs: {len(gists)}
+
+PR Gists:
+{chr(10).join(gist_lines)}"""
+
+
+def weekly_digest_input(gists: List[Dict], week_start: str, week_end: str) -> str:
+    """The weekly digest call's user message: the week's gists, grouped by date."""
+    by_date = defaultdict(list)
+    for g in gists:
+        date = g.get("merged_at", "")[:10] or "unknown"
+        by_date[date].append(gist_context(g))
+
+    gist_sections = []
+    for date in sorted(by_date.keys()):
+        gist_sections.append(json.dumps({
+            "date": date,
+            "pr_count": len(by_date[date]),
+            "prs": by_date[date],
+        }, indent=2))
+
+    return f"""Week: {week_start} to {week_end}
+Total PRs: {len(gists)}
+Days with PRs: {len(by_date)}
+
+PR gists by date:
+{chr(10).join(gist_sections)}"""
+
+
 def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
     """Read a JSON file from the news branch (local overlay first, GitHub API fallback).
 
@@ -737,29 +885,6 @@ def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> 
     return None
 
 
-def read_news_text_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[str]:
-    """Read a text file from the news branch (local overlay first, GitHub API fallback)."""
-    # Try local first (workflow overlay)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return f.read()
-        except OSError:
-            pass
-
-    # Fall back to GitHub API
-    import base64 as _b64
-    headers = _github_headers(github_token)
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        return _b64.b64decode(resp.json()["content"]).decode()
-    return None
-
-
 def generate_platform_post(
     platform: str,
     summary: Dict,
@@ -782,13 +907,7 @@ def generate_platform_post(
         Parsed JSON dict or None on failure
     """
     voice = load_prompt(f"tone/{platform}")
-    pr_summary = summary.get("pr_summary", "")
-    arc_titles = str([a["headline"] for a in summary.get("arcs", [])])
-    pr_count = summary.get("pr_count", 0)
-
-    task = f"{preamble}\n\n{pr_summary}\n\nMost impactful updates: {arc_titles}"
-    if pr_count:
-        task += f"\nTotal PRs merged: {pr_count}"
+    task = f"{preamble}\n\n{post_recap(summary)}"
     task += "\n\n" + load_format(platform)
     if extra_context:
         task += extra_context
@@ -797,6 +916,18 @@ def generate_platform_post(
     if not response:
         return None
     return parse_json_response(response)
+
+
+def post_recap(summary: Dict) -> str:
+    """The part of a summary or digest that each platform post is written from."""
+    pr_summary = summary.get("pr_summary", "")
+    arcs = json.dumps(summary.get("arcs", []), indent=2)
+    pr_count = summary.get("pr_count", 0)
+
+    recap = f"{pr_summary}\n\nSelected updates with factual detail:\n{arcs}"
+    if pr_count:
+        recap += f"\nPRs selected for this recap: {pr_count}. This is not the total number of merges."
+    return recap
 
 
 def build_linkedin_post_text(post_data: Dict) -> str:
@@ -969,6 +1100,197 @@ def build_canonical_summary(
     return result
 
 
+def build_daily_summary_artifact(
+    summary: Dict, gists: List[Dict], date_str: str, generated_at: str
+) -> Dict:
+    """Build the canonical daily summary stored on the news branch."""
+    arcs = summary.get("arcs") or []
+    one_liner = (summary.get("one_liner") or "").strip()
+    headline = next(
+        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
+        "",
+    )
+    title = headline or one_liner or f"Updates for {date_str}"
+    arc_summaries = [
+        (arc.get("summary") or "").strip()
+        for arc in arcs[:3]
+        if (arc.get("summary") or "").strip()
+    ]
+    summary_text = join_summary_parts(
+        ([one_liner] if one_liner and one_liner != title else []) + arc_summaries
+    )
+    if not summary_text:
+        summary_text = one_liner or title
+
+    prs = [{"number": gist.get("pr_number"), "date": date_str} for gist in gists]
+    artifact = build_canonical_summary(
+        date=date_str,
+        period_start=date_str,
+        period_end=date_str,
+        title=title,
+        summary=summary_text,
+        prs=prs,
+        generated_at=generated_at,
+    )
+    # Shown directly on Enter's News page and in the README via index.json.
+    artifact["highlights"] = [
+        item for item in summary.get("highlights") or []
+        if isinstance(item, dict) and item.get("title") and item.get("text")
+    ]
+    return artifact
+
+
+def get_week_dates(override_start: Optional[str] = None):
+    """Return (week_start, week_end, publish_date) as YYYY-MM-DD strings.
+    Coverage stays Sun→Sat, but weekly artifacts are keyed by the Sunday publish date.
+    When run by cron on Sunday 06:00 UTC:
+      - week_start = today-7 (last Sunday)
+      - week_end = today-1 (Saturday)
+      - publish_date = today (Sunday)
+    """
+    if override_start:
+        start = datetime.strptime(override_start, "%Y-%m-%d").date()
+    else:
+        today = datetime.now(timezone.utc).date()
+        start = today - timedelta(days=7)
+
+    end = start + timedelta(days=6)  # Saturday
+    publish_date = end + timedelta(days=1)  # Sunday
+    return (
+        start.strftime("%Y-%m-%d"),
+        end.strftime("%Y-%m-%d"),
+        publish_date.strftime("%Y-%m-%d"),
+    )
+
+
+def build_weekly_summary_artifact(
+    digest: Dict,
+    gists: List[Dict],
+    publish_date: str,
+    week_start: str,
+    week_end: str,
+    generated_at: str,
+) -> Dict:
+    """Build the canonical weekly summary stored on the news branch."""
+    arcs = digest.get("arcs") or []
+    theme = (digest.get("theme") or "").strip()
+    headline = next(
+        ((arc.get("headline") or "").strip() for arc in arcs if (arc.get("headline") or "").strip()),
+        "",
+    )
+    title = headline or theme or f"Week ending {week_end}"
+    arc_summaries = [
+        (arc.get("summary") or "").strip()
+        for arc in arcs[:4]
+        if (arc.get("summary") or "").strip()
+    ]
+    summary_text = join_summary_parts(
+        ([theme] if theme and theme != title else []) + arc_summaries
+    )
+    if not summary_text:
+        summary_text = theme or title
+
+    prs = [
+        {"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]}
+        for gist in gists
+    ]
+
+    return build_canonical_summary(
+        date=publish_date,
+        period_start=week_start,
+        period_end=week_end,
+        title=title,
+        summary=summary_text,
+        prs=prs,
+        generated_at=generated_at,
+    )
+
+
+def month_dates(month: str) -> tuple[str, str]:
+    year, month_number = (int(part) for part in month.split("-"))
+    final_day = calendar.monthrange(year, month_number)[1]
+    return f"{month}-01", f"{month}-{final_day:02d}"
+
+
+def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Dict]:
+    """Read valid canonical daily summaries for a calendar month."""
+    root = Path(repo_root or get_repo_root())
+    daily_root = root / DAILY_REL_DIR
+    summaries = []
+    for path in sorted(daily_root.glob(f"{month}-*/summary.json")):
+        try:
+            summary = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as error:
+            print(f"  Warning: skipping malformed daily summary {path}: {error}")
+            continue
+        if str(summary.get("date") or "").startswith(month):
+            summaries.append(summary)
+    return summaries
+
+
+def monthly_digest_input(daily_summaries: List[Dict], month: str) -> str:
+    """The monthly digest call's user message: the month's daily summaries."""
+    context = [
+        {
+            "date": summary.get("date"),
+            "title": summary.get("title"),
+            "summary": summary.get("summary"),
+            "pr_count": summary.get("pr_count", 0),
+        }
+        for summary in daily_summaries
+    ]
+    pr_count = sum(int(summary.get("pr_count") or 0) for summary in daily_summaries)
+    return (
+        f"Month: {month}\n"
+        f"PRs selected for daily recaps: {pr_count}\n"
+        f"Active days: {len(daily_summaries)}\n\n"
+        f"Canonical daily summaries:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
+    )
+
+
+def build_monthly_summary_artifact(
+    digest: Dict,
+    daily_summaries: List[Dict],
+    month: str,
+    generated_at: str,
+) -> Dict:
+    """Build the canonical summary stored in the monthly news archive."""
+    period_start, period_end = month_dates(month)
+    arcs = digest.get("arcs") or []
+    theme = str(digest.get("theme") or "").strip()
+    headline = next(
+        (
+            str(arc.get("headline") or "").strip()
+            for arc in arcs
+            if str(arc.get("headline") or "").strip()
+        ),
+        "",
+    )
+    title = headline or theme or datetime.strptime(month, "%Y-%m").strftime("%B %Y")
+    arc_summaries = [
+        str(arc.get("summary") or "").strip()
+        for arc in arcs[:4]
+        if str(arc.get("summary") or "").strip()
+    ]
+    summary_text = join_summary_parts(
+        ([theme] if theme and theme != title else []) + arc_summaries
+    )
+
+    prs = []
+    for daily in daily_summaries:
+        prs.extend(daily.get("prs") or [])
+
+    return build_canonical_summary(
+        date=period_end,
+        period_start=period_start,
+        period_end=period_end,
+        title=title,
+        summary=summary_text or theme or title,
+        prs=prs,
+        generated_at=generated_at,
+    )
+
+
 def commit_files_to_branch(
     files: List[tuple],
     branch: str,
@@ -976,8 +1298,8 @@ def commit_files_to_branch(
     owner: str,
     repo: str,
     label: str = "",
-) -> None:
-    """Commit JSON files to a branch.
+) -> bool:
+    """Commit JSON files to a branch. Returns False if any file failed.
 
     Args:
         files: list of (file_path, data_dict) tuples
@@ -987,6 +1309,7 @@ def commit_files_to_branch(
 
     headers = _github_headers(github_token)
 
+    ok = True
     for file_path, data in files:
         if data is None:
             continue
@@ -1019,6 +1342,216 @@ def commit_files_to_branch(
             print(f"  Committed {file_path}")
         else:
             print(f"  Error committing {file_path}: {resp.status_code} {resp.text[:200]}")
+            ok = False
+    return ok
+
+
+# ── Model post ───────────────────────────────────────────────────────
+
+CATEGORIES: tuple[str, ...] = ("text", "image", "video", "audio", "embeddings")
+
+
+@dataclass(frozen=True)
+class Diff:
+    added: dict[str, list[dict[str, Any]]]
+    removed: dict[str, list[dict[str, Any]]]
+    changed: dict[str, list[dict[str, Any]]]
+
+    def is_empty(self) -> bool:
+        return not any(
+            self.added[c] or self.removed[c] or self.changed[c] for c in CATEGORIES
+        )
+
+    def to_json(self) -> dict[str, Any]:
+        return {"added": self.added, "removed": self.removed, "changed": self.changed}
+
+
+def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
+    """GET /models returns every model in one call with a 'category' field.
+    We bucket by that field into the known categories.
+
+    No auth — authenticated requests filter by key permissions, which would
+    create false 'removed' entries when keys differ between runs."""
+    url = f"{GEN_BASE}/models"
+    resp = requests.get(url, headers={"Accept": "application/json"}, timeout=30)
+    resp.raise_for_status()
+    payload = resp.json()
+    # /v1/models wraps in {data:[...]}; /models returns a bare list.
+    all_models: list[dict[str, Any]] = (
+        list(payload["data"])
+        if isinstance(payload, dict) and "data" in payload
+        else list(payload)
+        if isinstance(payload, list)
+        else []
+    )
+    if not all_models:
+        raise ValueError(f"Unexpected or empty response from {url}: {payload!r:.200}")
+
+    result: dict[str, list[dict[str, Any]]] = {cat: [] for cat in CATEGORIES}
+    unknown: list[str] = []
+    for model in all_models:
+        cat = model.get("category", "")
+        # API returns "embedding" (singular); we bucket under "embeddings"
+        if cat == "embedding":
+            cat = "embeddings"
+        if cat in result:
+            result[cat].append(model)
+        else:
+            unknown.append(f"{model.get('name', '?')}({cat})")
+    if unknown:
+        print(f"  Warning: unrecognised categories, skipped: {unknown[:10]}")
+    return result
+
+
+# Fields ignored when comparing models.
+# description: prose edits with no capability change.
+# added_date: static timestamp, never changes for existing models.
+# name / id: identity key fields used for lookup — excluded from value comparison
+#   so that snapshots migrating from 'id' to 'name' don't flood the diff.
+_DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
+    {"description", "added_date", "name", "id"}
+)
+
+
+def _normalize_for_diff(model: dict[str, Any]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for k, v in model.items():
+        if k in _DIFF_IGNORED_FIELDS:
+            continue
+        # Sort lists so reordering aliases/modalities/capabilities doesn't
+        # trigger false "changed" entries.
+        result[k] = sorted(str(x) for x in v) if isinstance(v, list) else v
+    # Snapshots taken before the catalog always sent paid_only omit it for
+    # models that were never paid-only; missing meant false. Remove once the
+    # stored snapshot has been taken from a catalog that always sends it.
+    result.setdefault("paid_only", False)
+    return result
+
+
+def _migrate_old_snapshot(
+    snapshot: dict[str, list[dict[str, Any]]],
+) -> dict[str, list[dict[str, Any]]]:
+    """One-time migration: old snapshots stored image+video together under 'image'
+    (fetched from /image/models before the video split). If 'video' is absent but
+    'image' is present, re-bucket by each model's 'category' field so the diff
+    doesn't report all video models as removed from image."""
+    if "video" in snapshot or "image" not in snapshot:
+        return snapshot
+    migrated = {k: list(v) for k, v in snapshot.items()}
+    migrated["image"] = [m for m in snapshot["image"] if m.get("category") != "video"]
+    migrated["video"] = [m for m in snapshot["image"] if m.get("category") == "video"]
+    video_count = len(migrated["video"])
+    if video_count:
+        print(f"  Migrated {video_count} video model(s) out of old 'image' bucket.")
+    return migrated
+
+
+def _model_key(m: dict[str, Any]) -> str | None:
+    """Return a stable identity key for a model, falling back to 'id' for
+    older snapshots that predate the 'name' field."""
+    return m.get("name") or m.get("id")
+
+
+def diff_models(
+    previous: dict[str, list[dict[str, Any]]] | None,
+    current: dict[str, list[dict[str, Any]]],
+) -> Diff:
+    added: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
+    removed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
+    changed: dict[str, list[dict[str, Any]]] = {c: [] for c in CATEGORIES}
+
+    if previous is None:
+        # First run: treat the snapshot as baseline with no announced changes.
+        return Diff(added=added, removed=removed, changed=changed)
+
+    for cat in CATEGORIES:
+        curr_raw = current.get(cat, [])
+        curr_by_name = {_model_key(m): m for m in curr_raw if _model_key(m)}
+
+        # Category absent from previous snapshot = newly tracked (e.g. 'video'
+        # added after this code change). Treat as no baseline — don't flood the
+        # diff by announcing every existing model as "added".
+        if cat not in previous:
+            print(
+                f"  Info: '{cat}' not in previous snapshot — skipping (new category)."
+            )
+            continue
+
+        prev_raw = previous[cat]
+        prev_by_name = {_model_key(m): m for m in prev_raw if _model_key(m)}
+
+        # Old snapshot has raw models but none resolved to a key — structural
+        # mismatch (e.g. old format used a different field). Skip rather than
+        # reporting every current model as "added".
+        if prev_raw and not prev_by_name:
+            print(
+                f"  Warning: previous snapshot for '{cat}' has {len(prev_raw)} models "
+                "but none have a resolvable key — skipping diff for this category."
+            )
+            continue
+
+        for name, model in curr_by_name.items():
+            if name not in prev_by_name:
+                added[cat].append(model)
+            elif _normalize_for_diff(prev_by_name[name]) != _normalize_for_diff(model):
+                changed[cat].append({"before": prev_by_name[name], "after": model})
+
+        for name, model in prev_by_name.items():
+            if name not in curr_by_name:
+                removed[cat].append(model)
+
+    return Diff(added=added, removed=removed, changed=changed)
+
+
+def models_report_input(
+    diff: dict[str, Any], date_str: str, previous_date: str | None
+) -> str:
+    """The model post call's user message: the /models comparison."""
+    return json.dumps(
+        {
+            "date": date_str,
+            "previous_date": previous_date,
+            "diff": diff,
+        },
+        indent=2,
+        ensure_ascii=False,
+    )
+
+
+def discord_payload(
+    discord_text: str,
+    date_str: str,
+    previous_date: str | None,
+    role_id: str | None,
+    generated_at: str,
+) -> dict[str, Any]:
+    text = discord_text
+    if role_id:
+        text = text.replace("<@&MODEL_ROLE_ID>", f"<@&{role_id}>")
+    else:
+        text = text.replace("<@&MODEL_ROLE_ID>", "").lstrip()
+    return {
+        "platform": "discord",
+        "scope": "models_weekly",
+        "date": date_str,
+        "previous_date": previous_date,
+        "generated_at": generated_at,
+        "text": text,
+    }
+
+
+def models_md(existing_md: str, section: str) -> str:
+    """models.md with the new section on top, under one changelog heading."""
+    # Strip any existing top-level changelog heading so we don't accumulate
+    # duplicates each week — the H1 is re-added below.
+    body = existing_md.lstrip()
+    if body.startswith("# Pollinations Model Changelog"):
+        body = body.split("\n", 1)[1].lstrip() if "\n" in body else ""
+    return (
+        "# Pollinations Model Changelog\n\n"
+        + section.rstrip()
+        + ("\n\n" + body if body else "\n")
+    )
 
 
 # ── VPS deployment ───────────────────────────────────────────────────
@@ -1051,7 +1584,10 @@ def deploy_reddit_news_post(
         return None
 
     print("  Reddit...")
-    return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+    try:
+        return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
+    except Exception:  # noqa: BLE001 - the old senders report it as before: False, and go on
+        return False
 
 
 def deploy_reddit_post(
@@ -1070,6 +1606,7 @@ def deploy_reddit_post(
         print("  VPS: Missing required arguments")
         return False
 
+    deploying = False
     try:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1117,6 +1654,7 @@ LINKEOF
         deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
 
         print("  VPS: Running deploy.sh...")
+        deploying = True
         ssh.exec_command(deploy_cmd)  # fire-and-forget by design (nohup)
         ssh.close()
 
@@ -1126,4 +1664,6 @@ LINKEOF
 
     except Exception as e:
         print(f"  VPS: {type(e).__name__}: {e}")
+        if deploying:
+            raise  # deploy.sh may already run: the caller can't treat this as not sent
         return False

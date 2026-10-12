@@ -42,6 +42,15 @@
     --polli-color-brand-dark: #110518;
     --polli-color-brand-accent: oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
 
+    /* Third-party brand colours for the social count pills. Fixed in both
+       modes: they are Discord's and GitHub's own colours, not our theme. */
+    --polli-color-social-discord: #5865f2;
+    --polli-color-social-discord-text: #ffffff;
+    --polli-color-social-github: #0d1117;
+    --polli-color-social-github-hover: #010409;
+    --polli-color-social-github-text: #f0f6fc;
+    --polli-color-social-github-border: rgb(240 246 252 / 14%);
+
     /* Level 0 — Desk (neutral, identical on every page) */
     --polli-color-app-bg:              oklch(0.902 0.013 80);
 
@@ -102,7 +111,8 @@
 :root,
 [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
-    --polli-color-bg-subtle:       oklch(0.955 0.022 var(--polli-hue) / 0.7);
+    /* 0.918 keeps quiet fills visible on the cream block (surface-block 0.96). */
+    --polli-color-bg-subtle:       oklch(0.918 0.022 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.876 + var(--polli-nudge)) 0.135 var(--polli-hue));
     --polli-color-bg-hover:        oklch(calc(0.826 + var(--polli-nudge)) 0.165 var(--polli-hue));
     --polli-color-border:          var(--polli-color-bg-hover);

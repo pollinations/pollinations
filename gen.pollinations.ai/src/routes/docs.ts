@@ -91,8 +91,6 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
-    "🧩 Community Models": DOC_TAGS.communityModels,
-    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
@@ -105,9 +103,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
     "🤖 Models": DOC_TAGS.models,
-    "✨ Quests": DOC_TAGS.quests,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
-    "👤 Account": DOC_TAGS.account,
     "📊 Public Stats": DOC_TAGS.publicStats,
     "media.pollinations.ai": DOC_TAGS.mediaStorage,
 };
@@ -635,17 +631,6 @@ function normalizeDocTagName(tag: string): string {
     return LEGACY_DOC_TAGS[tag] ?? tag;
 }
 
-function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
-    return mergeTags(
-        tags.map((tag) =>
-            typeof tag.name === "string"
-                ? { ...tag, name: normalizeDocTagName(tag.name) }
-                : tag,
-        ),
-        [],
-    );
-}
-
 function normalizeOperationTags(paths: OpenApiSchema): void {
     for (const pathItem of Object.values(paths)) {
         if (!pathItem || typeof pathItem !== "object") continue;
@@ -734,24 +719,48 @@ function isPublicMediaRead(method: string, path: string): boolean {
     return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
+// gen owns every docs tag. enter operations get their sidebar tag from their
+// public path, so a tag string written in enter can never split a group.
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
-        paths[publicEnterPath(path)] = value;
+        const publicPath = publicEnterPath(path);
+        paths[publicPath] = withOperationTag(value, enterDocTag(publicPath));
     }
-    normalizeOperationTags(paths);
-    return {
-        ...schema,
-        tags: tagsForPaths(
-            {
-                ...schema,
-                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
-            },
-            paths,
-        ),
-        paths,
-    };
+    return { ...schema, paths };
+}
+
+function enterDocTag(path: string): string {
+    if (isPublicQuestCatalogPath(path)) return DOC_TAGS.quests;
+    if (
+        path === "/account/agents" ||
+        path.startsWith("/account/agents/") ||
+        path === "/account/my-models/endpoint-agents"
+    ) {
+        return DOC_TAGS.communityAgents;
+    }
+    if (
+        path === "/account/my-models" ||
+        path.startsWith("/account/my-models/")
+    ) {
+        return DOC_TAGS.communityModels;
+    }
+    return DOC_TAGS.account;
+}
+
+function withOperationTag(pathItem: unknown, tag: string): unknown {
+    if (!pathItem || typeof pathItem !== "object") return pathItem;
+    const tagged: OpenApiSchema = {};
+    for (const [key, operation] of Object.entries(pathItem as OpenApiSchema)) {
+        tagged[key] =
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+                ? { ...(operation as OpenApiSchema), tags: [tag] }
+                : operation;
+    }
+    return tagged;
 }
 
 function isPublicEnterPath(path: string): boolean {
@@ -777,28 +786,6 @@ function publicEnterPath(path: string): string {
     return path
         .replace(/^\/api\/account(?=\/|$)/, "/account")
         .replace(/^\/api\/quests(?=\/|$)/, "/quests");
-}
-
-function tagsForPaths(
-    schema: OpenApiSchema,
-    paths: OpenApiSchema,
-): OpenApiSchema[] {
-    const usedTags = new Set<string>();
-    for (const pathItem of Object.values(paths)) {
-        if (!pathItem || typeof pathItem !== "object") continue;
-        for (const operation of Object.values(pathItem as OpenApiSchema)) {
-            if (!operation || typeof operation !== "object") continue;
-            const tags = (operation as { tags?: unknown }).tags;
-            if (!Array.isArray(tags)) continue;
-            for (const tag of tags) {
-                if (typeof tag === "string") usedTags.add(tag);
-            }
-        }
-    }
-
-    return asRecordArray(schema.tags).filter(
-        (tag) => typeof tag.name === "string" && usedTags.has(tag.name),
-    );
 }
 
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
@@ -882,10 +869,7 @@ function mergeSchemas(
         info: generationSchema.info,
         servers: generationSchema.servers,
         security: generationSchema.security,
-        tags: mergeTags(
-            asRecordArray(generationSchema.tags),
-            asRecordArray(enterSchema?.tags),
-        ),
+        tags: generationSchema.tags,
         components: mergeComponents(
             asRecord(enterSchema?.components),
             asRecord(generationSchema.components),
@@ -911,16 +895,6 @@ function mergeSchemas(
     };
 }
 
-function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {
-    const tags = new Map<string, OpenApiSchema>();
-    for (const tag of [...primary, ...secondary]) {
-        if (typeof tag.name === "string" && !tags.has(tag.name)) {
-            tags.set(tag.name, tag);
-        }
-    }
-    return [...tags.values()];
-}
-
 function mergeComponents(base: OpenApiSchema, overrides: OpenApiSchema) {
     const merged: OpenApiSchema = { ...base };
     for (const [key, value] of Object.entries(overrides)) {
@@ -944,14 +918,6 @@ function mergeComponents(base: OpenApiSchema, overrides: OpenApiSchema) {
 function asRecord(value: unknown): OpenApiSchema {
     if (!value || typeof value !== "object" || Array.isArray(value)) return {};
     return value as OpenApiSchema;
-}
-
-function asRecordArray(value: unknown): OpenApiSchema[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-        (item): item is OpenApiSchema =>
-            !!item && typeof item === "object" && !Array.isArray(item),
-    );
 }
 
 /**

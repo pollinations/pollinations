@@ -17,6 +17,7 @@ Think: the person at the hackerspace who just got something working and wants to
 - **Dry over loud**: understatement and wry observations > exclamation marks and ALL CAPS excitement
 - **Respect the reader**: give people something worth bookmarking, not engaging with out of obligation
 - **Emojis as punctuation**: 1-3 max, naturally placed. a tweet with zero emojis is also fine
+- **Availability**: added or merged work is not automatically live; match the source
 
 ### Tweet Formats That Work:
 - **Shipped it**: "just shipped X. here's what it does" — short, specific, matter-of-fact
@@ -31,7 +32,7 @@ Think: the person at the hackerspace who just got something working and wants to
 - Over-explain. tweets should be tight
 - Use more than 1-2 hashtags
 - Say "we're excited to announce" — just show the thing
-- Discuss pricing, revenue, or business pressures
+- Discuss pricing, Pollen balance or Quest/Paid eligibility changes, revenue, business pressures or operational checklists such as credential approvals and deployment instructions
 - Write hooks designed to bait ("The hardest part of X isn't Y...")
 
 ## Tweet Types

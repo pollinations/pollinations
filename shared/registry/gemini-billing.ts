@@ -6,6 +6,7 @@ const VERTEX_CACHE_TTL_HOURS = 1;
 
 type GeminiBillingOutput = {
     usage?: {
+        cost?: unknown;
         cache_creation_input_tokens?: unknown;
         prompt_tokens_details?: {
             cache_write_tokens?: unknown;
@@ -14,8 +15,16 @@ type GeminiBillingOutput = {
             web_search_requests?: unknown;
         };
     };
-    choices?: { groundingMetadata?: GroundingMetadata }[];
+    choices?: {
+        groundingMetadata?: GroundingMetadata;
+        message?: { provider_metadata?: GatewaySearchMetadata };
+        delta?: { provider_metadata?: GatewaySearchMetadata };
+    }[];
     streamEvents?: GeminiBillingOutput[];
+};
+
+type GatewaySearchMetadata = {
+    gateway?: { gatewayToolCalls?: { exa_search?: number } };
 };
 
 type GroundingMetadata = {
@@ -57,7 +66,7 @@ function countGeminiWebSearchQueries(output: unknown): number {
             queries.add(query.trim());
         }
     }
-    return queries.size || countOpenRouterWebSearchRequests(output);
+    return queries.size || countReportedWebSearchRequests(output);
 }
 
 function positiveUsageCounter(
@@ -91,11 +100,52 @@ const countOpenRouterCacheWriteTokens = positiveUsageCounter(
     (event) => event.usage?.prompt_tokens_details?.cache_write_tokens,
 );
 
-// OpenRouter's native web-search tool reports the number of billed searches
-// directly in provider usage.
-const countOpenRouterWebSearchRequests = positiveUsageCounter(
-    (event) => event.usage?.server_tool_use_details?.web_search_requests,
+// Provider usage and gateway metadata report cumulative billed search counts.
+const countReportedWebSearchRequests = positiveUsageCounter(
+    (event) =>
+        event.usage?.server_tool_use_details?.web_search_requests ??
+        Math.max(
+            0,
+            ...(event.choices ?? []).map(
+                (choice) =>
+                    (choice.message ?? choice.delta)?.provider_metadata?.gateway
+                        ?.gatewayToolCalls?.exa_search ?? 0,
+            ),
+        ),
 );
+
+export const VERCEL_EXA_SEARCH_BILLING: BillingRules = {
+    resolveTotalCost: reportedTextCost(),
+    adjustments: [
+        {
+            id: "vercel.exa.web_search.v1",
+            description: "Exa search adds $7 / 1K provider-reported requests.",
+            kind: "search_request",
+            unit: "request",
+            unitCost: 7 / 1_000,
+            publicPricing: {
+                label: "Search",
+                quantity: 1_000,
+                unit: "search requests",
+            },
+            countUnits: countReportedWebSearchRequests,
+        },
+    ],
+};
+
+/** Server-tool loops report aggregate dollars more accurately than modality counters. */
+export function reportedTextCost(
+    fee = 1,
+): (output: unknown) => number | undefined {
+    return (output) => {
+        for (const event of [...outputEvents(output)].reverse()) {
+            const cost = event.usage?.cost;
+            if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0)
+                return cost * fee;
+        }
+        return undefined;
+    };
+}
 
 // Rates vary per model and route; each registry entry passes the current
 // true provider cost. Search is billed per request, cache storage per
@@ -120,7 +170,7 @@ export function openRouterGeminiBilling({
                     quantity: 1_000,
                     unit: "search requests",
                 },
-                countUnits: countOpenRouterWebSearchRequests,
+                countUnits: countReportedWebSearchRequests,
             },
             {
                 id: "openrouter.google.cache_storage.v1",

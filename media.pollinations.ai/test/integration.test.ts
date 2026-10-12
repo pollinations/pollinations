@@ -12,7 +12,11 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../src/index";
-import { MediaUpload, uploadUnlistedMedia } from "../src/media-upload.ts";
+import {
+    MediaUpload,
+    rawUploadFileName,
+    uploadUnlistedMedia,
+} from "../src/media-upload.ts";
 
 // 1x1 red PNG (67 bytes)
 const TINY_PNG = new Uint8Array([
@@ -533,6 +537,51 @@ describe("media.pollinations.ai", () => {
             "large-image.png",
         );
         expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("keeps a Unicode raw-upload filename sent as RFC 8187 filename*", async () => {
+        const name = "截图 📷 50%.png";
+        const uploadRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: TINY_PNG,
+                headers: {
+                    Authorization: `Bearer ${VALID_KEY}`,
+                    "Content-Type": "image/png",
+                    "Content-Length": String(TINY_PNG.length),
+                    "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+                },
+            },
+        );
+        expect(uploadRes.status).toBe(200);
+        const upload = (await uploadRes.json()) as UploadResponse;
+
+        const getRes = await SELF.fetch(upload.url);
+        expect(getRes.headers.get("content-disposition")).toBe(
+            `inline; filename*=UTF-8''${encodeURIComponent(name)}`,
+        );
+        expect(new Uint8Array(await getRes.arrayBuffer())).toEqual(TINY_PNG);
+    });
+
+    it("reads raw-upload filenames from filename* before X-File-Name", () => {
+        const name = (headers: Record<string, string>) =>
+            rawUploadFileName(new Headers(headers));
+        expect(
+            name({
+                "Content-Disposition":
+                    "attachment; filename*=UTF-8''%E6%88%AA%E5%9B%BE.png",
+                "X-File-Name": "fallback.png",
+            }),
+        ).toBe("截图.png");
+        expect(
+            name({
+                "Content-Disposition": "attachment; filename*=utf-8''%ZZ.png",
+                "X-File-Name": "fallback.png",
+            }),
+        ).toBe("fallback.png");
+        expect(name({ "X-File-Name": "100%.png" })).toBe("100%.png");
+        expect(name({})).toBeUndefined();
     });
 
     it("rejects raw uploads without a known size or above the configured limit", async () => {

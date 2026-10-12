@@ -26,7 +26,7 @@ import {
     useEffect,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient } from "../../api.ts";
 import { resourceActionError } from "../../lib/resource-action-error.ts";
 import { LoadError, PageLoading } from "../layout/dashboard-loading.tsx";
 import type { ApiModelInfo } from "../models/model-catalog.ts";
@@ -155,8 +155,8 @@ export function CommunityEndpoints({
         setError(null);
         try {
             const [endpointResponse, agentResponse] = await Promise.all([
-                apiClient.account["my-models"].$get(),
-                apiClient.account.agents.$get(),
+                accountClient["my-models"].$get(),
+                accountClient.agents.$get(),
             ]);
             if (!endpointResponse.ok || !agentResponse.ok) {
                 setError(
@@ -192,7 +192,7 @@ export function CommunityEndpoints({
     }, [loadEndpoints]);
 
     async function handleCreateAgent(form: AgentFormState): Promise<void> {
-        const response = await apiClient.account.agents.$post({
+        const response = await accountClient.agents.$post({
             json: toAgentPayload(form),
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -202,7 +202,7 @@ export function CommunityEndpoints({
 
     async function handleUpdateAgent(form: AgentFormState): Promise<void> {
         if (!editingAgent) return;
-        const response = await apiClient.account.agents[":id"].$patch({
+        const response = await accountClient.agents[":id"].$patch({
             param: { id: editingAgent.id },
             json: toAgentUpdatePayload(form),
         });
@@ -217,7 +217,7 @@ export function CommunityEndpoints({
         setDeletingAgent(null);
         setError(null);
         try {
-            const response = await apiClient.account.agents[":id"].$delete({
+            const response = await accountClient.agents[":id"].$delete({
                 param: { id: target.id },
             });
             if (!response.ok) throw new Error(await readError(response));
@@ -230,7 +230,7 @@ export function CommunityEndpoints({
 
     async function handleSyncAgent(): Promise<string> {
         if (!editingAgent) throw new Error("No agent selected");
-        const response = await apiClient.account.agents[":id"].sync.$post({
+        const response = await accountClient.agents[":id"].sync.$post({
             param: { id: editingAgent.id },
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -244,7 +244,7 @@ export function CommunityEndpoints({
         payload: EndpointPayload,
         bearerToken: string,
     ): Promise<void> {
-        const response = await apiClient.account["my-models"].$post({
+        const response = await accountClient["my-models"].$post({
             json: { ...payload, bearerToken },
         });
         if (!response.ok) throw new Error(await readError(response));
@@ -273,9 +273,7 @@ export function CommunityEndpoints({
                 : bearerToken
                   ? { ...proxyUpdate, bearerToken }
                   : proxyUpdate;
-        const response = await apiClient.account["my-models"][
-            ":id"
-        ].update.$post({
+        const response = await accountClient["my-models"][":id"].update.$post({
             param: { id: editing.id },
             json: update,
         });
@@ -290,9 +288,9 @@ export function CommunityEndpoints({
         setDeleting(null);
         setError(null);
         try {
-            const response = await apiClient.account["my-models"][
-                ":id"
-            ].$delete({ param: { id: target.id } });
+            const response = await accountClient["my-models"][":id"].$delete({
+                param: { id: target.id },
+            });
             if (!response.ok) throw new Error(await readError(response));
             await loadEndpoints();
             await onChange?.();
@@ -314,9 +312,7 @@ export function CommunityEndpoints({
         setIsSavingProvider(true);
         setError(null);
         try {
-            const response = await apiClient.account[
-                "my-models"
-            ].provider.$post({
+            const response = await accountClient["my-models"].provider.$post({
                 json: {
                     name: providerName,
                     url: providerUrl,

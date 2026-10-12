@@ -71,6 +71,7 @@ const HOST_VENDORS: Record<string, string> = {
     "api.deepinfra.com": "deepinfra",
     "api.inferenceport.ai": "inferenceport",
     "api.mistral.ai": "mistral",
+    "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",
     "openrouter.ai": "openrouter",
     "dashscope-intl.aliyuncs.com": "alibaba",

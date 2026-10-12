@@ -102,6 +102,8 @@ export const CommunityEndpointAdvertisedSchema = z
             .positive()
             .max(MAX_COMMUNITY_CONTEXT_LENGTH)
             .optional(),
+        // Absent means the endpoint streams. The endpoint test detects false.
+        streaming: z.literal(false).optional(),
     })
     .strict();
 
@@ -123,6 +125,7 @@ export function normalizeCommunityEndpointAdvertised(
         if (capabilities.length) advertised.capabilities = capabilities;
     }
     if (value.contextLength) advertised.contextLength = value.contextLength;
+    if (value.streaming === false) advertised.streaming = false;
     return advertised;
 }
 
@@ -1062,8 +1065,11 @@ export function communityModelDefinition(
     );
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
-    const { capabilities = [], ...advertised } =
-        normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
+    const {
+        capabilities = [],
+        streaming,
+        ...advertised
+    } = normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
     return {
         aliases,
         provider: "community",
@@ -1101,6 +1107,7 @@ export function communityModelDefinition(
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
         ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
         ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...(streaming === false ? { supportsStreaming: false } : {}),
         ...advertised,
     };
 }

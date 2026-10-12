@@ -1,16 +1,13 @@
 import {
-    AccountIcon,
     ArrowLeftIcon,
     Button,
-    InfoTip,
     KeyIcon,
-    SproutIcon,
     Surface,
     Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -20,9 +17,10 @@ import {
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
@@ -323,7 +321,7 @@ export function Authorize() {
                     : attribution?.appName || redirectHostname,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(app_key &&
                         (!isDeviceMode || attribution?.found) && {
@@ -399,7 +397,9 @@ export function Authorize() {
                     if (!res || !res.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        accountClient.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
                         const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };
@@ -561,26 +561,12 @@ export function Authorize() {
             >
                 <KeyPermissionsInputs
                     value={keyPermissions}
-                    accessContext={isDeviceMode ? undefined : "app"}
+                    accessContext={isDeviceMode ? "device" : "app"}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
-                    lead={
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            <span className="inline-flex items-center">
-                                Username and picture
-                                <InfoTip
-                                    text="This app can also see this key’s budget and usage."
-                                    label="Username and picture information"
-                                />
-                            </span>
-                        </AuthAccessItem>
-                    }
-                    accountAfter={
+                    permissionsAfter={
                         attribution?.earningsEnabled ? (
-                            <AuthAccessItem icon={<SproutIcon />}>
-                                20% of the Pollen you spend in this app goes to
-                                its developer.
-                            </AuthAccessItem>
+                            <AppEarningsRow />
                         ) : undefined
                     }
                     disabled={isAuthorizing}

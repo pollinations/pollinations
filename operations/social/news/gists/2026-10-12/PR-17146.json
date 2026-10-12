@@ -1,0 +1,39 @@
+{
+  "pr_number": 17146,
+  "title": "Add Pollen Village - Roblox NPC dialogue to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17146",
+  "merged_at": "2026-10-12T06:33:57Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added Pollen Village to the games catalog and README. Its Roblox Luau module gives an NPC a persona and lets it answer nearby players using any Pollinations text model, posting replies as both a speech bubble and a chat line. The API key stays in Roblox's secrets store; Sage is the example NPC.",
+    "keywords": [
+      "Pollen Village",
+      "Roblox",
+      "Luau",
+      "NPC dialogue",
+      "text models",
+      "games"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17146.jpg",
+    "prompt": "In a cozy pixel-art village garden, a small Sage NPC chats with a player while a speech bubble and chat line appear beside them; Polli hovers nearby wearing a tiny village-guide scarf. Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she has consistent, non-elongated proportions and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients over prominent lime green (#ecf874) and warm cream, dark purple (#110518) outlines, warm lighting, retro gaming vibes, and a few pixel flowers."
+  },
+  "generated_at": "2026-10-12T06:35:06.363505+00:00",
+  "app_name": "Pollen Village - Roblox NPC dialogue",
+  "app_url": "https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "605507ea225dda743e73f921d5b0fa2346957688",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

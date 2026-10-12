@@ -49,28 +49,6 @@ MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
 MODELS_NEWS_DIR = f"{NEWS_REL_DIR}/models"
 
 
-def models_news_staging_dir(date_str: str) -> str:
-    """Workspace-local dir holding the artifacts to be committed to the news
-    branch in a single tree commit. Generator writes them all here; publisher
-    reads them, posts Discord, and only on success commits all four atomically.
-    A publish failure leaves the news branch untouched, so next week's run
-    re-detects and re-announces the same changes."""
-    base = os.environ.get("RUNNER_TEMP") or "/tmp"
-    path = os.path.join(base, f"models-news-{date_str}")
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
-def models_news_staged_files(date_str: str) -> list[tuple[str, str]]:
-    """Returns [(local_filename, news_branch_path), ...] for the four artifacts
-    committed atomically per weekly run."""
-    return [
-        ("discord.json", f"{MODELS_NEWS_DIR}/{date_str}/discord.json"),
-        ("diff.json", f"{MODELS_NEWS_DIR}/diffs/{date_str}.json"),
-        ("models.md", f"{MODELS_NEWS_DIR}/models.md"),
-        ("snapshot.json", f"{MODELS_NEWS_DIR}/snapshots/{date_str}.json"),
-    ]
-
 # Image generation
 IMAGE_SIZE = 2048
 # Style suffix appended to every image prompt — ensures consistent pixel art style
@@ -83,7 +61,9 @@ IMAGE_STYLE_SUFFIX = (
     "Lo-fi retro gaming vibes like Stardew Valley or A Short Hike. "
     "The attached image is a CHARACTER REFERENCE SHEET only — use it for character design, "
     "proportions, and art style consistency. Do NOT copy the layout or background from it. "
-    "Only draw the characters mentioned in the prompt above, not all characters from the sheet."
+    "Only draw the characters mentioned in the prompt above, not all characters from the sheet. "
+    "Polli (the bee), the monitor robot and Nomnom are each one unique individual: "
+    "each appears at most once, never twice in the same picture."
 )
 
 # Discord-specific
@@ -348,39 +328,6 @@ def prompt_text(content: str) -> str:
     return content
 
 
-def load_format(platform: str) -> str:
-    """Load the ## {platform} section from prompts/format.md.
-
-    Args:
-        platform: 'Twitter', 'LinkedIn', 'Instagram', 'Reddit', 'Discord', 'Realtime'
-
-    Returns:
-        The section content (without the ## heading)
-    """
-    content = load_prompt("format")
-    if not content:
-        return ""
-
-    lines = content.split("\n")
-    section_lines = []
-    in_section = False
-
-    for line in lines:
-        if line.startswith("## "):
-            if in_section:
-                break
-            if line[3:].strip().lower() == platform.lower():
-                in_section = True
-                continue
-        elif in_section:
-            section_lines.append(line)
-
-    if not section_lines:
-        print(f"Warning: No ## {platform} section found in format.md")
-
-    return "\n".join(section_lines).strip()
-
-
 def call_pollinations_api(
     system_prompt: str,
     user_prompt: str,
@@ -406,6 +353,9 @@ def call_pollinations_api(
     }
 
     last_error = None
+    # The API saves each answer under its exact request, an empty one too, so a retry
+    # after an empty answer adds a seed to get a new answer instead of the saved one.
+    seed = None
 
     for attempt in range(MAX_RETRIES):
         payload = {
@@ -418,6 +368,8 @@ def call_pollinations_api(
         }
         if response_format is not None:
             payload["response_format"] = response_format
+        if seed is not None:
+            payload["seed"] = seed
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
@@ -438,9 +390,12 @@ def call_pollinations_api(
                     content = result['choices'][0]['message']['content']
                     print(
                         f"  Text response: cache={response.headers.get('X-Cache', 'unknown')}, "
-                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content)}"
+                        f"finish_reason={result['choices'][0].get('finish_reason')}, chars={len(content or '')}"
                     )
-                    return content
+                    if content and content.strip():
+                        return content
+                    last_error = "Empty response"
+                    seed = attempt + 1
                 except (KeyError, IndexError, json.JSONDecodeError) as e:
                     last_error = f"Error parsing API response: {e}"
                     error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
@@ -521,7 +476,7 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
                     is_webp = image_bytes[:4] == b'RIFF' and image_bytes[8:12] == b'WEBP'
 
                     if not (is_jpeg or is_png or is_webp):
-                        last_error = f"Invalid image format"
+                        last_error = "Invalid image format"
                         print(f"  {last_error}")
                         continue
 
@@ -850,70 +805,6 @@ Days with PRs: {len(by_date)}
 
 PR gists by date:
 {chr(10).join(gist_sections)}"""
-
-
-def read_news_file(file_path: str, github_token: str, owner: str, repo: str) -> Optional[Dict]:
-    """Read a JSON file from the news branch (local overlay first, GitHub API fallback).
-
-    The workflow overlays operations/social/news/ from the news branch onto the local checkout,
-    so local reads work during CI. Falls back to the GitHub API with ?ref=news.
-    """
-    # Try local first (workflow overlay)
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    # Fall back to GitHub API
-    import base64 as _b64
-    headers = _github_headers(github_token)
-    resp = github_api_request(
-        "GET",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}?ref={GISTS_BRANCH}",
-        headers=headers,
-    )
-    if resp.status_code == 200:
-        content = _b64.b64decode(resp.json()["content"]).decode()
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            pass
-    return None
-
-
-def generate_platform_post(
-    platform: str,
-    summary: Dict,
-    token: str,
-    preamble: str,
-    temperature: float = 0.7,
-    extra_context: str = "",
-) -> Optional[Dict]:
-    """Generate a platform post from a summary/digest.
-
-    Args:
-        platform: 'twitter', 'instagram', 'reddit', 'linkedin', 'discord'
-        summary: The summary or digest dict (must have 'arcs' and optionally 'pr_summary', 'pr_count')
-        token: Pollinations API token
-        preamble: The opening instruction line (e.g. "Write a tweet about today's shipped work.")
-        temperature: Generation temperature
-        extra_context: Additional context appended to the task prompt
-
-    Returns:
-        Parsed JSON dict or None on failure
-    """
-    voice = load_prompt(f"tone/{platform}")
-    task = f"{preamble}\n\n{post_recap(summary)}"
-    task += "\n\n" + load_format(platform)
-    if extra_context:
-        task += extra_context
-
-    response = call_pollinations_api(voice, task, token, temperature=temperature)
-    if not response:
-        return None
-    return parse_json_response(response)
 
 
 def post_recap(summary: Dict) -> str:
@@ -1553,39 +1444,6 @@ def models_md(existing_md: str, section: str) -> str:
 
 
 # ── VPS deployment ───────────────────────────────────────────────────
-
-def deploy_reddit_news_post(
-    post_dir: str,
-    github_token: str,
-    owner: str,
-    repo: str,
-) -> Optional[bool]:
-    """Deploy reddit.json when the shared VPS configuration is available."""
-    vps_host = get_env("REDDIT_VPS_HOST", required=False)
-    vps_user = get_env("REDDIT_VPS_USER", required=False)
-    vps_ssh_key = (get_env("REDDIT_VPS_SSH_KEY", required=False) or "").strip()
-    if not (vps_host and vps_user and vps_ssh_key):
-        print("  Reddit VPS credentials not configured — skipping")
-        return None
-
-    import base64
-    import io
-    import paramiko
-
-    private_key = base64.b64decode(vps_ssh_key).decode("utf-8")
-    pkey = paramiko.Ed25519Key.from_private_key(io.StringIO(private_key))
-    reddit_data = read_news_file(
-        os.path.join(post_dir, "reddit.json"), github_token, owner, repo
-    )
-    if not reddit_data:
-        print("  No reddit.json — skipping")
-        return None
-
-    print("  Reddit...")
-    try:
-        return deploy_reddit_post(reddit_data, vps_host, vps_user, pkey)
-    except Exception:  # noqa: BLE001 - the old senders report it as before: False, and go on
-        return False
 
 
 def deploy_reddit_post(

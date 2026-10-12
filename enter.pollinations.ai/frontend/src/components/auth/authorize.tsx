@@ -20,7 +20,7 @@ import {
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
 import {
@@ -323,7 +323,7 @@ export function Authorize() {
                     : attribution?.appName || redirectHostname,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
                     ...(app_key &&
                         (!isDeviceMode || attribution?.found) && {
@@ -399,7 +399,9 @@ export function Authorize() {
                     if (!res || !res.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        accountClient.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
                         const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };

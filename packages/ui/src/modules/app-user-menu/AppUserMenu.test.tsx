@@ -50,7 +50,7 @@ describe("AppUserMenu", () => {
 
     afterEach(() => vi.unstubAllGlobals());
 
-    test("renders the branded connect pill when logged out", () => {
+    test("renders the bordered brand button with an inline mark when logged out", () => {
         sdk.auth.isLoggedIn = false;
 
         const html = renderMenu();
@@ -58,6 +58,10 @@ describe("AppUserMenu", () => {
         expect(html).toContain("Pollinations Connect");
         expect(html).toContain("mask:url(");
         expect(html.match(/mask:url\(/g)).toHaveLength(2);
+        expect(html).toContain('data-intent="brand"');
+        expect(html).toContain("polli:border-theme-text-soft");
+        expect(html).not.toContain("polli:gap-0");
+        expect(html).not.toContain("polli:h-full");
     });
 
     test("shows Permissions only when the connected key has an id", () => {
@@ -74,7 +78,7 @@ describe("AppUserMenu", () => {
         const large = renderToStaticMarkup(<AppUserMenu connectSize="lg" />);
         expect(large).toContain("polli:h-12");
         expect(large).toContain("polli:text-base");
-        expect(large).toContain("polli:px-4");
+        expect(large).toContain("polli:px-5");
 
         sdk.auth.isLoggedIn = true;
         expect(renderToStaticMarkup(<AppUserMenu connectSize="lg" />)).toBe(

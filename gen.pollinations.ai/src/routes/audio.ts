@@ -1,13 +1,16 @@
 import type { Logger } from "@logtape/logtape";
-import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
+    collectUpstreamHeaders,
+    ensureUpstreamOk,
+    UpstreamError,
+} from "@shared/error.ts";
+import {
+    AUDIO_SERVICES,
     AUDIO_VOICES,
     type AudioModelName,
-    CSM_VOICES,
     GEMINI_TTS_VOICES,
-    KOKORO_VOICES,
+    MAI_VOICE_21_VOICES,
     resolveElevenLabsVoiceId,
-    XAI_TTS_VOICES,
 } from "@shared/registry/audio.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
@@ -15,6 +18,7 @@ import {
     createAudioSecondsUsage,
     createAudioTokenUsage,
     createCompletionAudioSecondsUsage,
+    PROVIDER_BILLING_HEADERS,
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
@@ -52,6 +56,7 @@ import {
     callCommunityTranscriptionEndpoint,
 } from "../audio/communityEndpoint.ts";
 import { generateLyria35 } from "../audio/lyria.ts";
+import { transcribeMai } from "../audio/mai-transcription.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -89,7 +94,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -151,7 +156,7 @@ const CreateSpeechRequestSchema = z
         }),
         instructions: z.string().optional().meta({
             description:
-                "Emotion/style instruction (Gemini TTS and qwen/qwen3-tts-instruct-flash). e.g. 'excited and cheerful'.",
+                "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
     })
@@ -381,6 +386,26 @@ const ELEVENLABS_TTS_VOICE_SETTINGS = {
     use_speaker_boost: true,
 } as const;
 
+// An unknown caller-supplied voice is a client error, not a missing upstream route.
+async function ensureElevenLabsVoiceOk(response: Response, endpoint: string) {
+    if (response.status === 404) {
+        const body = await response
+            .clone()
+            .json<{ detail?: { status?: string; message?: string } }>()
+            .catch(() => null);
+        if (body?.detail?.status === "voice_not_found") {
+            throw new UpstreamError(400, {
+                message: body.detail.message,
+                upstreamStatus: response.status,
+                requestUrl: new URL(endpoint),
+                responseBody: await response.text(),
+                upstreamHeaders: collectUpstreamHeaders(response.headers),
+            });
+        }
+    }
+    return ensureUpstreamOk(response, endpoint);
+}
+
 type ElevenLabsTtsModelName = keyof typeof ELEVENLABS_TTS_MODEL_IDS;
 
 export async function generateElevenLabsSpeech(opts: {
@@ -412,21 +437,7 @@ export async function generateElevenLabsSpeech(opts: {
         });
     }
 
-    if (characters > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${characters} characters. Maximum is 10000.`,
-        });
-    }
-
     const voiceId = resolveElevenLabsVoiceId(voice);
-
-    // Basic sanity check (custom voice IDs are long strings/UUIDs)
-    if (!voiceId || voiceId.length < 8) {
-        log.warn("Invalid voice requested: {voice}", { voice });
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
 
@@ -456,7 +467,7 @@ export async function generateElevenLabsSpeech(opts: {
         },
         body: JSON.stringify(elevenLabsBody),
     });
-    const response = await ensureUpstreamOk(rawResponse, elevenLabsUrl);
+    const response = await ensureElevenLabsVoiceOk(rawResponse, elevenLabsUrl);
 
     const usageHeaders = {
         ...buildUsageHeaders(modelName, createAudioTokenUsage(characters)),
@@ -489,18 +500,8 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
             message: "TTS service is not configured (missing API key)",
         });
     }
-    if (characters > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Input text too long: ${characters} characters. Maximum is 10000.`,
-        });
-    }
 
     const voiceId = resolveElevenLabsVoiceId(voice);
-    if (!voiceId || voiceId.length < 8) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${outputFormat}`;
@@ -522,7 +523,7 @@ export async function generateElevenLabsSpeechWithTimestamps(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -568,11 +569,6 @@ export async function generateElevenLabsDialogue(opts: {
         (total, input) => total + input.text.length,
         0,
     );
-    if (characterCount > 2000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Dialogue input too long: ${characterCount} characters. Maximum is 2000.`,
-        });
-    }
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Dialogue service is not configured (missing API key)",
@@ -584,17 +580,6 @@ export async function generateElevenLabsDialogue(opts: {
         voice_id: resolveElevenLabsVoiceId(input.voice),
     }));
     const uniqueVoices = new Set(resolvedInputs.map((input) => input.voice_id));
-    if (uniqueVoices.size > 10) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "Dialogue supports at most 10 unique voices per request.",
-        });
-    }
-    if (resolvedInputs.some((input) => input.voice_id.length < 8)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "Each dialogue voice must be a preset name or valid ElevenLabs voice ID.",
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/text-to-dialogue?output_format=${outputFormat}`;
@@ -614,7 +599,7 @@ export async function generateElevenLabsDialogue(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -713,11 +698,6 @@ export async function changeVoiceWithElevenLabs(opts: {
     }
 
     const voiceId = resolveElevenLabsVoiceId(voice);
-    if (!voiceId || voiceId.length < 8) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice: ${voice}. Use a preset name or valid ElevenLabs voice ID.`,
-        });
-    }
 
     const outputFormat = mapOutputFormat(responseFormat);
     const endpoint = `https://api.elevenlabs.io/v1/speech-to-speech/${encodeURIComponent(voiceId)}?output_format=${outputFormat}`;
@@ -734,7 +714,7 @@ export async function changeVoiceWithElevenLabs(opts: {
         },
     );
 
-    const response = await ensureUpstreamOk(
+    const response = await ensureElevenLabsVoiceOk(
         await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -1722,12 +1702,6 @@ export async function generateMusic(
         });
     }
 
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-        });
-    }
-
     const modelId = ELEVENLABS_MUSIC_MODEL_IDS[modelName];
     let uploadedSongId: string | undefined;
     let uploadedReferenceDuration: number | undefined;
@@ -1898,11 +1872,6 @@ export async function generateSoundEffect(opts: {
             message: `elevenlabs/eleven-text-to-sound-v2 only supports mp3 output; response_format=${responseFormat} is not available.`,
         });
     }
-    if (prompt.length > 1000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 1000.`,
-        });
-    }
 
     const modelId = "eleven_text_to_sound_v2";
     const elevenLabsUrl = "https://api.elevenlabs.io/v1/sound-generation";
@@ -1949,26 +1918,19 @@ export async function generateSoundEffect(opts: {
     });
 }
 
-const QWEN_TTS_ENDPOINT =
-    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
-
 const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
-const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
 
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
-const DEEPINFRA_AUDIO_FORMATS = ["mp3", "opus", "flac", "wav", "pcm"] as const;
 const DEEPINFRA_TTS_CONFIGS = {
     "sesame/csm-1b": {
         modelId: "sesame/csm-1b",
-        voices: CSM_VOICES,
         defaultVoice: "conversational_a",
         maxCharacters: 200,
     },
     "hexgrad/kokoro-82m": {
         modelId: "hexgrad/Kokoro-82M",
-        voices: KOKORO_VOICES,
         defaultVoice: "af_alloy",
         maxCharacters: 10_000,
     },
@@ -1977,7 +1939,6 @@ const DEEPINFRA_TTS_CONFIGS = {
         AudioModelName,
         {
             modelId: string;
-            voices: readonly string[];
             defaultVoice: string;
             maxCharacters: number;
         }
@@ -1986,12 +1947,59 @@ const DEEPINFRA_TTS_CONFIGS = {
 
 type DeepInfraTtsModelName = keyof typeof DEEPINFRA_TTS_CONFIGS;
 
-const QWEN_TTS_MODEL_IDS = {
-    "qwen/qwen3-tts-flash": "qwen3-tts-flash",
-    "qwen/qwen3-tts-instruct-flash": "qwen3-tts-instruct-flash",
-} as const satisfies Partial<Record<AudioModelName, string>>;
+// Both DashScope routes return { output.audio.url, usage.characters }.
+const QWEN_TTS_CONFIGS = {
+    "qwen/qwen3-tts-flash": {
+        modelId: "qwen3-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+        supportsInstructions: false,
+        openAiVoices: {
+            alloy: "Chelsie",
+            echo: "Ethan",
+            fable: "Cherry",
+            onyx: "Ryan",
+            nova: "Serena",
+            shimmer: "Jada",
+            coral: "Cherry",
+            verse: "Ethan",
+            ballad: "Ryan",
+            ash: "Ethan",
+            sage: "Serena",
+        },
+    },
+    "qwen/qwen-audio-3.0-tts-flash": {
+        modelId: "qwen-audio-3.0-tts-flash",
+        endpoint:
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
+        supportsInstructions: true,
+        openAiVoices: {
+            alloy: "loongeva_v3.6",
+            echo: "loongjohn",
+            fable: "loongmary",
+            onyx: "loongjohn",
+            nova: "loongeva_v3.6",
+            shimmer: "loongmary",
+            coral: "longanfengyue",
+            verse: "loongjohn",
+            ballad: "loongjohn",
+            ash: "loongjohn",
+            sage: "longanfengyue",
+        },
+    },
+} as const satisfies Partial<
+    Record<
+        AudioModelName,
+        {
+            modelId: string;
+            endpoint: string;
+            supportsInstructions: boolean;
+            openAiVoices: Record<string, string>;
+        }
+    >
+>;
 
-type QwenTtsModelName = keyof typeof QWEN_TTS_MODEL_IDS;
+type QwenTtsModelName = keyof typeof QWEN_TTS_CONFIGS;
 
 type LyriaInteractionResponse = {
     status?: string;
@@ -2001,24 +2009,6 @@ type LyriaInteractionResponse = {
         data?: string;
     }>;
 };
-
-const QWEN_TTS_OPENAI_VOICE_MAP: Record<string, string> = {
-    alloy: "Chelsie",
-    echo: "Ethan",
-    fable: "Cherry",
-    onyx: "Ryan",
-    nova: "Serena",
-    shimmer: "Jada",
-    coral: "Cherry",
-    verse: "Ethan",
-    ballad: "Ryan",
-    ash: "Ethan",
-    sage: "Serena",
-};
-
-function resolveQwenVoice(voice: string): string {
-    return QWEN_TTS_OPENAI_VOICE_MAP[voice] ?? voice;
-}
 
 export async function generateLyria3Clip(opts: {
     prompt: string;
@@ -2275,7 +2265,7 @@ export async function generateQwenTts(opts: {
     log: Logger;
 }): Promise<Response> {
     const { modelName, text, voice, instructions, apiKey, log } = opts;
-    const modelId = QWEN_TTS_MODEL_IDS[modelName];
+    const config = QWEN_TTS_CONFIGS[modelName];
 
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
@@ -2283,31 +2273,29 @@ export async function generateQwenTts(opts: {
         });
     }
 
-    if (instructions && modelName !== "qwen/qwen3-tts-instruct-flash") {
+    if (instructions && !config.supportsInstructions) {
         throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "The instructions parameter is only supported by qwen/qwen3-tts-instruct-flash",
+            message: `The instructions parameter is not supported by ${modelName}`,
         });
     }
 
-    const qwenVoice = resolveQwenVoice(voice);
+    const openAiVoices: Record<string, string> = config.openAiVoices;
+    const qwenVoice = openAiVoices[voice] ?? voice;
 
     log.info("Qwen TTS request: model={model}, voice={voice}, chars={chars}", {
-        model: modelId,
+        model: config.modelId,
         voice: qwenVoice,
         chars: text.length,
     });
 
     const body: Record<string, unknown> = {
-        model: modelId,
+        model: config.modelId,
         input: { text, voice: qwenVoice },
-        parameters:
-            modelName === "qwen/qwen3-tts-instruct-flash" && instructions
-                ? { instructions }
-                : {},
+        // Qwen-Audio names the field `instruction`.
+        parameters: instructions ? { instruction: instructions } : {},
     };
 
-    const rawResponse = await fetch(QWEN_TTS_ENDPOINT, {
+    const rawResponse = await fetch(config.endpoint, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -2315,7 +2303,7 @@ export async function generateQwenTts(opts: {
         },
         body: JSON.stringify(body),
     });
-    const response = await ensureUpstreamOk(rawResponse, QWEN_TTS_ENDPOINT);
+    const response = await ensureUpstreamOk(rawResponse, config.endpoint);
 
     const data = (await response.json()) as {
         output?: { audio?: { url?: string } };
@@ -2355,7 +2343,6 @@ export async function generateQwenTts(opts: {
 
 const OPENROUTER_SPEECH_ENDPOINT = "https://openrouter.ai/api/v1/audio/speech";
 const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
-const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
 
 export async function generateOpenRouterFishSpeech(opts: {
     text: string;
@@ -2369,16 +2356,6 @@ export async function generateOpenRouterFishSpeech(opts: {
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "OpenRouter is not configured (missing API key)",
-        });
-    }
-
-    if (
-        !OPENROUTER_FISH_TTS_FORMATS.includes(
-            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for fish-audio/s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
         });
     }
 
@@ -2434,6 +2411,158 @@ const GEMINI_TTS_MODELS = {
     "google/gemini-3.8-flash-tts": "gemini-3.8-flash-tts",
     "google/gemini-3.8-flash-lite-tts": "gemini-3.8-flash-lite-tts",
 } as const;
+
+// Canonical model id -> the suffix Azure expects on its voice ids.
+const MAI_TTS_MODEL_SUFFIXES = {
+    "microsoft/mai-voice-2.1": "MAI-Voice-2.1",
+    "microsoft/mai-voice-2.1-flash": "MAI-Voice-2.1-Flash",
+} as const;
+const MAI_TTS_DEFAULT_VOICE = "en-US-Harper";
+
+export function resolveMaiSpeechVoice(
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES,
+    requestedVoice: string,
+): string {
+    const suffix = MAI_TTS_MODEL_SUFFIXES[modelName];
+    // The speech schema defaults voice to "alloy"; for MAI that means unset.
+    const requested =
+        requestedVoice === "alloy" ? MAI_TTS_DEFAULT_VOICE : requestedVoice;
+    const base = requested.endsWith(`:${suffix}`)
+        ? requested.slice(0, -(suffix.length + 1))
+        : requested;
+    const match = MAI_VOICE_21_VOICES.find(
+        (v) => v.toLowerCase() === base.toLowerCase(),
+    );
+    if (!match) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for ${modelName}: ${requestedVoice}. Supported voices: ${MAI_VOICE_21_VOICES.join(", ")} (optionally suffixed with :${suffix}).`,
+        });
+    }
+    return `${match}:${suffix}`;
+}
+
+export async function generateMaiSpeech(opts: {
+    modelName: keyof typeof MAI_TTS_MODEL_SUFFIXES;
+    routeId: string;
+    provider: string;
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const {
+        modelName,
+        routeId,
+        provider,
+        text,
+        voice,
+        responseFormat,
+        apiKey,
+    } = opts;
+    if (responseFormat !== "mp3" && responseFormat !== "pcm")
+        throw new UpstreamError(400, {
+            message: "MAI speech supports mp3 and 24 kHz pcm.",
+        });
+    if (!apiKey)
+        throw new UpstreamError(500, {
+            message: "MAI speech provider is not configured.",
+        });
+    const resolvedVoice = resolveMaiSpeechVoice(modelName, voice);
+    const gateway = provider === "vercel";
+    const url = gateway
+        ? "https://ai-gateway.vercel.sh/v4/ai/speech-model"
+        : "https://swedencentral.tts.speech.microsoft.com/cognitiveservices/v1";
+    const escapeXml = (value: string) =>
+        value.replace(
+            /[&<>"']/g,
+            (ch) =>
+                ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&apos;",
+                })[ch] ?? ch,
+        );
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${resolvedVoice.slice(0, 5)}"><voice name="${escapeXml(resolvedVoice)}">${escapeXml(text)}</voice></speak>`;
+    const response = await ensureUpstreamOk(
+        await fetch(url, {
+            method: "POST",
+            headers: gateway
+                ? {
+                      Authorization: `Bearer ${apiKey}`,
+                      "Content-Type": "application/json",
+                      "ai-gateway-protocol-version": "0.0.1",
+                      "ai-speech-model-specification-version": "4",
+                      "ai-model-id": modelName,
+                  }
+                : {
+                      "Ocp-Apim-Subscription-Key": apiKey,
+                      "Content-Type": "application/ssml+xml; charset=utf-8",
+                      "User-Agent": "pollinations",
+                      "X-Microsoft-OutputFormat":
+                          responseFormat === "mp3"
+                              ? "audio-24khz-160kbitrate-mono-mp3"
+                              : "raw-24khz-16bit-mono-pcm",
+                  },
+            body: gateway
+                ? JSON.stringify({
+                      text,
+                      voice: resolvedVoice.split(":")[0],
+                      outputFormat: responseFormat,
+                  })
+                : ssml,
+        }),
+        url,
+    );
+    let audio: BodyInit | null = response.body;
+    let characters = text.length;
+    let providerCost: number | undefined;
+    if (gateway) {
+        const parsed = z
+            .object({
+                audio: z.string().min(1),
+                providerMetadata: z.object({
+                    gateway: z.object({
+                        cost: z.coerce.number().finite().positive(),
+                    }),
+                }),
+                usage: z
+                    .object({
+                        inputCharacters: z.number().nonnegative().optional(),
+                    })
+                    .passthrough()
+                    .optional(),
+            })
+            .safeParse(await response.json());
+        if (!parsed.success)
+            throw new UpstreamError(502, {
+                message: "MAI speech returned invalid audio.",
+            });
+        audio = Uint8Array.from(atob(parsed.data.audio), (ch) =>
+            ch.charCodeAt(0),
+        );
+        characters = parsed.data.usage?.inputCharacters ?? characters;
+        providerCost = parsed.data.providerMetadata.gateway.cost;
+    }
+    // Binary providers do not report characters; reconcile against provider billing before merge.
+    return new Response(audio, {
+        headers: {
+            "Content-Type":
+                responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg",
+            "x-tts-voice": resolvedVoice,
+            ...buildUsageHeaders(routeId, createAudioTokenUsage(characters)),
+            ...(providerCost === undefined
+                ? {}
+                : {
+                      [PROVIDER_BILLING_HEADERS.units]: String(providerCost),
+                      [PROVIDER_BILLING_HEADERS.unitCost]: "1",
+                  }),
+        },
+    });
+}
+
 const GEMINI_TTS_ENDPOINT =
     "https://generativelanguage.googleapis.com/v1beta/interactions";
 
@@ -2813,21 +2942,6 @@ export async function generateXaiSpeech(opts: {
     }
 
     const voice = opts.voice === "alloy" ? "eve" : opts.voice;
-    if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for x-ai/grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
-        });
-    }
-
-    if (
-        !XAI_TTS_FORMATS.includes(
-            responseFormat as (typeof XAI_TTS_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for x-ai/grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
-        });
-    }
 
     log.info("xAI TTS request: voice={voice}, format={format}, chars={chars}", {
         voice,
@@ -2894,11 +3008,6 @@ export async function generateAzureSpeech(opts: {
         });
     }
     const characters = [...text].length;
-    if (characters > 4096) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: "Azure TTS input must be 4096 characters or fewer",
-        });
-    }
     const deployment = modelName === "openai/tts-1" ? "tts" : "tts-hd";
     const endpoint = `https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/${deployment}/audio/speech?api-version=2025-04-01-preview`;
     const response = await ensureUpstreamOk(
@@ -2948,21 +3057,6 @@ export async function generateDeepInfraSpeech(opts: {
     }
 
     const voice = opts.voice === "alloy" ? config.defaultVoice : opts.voice;
-    if (!(config.voices as readonly string[]).includes(voice)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Invalid voice for ${modelName}: ${opts.voice}. Supported voices: ${config.voices.join(", ")}.`,
-        });
-    }
-
-    if (
-        !DEEPINFRA_AUDIO_FORMATS.includes(
-            responseFormat as (typeof DEEPINFRA_AUDIO_FORMATS)[number],
-        )
-    ) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Unsupported response_format for ${modelName}: ${responseFormat}. Supported formats: ${DEEPINFRA_AUDIO_FORMATS.join(", ")}.`,
-        });
-    }
 
     log.info(
         "DeepInfra TTS request: model={model}, voice={voice}, format={format}, chars={chars}",
@@ -3058,12 +3152,6 @@ export async function generateStableAudio3Medium(opts: {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Stable Audio 3 Medium is not configured (missing FAL_KEY)",
-        });
-    }
-
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
         });
     }
 
@@ -3180,19 +3268,6 @@ export async function generateStableAudio3Large(opts: {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message:
                 "Stable Audio 3 Large is not configured (missing STABILITY_API_KEY)",
-        });
-    }
-
-    if (prompt.length > 10000) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message: `Prompt too long: ${prompt.length} characters. Maximum is 10000.`,
-        });
-    }
-
-    if (!["mp3", "wav"].includes(responseFormat)) {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "stability-ai/stable-audio-3 supports response_format values: mp3, wav",
         });
     }
 
@@ -3510,7 +3585,7 @@ async function dispatchAudioGeneration(
                 }),
             );
         case "qwen/qwen3-tts-flash":
-        case "qwen/qwen3-tts-instruct-flash":
+        case "qwen/qwen-audio-3.0-tts-flash":
             return withSafetyHeaders(
                 c,
                 await generateQwenTts({
@@ -3556,6 +3631,31 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "microsoft/mai-voice-2.1":
+        case "microsoft/mai-voice-2.1:vercel":
+        case "microsoft/mai-voice-2.1-flash":
+        case "microsoft/mai-voice-2.1-flash:vercel":
+        case "microsoft/mai-voice-2.1-flash:openrouter": {
+            const upstreamModel = c.var.model
+                .resolved as keyof typeof MAI_TTS_MODEL_SUFFIXES;
+            const provider = AUDIO_SERVICES[model as AudioModelName].provider;
+            return withSafetyHeaders(
+                c,
+                await generateMaiSpeech({
+                    modelName: upstreamModel,
+                    routeId: model,
+                    provider,
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey:
+                        provider === "vercel"
+                            ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                            : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+                    log,
+                }),
+            );
+        }
         case "google/gemini-3.8-flash-tts":
         case "google/gemini-3.8-flash-lite-tts":
             return withSafetyHeaders(
@@ -3911,6 +4011,23 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 },
                 c.env.BETTER_AUTH_SECRET,
             );
+        }
+        if (
+            candidate.id === "microsoft/mai-transcribe-2" ||
+            candidate.id === "microsoft/mai-transcribe-2:vercel"
+        ) {
+            return transcribeMai({
+                file,
+                language,
+                prompt,
+                responseFormat,
+                temperature,
+                modelId: candidate.id,
+                apiKey:
+                    candidate.id === "microsoft/mai-transcribe-2:vercel"
+                        ? (c.env.AI_GATEWAY_API_KEY ?? "")
+                        : c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            });
         }
         if (candidate.id === "x-ai/grok-transcribe") {
             return transcribeWithXai({
@@ -4498,15 +4615,8 @@ export const audioRoutes = new Hono<Env>()
                 "",
                 "**Supported audio formats:** mp3, mp4, mpeg, mpga, m4a, wav, webm",
                 "",
-                "**Models:**",
-                "- `openai/whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
-                "- `whisper-1` — Alias for `openai/whisper-large-v3`",
-                "- `openai/gpt-transcribe` — Fast multilingual speech recognition with prompt context",
-                "- `elevenlabs/scribe-v2` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
-                "- `x-ai/grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
-                "- `google/gemini-3.5-transcribe` — Google speech recognition with word timestamps and speaker labels (wav, mp3, flac, m4a, ogg, webm, aac; `prompt` is ignored)",
-                "- `assemblyai/universal-2` — AssemblyAI Universal-2 (99 languages)",
-                "- `assemblyai/universal-3.5-pro` — AssemblyAI Universal-3.5 Pro (18 languages, code switching, prompting)",
+                "See `/audio/models` for current transcription models, capabilities, and prices.",
+                "Optional controls and response formats depend on the model. Unsupported combinations return 400.",
             ].join("\n"),
             requestBody: {
                 required: true,
@@ -4526,7 +4636,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "openai/whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `openai/whisper-large-v3`, `whisper-1`, `openai/gpt-transcribe`, `elevenlabs/scribe-v2`, `x-ai/grok-transcribe`, `google/gemini-3.5-transcribe`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`.",
+                                        "Transcription model ID. See `/audio/models` for current models advertising `/v1/audio/transcriptions`.",
                                 },
                                 language: {
                                     type: "string",
@@ -4550,7 +4660,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` require a model that renders subtitles, and `diarized_json` a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",

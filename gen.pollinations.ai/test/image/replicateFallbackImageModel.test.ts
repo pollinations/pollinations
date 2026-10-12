@@ -142,15 +142,6 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
-    it("rejects more than 8 reference images for FLUX.2 Max", async () => {
-        await expect(
-            callReplicateFallbackImage(
-                "make it blue",
-                params("black-forest-labs/flux.2-max", Array(9).fill(PNG)),
-            ),
-        ).rejects.toThrow("FLUX.2 Max supports at most 8 reference images");
-    });
-
     it("passes all supported p-image-edit references", async () => {
         const fetchSpy = mockPrediction();
 

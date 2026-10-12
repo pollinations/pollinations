@@ -23,11 +23,6 @@ export async function callAlibabaVideo(
                       : best,
               )
             : requestedDuration;
-    if (!(version === "3.0" ? [5] : [5, 10, 15]).includes(duration)) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Unsupported Wan ${version} duration: ${duration}`,
-        });
-    }
     const frames = params.image ?? [];
     const references = [
         ...(params.reference_images ?? []).map((url) => ({

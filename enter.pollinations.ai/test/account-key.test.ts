@@ -2,7 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { authenticateApiKeyRequest } from "@shared/auth/api-key.ts";
 import { expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 const endpoint = "/api/account/key";
 
@@ -57,11 +57,15 @@ test(
 test(
     "GET /api/account/key - accepts an agent run token",
     { timeout: 30000 },
-    async ({ apiKey, mocks }) => {
+    async ({ accountToken, mocks }) => {
         await mocks.enable("tinybird");
+        const { key } = await createApiKeyViaApi(accountToken, {
+            name: "agent-parent",
+            accountPermissions: ["usage"],
+        });
         const parent = await authenticateApiKeyRequest({
             request: new Request("http://localhost", {
-                headers: { Authorization: `Bearer ${apiKey}` },
+                headers: { Authorization: `Bearer ${key}` },
             }),
             env,
         });
@@ -84,8 +88,8 @@ test(
             userId: parent?.user?.id,
             byopApp: null,
         });
-        // A run token never carries account scope, only generation access.
-        expect(data.permissions.account).toBeNull();
+        // A run token carries the parent key's account permissions.
+        expect(data.permissions.account).toEqual(["usage"]);
     },
 );
 

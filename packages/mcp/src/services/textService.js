@@ -154,6 +154,7 @@ async function generateText(params, context) {
                     model: result.model,
                     finish_reason: choice?.finish_reason,
                     usage: result.usage,
+                    logprobs: choice?.logprobs,
                 },
                 true,
             ),
@@ -174,8 +175,9 @@ const messageSchema = z.object({
         ),
     content: z
         .union([z.string(), z.array(z.any())])
+        .nullish()
         .describe(
-            "Message content. String for text, or array for multimodal (images, audio, video)",
+            "Message content. String for text, or array for multimodal (images, audio, video). May be null or omitted for assistant tool calls",
         ),
     name: z
         .string()

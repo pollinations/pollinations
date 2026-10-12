@@ -2,6 +2,8 @@
 
 Optional safety checking runs on text input before generation. Omitted, `false`, or `0` means off.
 
+Checks read the request's text only. Generated images, video, and audio are not inspected: `X-Safety-Applied` means the checks ran on the input, not that the output was reviewed. A prompt can pass `sexual` and still produce nudity, for example when nudity is asked for in an artistic framing. If your app must exclude all nudity, moderate the generated output before showing it.
+
 For community models, enabled checks run before text is sent to the provider or a configured fallback.
 
 Models may require specific checks. Required checks are listed as `required_safety` in the model catalog and cannot be disabled by callers.

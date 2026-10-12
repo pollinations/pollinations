@@ -29,6 +29,7 @@ interface ProfileResponse {
 
 interface BalanceResponse {
     balance?: number;
+    accountBalance?: { total: number };
 }
 
 interface DeviceCodeResponse {
@@ -273,11 +274,16 @@ export async function showAuthStatus(): Promise<void> {
         return;
     }
 
+    // `balance` is a budgeted key's remaining budget, not the wallet; the
+    // wallet is in `accountBalance` (needs account:usage). Unbudgeted keys
+    // see the wallet total in `balance`, so only list it when it differs.
+    const wallet = balance?.accountBalance?.total;
     printResult({
         authenticated: true,
         key: masked,
         name: profile.githubUsername ?? "unknown",
-        pollen: balance?.balance ?? "unknown",
+        pollen: wallet ?? "unknown",
+        key_budget: balance?.balance !== wallet ? balance?.balance : undefined,
     });
 }
 

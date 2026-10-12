@@ -278,17 +278,17 @@ describe("generateTextPortkey", () => {
                 expect(headers.get("x-portkey-provider")).toBe("vertex-ai");
                 expect(headers.get("x-portkey-vertex-region")).toBe("global");
                 expect(headers.get("x-portkey-vertex-model-id")).toBe(
-                    "gemini-2.5-flash-lite",
+                    "gemini-3.5-flash-lite",
                 );
                 expect(headers.get("Authorization")).toBe(
                     "Bearer test-google-token",
                 );
                 expect(JSON.parse(String(init?.body))).toMatchObject({
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-3.5-flash-lite",
                 });
                 return Response.json({
                     id: "generation-1",
-                    model: "gemini-2.5-flash-lite",
+                    model: "gemini-3.5-flash-lite",
                     choices: [
                         {
                             index: 0,
@@ -308,7 +308,7 @@ describe("generateTextPortkey", () => {
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "gemini-fast",
+                model: "google/gemini-3.5-flash-lite",
                 portkeyGatewayUrl: "https://portkey.test",
             },
             portkeyFetcher,
@@ -327,16 +327,16 @@ describe("generateTextPortkey", () => {
         });
     });
 
-    it("falls back from direct Vertex to the proven OpenRouter route", async () => {
+    it("falls back from Vercel to the proven OpenRouter AI Studio route", async () => {
         vi.spyOn(googleCloudAuth, "getAccessToken").mockResolvedValue(
             "test-google-token",
         );
         const primary = "google/gemini-2.5-flash-lite" as const;
         const fallback =
-            "google/gemini-2.5-flash-lite:openrouter:vertex-eu" as const;
+            "google/gemini-2.5-flash-lite:openrouter:ai-studio" as const;
         const portkeyFetcher = vi.fn(async () =>
             Response.json(
-                { error: { message: "Vertex unavailable" } },
+                { error: { message: "Vercel unavailable" } },
                 { status: 503 },
             ),
         );
@@ -344,13 +344,26 @@ describe("generateTextPortkey", () => {
             .spyOn(globalThis, "fetch")
             .mockImplementation(
                 async (input: RequestInfo | URL, init?: RequestInit) => {
+                    if (
+                        String(input) ===
+                        "https://ai-gateway.vercel.sh/v1/chat/completions"
+                    ) {
+                        expect(JSON.parse(String(init?.body))).toMatchObject({
+                            model: "google/gemini-2.5-flash-lite",
+                            providerOptions: { gateway: { only: ["google"] } },
+                        });
+                        return Response.json(
+                            { error: { message: "Vercel unavailable" } },
+                            { status: 503 },
+                        );
+                    }
                     expect(String(input)).toBe(
                         "https://openrouter.ai/api/v1/chat/completions",
                     );
                     expect(JSON.parse(String(init?.body))).toMatchObject({
                         model: "google/gemini-2.5-flash-lite",
                         provider: {
-                            only: ["google-vertex/eu"],
+                            only: ["google-ai-studio"],
                             allow_fallbacks: false,
                         },
                     });
@@ -411,8 +424,8 @@ describe("generateTextPortkey", () => {
                 ),
         );
 
-        expect(portkeyFetcher).toHaveBeenCalledOnce();
-        expect(fetchSpy).toHaveBeenCalledOnce();
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
         expect(candidate.id).toBe(fallback);
         expect(index).toBe(1);
         expect(result).toMatchObject({
@@ -476,7 +489,7 @@ describe("generateTextPortkey", () => {
         const completion = await generateTextPortkey(
             [{ role: "user", content: "hello" }],
             {
-                model: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
+                model: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
                 stream: true,
             },
             portkeyFetcher,

@@ -10,7 +10,9 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
-Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
+New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
+
+Catalog fields are defined in `operations/app-management/app.js`; categories and platforms in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
@@ -193,6 +195,13 @@ npx vitest run test/file.test.ts
 - Production API tests should hit `gen.pollinations.ai`.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
+## Data-processing documentation maintenance
+
+- Maintain `pollinations.ai/public/legal/SUBPROCESSORS.md`, the Privacy Policy, and the internal draft `operations/legal/DATA_PROCESSING_ADDENDUM.md` when model, fallback, GPU host, region, infrastructure, hosted-tool, logging, caching, retention, training-use, or supplier changes affect personal-data processing. Update them in the same change; an unchanged public model name does not exempt a provider or location change. Keep the draft outside website assets and navigation until its commitments can be supported and an effective agreement is approved.
+- Verify the live route and all intermediaries/fallbacks, contracted legal entity, processing countries, data categories, retention/training settings, written processing terms, and transfer safeguards from operational and contractual evidence. Model publishers, supplier headquarters, and endpoint hostnames are not sufficient evidence. Mark unknowns explicitly; do not invent compliance or publish draft entries as approved.
+- Check the Terms, Privacy Policy, and any applicable customer agreement's notice and objection requirements before a sub-processor addition/replacement or material processing change takes effect. A provider-list edit alone is not customer notice. If an incident requires an urgent change, record and escalate the notice/contract impact to the maintainer; do not silently certify the new arrangement.
+- Keep legal documents as the single source of truth, update their version dates and links when applicable, and obtain legal/operator review before introducing or changing contractual commitments. Pricing-only edits and read-only health checks need no legal edit when processing is unchanged.
+
 ## Models & API Changes
 
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
@@ -254,7 +263,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

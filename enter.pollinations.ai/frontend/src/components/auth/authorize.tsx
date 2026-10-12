@@ -561,7 +561,7 @@ export function Authorize() {
             >
                 <KeyPermissionsInputs
                     value={keyPermissions}
-                    accessContext={isDeviceMode ? undefined : "app"}
+                    accessContext={isDeviceMode ? "device" : "app"}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
                     permissionsAfter={

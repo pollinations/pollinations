@@ -1,5 +1,7 @@
+import { AuthAccessItem } from "@pollinations/ui/auth";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { act, create } from "react-test-renderer";
+import { describe, expect, it, vi } from "vitest";
 import { AppEarningsRow } from "../frontend/src/components/keys/app-earnings-row.tsx";
 import { KeyNameField } from "../frontend/src/components/keys/key-name-field.tsx";
 import {
@@ -12,11 +14,13 @@ function Editor(props: {
     permissionsAfter?: boolean;
     withName?: boolean;
     allowedModels?: string[] | null;
+    accessContext?: "app" | "device";
 }) {
     const value = useKeyPermissions({ allowedModels: props.allowedModels });
     return (
         <KeyPermissionsInputs
             value={value}
+            accessContext={props.accessContext}
             nameField={
                 props.withName ? (
                     <KeyNameField
@@ -43,6 +47,69 @@ function lists(html: string) {
 }
 
 describe("key permissions layout", () => {
+    it("restores the previous categories after switching Generate off or deselecting the last category", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer: ReturnType<typeof create>;
+        await act(async () => {
+            renderer = create(<Editor allowedModels={["text", "image"]} />);
+        });
+        const generate = () =>
+            renderer.root.find(
+                (row) =>
+                    row.type === AuthAccessItem &&
+                    row.props.children === "Generate",
+            );
+        const category = (name: string) =>
+            renderer.root.find(
+                (button) =>
+                    button.type === "button" && button.children.includes(name),
+            );
+        try {
+            await act(async () => generate().props.onChange(false));
+            expect(generate().props.checked).toBe(false);
+            expect(category("Text").props.disabled).toBe(true);
+            expect(category("Text").props["aria-pressed"]).toBe(false);
+            await act(async () => generate().props.onChange(true));
+            expect(category("Text").props["aria-pressed"]).toBe(true);
+            expect(category("Image").props["aria-pressed"]).toBe(true);
+            expect(category("Video").props["aria-pressed"]).toBe(false);
+            await act(async () => category("Image").props.onClick());
+            await act(async () => category("Text").props.onClick());
+            expect(generate().props.checked).toBe(false);
+            expect(category("Text").props.disabled).toBe(true);
+            await act(async () => generate().props.onChange(true));
+            expect(category("Text").props["aria-pressed"]).toBe(true);
+            expect(category("Image").props["aria-pressed"]).toBe(false);
+        } finally {
+            await act(async () => renderer.unmount());
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it.each([
+        undefined,
+        "app",
+        "device",
+    ] as const)("uses the %s context in the identity tooltip", (accessContext) => {
+        const html = renderToStaticMarkup(
+            <Editor accessContext={accessContext} />,
+        );
+        expect(html).toContain(
+            `This ${accessContext ?? "key"} can access your username`,
+        );
+        expect(html).not.toContain("Anyone using this key");
+    });
+
+    it("explains earnings to the reader of each screen", () => {
+        const consent = renderToStaticMarkup(<AppEarningsRow />);
+        const owner = renderToStaticMarkup(
+            <AppEarningsRow checked onChange={() => {}} />,
+        );
+        expect(consent).toContain("You pay 25% above the base rate");
+        expect(consent).not.toContain("When enabled");
+        expect(owner).toContain("You receive that markup");
+    });
+
     it("disables category selectors when generation is off and has no All control", () => {
         for (const allowedModels of [null, []]) {
             const html = renderToStaticMarkup(

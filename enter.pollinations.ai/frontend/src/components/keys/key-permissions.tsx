@@ -2,7 +2,7 @@ import { AccountIcon, InfoTip } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useModelCatalog } from "../models/use-model-catalog.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { KeyLimitInput } from "./key-limit-input.tsx";
@@ -81,6 +81,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setQuestPollenOnly,
     } = value;
     const catalog = useModelCatalog();
+    const generateInput = useRef<HTMLInputElement>(null);
     const [previousModels, setPreviousModels] = useState<string[] | null>(
         requestedModels?.length ? requestedModels : null,
     );
@@ -90,6 +91,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         permissions.allowedModels.length > 0;
     const changeModels = (models: string[] | null) => {
         if (hasModels) setPreviousModels(permissions.allowedModels);
+        if (models?.length === 0) generateInput.current?.focus();
         setAllowedModels(models);
     };
     const accountPermissionProps = {
@@ -135,6 +137,7 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     );
     const modelsItem = (
         <AuthAccessItem
+            inputRef={generateInput}
             checked={hasModels}
             disabled={disabled}
             onChange={(checked) => changeModels(checked ? previousModels : [])}
@@ -144,28 +147,22 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     );
     return (
         <div className="space-y-3">
-            <AuthInfoCard>
-                <p className="text-xs font-medium leading-5 text-theme-text-muted">
-                    {nameField ? "Settings" : "Limits"}
-                </p>
+            <AuthInfoCard title={nameField ? "Settings" : "Limits"}>
                 <div className="@container grid gap-2">
                     {nameField && <ul className="text-sm">{nameField}</ul>}
-                    <ul className="grid w-full grid-cols-1 items-center gap-x-6 gap-y-2 text-sm @min-[35rem]:grid-cols-[18rem_minmax(0,1fr)] [&>li>div]:grid [&>li>div]:max-w-xs [&>li>div]:grid-cols-[1.25rem_4.5rem_minmax(0,1fr)]">
+                    <ul className="grid w-full grid-cols-1 items-center gap-x-6 gap-y-2 text-sm @min-[35rem]:grid-cols-[18rem_minmax(0,1fr)]">
                         {limitInputs}
                     </ul>
                 </div>
             </AuthInfoCard>
-            <AuthInfoCard>
-                <p className="text-xs font-medium leading-5 text-theme-text-muted">
-                    Permissions
-                </p>
+            <AuthInfoCard title="Permissions">
                 <div className="grid gap-2">
                     <ul className="grid grid-cols-1 gap-y-2 text-sm">
                         <AuthAccessItem icon={<AccountIcon />}>
                             <span className="inline-flex items-center">
                                 See your username and picture
                                 <InfoTip
-                                    text="Anyone using this key can see your username, profile picture, and this key’s own budget and usage."
+                                    text={`This ${accessContext ?? "key"} can access your username, profile picture and its own budget and usage.`}
                                     label="See your username and picture information"
                                 />
                             </span>

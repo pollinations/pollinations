@@ -27,7 +27,7 @@ export function ModelPermissionsInput({
     return (
         <ButtonGroup
             aria-label="Model categories"
-            className="col-span-2 row-start-2 sm:col-span-1 sm:col-start-2 sm:row-start-1"
+            className="col-span-2 row-start-2 pl-8 sm:pl-0 sm:col-span-1 sm:col-start-2 sm:row-start-1"
         >
             {MODEL_CATEGORY_ORDER.map((category) => (
                 <TabButton

@@ -100,7 +100,7 @@ export function KeyDialogContent({
                 ? "Add this app key to your app. You can copy it again from the Apps section at any time."
                 : "Copy your secret key now. You won’t be able to see it again."
             : publishable
-              ? "Set the name, earnings, and redirect URLs."
+              ? "Set the name, earnings and redirect URLs."
               : accessContext
                 ? `Choose what this ${accessContext} can access and how much it can spend.`
                 : "Choose what this key can access and how much it can spend.";
@@ -249,10 +249,7 @@ export function KeyDialogContent({
                 ) : showFields ? (
                     <div className="space-y-3">
                         {publishable && (
-                            <AuthInfoCard>
-                                <p className="text-xs font-medium leading-5 text-theme-text-muted">
-                                    Settings
-                                </p>
+                            <AuthInfoCard title="Settings">
                                 <ul className="grid gap-2 text-sm">
                                     {nameField}
                                     <AppEarningsRow

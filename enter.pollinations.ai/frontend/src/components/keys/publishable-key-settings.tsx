@@ -1,4 +1,4 @@
-import { Button, Field, InfoTip, Input, Text } from "@pollinations/ui";
+import { Button, Field, InfoTip, Input } from "@pollinations/ui";
 import { AuthInfoCard } from "@pollinations/ui/auth";
 import type { FC } from "react";
 
@@ -36,22 +36,18 @@ export const PublishableKeySettings: FC<PublishableKeySettingsProps> = ({
     }
 
     return (
-        <AuthInfoCard title={null}>
-            <div className="space-y-2">
-                <div className="flex items-center">
-                    <Text
-                        size="xs"
-                        weight="medium"
-                        tone="muted"
-                        className="polli:leading-5"
-                    >
-                        Redirect URLs
-                    </Text>
+        <AuthInfoCard
+            title={
+                <>
+                    Redirect URLs
                     <InfoTip
                         text="Your app receives users at these URLs after consent. For local development, match a localhost redirect to your dev server’s path; remove it before production."
                         label="Redirect URLs information"
                     />
-                </div>
+                </>
+            }
+        >
+            <div className="space-y-2">
                 {redirectUris.map((uri, index) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: stable enough for a small editable list

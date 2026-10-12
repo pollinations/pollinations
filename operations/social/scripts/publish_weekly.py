@@ -24,8 +24,8 @@ from buffer_publish import (
     stage_buffer_posts,
 )
 from common import (
+    chunk_message,
     post_discord_webhook,
-    DISCORD_CHUNK_SIZE,
     deploy_reddit_news_post,
     get_env,
     get_post_image_urls,
@@ -54,33 +54,6 @@ def get_weekly_date() -> str:
     days_since_sunday = (today.weekday() + 1) % 7
     sunday = today - timedelta(days=days_since_sunday)
     return sunday.strftime("%Y-%m-%d")
-
-
-def chunk_message(message: str, max_length: int = DISCORD_CHUNK_SIZE):
-    """Split message into chunks at paragraph breaks."""
-    if len(message) <= max_length:
-        return [message]
-
-    chunks = []
-    remaining = message
-    while remaining:
-        if len(remaining) <= max_length:
-            chunks.append(remaining)
-            break
-        chunk = remaining[:max_length]
-        # Split at paragraph break
-        split = chunk.rfind("\n\n")
-        if split >= max_length * 0.5:
-            split_point = split + 2
-        else:
-            split = chunk.rfind("\n")
-            if split >= max_length * 0.5:
-                split_point = split + 1
-            else:
-                split_point = max_length
-        chunks.append(remaining[:split_point].rstrip())
-        remaining = remaining[split_point:].lstrip()
-    return chunks
 
 
 def post_to_discord(webhook_url: str, message: str, image_url: str = None) -> bool:

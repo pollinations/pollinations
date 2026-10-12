@@ -64,7 +64,11 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("create")
             .description("Start a sandbox you can ssh into")
-            .argument("[template]", "E2B template", "pollinations")
+            .argument(
+                "[template]",
+                "E2B template; pollinations-large has 4 vCPU and 8 GB",
+                "pollinations",
+            )
             .option(
                 "--timeout <seconds>",
                 "Keep it running this long without ssh, paid in advance; 0 never expires",

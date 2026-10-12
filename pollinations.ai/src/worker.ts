@@ -35,6 +35,10 @@ export default {
             return Response.redirect("https://pollinations.ai/", 301);
         }
 
+        if (url.hostname === "playground.pollinations.ai") {
+            return Response.redirect("https://pollinations.ai/play", 301);
+        }
+
         // www is routed only so it can redirect to the canonical apex host.
         if (url.hostname.startsWith("www.")) {
             url.hostname = url.hostname.slice(4);

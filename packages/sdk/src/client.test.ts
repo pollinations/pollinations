@@ -553,7 +553,8 @@ describe("Pollinations server-owned defaults", () => {
                 },
             ],
         };
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ data: [{ b64_json: "AAAA" }] }),
@@ -690,7 +691,7 @@ describe("Pollinations video reference media", () => {
         const url = new URL(fetchMock.mock.calls[0][0] as string);
         expect(url.searchParams.get("image")).toBe(
             Array.isArray(referenceImage)
-                ? referenceImage.join(",")
+                ? referenceImage.join("|")
                 : (referenceImage ?? null),
         );
         for (const name of [
@@ -700,6 +701,18 @@ describe("Pollinations video reference media", () => {
         ]) {
             expect(url.searchParams.has(name)).toBe(false);
         }
+    });
+
+    it("serializes multiple reference images using pipe delimiter for image generation", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const references = [
+            "https://media.example/ref1.png?v=1",
+            "https://media.example/ref2.png?v=2",
+        ];
+        await newClient().image("a scene", { referenceImage: references });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(references.join("|"));
     });
 });
 
@@ -732,7 +745,8 @@ describe("Pollinations seed handling", () => {
 
     it("passes seed through text and chat requests consistently", async () => {
         const client = newClient();
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ choices: [{ message: { content: "ok" } }] }),
@@ -942,7 +956,7 @@ describe("Pollinations chat routing", () => {
         const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -1102,10 +1116,36 @@ describe("Pollinations chat streaming", () => {
         expect(body.locked).toBe(false);
     });
 
+    it("rejects a chat stream that closes before completion instead of returning partial text", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(
+                'data: {"choices":[{"delta":{"content":"unfinished"},"finish_reason":null}]}\n\n',
+                { headers: { "content-type": "text/event-stream" } },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream through EOF.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INCOMPLETE_STREAM",
+            status: 502,
+        });
+    });
+
     it("discards an incomplete SSE event at EOF", async () => {
+        const terminal = { choices: [{ delta: {}, finish_reason: "stop" }] };
         const event = { choices: [{ delta: { content: "last" } }] };
         fetchMock.mockResolvedValue(
-            new Response(`data: ${JSON.stringify(event)}`),
+            new Response(
+                `data: ${JSON.stringify(terminal)}\n\ndata: ${JSON.stringify(event)}`,
+            ),
         );
 
         const chunks = [];
@@ -1115,7 +1155,7 @@ describe("Pollinations chat streaming", () => {
             chunks.push(chunk);
         }
 
-        expect(chunks).toEqual([]);
+        expect(chunks).toEqual([terminal]);
     });
 
     it("does not guess event boundaries between complete JSON data lines", async () => {

@@ -8,6 +8,20 @@
 
 import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
+/**
+ * RFC 8288 Link headers for every page this worker rewrites, so an agent that
+ * fetches a page learns where the machine-readable surface lives. Registered
+ * relations only: service-desc and service-doc (RFC 8631), api-catalog
+ * (RFC 9727) and describedby. Same set as gen.pollinations.ai, with absolute
+ * URLs because the targets live on that host.
+ */
+const AGENT_LINKS = [
+    '<https://gen.pollinations.ai/openapi.json>; rel="service-desc"',
+    '<https://gen.pollinations.ai/docs/llm.txt>; rel="service-doc"',
+    '<https://gen.pollinations.ai/.well-known/api-catalog>; rel="api-catalog"',
+    '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
+].join(", ");
+
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
     setAttribute(name: string, value: string): void;
@@ -33,6 +47,10 @@ export default {
 
         if (url.hostname === "old.pollinations.ai") {
             return Response.redirect("https://pollinations.ai/", 301);
+        }
+
+        if (url.hostname === "playground.pollinations.ai") {
+            return Response.redirect("https://pollinations.ai/play", 301);
         }
 
         // www is routed only so it can redirect to the canonical apex host.
@@ -116,6 +134,9 @@ export default {
                         { html: true },
                     ),
             });
+        }
+        if (page) {
+            htmlResponse.headers.set("Link", AGENT_LINKS);
         }
         return rewriter.transform(htmlResponse);
     },

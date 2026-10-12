@@ -117,6 +117,7 @@ export function CommunityEndpointCard({
                                 earningsAnchor: undefined,
                                 earningsModels: [endpoint.modelId],
                                 usageMetric: undefined,
+                                usageGroup: undefined,
                                 usageKeys: undefined,
                                 usageModels: undefined,
                                 earningsMetric: undefined,

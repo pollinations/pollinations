@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
+| [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
+| [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
+| [💼 RankNest YouTube Research & Strategy Tool](https://ranknest.tech/youtube-research) | RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas. | [@asiasi44](https://github.com/asiasi44) |
+| [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
 | [📚 Text Comparison](https://mahmoudpov373-star.github.io/Comart) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@mahmoudpov373-star](https://github.com/mahmoudpov373-star) |
 | [🖼️ InkBloom](https://coloring-project1.ismailbanouigu.workers.dev) | Turn photos or text prompts into printable coloring pages. Text-to-coloring generation is powered by Pollinations. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
 | [🤖 MebelSmetaBot](https://t.me/MebelSmetaBot) | Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al | [@druzhininige-dotcom](https://github.com/druzhininige-dotcom) |
-| [✍️ Nice No](https://nice-no.maxtoms21.chatgpt.site) | Nice No helps people turn awkward everyday requests into kind, clear boundary messages. Describe a situation, choose Gentle, Firm, or Brief, then copy a suggested reply and a follow-up for pushback. I | [@maxtoms](https://github.com/maxtoms) |
-| [✍️ Fable Finder](https://mhmdrizki803-boop.github.io/fable-finder) | Type the lesson you keep forgetting and get a four line fable with a picture, written on the spot. | [@mhmdrizki803-boop](https://github.com/mhmdrizki803-boop) |
-| [🖼️ Create 3D (newapp)](https://ghiygren-code.github.io/Mahoraga-) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@ghiygren-code](https://github.com/ghiygren-code) |
-| [🎬 Video](https://mahmoudakrman97-lgtm.github.io/Video) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@mahmoudakrman97-lgtm](https://github.com/mahmoudakrman97-lgtm) |
-| [✍️ Keigo Formatter](https://ucalis-uma.github.io/keigo-formatter) | Rough Japanese memos to polite business Japanese. Single-page static app (no build, GitHub Pages). Uses Pollinations text API ( POST /v1/chat/completions , default deepseek/deepseek-v4.1-flash ). BYOP | [@ucalis-uma](https://github.com/ucalis-uma) |
-| [🎬 Audio](https://dwikatmahmoud87-source.github.io/Gtdcg) | Update: The TTS feature is implemented and gated behind login, which is standard for a BYOP app — an unauthenticated reviewer can only see the sign-in screen, since the feature lives inside a hidden d | [@dwikatmahmoud87-source](https://github.com/dwikatmahmoud87-source) |
-| [🛠️ SoloForge AI](https://soloforge-ai-web.onrender.com) | SoloForge AI is an AI Creator OS that turns content ideas into generated assets, review queues, and automated publishing workflows. It uses Pollinations for AI image generation, authenticated AI sessi | [@soloforge-ai](https://github.com/soloforge-ai) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-11** – **🚀 Longer, larger sandboxes** Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.
+- **2026-10-11** – **🎨 InkBloom coloring pages** Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).
+- **2026-10-11** – **💡 Text Comparison joins Learn** Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).
+- **2026-10-11** – **🎵 Compose with Midi Journey** Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).
+- **2026-10-11** – **🤖 Polli keeps the conversation going** Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).
 - **2026-10-10** – **🎨 A new Play page** Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).
 - **2026-10-10** – **💡 PDFs for Claude and GPT** Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).
 - **2026-10-10** – **🤖 Catalogs for agent discovery** Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
 - **2026-10-10** – **📱 Furniture ideas from a photo** Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).
 - **2026-10-09** – **🎵 MAI voices for speech** Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).
-- **2026-10-09** – **🎵 MAI transcription, two ways** Transcribe multilingual audio files with timed segments using `microsoft/mai-transcribe-2`, or send live PCM audio to `microsoft/mai-transcribe-2-streaming`. [Browse the file transcription model](https://enter.pollinations.ai/models?q=microsoft/mai-transcribe-2).
-- **2026-10-09** – **🤖 GPT-6 Luna Decisions** Use `openai/gpt-6-luna-decisions` for text or JSON decisions, including streaming requests. [Browse the model](https://enter.pollinations.ai/models?q=openai/gpt-6-luna-decisions).
-- **2026-10-09** – **🎨 Fable Finder** Give it a lesson you keep forgetting; get a four-line fable and an illustration. [Try it](https://mhmdrizki803-boop.github.io/fable-finder).
-- **2026-10-09** – **✨ Nice No** Turn an awkward request into a gentle, firm, or brief boundary message, with a follow-up for pushback. [Try it](https://nice-no.maxtoms21.chatgpt.site).
-- **2026-10-08** – **🤖 Two long-context text models** Try `anthropic/claude-haiku-5.5` and `stepfun/step-5-preview` for text and image input, tool calls and 1M-token contexts. Both are paid-only models available through the [text API](https://gen.pollinations.ai/v1/chat/completions).
 ---
 
 ## 🌱 Introduction
@@ -89,7 +89,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
+<!-- Updated daily by .github/workflows/news-sync-readme.yml.
      Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">

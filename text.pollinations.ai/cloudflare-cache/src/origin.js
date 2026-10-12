@@ -674,9 +674,12 @@ async function feed(env, method) {
  */
 function publisher(request, env, ctx, data, body, { messages }, route) {
     const url = new URL(request.url);
+    // The two POST routes set it whatever the path's case; getRequestData
+    // checked the raw path, so GET /OpenAI… stayed public
     const isPrivate =
-        url.pathname.startsWith("/openai") ||
+        route === "POST /openai*" ||
         route === "POST /v1/chat/completions" ||
+        url.pathname.startsWith("/openai") ||
         toBool(data.private) === true;
     if (isPrivate) return () => {};
     const parameters = {

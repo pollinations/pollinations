@@ -338,6 +338,7 @@ test("the public feed gets each public generation as the VM sent it, and nothing
         body: JSON.stringify({ messages: [{ role: "user", content: "p1" }] }),
     });
     await call("/openai/p2", { method: "POST" });
+    await call("/OpenAI/p2b", { method: "POST" });
     await call("/openai-p3");
     await call("/p4?private=true");
 

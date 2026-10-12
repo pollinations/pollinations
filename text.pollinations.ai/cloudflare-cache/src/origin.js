@@ -475,7 +475,15 @@ async function generation(
     ip,
     { data, prompt, format, route },
 ) {
-    const params = readParams(data, prompt);
+    let params;
+    try {
+        params = readParams(data, prompt);
+    } catch (error) {
+        // The VM threw this in its async route handler, which crashed the
+        // process (e.g. ?system= with non-array messages: "messages.unshift
+        // is not a function"). Answered as Express answers a route's error.
+        return errorPage(500, `${error.name}: ${error.message}`, true);
+    }
     const job = { ...params, format, route };
     const canWait = params.stream || !weftEnabled(env);
     let slot;

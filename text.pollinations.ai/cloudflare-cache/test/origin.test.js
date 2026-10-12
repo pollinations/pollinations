@@ -452,6 +452,39 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
     }
 });
 
+test("non-array messages with a system prompt, which crashed the VM, get Express's 500 page and no generation", async () => {
+    for (const [path, options] of [
+        ["/x?system=hi&messages=foo", {}],
+        [
+            "/v1/chat/completions?system=hi",
+            {
+                method: "POST",
+                headers: JSON_BODY,
+                body: JSON.stringify({ messages: "x" }),
+            },
+        ],
+    ]) {
+        const gen = recordingGen();
+        const ip = nextIp();
+        const { response, text } = await call(path, {
+            ...options,
+            ip,
+            testEnv: gen.testEnv,
+        });
+
+        expect(response.status, path).toBe(500);
+        expect(text, path).toBe(
+            errorPage("TypeError: messages.unshift is not a function"),
+        );
+        expect(Object.fromEntries(response.headers), path).toEqual(
+            pageHeaders(true),
+        );
+        expect(gen.bodies, path).toHaveLength(0);
+        // Parameters are read before the free slot is taken
+        expect(await alarmOf(ip), path).toBeNull();
+    }
+});
+
 test("a blocked /24 gets an empty 403 without CORS, but cache hits are still served", async () => {
     await call("/stored%20before%20the%20block");
     const blocked = "192.42.116.7";

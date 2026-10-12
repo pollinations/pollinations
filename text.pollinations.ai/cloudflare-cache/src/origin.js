@@ -1,3 +1,8 @@
+import { Buffer } from "node:buffer";
+import { gunzipSync, inflateSync } from "node:zlib";
+import contentType from "content-type";
+import iconv from "iconv-lite";
+import mediaTyper from "media-typer";
 import { takeSlot } from "../../../shared/ip-slot.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
@@ -304,23 +309,67 @@ function headSize(request, url) {
     return size;
 }
 
-/** body-parser's json(): a JSON body becomes an object, anything else {} */
+/**
+ * body-parser 1.20.3's json(), with the libraries it used: a JSON body becomes
+ * an object, anything else {}. Checks run in its order.
+ */
 async function readBody(request) {
-    const type = request.headers.get("content-type") ?? "";
-    if (!/^application\/json\s*(;|$)/i.test(type) || !request.body) return {};
+    const type = request.headers.get("content-type");
+    if (!request.body || !isJson(type)) return {};
+    let charset;
+    try {
+        charset = contentType.parse(type).parameters.charset?.toLowerCase();
+    } catch {}
+    charset ||= "utf-8";
+    const unsupported = (what) =>
+        errorPage(415, `UnsupportedMediaTypeError: unsupported ${what}`, false);
+    if (!charset.startsWith("utf-")) {
+        return unsupported(`charset "${charset.toUpperCase()}"`);
+    }
+    const encoding = (
+        request.headers.get("content-encoding") ?? "identity"
+    ).toLowerCase();
+    const inflate = { gzip: gunzipSync, deflate: inflateSync }[encoding];
+    if (!inflate && encoding !== "identity") {
+        return unsupported(`content encoding "${encoding}"`);
+    }
     const tooLarge = () =>
         errorPage(413, "PayloadTooLargeError: request entity too large", false);
-    if (Number(request.headers.get("content-length")) > MAX_BODY_BYTES) {
-        return tooLarge();
+    // raw-body checked the declared length only for an uncompressed body
+    const length = Number.parseInt(request.headers.get("content-length"), 10);
+    if (!inflate && length > MAX_BODY_BYTES) return tooLarge();
+    if (!iconv.encodingExists(charset)) {
+        return unsupported(`charset "${charset.toUpperCase()}"`);
     }
-    const bytes = new Uint8Array(await request.arrayBuffer());
+    let bytes = Buffer.from(await request.arrayBuffer());
+    if (inflate) {
+        try {
+            bytes = inflate(bytes, { maxOutputLength: MAX_BODY_BYTES + 1 });
+        } catch (error) {
+            // maxOutputLength: workerd throws a RangeError without Node's code
+            if (error instanceof RangeError) return tooLarge();
+            return errorPage(400, `Error: ${error.message}`, false);
+        }
+    }
     if (bytes.byteLength > MAX_BODY_BYTES) return tooLarge();
-    const text = new TextDecoder().decode(bytes);
+    const text = iconv.decode(bytes, charset);
     if (!text) return {};
     try {
         return parseStrict(text);
     } catch (error) {
         return errorPage(400, `${error.name}: ${error.message}`, false);
+    }
+}
+
+/** type-is 1.6.18's check for "application/json", parameters ignored */
+function isJson(value) {
+    if (!value) return false;
+    try {
+        const type = mediaTyper.parse(value);
+        type.parameters = undefined;
+        return mediaTyper.format(type) === "application/json";
+    } catch {
+        return false;
     }
 }
 

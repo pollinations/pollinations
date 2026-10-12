@@ -4,6 +4,8 @@ import {
     runInDurableObject,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { Buffer } from "node:buffer";
+import { deflateSync, gzipSync } from "node:zlib";
 import { expect, test, vi } from "vitest";
 import worker from "../src/index.js";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
@@ -550,6 +552,145 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
             ...(status < 401 && CACHE_MISS),
         });
         expect(gen.bodies, label).toHaveLength(0);
+    }
+});
+
+test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media type", async () => {
+    // Expected answers from the VM's own body-parser on the same bytes. Each
+    // body differs: the cache code stores 400s under a key of the body.
+    const messages = (content) =>
+        JSON.stringify({ messages: [{ role: "user", content }] });
+    const json = "application/json";
+    const cases = [
+        [
+            "gzip",
+            { "content-encoding": "gzip" },
+            gzipSync(messages("gz")),
+            "gz",
+        ],
+        [
+            "deflate",
+            { "content-encoding": "DEFLATE" },
+            deflateSync(messages("df")),
+            "df",
+        ],
+        [
+            "utf-16le",
+            { "content-type": `${json}; charset=utf-16le` },
+            Buffer.from(messages("é"), "utf16le"),
+            "é",
+        ],
+        [
+            "utf-8 BOM",
+            {},
+            Buffer.concat([
+                Buffer.from([0xef, 0xbb, 0xbf]),
+                Buffer.from(messages("bom")),
+            ]),
+            "bom",
+        ],
+        [
+            "upper case type",
+            { "content-type": "APPLICATION/JSON" },
+            messages("up"),
+            "up",
+        ],
+        // Media types type-is did not read as application/json: body ignored
+        ["trailing ;", { "content-type": `${json};` }, messages("x1"), 400],
+        [
+            "charset then ;",
+            { "content-type": `${json}; charset=utf-8;` },
+            messages("x2"),
+            400,
+        ],
+        [
+            "+json suffix",
+            { "content-type": "application/merge-patch+json" },
+            messages("x3"),
+            400,
+        ],
+        [
+            "bad gzip",
+            { "content-encoding": "gzip" },
+            messages("x4"),
+            [400, "Error: incorrect header check"],
+        ],
+        [
+            "br",
+            { "content-encoding": "br" },
+            messages("x5"),
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported content encoding &quot;br&quot;",
+            ],
+        ],
+        [
+            "latin1",
+            { "content-type": `${json}; charset=iso-8859-1` },
+            messages("x6"),
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported charset &quot;ISO-8859-1&quot;",
+            ],
+        ],
+        [
+            "UTF8 without a dash",
+            { "content-type": `${json}; charset=UTF8` },
+            messages("x7"),
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported charset &quot;UTF8&quot;",
+            ],
+        ],
+        [
+            "utf-9",
+            { "content-type": `${json}; charset=utf-9` },
+            messages("x8"),
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported charset &quot;UTF-9&quot;",
+            ],
+        ],
+        // The charset is checked before the encoding
+        [
+            "latin1 and br",
+            {
+                "content-type": `${json}; charset=latin1`,
+                "content-encoding": "br",
+            },
+            "{}",
+            [
+                415,
+                "UnsupportedMediaTypeError: unsupported charset &quot;LATIN1&quot;",
+            ],
+        ],
+        // The 20 MB limit applies to the inflated body
+        [
+            "gzip over 20 MB",
+            { "content-encoding": "gzip" },
+            gzipSync(" ".repeat(21 * 1024 * 1024)),
+            [413, "PayloadTooLargeError: request entity too large"],
+        ],
+    ];
+    for (const [label, headers, body, expected] of cases) {
+        const gen = recordingGen();
+        const { response, text } = await call("/", {
+            method: "POST",
+            headers: { "content-type": json, ...headers },
+            body,
+            testEnv: gen.testEnv,
+        });
+        if (typeof expected === "string") {
+            expect(response.status, label).toBe(200);
+            expect(gen.bodies[0].messages.at(-1).content, label).toBe(expected);
+        } else if (expected === 400) {
+            expect(response.status, label).toBe(400);
+            expect(text, label).toBe('{"error":"Invalid messages array"}');
+        } else {
+            expect(response.status, label).toBe(expected[0]);
+            expect(text, label).toBe(errorPage(expected[1]));
+            expect(gen.bodies, label).toHaveLength(0);
+        }
     }
 });
 

@@ -28,6 +28,9 @@
         "@weftlabs/sdk": "0.27.1",
         "@x402/core": "2.27.0",
         "@x402/evm": "2.27.0",
-        "hono": "4.13.9"
+        "content-type": "1.0.5",
+        "hono": "4.13.9",
+        "iconv-lite": "0.4.24",
+        "media-typer": "0.3.0"
     }
 }

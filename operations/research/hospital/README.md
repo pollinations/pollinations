@@ -87,11 +87,21 @@ See `runs/3/REPORT.md`.
   had 100 credited, and the case was reopened.
 - The same version-bump check flags 22 of 26 open non-draft package PRs.
 
+## Run 4 (2026-10-12)
+
+The iteration 3 harness on two fresh PRs. See `runs/4/REPORT.md`.
+
+| Case | Kind | Outcome | Pollen |
+|---|---|---|---:|
+| #16920 | PR review | discharged in one pass: GPT Image region failover on 401/402/403, with matching red/green logs from the fellow and the reviewer | 5.06 |
+| #16359 | PR review | changes requested at workup: #16213 deleted the file it edits, and base already has the fix | 1.02 |
+
+- Cost: about 6.2 Pollen. Claude 3.76, Codex 2.32, box time about 0.1.
+- The box was killed after the run. Its records are under `runs/4/`.
+
 ## Next questions
 
 - Is 3.7 to 8 Pollen per discharged small PR worth it, compared with one
   independent review pass? One rework doubles the cost.
-- Should the driver check the account's paid balance before a run, and list
-  PRs that fix the same issue at admission?
 - Is the #17082 review worth posting on the PR? The runs are dry runs, so
   nothing was posted.

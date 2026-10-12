@@ -1,0 +1,4 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx biome check src/image/createAndReturnImages.ts test/image/gptImageRouting.test.ts test/generation-vcr.test.ts
+Checked 3 files in 66ms. No fixes applied.
+
+exit 0

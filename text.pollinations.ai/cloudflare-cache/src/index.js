@@ -390,7 +390,9 @@ async function proxyRequest(request, env) {
         originHost = `https://${originHost}`;
     }
 
-    const originUrl = new URL(url.pathname + url.search, originHost);
+    // Append the path: resolved as a relative URL, a path starting with //
+    // would replace the origin host with any host the caller names
+    const originUrl = new URL(`${originHost}${url.pathname}${url.search}`);
     log("proxy", `Proxying to: ${originUrl.toString()}`);
 
     // Prepare forwarded headers

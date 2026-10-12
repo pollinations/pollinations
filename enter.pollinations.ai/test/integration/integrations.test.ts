@@ -2,16 +2,16 @@ import { SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { test } from "../fixtures.ts";
 
-function sessionHeaders(sessionToken: string) {
-    return { Cookie: `better-auth.session_token=${sessionToken}` };
+function sessionHeaders(accountToken: string) {
+    return { Authorization: `Bearer ${accountToken}` };
 }
 
 test("manages connected apps through the authenticated account", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const listResponse = await SELF.fetch(
         "http://localhost:3000/api/account/integrations",
-        { headers: sessionHeaders(sessionToken) },
+        { headers: sessionHeaders(accountToken) },
     );
     expect(listResponse.status).toBe(200);
     expect(await listResponse.json()).toMatchObject({
@@ -29,7 +29,7 @@ test("manages connected apps through the authenticated account", async ({
 
     const toolkitResponse = await SELF.fetch(
         "http://localhost:3000/api/account/integrations/toolkits?search=git",
-        { headers: sessionHeaders(sessionToken) },
+        { headers: sessionHeaders(accountToken) },
     );
     expect(toolkitResponse.status).toBe(200);
     expect(await toolkitResponse.json()).toEqual({
@@ -48,7 +48,7 @@ test("manages connected apps through the authenticated account", async ({
         {
             method: "POST",
             headers: {
-                ...sessionHeaders(sessionToken),
+                ...sessionHeaders(accountToken),
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ toolkit: "github" }),
@@ -63,7 +63,7 @@ test("manages connected apps through the authenticated account", async ({
         "http://localhost:3000/api/account/integrations/ca_test",
         {
             method: "DELETE",
-            headers: sessionHeaders(sessionToken),
+            headers: sessionHeaders(accountToken),
         },
     );
     expect(deleteResponse.status).toBe(204);

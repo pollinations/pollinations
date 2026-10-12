@@ -31,6 +31,7 @@ const BRAND_LOGOS: Record<string, string> = {
     MiniMax: "minimax",
     Mistral: "mistral",
     "Moonshot AI": "moonshot",
+    "Nex AGI": "nex-agi",
     NVIDIA: "nvidia",
     OpenAI: "openai",
     Perplexity: "perplexity",

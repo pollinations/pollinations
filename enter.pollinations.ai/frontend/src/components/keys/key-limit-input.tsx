@@ -59,6 +59,7 @@ export function KeyLimitInput({
     return (
         <AuthAccessItem
             icon={limit.icon}
+            rowClassName="grid max-w-xs grid-cols-[1.25rem_4.5rem_minmax(0,1fr)]"
             control={
                 <label htmlFor={inputId} className="flex items-center gap-2">
                     <span className="sr-only">{limit.label} value</span>
@@ -81,10 +82,10 @@ export function KeyLimitInput({
                                     : null,
                             );
                         }}
-                        className="w-[116px]"
+                        className="w-24"
                         hideNumberSteppers
                     />
-                    <Text as="span" size="xs" tone="muted" className="w-12">
+                    <Text as="span" size="xs" tone="muted" className="w-10">
                         {limit.unit}
                     </Text>
                 </label>

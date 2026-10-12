@@ -8,7 +8,7 @@ import { test } from "./fixtures.ts";
 const baseUrl = "http://localhost:3000/api";
 
 test("admin grant records one claimable reward per user and campaign", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const [user] = await db
@@ -72,9 +72,9 @@ test("admin grant records one claimable reward per user and campaign", async ({
         claimedAt: null,
     });
 
-    const listed = await SELF.fetch(`${baseUrl}/quests/rewards`, {
+    const listed = await SELF.fetch(`${baseUrl}/account/quests/rewards`, {
         headers: {
-            Cookie: `better-auth.session_token=${sessionToken}`,
+            Authorization: `Bearer ${accountToken}`,
         },
     });
     expect(listed.status).toBe(200);
@@ -91,7 +91,7 @@ test("admin grant records one claimable reward per user and campaign", async ({
 });
 
 test("a pack grant credits paid pollen when claimed", async ({
-    sessionToken,
+    accountToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const [user] = await db
@@ -130,10 +130,10 @@ test("a pack grant credits paid pollen when claimed", async ({
     expect(reward).toMatchObject({ balanceBucket: "pack", claimedAt: null });
 
     const claim = await SELF.fetch(
-        `${baseUrl}/quests/rewards/${reward?.id}/claim`,
+        `${baseUrl}/account/quests/rewards/${reward?.id}/claim`,
         {
             method: "POST",
-            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+            headers: { Authorization: `Bearer ${accountToken}` },
         },
     );
     expect(claim.status).toBe(200);

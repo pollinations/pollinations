@@ -244,7 +244,7 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "azure",
-        "deepseek/deepseek-v4.1-flash": "fireworks",
+        "deepseek/deepseek-v4.1-flash": "deepinfra",
         "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {

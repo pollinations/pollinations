@@ -70,11 +70,6 @@ const OPENROUTER_ROUTES = [
         "streamlake",
     ],
     [
-        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
-    ],
-    [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
@@ -682,8 +677,8 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        ["deepseek/deepseek-v4.1-flash", 0.000546],
-        ["deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8", 0.000240751],
+        ["deepseek/deepseek-v4.1-flash", 0.000326],
+        ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
     ] as const)("bills DeepSeek V4.1 Flash at the current quote when %s serves", (route, cost) => {
         const billing = calculateUsageBilling({
             model: "deepseek/deepseek-v4.1-flash",
@@ -697,7 +692,7 @@ describe("static provider fallbacks", () => {
             },
         });
         expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.000546, 8);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000326, 8);
     });
 
     it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
@@ -839,15 +834,6 @@ describe("static provider fallbacks", () => {
             promptTextTokens: 0.06 / 1_000_000,
             promptCachedTokens: 0.015 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
-        });
-        expect(
-            TEXT_SERVICES[
-                "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
-            ].cost,
-        ).toMatchObject({
-            promptTextTokens: (0.14 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.0042 / 1_000_000) * 1.055,
-            completionTextTokens: (0.42 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
             promptTextTokens: (0.24 / 1_000_000) * 1.055,

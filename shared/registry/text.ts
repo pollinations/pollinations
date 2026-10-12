@@ -1147,9 +1147,9 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
@@ -1157,10 +1157,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: false,
         perUserRpm: 60,
         cost: {
-            // Fireworks Standard rates (2026-10-12).
-            promptTextTokens: perMillion(0.3),
+            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
+            // is not passed on.
+            promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(1.2),
+            completionTextTokens: perMillion(0.6),
         },
         title: "DeepSeek V4.1 Flash",
         description:

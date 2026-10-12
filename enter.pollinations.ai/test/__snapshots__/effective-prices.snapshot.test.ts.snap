@@ -799,26 +799,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "deepseek/deepseek-v4.1-flash": {
     "cost": {
-      "completionTextTokens": 0.0000012,
+      "completionTextTokens": 0.0000006,
       "promptCachedTokens": 0.000000006,
-      "promptTextTokens": 0.0000003,
+      "promptTextTokens": 0.0000002,
     },
     "price": {
-      "completionTextTokens": 0.0000012,
+      "completionTextTokens": 0.0000006,
       "promptCachedTokens": 0.000000006,
-      "promptTextTokens": 0.0000003,
+      "promptTextTokens": 0.0000002,
     },
   },
-  "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8": {
+  "deepseek/deepseek-v4.1-flash:fireworks": {
     "cost": {
-      "completionTextTokens": 0.0000004431,
-      "promptCachedTokens": 0.000000004431,
-      "promptTextTokens": 0.0000001477,
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0.0000004431,
-      "promptCachedTokens": 0.000000004431,
-      "promptTextTokens": 0.0000001477,
+      "completionTextTokens": 0.0000012,
+      "promptCachedTokens": 0.000000006,
+      "promptTextTokens": 0.0000003,
     },
   },
   "elevenlabs/eleven-flash-v2.5": {

@@ -3315,6 +3315,16 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
         ),
         cost: {
             promptTextTokens: perMillion(2),
@@ -3359,6 +3369,16 @@ const TEXT_BASE_SERVICES = {
                 },
             },
             "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
         ),
         cost: {
             promptTextTokens: perMillion(2),

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-10-12**
 
 ## 1) Scope & Roles
 
@@ -62,6 +62,8 @@ We do not use third-party analytics or marketing cookies/SDKs.
 * **Service providers (sub-processors):** see [Service Providers](/subprocessors).
 
 **Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
+
+Gemma 4 26B A4B and 31B requests are processed by DeepInfra, or by OpenRouter and Novita AI when the configured fallback is used. See [Service Providers](/subprocessors) for the request data involved and remaining route-specific verification.
 
 * **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.

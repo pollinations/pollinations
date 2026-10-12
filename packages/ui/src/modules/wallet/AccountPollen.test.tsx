@@ -65,9 +65,9 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(mixed).toContain("Quest Pollen:");
-        expect(mixed).toContain("Paid Pollen:");
-        expect(mixed).not.toContain("No Pollen");
+        expect(mixed).toContain("Quest pollen:");
+        expect(mixed).toContain("Paid pollen:");
+        expect(mixed).not.toContain("No pollen");
         expect(mixed).not.toContain("/top-up");
         expect(mixed.indexOf("Quest")).toBeLessThan(mixed.indexOf("Paid"));
     });
@@ -79,15 +79,15 @@ describe("account Pollen", () => {
                 topUpHref="/top-up"
             />,
         );
-        expect(linked).toContain("No Pollen");
+        expect(linked).toContain("No pollen");
         expect(linked).toContain('href="/top-up"');
-        expect(linked).not.toContain("Quest Pollen:");
+        expect(linked).not.toContain("Quest pollen:");
         const menu = renderToStaticMarkup(
             <AccountPollen
                 source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
             />,
         );
-        expect(menu).toContain("No Pollen");
+        expect(menu).toContain("No pollen");
         expect(menu).not.toContain("<a ");
     });
 

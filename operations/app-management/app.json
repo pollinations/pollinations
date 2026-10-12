@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Pollinations NPC for Roblox",
+    "url": null,
+    "description": "Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith.",
+    "language": "en",
+    "category": "games",
+    "platform": "library",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-28",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/15669",
+    "approvedDate": "2026-10-12",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/13b2a571-e3a7-4043-a295-5dbe475bbc74"
+  },
+  {
+    "emoji": "🎮",
     "name": "Pollen Village - Roblox NPC dialogue",
     "url": null,
     "description": "Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage.",

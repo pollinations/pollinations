@@ -1,0 +1,36 @@
+{
+  "pr_number": 17139,
+  "title": "fix: update MIDI Journey 2 catalog name and screenshot",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17139",
+  "merged_at": "2026-10-12T02:57:39Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Corrected the existing app catalog entry to say MIDI Journey 2 and use the maintainer-selected Ableton screenshot. Updated the generated README listing; the original artwork remains in the MIDI Journey repository. The catalog image is a 1280×720 WebP.",
+    "keywords": [
+      "MIDI Journey 2",
+      "app catalog",
+      "Ableton",
+      "screenshot",
+      "README"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17139.jpg",
+    "prompt": "In a cozy pixel art music studio, Polli wears tiny headphones and hovers beside a retro monitor showing a chunky MIDI piano roll for MIDI Journey 2; a small code-plant grows beside the desk. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized, sharing the frame with the monitor, never oversized or dominating the image; strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-12T02:58:58.873342+00:00",
+  "area": "App catalog & showcase",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "72187a21dceb27a8e588c2eecd0a77e0311a8544",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

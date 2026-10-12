@@ -1,6 +1,7 @@
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
+import { BooleanQueryParamSchema } from "./text.ts";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
@@ -22,7 +23,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+            "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -32,7 +33,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.5-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 1,048,576 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+                "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()
@@ -120,7 +121,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
             description:
                 "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
-    transparent: z.coerce.boolean().optional().default(false).meta({
+    transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
             "Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`.",
     }),
@@ -139,11 +140,11 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
-    audio: z.coerce.boolean().optional().default(false).meta({
+    audio: BooleanQueryParamSchema.optional().meta({
         description:
-            "Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),
 });
 

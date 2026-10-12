@@ -737,8 +737,6 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
-            hiddenAt: null,
-            hiddenReason: null,
             bearerTokenCiphertext: await encryptSecret("sk_saved", secret),
             ...communityEndpointPrices({
                 promptTextPrice: 0.1,

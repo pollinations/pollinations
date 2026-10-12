@@ -1,18 +1,28 @@
 import { expiryDaysToExpiresIn } from "@shared/auth/authorize-config.ts";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { readError } from "../components/community-endpoints/types.ts";
 
 type Permissions = {
     allowedModels?: string[] | null;
     pollenBudget?: number | null;
     accountPermissions?: string[] | null;
+    questPollenOnly?: boolean;
 };
 
 type CreateKeyInput = {
     name: string;
     prefix: "sk" | "pk";
     expiryDays?: number | null;
-    metadata?: Record<string, unknown>;
+    description?: string;
+    redirectUris?: string[];
+    earningsEnabled?: boolean;
+    /** Set by the consent screen to bind the key to the app being authorized. */
+    consent?: {
+        requestedClientId?: string;
+        redirectUri?: string;
+        redirectOrigin?: string;
+        deviceUserCode?: string;
+    };
     permissions?: Permissions;
 };
 
@@ -27,27 +37,16 @@ type CreatedKey = {
 // Server-side creation keeps Better Auth as an implementation detail and lets
 // us validate Pollinations-specific fields before the key exists.
 export async function createKeyWithPermissions({
-    name,
     prefix,
     expiryDays,
-    metadata,
     permissions,
+    ...fields
 }: CreateKeyInput): Promise<CreatedKey> {
     const expiresIn = expiryDaysToExpiresIn(expiryDays);
-    const keyType: "publishable" | "secret" =
-        prefix === "pk" ? "publishable" : "secret";
-    const body = {
-        name,
-        type: keyType,
-        expiresIn,
-        metadata,
-        allowedModels: permissions?.allowedModels,
-        pollenBudget: permissions?.pollenBudget,
-        accountPermissions: permissions?.accountPermissions,
-    };
+    const type = prefix === "pk" ? "publishable" : "secret";
 
-    const response = await apiClient["api-keys"].$post({
-        json: body,
+    const response = await accountClient.keys.$post({
+        json: { ...fields, ...permissions, type, expiresIn },
     });
 
     if (!response.ok) {

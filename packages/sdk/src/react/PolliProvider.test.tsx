@@ -386,10 +386,11 @@ describe("PolliProvider", () => {
         ["?code=code&state=expected", null, "Missing PKCE verifier"],
         ["?error=access_denied&state=expected", "verifier", "access_denied"],
         ["?code=code&state=expected", "verifier", "Code expired"],
-    ])("exposes callback failure without claiming a connection: %s", async (query, verifier, expected) => {
+    ])("keeps the saved key when a re-login fails: %s", async (query, verifier, expected) => {
         stubWindow(`https://app.example/${query}`);
         vi.spyOn(console, "warn").mockImplementation(() => {});
         const storage = memoryStorage({
+            "polli:pk_test:token": "sk_stored",
             "polli:pk_test:oauth_state": "expected",
             ...(verifier ? { "polli:pk_test:oauth_verifier": verifier } : {}),
         });
@@ -416,12 +417,12 @@ describe("PolliProvider", () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
         });
         expect(auth.current?.error?.message).toBe(expected);
-        expect(auth.current?.isLoggedIn).toBe(false);
+        expect(auth.current?.apiKey).toBe("sk_stored");
         expect(auth.current?.isHydrated).toBe(true);
         expect(fetchMock).toHaveBeenCalledTimes(
             expected === "Code expired" ? 1 : 0,
         );
-        expect(storage.getItem("polli:pk_test:token")).toBeNull();
+        expect(storage.getItem("polli:pk_test:token")).toBe("sk_stored");
     });
 
     it.each([

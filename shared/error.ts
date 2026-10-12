@@ -164,7 +164,7 @@ export type ImageInputErrorCode =
  * `getErrorCode(status)`, and the published schema must say so.
  */
 const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
-    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"],
+    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE", "QUEST_POLLEN_ONLY"],
     400: [
         "content_blocked",
         "failed_to_download_image",
@@ -218,7 +218,8 @@ export function createErrorResponseSchema(
                 z.string(),
             ]),
             timestamp: z.string(),
-            details: errorDetailsSchema,
+            // Only sent when there are details, e.g. validation or upstream errors.
+            details: errorDetailsSchema.optional(),
             requestId: z.string().optional(),
         }),
     });

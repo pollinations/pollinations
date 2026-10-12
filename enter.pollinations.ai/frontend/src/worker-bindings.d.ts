@@ -37,7 +37,7 @@ interface __BaseEnv_CloudflareBindings {
 	GITHUB_APP_PRIVATE_KEY: string;
 	GEN_BASE_URL: "http://localhost:8788" | "https://gen.pollinations.ai" | "https://staging.gen.pollinations.ai" | "https://dev.gen.pollinations.ai";
 	STAGING_ALLOWED_GITHUB_IDS?: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-	STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai";
+	STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 	USAGE_DEBUG_USER_ID?: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
 }
 declare namespace Cloudflare {
@@ -126,7 +126,7 @@ declare namespace Cloudflare {
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		STAGING_ALLOWED_GITHUB_IDS: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
-		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai";
+		STAGING_ALLOWED_EMAILS: "elliot@pollinations.ai,x402-holding-staging-20260930@pollinations.invalid";
 		BETTER_AUTH_SECRET: string;
 		GITHUB_CLIENT_ID: string;
 		GITHUB_CLIENT_SECRET: string;

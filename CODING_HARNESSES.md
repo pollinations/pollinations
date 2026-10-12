@@ -2,7 +2,7 @@
 
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
-> **Available now:** Bloom CLI, Claude Code (through Claude Code Router), Codex (through Codex Router), DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
+> **Available now:** Bloom CLI, Claude Code, Codex (through Codex Router), DeepSeek Harness, Hermes Agent, OpenCode, OpenClaw, Pi, Prime Agent, and tgpt are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -28,7 +28,7 @@ Polli configures harnesses; it does not update their installations. Use the harn
 ```bash
 npm install -g @pollinations/cli@latest
 uv tool upgrade bloom-cli
-npm install -g @musistudio/claude-code-router@latest
+claude update
 # Codex Router: rerun its official installer/update flow
 npx @deepseek-ai/dsh@latest web
 hermes update
@@ -47,13 +47,13 @@ Polli defaults to `openai/gpt-6-sol` unless you pass `--model <id>`. Bloom is ke
 | Harness | Status | What is unique |
 | --- | --- | --- |
 | [Bloom CLI](https://github.com/Ilm-Alan/bloom-cli) | **Available now** — `polli harness bloom on` | Creates a dedicated key for Bloom's existing Pollinations integration. |
-| [Claude Code](https://claude.com/claude-code) + [Claude Code Router](https://github.com/musistudio/claude-code-router) | **Available now** — `polli harness claude-code on` | Adds a Pollinations provider and isolated `ccr`-scope Claude profile without replacing native Claude login/settings; performs a routed `pong` smoke and verifies dedicated-key usage. |
+| [Claude Code](https://claude.com/claude-code) | **Available now** — `polli harness claude-code on` | Writes a separate settings file for gen's Anthropic Messages API, leaving the native Claude login and settings alone; runs Claude Code itself for a `pong` smoke and verifies dedicated-key usage. |
 | [Codex](https://github.com/openai/codex) + [Codex Router](https://github.com/duolahypercho/codex-router) | **Available now** — `polli harness codex on` | Uses Codex Router's generic-provider/curation path, protected credential storage and compatibility probe; native Codex ChatGPT login is left untouched. |
 | [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) | **Available now** — `polli harness dsh on` | Adds the Pollinations provider, hosted Pollinations MCP, and Polli skill. Uses `openai/gpt-6-sol` by default. Its official launch uses `npx`, so no separate global DSH installation is required. |
 | [Hermes Agent](https://github.com/NousResearch/hermes-agent) | **Available now** — `polli harness hermes on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, discovering models from the live catalog. Install the hosted MCP servers with `polli mcp install hermes`. Defaults to `openai/gpt-6-sol`. |
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai/gpt-6-sol`. |
 | [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Adds the Pollinations provider, a dedicated key, and the Polli skill, pulling models from the live catalog. Defaults to `openai/gpt-6-sol`. |
-| [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `openai/gpt-6-sol`. |
+| [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Add hosted MCP servers with `polli mcp install pi --all` (Pi 0.99+). Defaults to `openai/gpt-6-sol`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
 | [tgpt](https://github.com/aandrew-me/tgpt) | **Available now** — `polli harness tgpt on` | Configures tgpt's existing Pollinations provider with a dedicated key and authenticated text model. |
 
@@ -67,22 +67,20 @@ bloom
 
 Bloom already uses Pollinations for its models. `on` creates a dedicated key and stores it in `~/.bloom/.env` (or `$BLOOM_HOME/.env`); `off` restores the previous file or removes only that key if the file changed later.
 
-## Claude Code through Claude Code Router
+## Claude Code
 
 ```bash
-npm install -g @musistudio/claude-code-router@latest
-ccr start
 polli harness claude-code on
+claude --settings ~/.pollinations/claude-code.json
 polli harness claude-code status
-ccr "Pollinations"
 polli harness claude-code off
 ```
 
-`on` requires both `claude` and Claude Code Router (CCR) `>=3.1.1`, and requires the CCR service to already be running. Missing prerequisites stop the command **before** Polli login or child-key creation. Polli uses CCR's authenticated management RPC rather than editing its live SQLite database. It adds one Pollinations provider and one isolated `scope: "ccr"` Claude profile, so native Claude login, global settings, providers, and other profiles are left alone. The provider secret lives only in CCR's own configuration.
+Claude Code talks to gen's Anthropic Messages API (`/v1/messages`) directly. `on` writes `~/.pollinations/claude-code.json`, a Claude Code settings file whose `env` sets `ANTHROPIC_BASE_URL`, the dedicated key as `ANTHROPIC_AUTH_TOKEN`, and the model as `ANTHROPIC_MODEL` and every model alias (`haiku`, `sonnet`, `opus`, `fable`), so background requests and subagents also use Pollinations. Claude Code reads the file only when launched with `--settings`; plain `claude` keeps your native login and `~/.claude` settings.
 
-Models come from Pollinations' live compatible model catalog; choose another with `--model <id>`. Before `on` succeeds, Polli sends a tiny one-word `pong` through CCR and confirms activity for the dedicated child key. `status` reports router/client/service/version/provider/profile readiness. `off` removes only Polli-owned provider/profile state, leaving CCR and unrelated configuration installed.
+Choose another model with `--model <id>`. Before `on` succeeds, Polli runs `claude -p --settings ~/.pollinations/claude-code.json` with a one-word `pong` prompt and confirms activity for the dedicated key; if that fails, the previous file is restored. `off` deletes only that file.
 
-If `status` says the router is installed but not ready, run `ccr start`. If CCR is too old, upgrade it with the npm command above. Polli refuses to overwrite a foreign Pollinations provider/profile.
+gen does not serve `/v1/messages/count_tokens`, so `/context` shows estimated counts. Claude Code warns that a Pollinations model id is not in its catalog and compacts at 200K tokens.
 
 ## Codex through Codex Router
 
@@ -158,7 +156,9 @@ polli harness pi status
 polli harness pi off
 ```
 
-`on` requires Pi to be installed with its official npm command: `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`. It registers the current compatible Pollinations model catalog in `~/.pi/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`. Pi does not include built-in MCP support.
+`on` requires Pi to be installed with its official npm command: `npm install -g --ignore-scripts @earendil-works/pi-coding-agent`. It registers the current compatible Pollinations model catalog in `~/.pi/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`. This setup works with Pi 1.0 and older versions without separate configuration formats.
+
+Pi 0.99+ includes native MCP. Run `polli mcp install pi --all` (or choose servers from `polli mcp list`) to configure the hosted servers in `~/.pi/agent/mcp.json`. Both commands honor `PI_CODING_AGENT_DIR`. Run `/reload` in Pi after installation. MCP setup checks the Pi version before creating a key; upgrade older installations with `npm install -g --ignore-scripts @earendil-works/pi-coding-agent@latest`. MCP has its own lifecycle: `polli mcp status pi` and `polli mcp remove pi`; `polli harness pi off` leaves it unchanged.
 
 ## Prime Agent
 

@@ -12,6 +12,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
+import { resolveKreaAspectRatio } from "./kreaModel.ts";
 
 type ReplicateFallbackModel =
     | "black-forest-labs/flux.1-kontext-pro:replicate"
@@ -45,17 +46,6 @@ const QWEN_RATIOS = [
     "2:3",
     "2:1",
     "1:2",
-] as const;
-
-const KREA_RATIOS = [
-    "1:1",
-    "4:3",
-    "3:2",
-    "16:9",
-    "2.35:1",
-    "4:5",
-    "2:3",
-    "9:16",
 ] as const;
 
 async function runReplicateImage(
@@ -115,11 +105,6 @@ export async function callReplicateFallbackImage(
 
     switch (model) {
         case "black-forest-labs/flux.2-pro:replicate": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Pro supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -139,11 +124,6 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "black-forest-labs/flux.2-max": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Max supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -207,11 +187,6 @@ export async function callReplicateFallbackImage(
                     message: "p-image-edit requires at least one input image",
                 });
             }
-            if (params.image.length > 5) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "p-image-edit supports at most 5 input images",
-                });
-            }
             buffer = await runReplicateImage(
                 "prunaai/p-image-edit",
                 {
@@ -234,7 +209,8 @@ export async function callReplicateFallbackImage(
                 "krea/krea-2-medium",
                 {
                     prompt,
-                    aspect_ratio: closestRatio(params, KREA_RATIOS),
+                    // Same resolution as the fal primary, which accepts the same ratios.
+                    aspect_ratio: resolveKreaAspectRatio(params),
                     seed: params.seed,
                 },
                 "Krea 2 Medium",

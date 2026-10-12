@@ -61,10 +61,26 @@ it("publishes each source, distinguishes pending from failed, and ignores an old
     expect(requests).toHaveLength(5);
 
     for (let i = 0; i < SOURCE_LABELS.length; i++) {
-        await reply(4 + i, i === 0 ? { stars: 456 } : { data: [] });
+        const body = i === 0 ? { stars: 456 } : { data: [] };
+        if (SOURCE_LABELS[i] === "Official apps") {
+            body.data = [
+                {
+                    week: "2026-09-21",
+                    officialApp_all: 7,
+                    officialApp_cli: 7,
+                    officialApp_play: 0,
+                },
+            ];
+        }
+        await reply(4 + i, body);
     }
     expect(state.loading).toBe(false);
     expect(state.done).toEqual(SOURCE_LABELS);
     expect(state.github.stars).toBe(456);
+    expect(state.weeklyData[0]).toMatchObject({
+        officialApp_all: 7,
+        officialApp_cli: 7,
+        officialApp_play: 0,
+    });
     expect(requests).toHaveLength(4 + SOURCE_LABELS.length);
 });

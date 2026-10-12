@@ -458,6 +458,16 @@ export function WalletIcon(props: IconProps) {
     );
 }
 
+/** A paper receipt: what a price includes. */
+export function ReceiptIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z" />
+            <path d="M9 8h6M9 12h6M9 16h3" />
+        </svg>
+    );
+}
+
 export function MoonIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

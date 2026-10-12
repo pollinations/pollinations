@@ -3,15 +3,17 @@ import {
     ContentHeader,
     ExternalLinkButton,
     InlineLink,
+    LiveDot,
     RocketIcon,
+    StatCard,
 } from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useRequestsLastHour } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { DevKit } from "../ui/home/DevKit";
 import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
-import { OnTheWay } from "../ui/home/OnTheWay";
-import { QuestsCard } from "../ui/home/QuestsCard";
 import { StartBuilding } from "../ui/home/StartBuilding";
 import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
@@ -25,14 +27,11 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <HeroScene
-                page="home"
-                contentClassName="sm:max-w-[90%] sm:pt-20 lg:max-w-[72%]"
-            >
+            <HeroScene page="home" wide>
                 <ContentHeader
-                    eyebrow="Open infrastructure for AI builders"
-                    title="Models. Agents. Tools. One wallet."
-                    subtitle="One API for official and community models, agents and hosted tools. Pay with Pollen credits, or let users bring theirs. Publish your own models and agents; earn from your models and apps."
+                    eyebrow="Open infrastructure for AI-natives"
+                    title="Models. Agents. Tools. One API."
+                    subtitle="The AI-native builder community. Generate images, video, speech, music and text. Build agents and apps."
                     variant="page"
                     className="[&_h1]:text-balance sm:[&_h1]:max-w-[18ch]"
                 />
@@ -56,17 +55,74 @@ function HelloPage() {
                         Quick start
                     </InlineLink>
                 </div>
+                <RequestsLastHour />
             </HeroScene>
 
             <DevKit className={postHeroSpacingClassName} />
-            {/* Dark panel is inset inside the cream sheet, not a sibling of
-                it — it reads as a band within the page, not a new section. */}
             <MoneyMoves />
-            <QuestsCard />
             <LiveApps />
-            <OnTheWay />
             <StartBuilding />
             <BottomScene page="home" />
         </>
     );
+}
+
+/**
+ * Measured traffic as the hero's proof point. The block keeps its height
+ * while loading or on failure, and the number counts up once when it lands;
+ * screen readers get the final value straight away.
+ */
+function RequestsLastHour() {
+    const { data: requests } = useRequestsLastHour();
+    const shown = useCountUp(requests);
+
+    return (
+        <div className="min-h-[3.875rem]">
+            {requests ? (
+                <StatCard
+                    variant="display"
+                    value={
+                        <>
+                            <span aria-hidden="true">
+                                {(shown ?? 0).toLocaleString()}
+                            </span>
+                            <span className="sr-only">
+                                {requests.toLocaleString()}
+                            </span>
+                        </>
+                    }
+                    label={
+                        <>
+                            requests in the last hour
+                            <LiveDot />
+                        </>
+                    }
+                />
+            ) : null}
+        </div>
+    );
+}
+
+/** Eases from 0 to `target` over ~1s; jumps straight there under reduced motion. */
+function useCountUp(target: number | null) {
+    const [value, setValue] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (target === null) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setValue(target);
+            return;
+        }
+        const start = performance.now();
+        let frame = 0;
+        const tick = (now: number) => {
+            const progress = Math.min(1, (now - start) / 1000);
+            setValue(Math.round(target * (1 - (1 - progress) ** 3)));
+            if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+    }, [target]);
+
+    return value;
 }

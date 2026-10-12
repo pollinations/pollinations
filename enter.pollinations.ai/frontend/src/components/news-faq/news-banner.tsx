@@ -1,273 +1,405 @@
-import { InlineLink, Surface } from "@pollinations/ui";
-import { type FC, type ReactNode, useEffect, useState } from "react";
+import {
+    Button,
+    Chip,
+    ExternalLinkButton,
+    Eyebrow,
+    GlobeIcon,
+    Heading,
+    IconTile,
+    type IconTileProps,
+    InlineLink,
+    KeyIcon,
+    Surface,
+    TerminalIcon,
+    Text,
+    WalletIcon,
+} from "@pollinations/ui";
+import { Markdown } from "@pollinations/ui/markdown";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
+import { type FC, type ReactNode, useState } from "react";
+import {
+    API_DOCS_URL,
+    type ApiNews,
+    apiDetails,
+    apiDocsAnchor,
+    type CardDetail,
+    cardDetails,
+    formatNewsDate,
+    type Highlight,
+    highlightLink,
+    type ModelNews,
+    type NewsIndex,
+    visibleModelNews,
+} from "./news-index.ts";
 
-const HIGHLIGHTS_RAW_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/highlights.md";
-export const HIGHLIGHTS_GITHUB_URL =
-    "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md";
+export const NEWS_MORE_URL =
+    "https://github.com/pollinations/pollinations#-latest-news";
 
-const DYNAMIC_NEWS_COUNT = 6;
+/** Rows shown at first and added per "Show older". */
+const PAGE_SIZE = 10;
 
-interface Highlight {
-    date?: string;
-    /** Overrides the formatted date label (e.g. "Starting Jun 2"); pinned items only. */
-    dateLabel?: string;
-    emoji: string;
+/** A launch or change pinned by hand; it shows until `until` (UTC day). */
+type Announcement = {
+    /** The day it shipped or takes effect. */
+    date: string;
+    until: string;
+    label: "New" | "Changing";
     title: string;
-    description: string;
-    /** Optional bullet list rendered under the description (pinned items only). */
-    details?: string[];
-}
+    text: string;
+    icon: IconTileProps["icon"];
+    cta: { label: string; href: string };
+};
 
 /**
- * Pinned news items that stay visible regardless of daily updates.
- * Edit this array to add/remove pinned announcements.
+ * Newest first. Cards share a row, so keep them even: a title of a few
+ * words, one sentence of about 80 characters and a two- or three-word button.
  */
-const PINNED_NEWS: Highlight[] = [
+const ANNOUNCEMENTS: Announcement[] = [
     {
-        date: "2026-09-26",
-        emoji: "📅",
-        title: "Upcoming model changes",
-        description:
-            "Nova Canvas and Nova Reel are retiring; MAI Image 2.5 Flash is moving to 2.6 Flash. Check the model IDs used by your apps.",
-        details: [
-            "September 30: amazon/nova-canvas-v1 and amazon/nova-reel-v1 will be removed, including their aliases. Requests will not automatically fall back to another model. Choose another image or video model before then.",
-            "October 1: MAI Image 2.5 Flash will leave the catalog as a separate model. Its existing ID, microsoft/mai-image-2.5-flash, will keep working but use MAI Image 2.6 Flash and 2.6 Flash pricing. Use microsoft/mai-image-2.6-flash for new integrations.",
-            "[Browse models](/models) for available options and current prices.",
-        ],
+        date: "2026-11-01",
+        until: "2026-11-15",
+        label: "Changing",
+        title: "Publishable keys",
+        text: "From Nov 1, pk_ keys only identify your app; users pay through Connect User Wallets.",
+        icon: KeyIcon,
+        cta: {
+            label: "Migrate your app",
+            href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        },
     },
     {
-        date: "2026-09-24",
-        emoji: "🔄",
-        title: "Model provider changes",
-        description:
-            "Some models moved to new providers. Model IDs are unchanged. [Browse models](/models).",
-        details: [
-            "Now Paid Pollen only: DeepSeek V4 Pro, DeepSeek V4 Flash Vision, Kimi K2.7 Code, GLM 5.2, Muse Glimmer 30B.",
-            "Price up: DeepSeek V4 Flash to $0.33/$0.99 per 1M tokens; GLM 5.2 and Kimi K2.7 Code about 5%.",
-            "Price down: DeepSeek V4 Pro and Muse Glimmer 30B.",
-            "Kimi K2.7 Code always reasons, so forcing a tool call returns an error.",
-        ],
+        date: "2026-10-10",
+        until: "2026-10-24",
+        label: "New",
+        title: "A new pollinations.ai",
+        text: "Redesigned: try models on Play, browse community apps and meet the builders.",
+        icon: GlobeIcon,
+        cta: {
+            label: "Visit the website",
+            href: "https://pollinations.ai",
+        },
     },
     {
-        date: "2026-09-11",
-        dateLabel: "Alpha",
-        emoji: "🧑‍💻",
-        title: "Code agents: run your own agent.ts",
-        description:
-            "Point a code agent at a public GitHub repository and Pollinations deploys and runs it as a model.",
-        details: [
-            "Write one agent.ts using the bundled Vercel AI SDK, Pollinations models, and MCP tools.",
-            "Calls are billed to whoever uses the agent, never to you.",
-            "Fork an [example repository](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example), then add it from [My Models](/my-models). [Read the guide](https://gen.pollinations.ai/docs#tag/publish-an-agent).",
-        ],
+        date: "2026-10-06",
+        until: "2026-10-20",
+        label: "New",
+        title: "Pay with crypto",
+        text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
+        icon: WalletIcon,
+        cta: { label: "Buy Pollen", href: "/pollen" },
     },
     {
-        date: "2026-09-11",
-        dateLabel: "Now live",
-        emoji: "🧩",
-        title: "Community model IDs get a clearer prefix",
-        description:
-            "Community models and agents are listed as community/username/model instead of username/model.",
-        details: [
-            "Both IDs keep working in generation requests. No changes to models, prices or providers.",
-            "Key permissions use the canonical IDs. Existing permissions were migrated automatically.",
-            "If your app matches saved IDs against the catalog, check aliases too.",
-        ],
-    },
-    {
-        date: "2026-08-15",
-        dateLabel: "Alpha",
-        emoji: "🤖",
-        title: "Build your own agents",
-        description:
-            "Create managed prompt agents and call them through the Pollinations API like any other model.",
-        details: [
-            "Choose a base model, add instructions, and optionally enable Pollinations tools.",
-            "Create an agent from [My Models](/my-models).",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Alpha",
-        emoji: "🧪",
-        title: "Community models alpha",
-        description:
-            "Community models are now available on Pollinations in alpha.",
-        details: [
-            "Try community-hosted models from the [Models tab](/models), with attractive pricing.",
-            "The catalog is early and will expand as more models are approved.",
-            "Want to deploy your own model? Access is allowlist-only for now; contact us in the [Discord community](https://discord.gg/pollinations-ai-885844321461485618).",
-        ],
+        date: "2026-10-02",
+        until: "2026-10-16",
+        label: "New",
+        title: "Sandboxes",
+        text: "Create E2B-compatible sandboxes with the API or polli sandbox, then connect over SSH.",
+        icon: TerminalIcon,
+        cta: {
+            label: "Read the docs",
+            href: "https://gen.pollinations.ai/docs#tag/sandboxes",
+        },
     },
 ];
 
-/** Render markdown links [text](url) as clickable <a> tags, preserving surrounding text. */
-function renderWithLinks(text: string): ReactNode[] {
-    const parts: ReactNode[] = [];
-    const matches = [...text.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
-    let lastIndex = 0;
-    for (const match of matches) {
-        const idx = match.index ?? 0;
-        const href = match[2];
-        if (idx > lastIndex) {
-            parts.push(text.slice(lastIndex, idx));
-        }
-        parts.push(
-            <InlineLink key={idx} href={href}>
-                {match[1]}
-            </InlineLink>,
-        );
-        lastIndex = idx + match[0].length;
+export const currentAnnouncements = (today: string) =>
+    ANNOUNCEMENTS.filter(({ until }) => until >= today);
+
+function changeChip(
+    { action, date, changes, status }: ModelNews,
+    today: string,
+) {
+    const upcoming = date > today;
+    if (status === "cancelled") {
+        return { label: "Not retiring", intent: "info" } as const;
     }
-    if (lastIndex < text.length) {
-        parts.push(text.slice(lastIndex));
+    // Same ID, different model behind it: check voices and behavior.
+    if (changes.model_id)
+        return { label: "Replaced", intent: "warning" } as const;
+    if (action === "NEW") return { label: "New", intent: "success" } as const;
+    if (action === "RETIRE") {
+        return {
+            label: upcoming ? "Retiring" : "Retired",
+            intent: "danger",
+        } as const;
     }
-    return parts;
+    return {
+        label: upcoming ? "Updating" : "Updated",
+        intent: "info",
+    } as const;
 }
 
-function parseHighlights(md: string): Highlight[] {
-    return md
-        .split("\n")
-        .filter((line) => line.startsWith("- **"))
-        .filter((line) => !line.includes("<!-- app -->"))
-        .map((line) => {
-            const dateMatch = line.match(/^- \*\*(\d{4}-\d{2}-\d{2})\*\*/);
-            const emojiTitleMatch = line.match(/– \*\*(\S+)\s+([^*]+)\*\*/);
-            const descStart = line.lastIndexOf("**") + 2;
-            const description = line.slice(descStart).trim();
-            return {
-                date: dateMatch?.[1] ?? "",
-                emoji: emojiTitleMatch?.[1] ?? "",
-                title: emojiTitleMatch?.[2]?.trim() ?? "",
-                description,
-            };
-        });
-}
-
-function formatNewsDate(date: string): string {
-    if (!date) return "";
-    const parsed = new Date(`${date}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime())) return date;
-    return parsed.toLocaleDateString("en-US", {
-        timeZone: "UTC",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-    });
-}
-
-/** Hand-curated, pinned announcements — one card per item. */
-export const Announcements: FC = () => {
-    return (
-        <div className="flex flex-col gap-3">
-            <CanonicalModelSlugAnnouncement />
-            {PINNED_NEWS.map((item) => (
-                <PinnedNews key={item.title} item={item} />
-            ))}
-        </div>
+/** Balance values show the wallet icon and its name; the rest is text. */
+const DetailValue: FC<{ label: string; value: string; muted?: boolean }> = ({
+    label,
+    value,
+    muted,
+}) => {
+    const tone = muted ? "text-theme-text-muted" : "text-theme-text-base";
+    return label === "Balance" ? (
+        <span className={`inline-flex items-baseline gap-1 ${tone}`}>
+            <WalletKindIcon
+                kind={value === "paid" ? "paid" : "tier"}
+                className={`self-center ${muted ? "opacity-50" : ""}`}
+            />
+            {value === "paid" ? "Paid" : "Quest"}
+        </span>
+    ) : (
+        <span className={tone}>{value}</span>
     );
 };
 
-const CanonicalModelSlugAnnouncement: FC = () => (
-    <Surface
-        id="canonical-model-slugs"
-        variant="card"
-        className="scroll-mt-4 break-words leading-relaxed [&_code]:break-all"
-    >
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-            API update
-        </div>
-        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-            <span aria-hidden="true" className="shrink-0">
-                🧪
-            </span>
-            <span>Model IDs are now standardized</span>
-        </div>
-        <p className="mt-1 text-sm text-ink-700">
-            Model IDs now follow <code>publisher/model</code>—for example,{" "}
-            <code>flux</code> → <code>black-forest-labs/flux.1-schnell</code>.
-            The model catalog uses the new IDs. Existing IDs remain supported as
-            aliases in API requests.
-        </p>
-        <InlineLink href="/models" className="mt-3 block w-fit text-sm">
-            Browse models and their aliases
-        </InlineLink>
-    </Surface>
-);
-
-export const NewsBanner: FC = () => {
-    const [highlights, setHighlights] = useState<Highlight[]>([]);
-
-    useEffect(() => {
-        fetch(HIGHLIGHTS_RAW_URL)
-            .then((res) => res.text())
-            .then((md) =>
-                setHighlights(parseHighlights(md).slice(0, DYNAMIC_NEWS_COUNT)),
-            )
-            .catch((err) => console.error("Failed to fetch highlights:", err));
-    }, []);
-
-    if (highlights.length === 0) return null;
-
-    return (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {highlights.map((item) => (
-                <DynamicNews key={`${item.date}-${item.title}`} item={item} />
-            ))}
-        </div>
-    );
+type ChangeItem = {
+    key: string;
+    date: string;
+    chip: { label: string; intent: "danger" | "info" | "success" | "warning" };
+    name: ReactNode;
+    /** Where the change lives now; none once it is gone. */
+    href?: string;
+    details: CardDetail[];
 };
 
-const PinnedNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="min-w-0 leading-relaxed">
-        {(item.dateLabel || item.date) && (
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
-                {item.dateLabel ??
-                    (item.date ? formatNewsDate(item.date) : null)}
-            </div>
-        )}
-        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0">
-                    {item.emoji}
-                </span>
+const modelChange = (news: ModelNews, today: string): ChangeItem => ({
+    key: news.id,
+    date: news.date,
+    chip: changeChip(news, today),
+    name: <strong>{news.title}</strong>,
+    href:
+        news.action === "RETIRE" &&
+        news.status !== "cancelled" &&
+        news.date <= today
+            ? undefined
+            : `/models?q=${encodeURIComponent(news.model_id)}`,
+    details: cardDetails(news),
+});
+
+const API_LABEL = {
+    ADD: "New",
+    CHANGE: "Changed",
+    REMOVE: "Removed",
+} as const;
+
+/** API rows name the endpoint in code style; breaking ones are red like retirements. */
+const apiChange = (news: ApiNews): ChangeItem => {
+    const [method, path] = news.endpoint.split(" ");
+    return {
+        key: news.id,
+        date: news.date,
+        chip: {
+            label: API_LABEL[news.action],
+            intent:
+                news.action === "ADD"
+                    ? "success"
+                    : news.breaking
+                      ? "danger"
+                      : "info",
+        },
+        name: (
+            <code className="font-mono text-xs">
+                <span className="font-semibold">{method}</span> {path}
+            </code>
+        ),
+        href:
+            news.action === "REMOVE"
+                ? undefined
+                : `${API_DOCS_URL}#${apiDocsAnchor(news)}`,
+        details: apiDetails(news),
+    };
+};
+
+const ChangeRow: FC<{ item: ChangeItem }> = ({ item }) => (
+    <li className="grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-1 border-t border-theme-text-strong/10 py-2 first:border-t-0 sm:grid-cols-[5.5rem_minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Chip
+            size="sm"
+            intent={item.chip.intent}
+            className="justify-self-start"
+        >
+            {item.chip.label}
+        </Chip>
+        <div className="min-w-0 text-theme-text-strong sm:border-l sm:border-theme-text-strong/15 sm:pl-3">
+            {item.href ? (
+                <InlineLink href={item.href}>{item.name}</InlineLink>
+            ) : (
+                item.name
             )}
-            <span>{item.title}</span>
         </div>
-        {item.description && (
-            <p className="mt-1 text-sm text-ink-700">
-                {renderWithLinks(item.description)}
-            </p>
-        )}
-        {item.details && item.details.length > 0 && (
-            <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm text-ink-700 marker:text-theme-text-soft">
-                {item.details.map((detail) => (
-                    <li key={detail}>{renderWithLinks(detail)}</li>
+        {item.details.length > 0 && (
+            <dl className="col-start-2 grid gap-y-0.5 text-xs leading-5 sm:col-start-3 sm:border-l sm:border-theme-text-strong/15 sm:pl-3">
+                {item.details.map(({ label, before, after }, i) => (
+                    <div
+                        key={`${label}:${before}`}
+                        className="flex max-w-full items-baseline gap-2"
+                    >
+                        <dt className="w-16 shrink-0 text-theme-text-muted">
+                            {item.details[i - 1]?.label === label ? "" : label}
+                        </dt>
+                        <dd className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                            {before && (
+                                <>
+                                    <DetailValue
+                                        label={label}
+                                        value={before}
+                                        muted
+                                    />
+                                    <span className="text-theme-text-muted">
+                                        →
+                                    </span>
+                                </>
+                            )}
+                            <DetailValue label={label} value={after} />
+                        </dd>
+                    </div>
                 ))}
-            </ul>
+            </dl>
         )}
-    </Surface>
+    </li>
 );
 
-const DynamicNews: FC<{ item: Highlight }> = ({ item }) => (
-    <Surface variant="card" className="text-sm leading-relaxed">
-        {item.date && (
-            <time
-                dateTime={item.date}
-                className="mb-1 block text-xs font-medium text-theme-text-muted"
-            >
-                {formatNewsDate(item.date)}
-            </time>
-        )}
-        <div className="flex items-start gap-2 font-semibold text-ink-900">
-            {item.emoji && (
-                <span aria-hidden="true" className="shrink-0 text-base">
-                    {item.emoji}
-                </span>
-            )}
-            <div className="min-w-0">{item.title}</div>
+/** Adds PAGE_SIZE more rows, back to the 30 days the index keeps. */
+const ShowOlder: FC<{ hidden: boolean; onClick: () => void }> = ({
+    hidden,
+    onClick,
+}) =>
+    hidden ? null : (
+        <div className="mt-4 flex justify-end">
+            <Button as="button" onClick={onClick}>
+                Show older
+            </Button>
         </div>
-        <p className="mt-1 text-ink-700">{renderWithLinks(item.description)}</p>
-    </Surface>
+    );
+
+/** A day card's header: upcoming days say so, since they lead the list. */
+const dayLabel = (date: string, today: string) =>
+    date === today
+        ? "Today"
+        : date > today
+          ? `Upcoming · ${formatNewsDate(date)}`
+          : formatNewsDate(date);
+
+/**
+ * Model and API changes from merged PRs (news/index.json), today −30 to +30
+ * days: upcoming ones first, then the latest past ones.
+ */
+export const Changelog: FC<{ index?: NewsIndex }> = ({ index }) => {
+    const [visiblePast, setVisiblePast] = useState(PAGE_SIZE);
+    if (!index) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    // Newest first, so upcoming changes lead.
+    const changes = [
+        ...visibleModelNews(index.models, today).map((news) =>
+            modelChange(news, today),
+        ),
+        ...visibleModelNews(index.api, today).map(apiChange),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+    // All upcoming changes, then the latest past ones, PAGE_SIZE at a time.
+    const upcoming = changes.filter(({ date }) => date > today);
+    const past = changes.filter(({ date }) => date <= today);
+    const shown = [...upcoming, ...past.slice(0, visiblePast)];
+    if (changes.length === 0) return null;
+    // One card per day.
+    const days: { date: string; items: ChangeItem[] }[] = [];
+    for (const item of shown) {
+        const day = days.at(-1);
+        if (day?.date === item.date) day.items.push(item);
+        else days.push({ date: item.date, items: [item] });
+    }
+    return (
+        <>
+            <div className="flex flex-col gap-3">
+                {days.map(({ date, items }) => (
+                    <Surface key={date} className="flex flex-col gap-1">
+                        <Eyebrow>{dayLabel(date, today)}</Eyebrow>
+                        <ul className="text-sm text-theme-text-base">
+                            {items.map((item) => (
+                                <ChangeRow key={item.key} item={item} />
+                            ))}
+                        </ul>
+                    </Surface>
+                ))}
+            </div>
+            <ShowOlder
+                hidden={visiblePast >= past.length}
+                onClick={() => setVisiblePast((count) => count + PAGE_SIZE)}
+            />
+        </>
+    );
+};
+
+/** Hand-picked launches and changes as tinted feature cards that share each row. */
+export const Announcements: FC<{ items: Announcement[] }> = ({ items }) => (
+    <ul className="flex flex-wrap gap-3">
+        {items.map((item) => (
+            <Surface
+                as="li"
+                key={item.title}
+                variant="card-themed"
+                className="flex grow basis-72 flex-col gap-3 p-5 sm:p-6"
+            >
+                <div className="flex items-center gap-3">
+                    <IconTile icon={item.icon} />
+                    <Eyebrow>
+                        {item.label} · {formatNewsDate(item.date)}
+                    </Eyebrow>
+                </div>
+                <Heading as="h3" size="subsection">
+                    {item.title}
+                </Heading>
+                <Text size="sm">{item.text}</Text>
+                <div className="mt-auto pt-1">
+                    <ExternalLinkButton href={item.cta.href}>
+                        {item.cta.label}
+                    </ExternalLinkButton>
+                </div>
+            </Surface>
+        ))}
+    </ul>
 );
+
+/** The daily highlights as a grid of cards, newest first. */
+export const Updates: FC<{ items: Highlight[] }> = ({ items }) => {
+    const [visible, setVisible] = useState(PAGE_SIZE);
+    const updates = items.slice(0, visible);
+    if (updates.length === 0) return null;
+    const today = new Date().toISOString().slice(0, 10);
+    return (
+        <>
+            <ul className="grid gap-3 sm:grid-cols-2">
+                {updates.map((item) => {
+                    const { text, link } = highlightLink(item.text);
+                    return (
+                        <Surface
+                            as="li"
+                            key={`${item.date}-${item.title}`}
+                            className="flex flex-col gap-2"
+                        >
+                            <Eyebrow>
+                                {item.date === today
+                                    ? "Today"
+                                    : formatNewsDate(item.date)}
+                            </Eyebrow>
+                            <strong className="text-sm text-theme-text-strong">
+                                {item.title}
+                            </strong>
+                            <Markdown className="text-xs leading-5 text-theme-text-base">
+                                {text}
+                            </Markdown>
+                            {link && (
+                                <InlineLink
+                                    href={link.href}
+                                    size="sm"
+                                    className="mt-auto self-start pt-1"
+                                >
+                                    {link.label}
+                                </InlineLink>
+                            )}
+                        </Surface>
+                    );
+                })}
+            </ul>
+            <ShowOlder
+                hidden={visible >= items.length}
+                onClick={() => setVisible((count) => count + PAGE_SIZE)}
+            />
+        </>
+    );
+};

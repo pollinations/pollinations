@@ -25,6 +25,7 @@ export async function generateCacheKey(
     url: URL,
     safeHeader?: string | null,
     requiredSafetyFeatures: readonly SafetyFeature[] = [],
+    modelCacheVersion?: string,
 ): Promise<string> {
     const normalizedUrl = new URL(url);
     const hasQuerySafe = normalizedUrl.searchParams.has("safe");
@@ -51,6 +52,9 @@ export async function generateCacheKey(
     }
     if (usesSafety || usesHeaderSafety || requiredSafetyFeatures.length > 0) {
         normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
+    }
+    if (modelCacheVersion) {
+        normalizedUrl.searchParams.append("__model_cache", modelCacheVersion);
     }
 
     const fullPath = normalizedUrl.pathname + normalizedUrl.search;

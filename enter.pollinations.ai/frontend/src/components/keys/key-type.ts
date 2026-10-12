@@ -28,22 +28,6 @@ export function isAppKey(apiKey: ApiKey): boolean {
     );
 }
 
-// Must mirror isPublishableKey, the predicate that decides whether the
-// settings fields render — if this gate is narrower than that one, edits
-// to a visible field get silently dropped.
-export function shouldPostKeyMetadata(
-    apiKey: ApiKey,
-    next: { redirectUris: string[]; earningsEnabled: boolean },
-): boolean {
-    if (!isPublishableKey(apiKey)) return false;
-    const initialUris = readRedirectUris(apiKey.metadata);
-    return (
-        next.redirectUris.length !== initialUris.length ||
-        next.redirectUris.some((v, i) => v !== initialUris[i]) ||
-        next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true)
-    );
-}
-
 /** Display context only; authorization remains enforced by the server. */
 export function getKeyAccessContext(
     apiKey: ApiKey,

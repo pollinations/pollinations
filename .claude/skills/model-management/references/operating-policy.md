@@ -57,4 +57,4 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Set `addedDate` once for a genuinely new public model; never refresh it for provider, price, or metadata updates.
 - Descriptions are user-facing for developers: state practical capabilities or differentiators, never repeat the model title, and never mention internal routing.
 - Every new publisher must map to an existing catalog SVG and render correctly.
-- One focused PR per model or tightly coupled family. Secret changes always use their own dedicated PR.
+- One focused PR per model or tightly coupled family.

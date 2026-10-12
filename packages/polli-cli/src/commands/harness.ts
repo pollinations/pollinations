@@ -6,6 +6,7 @@ import type {
     HarnessContext,
     HarnessOnOptions,
 } from "../harnesses/types.js";
+import { gen } from "../lib/api.js";
 import { fail, printInfo, printResult, printSuccess } from "../lib/output.js";
 
 const context = (): HarnessContext => ({ home: homedir(), env: process.env });
@@ -19,6 +20,10 @@ const OFF_MESSAGES = {
 const runOn = async (harness: HarnessAdapter, options: HarnessOnOptions) => {
     try {
         const result = await harness.on(context(), options);
+        await gen("/account/polli/harness-on", {
+            method: "POST",
+            body: { harness: harness.id },
+        }).catch(() => undefined);
         const model = result.model ? ` (model: ${result.model})` : "";
         printSuccess(`${harness.label} now uses Pollinations${model}.`);
         printInfo(harness.restartHint);

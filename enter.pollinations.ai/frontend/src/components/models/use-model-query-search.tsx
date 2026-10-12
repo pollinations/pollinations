@@ -101,7 +101,13 @@ export function useModelQuerySearch({
         models,
     );
     const options = draft
-        ? suggestions.map(getModelQueryDraftSuggestionValue)
+        ? suggestions.map((option) =>
+              getModelQueryDraftSuggestionValue(
+                  option,
+                  visibleSearch,
+                  draft.value,
+              ),
+          )
         : pickable
           ? [
                 ...suggestions,

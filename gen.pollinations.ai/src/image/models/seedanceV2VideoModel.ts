@@ -1,4 +1,3 @@
-import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
@@ -38,37 +37,11 @@ const MODELS = {
 } as const;
 type SeedanceV2ModelName = keyof typeof MODELS;
 
-// Pollinations currently exposes this validated subset. Adding 9:21 requires
-// a separate live probe before expanding the public contract.
-const SEEDANCE_V2_ASPECT_RATIOS = [
-    "16:9",
-    "4:3",
-    "1:1",
-    "3:4",
-    "9:16",
-    "21:9",
-    "adaptive",
-] as const;
-type SeedanceV2AspectRatio = (typeof SEEDANCE_V2_ASPECT_RATIOS)[number];
-
-export function resolveSeedanceV2AspectRatio(
-    requested: ImageParams["aspectRatio"] | undefined,
-    modelTitle = "Seedance 2.0",
-): SeedanceV2AspectRatio {
-    if (!requested) return "16:9";
-    if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
-        return requested as SeedanceV2AspectRatio;
-    }
-    throw UpstreamError.fromProvider(400, {
-        message: `aspectRatio "${requested}" is not supported by ${modelTitle}. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
-    });
-}
-
 interface SeedanceV2Input {
     prompt: string;
     duration: number;
     resolution: "480p" | "720p";
-    aspect_ratio: SeedanceV2AspectRatio;
+    aspect_ratio: string;
     generate_audio: boolean;
     seed?: number;
     image?: string;
@@ -102,11 +75,8 @@ export async function callSeedanceV2API(
         prompt,
         duration,
         resolution,
-        aspect_ratio: resolveSeedanceV2AspectRatio(
-            safeParams.aspectRatio,
-            definition.title,
-        ),
-        generate_audio: safeParams.audio,
+        aspect_ratio: safeParams.aspectRatio ?? "16:9",
+        generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;

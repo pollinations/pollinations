@@ -3,6 +3,7 @@ import * as api from "../lib/api";
 import { buildDailyComparison } from "../lib/dailyComparison";
 import { currentWeekStart } from "../lib/format";
 import { buildStarWeeks } from "../lib/githubStars";
+import { OFFICIAL_APP_VIEWS } from "../lib/officialApps";
 import { DEFAULT_WEEKS } from "../lib/range";
 
 const RETENTION_WEEKS = 8;
@@ -52,6 +53,11 @@ const SOURCES = [
         load: (weeks) => api.weekly("agent-mcp-usage", weeks),
     },
     {
+        label: "Official apps",
+        key: "officialApps",
+        load: (weeks) => api.weekly("official-apps", weeks),
+    },
+    {
         label: "User segments",
         key: "segments",
         load: (weeks) => api.weekly("user-segments", weeks),
@@ -72,11 +78,12 @@ const REQUIRED = {
     usage: "Tinybird (usage)",
     trafficTotals: "Tinybird (traffic totals)",
     agentMcpUsage: "Tinybird (agent/MCP usage)",
+    officialApps: "Tinybird (official apps)",
     revenue: "Revenue (Stripe)",
     dailyRevenue: "Revenue (daily Stripe)",
     dailyRegistrations: "Daily signups (D1 snapshot)",
-    // A failed GitHub call returns an empty list, which is indistinguishable
-    // from a week with no submissions unless we name it here.
+    // An empty list is indistinguishable from weeks with no submissions
+    // unless we name it here.
     appSubmissions: "GitHub (app submissions)",
 };
 
@@ -197,6 +204,11 @@ export function useKpiData(weeks = DEFAULT_WEEKS) {
                     revenue: row.revenue,
                     packPurchases: row.purchases,
                 }));
+                mergeInto(weekMap, raw.officialApps, (row) =>
+                    Object.fromEntries(
+                        OFFICIAL_APP_VIEWS.map(({ key }) => [key, row[key]]),
+                    ),
+                );
                 mergeInto(weekMap, raw.agentMcpUsage, (row) => ({
                     agentRequests: row.agent_requests,
                     agentUsers: row.agent_users,

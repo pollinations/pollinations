@@ -28,9 +28,9 @@ explicitly authorizes candidate spend. Never infer Promote authority from a
 scheduled run or an earlier approval.
 
 Never print credentials. Creating, adding, rotating, synchronizing, or
-deploying a secret requires the separate approval and dedicated secret PR
-defined in `AGENTS.md`. If Prepare lacks an approved, narrowly scoped canary
-credential path, report the blocker and stop before provisioning.
+deploying a secret requires the separate approval defined in `AGENTS.md`. If
+Prepare lacks an approved, narrowly scoped canary credential path, report the
+blocker and stop before provisioning.
 
 ## Invoke from scheduled tasks
 
@@ -202,8 +202,7 @@ repository PR:
 4. Update the shared model registry only if the configured provider or public
    model contract changed. Replacing one Vast instance with another normally
    does not require a registry edit.
-5. Keep secret mutations out of the operational PR.
-6. Run the repository checks, open a ready PR with measured evidence, and do
+5. Run the repository checks, open a ready PR with measured evidence, and do
    not merge it without explicit instruction.
 
 Do not create a documentation-only PR for a failed candidate unless it produced

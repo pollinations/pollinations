@@ -124,14 +124,15 @@ describe("docs routes", () => {
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
-                "/api/quests/check": {
-                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                "/api/account/quests/rewards": {
+                    get: { tags: ["👤 Account"] },
                 },
-                "/api/quests/rewards": {
-                    get: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                // Drifted enter tag literals must still land in gen's groups.
+                "/api/account/integrations": {
+                    get: { tags: ["🔗 Account"] },
                 },
-                "/api/quests/rewards/{rewardId}/claim": {
-                    post: { tags: ["✨ Quests"], security: [{ session: [] }] },
+                "/api/account/my-models/endpoint-agents": {
+                    post: { tags: ["Community Agents "] },
                 },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
@@ -197,6 +198,7 @@ describe("docs routes", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/account/profile"]).toBeDefined();
         expect(schema.paths["/account/quests"]).toBeDefined();
+        expect(schema.paths["/account/quests/rewards"]).toBeDefined();
         expect(schema.paths["/account/my-models"]).toBeDefined();
         expect(schema.paths["/account/my-models/{id}/update"]).toBeDefined();
         expect(schema.paths["/account/agents"]).toBeDefined();
@@ -205,19 +207,10 @@ describe("docs routes", () => {
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
+        expect(schema.paths["/api/account/quests/rewards"]).toBeUndefined();
         expect(schema.paths["/api/account/my-models"]).toBeUndefined();
         expect(schema.paths["/api/account/agents"]).toBeUndefined();
         expect(schema.paths["/api/quests/catalog"]).toBeUndefined();
-        expect(schema.paths["/quests/check"]).toBeUndefined();
-        expect(schema.paths["/quests/rewards"]).toBeUndefined();
-        expect(
-            schema.paths["/quests/rewards/{rewardId}/claim"],
-        ).toBeUndefined();
-        expect(schema.paths["/api/quests/check"]).toBeUndefined();
-        expect(schema.paths["/api/quests/rewards"]).toBeUndefined();
-        expect(
-            schema.paths["/api/quests/rewards/{rewardId}/claim"],
-        ).toBeUndefined();
         expect(schema.paths["/api/customer/portal"]).toBeUndefined();
         expect(schema.paths["/api-keys"]).toBeUndefined();
         expect(schema.paths["/generate/text/{prompt}"]).toBeUndefined();
@@ -334,6 +327,39 @@ describe("docs routes", () => {
         )?.get as Record<string, unknown> | undefined;
         expect(agentsGet?.description).toContain("account:keys");
         expect(agentsGet?.tags).toEqual(["Community Agents"]);
+
+        const integrationsGet = (
+            schema.paths["/account/integrations"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(integrationsGet?.tags).toEqual(["Account"]);
+
+        const endpointAgentsPost = (
+            schema.paths["/account/my-models/endpoint-agents"] as Record<
+                string,
+                unknown
+            >
+        )?.post as Record<string, unknown> | undefined;
+        expect(endpointAgentsPost?.tags).toEqual(["Community Agents"]);
+
+        // Every operation tag must be one gen declares, or Scalar shows an
+        // extra, undescribed sidebar group.
+        const declaredTags = new Set(schema.tags.map((tag) => tag.name));
+        const undeclared = Object.entries(schema.paths).flatMap(
+            ([path, pathItem]) =>
+                Object.entries(pathItem as Record<string, unknown>).flatMap(
+                    ([method, operation]) =>
+                        (
+                            ((operation as { tags?: unknown })?.tags ??
+                                []) as string[]
+                        )
+                            .filter((tag) => !declaredTags.has(tag))
+                            .map((tag) => `${method} ${path}: ${tag}`),
+                ),
+        );
+        expect(undeclared).toEqual([]);
+        expect(new Set(schema.tags.map((tag) => tag.name)).size).toBe(
+            schema.tags.length,
+        );
 
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
@@ -568,7 +594,7 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("### Pollinations MCP");
         expect(mcpBody).toContain("### FFmpeg MCP");
         expect(mcpBody).toContain("### Exa Search MCP");
-        expect(mcpBody).toContain("### Connected Apps MCP");
+        expect(mcpBody).toContain("### Connectors MCP");
         expect(mcpBody).toContain("### Computer MCP");
         expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
         expect(mcpBody).not.toContain("## Other built-in MCPs");

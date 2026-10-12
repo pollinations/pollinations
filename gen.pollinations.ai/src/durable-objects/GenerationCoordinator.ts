@@ -2,8 +2,8 @@ import { DurableObject } from "cloudflare:workers";
 import type {
     GenerationCacheIdentity,
     GenerationJob,
+    GenerationJobHead,
     GenerationOutcome,
-    GenerationRequestSnapshot,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
 
@@ -11,11 +11,41 @@ const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
 
-type PersistedJob = Omit<GenerationJob, "request"> & {
-    request: Omit<GenerationRequestSnapshot, "body">;
+type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
     started: boolean;
 };
+
+/** Splits a streamed request body into storage-sized values. */
+async function readBodyChunks(
+    body: ReadableStream<Uint8Array>,
+): Promise<Uint8Array[]> {
+    const chunks: Uint8Array[] = [];
+    let chunk = new Uint8Array(BODY_CHUNK_BYTES);
+    let filled = 0;
+    const reader = body.getReader();
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (let offset = 0; offset < value.byteLength; ) {
+            const size = Math.min(
+                value.byteLength - offset,
+                BODY_CHUNK_BYTES - filled,
+            );
+            chunk.set(value.subarray(offset, offset + size), filled);
+            filled += size;
+            offset += size;
+            if (filled === BODY_CHUNK_BYTES) {
+                chunks.push(chunk);
+                chunk = new Uint8Array(BODY_CHUNK_BYTES);
+                filled = 0;
+            }
+        }
+    }
+    // Copy the tail so storage does not serialize the unused buffer.
+    if (filled > 0) chunks.push(chunk.slice(0, filled));
+    return chunks;
+}
 
 function bodyChunkKeys(count: number): string[] {
     return Array.from(
@@ -47,7 +77,14 @@ function unavailable(message: string): GenerationOutcome {
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
 
-    async startAndWait(job: GenerationJob): Promise<GenerationOutcome> {
+    /**
+     * The body arrives as a stream: RPC streams it with flow control, while
+     * serialized arguments are capped at 32 MiB.
+     */
+    async startAndWait(
+        job: GenerationJobHead,
+        body?: ReadableStream<Uint8Array>,
+    ): Promise<GenerationOutcome> {
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
 
@@ -56,6 +93,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
 
             if (cachePresent) {
+                await body?.cancel();
                 if (stored) {
                     await this.clear(stored.bodyChunks, true);
                 }
@@ -63,8 +101,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 return;
             }
 
-            if (!stored) {
-                await this.persist(job);
+            if (stored) {
+                // Joiners share the owner's persisted body.
+                await body?.cancel();
+            } else {
+                await this.persist(job, body);
             }
 
             wait = new Promise<GenerationOutcome>((resolve) => {
@@ -127,29 +168,18 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         }
     }
 
-    private async persist(job: GenerationJob): Promise<void> {
-        const body = job.request.body;
-        const chunks: Uint8Array[] = [];
-        if (body !== undefined) {
-            const bytes = body;
-            for (let offset = 0; offset < bytes.byteLength; ) {
-                const end = Math.min(
-                    offset + BODY_CHUNK_BYTES,
-                    bytes.byteLength,
-                );
-                chunks.push(bytes.slice(offset, end));
-                offset = end;
-            }
-        }
-
-        const { body: _body, ...request } = job.request;
+    private async persist(
+        job: GenerationJobHead,
+        body?: ReadableStream<Uint8Array>,
+    ): Promise<void> {
+        const chunks = body ? await readBodyChunks(body) : [];
         const stored: PersistedJob = {
             cache: job.cache,
             auth: job.auth,
             requestId: job.requestId,
             balanceCheckResult: job.balanceCheckResult,
             apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request,
+            request: job.request,
             bodyChunks: chunks.length,
             started: false,
         };

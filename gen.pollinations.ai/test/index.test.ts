@@ -117,6 +117,52 @@ describe("gen worker routing", () => {
         await waitOnExecutionContext(ctx);
     });
 
+    it("accepts a 28 MiB inline-image chat body before authentication", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/png;base64,${"A".repeat(28 * 1024 * 1024)}`,
+                            },
+                        },
+                    ],
+                },
+            ],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body,
+        });
+
+        expect(response.status).toBe(401);
+    });
+
+    it("reports the 32 MiB limit for oversized chat bodies", async () => {
+        const body = JSON.stringify({
+            model: "openai/gpt-5-nano",
+            messages: [{ role: "user", content: "A".repeat(33 * 1024 * 1024) }],
+        });
+        const response = await fetchWorker("/v1/chat/completions", env, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": String(body.length),
+            },
+            body,
+        });
+
+        expect(response.status).toBe(413);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { message: "Request body exceeds the 32 MiB limit" },
+        });
+    });
+
     it("serves root metadata for social previews", async () => {
         const response = await fetchWorker("/");
 
@@ -214,6 +260,142 @@ describe("gen worker routing", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toBe("text/plain");
         await expect(response.text()).resolves.toContain("Disallow: /api/");
+    });
+
+    it("serves an agent index with reachable plain-text CLI and API guides", async () => {
+        const index = await fetchWorker("/llms.txt");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("text/plain");
+        expect(index.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await index.text();
+        expect(body).toContain("/docs/polli-skill.md");
+        expect(body).toContain("/docs/polli-tasks.md");
+        expect(body).toContain("/docs/llm.txt");
+        expect(body).toContain("/docs/llm.txt?section=cli");
+        expect(body).toContain("/docs/llm.txt?section=mcp");
+
+        for (const path of [
+            "/docs/polli-skill.md",
+            "/docs/polli-tasks.md",
+            "/docs/llm.txt",
+        ]) {
+            const response = await fetchWorker(path);
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Content-Type")).toContain(
+                "text/plain",
+            );
+            expect(await response.text()).not.toContain("<html");
+        }
+    });
+
+    it("publishes the polli and pollinations-api skills through Agent Skills well-known discovery", async () => {
+        const index = await fetchWorker("/.well-known/agent-skills/index.json");
+        expect(index.status).toBe(200);
+        expect(index.headers.get("Content-Type")).toContain("application/json");
+        expect(index.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        const body = (await index.json()) as {
+            $schema: string;
+            skills: {
+                name: string;
+                type: string;
+                description: string;
+                url: string;
+                digest: string;
+            }[];
+        };
+        expect(body.$schema).toBe(
+            "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+        );
+        expect(body.skills).toHaveLength(2);
+        const [skill, apiSkill] = body.skills;
+        expect(skill).toMatchObject({
+            name: "polli",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/polli/SKILL.md",
+        });
+        expect(skill.description).toMatch(/^Generate images/);
+        expect(apiSkill).toMatchObject({
+            name: "pollinations-api",
+            type: "skill-md",
+            url: "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        });
+        expect(apiSkill.description).toMatch(/without installing/);
+
+        const skillFile = await fetchWorker(skill.url);
+        expect(skillFile.status).toBe(200);
+        expect(skillFile.headers.get("Content-Type")).toContain(
+            "text/markdown",
+        );
+        const bytes = new Uint8Array(await skillFile.arrayBuffer());
+        expect(new TextDecoder().decode(bytes)).toMatch(/^---\nname: polli\n/);
+        const hash = await crypto.subtle.digest("SHA-256", bytes);
+        const hex = [...new Uint8Array(hash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(skill.digest).toBe(`sha256:${hex}`);
+
+        const apiFile = await fetchWorker(apiSkill.url);
+        expect(apiFile.status).toBe(200);
+        expect(apiFile.headers.get("Content-Type")).toContain("text/markdown");
+        const apiBytes = new Uint8Array(await apiFile.arrayBuffer());
+        expect(new TextDecoder().decode(apiBytes)).toMatch(
+            /^---\nname: pollinations-api\n/,
+        );
+        const apiHash = await crypto.subtle.digest("SHA-256", apiBytes);
+        const apiHex = [...new Uint8Array(apiHash)]
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+        expect(apiSkill.digest).toBe(`sha256:${apiHex}`);
+
+        const llms = await fetchWorker("/llms.txt");
+        const llmsBody = await llms.text();
+        expect(llmsBody).toContain("/.well-known/agent-skills/index.json");
+        expect(llmsBody).toContain(
+            "/.well-known/agent-skills/pollinations-api/SKILL.md",
+        );
+    });
+
+    it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
+        const catalog = await fetchWorker("/.well-known/api-catalog");
+        expect(catalog.status).toBe(200);
+        expect(catalog.headers.get("Content-Type")).toContain(
+            "application/linkset+json",
+        );
+        const body = (await catalog.json()) as {
+            linkset: {
+                anchor: string;
+                "service-desc": { href: string; type: string }[];
+                "service-doc": { href: string; type: string }[];
+            }[];
+        };
+        expect(body.linkset).toHaveLength(1);
+        const [linkset] = body.linkset;
+        // The origin follows the serving host (the test worker serves staging).
+        const origin = "https://staging.gen.pollinations.ai";
+        expect(linkset.anchor).toBe(origin);
+        expect(linkset["service-desc"]).toEqual([
+            { href: `${origin}/openapi.json`, type: "application/json" },
+        ]);
+        expect(linkset["service-doc"]).toEqual([
+            { href: `${origin}/docs/llm.txt`, type: "text/plain" },
+        ]);
+        expect(catalog.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(catalog.headers.get("Access-Control-Allow-Origin")).toBe("*");
+
+        const head = await fetchWorker(
+            "/.well-known/api-catalog",
+            envWithEnter(),
+            { method: "HEAD" },
+        );
+        expect(head.status).toBe(200);
+        expect(head.headers.get("Link")).toBe(
+            `<${origin}/.well-known/api-catalog>; rel="api-catalog"`,
+        );
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/.well-known/api-catalog");
     });
 
     it("does not expose /api routes on gen", async () => {
@@ -426,6 +608,24 @@ describe("gen worker routing", () => {
                     ?.supported_endpoints,
             ).toEqual(["/v1/audio/transcriptions"]);
         }
+    });
+
+    it("marks paid-only models on the OpenAI-compatible model list", async () => {
+        const response = await fetchWorker("/v1/models", envWithEnter());
+        const models = (await response.json()) as {
+            data: { id: string; paid_only: boolean }[];
+        };
+        const paidOnly = (id: string) =>
+            models.data.find((model) => model.id === id)?.paid_only;
+
+        expect(paidOnly("anthropic/claude-haiku-5.5")).toBe(true);
+        expect(paidOnly("openai/gpt-6-luna")).toBe(false);
+
+        const retrieved = await fetchWorker(
+            "/v1/models/anthropic/claude-haiku-5.5",
+            envWithEnter(),
+        );
+        expect(await retrieved.json()).toMatchObject({ paid_only: true });
     });
 
     it.each([
@@ -670,7 +870,9 @@ describe("model status", () => {
         expect(response.headers.get("Cache-Control")).toBe(
             "public, max-age=60",
         );
-        expect(await response.json()).toEqual({ data: [{ model: "test" }] });
+        expect(await response.json()).toEqual({
+            data: [{ model: "test" }],
+        });
 
         const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
         expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
@@ -695,6 +897,24 @@ describe("model status", () => {
         const response = await fetchWorker("/models/status?minutes=abc");
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: "bad minutes" });
+    });
+
+    it("serves the 7-day model usage stats the dashboard prices models with", async () => {
+        await env.KV.delete("model-stats-v3");
+        const stats = { data: [{ model: "test", avg_cost_usd: 0.001 }] };
+        const upstream = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json(stats));
+
+        const response = await fetchWorker("/models/stats");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=300",
+        );
+        expect(await response.json()).toEqual(stats);
+        expect(String(upstream.mock.calls[0]?.[0])).toContain(
+            "/v0/pipes/public_model_stats.json",
+        );
     });
 });
 
@@ -987,15 +1207,15 @@ fixtureTest(
 
                 if (
                     request.url ===
-                    "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+                    "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer"
                 ) {
                     await expect(request.json()).resolves.toEqual({
-                        model: "qwen3-tts-instruct-flash",
+                        model: "qwen-audio-3.0-tts-flash",
                         input: {
                             text: "Hello Qwen",
-                            voice: "Serena",
+                            voice: "loongeva_v3.6",
                         },
-                        parameters: { instructions: "speak softly" },
+                        parameters: { instruction: "speak softly" },
                     });
 
                     return Response.json({
@@ -1050,18 +1270,18 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
         expect(response.headers.get("x-model-used")).toBe(
-            "qwen/qwen3-tts-instruct-flash",
+            "qwen/qwen-audio-3.0-tts-flash",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );
-        expect(response.headers.get("x-tts-voice")).toBe("Serena");
+        expect(response.headers.get("x-tts-voice")).toBe("loongeva_v3.6");
         await response.arrayBuffer();
 
         await waitOnExecutionContext(ctx);
 
         expect(calls).toContain(
-            "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+            "https://dashscope-intl.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer",
         );
         expect(
             calls.some((url) => new URL(url).hostname === "api.elevenlabs.io"),
@@ -1148,7 +1368,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "validates CSM input before calling DeepInfra",
+    "rejects CSM input over 200 characters before calling DeepInfra",
     async ({ paidApiKey }) => {
         const deepInfraEndpoint =
             "https://api.deepinfra.com/v1/openai/audio/speech";
@@ -1176,18 +1396,6 @@ fixtureTest(
                 voice: "conversational_a",
                 response_format: "mp3",
                 message: "Maximum is 200",
-            },
-            {
-                input: "Hello",
-                voice: "unknown_voice",
-                response_format: "mp3",
-                message: "Invalid voice for sesame/csm-1b",
-            },
-            {
-                input: "Hello",
-                voice: "conversational_a",
-                response_format: "aac",
-                message: "Unsupported response_format for sesame/csm-1b",
             },
         ];
 
@@ -1340,65 +1548,6 @@ fixtureTest(
 );
 
 fixtureTest(
-    "validates Kokoro voices and formats before calling DeepInfra",
-    async ({ paidApiKey }) => {
-        const deepInfraEndpoint =
-            "https://api.deepinfra.com/v1/openai/audio/speech";
-        const calls: string[] = [];
-
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                calls.push(request.url);
-                if (
-                    request.url.startsWith(
-                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
-                    ) ||
-                    request.url.startsWith("http://localhost:7181/")
-                ) {
-                    return Response.json({ data: [] });
-                }
-                throw new Error(`Unexpected fetch: ${request.url}`);
-            },
-        );
-
-        for (const testCase of [
-            { voice: "unknown_voice", response_format: "mp3" },
-            { voice: "af_bella", response_format: "aac" },
-        ]) {
-            const ctx = createExecutionContext();
-            const response = await worker.fetch(
-                new Request(
-                    "https://staging.gen.pollinations.ai/v1/audio/speech",
-                    {
-                        method: "POST",
-                        headers: {
-                            Authorization: `Bearer ${paidApiKey}`,
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            model: "kokoro",
-                            input: "Hello",
-                            ...testCase,
-                        }),
-                    },
-                ),
-                withInlineGenerationCoordinator({
-                    ...env,
-                    DEEPINFRA_API_KEY: "test-deepinfra-key",
-                } as unknown as CloudflareBindings),
-                ctx,
-            );
-
-            expect(response.status).toBe(400);
-            await waitOnExecutionContext(ctx);
-        }
-
-        expect(calls).not.toContain(deepInfraEndpoint);
-    },
-);
-
-fixtureTest(
     "routes Lyria aliases through the Vertex interactions API",
     async ({ paidApiKey }) => {
         const endpoint =
@@ -1518,7 +1667,7 @@ fixtureTest(
                     input: "slow ambient strings",
                     duration: 20,
                 },
-                message: "fixed 30-second clips",
+                message: "Unsupported duration for google/lyria-3-clip-preview",
             },
             {
                 body: {

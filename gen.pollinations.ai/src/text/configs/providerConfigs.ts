@@ -80,6 +80,7 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
         ...overrides,
     });
 }
@@ -143,6 +144,17 @@ export function createOpenRouterModelConfig(
     };
 }
 
+export function createNovitaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        authKey: textEnvironmentValue("NOVITA_API_KEY"),
+        ...overrides,
+    };
+}
+
 export function createAlibabaModelConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -196,16 +208,6 @@ export function createPerplexityAgentConfig(
                 tool_choice: "required",
             },
         },
-    );
-}
-
-export function createOVHcloudModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        textEnvironmentValue("OVHCLOUD_API_KEY"),
-        overrides,
     );
 }
 

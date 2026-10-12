@@ -1,0 +1,99 @@
+DESCRIPTION >
+    One-week Polli task cohorts. start_date accepts YYYY-MM-DD and defaults
+    to the previous full week.
+    OpenCode starts when harness on completes; terminal image starts at a
+    direct CLI image attempt. First success must happen within 24 hours.
+    Seven-day return means another successful request on days 1-7 after
+    first success. Join by server user/key identity, never by device.
+    Requires polli_harness_on and polli_client_version instrumentation.
+
+TOKEN tinybird_read READ
+
+NODE task_starts
+SQL >
+    %
+    SELECT user_id, 'opencode' AS task, min(toDateTime(timestamp)) AS started_at
+    FROM product_event
+    WHERE environment = {{String(environment, 'production')}}
+        AND event = 'polli_harness_on'
+        AND harness = 'opencode'
+        AND user_id != ''
+        AND timestamp >= coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY)
+        AND timestamp < coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY) + INTERVAL 7 DAY
+    GROUP BY user_id
+    UNION ALL
+    SELECT user_id, 'terminal_image' AS task, min(start_time) AS started_at
+    FROM generation_event_v2
+    WHERE environment = {{String(environment, 'production')}}
+        AND polli_client_version != ''
+        AND event_type = 'generate.image'
+        AND user_id NOT IN ('', 'undefined')
+        AND start_time >= coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY)
+        AND start_time < coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY) + INTERVAL 7 DAY
+    GROUP BY user_id
+
+NODE successful_requests
+SQL >
+    %
+    SELECT
+        user_id,
+        if(api_key_name = 'polli-harness-opencode', 'opencode', 'terminal_image') AS task,
+        start_time
+    FROM generation_event_v2
+    WHERE environment = {{String(environment, 'production')}}
+        AND is_final = true
+        AND response_status >= 200 AND response_status < 300
+        AND user_id NOT IN ('', 'undefined')
+        AND (
+            api_key_name = 'polli-harness-opencode'
+            OR (polli_client_version != '' AND event_type = 'generate.image')
+        )
+        AND start_time >= coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY)
+        AND start_time < coalesce(toDateOrNull({{String(start_date, '')}}), toStartOfWeek(today(), 1) - INTERVAL 7 DAY) + INTERVAL 15 DAY
+
+NODE first_success
+SQL >
+    %
+    SELECT
+        a.user_id,
+        a.task,
+        a.started_at,
+        minIf(s.start_time, s.start_time >= a.started_at AND s.start_time < a.started_at + INTERVAL 1 DAY) AS first_success_at
+    FROM task_starts a
+    LEFT JOIN successful_requests s ON a.user_id = s.user_id AND a.task = s.task
+    GROUP BY a.user_id, a.task, a.started_at
+
+NODE user_outcomes
+SQL >
+    %
+    SELECT
+        f.user_id,
+        f.task,
+        f.started_at,
+        f.first_success_at,
+        countIf(
+            f.first_success_at > toDateTime(0)
+            AND s.start_time >= f.first_success_at + INTERVAL 1 DAY
+            AND s.start_time < f.first_success_at + INTERVAL 8 DAY
+        ) > 0 AS returned_7d
+    FROM first_success f
+    LEFT JOIN successful_requests s ON f.user_id = s.user_id AND f.task = s.task
+    GROUP BY f.user_id, f.task, f.started_at, f.first_success_at
+
+NODE funnel
+SQL >
+    %
+    SELECT
+        toDate(started_at) AS cohort_date,
+        task,
+        count() AS started_users,
+        countIf(first_success_at > toDateTime(0)) AS first_success_users,
+        countIf(first_success_at > toDateTime(0) AND first_success_at <= now() - INTERVAL 8 DAY) AS eligible_7d_users,
+        countIf(returned_7d AND first_success_at <= now() - INTERVAL 8 DAY) AS returned_7d_users,
+        round(100 * first_success_users / started_users, 1) AS first_success_pct,
+        if(eligible_7d_users = 0, 0, round(100 * returned_7d_users / eligible_7d_users, 1)) AS return_7d_pct
+    FROM user_outcomes
+    GROUP BY cohort_date, task
+    ORDER BY cohort_date, task
+
+TYPE endpoint

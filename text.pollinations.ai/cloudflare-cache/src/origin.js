@@ -297,8 +297,9 @@ function preflight(request) {
         Vary: "Access-Control-Request-Headers",
         "Access-Control-Expose-Headers": CORS["Access-Control-Expose-Headers"],
         "X-Powered-By": "Express",
-        // cors() sets it so that Safari does not wait for a body
-        "Content-Length": "0",
+        // cors() set Content-Length 0, but the 204 reached the cache code
+        // without it, which sent it down the branch that adds X-Cache and
+        // stores nothing
     };
     const requested = request.headers.get("access-control-request-headers");
     if (requested) headers["Access-Control-Allow-Headers"] = requested;

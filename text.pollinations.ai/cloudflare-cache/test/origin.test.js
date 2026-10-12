@@ -228,7 +228,7 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
     expect(await storedAt("/gen:400?stream=true")).toBeNull();
 });
 
-test("the VM's other routes: redirect, models, crossdomain, feed and preflight", async () => {
+test("the VM's other routes: redirect, models, crossdomain and feed", async () => {
     const root = await call("/");
     expect(root.response.status).toBe(301);
     // Every header of the live redirect, X-Powered-By: Express included
@@ -304,29 +304,52 @@ test("the VM's other routes: redirect, models, crossdomain, feed and preflight",
         error: "feed_removed",
         message: "The public feed has been retired.",
     });
+});
 
-    const preflight = await call("/anything", {
-        method: "OPTIONS",
-        headers: {
-            origin: "https://example.com",
-            "access-control-request-method": "POST",
-            "access-control-request-headers": "content-type,x-custom",
-        },
-    });
-    expect(preflight.response.status).toBe(204);
-    expect(preflight.response.headers.get("access-control-allow-origin")).toBe(
-        "*",
-    );
-    expect(preflight.response.headers.get("access-control-allow-methods")).toBe(
-        "GET,HEAD,PUT,PATCH,POST,DELETE",
-    );
-    expect(preflight.response.headers.get("access-control-allow-headers")).toBe(
-        "content-type,x-custom",
-    );
-    // cors() set it for Safari
-    expect(preflight.response.headers.get("content-length")).toBe("0");
-    // Preflights take the cache path and its split, as before
-    expect(preflight.response.headers.get("x-legacy-path")).toBe("worker");
+test("a preflight gets the live 204: cors() headers plus the cache code's, and nothing is stored", async () => {
+    // The live captures of 2026-10-12, without the edge's headers
+    const live = {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-expose-headers":
+            "Payment-Required, Payment-Response, Link, X-Pollinations-Logo, X-Powered-By",
+        link: '<https://pollinations.ai>; rel="service"',
+        vary: "Access-Control-Request-Headers",
+        "x-cache": "MISS",
+        "x-cache-key": expect.stringMatching(/^[0-9a-f]{64}$/),
+        "x-legacy-path": "worker",
+        "x-pollinations-logo":
+            "https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.svg",
+        "x-powered-by": "Pollinations.AI",
+    };
+    for (const [path, requested, allowed] of [
+        ["/preflight%20reqh", "content-type,x-foo", "content-type,x-foo"],
+        // The cache code's default when none are requested
+        [
+            "/preflight%20noreqh",
+            null,
+            "Content-Type, X-Turnstile-Token, Payment-Signature, X-PAYMENT",
+        ],
+    ]) {
+        const { response, text } = await call(path, {
+            method: "OPTIONS",
+            headers: {
+                origin: "https://example.com",
+                "access-control-request-method": "POST",
+                ...(requested && {
+                    "access-control-request-headers": requested,
+                }),
+            },
+        });
+
+        expect(response.status, path).toBe(204);
+        expect(text, path).toBe("");
+        expect(Object.fromEntries(response.headers), path).toEqual({
+            ...live,
+            "access-control-allow-headers": allowed,
+        });
+        expect(await storedAt(path, "OPTIONS"), path).toBeNull();
+    }
 });
 
 /** Express's finalhandler page, as the VM sent it without its stack lines */

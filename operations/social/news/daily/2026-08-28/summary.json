@@ -80,7 +80,6 @@
       "emoji": "✨",
       "title": "Pixels enter the forge",
       "text": "Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge)",
-      "app": true,
       "kind": "app"
     }
   ]

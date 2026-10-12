@@ -91,28 +91,24 @@
       "emoji": "🧩",
       "title": "Prompt Your Own Puzzles",
       "text": "PolliCross uses our image API to generate playable Picross/Nonogram levels from whatever text prompt you can think of. [Try it](https://zqigolden.github.io/pollicross/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "📖",
       "title": "Inpainted Storybooks",
       "text": "Storiva is a clever Android app that uses AI inpainting to seamlessly put a child's face into custom-generated story illustrations. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.storiva)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🌍",
       "title": "World Weaver",
       "text": "A tool that orchestrates text, image, and video models through our unified API to generate entire environments at once. [View repo](https://github.com/MrMegnis/world-generator)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🎵",
       "title": "Endless Audio",
       "text": "Generative Soundscape turns text prompts into continuous, never-ending music streams. [Try it](https://generative-soundscape.vercel.app/)",
-      "app": true,
       "kind": "app"
     }
   ]

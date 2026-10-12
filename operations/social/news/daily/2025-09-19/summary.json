@@ -30,7 +30,6 @@
       "emoji": "🎨",
       "title": "StoryWeaver AI",
       "text": "Create real-time comic book panels and storyboards. [Try it](https://storyweaver-ai-umber.vercel.app/)",
-      "app": true,
       "kind": "app"
     },
     {

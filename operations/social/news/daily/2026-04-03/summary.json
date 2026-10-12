@@ -104,14 +104,12 @@
       "emoji": "📱",
       "title": "Genie AI",
       "text": "A massive new community app featuring live web search, document analysis, and multimodal generation just dropped in the showcase. [Try it](https://cantalopapps.com/genie-ai)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🤖",
       "title": "Discord bot family",
       "text": "We added a functional multi-model bot framework to the apps directory, complete with per-channel routing. Deploy your own AI staff. [View repos](https://github.com/pollinations/pollinations)",
-      "app": true,
       "kind": "app"
     }
   ]

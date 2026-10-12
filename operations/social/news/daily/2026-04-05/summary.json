@@ -42,7 +42,6 @@
       "emoji": "✨",
       "title": "URV AI Chat",
       "text": "A new community app just dropped in the showcase, featuring diverse LLM access, character creation, and image generation. [Try it](https://urv-ai.vercel.app)",
-      "app": true,
       "kind": "app"
     },
     {

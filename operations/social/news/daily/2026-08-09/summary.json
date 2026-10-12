@@ -37,7 +37,6 @@
       "emoji": "🎨",
       "title": "Stoicky joins the app garden",
       "text": "An AI video-automation tool for faceless creators, built with Pollinations image and text inference. [Try it](https://stoicky.vercel.app)",
-      "app": true,
       "kind": "app"
     },
     {

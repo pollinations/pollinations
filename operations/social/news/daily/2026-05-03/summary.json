@@ -51,21 +51,18 @@
       "emoji": "🎨",
       "title": "Infinite Canvas",
       "text": "Lkalma is an AI-powered collaborative whiteboard with offline-first sketching tools. [Try it](https://lkal.ma)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✍️",
       "title": "Storyframe Studio",
       "text": "An open-source AI creative workspace powered by the Pollinations API for your text and image workflows. [Try it](https://storyframe-studio.web.app)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🎛️",
       "title": "AIGC Control Console",
       "text": "A new web-based dashboard for managing your generative AI workflows. [Try it](https://jfliu3265.github.io/pollinations-aigc-public/)",
-      "app": true,
       "kind": "app"
     }
   ]

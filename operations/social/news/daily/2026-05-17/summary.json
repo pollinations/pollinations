@@ -191,14 +191,12 @@
       "emoji": "🎲",
       "title": "Dynamic roleplay backgrounds",
       "text": "A clever new community integration detects location changes in your SillyTavern chats and automatically generates the environment visuals in the background. [View repo](https://github.com/ZapoVerde/SillyTavern-Localyze)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✨",
       "title": "Prompt Evolution Engine",
       "text": "Stop guessing what the image model wants. This community tool runs your basic ideas through a 5-step interactive refinement process to spit out highly detailed, cinematic prompts. [Try it](https://erbharatmalhotra.github.io/Prompt-Evolution-Engine/)",
-      "app": true,
       "kind": "app"
     }
   ]

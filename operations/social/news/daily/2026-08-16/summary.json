@@ -84,7 +84,6 @@
       "emoji": "📱",
       "title": "NeuralCanvas on Android",
       "text": "A native Kotlin/Jetpack Compose app turns text prompts into images with the Pollinations image API. [Try it](https://play.google.com/store/apps/details?id=com.proApps.aiimagegenerator)",
-      "app": true,
       "kind": "app"
     }
   ]

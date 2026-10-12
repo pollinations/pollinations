@@ -29,7 +29,6 @@
       "emoji": "🎮",
       "title": "Neon Runner",
       "text": "Play a real-time AI-generated infinite runner game with a 90s retro-anime aesthetic, fresh in the community showcase. [Try it](https://neon-runnerai.netlify.app/)",
-      "app": true,
       "kind": "app"
     }
   ]

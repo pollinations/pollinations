@@ -38,14 +38,12 @@
       "emoji": "🧠",
       "title": "Flashlearn",
       "text": "Turn your documents into true/false flashcards and AI audio lessons. Because reading is hard. [Try it](http://flashlearn.asquareportal.com/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Ciel AI",
       "text": "A full-featured, mobile-first AI assistant powered entirely by our API. Good inspiration for your own mobile builds. [Try it](https://ciel-ai-v1.netlify.app)",
-      "app": true,
       "kind": "app"
     }
   ]

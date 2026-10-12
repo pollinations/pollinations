@@ -56,7 +56,6 @@
       "prs": [
         14669
       ],
-      "app": true,
       "kind": "app"
     },
     {
@@ -66,7 +65,6 @@
       "prs": [
         14694
       ],
-      "app": true,
       "kind": "app"
     },
     {
@@ -85,7 +83,6 @@
       "prs": [
         14677
       ],
-      "app": true,
       "kind": "app"
     }
   ]

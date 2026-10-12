@@ -82,35 +82,30 @@
       "emoji": "🎨",
       "title": "Laying down the tiles",
       "text": "Generate seamless repeating textures for games and backgrounds using Flux Schnell. [Try it](https://tiletile.netlify.app/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "📸",
       "title": "Welcome to the Studio",
       "text": "A lightweight, open-source web UI for AI image generation powered by the Pollinations API. [Try it](https://image-ai.testes.eu.org)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🔗",
       "title": "Picture perfect previews",
       "text": "A dedicated tool to generate perfectly sized Open Graph preview cards for social media. [Try it](https://ogp-maker-teal.vercel.app/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "📱",
       "title": "Shorts on autopilot",
       "text": "Automatically generate and publish YouTube Shorts directly from news URLs. [View repo](https://github.com/oguzgokyar/Video_Kur)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✨",
       "title": "Fresh in the greenhouse",
       "text": "Easy AI-powered photo editing directly from the browser. [Try it](https://vision.scripted.my.id/)",
-      "app": true,
       "kind": "app"
     }
   ]

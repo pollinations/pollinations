@@ -17,7 +17,6 @@
       "emoji": "🎮",
       "title": "Roblox Integration",
       "text": "Tomdacat brings Pollinations to Roblox creators with an OpenAI-compatible API powering 40+ models. [Try it](https://ai.tomdacat.com)",
-      "app": true,
       "kind": "app"
     }
   ]

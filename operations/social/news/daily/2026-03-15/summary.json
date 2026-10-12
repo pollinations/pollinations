@@ -59,14 +59,12 @@
       "emoji": "🎬",
       "title": "AI City Diorama Generator",
       "text": "New in the showcase: a fully automated n8n pipeline that hallucinates cinematic miniature cities and publishes them straight to YouTube Shorts. [Try it](https://www.youtube.com/@WhatIF-KA/shorts)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "📚",
       "title": "LoreLoom Storybooks",
       "text": "Also new in the community showcase: an interactive, narrated AI storybook generator for kids. [Try it](https://loreloom.sprinthon.com)",
-      "app": true,
       "kind": "app"
     }
   ]

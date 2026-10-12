@@ -76,7 +76,6 @@
       "emoji": "📱",
       "title": "A whisper joins the hive",
       "text": "Meet Whisper, an Android overlay that sends screen and audio context to Pollinations models without making you leave the app you are using. [Try it](https://play.google.com/store/apps/details?id=com.leiver.whisper_android)",
-      "app": true,
       "kind": "app"
     }
   ]

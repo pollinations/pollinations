@@ -54,7 +54,6 @@
       "emoji": "🚀",
       "title": "Siriusly Fast Elevators",
       "text": "The Sirius Cybernetics Elevator Challenge app now defaults to Mistral, dropping response times from 10s to 1.2s. Even the API errors are now delivered in-character. [Try it](https://pollinations.ai)",
-      "app": true,
       "kind": "app"
     },
     {

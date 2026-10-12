@@ -90,7 +90,6 @@
       "emoji": "🌟",
       "title": "Pollinations Studio",
       "text": "puts image, text, audio, and video generation in one browser workspace, using your own Pollinations API key. [Try it](https://sankezhiyyds.github.io/pollinations-app)",
-      "app": true,
       "kind": "app"
     }
   ]

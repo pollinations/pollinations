@@ -29,7 +29,6 @@
       "emoji": "🎨",
       "title": "IMADreamer joins the garden",
       "text": "A free, Pollinations-powered image generator for turning prompts into pixels. [Try it](https://fastnow.github.io/imadreamer)",
-      "app": true,
       "kind": "app"
     },
     {

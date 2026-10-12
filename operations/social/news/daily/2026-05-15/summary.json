@@ -93,7 +93,6 @@
       "emoji": "🎨",
       "title": "PromptArt Telegram Bot",
       "text": "A new community bot for generating styled images without wrestling with prompts. [Try it](https://t.me/promptart_ai_bot)",
-      "app": true,
       "kind": "app"
     }
   ]

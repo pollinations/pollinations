@@ -38,21 +38,18 @@
       "emoji": "🍎",
       "title": "VeroClass AI Teacher Hub",
       "text": "AI-powered tools for educators to streamline lesson planning and classroom management. [Try it](https://teachers.veroclass.org)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🏷️",
       "title": "Metadatagenerator",
       "text": "A new community tool for generating metadata and prompts for microstock marketplaces. [Try it](https://metadatagenerator.online/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✈️",
       "title": "TelegramChannelAI",
       "text": "Automate your Telegram channel management with this new community-built content generation pipeline. [View repo](https://github.com/rrs1979/TelegramChannelAI)",
-      "app": true,
       "kind": "app"
     }
   ]

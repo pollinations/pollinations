@@ -56,14 +56,12 @@
       "emoji": "🧪",
       "title": "AI Models Laboratory",
       "text": "A new Next.js/Three.js playground for real-time generative creation just dropped in the community showcase. [Try it](https://iamge-lab-website.vercel.app/)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✍️",
       "title": "Scene2Text",
       "text": "A picture is worth a thousand tokens. Turn scenes into text with this new community-built app. [Try it](https://scene2text.static.jp/)",
-      "app": true,
       "kind": "app"
     }
   ]

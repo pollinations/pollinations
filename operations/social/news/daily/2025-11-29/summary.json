@@ -48,7 +48,6 @@
       "emoji": "📱",
       "title": "PolliPalmTop App",
       "text": "A new Android app featuring AI chat, web search, and image generation. [Try it](https://aiworld.institute/server/pollipalmtopv1.apk)",
-      "app": true,
       "kind": "app"
     }
   ]

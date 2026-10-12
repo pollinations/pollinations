@@ -77,7 +77,6 @@
       "emoji": "🎨",
       "title": "New Creative Apps",
       "text": "Launched three new AI tools: Virtual Makeup Studio, Packaging Designer, and Map-to-3D visualizer. [View repos](https://github.com/pollinations/pollinations/tree/main/apps)",
-      "app": true,
       "kind": "app"
     },
     {
@@ -94,7 +93,6 @@
       "emoji": "🎮",
       "title": "Devil Summoner",
       "text": "A new procedural text RPG with combat and demon recruitment. [Play it](https://gamedemo-a65.pages.dev/)",
-      "app": true,
       "kind": "app"
     }
   ]

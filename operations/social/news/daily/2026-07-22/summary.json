@@ -84,14 +84,12 @@
       "emoji": "🎨",
       "title": "Anime Legends Generator",
       "text": "Make anime-inspired legendary characters from a prompt. [Try it](https://anime.caasexpresss.com)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "✨",
       "title": "Arika",
       "text": "A community-built conversational AI for chats with slightly less robot energy. [Try it](https://arika.hizumi.in)",
-      "app": true,
       "kind": "app"
     }
   ]

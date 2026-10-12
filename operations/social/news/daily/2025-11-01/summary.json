@@ -34,14 +34,12 @@
       "emoji": "📱",
       "title": "ReImagine Mobile App",
       "text": "A new open-source React Native application for transforming images on the go. [Try it](https://play.google.com/store/apps/details?id=com.ismafly.reimagine)",
-      "app": true,
       "kind": "app"
     },
     {
       "emoji": "🎨",
       "title": "Opposite Prompt Generator",
       "text": "A creative tool that generates the semantic opposite of your image prompts. [Try it](https://opposite-prompt-generator.pollinations.ai)",
-      "app": true,
       "kind": "app"
     },
     {

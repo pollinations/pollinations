@@ -82,6 +82,8 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
     );

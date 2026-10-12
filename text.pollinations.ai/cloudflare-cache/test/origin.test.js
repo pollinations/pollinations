@@ -424,12 +424,12 @@ test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its
         await hub.publish(event);
         expect(await readEvent()).toBe(event.length);
     }
-    // The stalled listener's stream ends in an error once it is cut off
-    await expect(
-        (async () => {
-            while (!(await stalled.read()).done);
-        })(),
-    ).rejects.toThrow();
+    // The stalled listener's stream ends after the four events queued for it
+    let stalledBytes = 0;
+    for (let read; !(read = await stalled.read()).done; ) {
+        stalledBytes += read.value.byteLength;
+    }
+    expect(stalledBytes).toBe(4 * event.length);
     const count = () =>
         runInDurableObject(hub, (feedHub) => feedHub.writers.size);
     expect(await count()).toBe(1);

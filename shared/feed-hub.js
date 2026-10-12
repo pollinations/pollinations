@@ -1,14 +1,15 @@
 import { DurableObject } from "cloudflare:workers";
 
 const encoder = new TextEncoder();
-// Unsent bytes after which a listener counts as stalled: the VM buffered
-// without limit, but an object has 128 MB for all its listeners
+// Unsent bytes after which a listener counts as stalled and gets no more
+// events: the VM buffered without limit, but an object has 128 MB for all its
+// listeners
 export const MAX_BACKLOG_BYTES = 1_000_000;
 
 /**
  * The public /feed of one legacy API: every connected listener gets each event
  * published while it stays connected, as the VM's in-memory listener list did,
- * unless more than MAX_BACKLOG_BYTES wait unsent.
+ * until more than MAX_BACKLOG_BYTES wait unsent.
  * One object per API; nothing is stored, so a restart drops the listeners as a
  * VM restart did.
  */
@@ -32,12 +33,12 @@ export class FeedHub extends DurableObject {
     publish(line) {
         const bytes = encoder.encode(line);
         for (const writer of this.writers) {
-            // A stalled listener is cut off and may reconnect
+            // A stalled listener's stream ends after what it already has, so
+            // it may reconnect. Ending it with an error would drop that
+            // backlog sooner, but leaves rejections in the runtime's own pipe.
             if (writer.desiredSize < 0) {
                 this.writers.delete(writer);
-                writer
-                    .abort(new Error("feed listener stalled"))
-                    .catch(() => {});
+                writer.close().catch(() => {});
                 continue;
             }
             writer.write(bytes).catch(() => this.writers.delete(writer));

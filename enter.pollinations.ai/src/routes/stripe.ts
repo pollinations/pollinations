@@ -16,7 +16,10 @@ import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { getCohortFromCountry } from "../utils/currency-router.ts";
+import {
+    getCohortFromCountry,
+    usesLocalCurrency,
+} from "../utils/currency-router.ts";
 import {
     captureFromRequest,
     referringSource,
@@ -342,7 +345,8 @@ async function createPackCheckoutSession(
 
     // Resolve cohort from buyer IP for analytics. Checkout stays USD-native
     // and does not call FX at runtime.
-    const cohort = getCohortFromCountry(c.req.header("cf-ipcountry"));
+    const country = c.req.header("cf-ipcountry");
+    const cohort = getCohortFromCountry(country);
     // Fail closed if the checkout PMC env var is missing. The alternative
     // (omit payment_method_configuration → Stripe falls back to account
     // default PMC) would hide a misconfigured deploy.
@@ -414,7 +418,9 @@ async function createPackCheckoutSession(
                     quantity: 1,
                 },
             ],
-            adaptive_pricing: { enabled: !cryptoCheckout },
+            adaptive_pricing: {
+                enabled: !cryptoCheckout && usesLocalCurrency(country),
+            },
             ...(requestThreeDSecure &&
                 !cryptoCheckout && {
                     payment_method_options: {

@@ -699,6 +699,28 @@ test("cohort MO spoof regression: cf-ipcountry=MO → USD default (NOT APAC_ALIP
     expect(body?.["metadata[cohort]"]).toBe("USD");
 });
 
+test("checkout from Indonesia stays in USD so PayPal shows", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const response = await SELF.fetch(`${base}/checkout/p5`, {
+        headers: {
+            cookie: `better-auth.session_token=${sessionToken}`,
+            "cf-ipcountry": "ID",
+        },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(body?.["adaptive_pricing[enabled]"]).toBe("false");
+    expect(body?.payment_method_configuration).toBe(stripePmcId);
+});
+
 test("POST /api/stripe/billing/portal creates a Stripe Portal session", async ({
     sessionToken,
     mocks,

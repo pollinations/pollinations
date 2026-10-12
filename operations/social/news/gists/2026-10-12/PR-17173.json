@@ -1,0 +1,36 @@
+{
+  "pr_number": 17173,
+  "title": "feat(news): write each month's contributor counts in the monthly job",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17173",
+  "merged_at": "2026-10-12T16:22:07Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The monthly news job now writes `monthly/<month>/contributors.json` for the website’s community section, including when a month has no other posts to write. Starting with finished months from 2026-11-01, it counts each PR merged into `main` or `master` once and credits its author and noreply co-authors by GitHub account ID. The job receives a GitHub token for search. Recounts matched the existing backfills for 2026-09 (691 PRs, 75 accounts) and 2025-06 (73 PRs, 8 accounts), apart from one avatar link that changed after the backfill.",
+    "keywords": [
+      "monthly news",
+      "contributors",
+      "GitHub PRs",
+      "community section",
+      "automation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-12/PR-17173.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny calendar hat and files a contributor-count sheet beside a retro computer, with small code-plants growing nearby; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art. A soft lime green (#ecf874) and pastel gradient background surrounds chunky retro sprites, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, and a warm, nostalgic feel."
+  },
+  "generated_at": "2026-10-12T16:23:30.217260+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "a2cdb2ee3c9650597fe35e9a22577c101325aba3",
+  "announcements": [],
+  "enrichment": {
+    "classification": "complete",
+    "models": "complete"
+  }
+}

@@ -101,6 +101,44 @@ function fixture() {
 }
 const options = (fetch) => ({ guidanceDigest, inventory: [model], fetch });
 
+test("unchanged rendered evidence refreshes through the same free browser method", async () => {
+    const { previous, source, refreshed } = fixture();
+    source.method = "scrapling-browser";
+    refreshed.method = "scrapling-browser";
+    const calls = [];
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async (...args) => {
+            calls.push(args);
+            return refreshed;
+        }),
+    );
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0][1], "dynamic");
+    assert.equal(result.sources[0].method, "scrapling-browser");
+    assert.deepEqual(result.routes, previous.models[0].routes);
+});
+
+test("browser evidence is not reused from a different method or changed rendered page", async () => {
+    for (const change of [
+        { method: "scrapling-http" },
+        { pageDigest: hash("changed rendered page") },
+    ]) {
+        const { previous, source, refreshed } = fixture();
+        source.method = "scrapling-browser";
+        const result = await reuseModel(
+            previous,
+            model,
+            options(async (_, mode) => {
+                assert.equal(mode, "dynamic");
+                return { ...refreshed, method: "scrapling-browser", ...change };
+            }),
+        );
+        assert.equal(result, null);
+    }
+});
+
 function unresolvedFixture() {
     const value = fixture();
     value.row.routes = [];

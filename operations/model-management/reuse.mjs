@@ -139,7 +139,7 @@ export async function reuseModel(
             );
             const refreshed = await fetch(
                 source.url,
-                "http",
+                source.method === "scrapling-browser" ? "dynamic" : "http",
                 source.focus,
                 maxCharacters,
                 ...(source.fullPage === true ? [true] : []),
@@ -148,7 +148,12 @@ export async function reuseModel(
                 refreshed &&
                     (!refreshed.status || refreshed.status === "fetched"),
             );
-            assert.equal(refreshed.method, "scrapling-http");
+            assert.equal(
+                refreshed.method,
+                source.method === "scrapling-browser"
+                    ? "scrapling-browser"
+                    : "scrapling-http",
+            );
             assert.equal(refreshed.extractionVersion, 2);
             assert.equal(refreshed.pageDigest, source.pageDigest);
             assert.ok(

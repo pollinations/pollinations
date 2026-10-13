@@ -659,6 +659,178 @@ describe("Pollinations server-owned defaults", () => {
     });
 });
 
+describe("Pollinations 3D generation", () => {
+    it("builds a GET /3d/{prompt} URL with options and strips the key", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/gltf-binary",
+            }),
+        );
+
+        const result = await newClient().threeD(
+            "a low-poly wooden chair",
+            { model: "microsoft/trellis-2", resolution: "low", seed: 7 },
+        );
+
+        const [url] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/3d/a%20low-poly%20wooden%20chair?model=microsoft%2Ftrellis-2&resolution=low&seed=7&key=sk_test",
+        );
+        expect(result.contentType).toBe("model/gltf-binary");
+        expect(result.buffer.byteLength).toBe(8);
+    });
+
+    it("threeDUrl returns the keyless generation URL", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/gltf-binary",
+            }),
+        );
+
+        const url = await newClient().threeDUrl("a vase", {
+            model: "microsoft/trellis-2",
+            resolution: "high",
+        });
+
+        expect(url).toContain("https://example.test/3d/a%20vase?");
+        expect(url).not.toContain("sk_test");
+    });
+
+    it("omits unset 3D options from the URL", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { kind: "binary" }),
+        );
+
+        await newClient().threeD("a chair");
+
+        const [url] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/3d/a%20chair?key=sk_test");
+        expect(new URL(url as string).searchParams.has("model")).toBe(false);
+    });
+
+    it("rejects a missing prompt", async () => {
+        const client = newClient();
+        await expect(client.threeD("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("Pollinations model status", () => {
+    it("fetches /models/status with traffic and minutes", async () => {
+        const rows = [
+            {
+                model: "openai/gpt-5.1",
+                event_type: "generate.text",
+                status_2xx: 100,
+                errors_5xx: 2,
+            },
+        ];
+        fetchMock.mockResolvedValue(makeResponse({ data: rows }));
+
+        const result = await newClient().modelStatus({
+            traffic: "regular",
+            minutes: 1440,
+        });
+
+        const [url] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=1440&key=sk_test",
+        );
+        expect(result.data).toEqual(rows);
+        expect(result.data[0].model).toBe("openai/gpt-5.1");
+    });
+
+    it("omits unset status filters", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ data: [] }));
+
+        await newClient().modelStatus();
+
+        const [url] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/models/status?key=sk_test");
+    });
+});
+
+describe("Pollinations speech with timestamps", () => {
+    it("posts input and options to /v1/audio/speech/with-timestamps", async () => {
+        const payload = {
+            audio_base64: "U3VkZG8=",
+            duration: 1.2,
+            normalized_alignment: {
+                characters: ["H", "e", "l", "l", "o"],
+                character_start_times_seconds: [0, 0.1, 0.2, 0.3, 0.4],
+                character_end_times_seconds: [0.1, 0.2, 0.3, 0.4, 0.5],
+            },
+            original_alignment: {
+                characters: ["H", "e", "l", "l", "o"],
+                character_start_times_seconds: [0, 0.1, 0.2, 0.3, 0.4],
+                character_end_times_seconds: [0.1, 0.2, 0.3, 0.4, 0.5],
+            },
+        };
+        fetchMock.mockResolvedValue(makeResponse(payload));
+
+        const result = await newClient().speechWithTimestamps("Hello", {
+            model: "elevenlabs/eleven-v4",
+            voice: "nova",
+            responseFormat: "mp3",
+            seed: 42,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(init.method).toBe("POST");
+        expect(JSON.parse((init as RequestInit).body as string)).toEqual({
+            input: "Hello",
+            model: "elevenlabs/eleven-v4",
+            voice: "nova",
+            response_format: "mp3",
+            seed: 42,
+        });
+        expect(result.audio_base64).toBe("U3VkZG8=");
+        expect(result.duration).toBe(1.2);
+        expect(result.normalized_alignment.characters).toHaveLength(5);
+    });
+
+    it("omits unset speech options from the body", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                audio_base64: "",
+                duration: 0,
+                normalized_alignment: {
+                    characters: [],
+                    character_start_times_seconds: [],
+                    character_end_times_seconds: [],
+                },
+                original_alignment: {
+                    characters: [],
+                    character_start_times_seconds: [],
+                    character_end_times_seconds: [],
+                },
+            }),
+        );
+
+        await newClient().speechWithTimestamps("Hi");
+
+        const [, init] = fetchMock.mock.calls[0];
+        expect(JSON.parse((init as RequestInit).body as string)).toEqual({
+            input: "Hi",
+        });
+    });
+
+    it("rejects a missing input", async () => {
+        const client = newClient();
+        await expect(client.speechWithTimestamps("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
 describe("Pollinations video reference media", () => {
     it.each([false, true])(
         "sends guidance URLs (arrays: %s)",

@@ -124,6 +124,32 @@ export interface VideoResponse {
 }
 
 // ============================================================================
+// 3D Generation
+// ============================================================================
+
+/** Options for 3D generation (GET /3d/{prompt}) */
+export interface ThreeDGenerateOptions extends RequestOptions {
+    /** 3D model to use (server default: 'microsoft/trellis-2') */
+    model?: string;
+    /** Output resolution tier for trellis-2 ('low', 'medium' or 'high') */
+    resolution?: string;
+    /** Public image URL for image-to-3D models that ignore text prompts */
+    image?: string;
+    /** Seed for reproducible generation */
+    seed?: number;
+}
+
+/** Response from 3D generation */
+export interface ThreeDResponse {
+    /** The generated model as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (model/gltf-binary for GLB, or the raw PLY content type) */
+    contentType: string;
+    /** The URL that was used to generate the 3D model */
+    url: string;
+}
+
+// ============================================================================
 // Text Generation
 // ============================================================================
 
@@ -506,6 +532,41 @@ export interface AudioBinaryResponse {
     buffer: ArrayBuffer;
     /** Content type (audio/mpeg) */
     contentType: string;
+}
+
+// ============================================================================
+// Speech with Timestamps (POST /v1/audio/speech/with-timestamps)
+// ============================================================================
+
+/** Options for POST /v1/audio/speech/with-timestamps */
+export interface SpeechWithTimestampsOptions extends RequestOptions {
+    /** Voice to use (server default: 'alloy') */
+    voice?: AudioVoice;
+    /** Model advertising /v1/audio/speech/with-timestamps (server default: 'elevenlabs/eleven-v3') */
+    model?: AudioModel;
+    /** Encoding used for audio_base64: 'mp3' (default), 'opus', 'aac', 'wav' or 'pcm' */
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    /** Seed for reproducible generation */
+    seed?: number;
+}
+
+/** Character-level timing for one alignment pass */
+export interface SpeechTimingCharacters {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+/** Response from POST /v1/audio/speech/with-timestamps */
+export interface SpeechWithTimestampsResponse {
+    /** Base64-encoded audio in the requested response format */
+    audio_base64: string;
+    /** Character timing for the normalized text */
+    normalized_alignment: SpeechTimingCharacters;
+    /** Character timing for the original input text */
+    original_alignment: SpeechTimingCharacters;
+    /** Audio duration in seconds */
+    duration: number;
 }
 
 /** Audio response from chat with audio modality */
@@ -1159,6 +1220,54 @@ export interface ModelInfo {
     /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+// ============================================================================
+// Model Status (GET /models/status)
+// ============================================================================
+
+/** Options for fetching live model status */
+export interface ModelStatusOptions extends RequestOptions {
+    /** Traffic population: 'all' (default) or 'regular' (excluding legacy APIs and internal traffic) */
+    traffic?: "all" | "regular";
+    /** Rolling window in minutes (default 60, maximum 10080) */
+    minutes?: number;
+}
+
+/** One rollup row returned by GET /models/status */
+export interface ModelStatusRow {
+    /** Model id, for example 'openai/gpt-5.1' */
+    model?: string;
+    /** Generation category, for example 'generate.text' */
+    event_type?: string;
+    /** The model actually served after fallbacks, when different from `model` */
+    model_used?: string;
+    /** Inference provider */
+    provider?: string;
+    /** 1 when the row is a rollup aggregate */
+    is_rollup?: number;
+    fallback_used?: boolean;
+    total_requests?: number;
+    status_2xx?: number;
+    errors_4xx?: number;
+    errors_5xx?: number;
+    served?: number;
+    fallback_rescues?: number;
+    retried_503s?: number;
+    last_error_at?: string;
+    latency_p50_ms?: number | null;
+    latency_p95_ms?: number | null;
+    avg_latency_ms?: number | null;
+    last_request_at?: string;
+    tokens_per_second?: number | null;
+}
+
+/** Response from GET /models/status (raw Tinybird pipe rows) */
+export interface ModelStatusResponse {
+    /** Column metadata for the rows */
+    meta?: { name: string; type: string }[];
+    /** Rollup rows, one per model and event type */
+    data: ModelStatusRow[];
 }
 
 // ============================================================================

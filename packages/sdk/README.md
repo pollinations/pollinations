@@ -456,6 +456,96 @@ audioEl.play();
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: 'YOUR_API_KEY' });
+
+// Generate a 3D model and save the binary file (GLB by default)
+const model = await pollinations.threeD('a low-poly wooden chair', {
+  model: 'microsoft/trellis-2',
+  resolution: 'low',
+});
+await model.saveToFile?.('chair.glb');
+
+// Or get a keyless URL you can share after generation completes
+const url = await pollinations.threeDUrl('a low-poly wooden chair');
+```
+
+> 3D generation runs on the server and can take several minutes. `nvidia/asset-harvester` returns raw PLY instead of GLB.
+
+### 3D Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | server default | 3D model to use (`microsoft/trellis-2`, `nvidia/asset-harvester`, ...) |
+| `resolution` | string | server default | `'low'`, `'medium'`, or `'high'` |
+| `image` | string | - | Image URL for image-to-3D generation |
+| `seed` | number | random | Reproducible results |
+
+## Speech with Timestamps
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: 'YOUR_API_KEY' });
+
+const { audio_base64, duration, normalized_alignment } =
+  await pollinations.speechWithTimestamps('Hello world', {
+    model: 'elevenlabs/eleven-v4',
+    responseFormat: 'mp3',
+  });
+
+// Play or save the audio, and use the character timestamps for captioning
+const bytes = Buffer.from(audio_base64, 'base64');
+await import('node:fs/promises').then((fs) =>
+  fs.writeFile('speech.mp3', bytes),
+);
+console.log(normalized_alignment.characters); // ['H','e','l','l','o',' ','w',...]
+```
+
+Only models that advertise `/v1/audio/speech/with-timestamps` in
+[`/audio/models`](https://gen.pollinations.ai/audio/models) are supported (e.g.
+`elevenlabs/eleven-v4`, `elevenlabs/eleven-v3`, `elevenlabs/eleven-flash-v2.5`).
+
+### Speech-with-Timestamps Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `voice` | string | server default | Voice to use |
+| `model` | string | server default | Model advertising the with-timestamps endpoint |
+| `responseFormat` | string | `'mp3'` | `'mp3'`, `'opus'`, `'aac'`, `'wav'`, or `'pcm'` |
+| `seed` | number | random | Reproducible results |
+
+## Model Status
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: 'YOUR_API_KEY' });
+
+const { data } = await pollinations.modelStatus({
+  traffic: 'regular',
+  minutes: 60,
+});
+
+for (const row of data) {
+  console.log(row.model, row.status_2xx, row.errors_5xx);
+}
+```
+
+`modelStatus()` returns the live per-model success and error counters for the
+rolling window served by `GET /models/status`.
+
+### Model Status Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `traffic` | string | server default | Traffic filter (e.g. `'regular'`) |
+| `minutes` | number | server default | Rolling window in minutes |
+
 ## Vision (Image Input)
 
 ```javascript

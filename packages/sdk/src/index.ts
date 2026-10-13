@@ -149,6 +149,9 @@ export type {
     ModelInfo,
     ModelInputModality,
     ModelOutputModality,
+    ModelStatusOptions,
+    ModelStatusResponse,
+    ModelStatusRow,
     NoulAnswer,
     NoulQuestion,
     // Config
@@ -159,6 +162,9 @@ export type {
     ResponseFormat,
     ScoreAnswer,
     ScoreQuestion,
+    SpeechTimingCharacters,
+    SpeechWithTimestampsOptions,
+    SpeechWithTimestampsResponse,
     TextContentPart,
     TextGenerateOptions,
     // Text
@@ -182,6 +188,9 @@ export type {
     // Video
     VideoModel,
     VideoResponse,
+    // 3D
+    ThreeDGenerateOptions,
+    ThreeDResponse,
 } from "./types.js";
 
 // Export runtime constants and the error class

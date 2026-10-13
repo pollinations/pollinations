@@ -36,9 +36,15 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechWithTimestampsOptions,
+    SpeechWithTimestampsResponse,
     TextGenerateOptions,
+    ThreeDGenerateOptions,
+    ThreeDResponse,
     TranscribeOptions,
     TranscriptionResponse,
     TranscriptionVerboseResponse,
@@ -750,6 +756,91 @@ export class Pollinations {
     }
 
     // ============================================================================
+    // 3D Generation
+    // ============================================================================
+
+    /** Build 3D URL with all params (internal use) */
+    private build3DUrl(
+        prompt: string,
+        options: ThreeDGenerateOptions = {},
+    ): string {
+        const params: Record<string, unknown> = {
+            model: options.model,
+            resolution: options.resolution,
+            image: options.image,
+            seed: options.seed,
+        };
+
+        const queryString = this.buildQueryParams(params);
+        const encodedPrompt = encodeURIComponent(prompt);
+
+        return `${this.baseUrl}/3d/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
+    }
+
+    /**
+     * Generate a 3D model URL from a text prompt.
+     * Returns a keyless URL that can be shared after the model has been generated.
+     *
+     * @example
+     * ```ts
+     * const url = await pollinations.threeDUrl('A low-poly wooden chair');
+     * ```
+     */
+    async threeDUrl(
+        prompt: string,
+        options: ThreeDGenerateOptions = {},
+    ): Promise<string> {
+        const response = await this.threeD(prompt, options);
+        return response.url;
+    }
+
+    /**
+     * Generate a 3D model and return it as binary data.
+     * Returns glTF Binary (GLB) by default; `nvidia/asset-harvester` returns raw PLY.
+     * Note: 3D generation can take several minutes.
+     *
+     * @example
+     * ```ts
+     * const { buffer, contentType } = await pollinations.threeD(
+     *   'A low-poly wooden chair',
+     *   { model: 'microsoft/trellis-2', resolution: 'low' },
+     * );
+     * ```
+     */
+    async threeD(
+        prompt: string,
+        options: ThreeDGenerateOptions = {},
+    ): Promise<ThreeDResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const url = this.build3DUrl(prompt, options);
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") ||
+                    "model/gltf-binary";
+
+                return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
+
+    // ============================================================================
     // Text Generation
     // ============================================================================
 
@@ -1093,6 +1184,58 @@ export class Pollinations {
         );
     }
 
+    /**
+     * Generate speech with character-level word timestamps
+     * (POST /v1/audio/speech/with-timestamps).
+     * Only models advertising that endpoint in `/audio/models` are supported.
+     *
+     * @example
+     * ```ts
+     * const { audio_base64, duration, normalized_alignment } =
+     *   await pollinations.speechWithTimestamps('Hello world', {
+     *     model: 'elevenlabs/eleven-v4',
+     *     responseFormat: 'mp3',
+     *   });
+     * ```
+     */
+    async speechWithTimestamps(
+        input: string,
+        options: SpeechWithTimestampsOptions = {},
+    ): Promise<SpeechWithTimestampsResponse> {
+        if (!input || typeof input !== "string") {
+            throw new PollinationsError(
+                "Input is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input,
+            voice: options.voice,
+            model: options.model,
+            response_format: options.responseFormat,
+            seed: options.seed,
+        };
+
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(this.stripUndefined(body)),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return (await response.json()) as SpeechWithTimestampsResponse;
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1165,6 +1308,32 @@ export class Pollinations {
      */
     async models(): Promise<ModelInfo[]> {
         return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    }
+
+    /**
+     * Get live model status for the rolling window.
+     * Returns raw Tinybird pipe rows; upstream errors pass through with their status.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.modelStatus({ minutes: 60 });
+     * for (const row of data) {
+     *   console.log(row.model, row.status_2xx, row.errors_5xx);
+     * }
+     * ```
+     */
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const params: Record<string, unknown> = {
+            traffic: options.traffic,
+            minutes: options.minutes,
+        };
+        const queryString = this.buildQueryParams(params);
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${queryString ? `?${queryString}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================

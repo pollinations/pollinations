@@ -2855,10 +2855,10 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-08-27").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        // Fireworks standard serverless rates (2026-08-29).
+        // Fireworks standard serverless rates (2026-10-12).
         cost: {
             promptTextTokens: perMillion(0.15),
-            promptCachedTokens: perMillion(0.029),
+            promptCachedTokens: perMillion(0.03),
             promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.5),
         },
@@ -2883,11 +2883,11 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Z.AI fp8 route rates (2026-09-19), including the
+            // OpenRouter Z.AI fp8 route rates (2026-10-12), including the
             // mandatory 5.5% OpenRouter credit fee. Image inputs are
             // tokenized into promptTextTokens; no separate usage is reported.
             promptTextTokens: perMillion(0.37) * 1.055,
-            promptCachedTokens: perMillion(0.075) * 1.055,
+            promptCachedTokens: perMillion(0.09) * 1.055,
             completionTextTokens: perMillion(1.25) * 1.055,
         },
         title: "Z.ai GLM-5.3 FlashX",

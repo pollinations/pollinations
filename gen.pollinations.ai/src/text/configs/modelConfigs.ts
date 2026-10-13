@@ -309,6 +309,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.6",
     }),
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
@@ -640,7 +646,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
+    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
+    // which bill above the quoted rate, so they are excluded explicitly.
+    "grok-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai"],
+                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",

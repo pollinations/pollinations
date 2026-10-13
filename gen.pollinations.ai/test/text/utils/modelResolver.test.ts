@@ -291,14 +291,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes Grok 4.7 to xAI with a base-xAI OpenRouter fallback", () => {
+        const primary = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",
         });
+        const fallback = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7:openrouter",
+        });
 
-        expect(result.options.model).toBe("x-ai/grok-4.7");
-        expect(result.options.provider).toEqual({
+        expect(primary.options.model).toBe("grok-4.7");
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe("x-ai/grok-4.7");
+        expect(fallback.options.provider).toEqual({
             only: ["xai"],
+            ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
             allow_fallbacks: false,
         });
     });

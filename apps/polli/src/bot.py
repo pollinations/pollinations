@@ -1344,10 +1344,10 @@ async def _process_message(
         "discord_message": source_message,
     }
 
-    # Discord history only carries Polli's prose; hand back the lookups behind it.
-    evidence = tool_evidence.render(session.thread_id, user.id)
+    # Discord history only carries Polli's prose; hand back the lookups behind it as tool data.
+    evidence = tool_evidence.replay(session.thread_id, user.id)
     if evidence:
-        thread_history = [*(thread_history or []), {"role": "system", "content": evidence}]
+        thread_history = [*(thread_history or []), *evidence]
 
     def take_pending(*, allow_mixed):
         queue = _conversation_queues.get(channel.id, [])

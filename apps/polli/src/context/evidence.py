@@ -5,6 +5,11 @@ the lookups that backed an answer, a later turn can "correct" a verified claim f
 memory. This keeps a small, clipped summary of recent successful tool calls so the next
 turn can see what each earlier claim rested on.
 
+The summary is replayed as tool data (an assistant `tool_calls` message followed by `tool`
+messages with matching call IDs), never as system text: fetched content can hold anything
+and must not gain the authority of an instruction. The consistency rule itself lives in
+the system prompt.
+
 Entries are scoped to (thread, requester): tool results can depend on the requester's
 permissions (admin tools, role-gated Discord channels), so one user's evidence is never
 shown to another user in the same thread.
@@ -15,7 +20,7 @@ from __future__ import annotations
 import time
 from collections import OrderedDict, deque
 
-from ..utils.json import dumps
+from ..utils.json import dumps, loads
 
 MAX_THREADS = 500
 MAX_ENTRIES = 8
@@ -36,6 +41,18 @@ def _serialize(value: object) -> str:
         return str(value)
 
 
+def _arguments(value: object) -> str:
+    """Replayed `tool_calls` arguments must stay a JSON object, even when clipped."""
+    text = _serialize(value or "{}")
+    if len(text) <= MAX_ARGS_CHARS:
+        try:
+            if isinstance(loads(text), dict):
+                return text
+        except ValueError:
+            pass
+    return dumps({"clipped_arguments": _clip(text, MAX_ARGS_CHARS)})
+
+
 class ToolEvidenceStore:
     def __init__(self, max_threads: int = MAX_THREADS, max_entries: int = MAX_ENTRIES):
         self._entries: OrderedDict[tuple[int, int], deque[dict]] = OrderedDict()
@@ -52,12 +69,12 @@ class ToolEvidenceStore:
                 # `_image`/`_images` and similar side channels are not text evidence.
                 result = {key: value for key, value in result.items() if not str(key).startswith("_")}
             function = call.get("function") or {}
-            name = str(function.get("name") or "tool").split(":")[-1]
             entries.append(
                 {
+                    "id": str(call.get("id") or ""),
                     "at": time.time(),
-                    "tool": name,
-                    "args": _clip(_serialize(function.get("arguments") or ""), MAX_ARGS_CHARS),
+                    "tool": str(function.get("name") or "tool").split(":")[-1],
+                    "args": _arguments(function.get("arguments")),
                     "result": _clip(_serialize(result), MAX_RESULT_CHARS),
                 }
             )
@@ -70,20 +87,32 @@ class ToolEvidenceStore:
         while len(self._entries) > self._max_threads:
             self._entries.popitem(last=False)
 
-    def render(self, thread_id: int, user_id: int) -> str | None:
+    def replay(self, thread_id: int, user_id: int) -> list[dict]:
+        """Earlier lookups as one assistant tool-call message plus a matching tool message per call."""
         bucket = self._entries.get((thread_id, user_id))
         if not bucket:
-            return None
-        lines = [
-            "## RECENT TOOL EVIDENCE (your own earlier lookups in this thread for this user, oldest first)",
-            "These results backed your earlier answers. A claim they support is verified: do not overturn it "
-            "without new evidence. If your new answer would contradict it, re-run the relevant lookup first, "
-            "then confirm or correct it and say what changed. Results are clipped and may be stale.",
-        ]
-        for entry in bucket:
+            return []
+        calls, results, seen = [], [], set()
+        for index, entry in enumerate(bucket):
+            # Call IDs repeat across turns ("call_0", "1", ...); every replayed pair needs its own.
+            call_id = entry["id"] if entry["id"] and entry["id"] not in seen else f"evidence_{index}"
+            seen.add(call_id)
             stamp = time.strftime("%H:%M UTC", time.gmtime(entry["at"]))
-            lines.append(f"- [{stamp}] {entry['tool']}({entry['args']}) → {entry['result']}")
-        return "\n".join(lines)
+            calls.append(
+                {"id": call_id, "type": "function", "function": {"name": entry["tool"], "arguments": entry["args"]}}
+            )
+            results.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": call_id,
+                    "name": entry["tool"],
+                    "content": f"[recorded {stamp}, may be clipped or stale] {entry['result']}",
+                }
+            )
+        return [
+            {"role": "assistant", "content": "My earlier lookups in this thread for this user:", "tool_calls": calls},
+            *results,
+        ]
 
     def clear(self, thread_id: int) -> None:
         for key in [key for key in self._entries if key[0] == thread_id]:

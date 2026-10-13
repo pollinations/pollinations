@@ -954,7 +954,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -985,7 +985,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's promotional pricing runs through 2026-12-31; list rates
         // double on 2027-01-01 and need another update then.
@@ -1018,7 +1018,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's introductory pricing ends 2026-12-31.
         cost: {
@@ -1043,6 +1043,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-argon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-10-13").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Vertex global list rates (2026-10-13). Vertex invoices these and
+        // returns 50% as credits through 2026-11-30; that promo is not priced in.
+        cost: {
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
+            promptAudioTokens: perMillion(4),
+            promptImageTokens: perMillion(4),
+            promptVideoTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Argon",
+        description:
+            "Flagship reasoning over text, images, audio and video, with web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-3.5-flash-lite": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [
@@ -1057,7 +1090,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.3),
@@ -2677,7 +2710,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),
@@ -3092,6 +3125,33 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Muse Spark 1.2",
         description: "Agentic coding and tool-use model with 1M context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "meta/muse-wonder-1.0": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMuseWonder,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-12").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Meta endpoint (2026-10-12), including the 5.5%
+        // credit-purchase fee.
+        cost: {
+            promptTextTokens: perMillion(4) * 1.055,
+            promptCachedTokens: perMillion(0.2) * 1.055,
+            promptImageTokens: perMillion(4) * 1.055,
+            completionTextTokens: perMillion(20) * 1.055,
+        },
+        title: "Muse Wonder 1.0",
+        description:
+            "Long-running agent and coding model with 1M context and image input",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

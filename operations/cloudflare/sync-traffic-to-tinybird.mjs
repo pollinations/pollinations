@@ -22,6 +22,13 @@
  *               path. A host with more groups than one query returns is
  *               fetched as two halves by country code (A–L, M–Z), and the two
  *               group lists are stored together in one response.
+ *   api_referrers
+ *               one response per Free API Classic host (text, image) and
+ *               day: requests by referring host and status, without the
+ *               path. Only the 10,000 largest groups are kept: on 2026-10-12
+ *               image had ~13,500 referring hosts, and the 10,000 groups
+ *               kept 99.7% of its requests; each group left out had one or
+ *               two. Referrer hosts are filtered as in page_referrers.
  *
  * Requests come from real clients only (requestSource eyeball), which leaves
  * out our Workers' own outgoing calls. Paths are kept only for our own page
@@ -36,7 +43,7 @@
  *
  * --days fetches the last N complete UTC days, for a missed run or a backfill:
  * up to 7 for all datasets or host_views (a day of everything takes ~2 min),
- * 30 for page_views and 89 for page_referrers. The zone serves about 90 days:
+ * 30 for page_views and 89 for page_referrers and api_referrers. The zone serves about 90 days:
  * full detail for ~34 days, then sampled about 10x. --dataset fetches one
  * dataset only, so a backfill of a new dataset does not append the others
  * again.
@@ -52,7 +59,13 @@ const ZONE_ID = "1815735e6400a65d924e0e9f9eb6e18a"; // pollinations.ai
 const TINYBIRD_BASE = "https://api.europe-west2.gcp.tinybird.co";
 const DATASOURCE = "cloudflare_traffic_raw";
 const LIMIT = 10000;
-const MAX_DAYS = { all: 7, host_views: 7, page_views: 30, page_referrers: 89 };
+const MAX_DAYS = {
+    all: 7,
+    host_views: 7,
+    page_views: 30,
+    page_referrers: 89,
+    api_referrers: 89,
+};
 const MAX_RETRIES = 3;
 // Cloudflare allows 300 GraphQL queries per 5 minutes; a day takes ~60.
 const QUERY_INTERVAL_MS = 1100;
@@ -94,12 +107,14 @@ const PAGES = {
     ],
 };
 PAGES["www.pollinations.ai"] = PAGES["pollinations.ai"];
+const CLASSIC_HOSTS = ["text.pollinations.ai", "image.pollinations.ai"];
 
 const groupsQuery = (
     dimensions,
+    orderBy = "",
 ) => `query ($zone: String!, $filter: ZoneHttpRequestsAdaptiveGroupsFilter_InputObject!) {
   viewer { zones(filter: { zoneTag: $zone }) {
-    httpRequestsAdaptiveGroups(limit: ${LIMIT}, filter: $filter) {
+    httpRequestsAdaptiveGroups(limit: ${LIMIT}, filter: $filter${orderBy}) {
       count
       avg { sampleInterval }
       sum { visits }
@@ -123,8 +138,17 @@ const BARE_REFERRER_HOST = ["?", "#", "@", "/", "=", "&", " "].map((c) => ({
 const HOST_VIEWS_QUERY = groupsQuery(
     "date clientRequestHTTPHost edgeResponseStatus edgeResponseContentTypeName clientCountryName clientDeviceType userAgentBrowser verifiedBotCategory",
 );
+const API_REFERRERS_QUERY = groupsQuery(
+    "date clientRequestHTTPHost clientRefererHost edgeResponseStatus",
+    ", orderBy: [count_DESC]",
+);
 const HOSTS_QUERY = groupsQuery("clientRequestHTTPHost");
-const DATASETS = ["page_views", "page_referrers", "host_views"];
+const DATASETS = [
+    "page_views",
+    "page_referrers",
+    "host_views",
+    "api_referrers",
+];
 
 const { values: args } = parseArgs({
     options: {
@@ -258,19 +282,33 @@ async function* fromApi(days, dataset) {
             }
         }
     }
-    // After every day of the established datasets, so a failure in the newest
+    // After every day of the established datasets, so a failure in a newer
     // one cannot cost any of their days.
-    if (!wanted("page_referrers")) return;
+    if (wanted("page_referrers")) {
+        for (const date of lastDays(days)) {
+            const body = await complete(PAGE_REFERRERS_QUERY, {
+                ...pageLoads(date),
+                AND: BARE_REFERRER_HOST,
+            });
+            yield { dataset: "page_referrers", date, host: "", body };
+        }
+    }
+    if (!wanted("api_referrers")) return;
     for (const date of lastDays(days)) {
-        const body = await complete(PAGE_REFERRERS_QUERY, {
-            ...pageLoads(date),
-            AND: BARE_REFERRER_HOST,
-        });
-        yield { dataset: "page_referrers", date, host: "", body };
+        for (const host of CLASSIC_HOSTS) {
+            // A full page is expected here: the largest groups, by count
+            const body = await graphql(API_REFERRERS_QUERY, {
+                date,
+                requestSource: "eyeball",
+                clientRequestHTTPHost: host,
+                AND: BARE_REFERRER_HOST,
+            });
+            yield { dataset: "api_referrers", date, host, body };
+        }
     }
 }
 
-// One request per response: a body can be close to a megabyte.
+// One request per response: a body can be over two megabytes.
 async function append(row) {
     const res = await fetchWithRetry(
         `${TINYBIRD_BASE}/v0/events?name=${DATASOURCE}&wait=true`,

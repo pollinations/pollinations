@@ -70,13 +70,11 @@ const LOGGED_IN_TEMPLATES = Object.keys(TEMPLATE_SIZES);
 const POLLI_PERMISSIONS = ["profile", "usage", "machines"];
 // E2B takes a timeout as 32-bit seconds.
 const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
-// A timeout past the end of the 24-hour run keeps the sandbox, as on an E2B
-// team with a longer limit: gen's cron renews it until then with the key that
-// set the timeout, or as its owner when the dashboard set it. The cron runs
-// every 10 minutes and renews a kept sandbox for up to an hour once less than
-// 15 minutes of its lease are left.
-const KEEP_LEASE_SECONDS = 3600;
-const KEEP_RENEW_WITHIN_MS = 15 * 60_000;
+// A timeout longer than 10 minutes keeps the sandbox: E2B gets 10 minutes at a
+// time, and gen's cron, every 5 minutes, tops it back up to 10 minutes until
+// then, past E2B's 24-hour run too. It pays with the key that set the timeout,
+// or as the owner when the dashboard set it.
+const KEEP_LEASE_SECONDS = 600;
 
 type SandboxDetail = {
     sandboxID: string;
@@ -168,6 +166,28 @@ async function ownedSandbox(c: E2bContext): Promise<SandboxDetail> {
         throw new HTTPException(404, { message: `Sandbox ${id} not found` });
     }
     return sandbox;
+}
+
+// As on an E2B team with a longer limit, a kept sandbox's `endAt` says when
+// its timeout ends, not when the 10 minutes paid so far do.
+async function showKeeps(env: CloudflareBindings, sandboxes: SandboxDetail[]) {
+    const running = sandboxes.filter((sandbox) => sandbox.state === "running");
+    const keeps = running.length
+        ? await drizzle(env.DB)
+              .select()
+              .from(sandboxKeep)
+              .where(
+                  inArray(
+                      sandboxKeep.sandboxId,
+                      running.map((sandbox) => sandbox.sandboxID),
+                  ),
+              )
+        : [];
+    const until = new Map(keeps.map((keep) => [keep.sandboxId, keep.until]));
+    return sandboxes.map((sandbox) => {
+        const end = sandbox.state === "running" && until.get(sandbox.sandboxID);
+        return end ? { ...sandbox, endAt: end.toISOString() } : sandbox;
+    });
 }
 
 // E2B's concurrency limit is per team, so each user may hold only a few.
@@ -297,26 +317,22 @@ async function extendLease(
 }
 
 // When E2B ends the sandbox's run: 24 hours after it started, or from now for
-// a create or a resume, which start a new run.
-function runEnd(sandbox: SandboxDetail | null, now = Date.now()) {
-    const running = sandbox?.state === "running";
+// a resume, which starts a new run.
+function runEnd(sandbox: SandboxDetail, now: number) {
+    const running = sandbox.state === "running";
     return (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
 }
 
-// When a keep that `timeout` asks for ends, if it runs past the end of the run.
-function keepUntil(
-    timeout: unknown,
-    sandbox: SandboxDetail | null = null,
-): Date | null {
-    if (typeof timeout !== "number" || timeout > MAX_TIMEOUT_SECONDS) {
-        return null;
-    }
-    const now = Date.now();
-    const until = now + timeout * 1000;
-    return until > runEnd(sandbox, now) ? new Date(until) : null;
+// When a keep that `timeout` asks for ends, if it is longer than a lease.
+function keepUntil(timeout: unknown): Date | null {
+    return typeof timeout === "number" &&
+        timeout > KEEP_LEASE_SECONDS &&
+        timeout <= MAX_TIMEOUT_SECONDS
+        ? new Date(Date.now() + timeout * 1000)
+        : null;
 }
 
-// A kept sandbox's lease: an hour, or what is left of a longer one, which
+// A kept sandbox's lease: 10 minutes, or what is left of a longer one, which
 // E2B's timeout would otherwise cut short. Rounded down, so it never bills a
 // fraction of a second already paid.
 function keepLease(sandbox: SandboxDetail) {
@@ -519,41 +535,24 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             url.searchParams.set("metadata", metadata.toString());
             const response = await forward(c, url.search);
             if (!response.ok) return response;
-            // Not E2B's: `keptUntil`, when gen keeps a sandbox running until.
             const sandboxes = await response.json<SandboxDetail[]>();
-            const keeps = sandboxes.length
-                ? await drizzle(c.env.DB)
-                      .select()
-                      .from(sandboxKeep)
-                      .where(
-                          inArray(
-                              sandboxKeep.sandboxId,
-                              sandboxes.map((sandbox) => sandbox.sandboxID),
-                          ),
-                      )
-                : [];
-            const keptUntil = new Map(
-                keeps.map((keep) => [keep.sandboxId, keep.until]),
-            );
             const headers = new Headers(response.headers);
             headers.delete("content-length");
             return new Response(
-                JSON.stringify(
-                    sandboxes.map((sandbox) => ({
-                        ...sandbox,
-                        keptUntil: keptUntil.get(sandbox.sandboxID),
-                    })),
-                ),
+                JSON.stringify(await showKeeps(c.env, sandboxes)),
                 { status: response.status, headers },
             );
         })
-        .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
+        .get("/sandboxes/:id", async (c) => {
+            const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
+            return c.json(sandbox);
+        })
         .delete("/sandboxes/:id", ownerOnly)
         .get("/sandboxes/:id/metrics", ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.
         .get("/sandboxes/:id/logs", ownerOnly)
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
-        // past the end of the run starts it again.
+        // longer than 10 minutes starts it again.
         .post("/sandboxes/:id/pause", async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
@@ -566,7 +565,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .post("/sandboxes/:id/timeout", async (c) => {
             const sandbox = await ownedSandbox(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
-            const until = keepUntil(timeout, sandbox);
+            const until = keepUntil(timeout);
             const response = await extendLease(
                 c,
                 sandbox,
@@ -584,7 +583,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 const sandbox = await ownedSandbox(c);
                 if (sandbox.state === "paused") await requireCapacity(c);
                 const { timeout } = await readJson<{ timeout: number }>(c);
-                const until = keepUntil(timeout, sandbox);
+                const until = keepUntil(timeout);
                 const response = await extendLease(
                     c,
                     sandbox,
@@ -604,7 +603,6 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .get("/pricing", (c) =>
             c.json({
                 maxRunning: MAX_RUNNING_PER_USER,
-                maxRunSeconds: MAX_RUN_MS / 1000,
                 vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
                 gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
                 templates: TEMPLATE_SIZES,
@@ -662,11 +660,11 @@ async function loadPayer(
 /**
  * Keeps each kept sandbox running until its timeout, through this API as the
  * key that set it: every renewal is checked and charged like the owner's own.
- * A running sandbox is renewed for up to an hour once its lease is about to
- * end; before E2B would end its 24-hour run, a pause and resume starts a new
- * run instead, giving up the rest of the lease like any pause. A paused one
- * (a missed renewal, a failed resume, E2B's own pause) is resumed, as the
- * owner's own pause has ended its keep. The keep ends when the sandbox is
+ * A running sandbox is topped back up to 10 minutes of lease; before E2B would
+ * end its 24-hour run, a pause and resume starts a new run instead, giving up
+ * the rest of the lease like any pause. A paused one (a missed renewal, a
+ * failed resume, E2B's own pause) is resumed, as the owner's own pause has
+ * ended its keep. The keep ends when the sandbox is
  * gone, or the key is or can no longer pay.
  */
 export async function keepSandboxes(
@@ -703,13 +701,7 @@ export async function keepSandboxes(
             now + KEEP_LEASE_SECONDS * 1000,
             until.getTime(),
         );
-        const endAt = Date.parse(sandbox.endAt);
-        if (
-            !paused &&
-            (endAt - now >= KEEP_RENEW_WITHIN_MS || renewTo <= endAt)
-        ) {
-            return;
-        }
+        if (!paused && renewTo <= Date.parse(sandbox.endAt)) return;
         const payer = await loadPayer(
             env,
             apiKeyId,

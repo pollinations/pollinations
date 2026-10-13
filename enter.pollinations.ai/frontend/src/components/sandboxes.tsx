@@ -3,6 +3,7 @@ import {
     Button,
     ButtonGroup,
     Chip,
+    ClockIcon,
     ConfirmationDialog,
     CopyField,
     InlineLink,
@@ -35,15 +36,12 @@ type Sandbox = Size & {
     state: "running" | "paused";
     // When its current run started: at the create or the last resume.
     startedAt: string;
-    // When a running sandbox's paid time ends, or when a paused one paused.
+    // When a running sandbox's timeout ends, or when a paused one paused.
     endAt: string;
-    // Not E2B's: when gen keeps it running until, paying an hour at a time.
-    keptUntil?: string;
 };
 
 type Pricing = {
     maxRunning: number;
-    maxRunSeconds: number;
     vcpuSecond: number;
     gibSecond: number;
     templates: Record<string, Size>;
@@ -54,8 +52,8 @@ type Pricing = {
 const FOREVER = 2 ** 31 - 1;
 
 // How long a create, a resume or more time runs the sandbox for: at least 10
-// minutes, or until it's stopped. Up to the end of E2B's 24-hour run it's paid
-// up front; past it, gen keeps the sandbox running and pays an hour at a time.
+// minutes, or until it's stopped. Gen keeps it running until then and takes
+// the Pollen 10 minutes at a time.
 const UNITS = [
     { label: "minutes", seconds: 60 },
     { label: "hours", seconds: 3600 },
@@ -72,6 +70,8 @@ const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 type Pending =
     | { action: "create"; template: string }
     | { action: "connect"; sandbox: Sandbox }
+    // Ends a running sandbox's "Until I stop it" after a while.
+    | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
@@ -102,17 +102,17 @@ function customError(seconds: number) {
     return null;
 }
 
-// What the pending action costs for that many seconds, or per vCPU and GB
-// when the template's size isn't known.
-function upFront(pricing: Pricing, pending: Pending, seconds: number) {
+// What the pending action's sandbox costs an hour, or per vCPU and GB when
+// the template's size isn't known.
+function perHour(pricing: Pricing, pending: Pending) {
     if (pending.action === "create") {
         const size = pricing.templates[pending.template];
         if (!size) {
-            return `${pollen(pricing.vcpuSecond * seconds)} per vCPU and ${pollen(pricing.gibSecond * seconds)} per GB, depending on the template’s size`;
+            return `${pollen(pricing.vcpuSecond * 3600)} per vCPU and ${pollen(pricing.gibSecond * 3600)} per GB, depending on the template’s size`;
         }
-        return `${pollen(perSecond(pricing, size) * seconds)} (${sizeLabel(size)})`;
+        return `${pollen(perSecond(pricing, size) * 3600)} (${sizeLabel(size)})`;
     }
-    return pollen(perSecond(pricing, pending.sandbox) * seconds);
+    return pollen(perSecond(pricing, pending.sandbox) * 3600);
 }
 
 function SandboxCard({
@@ -120,6 +120,7 @@ function SandboxCard({
     pricing,
     busy,
     onConnect,
+    onLimit,
     onPause,
     onKill,
 }: {
@@ -127,11 +128,12 @@ function SandboxCard({
     pricing: Pricing;
     busy: boolean;
     onConnect: () => void;
+    onLimit: () => void;
     onPause: () => void;
     onKill: () => void;
 }) {
     const running = sandbox.state === "running";
-    const kept = running ? sandbox.keptUntil : undefined;
+    const endless = running && forever(sandbox.endAt);
     return (
         <Surface className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -153,9 +155,9 @@ function SandboxCard({
                 <Chip intent={running ? "success" : "neutral"} size="md">
                     {!running
                         ? "Paused"
-                        : kept && forever(kept)
+                        : endless
                           ? "Runs until you stop it"
-                          : `Runs until ${new Date(kept ?? sandbox.endAt).toLocaleString()}`}
+                          : `Runs until ${new Date(sandbox.endAt).toLocaleString()}`}
                 </Chip>
             </div>
             <CopyField
@@ -163,17 +165,27 @@ function SandboxCard({
                 value={`ssh ${sandbox.sandboxID}.polli`}
             />
             <ButtonGroup>
-                {!(kept && forever(kept)) && (
-                    <Button
-                        size="sm"
-                        intent="commit"
-                        icon={running ? <PlusIcon /> : <PlayIcon />}
-                        disabled={busy}
-                        onClick={onConnect}
-                    >
-                        {running ? "Add time" : "Resume"}
-                    </Button>
-                )}
+                <Button
+                    size="sm"
+                    intent="commit"
+                    icon={
+                        !running ? (
+                            <PlayIcon />
+                        ) : endless ? (
+                            <ClockIcon />
+                        ) : (
+                            <PlusIcon />
+                        )
+                    }
+                    disabled={busy}
+                    onClick={endless ? onLimit : onConnect}
+                >
+                    {!running
+                        ? "Resume"
+                        : endless
+                          ? "Set time limit"
+                          : "Add time"}
+                </Button>
                 {running && (
                     <Button
                         size="sm"
@@ -255,23 +267,15 @@ export function Sandboxes() {
 
     const seconds = untilStopped ? FOREVER : Math.round(Number(amount) * unit);
     const durationError = untilStopped ? null : customError(seconds);
-    // Create and resume run from now and start a new run; Add time adds to
-    // the time a running sandbox already runs for.
+    // Create, resume and a time limit run from now; Add time adds to the time
+    // a running sandbox already runs for.
     const addTo =
         pending?.action === "connect" && pending.sandbox.state === "running"
             ? pending.sandbox
             : null;
     const now = Date.now();
-    const from = addTo ? Date.parse(addTo.keptUntil ?? addTo.endAt) : now;
+    const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
-    const runEnd =
-        (addTo ? Date.parse(addTo.startedAt) : now) +
-        (pricing?.maxRunSeconds ?? 0) * 1000;
-    // Past the end of the run, gen keeps it running an hour at a time.
-    const kept = now + timeout * 1000 > runEnd;
-    const paidNow =
-        timeout -
-        (addTo ? Math.max(0, Date.parse(addTo.endAt) - now) / 1000 : 0);
 
     function confirm() {
         if (!pending) return;
@@ -294,11 +298,16 @@ export function Sandboxes() {
         }
         const id = pending.sandbox.sandboxID;
         // Connect sets the time from now and, unlike timeout, never shortens
-        // it, so a keep set from the CLI stays.
+        // it, so a keep set from the CLI stays. A time limit is meant to
+        // shorten it.
         void run(id, () =>
             pending.action === "kill"
                 ? e2b(`/sandboxes/${id}`, "DELETE")
-                : e2b(`/sandboxes/${id}/connect`, "POST", { timeout }),
+                : e2b(
+                      `/sandboxes/${id}/${pending.action === "limit" ? "timeout" : "connect"}`,
+                      "POST",
+                      { timeout },
+                  ),
         );
     }
 
@@ -401,7 +410,7 @@ export function Sandboxes() {
                                 {Object.entries(pricing.templates)
                                     .map(
                                         ([id, size]) =>
-                                            `${id} (${sizeLabel(size)})`,
+                                            `${id} (${sizeLabel(size)}, ${pollen(perSecond(pricing, size) * 3600)} an hour)`,
                                     )
                                     .join(" and ")}{" "}
                                 come with polli logged in. Or any public E2B
@@ -431,6 +440,13 @@ export function Sandboxes() {
                                             sandbox,
                                         })
                                     }
+                                    onLimit={() => {
+                                        setUntilStopped(false);
+                                        setPending({
+                                            action: "limit",
+                                            sandbox,
+                                        });
+                                    }}
                                     onPause={() =>
                                         void run(sandbox.sandboxID, () =>
                                             e2b(
@@ -458,9 +474,17 @@ export function Sandboxes() {
                     How time works
                 </Text>
                 <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-theme-text-muted">
+                    {pricing && (
+                        <li>
+                            A running sandbox costs{" "}
+                            {pollen(pricing.vcpuSecond * 3600)} per vCPU and{" "}
+                            {pollen(pricing.gibSecond * 3600)} per GB of memory
+                            an hour.
+                        </li>
+                    )}
                     <li>
-                        Time comes out of your Pollen ahead of time; past 24
-                        hours, an hour at a time.
+                        While it runs, time comes out of your Pollen 10 minutes
+                        at a time.
                     </li>
                     <li>
                         When the time is up, the sandbox pauses. Paused
@@ -496,9 +520,11 @@ export function Sandboxes() {
                           ? "Create sandbox?"
                           : pending.action === "kill"
                             ? "Kill sandbox?"
-                            : pending.sandbox.state === "running"
-                              ? "Add time?"
-                              : "Resume sandbox?"
+                            : pending.action === "limit"
+                              ? "Set a time limit?"
+                              : pending.sandbox.state === "running"
+                                ? "Add time?"
+                                : "Resume sandbox?"
                 }
                 intent={spends ? "commit" : "danger"}
                 confirmIcon={spends ? <PlayIcon /> : undefined}
@@ -509,9 +535,11 @@ export function Sandboxes() {
                           ? "Create"
                           : pending.action === "kill"
                             ? "Kill"
-                            : addTo
-                              ? "Add time"
-                              : "Resume"
+                            : pending.action === "limit"
+                              ? "Set time limit"
+                              : addTo
+                                ? "Add time"
+                                : "Resume"
                 }
                 confirmDisabled={!!spends && !!durationError}
                 onConfirm={confirm}
@@ -569,13 +597,17 @@ export function Sandboxes() {
                                             {option.label}
                                         </TabButton>
                                     ))}
-                                    <TabButton
-                                        size="sm"
-                                        active={untilStopped}
-                                        onClick={() => setUntilStopped(true)}
-                                    >
-                                        Until I stop it
-                                    </TabButton>
+                                    {pending.action !== "limit" && (
+                                        <TabButton
+                                            size="sm"
+                                            active={untilStopped}
+                                            onClick={() =>
+                                                setUntilStopped(true)
+                                            }
+                                        >
+                                            Until I stop it
+                                        </TabButton>
+                                    )}
                                 </ButtonGroup>
                             </div>
                             {durationError && (
@@ -586,25 +618,14 @@ export function Sandboxes() {
                         </div>
                         {!durationError && (
                             <Alert intent="info">
-                                {kept ? (
-                                    <>
-                                        Runs until{" "}
-                                        {timeout === FOREVER
-                                            ? "you pause or kill it"
-                                            : new Date(
-                                                  now + timeout * 1000,
-                                              ).toLocaleString()}
-                                        , an hour at a time. From your Pollen
-                                        each hour:{" "}
-                                        {upFront(pricing, pending, 3600)}.
-                                    </>
-                                ) : (
-                                    <>
-                                        From your Pollen now:{" "}
-                                        {upFront(pricing, pending, paidNow)}.
-                                    </>
-                                )}{" "}
-                                Unused time isn’t refunded.
+                                Runs until{" "}
+                                {timeout === FOREVER
+                                    ? "you pause or kill it"
+                                    : new Date(
+                                          now + timeout * 1000,
+                                      ).toLocaleString()}
+                                , 10 minutes at a time. From your Pollen each
+                                hour: {perHour(pricing, pending)}.
                             </Alert>
                         )}
                     </>

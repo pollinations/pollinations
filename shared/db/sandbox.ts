@@ -1,6 +1,6 @@
-// Sandboxes kept running past E2B's 24-hour run (gen's routes/e2b.ts). E2B's
-// metadata is set once at create, so the keep lives here: a timeout or pause
-// changes it.
+// Sandboxes gen keeps running until their timeout, 10 minutes at a time
+// (gen's routes/e2b.ts). E2B's metadata is set once at create, so the keep
+// lives here: a timeout or pause changes it.
 
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { apikey } from "./better-auth.ts";

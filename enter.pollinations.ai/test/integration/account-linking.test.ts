@@ -4,13 +4,13 @@ import {
     rewards as rewardsTable,
     user as userTable,
 } from "@shared/db/better-auth.ts";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { createAuth } from "../../src/auth.ts";
 import {
     discordConfigFromEnv,
-    isPollinationsDiscordMember,
+    getPollinationsDiscordMember,
 } from "../../src/services/discord.ts";
 import { checkQuestsForUser } from "../../src/services/quest-checker.ts";
 import { test } from "../fixtures.ts";
@@ -215,7 +215,7 @@ test("treats Discord error 10007 as a missing member", async ({
     mocks.discord.state.membershipStatus = 404;
     mocks.discord.state.membershipErrorCode = 10007;
 
-    await expect(isPollinationsDiscordMember(env, userId)).resolves.toBe(false);
+    await expect(getPollinationsDiscordMember(env, userId)).resolves.toBeNull();
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 
@@ -228,7 +228,7 @@ test("surfaces Discord 404 errors other than unknown member", async ({
     mocks.discord.state.membershipStatus = 404;
     mocks.discord.state.membershipErrorCode = 10004;
 
-    await expect(isPollinationsDiscordMember(env, userId)).rejects.toThrow(
+    await expect(getPollinationsDiscordMember(env, userId)).rejects.toThrow(
         "404 code=10004",
     );
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
@@ -242,10 +242,67 @@ test("surfaces Discord membership rate limits", async ({
     const userId = await seedDiscordAccount(mocks.discord.state.userId);
     mocks.discord.state.membershipStatus = 429;
 
-    await expect(isPollinationsDiscordMember(env, userId)).rejects.toThrow(
+    await expect(getPollinationsDiscordMember(env, userId)).rejects.toThrow(
         "Discord membership lookup is rate limited",
     );
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
+});
+
+test("pays Discord quests once per Discord account", async ({
+    mocks,
+    sessionToken: _sessionToken,
+}) => {
+    await mocks.enable("discord");
+    const discordId = mocks.discord.state.userId;
+    const firstUserId = await seedDiscordAccount(discordId);
+    // Arcane's "Level 20+" role.
+    mocks.discord.state.memberRoles = ["1365603135858409482"];
+
+    await checkQuestsForUser(env, firstUserId);
+
+    // Move the same Discord account to a second Pollinations account.
+    const db = drizzle(env.DB);
+    const secondUserId = "discord-relink-user";
+    await db.delete(accountTable).where(eq(accountTable.userId, firstUserId));
+    await db.insert(userTable).values({
+        id: secondUserId,
+        name: "Discord Relink User",
+        email: "discord-relink-user@example.com",
+        emailVerified: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        githubId: 424242,
+        githubUsername: "discord-relink-user",
+    });
+    await db.insert(accountTable).values({
+        id: crypto.randomUUID(),
+        accountId: discordId,
+        providerId: "discord",
+        userId: secondUserId,
+    });
+
+    await checkQuestsForUser(env, secondUserId);
+
+    const discordRewards = (userId: string) =>
+        db
+            .select({
+                questId: rewardsTable.questId,
+                pollenAmount: rewardsTable.pollenAmount,
+            })
+            .from(rewardsTable)
+            .where(
+                and(
+                    eq(rewardsTable.userId, userId),
+                    like(rewardsTable.questId, "%discord%"),
+                ),
+            )
+            .orderBy(rewardsTable.questId);
+    expect(await discordRewards(firstUserId)).toEqual([
+        { questId: "discord_level_10", pollenAmount: 2 },
+        { questId: "discord_level_20", pollenAmount: 5 },
+        { questId: "join_discord", pollenAmount: 1 },
+    ]);
+    expect(await discordRewards(secondUserId)).toEqual([]);
 });
 
 test("rejects Discord as a standalone sign-in provider", async () => {

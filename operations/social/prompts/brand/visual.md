@@ -31,6 +31,8 @@
 
 ## Characters — Recurring Cast
 
+Each character is one unique individual: there is only one Polli, one Monitor Robot and one Nomnom. Never show the same character twice in one image — no second bee, no pair of robots, no two Nomnoms.
+
 ### Polli (The Bee) — Main Character (MANDATORY in every image)
 
 The pollinations.ai bee MUST appear in every image, interacting with the scene.

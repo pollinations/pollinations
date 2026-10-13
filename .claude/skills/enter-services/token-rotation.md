@@ -33,11 +33,6 @@ this gains explicit workspace handling (tracked in #11127).
 replacement. It is not an Enter Worker secret and does not belong in Enter
 SOPS files.
 
-`TINYBIRD_LEGACY_READ_TOKEN` lives in the retired `pollinations_ai` workspace
-and has no rotation path. `operations/observability` still uploads it but no
-longer reads it; delete the Worker secret and revoke the token once that
-removal is approved.
-
 ## Rotation mechanisms
 
 - **`PLN_ENTER_TOKEN`**, **`PLN_GPU_TOKEN`**: self-generated (`openssl rand

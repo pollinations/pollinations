@@ -310,7 +310,11 @@ test("discovery needs distinct platforms, actual Exa search and local Scrapling 
         /Scrapling/,
     );
     const sources = [
-        { ...source("a", "provider.example"), method: "scrapling-http" },
+        {
+            ...source("a", "provider.example"),
+            method: "scrapling-http",
+            text: "publisher/example-v2 and community/user/example-v1 are newly documented models.",
+        },
     ];
     const discoveries = [
         " PUBLISHER/EXAMPLE-V1 ",
@@ -353,6 +357,39 @@ test("discovery needs distinct platforms, actual Exa search and local Scrapling 
                 [model],
             ),
         /Exa/,
+    );
+});
+
+test("discovery identity must occur in its own cited fetched source without changing checkpoints", () => {
+    const sources = [
+        { id: "a", status: "fetched", text: "Atlas-2 is a text model." },
+        { id: "b", status: "fetched", text: "Birch-3 is an embedding model." },
+    ];
+    const discoveries = [
+        { name: "publisher/Birch-3", sourceIds: ["a"] },
+        { name: "publisher/Atlas-3", sourceIds: ["a"] },
+        { name: "publisher/Atlas-2", sourceIds: ["a"] },
+        { name: "publisher/Birch-3", sourceIds: ["b"] },
+    ].map((item) => ({
+        ...item,
+        kind: "model",
+        reason: "New documented model",
+        semanticAudit: [{ relation: "supported" }],
+    }));
+    const output = assess(
+        { routes: [], discoveries, gaps: [] },
+        sources,
+        new Map(),
+        null,
+        [],
+        false,
+    );
+    assert.deepEqual(
+        output.discoveries.map(({ name }) => name),
+        ["publisher/Atlas-2", "publisher/Birch-3"],
+    );
+    assert.ok(
+        output.discoveries.every((item) => item.semanticAudit === undefined),
     );
 });
 

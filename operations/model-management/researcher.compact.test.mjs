@@ -121,8 +121,8 @@ async function fixture(t) {
     };
 }
 
-function nativeResponse(payload) {
-    const choice = payload.state.items ? "supported" : "relevant";
+function nativeResponse(payload, relation = "supported") {
+    const choice = payload.state.items ? relation : "relevant";
     return {
         id: "fixture-native-response",
         model: JEV_MODEL,
@@ -149,7 +149,13 @@ function nativeResponse(payload) {
 function network(
     t,
     inventory,
-    { invalid, nativeAt = 1, absentQuote = false } = {},
+    {
+        invalid,
+        nativeAt = 1,
+        absentQuote = false,
+        marketRelation,
+        longReason = false,
+    } = {},
 ) {
     const calls = { search: [], native: [], sol: [] };
     t.mock.method(globalThis, "fetch", async (endpoint, options) => {
@@ -200,7 +206,14 @@ function network(
                 undefined,
                 "Jev must use its native shared-state protocol",
             );
-            const response = nativeResponse(payload);
+            const response = nativeResponse(
+                payload,
+                payload.state.items?.some(({ id }) =>
+                    id.startsWith("discovery:"),
+                )
+                    ? marketRelation
+                    : "supported",
+            );
             if (calls.native.length === nativeAt) {
                 if (invalid === "usage") response.usage.input_tokens = 0;
                 if (invalid === "answer")
@@ -218,16 +231,22 @@ function network(
         calls.sol.push(payload);
         assert.equal(payload.model, sol.name);
         const context = JSON.parse(payload.messages[1].content);
-        assert.equal(context.preparation.searches.length, 4);
-        assert.equal(context.preparation.sources.length, 1);
+        assert.equal(
+            context.preparation.searches.length,
+            context.models ? 4 : 1,
+        );
+        if (!marketRelation || !context.models)
+            assert.equal(context.preparation.sources.length, 1);
         assert.equal(
             context.savedSources,
             undefined,
             "Prepared sources must not be repeated in saved context",
         );
         const source = context.preparation.sources[0];
-        assert.equal(source.method, "scrapling-http");
-        assert.equal(source.pageDigest, hash(text));
+        if (source) {
+            assert.equal(source.method, "scrapling-http");
+            assert.equal(source.pageDigest, hash(text));
+        }
         const candidate = {
             action: "verify",
             routes: [],
@@ -283,6 +302,34 @@ function network(
                 },
             ],
         };
+        if (marketRelation) {
+            if (context.models)
+                candidate.models = context.models.map(({ name }) => ({
+                    name,
+                    routes: [],
+                    discoveries: [],
+                    gaps: ["No documented route"],
+                }));
+            else {
+                delete candidate.models;
+                candidate.discoveries = [
+                    {
+                        name: "fixture-embedding-8b",
+                        kind: "model",
+                        reason: longReason
+                            ? "Documented embedding model. ".repeat(60)
+                            : "Accepts text and returns embedding vectors",
+                        sourceIds: [source.id],
+                        semanticAudit: [
+                            {
+                                relation: "supported",
+                                requestDigest: "unverified",
+                            },
+                        ],
+                    },
+                ];
+            }
+        }
         if (absentQuote)
             candidate.models[0].routes[0].claims[1].quote =
                 "fixture-embedding-8b is available on every planet through a managed serverless API.";
@@ -423,6 +470,71 @@ test(
         );
     },
 );
+
+for (const relation of [
+    "supported",
+    "insufficient",
+    "contradicted",
+    "too-long",
+])
+    test(
+        `compact market discovery receives bounded native support grading: ${relation}`,
+        { skip: !available && "Python with Scrapling unavailable" },
+        async (t) => {
+            const { env } = await fixture(t);
+            delete env.MODELS;
+            const calls = network(t, [sol, jev], {
+                marketRelation:
+                    relation === "too-long" ? "supported" : relation,
+                longReason: relation === "too-long",
+            });
+            const report = await main(env);
+            assert.equal(report.status, "complete");
+            assert.equal(report.discovery.status, "researched");
+            const audits = calls.native.filter(({ state }) =>
+                state.items?.some(({ id }) => id.startsWith("discovery:")),
+            );
+            assert.equal(audits.length, relation === "too-long" ? 0 : 1);
+            if (audits.length) {
+                const item = audits[0].state.items[0];
+                assert.match(item.claim, /fixture-embedding-8b as a model/);
+                assert.match(
+                    item.claim,
+                    /Accepts text and returns embedding vectors/,
+                );
+                assert.match(item.excerpt, /fixture-embedding-8b/);
+                assert.ok(
+                    item.claim.length <= 1000 && item.excerpt.length <= 1600,
+                );
+            }
+            assert.equal(
+                report.discovery.discoveries.length,
+                relation === "supported" ? 1 : 0,
+            );
+            if (relation === "supported") {
+                const [grade] = report.discovery.discoveries[0].semanticAudit;
+                assert.equal(grade.relation, "supported");
+                assert.match(grade.requestDigest, /^[a-f0-9]{64}$/);
+                assert.ok(
+                    report.calls.some(
+                        (call) =>
+                            call.requestDigest === grade.requestDigest &&
+                            call.status === "received",
+                    ),
+                );
+            } else
+                assert.ok(
+                    report.discovery.gaps.some((gap) =>
+                        gap.includes(
+                            relation === "too-long"
+                                ? "exceeds bounded semantic audit"
+                                : `discovery evidence ${relation}`,
+                        ),
+                    ),
+                );
+            assert.match(report.discovery.auditDigest, /^[a-f0-9]{64}$/);
+        },
+    );
 
 for (const invalid of ["usage", "answer"])
     test(

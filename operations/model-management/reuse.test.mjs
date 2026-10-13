@@ -460,10 +460,14 @@ test("reuse cannot promote historical unverified routes to documented", async ()
 
 test("every discovery reference also needs an unchanged full-page digest", async () => {
     const { previous, row, source, refreshed } = fixture();
+    const text = `${source.text} new-provider offers managed inference.`;
     const second = {
         ...source,
         id: "s2",
         url: "https://fireworks.ai/new-provider",
+        text,
+        digest: hash(text),
+        pageDigest: hash(`${text} unchanged whole page`),
     };
     row.sources.push(second);
     row.discoveries = [

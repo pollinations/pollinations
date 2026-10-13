@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T20:22:33.153949+00:00",
+  "generated_at": "2026-10-13T20:33:24.756873+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6220,6 +6220,70 @@
             "promptImageTokens": "0.00000075",
             "promptVideoTokens": "0.00000075",
             "completionTextTokens": "0.00000375"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17329:google/gemini-4-argon",
+      "model_id": "google/gemini-4-argon",
+      "title": "Gemini 4 Argon",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17329,
+      "url": "https://github.com/pollinations/pollinations/pull/17329",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "web_search"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3600
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000004",
+            "promptAudioTokens": "0.000004",
+            "promptImageTokens": "0.000004",
+            "promptVideoTokens": "0.000004",
+            "completionTextTokens": "0.00002"
           }
         }
       }

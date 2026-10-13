@@ -359,9 +359,7 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             titleBound &&
             scopeValid(i - 2) &&
             paths.length > 0 &&
-            paths.every(
-                ([, value]) => value.toLowerCase() === checkpoint.toLowerCase(),
-            ) &&
+            paths.every(([, value]) => exactModelIdentity(value, checkpoint)) &&
             lines[i - 2]?.value.replace(/^#{1,6}\s+/, "") ===
                 "Available Serverless" &&
             previous?.value === "Run queries immediately, pay only for usage";

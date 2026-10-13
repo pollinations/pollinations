@@ -20,7 +20,12 @@ import {
     validateResearchControl,
     validateTriage,
 } from "./jev.mjs";
-import { officialCandidates, parseLeads, prepareResearch } from "./prepare.mjs";
+import {
+    mentions as mentionsModelIdentity,
+    officialCandidates,
+    parseLeads,
+    prepareResearch,
+} from "./prepare.mjs";
 import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
 import { inferenceQuote } from "./pricing.mjs";
 
@@ -570,11 +575,12 @@ export function assess(
         const modelBound = (claim) => {
             if (
                 claim.kind !== "price" &&
-                route.upstreamModel.includes(" ") &&
+                (route.upstreamModel.includes(" ") ||
+                    !mentions(claim.quote, route.upstreamModel)) &&
                 wanted.some((name) =>
                     exactModelIdentity(route.upstreamModel, name),
                 ) &&
-                mentions(claim.quote, route.upstreamModel)
+                mentionsModelIdentity(claim.quote, route.upstreamModel)
             )
                 return true;
             const source = sources.find((item) => item.id === claim.sourceId);
@@ -612,11 +618,9 @@ export function assess(
                     wanted.some((name) =>
                         exactModelIdentity(route.upstreamModel, name),
                     ) &&
-                    mentions(norm(claim.quote), route.upstreamModel) &&
-                    wanted.some(
-                        (name) =>
-                            mentions(norm(claim.quote), name) ||
-                            exactModelIdentity(claim.quote, name),
+                    mentionsModelIdentity(
+                        norm(claim.quote),
+                        route.upstreamModel,
                     )) ||
                 (claim.kind === "identity" &&
                     wanted.some((name) =>

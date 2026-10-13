@@ -45,7 +45,7 @@ const jev = inventory.find((row) => row.name === JEV_MODEL),
 const rates = (
     await readJsonWithRetries("https://gen.pollinations.ai/mcp")
 ).data.find((row) => row.id === "exa").pricing.rates;
-const baseline = 2.13728930974;
+const baseline = 2.19773671636;
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 12 * 60000).toISOString(),
@@ -267,6 +267,13 @@ const services = {
 try {
     const prepared = await prepareResearch({}, services);
     report.prepared = {
+        plans: prepared.plans,
+        scopes: [...prepared.scopes].map(([scope, queries]) => [
+            scope,
+            [...queries],
+        ]),
+        leads: prepared.leads,
+        reasoningAction: prepared.reasoningAction,
         actions: prepared.actions,
         gaps: prepared.gaps,
         extraction: prepared.extraction,

@@ -164,6 +164,16 @@ function parseImageParams(
             cause: parseResult.error.issues,
         });
     }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
+        });
+    }
     return {
         ...parseResult.data,
         ...(communityReferences?.data ?? {}),

@@ -54,21 +54,22 @@ export const TEXT_FALLBACKS = {
     "inclusionai/ling-3.1-flash": {
         "inclusionai/ling-3.1-flash:openrouter:novita": {
             provider: "openrouter",
-            // Free during the launch promotion, matching the public quote.
+            // The primary's provisional rate plus the account's 5.5%
+            // credit-purchase fee, until Novita publishes its paid rate.
             cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
+                promptTextTokens: perMillion(0.3) * 1.055,
+                promptCachedTokens: perMillion(0.06) * 1.055,
+                completionTextTokens: perMillion(0.9) * 1.055,
             },
         },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
-            // Same Novita checkpoint through a separate gateway. Both routes
-            // are free during the launch promotion; recheck rates at cutover.
+            // Same Novita checkpoint through a separate gateway, which adds
+            // no fee; provisional until Novita publishes its paid rate.
             cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.9),
             },
         },
     },

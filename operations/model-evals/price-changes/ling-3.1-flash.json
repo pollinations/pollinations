@@ -1,9 +1,9 @@
 {
-    "status": "blocked_pending_provider_confirmation",
-    "runtime_change": false,
+    "status": "provisional_price_applied",
+    "runtime_change": true,
     "currency": "USD",
     "price_multiplier": 1,
-    "merge_policy": "Keep draft and MERGE-HOLD. Confirm exact promotion cutoff, successor rates on all serving routes and billing evidence before adding and validating runtime changes. Manual maintainer merge only.",
+    "merge_policy": "Merge on the promotion end. The price is provisional (Artificial Analysis rate on inclusionAI's API); replace it with Novita's published paid rate on all three routes as soon as it appears.",
     "model": "inclusionai/ling-3.1-flash",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16604",
     "current_price": {
@@ -11,21 +11,28 @@
         "cached_input_per_million_tokens": 0,
         "output_per_million_tokens": 0
     },
-    "next_price": null,
+    "next_price": {
+        "input_per_million_tokens": 0.3,
+        "cached_input_per_million_tokens": 0.06,
+        "output_per_million_tokens": 0.9,
+        "source": "Artificial Analysis via https://hokai.io/hub/models/ling-3.1-flash (inclusionAI's own API, checked 2026-10-13)",
+        "provisional": true
+    },
     "merge_on": "2026-10-13",
     "merge_date_confirmed": false,
     "unknowns": [
         "Exact October 13 promotion cutoff and timezone",
-        "Ling 3.1 Flash paid successor rates on Novita, OpenRouter/Novita and Vercel/Novita"
+        "Novita's published paid rate, which serves all three routes"
     ],
     "sources": [
-        "https://vercel.com/ai-gateway/models/ling-3.1-flash-free",
+        "https://developer.ant-ling.com/en/docs/models/price/",
+        "https://vercel.com/changelog/ling-3-1-flash-is-now-available-on-ai-gateway",
+        "https://hokai.io/hub/models/ling-3.1-flash",
         "https://novita.ai/pricing",
-        "https://openrouter.ai/inclusionai/ling-3.1-flash-free"
+        "https://openrouter.ai/inclusionai/ling-3.1-flash"
     ],
     "required_changes": [
-        "Replace free rates only with independently confirmed Ling 3.1 Flash rates, including intermediary fees",
-        "Retain priceMultiplier: 1; paid-only access policy is tracked separately in #16686",
-        "Validate provider usage, caller pricing, wallet debits and billing events before release"
+        "Replace the provisional rate with Novita's paid rate on all three routes, including OpenRouter's 5.5% fee",
+        "Keep paidOnly: true (Novita primary)"
     ]
 }

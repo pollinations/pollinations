@@ -1221,11 +1221,7 @@ describe("static provider fallbacks", () => {
             hidden: true,
             fallbackOnly: true,
             aliases: [],
-            cost: {
-                promptTextTokens: 0,
-                promptCachedTokens: 0,
-                completionTextTokens: 0,
-            },
+            cost: TEXT_SERVICES[primary].cost,
         });
         expect(findModelByName(route)?.config()).toMatchObject({
             model: primary,

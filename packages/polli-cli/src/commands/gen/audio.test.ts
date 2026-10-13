@@ -203,22 +203,25 @@ describe("gen audio output", () => {
         [["hi", "--timestamps", "--duration", "30"]],
         [["hi", "--timestamps", "--instrumental"]],
         [["hi", "--timestamps", "--duration", "30", "--instrumental"]],
-    ])("rejects --timestamps combined with music options (%j)", async (args) => {
-        const fetchMock = vi.fn();
-        vi.stubGlobal("fetch", fetchMock);
-        const stderr: string[] = [];
-        vi.spyOn(process.stderr, "write").mockImplementation((str) => {
-            stderr.push(String(str));
-            return true;
-        });
+    ])(
+        "rejects --timestamps combined with music options (%j)",
+        async (args) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            const stderr: string[] = [];
+            vi.spyOn(process.stderr, "write").mockImplementation((str) => {
+                stderr.push(String(str));
+                return true;
+            });
 
-        await expect(
-            createAudioCommand().parseAsync(args, { from: "user" }),
-        ).rejects.toThrow(ExitSignal);
+            await expect(
+                createAudioCommand().parseAsync(args, { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
 
-        expect(fetchMock).not.toHaveBeenCalled();
-        expect(stderr.join("")).toContain(
-            "--timestamps cannot be combined with --duration or --instrumental",
-        );
-    });
+            expect(fetchMock).not.toHaveBeenCalled();
+            expect(stderr.join("")).toContain(
+                "--timestamps cannot be combined with --duration or --instrumental",
+            );
+        },
+    );
 });

@@ -24,7 +24,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -117,7 +117,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models",
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
         ),
     pollenBudget: z
         .number()
@@ -1776,7 +1776,7 @@ export const accountRoutes = new Hono<Env>()
             const permissions = parsePermissions(key.permissions) ?? {};
             if (allowedModels !== undefined) {
                 if (allowedModels) {
-                    permissions.models = await toModelCategories(
+                    permissions.models = await toModelPermissions(
                         c.env.DB,
                         allowedModels,
                     );
@@ -2035,7 +2035,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())

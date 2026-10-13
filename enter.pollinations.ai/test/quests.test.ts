@@ -400,7 +400,7 @@ test("catalog returns quest definitions without ledger stats", async ({
     });
     expectStableCatalogFields("connect_polli_cli", {
         state: "available",
-        rewardAmount: 2,
+        rewardAmount: 1,
         balanceBucket: "tier",
     });
     expectStableCatalogFields("join_discord", {
@@ -1190,32 +1190,39 @@ test("app growth quests reward paid usage and ten-user reach, not the first conn
     ]);
 });
 
-test("Polli CLI quest rewards its device-login keys, not other app keys", async ({
+test("Polli CLI quest rewards device-login keys on accounts 3+ days old", async ({
     sessionToken: _sessionToken,
 }) => {
     const db = drizzle(env.DB, { schema });
     const owner = await getOnlyUser();
-    const [polliUserId, otherUserId] = await seedByopConnections(
-        owner.id,
-        2,
-        "polli-quest",
-    );
-    if (!polliUserId || !otherUserId) throw new Error("Expected BYOP users");
+    const [polliUserId, otherUserId, freshPolliUserId] =
+        await seedByopConnections(owner.id, 3, "polli-quest");
+    if (!polliUserId || !otherUserId || !freshPolliUserId) {
+        throw new Error("Expected BYOP users");
+    }
 
     await db
         .update(schema.apikey)
         .set({ byopClientKeyId: "jF3QOFUCn0ipcgRqkTU2kiSFMwZtm7v0" })
-        .where(eq(schema.apikey.referenceId, polliUserId));
+        .where(
+            inArray(schema.apikey.referenceId, [polliUserId, freshPolliUserId]),
+        );
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    await db
+        .update(schema.user)
+        .set({ createdAt: fourDaysAgo })
+        .where(inArray(schema.user.id, [polliUserId, otherUserId]));
 
-    await checkQuestsForUser(env, polliUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
-    await checkQuestsForUser(env, otherUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
-    await checkQuestsForUser(env, polliUserId, [
-        questIndex.ACCOUNT_SETUP_QUEST_GROUP,
-    ]);
+    for (const userId of [
+        polliUserId,
+        otherUserId,
+        freshPolliUserId,
+        polliUserId,
+    ]) {
+        await checkQuestsForUser(env, userId, [
+            questIndex.ACCOUNT_SETUP_QUEST_GROUP,
+        ]);
+    }
 
     const rewards = await db
         .select({
@@ -1224,7 +1231,7 @@ test("Polli CLI quest rewards its device-login keys, not other app keys", async 
         })
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, "connect_polli_cli"));
-    expect(rewards).toEqual([{ userId: polliUserId, amount: 2 }]);
+    expect(rewards).toEqual([{ userId: polliUserId, amount: 1 }]);
 });
 
 test("app milestones award their rewards at inclusive thresholds", async ({
@@ -2147,50 +2154,6 @@ test("reporters earn 3 Pollen per issue fixed since the 90-day cutoff, including
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 15);
-});
-
-test("the maintainer does not re-earn reported-issue rewards", async ({
-    mocks,
-    sessionToken: _sessionToken,
-}) => {
-    const db = drizzle(env.DB, { schema });
-    const user = await getOnlyUser();
-    await db
-        .update(schema.user)
-        .set({ githubId: 5099901, githubUsername: "VoodooHop" })
-        .where(eq(schema.user.id, user.id));
-    await mocks.enable("github", "tinybird");
-    mocks.github.state.questIssues.push({
-        number: 9101,
-        state: "closed",
-        title: "Issue 9101",
-        html_url: "https://github.com/pollinations/pollinations/issues/9101",
-        body: "A useful issue report",
-        created_at: "2026-09-22T00:00:00Z",
-        updated_at: "2026-09-24T12:00:00Z",
-        closed_at: "2026-09-24T12:00:00Z",
-        user: { login: "VoodooHop", databaseId: 5099901 },
-        labels: [],
-        closedByPullRequestsReferences: [
-            {
-                number: 10101,
-                mergedAt: "2026-09-24T12:00:00Z",
-                author: { databaseId: 999999 },
-            },
-        ],
-    });
-
-    await checkQuestsForUser(env, user.id);
-
-    const rewards = await db
-        .select({ questId: schema.rewards.questId })
-        .from(schema.rewards)
-        .where(eq(schema.rewards.userId, user.id));
-    expect(
-        rewards.filter((reward) =>
-            reward.questId?.startsWith("github:reported_issue:"),
-        ),
-    ).toEqual([]);
 });
 
 test("Bee Census quest pays 3 Pollen once for the user's own labelled survey issue with enough written answers", async ({

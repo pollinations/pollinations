@@ -8,11 +8,14 @@ describe("resource action feedback", () => {
         ["save", "app access", "Failed to save key metadata"],
         ["delete", "the model", "Request failed"],
         ["save", "the agent", "Request failed"],
-    ] as const)("does not append a generic %s failure for %s", (action, subject, detail) => {
-        expect(
-            resourceActionError(action, subject, new Error(` ${detail} `)),
-        ).toBe(resourceActionError(action, subject));
-    });
+    ] as const)(
+        "does not append a generic %s failure for %s",
+        (action, subject, detail) => {
+            expect(
+                resourceActionError(action, subject, new Error(` ${detail} `)),
+            ).toBe(resourceActionError(action, subject));
+        },
+    );
 
     it("preserves specific details even when they start with a generic failure", () => {
         const detail = "Request failed: endpoint returned 403 Forbidden.";

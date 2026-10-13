@@ -55,52 +55,51 @@ describe("model per-pollen calculations", () => {
         expect(calculatePerPollen(freeModel)).toBe("∞");
     });
 
-    it.each([
-        undefined,
-        0,
-        0.02,
-    ])("does not mistake an agent's free wrapper for its run cost (%s)", (avgCost) => {
-        const prices = getModelPricesFromCatalog(
-            [
-                {
-                    name: "owner/agent",
-                    category: "text",
-                    agent: true,
-                    community: true,
-                    pricing: { currency: "pollen" },
-                },
-                {
-                    name: "free-model",
-                    category: "text",
-                    pricing: { currency: "pollen" },
-                },
-            ],
-            avgCost === undefined
-                ? undefined
-                : {
-                      "owner/agent": { avgCost, requestCount: 3 },
-                  },
-        );
-        const [agent, freeModel] = prices;
+    it.each([undefined, 0, 0.02])(
+        "does not mistake an agent's free wrapper for its run cost (%s)",
+        (avgCost) => {
+            const prices = getModelPricesFromCatalog(
+                [
+                    {
+                        name: "owner/agent",
+                        category: "text",
+                        agent: true,
+                        community: true,
+                        pricing: { currency: "pollen" },
+                    },
+                    {
+                        name: "free-model",
+                        category: "text",
+                        pricing: { currency: "pollen" },
+                    },
+                ],
+                avgCost === undefined
+                    ? undefined
+                    : {
+                          "owner/agent": { avgCost, requestCount: 3 },
+                      },
+            );
+            const [agent, freeModel] = prices;
 
-        expect(agent.free).toBe(false);
-        expect(calculatePerPollen(agent)).toBe(avgCost ? "50" : "—");
-        expect(matchesModelQuery(agent, parseModelQuery("access:free"))).toBe(
-            false,
-        );
-        expect(freeModel.free).toBe(true);
-        expect(calculatePerPollen(freeModel)).toBe("∞");
-        expect(sortModels(prices, "price-low").map(({ name }) => name)).toEqual(
-            ["free-model", "owner/agent"],
-        );
-        expect(
-            sortModels(prices, "price-high").map(({ name }) => name),
-        ).toEqual(
-            avgCost
-                ? ["owner/agent", "free-model"]
-                : ["free-model", "owner/agent"],
-        );
-    });
+            expect(agent.free).toBe(false);
+            expect(calculatePerPollen(agent)).toBe(avgCost ? "50" : "—");
+            expect(
+                matchesModelQuery(agent, parseModelQuery("access:free")),
+            ).toBe(false);
+            expect(freeModel.free).toBe(true);
+            expect(calculatePerPollen(freeModel)).toBe("∞");
+            expect(
+                sortModels(prices, "price-low").map(({ name }) => name),
+            ).toEqual(["free-model", "owner/agent"]);
+            expect(
+                sortModels(prices, "price-high").map(({ name }) => name),
+            ).toEqual(
+                avgCost
+                    ? ["owner/agent", "free-model"]
+                    : ["free-model", "owner/agent"],
+            );
+        },
+    );
 });
 
 it("does not promise a whole request when one costs more than a Pollen", () => {

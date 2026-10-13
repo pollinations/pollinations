@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-12",
+  "period_start": "2026-10-12",
+  "period_end": "2026-10-12",
+  "generated_at": "2026-10-13T06:10:47.394597+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-12/images/twitter.jpg"
+    }
+  ],
+  "text": "added a REST-based Agent Skill so agents can call Pollinations without a CLI install. docs serve Markdown on request; SDK and CLI text streams now reject incomplete output instead of returning half an answer. the other half was important."
+}

@@ -1,0 +1,286 @@
+{
+  "date": "2026-10-12",
+  "period_start": "2026-10-12",
+  "period_end": "2026-10-12",
+  "title": "Claude fast mode joins a tidier media API",
+  "summary": "Claude fast mode, model-scoped keys, Roblox NPCs, and better agent entry points shared the day with a substantial round of API and tool fixes.\n\nClaude Opus 5.5 fast mode was added for text and image inputs. Speech requests now honor supported speed settings, Whisper subtitle formats return measured segments, and GPT Transcribe accepts plain-text output. DreamShaper keeps approximately the requested aspect ratio when shrinking oversized images; smaller SDK, MCP, and Gemini speech fixes make media requests more predictable.\n\nTwo Roblox NPC examples, Pollen Village’s Sage and Grix the blacksmith, were added alongside a game about spotting AI-generated images, a multi-model chat studio, a stickman image maker, and a YouTube research tool. App catalog corrections and pre-review fixes make submitted apps easier to find and assess.\n\nAPI keys can now allow specific model IDs without opening an entire category, with controls in the dashboard and Polli CLI. MCP clients gained a metadata-document sign-in option, and the activity table can group requests or Pollen spending by model or key. Key-editing, mobile controls, wallet display, and Quest status also received fixes.",
+  "pr_count": 57,
+  "prs": [
+    {
+      "number": 15569,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16532,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16603,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16622,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16626,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16717,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16753,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16776,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16778,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16825,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16931,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16940,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16945,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16954,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16986,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 16988,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17009,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17011,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17012,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17036,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17038,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17046,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17073,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17080,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17082,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17084,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17086,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17089,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17097,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17129,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17136,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17139,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17140,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17141,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17146,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17147,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17149,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17153,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17155,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17156,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17165,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17167,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17170,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17175,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17186,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17191,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17193,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17199,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17207,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17208,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17209,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17212,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17213,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17217,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17229,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17230,
+      "date": "2026-10-12"
+    },
+    {
+      "number": 17239,
+      "date": "2026-10-12"
+    }
+  ],
+  "generated_at": "2026-10-13T06:10:47.394597+00:00",
+  "highlights": [
+    {
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 fast",
+      "text": "Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).",
+      "prs": [
+        16954
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎯",
+      "title": "Keys scoped to models",
+      "text": "Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        17213
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "💡",
+      "title": "See usage your way",
+      "text": "Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.",
+      "prs": [
+        17165
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🔗",
+      "title": "API access for sandboxed agents",
+      "text": "The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16945
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "🎯",
+      "title": "A blacksmith who remembers",
+      "text": "Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).",
+      "prs": [
+        17147
+      ],
+      "kind": "app"
+    }
+  ]
+}

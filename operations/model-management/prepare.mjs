@@ -881,7 +881,10 @@ export async function prepareResearch(task, services) {
                         url: source.url,
                         mode: "exa",
                         required: true,
-                        maxCharacters: 4000,
+                        maxCharacters:
+                            REQUIRED_FEEDS.find(
+                                (feed) => feed.url === source.url,
+                            )?.maxCharacters ?? 4000,
                         sourceId: source.id,
                         text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
                     })),
@@ -896,7 +899,7 @@ export async function prepareResearch(task, services) {
                     tool: "fetch",
                     url: selected.url,
                     mode: "exa",
-                    maxCharacters: 4000,
+                    maxCharacters: selected.maxCharacters,
                     parentSourceId: failed.id,
                     models: [],
                     status: "pending",

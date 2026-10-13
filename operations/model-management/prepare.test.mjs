@@ -1004,6 +1004,14 @@ test("all blocked discovery reads keep fallback menus bounded and record unresol
     const result = await prepareResearch({}, f.services);
     assert.equal(f.reads.filter(({ mode }) => mode === "http").length, 20);
     assert.equal(f.reads.filter(({ mode }) => mode === "exa").length, 4);
+    const hubFallbacks = f.reads.filter(
+        ({ mode, url }) =>
+            mode === "exa" && new URL(url).hostname === "huggingface.co",
+    );
+    assert.equal(hubFallbacks.length, 2);
+    assert.ok(
+        hubFallbacks.every(({ maxCharacters }) => maxCharacters === 18000),
+    );
     assert.equal(result.requiredEvidencePending, false);
     assert.ok(
         result.gaps.includes(

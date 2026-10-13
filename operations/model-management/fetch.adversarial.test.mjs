@@ -12,7 +12,12 @@ spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
 adapter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
 case = json.load(sys.stdin)
+if "monotonic" in case:
+    times = iter(case["monotonic"])
+    adapter.time.monotonic = lambda: next(times)
 calls = []
+sleeps = []
+adapter.time.sleep = sleeps.append
 def resolve(host, port, **kwargs):
     addresses = case.get("dns", {}).get(host, ["93.184.216.34"])
     return [(socket.AF_INET6 if ":" in address else socket.AF_INET,
@@ -24,7 +29,8 @@ class Fetcher:
         calls.append({"url": url, "options": {key: str(value) for key, value in kwargs.items()}})
         item = case.get("pages", [{"status": 200, "html_content": "<p>Readable source</p>"}])[len(calls)-1]
         if "exception" in item:
-            raise (ValueError if item.get("kind") == "value" else RuntimeError)(item["exception"])
+            exceptions = {"value": ValueError, "timeout": TimeoutError, "os": OSError}
+            raise exceptions.get(item.get("kind"), RuntimeError)(item["exception"])
         return types.SimpleNamespace(**item)
 scrapling = types.ModuleType("scrapling")
 fetchers = types.ModuleType("scrapling.fetchers")
@@ -46,7 +52,7 @@ sys.modules["scrapling"] = scrapling
 sys.modules["scrapling.fetchers"] = fetchers
 sys.stdin = io.StringIO(json.dumps(case.get("request", {"url": "https://docs.example/"})))
 result = adapter.main()
-print(json.dumps({"result": result, "calls": calls}))
+print(json.dumps({"result": result, "calls": calls, "sleeps": sleeps}))
 `;
 
 function run(overrides = {}, script = harness) {
@@ -194,6 +200,201 @@ test("redirect cycle has a bounded number of HTTP executions", () => {
     assert.equal(result.status, "unavailable");
     assert.match(result.error, /redirect/i);
     assert.ok(calls.length <= 6);
+});
+
+test("transient HTTP failures retry three times with bounded incremental delays", () => {
+    const { result, calls, sleeps } = run({
+        pages: [
+            { status: 503, headers: {} },
+            { status: 429, headers: { "Retry-After": "7" } },
+            { status: 200, html_content: "<p>Recovered documentation</p>" },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.equal(result.text, "Recovered documentation");
+    assert.equal(calls.length, 3);
+    assert.deepEqual(sleeps, [2, 7]);
+
+    const exhausted = run({
+        pages: Array.from({ length: 3 }, () => ({ status: 503, headers: {} })),
+    });
+    assert.equal(exhausted.result.status, "unavailable");
+    assert.equal(exhausted.calls.length, 3);
+    assert.deepEqual(exhausted.sleeps, [2, 4]);
+});
+
+test("network timeouts retry but client and validation failures do not", () => {
+    const recovered = run({
+        pages: [
+            { kind: "timeout", exception: "timed out" },
+            { status: 200, html_content: "<p>Recovered</p>" },
+        ],
+    });
+    assert.equal(recovered.result.status, "fetched", recovered.result.error);
+    assert.equal(recovered.calls.length, 2);
+    assert.deepEqual(recovered.sleeps, [2]);
+
+    for (const status of [400, 401, 403, 404]) {
+        const failed = run({ pages: [{ status, headers: {} }] });
+        assert.equal(failed.result.status, "unavailable", status);
+        assert.equal(failed.calls.length, 1, status);
+        assert.deepEqual(failed.sleeps, [], status);
+    }
+    const invalid = run({ request: { url: "http://docs.example/" } });
+    assert.equal(invalid.calls.length, 0);
+    assert.deepEqual(invalid.sleeps, []);
+});
+
+test("Retry-After delays up to thirty seconds are honored", () => {
+    const { result, calls, sleeps } = run({
+        pages: [
+            { status: 408, headers: { "retry-after": "30" } },
+            { status: 200, html_content: "<p>Recovered</p>" },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(sleeps, [30]);
+});
+
+test("the HTTP deadline prevents another attempt when its incremental wait cannot fit", () => {
+    const { result, calls, sleeps } = run({
+        monotonic: [0, 79, 79],
+        pages: [{ status: 503, headers: {} }],
+    });
+    assert.equal(result.status, "unavailable");
+    assert.equal(calls.length, 1);
+    assert.deepEqual(sleeps, []);
+});
+
+test("Retry-After beyond thirty seconds defers without retrying early", () => {
+    for (const retryAfter of [
+        "120",
+        new Date(Date.now() + 120_000).toUTCString(),
+    ]) {
+        const { result, calls, sleeps } = run({
+            pages: [{ status: 429, headers: { "Retry-After": retryAfter } }],
+        });
+        assert.equal(result.status, "unavailable");
+        assert.match(result.error, /HTTP 429/);
+        assert.equal(calls.length, 1);
+        assert.deepEqual(sleeps, []);
+    }
+});
+
+test("Retry-After HTTP dates are honored", () => {
+    const retryAt = new Date(Date.now() + 10_000).toUTCString();
+    const { result, calls, sleeps } = run({
+        pages: [
+            { status: 503, headers: { "Retry-After": retryAt } },
+            { status: 200, html_content: "<p>Recovered</p>" },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.equal(calls.length, 2);
+    assert.equal(sleeps.length, 1);
+    assert.ok(sleeps[0] >= 8 && sleeps[0] <= 10, sleeps[0]);
+});
+
+test("installed curl transport retries only transient error codes", () => {
+    const script = `
+import importlib.util, json, sys, types
+from curl_cffi.const import CurlECode
+from curl_cffi.requests.errors import RequestsError
+spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
+fetch = importlib.util.module_from_spec(spec); spec.loader.exec_module(fetch)
+fetch._public_addresses = lambda host, *args: ["1.1.1.1"]
+fetch.time.sleep = lambda delay: None
+calls = []
+class Session:
+    def __init__(self): self._curl_session = types.SimpleNamespace()
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def get(self, *args, **kwargs):
+        calls.append(mode)
+        if mode == "timeout" and calls.count(mode) < 3:
+            raise RequestsError("timeout", CurlECode.OPERATION_TIMEDOUT)
+        if mode == "filesize":
+            raise RequestsError("too large", CurlECode.FILESIZE_EXCEEDED)
+        if mode == "certificate":
+            raise RequestsError("bad certificate", CurlECode.SSL_CERTPROBLEM)
+        return types.SimpleNamespace(status=200, headers={}, html_content="<p>Recovered</p>")
+sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
+results = {}
+for mode in ["timeout", "filesize", "certificate"]:
+    before = len(calls)
+    results[mode] = [fetch._read_http("https://example.com", 100), len(calls) - before]
+print(json.dumps(results))
+`;
+    const child = spawnSync(python, ["-c", script, adapter], {
+        encoding: "utf8",
+        timeout: 10_000,
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    assert.equal(child.status, 0, child.stderr || String(child.error));
+    const results = JSON.parse(child.stdout);
+    assert.equal(results.timeout[0].status, "fetched");
+    assert.equal(results.timeout[1], 3);
+    for (const name of ["filesize", "certificate"]) {
+        assert.equal(results[name][0].status, "unavailable", name);
+        assert.equal(results[name][1], 1, name);
+    }
+});
+
+test("temporary DNS failures retry without weakening permanent or private-address rejection", () => {
+    const script = `
+import importlib.util, io, json, socket, sys, types
+spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
+fetch = importlib.util.module_from_spec(spec); spec.loader.exec_module(fetch)
+sleeps = []
+fetch.time.sleep = sleeps.append
+dns = []
+mode = "temporary"
+def resolve(host, *args, **kwargs):
+    dns.append(mode)
+    count = dns.count(mode)
+    if mode == "temporary" and count <= 2:
+        raise socket.gaierror(socket.EAI_AGAIN, "temporary")
+    if mode == "permanent":
+        raise socket.gaierror(socket.EAI_NONAME, "permanent")
+    if mode == "private":
+        return [(None, None, None, None, ("127.0.0.1", 443))]
+    return [(None, None, None, None, ("1.1.1.1", 443))]
+fetch.socket.getaddrinfo = resolve
+calls = []
+class Session:
+    def __init__(self): self._curl_session = types.SimpleNamespace()
+    def __enter__(self): return self
+    def __exit__(self, *args): pass
+    def get(self, *args, **kwargs):
+        calls.append(mode)
+        return types.SimpleNamespace(status=200, headers={}, html_content="<p>Fetched</p>")
+sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2))
+sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
+results = {}
+for mode in ["temporary", "permanent", "private"]:
+    before_dns, before_calls, before_sleeps = len(dns), len(calls), len(sleeps)
+    sys.stdin = io.StringIO(json.dumps({"url": "https://docs.example/"}))
+    results[mode] = [fetch.main(), len(dns) - before_dns, len(calls) - before_calls, sleeps[before_sleeps:]]
+print(json.dumps(results))
+`;
+    const child = spawnSync(python, ["-c", script, adapter], {
+        encoding: "utf8",
+        timeout: 10_000,
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    assert.equal(child.status, 0, child.stderr || String(child.error));
+    const results = JSON.parse(child.stdout);
+    assert.equal(results.temporary[0].status, "fetched");
+    assert.equal(results.temporary[1], 4);
+    assert.equal(results.temporary[2], 1);
+    assert.deepEqual(results.temporary[3], [2, 4]);
+    for (const name of ["permanent", "private"]) {
+        assert.equal(results[name][0].status, "unavailable", name);
+        assert.equal(results[name][1], 1, name);
+        assert.equal(results[name][2], 0, name);
+        assert.deepEqual(results[name][3], [], name);
+    }
 });
 
 test("upstream exception text never becomes public error text", () => {

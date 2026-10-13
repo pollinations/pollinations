@@ -8,6 +8,8 @@ import os
 import re
 import socket
 import sys
+import time
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +20,9 @@ EXTRACTION_VERSION = 2
 MAX_CHARACTERS = 18_000
 MAX_REDIRECTS = 5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_HTTP_ATTEMPTS = 3
+HTTP_DEADLINE_SECONDS = 80
+RETRYABLE_CURL_CODES = {6, 7, 18, 28, 52, 55, 56, 81, 89, 92, 95, 96}
 SENSITIVE_QUERY_NAMES = {"access_key", "access_token", "api_key", "apikey", "auth", "authorization", "bearer", "client_secret", "credential", "key", "password", "secret", "signature", "sig", "token"}
 
 
@@ -25,11 +30,19 @@ class ValidationError(ValueError):
     pass
 
 
-def _public_addresses(host):
-    try:
-        addresses = {item[4][0] for item in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)}
-    except socket.gaierror as error:
-        raise ValidationError("url host could not be resolved") from error
+def _public_addresses(host, deadline=None):
+    attempts = MAX_HTTP_ATTEMPTS if deadline is not None else 1
+    for attempt in range(attempts):
+        try:
+            addresses = {item[4][0] for item in socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)}
+            break
+        except socket.gaierror as error:
+            if error.errno != socket.EAI_AGAIN or attempt == attempts - 1:
+                raise ValidationError("url host could not be resolved") from error
+            delay = 2 ** (attempt + 1)
+            if delay >= deadline - time.monotonic():
+                raise ValidationError("url host could not be resolved") from error
+            time.sleep(delay)
     if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
         raise ValidationError("url host must resolve only to public IP addresses")
     return sorted(addresses)
@@ -121,7 +134,7 @@ def _safe_url(value):
         return ""
 
 
-def _validate_url(value):
+def _validate_url(value, deadline=None):
     if not isinstance(value, str) or len(value) > 2_048:
         raise ValidationError("url must be a public HTTPS URL")
     parsed = urlsplit(value)
@@ -131,7 +144,7 @@ def _validate_url(value):
         raise ValidationError("url must not include credential-bearing query parameters")
     if parsed.port not in (None, 443):
         raise ValidationError("url must use HTTPS port 443")
-    _public_addresses(parsed.hostname)
+    _public_addresses(parsed.hostname, deadline)
     return urlunsplit(("https", parsed.netloc, parsed.path or "/", parsed.query, ""))
 
 
@@ -143,6 +156,27 @@ def _page_html(page):
     if isinstance(body, bytes):
         return body.decode(getattr(page, "encoding", None) or "utf-8", errors="replace")
     return body if isinstance(body, str) else ""
+
+
+def _retry_delay(headers, attempt):
+    value = headers.get("retry-after") if hasattr(headers, "get") else None
+    if value is None and hasattr(headers, "get"):
+        value = headers.get("Retry-After")
+    try:
+        delay = float(value)
+    except (TypeError, ValueError):
+        try:
+            delay = (parsedate_to_datetime(value) - datetime.now(timezone.utc)).total_seconds()
+        except (TypeError, ValueError, OverflowError):
+            delay = 0
+    if delay > 30:
+        return None
+    return max(2 ** (attempt + 1), delay)
+
+
+def _retryable_network_error(error):
+    code = getattr(error, "code", None)
+    return isinstance(error, (TimeoutError, ConnectionError)) or code in RETRYABLE_CURL_CODES
 
 
 def _excerpt(page, max_characters, focus, cached):
@@ -164,7 +198,8 @@ def _excerpt(page, max_characters, focus, cached):
 
 
 def _read_http(url, max_characters, focus=None):
-    current = _validate_url(url)
+    deadline = time.monotonic() + HTTP_DEADLINE_SECONDS
+    current = _validate_url(url, deadline)
     requested = current
     cache_dir = os.environ.get("FETCH_CACHE_DIR")
     cache_path = Path(cache_dir) / (hashlib.sha256(requested.encode("utf-8")).hexdigest() + ".json") if cache_dir else None
@@ -183,7 +218,7 @@ def _read_http(url, max_characters, focus=None):
                     or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")):
                 raise ValueError("invalid cache entry")
             datetime.fromisoformat(page["fetchedAt"].replace("Z", "+00:00"))
-            page["url"] = _validate_url(page["url"])
+            page["url"] = _validate_url(page["url"], deadline)
         except Exception as error:
             raise ValidationError("cached page failed validation") from error
         if page["extractionVersion"] == EXTRACTION_VERSION:
@@ -194,20 +229,39 @@ def _read_http(url, max_characters, focus=None):
 
     for _ in range(MAX_REDIRECTS + 1):
         host = urlsplit(current).hostname
-        addresses = _public_addresses(host)
+        addresses = _public_addresses(host, deadline)
         resolved = ",".join(f"[{address}]" if ":" in address else address for address in addresses)
-        with FetcherSession() as session:
-            # Pinned Scrapling 0.4.15 has no public transport-options hook.
-            session._curl_session.curl_options = {CurlOpt.RESOLVE: [f"{host}:443:{resolved}"], CurlOpt.MAXFILESIZE_LARGE: MAX_RESPONSE_BYTES}
-            session._curl_session.trust_env = False
-            page = session.get(current, follow_redirects=False, timeout=20, retries=0)
-        status = int(getattr(page, "status", 0))
-        headers = getattr(page, "headers", {})
+        for attempt in range(MAX_HTTP_ATTEMPTS):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return _result(current, "scrapling-http", "HTTP fetch failed")
+            try:
+                with FetcherSession() as session:
+                    # Pinned Scrapling 0.4.15 has no public transport-options hook.
+                    session._curl_session.curl_options = {CurlOpt.RESOLVE: [f"{host}:443:{resolved}"], CurlOpt.MAXFILESIZE_LARGE: MAX_RESPONSE_BYTES}
+                    session._curl_session.trust_env = False
+                    page = session.get(current, follow_redirects=False, timeout=min(20, remaining), retries=0)
+                status = int(getattr(page, "status", 0))
+                headers = getattr(page, "headers", {})
+                retryable = status in {408, 429} or 500 <= status < 600
+            except OSError as error:
+                if not _retryable_network_error(error) or attempt == MAX_HTTP_ATTEMPTS - 1:
+                    return _result(current, "scrapling-http", "HTTP fetch failed")
+                retryable = True
+                headers = {}
+            if not retryable or attempt == MAX_HTTP_ATTEMPTS - 1:
+                break
+            delay = _retry_delay(headers, attempt)
+            if delay is None:
+                break
+            if delay >= deadline - time.monotonic():
+                return _result(current, "scrapling-http", "HTTP fetch failed")
+            time.sleep(delay)
         if status in {301, 302, 303, 307, 308}:
             location = headers.get("location") if hasattr(headers, "get") else None
             if not location:
                 return _result(current, "scrapling-http", "redirect response did not include a location")
-            current = _validate_url(urljoin(current, location))
+            current = _validate_url(urljoin(current, location), deadline)
             continue
         if not 200 <= status < 300:
             return _result(current, "scrapling-http", f"upstream returned HTTP {status}")
@@ -250,9 +304,9 @@ def main():
             raise ValidationError("mode must be http or dynamic")
         if not isinstance(max_characters, int) or isinstance(max_characters, bool) or not 1 <= max_characters <= MAX_CHARACTERS:
             raise ValidationError(f"maxCharacters must be an integer from 1 to {MAX_CHARACTERS}")
-        url = _validate_url(url)
         if mode == "dynamic":
             # Scrapling's DynamicFetcher has no documented per-request DNS/IP policy hook.
+            url = _validate_url(url)
             return _result(url, "scrapling-dynamic", "dynamic mode is unavailable because browser subrequests cannot be safely validated")
         return _read_http(url, max_characters, focus)
     except ValidationError as error:

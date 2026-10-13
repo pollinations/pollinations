@@ -422,3 +422,36 @@ test("plain currency scope survives Standard until a section boundary", () => {
     const usd = source.replace("per 1M tokens", "Prices per 1M tokens (USD).");
     verifyPositions(usd, extractPrices(usd, { ...nano, quote: undefined }));
 });
+
+test("observed xAI video output rate stays partial and does not bind sibling checkpoints", () => {
+    const source = `grok-imagine-video-1.5-lite\n## At a glance\nPricing\n$0.02per second\n## Pricing\nOutput\n$0.02per second\nYou are charged for each second of video generated when using the API.\nYou are also charged when using video or image as an input.\nThis model is available on multiple clusters, you can find full regional based pricing below.\n## Details\nModel name\ngrok-imagine-video-1.5-lite`;
+    const options = {
+        category: "video",
+        upstreamModel: "grok-imagine-video-1.5-lite",
+        quote: "$0.02per second",
+    };
+    const result = extractPrices(source, options);
+    assert.equal(result.input, 0.02);
+    assert.equal(result.output, null);
+    assert.equal(result.unit, "second");
+    assert.deepEqual(result.conditions, [
+        "output component only; full input and regional charges remain unknown",
+    ]);
+    verifyPositions(source, result);
+    for (const altered of [
+        source.replace(
+            "Model name\ngrok-imagine-video-1.5-lite",
+            "Model name\ngrok-imagine-video-1.5",
+        ),
+        source.replace("## Pricing", "# Prices in CAD\n## Pricing"),
+        source.replaceAll("$0.02per second", "$0.02per second per hour"),
+        `${source}\nModel name\nother-model`,
+        source.replace("Output\n$0.02", "Cached output\n$0.02"),
+    ])
+        assert.equal(extractPrices(altered, options), null);
+    for (const sibling of ["grok-imagine-video-1.5", "grok-imagine-video"])
+        assert.equal(
+            extractPrices(source, { ...options, upstreamModel: sibling }),
+            null,
+        );
+});

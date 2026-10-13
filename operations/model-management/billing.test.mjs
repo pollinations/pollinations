@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import timers from "node:timers/promises";
 import { readBilledUsage } from "./billing.mjs";
 
 const end = Math.floor(Date.now() / 1000) * 1000 - 60000;
@@ -91,6 +92,72 @@ test("HTTP and transport failures never expose credential or body", async () => 
             /^Error: Billing usage request failed$/,
         );
     }
+});
+
+test("transient billing failures recover through the shared retry path", async (t) => {
+    const delays = [];
+    t.mock.method(timers, "setTimeout", async (delay) => delays.push(delay));
+    let attempts = 0;
+    const result = await readBilledUsage(
+        "test-key",
+        iso(end - 2000),
+        iso(end),
+        async () => {
+            attempts++;
+            if (attempts === 1) {
+                return {
+                    ok: false,
+                    status: 503,
+                    headers: new Headers(),
+                    json: async () => assert.fail("Unexpected JSON read"),
+                };
+            }
+            return response([row("a")]);
+        },
+    );
+    assert.equal(attempts, 2);
+    assert.deepEqual(delays, [2000]);
+    assert.equal(result.requests, 1);
+    assert.equal(result.pollen, 0.001);
+});
+
+test("exhausted transient billing failures stay sanitized", async (t) => {
+    const delays = [];
+    t.mock.method(timers, "setTimeout", async (delay) => delays.push(delay));
+    let attempts = 0;
+    await assert.rejects(
+        readBilledUsage("private-key", iso(end - 2000), iso(end), async () => {
+            attempts++;
+            return {
+                ok: false,
+                status: 429,
+                headers: new Headers({ "retry-after": "0" }),
+                json: async () => assert.fail("Unexpected JSON read"),
+            };
+        }),
+        /^Error: Billing usage request failed$/,
+    );
+    assert.equal(attempts, 3);
+    assert.deepEqual(delays, [2000, 4000]);
+});
+
+test("invalid billing JSON is not retried", async () => {
+    let attempts = 0;
+    await assert.rejects(
+        readBilledUsage("test-key", iso(end - 2000), iso(end), async () => {
+            attempts++;
+            return {
+                ok: true,
+                status: 200,
+                headers: new Headers(),
+                json: async () => {
+                    throw new SyntaxError("private malformed billing body");
+                },
+            };
+        }),
+        /^Error: Billing usage request failed$/,
+    );
+    assert.equal(attempts, 1);
 });
 
 test("malformed costs, timestamps, identifiers, ordering, and schemas fail closed", async () => {

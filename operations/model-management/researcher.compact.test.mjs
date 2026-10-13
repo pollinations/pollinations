@@ -5,6 +5,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import timers from "node:timers/promises";
 import { JEV_ENDPOINT, JEV_MODEL, validateClaimAudit } from "./jev.mjs";
 import { officialCandidates } from "./prepare.mjs";
 import {
@@ -573,10 +574,15 @@ function network(
         marketRelation,
         longReason = false,
         extraProvider = false,
+        extraProviderUrl = "https://8.8.8.8/fixture",
         marketFinish = false,
         chooseControl,
         sourceUrl = url,
         optionQueries,
+        leadText = text,
+        leadTitle = model.name,
+        nativeFailures = [],
+        solFailures = [],
     } = {},
 ) {
     const calls = { search: [], native: [], sol: [] };
@@ -613,11 +619,15 @@ function network(
                             type: "text",
                             text: JSON.stringify({
                                 results: [
-                                    { url: sourceUrl, title: model.name, text },
+                                    {
+                                        url: sourceUrl,
+                                        title: leadTitle,
+                                        text: leadText,
+                                    },
                                     ...(extraProvider
                                         ? [
                                               {
-                                                  url: "https://8.8.8.8/fixture",
+                                                  url: extraProviderUrl,
                                                   title: model.name,
                                                   text,
                                               },
@@ -632,6 +642,11 @@ function network(
         }
         if (endpoint === `${api}${JEV_ENDPOINT}`) {
             calls.native.push(payload);
+            const failure = nativeFailures[calls.native.length - 1];
+            if (failure)
+                return new Response("Transient native failure", {
+                    status: failure,
+                });
             assert.equal(payload.model, JEV_MODEL);
             assert.ok(Object.keys(payload.questions).length > 0);
             assert.equal(
@@ -651,6 +666,8 @@ function network(
                     ? chooseControl?.(payload, calls)
                     : undefined,
             );
+            if (invalid === "all-answer")
+                response.answers.unknown = Object.values(response.answers)[0];
             const invalidTarget =
                 nativeAt === 1
                     ? payload.state.canonicalModelIds
@@ -673,6 +690,11 @@ function network(
             "All network requests must stay on the mocked Pollinations boundary",
         );
         calls.sol.push(payload);
+        const failure = solFailures[calls.sol.length - 1];
+        if (failure)
+            return new Response("Transient reasoning failure", {
+                status: failure,
+            });
         assert.equal(payload.model, sol.name);
         const context = JSON.parse(payload.messages[1].content);
         if (optionQueries && !context.preparation) {
@@ -1137,6 +1159,62 @@ for (const relation of [
         },
     );
 
+test(
+    "official pipeline recovers a Jev 503 and continues with its uncertain charge reserved",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const waits = [];
+        t.mock.method(timers, "setTimeout", async (delay) => waits.push(delay));
+        const calls = network(t, [model, sol, jev], { nativeFailures: [503] });
+        const report = await main(env);
+        assert.equal(report.status, "complete");
+        assert.equal(report.models[0].status, "researched");
+        assert.equal(calls.sol.length, 0);
+        assert.deepEqual(waits, [2000]);
+        assert.deepEqual(calls.native[0], calls.native[1]);
+        assert.equal(report.calls[0].status, "uncertain");
+        assert.equal(report.calls[1].status, "received");
+        assert.equal(report.calls[0].operationId, report.calls[1].operationId);
+        assert.ok(report.budgetUsedPollen >= report.calls[0].reserved);
+        assert.ok(report.budgetUsedPollen <= report.maxPollen);
+        assert.ok(
+            report.calls.slice(2).every(({ status }) => status === "received"),
+        );
+        assert.match(report.models[0].auditDigest, /^[a-f0-9]{64}$/);
+        assert.deepEqual(
+            JSON.parse(await readFile(join(out, "research.json"), "utf8")),
+            report,
+        );
+    },
+);
+
+test(
+    "HTTP recovery followed by invalid Jev evidence never unlocks downstream paid work",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { env } = await fixture(t);
+        t.mock.method(timers, "setTimeout", async () => {});
+        const calls = network(t, [model, sol, jev], {
+            nativeFailures: [503],
+            invalid: "all-answer",
+        });
+        const report = await main(env);
+        assert.equal(report.status, "partial");
+        assert.equal(calls.native.length, 2);
+        assert.equal(report.calls.length, 2);
+        assert.equal(report.calls[0].operationId, report.calls[1].operationId);
+        assert.equal(calls.search.length, 0);
+        assert.equal(calls.sol.length, 0);
+        assert.ok(report.calls.every(({ status }) => status === "pending"));
+        assert.equal(
+            report.budgetUsedPollen,
+            report.calls.reduce((total, { reserved }) => total + reserved, 0),
+        );
+        assert.equal(report.models[0].status, "blocked");
+    },
+);
+
 for (const invalid of ["usage", "answer"])
     test(
         `compact main retains uncertain native ${invalid} receipt and stops before Sol`,
@@ -1321,6 +1399,8 @@ test(
     { skip: !available && "Python with Scrapling unavailable" },
     async (t) => {
         const { out, env } = await fixture(t);
+        const waits = [];
+        t.mock.method(timers, "setTimeout", async (delay) => waits.push(delay));
         const sourceUrl = "https://fireworks.ai/models/fixture-embedding-8b";
         const gapText = `${model.name}\nEmbeddings\nfixture-embedding-8b\n$0.010\n/ 1M tokens`;
         await writeFile(
@@ -1341,6 +1421,7 @@ test(
         const calls = network(t, [model, sol, jev], {
             sourceUrl,
             optionQueries,
+            solFailures: [503],
             chooseControl: (payload) => {
                 const actions = payload.state.actions;
                 if (payload.state.stage === "search") return actions[0].id;
@@ -1367,9 +1448,17 @@ test(
         );
         assert.equal(
             calls.sol.length,
-            1,
-            "Sol may supply options only when Jev requested the named reasoning task",
+            2,
+            "Only the failed Sol request may retry after Jev requested reasoning",
         );
+        assert.deepEqual(waits, [2000]);
+        const solReceipts = report.calls.filter(
+            ({ kind }) => kind === `inference:${sol.name}`,
+        );
+        assert.equal(solReceipts[0].status, "uncertain");
+        assert.equal(solReceipts[1].status, "received");
+        assert.notEqual(solReceipts[0].contextSeed, solReceipts[1].contextSeed);
+        assert.ok(report.budgetUsedPollen >= solReceipts[0].reserved);
         const queries = calls.search.map(
             ({ params }) => params.arguments.query,
         );
@@ -1394,12 +1483,79 @@ test(
 );
 
 test(
-    "main extracts distant whole-page prices without exposing whole pages to Sol",
+    "Sol reasoning skips unavailable source packets without blocking the official group",
     { skip: !available && "Python with Scrapling unavailable" },
     async (t) => {
         const { out, env } = await fixture(t);
-        const sourceUrl = "https://fireworks.ai/models/fixture-embedding-8b";
-        const fullText = `${model.name}\n${"navigation before pricing\n".repeat(400)}\nEmbeddings\nfixture-embedding-8b\n$0.010\n/ 1M tokens`;
+        await writeFile(
+            join(out, "pages", `${hash(url)}.json`),
+            JSON.stringify({
+                requestedUrl: url,
+                url,
+                text,
+                pageDigest: "invalid",
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+            }),
+        );
+        const second = "https://fireworks.ai/models/fixture-embedding-8b";
+        const partial = `${model.name}\nEmbeddings\nfixture-embedding-8b\n$0.010\n/ 1M tokens`;
+        await writeFile(
+            join(out, "pages", `${hash(second)}.json`),
+            JSON.stringify({
+                requestedUrl: second,
+                url: second,
+                text: partial,
+                pageDigest: hash(partial),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+            }),
+        );
+        const calls = network(t, [model, sol, jev], {
+            extraProvider: true,
+            extraProviderUrl: second,
+            optionQueries: [],
+            chooseControl: ({ state }) =>
+                state.stage === "search"
+                    ? state.actions[0].id
+                    : state.stage === "reasoning"
+                      ? (state.actions.find(({ kind }) => kind === "reason")
+                            ?.id ?? "finish")
+                      : (state.actions.find(({ kind }) => kind === "search")
+                            ?.id ?? "finish"),
+        });
+        const report = await main(env);
+        assert.equal(report.status, "complete", report.models[0].reason);
+        assert.equal(
+            calls.sol.length,
+            1,
+            JSON.stringify(
+                calls.native
+                    .filter(({ state }) => state.actions)
+                    .map(({ state }) => ({
+                        stage: state.stage,
+                        actions: state.actions,
+                    })),
+            ),
+        );
+        const context = JSON.parse(calls.sol[0].messages[1].content);
+        assert.equal(context.sources.length, 1);
+        assert.equal(context.sources[0].url, second);
+        assert.equal(typeof context.sources[0].excerpt, "string");
+        assert.ok(
+            report.sources.some(({ status }) => status === "unavailable"),
+        );
+        assert.equal(report.models[0].routes[0].pricing.input, 0.01);
+    },
+);
+
+test(
+    "main extracts distant prices from an unfocused catalogue and refreshes without paid calls",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const sourceUrl = url;
+        const fullText = `${model.name}\n${"navigation before pricing\n".repeat(400)}\nfixture-embedding-8b is available now through a managed serverless API.\nEmbeddings\nfixture-embedding-8b\n$0.010\n/ 1M tokens`;
         await writeFile(
             join(out, "pages", `${hash(sourceUrl)}.json`),
             JSON.stringify({
@@ -1411,7 +1567,11 @@ test(
                 fetchedAt: new Date().toISOString(),
             }),
         );
-        const calls = network(t, [model, sol, jev], { sourceUrl });
+        const calls = network(t, [model, sol, jev], {
+            sourceUrl,
+            leadTitle: "Provider catalogue",
+            leadText: "General provider catalogue and pricing",
+        });
         const report = await main(env);
         assert.equal(
             report.status,
@@ -1420,6 +1580,11 @@ test(
         );
         assert.equal(calls.sol.length, 0);
         assert.ok(report.sources[0].text.length > 3000);
+        assert.equal(
+            report.sources[0].focus,
+            undefined,
+            "The full page must be recovered even without focus metadata",
+        );
         assert.equal(report.sources[0].fullPage, true);
         assert.equal(report.sources[0].digest, hash(fullText));
         assert.equal(report.models[0].routes[0].pricing.input, 0.01);

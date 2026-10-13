@@ -107,23 +107,26 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
         conditions = [],
     ) => {
         if (quote !== undefined) {
-            const start = text.indexOf(quote);
-            if (
-                !quote ||
-                start < 0 ||
-                start >= priceEnd ||
-                start + quote.length <= priceStart
-            )
-                return null;
-            if (
-                !fragments.some(
-                    (item) =>
-                        item.kind === "price" &&
-                        start < item.end &&
-                        start + quote.length > item.start,
-                )
-            )
-                return null;
+            if (!quote) return null;
+            let start = text.indexOf(quote),
+                matched = false;
+            while (start >= 0) {
+                if (
+                    start < priceEnd &&
+                    start + quote.length > priceStart &&
+                    fragments.some(
+                        (item) =>
+                            item.kind === "price" &&
+                            start < item.end &&
+                            start + quote.length > item.start,
+                    )
+                ) {
+                    matched = true;
+                    break;
+                }
+                start = text.indexOf(quote, start + 1);
+            }
+            if (!matched) return null;
         }
         if (fragments.some((item) => item.quote.split(/\s+/).length > 25))
             return null;
@@ -332,6 +335,42 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             );
             if (result) return result;
         }
+    }
+    if (!embedding && kind !== "text") {
+        const labels = lines.flatMap((line, index) =>
+            line.value === "Model name" ? [index] : [],
+        );
+        const modelLine = labels.length === 1 ? lines[labels[0] + 1] : null;
+        const pricingStart = lines.findIndex((line) =>
+            /^#{1,6}\s+Pricing$/i.test(line.value),
+        );
+        if (!modelLine || !exact(modelLine.value) || pricingStart < 0)
+            return null;
+        for (let i = pricingStart + 1; i < lines.length; i++) {
+            if (/^#{1,6}\s/.test(lines[i].value)) break;
+            if (lines[i - 1]?.value !== "Output") continue;
+            const match = lines[i].value.match(
+                /^(?:\$|USD\s+)(\d+(?:\.\d+)?)\s*(?:per\s+|\/\s*)(image|second|minute|request)$/i,
+            );
+            if (!match || !scopeValid(i)) continue;
+            const fragments = [
+                evidence("model", modelLine.value, modelLine.start),
+                evidence("header", lines[i - 1].value, lines[i - 1].start),
+                evidence("price", lines[i].value, lines[i].start),
+            ];
+            const result = finish(
+                Number(match[1]),
+                null,
+                fragments,
+                lines[i].start,
+                lines[i].start + lines[i].value.length,
+                [
+                    "output component only; full input and regional charges remain unknown",
+                ],
+            );
+            if (result) return { ...result, unit: match[2].toLowerCase() };
+        }
+        return null;
     }
     if (!embedding) return null;
     const display = checkpoint.replaceAll("-", " ");

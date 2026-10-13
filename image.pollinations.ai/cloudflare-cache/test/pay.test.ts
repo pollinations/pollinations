@@ -146,8 +146,15 @@ async function payFor(
     });
 }
 
-test("the JSON 402 matches the VM's capture byte for byte, on both hosts and with any query", async () => {
-    const vm = Object.fromEntries(capturedHeaders(jsonHeaders));
+// The headers the free limit's message replaces on the paywall's JSON 402
+const MESSAGE_HEADERS = ["content-length", "etag", "retry-after"];
+const without = (headers: Headers) =>
+    Object.fromEntries(
+        [...headers].filter(([name]) => !MESSAGE_HEADERS.includes(name)),
+    );
+
+test("a script past the free limit gets the message, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
+    const vm = without(capturedHeaders(jsonHeaders));
 
     for (const host of ["image.pollinations.ai", "image.myceli.ai"]) {
         const { response, text } = await call(
@@ -156,8 +163,13 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
         );
 
         expect(response.status).toBe(402);
-        expect(text).toBe("{}");
-        expect(Object.fromEntries(response.headers)).toEqual(vm);
+        const wait = Number(response.headers.get("retry-after"));
+        expect(wait).toBeGreaterThan(0);
+        expect(wait).toBeLessThanOrEqual(45);
+        expect(JSON.parse(text)).toEqual({
+            error: `Free limit: 1 image every 45 seconds. Try again in ${wait} s, or get unlimited images with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+        });
+        expect(without(response.headers)).toEqual(vm);
     }
 });
 

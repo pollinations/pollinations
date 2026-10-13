@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
+import { explainFreeLimit } from "../../../shared/messages.js";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
@@ -397,7 +398,13 @@ export async function generate(c: Context, url: URL, route: string) {
             );
         }
         const { pay } = await import("./pay.ts");
-        return pay(request, pathname, env, ctx, unpaid);
+        return explainFreeLimit(
+            request,
+            await pay(request, pathname, env, ctx, unpaid),
+            "image",
+            FREE_INTERVAL_MS,
+            slot.until,
+        );
     }
 
     // go or wait: free the IP when the generation ends, even if the client

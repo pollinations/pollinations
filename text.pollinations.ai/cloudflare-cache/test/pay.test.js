@@ -160,8 +160,18 @@ async function payFor(path, options) {
     });
 }
 
-test("the JSON 402 matches the VM's capture byte for byte, on both hosts and with any query", async () => {
-    const vm = Object.fromEntries(capturedHeaders(jsonHeaders));
+// The headers the free limit's message replaces on the paywall's JSON 402
+const MESSAGE_HEADERS = [
+    "content-type",
+    "content-length",
+    "etag",
+    "retry-after",
+];
+const without = (headers, names) =>
+    Object.fromEntries([...headers].filter(([name]) => !names.includes(name)));
+
+test("a script past the free limit gets the sentence, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
+    const vm = without(capturedHeaders(jsonHeaders), MESSAGE_HEADERS);
 
     for (const host of ["text.pollinations.ai", "text.myceli.ai"]) {
         const { response, text } = await call(
@@ -170,9 +180,17 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
         );
 
         expect(response.status).toBe(402);
-        expect(text).toBe("{}");
+        const wait = Number(response.headers.get("retry-after"));
+        expect(wait).toBeGreaterThan(0);
+        expect(wait).toBeLessThanOrEqual(30);
+        expect(text).toBe(
+            `Free limit: 1 reply every 30 seconds. Try again in ${wait} s, or get unlimited replies at enter.pollinations.ai`,
+        );
+        expect(response.headers.get("content-type")).toBe(
+            "text/plain; charset=utf-8",
+        );
         const headers = Object.fromEntries(response.headers);
-        expect(headers).toEqual(vm);
+        expect(without(response.headers, MESSAGE_HEADERS)).toEqual(vm);
         // The challenge names the VM's origin host and path, without the query
         const challenge = JSON.parse(atob(headers["payment-required"]));
         expect(challenge.resource.url).toBe(
@@ -201,14 +219,19 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
     );
 });
 
-test("POST /openai gets the VM's challenge", async () => {
+test("POST /openai gets an OpenAI-style error and the VM's challenge", async () => {
     const { response, text } = await call("/openai", {
         ip: await limitedIp(),
         ...jsonPost({ messages: [{ role: "user", content: "hi" }] }),
     });
 
     expect(response.status).toBe(402);
-    expect(text).toBe("{}");
+    const wait = response.headers.get("retry-after");
+    expect(JSON.parse(text)).toEqual({
+        error: {
+            message: `Free limit: 1 request every 30 seconds. Try again in ${wait} s, or use a pollen key from https://enter.pollinations.ai/?ref=classic with base URL https://gen.pollinations.ai/v1`,
+        },
+    });
     expect(response.headers.get("payment-required")).toBe(
         capturedHeaders(openAiHeaders).get("payment-required"),
     );
@@ -247,9 +270,9 @@ test("only an HTML Accept from a Mozilla user agent gets the page", async () => 
         });
 
         expect(response.headers.get("content-type")).toBe(
-            "application/json; charset=utf-8",
+            "text/plain; charset=utf-8",
         );
-        expect(text).toBe("{}");
+        expect(text).toMatch(/^Free limit: /);
     }
 });
 

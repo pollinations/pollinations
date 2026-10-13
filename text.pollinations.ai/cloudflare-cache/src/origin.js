@@ -5,6 +5,7 @@ import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
+import { explainFreeLimit } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
@@ -635,7 +636,13 @@ async function generation(
         // The paywall covers GET and POST only, so a HEAD generates unpaid
         if (request.method === "HEAD") return unpaid();
         const { pay } = await import("./pay.js");
-        return pay(request, env, ctx, unpaid);
+        return explainFreeLimit(
+            request,
+            await pay(request, env, ctx, unpaid),
+            job.format,
+            FREE_INTERVAL_MS,
+            slot.until,
+        );
     }
 
     // go or wait: free the IP when the generation ends, even if the client

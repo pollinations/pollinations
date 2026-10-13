@@ -108,6 +108,16 @@ test("getBalance preserves the paid balance needed to assess paid-only models", 
     );
 });
 
+test("getBalance omits accountBalance when the gateway omits it", async (t) => {
+    mockFetch(t, () => Response.json({ balance: 5 }));
+
+    const result = await tools.getBalance.handler({}, CONTEXT);
+    const balance = JSON.parse(result.content[0].text);
+
+    assert.equal(balance.pollen, 5);
+    assert.equal("accountBalance" in balance, false);
+});
+
 test("getUsage lists 20 requests unless told otherwise", () => {
     assert.equal(tools.getUsage.shape.limit.parse(undefined), 20);
 });

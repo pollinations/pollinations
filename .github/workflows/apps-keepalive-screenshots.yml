@@ -8,13 +8,13 @@ on:
         type: boolean
         default: false
       models:
-        description: 'Compare compact research on the same five embedding models.'
+        description: 'Must be empty: full official catalog and market discovery.'
         type: string
-        default: 'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b'
+        default: ''
       max_pollen:
         description: 'Pollen admission cap for usage accounting and uncertain reservations (0 < budget <= 10).'
         type: string
-        default: '0.26'
+        default: '4'
       publish_issue:
         description: 'Create the parent research issue. Disable for a smoke test.'
         type: boolean
@@ -57,15 +57,15 @@ jobs:
         env:
           RUN_LIVE_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
-      - name: Validate the remaining canary allowance before paid work
+      - name: Validate the authorised full-catalog allowance before paid work
         env:
           MODELS: ${{ inputs.models }}
           MAX_POLLEN: ${{ inputs.max_pollen }}
         run: |
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
-          assert.equal(process.env.MODELS,'cohere/embed-v4.0,google/gemini-embedding-2,openai/text-embedding-3-large,openai/text-embedding-3-small,qwen/qwen3-embedding-8b');
-          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=0.26);
+          assert.equal(process.env.MODELS,'');
+          assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=4);
           JS
       - name: Restore the stopped full-catalog validation evidence
         id: previous
@@ -92,7 +92,41 @@ jobs:
           CHECK_BILLING: 'true'
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
-        run: node operations/model-management/researcher.mjs
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {spawn} from 'node:child_process';
+          import {readFile,appendFile} from 'node:fs/promises';
+          import {budgetUsed} from './operations/model-management/researcher.mjs';
+          import {readBilledUsage} from './operations/model-management/billing.mjs';
+          const cap=Number(process.env.MAX_POLLEN);
+          assert.ok(cap>0 && cap<=4);
+          const child=spawn(process.execPath,['operations/model-management/researcher.mjs'],{stdio:'inherit'});
+          let inflight, stopped=false;
+          const sample=async()=>{
+            try{
+              const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
+              const billed=await readBilledUsage(process.env.POLLINATIONS_API_KEY,r.startedAt);
+              const checkpoint={observedAt:billed.observedAt,accountedPollen:budgetUsed(r),billedPollen:billed.pollen,cap,calls:r.calls.length,pending:r.calls.filter(c=>c.status==='pending').length,researched:r.models.filter(m=>m.status==='researched').length,blocked:r.models.filter(m=>m.status==='blocked').length,selected:r.selectedCount,quality:r.quality};
+              await appendFile(process.env.RESEARCH_OUT+'/cost-monitor.jsonl',JSON.stringify(checkpoint)+'\n');
+              console.log('::notice title=Research cost::'+JSON.stringify(checkpoint));
+              assert.ok(checkpoint.accountedPollen<=cap+1e-9 && checkpoint.billedPollen<=cap+1e-9,'Cost cap exceeded');
+            }catch(error){
+              if(error.code!=='ENOENT'){
+                stopped=true;
+                console.error('Cost watchdog stopped research: budget exceeded or accounting unavailable.');
+                child.kill('SIGTERM');
+              }
+            }
+          };
+          const poll=()=>inflight??=(sample().finally(()=>{inflight=undefined}));
+          const timer=setInterval(poll,30000);
+          const result=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('exit',(code,signal)=>resolve({code,signal}));});
+          clearInterval(timer);
+          await inflight;
+          await poll();
+          process.exitCode=stopped || result.signal ? 1 : result.code;
+          JS
       - name: Save findings and partial evidence
         id: evidence
         if: always()
@@ -121,7 +155,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Audit the compact five-model comparison and combined cost
+      - name: Audit full-catalog coverage, useful findings and cost
         if: always() && steps.evidence.outcome == 'success'
         env:
           RESEARCH_OUT: ${{ runner.temp }}/model-research
@@ -135,12 +169,13 @@ jobs:
           const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
           const catalog=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/official-catalog.json','utf8'));
           assert.ok(catalog.every(m=>m.community===false));
-          assert.equal(r.selectedCount,5);
+          assert.equal(r.selectedCount,r.officialCount);
+          assert.equal(r.models.length,catalog.length);
+          assert.deepEqual(r.requestedModels,[]);
           assert.equal(r.researchMode,'compact');
-          assert.deepEqual(r.models.map(m=>m.name).sort(),['cohere/embed-v4.0','google/gemini-embedding-2','openai/text-embedding-3-large','openai/text-embedding-3-small','qwen/qwen3-embedding-8b'].sort());
-          assert.equal(r.discovery.status,'skipped');
-          assert.ok(r.maxPollen<=0.26 && budgetUsed(r)<=r.maxPollen);
-          assert.ok(2.5+6.8821505+0.2714467+0.00004882962+0.0835327243+budgetUsed(r)<=10, 'Combined validation admission budget exceeded');
+          assert.deepEqual(r.models.map(m=>m.name).sort(),catalog.map(m=>m.name).sort());
+          assert.equal(r.discovery.status,'researched');
+          assert.ok(r.maxPollen<=4 && budgetUsed(r)<=r.maxPollen);
           assert.ok(r.billing && !r.billingGap, 'Billed usage must be checked');
           assert.equal(r.budgetUsedPollen,budgetUsed(r));
           const ready=r.models.filter(m=>m.status==='researched');
@@ -152,9 +187,7 @@ jobs:
           assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
           assert.ok(r.calls.every(c=>c.status==='received'));
           assert.ok(r.calls.some(c=>c.kind==='inference:typesafe/jev-1.13'));
-          assert.ok(r.calls.filter(c=>c.kind==='inference:openai/gpt-6.1-sol').length<6);
-          assert.ok(r.quality.postedPriceRoutes>=1, 'Cheaper research must recover at least one supported price quote');
-          assert.ok(budgetUsed(r)<0.2714467, 'Canary must beat prior same-model cost');
+          assert.ok(r.quality.postedPriceRoutes>5, 'Fresh research must improve on the five posted-price baseline');
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS

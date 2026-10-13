@@ -45,15 +45,15 @@ test("rejects non-public and non-HTTPS URLs before importing Scrapling", () => {
     }
 });
 
-test("refuses dynamic mode until browser subrequests can be IP-validated", () => {
+test("dynamic mode rejects private hosts with the browser method before importing Scrapling", () => {
     const result = run({
-        url: "https://1.1.1.1",
+        url: "https://127.0.0.1",
         mode: "dynamic",
         maxCharacters: 100,
     });
     assert.equal(result.status, "unavailable");
-    assert.equal(result.method, "scrapling-dynamic");
-    assert.match(result.error, /subrequests/);
+    assert.equal(result.method, "scrapling-browser");
+    assert.match(result.error, /public IP/);
 });
 
 test("JSON transport preserves Unicode even with an ASCII-only stdout", () => {
@@ -93,7 +93,7 @@ class Session:
     def __exit__(self, *args): pass
     def get(self, *args, **kwargs):
         return types.SimpleNamespace(status=200, headers={}, html_content="<p>" + text + "</p>")
-sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2))
+sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2, PROXY=3))
 sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
 requests = [(18000, "gpt-model-example"), (18000, "unknown-model"), (18000, None), (20, "gpt-model-example")]
 print(json.dumps([fetch._read_http("https://example.com", limit, focus) for limit, focus in requests]))
@@ -148,10 +148,11 @@ class Session:
         global count
         assert self._curl_session.curl_options[2] == fetch.MAX_RESPONSE_BYTES
         assert self._curl_session.trust_env is False
+        assert self._curl_session.curl_options[3] == ""
         assert kwargs == {"follow_redirects": False, "timeout": 20, "retries": 0}
         count += 1
         return types.SimpleNamespace(status=200, headers={}, html_content="<p>" + text + "</p>")
-sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2))
+sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2, PROXY=3))
 sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
 url = "https://example.com/catalog"
 with tempfile.TemporaryDirectory() as root:

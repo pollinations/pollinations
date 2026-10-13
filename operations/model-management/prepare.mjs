@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { isIP } from "node:net";
 import { buildResearchControl } from "./jev.mjs";
 import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
 export const DISCOVERY_MODES = [
@@ -46,11 +47,38 @@ const REQUIRED_FEEDS = [
     })),
 ];
 
+export function publicAddress(ip) {
+    if (isIP(ip) === 6)
+        return /^[23][\da-f]{3}:/i.test(ip) && !/^2001:(?:db8|0):/i.test(ip);
+    if (isIP(ip) !== 4) return false;
+    const [a, b] = ip.split(".").map(Number);
+    return (
+        ![0, 10, 127].includes(a) &&
+        a < 224 &&
+        !(a === 169 && b === 254) &&
+        !(a === 172 && b >= 16 && b <= 31) &&
+        !(a === 192 && [0, 168].includes(b)) &&
+        !(a === 100 && b >= 64 && b <= 127) &&
+        !(a === 198 && [18, 19, 51].includes(b)) &&
+        !(a === 203 && b === 0)
+    );
+}
+
 function safeUrl(value) {
     if (typeof value !== "string" || value.length > 2048) return null;
     try {
         const url = new URL(value);
         if (url.protocol !== "https:" || url.username || url.password)
+            return null;
+        const host = url.hostname.toLowerCase();
+        const address = host.replace(/^\[|\]$/g, "");
+        if (
+            isIP(address)
+                ? !publicAddress(address)
+                : !host.includes(".") ||
+                  host.endsWith(".localhost") ||
+                  host.endsWith(".local")
+        )
             return null;
         if (
             [...url.searchParams.keys()].some((key) => {
@@ -361,21 +389,73 @@ export async function prepareResearch(task, services) {
     let reasoningAction = null;
     let extraction = null;
     let requiredEvidencePending = !names.length;
-    const evidence = () => ({
-        plans,
-        scopes,
-        coverage,
-        sources,
-        actions,
-        leads,
-        triage,
-        gaps,
-        unselectedLeadIds,
-        unselectedLeads,
-        reasoningAction,
-        extraction,
-        requiredEvidencePending,
-    });
+    const evidence = () => {
+        // Persist observed URLs only; fetched page text is never restored as evidence.
+        if (!names.length)
+            for (const source of sources) {
+                if (source.status !== "fetched") continue;
+                for (const link of source.links ?? [])
+                    retain({
+                        ...link,
+                        text: link.text,
+                        sourceId: source.id,
+                        modes: ["http"],
+                        scopes: ["crawl"],
+                    });
+            }
+        unselectedLeads.splice(0, unselectedLeads.length);
+        for (const lead of candidates.values()) {
+            const reads = sources.filter(
+                (source) =>
+                    source.url === lead.url ||
+                    actions.some(
+                        (action) =>
+                            action.tool === "fetch" &&
+                            action.url === lead.url &&
+                            action.sourceId === source.id &&
+                            source.id !== undefined,
+                    ),
+            );
+            if (reads.some((source) => source.status === "fetched")) continue;
+            const attempted =
+                lead.attempted === true ||
+                reads.length > 0 ||
+                actions.some(
+                    (action) =>
+                        action.tool === "fetch" && action.url === lead.url,
+                );
+            unselectedLeads.push({
+                ...lead,
+                status:
+                    attempted || lead.status === "unavailable"
+                        ? "unavailable"
+                        : "pending",
+                attempted,
+            });
+        }
+        unselectedLeadIds.splice(
+            0,
+            unselectedLeadIds.length,
+            ...unselectedLeads.map(({ id }) => id),
+        );
+        return {
+            plans,
+            scopes,
+            coverage,
+            sources,
+            actions,
+            leads,
+            triage,
+            gaps,
+            unselectedLeadIds,
+            unselectedLeads,
+            reasoningAction,
+            extraction,
+            requiredEvidencePending,
+            omittedCandidates,
+            remainingDeferredCount: unselectedLeads.length,
+        };
+    };
     const checkpoints = `(${names.map((name) => JSON.stringify(name.split("/").at(-1))).join(" OR ")})`;
     const month = new Date().toISOString().slice(0, 7);
     const searches = names.length
@@ -448,7 +528,84 @@ export async function prepareResearch(task, services) {
         "Checkpoint query exceeds 700 characters",
     );
     const candidates = new Map();
-    let omittedCandidates = 0;
+    let omittedCandidates =
+        Number.isSafeInteger(task.deferredOmittedCount) &&
+        task.deferredOmittedCount > 0
+            ? task.deferredOmittedCount
+            : 0;
+    let nextLeadId = 1;
+    const restoredUrls = new Set();
+    const omittedUrls = new Set();
+    const requiredUrls = new Set();
+    const currentModeLeads = new Map();
+    const retain = (lead, required = false) => {
+        const url = safeUrl(lead?.url);
+        if (!url) return null;
+        const existing = candidates.get(url);
+        if (existing) {
+            if (required) requiredUrls.add(url);
+            return existing;
+        }
+        if (candidates.size >= 256) {
+            if (required) {
+                const dropped = [...candidates.keys()].findLast(
+                    (candidate) => !requiredUrls.has(candidate),
+                );
+                candidates.delete(dropped);
+                omittedUrls.add(dropped);
+                omittedCandidates++;
+            } else {
+                if (!omittedUrls.has(url)) {
+                    omittedUrls.add(url);
+                    omittedCandidates++;
+                }
+                return null;
+            }
+        }
+        const strings = (items) =>
+            Array.isArray(items)
+                ? [
+                      ...new Set(
+                          items.filter(
+                              (item) =>
+                                  typeof item === "string" &&
+                                  item.length <= 700,
+                          ),
+                      ),
+                  ].slice(0, 16)
+                : [];
+        const saved = {
+            url,
+            id: `lead-${nextLeadId++}`,
+            title:
+                typeof lead.title === "string" ? lead.title.slice(0, 300) : "",
+            text: typeof lead.text === "string" ? lead.text.slice(0, 800) : "",
+            models: strings(lead.models),
+            scopes: strings(lead.scopes),
+            modes: strings(lead.modes),
+            queryModels: strings(lead.queryModels),
+            ...(typeof lead.sourceId === "string"
+                ? { sourceId: lead.sourceId.slice(0, 300) }
+                : {}),
+            ...(typeof lead.publishedAt === "string" &&
+            Number.isFinite(Date.parse(lead.publishedAt))
+                ? { publishedAt: lead.publishedAt }
+                : {}),
+            status: lead.status === "unavailable" ? "unavailable" : "pending",
+            attempted: lead.attempted === true,
+        };
+        candidates.set(url, saved);
+        if (required) requiredUrls.add(url);
+        return saved;
+    };
+    for (const lead of (Array.isArray(task.deferredSources)
+        ? task.deferredSources
+        : []
+    ).slice(0, 256)) {
+        const saved = retain(lead);
+        if (saved) restoredUrls.add(saved.url);
+    }
+    omittedCandidates += Math.max(0, (task.deferredSources?.length ?? 0) - 256);
     const control = async (stage, menu) => {
         if (!services.control) return menu[0];
         const facts = officialCandidates(task.models ?? [], sources, gaps);
@@ -586,33 +743,32 @@ export async function prepareResearch(task, services) {
             gaps.push(
                 `${mode}: discarded ${parsed.length - parsedLeads.length} off-platform search results; platform evidence remains unresolved until fetched`,
             );
-        if (!names.length)
-            omittedCandidates += Math.max(0, parsedLeads.length - 8);
         if (!parsedLeads.length && !names.length)
             gaps.push(`${mode}: no usable safe search lead returned`);
-        for (const lead of names.length
-            ? parsedLeads
-            : parsedLeads.slice(0, 8)) {
+        for (const lead of parsed) {
+            const observedMode = parsedLeads.includes(lead) ? mode : "web";
+            const requiredCurrent =
+                !names.length &&
+                parsedLeads.includes(lead) &&
+                !currentModeLeads.has(mode);
             let saved = candidates.get(lead.url);
             if (!saved) {
-                if (candidates.size >= (names.length ? 32 : 64)) {
-                    omittedCandidates++;
-                    continue;
-                }
-                saved = {
-                    ...lead,
-                    id: `lead-${candidates.size + 1}`,
-                    models: queryModels.filter((name) =>
-                        mentions(
-                            `${lead.title}\n${lead.text}\n${lead.url}`,
-                            name,
+                saved = retain(
+                    {
+                        ...lead,
+                        models: queryModels.filter((name) =>
+                            mentions(
+                                `${lead.title}\n${lead.text}\n${lead.url}`,
+                                name,
+                            ),
                         ),
-                    ),
-                    scopes: [],
-                    modes: [],
-                    queryModels: [],
-                };
-                candidates.set(lead.url, saved);
+                        scopes: [],
+                        modes: [],
+                        queryModels: [],
+                    },
+                    requiredCurrent,
+                );
+                if (!saved) continue;
             } else {
                 // Keep the first exact excerpt, but retain identities observed in later search snippets.
                 for (const name of queryModels.filter((name) =>
@@ -621,8 +777,13 @@ export async function prepareResearch(task, services) {
                     if (!saved.models.includes(name)) saved.models.push(name);
                 }
             }
+            if (requiredCurrent) {
+                requiredUrls.add(saved.url);
+                currentModeLeads.set(mode, saved);
+            }
             if (!saved.scopes.includes(scope)) saved.scopes.push(scope);
-            if (!saved.modes.includes(mode)) saved.modes.push(mode);
+            if (!saved.modes.includes(observedMode))
+                saved.modes.push(observedMode);
             returnedLeadIds.push(saved.id);
             for (const name of queryModels)
                 if (!saved.queryModels.includes(name))
@@ -655,7 +816,9 @@ export async function prepareResearch(task, services) {
         const selected = new Set();
         if (!names.length) {
             for (const [, mode] of searches) {
-                const lead = ranked.find((item) => item.modes.includes(mode));
+                const lead =
+                    currentModeLeads.get(mode) ??
+                    ranked.find((item) => item.modes.includes(mode));
                 if (lead) selected.add(lead);
                 else gaps.push(`${mode}: no usable discovery lead returned`);
             }
@@ -686,11 +849,26 @@ export async function prepareResearch(task, services) {
             if (rows.length && !rows.some((lead) => selected.has(lead)))
                 selected.add(rows[0]);
         }
+        if (!names.length) {
+            const deferred = ranked
+                .filter(
+                    (lead) => restoredUrls.has(lead.url) && !selected.has(lead),
+                )
+                .sort(
+                    (a, b) =>
+                        Number(a.status === "unavailable") -
+                        Number(b.status === "unavailable"),
+                );
+            for (const lead of deferred.slice(0, 2)) selected.add(lead);
+        }
         while (selected.size < Math.min(16, ranked.length)) {
+            const before = selected.size;
             for (const rows of scopeLeads) {
                 const lead = rows.find((item) => !selected.has(item));
                 if (lead && selected.size < 16) selected.add(lead);
             }
+            if (selected.size === before)
+                selected.add(ranked.find((item) => !selected.has(item)));
         }
         leads.push(...selected);
         unselectedLeadIds.push(
@@ -701,7 +879,7 @@ export async function prepareResearch(task, services) {
         unselectedLeads.push(...ranked.filter((lead) => !selected.has(lead)));
         if (omittedCandidates)
             gaps.push(
-                `Additional search results omitted because of the ${names.length ? "thirty-two" : "sixty-four"}-candidate preparation bound`,
+                `${omittedCandidates} observed URLs omitted because of the 256-source deferred frontier bound`,
             );
         const excerpts = leads
             .filter((lead) => lead.text.trim() || lead.title.trim())
@@ -769,6 +947,7 @@ export async function prepareResearch(task, services) {
             actions.push(action);
             const source = await services.read(args);
             sources.push(source);
+            action.sourceId = source.id;
             action.status = source.status;
         }
         if (!names.length) {
@@ -778,17 +957,31 @@ export async function prepareResearch(task, services) {
             let crawled = 0;
             while (crawled < 8 && sources.length < 24) {
                 const links = new Map();
-                for (const feed of REQUIRED_FEEDS)
+                for (const feed of REQUIRED_FEEDS) {
+                    retain(
+                        { ...feed, modes: ["http"], scopes: ["crawl"] },
+                        true,
+                    );
                     if (!readUrls.has(feed.url)) links.set(feed.url, feed);
+                }
                 for (const source of sources) {
                     if (
                         source.status !== "fetched" ||
                         (pageReads.get(source.id) ?? 0) >= 2
                     )
                         continue;
-                    for (const link of (source.links ?? []).slice(0, 12)) {
+                    for (const link of source.links ?? []) {
                         const url = safeUrl(link.url);
-                        if (!url || readUrls.has(url) || links.has(url))
+                        if (!url) continue;
+                        const observed = retain({
+                            url,
+                            title: link.title,
+                            text: link.text,
+                            sourceId: source.id,
+                            modes: ["http"],
+                            scopes: ["crawl"],
+                        });
+                        if (!observed || readUrls.has(url) || links.has(url))
                             continue;
                         if (!linkIds.has(url))
                             linkIds.set(url, `crawl-${linkIds.size + 1}`);
@@ -853,6 +1046,7 @@ export async function prepareResearch(task, services) {
                 actions.push(action);
                 const source = await services.read(args);
                 sources.push(source);
+                action.sourceId = source.id;
                 action.status = source.status;
                 crawled++;
             }
@@ -863,56 +1057,89 @@ export async function prepareResearch(task, services) {
                 gaps.push(
                     "Required public feeds were not attempted; discovery remains incomplete",
                 );
-            const blocked = sources
-                .filter(({ status }) => status === "unavailable")
-                .sort(
-                    (a, b) =>
-                        Number(
-                            REQUIRED_FEEDS.some(({ url }) => url === b.url),
-                        ) -
-                        Number(REQUIRED_FEEDS.some(({ url }) => url === a.url)),
+            const blockedSources = () => [
+                ...new Map(
+                    sources
+                        .filter(({ status }) => status === "unavailable")
+                        .filter(
+                            ({ url }) =>
+                                !sources.some(
+                                    (source) =>
+                                        source.url === url &&
+                                        source.status === "fetched",
+                                ),
+                        )
+                        .sort(
+                            (a, b) =>
+                                Number(
+                                    REQUIRED_FEEDS.some(
+                                        ({ url }) => url === b.url,
+                                    ),
+                                ) -
+                                Number(
+                                    REQUIRED_FEEDS.some(
+                                        ({ url }) => url === a.url,
+                                    ),
+                                ),
+                        )
+                        .map((source) => [source.url, source]),
+                ).values(),
+            ];
+            for (const mode of ["dynamic", "exa"]) {
+                const blocked = blockedSources().filter(
+                    ({ url }) =>
+                        mode === "dynamic" ||
+                        actions.some(
+                            (action) =>
+                                action.mode === "dynamic" && action.url === url,
+                        ),
                 );
-            let fallbacks = 0;
-            while (blocked.length && fallbacks < 4) {
-                const selected = await control("crawl", [
-                    ...blocked.slice(0, 12).map((source, index) => ({
-                        id: `fallback-${index}`,
-                        kind: "fetch",
-                        url: source.url,
-                        mode: "exa",
-                        required: true,
-                        maxCharacters:
-                            REQUIRED_FEEDS.find(
-                                (feed) => feed.url === source.url,
-                            )?.maxCharacters ?? 4000,
-                        sourceId: source.id,
-                        text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
-                    })),
-                ]);
-                if (!selected) break;
-                if (selected.kind === "finish") break;
-                const failed = blocked.splice(
-                    Number(selected.id.split("-").at(-1)),
-                    1,
-                )[0];
-                const action = {
-                    tool: "fetch",
-                    url: selected.url,
-                    mode: "exa",
-                    maxCharacters: selected.maxCharacters,
-                    parentSourceId: failed.id,
-                    models: [],
-                    status: "pending",
-                };
-                actions.push(action);
-                const source = await services.read(action);
-                sources.push(source);
-                action.status = source.status;
-                fallbacks++;
-                if (source.status !== "fetched")
-                    gaps.push(
-                        `${source.url}: both local HTTP and Exa retrieval unavailable`,
-                    );
+                let fallbacks = 0;
+                while (blocked.length && fallbacks < 4) {
+                    const selected = await control("crawl", [
+                        ...blocked.slice(0, 12).map((source, index) => ({
+                            id: `${mode}-fallback-${index}`,
+                            kind: "fetch",
+                            url: source.url,
+                            mode,
+                            required: true,
+                            maxCharacters:
+                                REQUIRED_FEEDS.find(
+                                    (feed) => feed.url === source.url,
+                                )?.maxCharacters ?? 4000,
+                            sourceId: source.id,
+                            text:
+                                mode === "dynamic"
+                                    ? "Blocked public page: attempt free guarded Scrapling browser rendering before paid retrieval."
+                                    : "Public source still unavailable locally: retrieve its text through Pollinations Exa (paid, bounded).",
+                        })),
+                    ]);
+                    if (!selected) break;
+                    if (selected.kind === "finish") break;
+                    const failed = blocked.splice(
+                        Number(selected.id.split("-").at(-1)),
+                        1,
+                    )[0];
+                    const action = {
+                        tool: "fetch",
+                        url: selected.url,
+                        mode,
+                        maxCharacters: selected.maxCharacters,
+                        parentSourceId: failed.id,
+                        models: [],
+                        status: "pending",
+                    };
+                    actions.push(action);
+                    const source = await services.read(action);
+                    sources.push(source);
+                    action.sourceId = source.id;
+                    action.status = source.status;
+                    fallbacks++;
+                    if (source.status !== "fetched" && mode === "exa")
+                        gaps.push(
+                            `${source.url}: local HTTP, guarded browser and Exa retrieval unavailable or unselected`,
+                        );
+                }
             }
         }
         if (!names.length)
@@ -1082,6 +1309,7 @@ export async function prepareResearch(task, services) {
                 actions.push(action);
                 const source = await services.read(args);
                 sources.push(source);
+                action.sourceId = source.id;
                 action.status = source.status;
             }
             const semantic = officialCandidates(
@@ -1156,11 +1384,19 @@ export async function prepareResearch(task, services) {
                     `${name}: exact-checkpoint primary evidence remains unresolved`,
                 );
         }
-        if (unselectedLeadIds.length)
+        const result = evidence();
+        if (result.remainingDeferredCount)
             gaps.push(
-                `${unselectedLeadIds.length} leads were not read because of the sixteen-lead preparation bound`,
+                `${result.remainingDeferredCount} observed sources remain pending or unavailable in the deferred frontier`,
             );
-        return evidence();
+        if (
+            omittedCandidates &&
+            !gaps.some((gap) => gap.includes("deferred frontier bound"))
+        )
+            gaps.push(
+                `${omittedCandidates} observed URLs omitted because of the 256-source deferred frontier bound`,
+            );
+        return result;
     } catch (error) {
         if (!leads.length && candidates.size) {
             const partial = [...candidates.values()];

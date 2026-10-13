@@ -1,6 +1,234 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseLeads, prepareResearch } from "./prepare.mjs";
+import { DISCOVERY_MODES, parseLeads, prepareResearch } from "./prepare.mjs";
+
+test("two discovery runs read older deferred URLs and retain failed and skipped crawl receipts", async () => {
+    const run = async (deferredSources = []) => {
+        const f = fixture([]);
+        let bucket = 0;
+        f.services.search = async () =>
+            JSON.stringify({
+                results: Array.from({ length: 20 }, (_, index) => ({
+                    url: `https://${discoveryHosts[bucket]}/run-${deferredSources.length ? 2 : 1}/${index}`,
+                    title: `Literal title ${index}`,
+                    text: `Literal snippet ${index}`,
+                })).map((row, index, rows) => {
+                    if (index === rows.length - 1) bucket++;
+                    return row;
+                }),
+            });
+        f.services.read = async (args) => {
+            f.reads.push(args);
+            return {
+                id: `source-${f.reads.length}`,
+                url: args.url,
+                status: args.url.endsWith("/0") ? "unavailable" : "fetched",
+                text: "Current page evidence",
+                links: args.url.endsWith("/1")
+                    ? Array.from({ length: 18 }, (_, index) => ({
+                          url: `https://publisher.example.org/skipped-${index}`,
+                          text: `Observed model link ${index}`,
+                      }))
+                    : [],
+            };
+        };
+        f.services.control = async ({ stage, actions }) => ({
+            action:
+                stage === "search"
+                    ? actions[0]
+                    : (actions.find(
+                          ({ required }) =>
+                              required && actions[0].mode !== "exa",
+                      ) ?? actions.find(({ kind }) => kind === "finish")),
+            selectedProbability: 0.98,
+            requestDigest: "f".repeat(64),
+        });
+        f.services.extract = async (sources) => {
+            assert.ok(
+                sources.every(({ text }) => text === "Current page evidence"),
+            );
+            return { gaps: [], discoveries: [], grades: [] };
+        };
+        return {
+            result: await prepareResearch({ deferredSources }, f.services),
+            reads: f.reads,
+        };
+    };
+    const first = await run();
+    const pending = first.result.unselectedLeads.find(
+        ({ url }) => url === "https://reddit.com/run-1/2",
+    );
+    assert.equal(pending.title, "Literal title 2");
+    assert.equal(pending.status, "pending");
+    assert.deepEqual(pending.modes, ["reddit"]);
+    assert.ok(
+        first.result.unselectedLeads.some(
+            ({ url, status, attempted }) =>
+                url.endsWith("/0") && status === "unavailable" && attempted,
+        ),
+    );
+    assert.ok(
+        first.result.unselectedLeads.some(
+            ({ url, sourceId }) => url.endsWith("skipped-17") && sourceId,
+        ),
+    );
+    const second = await run(first.result.unselectedLeads);
+    assert.ok(
+        second.reads.some(({ url }) => url === pending.url),
+        "Restored leads must receive a real current read",
+    );
+    assert.ok(second.reads.length <= 24);
+    assert.ok(second.result.remainingDeferredCount > 0);
+});
+
+test("restored frontier rejects private or credential URLs, dedupes fragments and bounds overflow", async () => {
+    const f = fixture([]);
+    const deferredSources = [
+        { url: "https://127.0.0.1/private" },
+        { url: "https://10.0.0.1/private" },
+        { url: "https://[::1]/private" },
+        { url: "https://user:password@example.org/private" },
+        { url: "https://example.org/private?access_token=secret" },
+        {
+            url: "https://publisher.example.org/real#one",
+            title: "Observed title",
+            text: "Observed snippet",
+            modes: ["news"],
+            scopes: ["discovery"],
+            sourceId: "previous-source",
+        },
+        { url: "https://publisher.example.org/real#two" },
+        ...Array.from({ length: 300 }, (_, index) => ({
+            url: `https://publisher.example.org/${index}`,
+        })),
+    ];
+    const result = await prepareResearch({ deferredSources }, f.services);
+    assert.ok(f.reads.every(({ url }) => !/private/.test(url)));
+    assert.equal(
+        f.reads.filter(
+            ({ url }) => url === "https://publisher.example.org/real",
+        ).length,
+        1,
+    );
+    const observed = result.leads.find(
+        ({ url }) => url === "https://publisher.example.org/real",
+    );
+    assert.equal(observed.title, "Observed title");
+    assert.equal(observed.sourceId, "previous-source");
+    assert.ok(result.omittedCandidates > 0);
+    assert.ok(result.unselectedLeads.length <= 256);
+});
+
+test("a saturated restored queue still reads all eight current platforms and required feeds", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () =>
+        JSON.stringify({
+            results: [
+                {
+                    url: `https://${discoveryHosts[bucket++]}/current`,
+                    text: "Observed current release",
+                },
+            ],
+        });
+    const result = await prepareResearch(
+        {
+            deferredSources: Array.from({ length: 256 }, (_, index) => ({
+                url: `https://old.example.org/${index}`,
+                title: `Observed old ${index}`,
+                modes: [DISCOVERY_MODES[index % DISCOVERY_MODES.length]],
+                scopes: ["discovery"],
+            })),
+        },
+        f.services,
+    );
+    for (const host of discoveryHosts)
+        assert.ok(
+            f.reads.some(({ url }) => url === `https://${host}/current`),
+            `${host}: current search lead must survive a restored same-mode backlog`,
+        );
+    assert.ok(
+        f.reads.filter(({ url }) => new URL(url).hostname === "old.example.org")
+            .length >= 2,
+    );
+    assert.ok(result.leads.some(({ modes }) => modes.includes("providers")));
+    assert.equal(result.requiredEvidencePending, false);
+    assert.ok(f.reads.length <= 24);
+    assert.ok(result.omittedCandidates >= 7);
+    assert.ok(result.unselectedLeads.length <= 256);
+});
+
+test("a current fetched redirect retires the requested deferred URL by its action source binding", async () => {
+    const requested = "https://example.org/requested-release";
+    const redirected = "https://example.org/canonical-release";
+    const f = fixture([
+        {
+            url: requested,
+            title: "Current observed release",
+            text: "Current search snippet",
+        },
+    ]);
+    f.services.read = async (args) => {
+        f.reads.push(args);
+        return {
+            id: `source-${f.reads.length}`,
+            url: args.url === requested ? redirected : args.url,
+            status: "fetched",
+            text: "Current fetched page",
+        };
+    };
+    const result = await prepareResearch(
+        {
+            deferredSources: [
+                {
+                    url: requested,
+                    modes: ["news"],
+                    scopes: ["discovery"],
+                    title: "Prior observed title",
+                },
+            ],
+        },
+        f.services,
+    );
+    const action = result.actions.find(
+        ({ tool, url }) => tool === "fetch" && url === requested,
+    );
+    assert.equal(
+        result.sources.find(({ id }) => id === action.sourceId).url,
+        redirected,
+    );
+    assert.ok(
+        !result.unselectedLeads.some(({ url }) => url === requested),
+        "Completed redirect must not be retried forever",
+    );
+});
+
+test("an unavailable redirected current read remains deferred despite prior fetched-looking fields", async () => {
+    const requested = "https://example.org/unavailable-release";
+    const f = fixture([{ url: requested, title: "Observed release" }]);
+    f.services.read = async (args) => ({
+        id: `source-${args.url}`,
+        url: args.url === requested ? "https://example.org/redirect" : args.url,
+        status: "unavailable",
+        text: "",
+    });
+    const result = await prepareResearch(
+        {
+            deferredSources: [
+                {
+                    url: requested,
+                    status: "fetched",
+                    text: "Stale page cannot retire this lead",
+                    modes: ["news"],
+                },
+            ],
+        },
+        f.services,
+    );
+    const pending = result.unselectedLeads.find(({ url }) => url === requested);
+    assert.equal(pending.status, "unavailable");
+    assert.equal(pending.attempted, true);
+});
 
 const discoveryHosts = [
     "reddit.com",
@@ -257,7 +485,7 @@ test("exact versions and every model's lead survive irrelevant triage and the re
             .every((lead) => !lead.models.length),
     );
     assert.equal(result.unselectedLeadIds.length, 12);
-    assert.ok(result.gaps.some((gap) => gap.includes("sixteen-lead")));
+    assert.ok(result.gaps.some((gap) => gap.includes("deferred frontier")));
 });
 
 test("scope rotation preserves Bedrock and alternatives among preferred-provider-heavy leads", async () => {
@@ -459,7 +687,7 @@ test("market discovery uses eight dated modes with no identity triage or Sol cal
     assert.equal(result.requiredEvidencePending, false);
 });
 
-test("discovery preserves eight-mode diversity within sixty-four candidates and sixteen reads", async () => {
+test("discovery preserves every safe result and eight-mode diversity within sixteen selected leads", async () => {
     const f = fixture([]);
     let bucket = 0;
     f.services.search = async () => {
@@ -473,7 +701,12 @@ test("discovery preserves eight-mode diversity within sixty-four candidates and 
     };
     const result = await prepareResearch({}, f.services);
     assert.equal(result.leads.length, 16);
-    assert.equal(result.unselectedLeads.length, 48);
+    assert.equal(result.unselectedLeads.length, 144);
+    assert.equal(result.omittedCandidates, 0);
+    assert.equal(
+        result.unselectedLeads.at(-1).url,
+        "https://provider.example.org/19",
+    );
     assert.equal(f.reads.length, 20);
     const modes = [
         "reddit",
@@ -647,18 +880,34 @@ test("a blocked page gets an Exa fallback only when Jev selects it", async () =>
     const result = await prepareResearch({}, f.services);
     assert.deepEqual(
         f.reads.map(({ mode }) => mode),
-        ["http", "http", "http", "http", "http", "exa", "exa", "exa", "exa"],
+        [
+            "http",
+            "http",
+            "http",
+            "http",
+            "http",
+            "dynamic",
+            "dynamic",
+            "dynamic",
+            "dynamic",
+            "exa",
+            "exa",
+            "exa",
+            "exa",
+        ],
     );
     assert.equal(result.sources[0].status, "unavailable");
-    assert.equal(result.sources[5].status, "fetched");
+    assert.equal(result.sources[9].status, "fetched");
     assert.ok(f.reads.length <= 24);
     assert.equal(result.requiredEvidencePending, false);
-    assert.ok(
-        result.actions.some(
-            (action) =>
-                action.mode === "exa" && action.parentSourceId === "source-4",
-        ),
-    );
+    for (const { url, mode } of f.reads.filter(({ mode }) => mode === "exa")) {
+        assert.equal(mode, "exa");
+        const local = f.reads.filter((read) => read.url === url);
+        assert.deepEqual(
+            local.map((read) => read.mode),
+            ["http", "dynamic", "exa"],
+        );
+    }
 });
 
 test("missing and failed discovery buckets preserve explicit unknown evidence", async () => {
@@ -796,7 +1045,7 @@ test("unselected IDs resolve to bounded preserved records without entering triag
         f.services,
     );
     assert.equal(result.leads.length, 16);
-    assert.equal(result.unselectedLeads.length, 16);
+    assert.equal(result.unselectedLeads.length, 24);
     assert.deepEqual(
         result.unselectedLeadIds,
         result.unselectedLeads.map(({ id }) => id),
@@ -810,7 +1059,7 @@ test("unselected IDs resolve to bounded preserved records without entering triag
             ({ id }) => !result.unselectedLeadIds.includes(id),
         ),
     );
-    assert.ok(result.gaps.some((gap) => gap.includes("thirty-two-candidate")));
+    assert.equal(result.omittedCandidates, 0);
 });
 
 test("Exa Highlights and Published preserve literal plain-text and JSON receipts", () => {
@@ -881,7 +1130,7 @@ test("platform modes exclude off-domain and lookalike results while broad search
     const wiki = result.leads.find(
         ({ url }) => new URL(url).hostname === "en.wikipedia.org",
     );
-    assert.deepEqual(wiki.modes, ["news", "providers"]);
+    assert.deepEqual(wiki.modes, ["web", "news", "providers"]);
 });
 
 test("required free feeds all precede optional finish and insufficient selection stays pending", async () => {
@@ -955,9 +1204,12 @@ test("blocked required community seeds fallback only after HTTP and remain insid
         f.reads.slice(16).filter(({ mode }) => mode === "http").length,
         8,
     );
-    assert.equal(f.reads.filter(({ mode }) => mode === "exa").length, 2);
+    assert.equal(f.reads.filter(({ mode }) => mode === "dynamic").length, 2);
+    assert.equal(f.reads.filter(({ mode }) => mode === "exa").length, 0);
     assert.equal(f.reads.length, 26);
-    for (const action of result.actions.filter(({ mode }) => mode === "exa")) {
+    for (const action of result.actions.filter(
+        ({ mode }) => mode === "dynamic",
+    )) {
         const parent = result.sources.find(
             ({ id }) => id === action.parentSourceId,
         );
@@ -968,7 +1220,7 @@ test("blocked required community seeds fallback only after HTTP and remain insid
         assert.ok(
             first <
                 f.reads.findIndex(
-                    ({ url, mode }) => url === action.url && mode === "exa",
+                    ({ url, mode }) => url === action.url && mode === "dynamic",
                 ),
         );
     }
@@ -1041,7 +1293,7 @@ test("declining a blocked-page fallback preserves attempted coverage and still e
     let extracted = false;
     f.services.extract = async (sources) => {
         extracted = true;
-        assert.equal(sources.length, 4);
+        assert.equal(sources.length, 6);
         assert.equal(
             sources.filter(({ status }) => status === "fetched").length,
             2,
@@ -1063,7 +1315,7 @@ test("declining a blocked-page fallback preserves attempted coverage and still e
     const result = await prepareResearch({}, f.services);
     assert.equal(result.requiredEvidencePending, false);
     assert.equal(extracted, true);
-    assert.equal(f.reads.length, 4);
+    assert.equal(f.reads.length, 6);
     assert.ok(result.gaps.includes("Fixture identity unresolved"));
     assert.ok(
         result.gaps.some((gap) =>

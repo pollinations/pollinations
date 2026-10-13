@@ -46,7 +46,7 @@ class FetcherSession:
         return Fetcher.get(url, **kwargs)
 fetchers.FetcherSession = FetcherSession
 curl = types.ModuleType("curl_cffi")
-curl.CurlOpt = types.SimpleNamespace(RESOLVE=10203, MAXFILESIZE_LARGE=30117)
+curl.CurlOpt = types.SimpleNamespace(RESOLVE=10203, MAXFILESIZE_LARGE=30117, PROXY=10004)
 sys.modules["curl_cffi"] = curl
 sys.modules["scrapling"] = scrapling
 sys.modules["scrapling.fetchers"] = fetchers
@@ -86,7 +86,7 @@ socket.getaddrinfo = resolve
 def request(self, method, **kwargs):
     calls.append({"url": kwargs["url"], "resolve": self.curl_options.get(CurlOpt.RESOLVE),
                   "max_response_bytes": self.curl_options.get(CurlOpt.MAXFILESIZE_LARGE),
-                  "trust_env": self.trust_env, "redirects": kwargs.get("allow_redirects")})
+                  "trust_env": self.trust_env, "proxy": self.curl_options.get(CurlOpt.PROXY), "redirects": kwargs.get("allow_redirects")})
     response = Response()
     response.url = kwargs["url"]
     response.status_code = 302 if len(calls) == 1 else 200
@@ -113,6 +113,7 @@ test(
         assert.equal(calls.length, 2);
         for (const call of calls) {
             assert.equal(call.trust_env, false);
+            assert.equal(call.proxy, "");
             assert.equal(call.redirects, false);
             assert.equal(call.max_response_bytes, 2 * 1024 * 1024);
             assert.ok(
@@ -259,7 +260,7 @@ test("Retry-After delays up to thirty seconds are honored", () => {
 
 test("the HTTP deadline prevents another attempt when its incremental wait cannot fit", () => {
     const { result, calls, sleeps } = run({
-        monotonic: [0, 79, 79],
+        monotonic: [0, 79, 79, 79, 79],
         pages: [{ status: 503, headers: {} }],
     });
     assert.equal(result.status, "unavailable");
@@ -424,7 +425,7 @@ class Session:
     def get(self, *args, **kwargs):
         calls.append(mode)
         return types.SimpleNamespace(status=200, headers={}, html_content="<p>Fetched</p>")
-sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2))
+sys.modules["curl_cffi"] = types.SimpleNamespace(CurlOpt=types.SimpleNamespace(RESOLVE=1, MAXFILESIZE_LARGE=2, PROXY=3))
 sys.modules["scrapling.fetchers"] = types.SimpleNamespace(FetcherSession=Session)
 results = {}
 for mode in ["temporary", "permanent", "private"]:
@@ -477,6 +478,17 @@ test("missing or null content cannot be reported as fetched text", () => {
         const { result } = run({ pages: [page] });
         assert.equal(result.status, "unavailable");
         assert.equal(result.text, "");
+    }
+});
+
+test("HTTP200 challenge and login screens cannot become evidence", () => {
+    for (const html_content of [
+        "<title>Just a moment...</title><p>Enable JavaScript and cookies to continue</p>",
+        '<form action="/login"><input type="password"></form><p>Please sign in to continue</p>',
+    ]) {
+        const { result } = run({ pages: [{ status: 200, html_content }] });
+        assert.equal(result.status, "unavailable");
+        assert.match(result.error, /challenge|login/);
     }
 });
 
@@ -573,3 +585,483 @@ test("percent-encoded credential names reject without retaining values", () => {
         assert.doesNotMatch(JSON.stringify(result), /confidential-marker/);
     }
 });
+
+// Two external fixtures (DNS and curl); the adapter, Scrapling, and Chromium are real.
+const browserHarness = `
+import hashlib, importlib.util, io, json, os, socket, sys, tempfile, time
+from pathlib import Path
+from curl_cffi import CurlOpt
+from curl_cffi.requests import Session
+from curl_cffi.requests.models import Response
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+case = json.load(sys.stdin)
+calls = []
+sleeps = []
+received_bytes = 0
+if case.get("captureSleeps"):
+    def profile(frame, event, function):
+        if event == "c_call" and function is time.sleep and frame.f_code.co_name == "_read_browser":
+            sleeps.append(frame.f_locals["delay"])
+    sys.setprofile(profile)
+def resolve(host, port, **kwargs):
+    addresses = case.get("dns", {}).get(host, ["93.184.216.34"])
+    return [(socket.AF_INET6 if ":" in address else socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port)) for address in addresses]
+socket.getaddrinfo = resolve
+def request(self, method, **kwargs):
+    global received_bytes
+    url = kwargs["url"]
+    calls.append({"url": url, "method": method, "resolve": self.curl_options.get(CurlOpt.RESOLVE),
+                  "maxBytes": self.curl_options.get(CurlOpt.MAXFILESIZE_LARGE), "trustEnv": self.trust_env,
+                  "proxy": self.curl_options.get(CurlOpt.PROXY),
+                  "redirects": kwargs.get("allow_redirects"), "verify": kwargs.get("verify"),
+                  "headers": kwargs.get("headers", {})})
+    item = case.get("pages", {}).get(url, {"status": 404, "body": "Missing fixture"})
+    if isinstance(item, list):
+        item = item[min(sum(call["url"] == url for call in calls)-1, len(item)-1)]
+    if item.get("timeout"):
+        raise TimeoutError("fixture transport timeout")
+    response = Response(); response.url = url; response.status_code = item.get("status", 200)
+    response.encoding = "utf-8"; response.reason = "Fixture"; response.cookies = {}; response.request = None; response.history = []
+    response.headers = {"content-type": "text/html; charset=utf-8", **item.get("headers", {})}
+    response.content = item.get("body", "").encode()
+    callback = kwargs.get("content_callback")
+    if callback:
+        chunk_size = case.get("chunkSize", 32)
+        for offset in range(0, len(response.content), chunk_size):
+            chunk = response.content[offset:offset+chunk_size]
+            received_bytes += len(chunk)
+            callback(chunk)
+        if item.get("timeoutAfterBody"):
+            raise TimeoutError("fixture interrupted transfer")
+        response.content = b""
+    return response
+Session.request = request
+if "requestLimit" in case: adapter.MAX_BROWSER_REQUESTS = case["requestLimit"]
+if "byteLimit" in case: adapter.MAX_BROWSER_BYTES = case["byteLimit"]
+with tempfile.TemporaryDirectory() as root:
+    os.environ["FETCH_CACHE_DIR"] = root
+    request = {"url": "https://docs.example/", "mode": "dynamic", **case.get("request", {})}
+    sys.stdin = io.StringIO(json.dumps(request)); result = adapter.main()
+    cached = [json.loads(path.read_text(encoding="utf-8")) for path in Path(root).glob("*.json")]
+    paths = [path.name for path in Path(root).glob("*.json")]
+    second = None
+    if case.get("readAgain"):
+        sys.stdin = io.StringIO(json.dumps(request)); second = adapter.main()
+    if case.get("readHttp"):
+        sys.stdin = io.StringIO(json.dumps({**request, "mode": "http"})); second = adapter.main()
+        paths = [path.name for path in Path(root).glob("*.json")]
+    print(json.dumps({"result": result, "second": second, "calls": calls, "cached": cached, "paths": paths,
+                      "sleeps": sleeps, "receivedBytes": received_bytes}))
+`;
+
+function runBrowser(overrides = {}) {
+    const child = spawnSync(python, ["-c", browserHarness, adapter], {
+        input: JSON.stringify(overrides),
+        encoding: "utf8",
+        timeout: 35_000,
+        maxBuffer: 1024 * 1024,
+        env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+    });
+    assert.equal(child.status, 0, child.stderr || String(child.error));
+    return JSON.parse(child.stdout);
+}
+
+const browserOptions = { skip: process.env.RUN_BROWSER_FETCH !== "1" };
+
+test(
+    "HTTP transport uses the DNS-adjusted deadline and rejects late responses",
+    { skip: !process.env.PYTHONPATH && process.env.RUN_LIVE_FETCH !== "1" },
+    () => {
+        const script = `
+import importlib.util, io, json, sys
+from curl_cffi.requests import Session
+from curl_cffi.requests.models import Response
+from scrapling.fetchers import FetcherSession
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+results = []
+for dns_end in [79, 81]:
+    calls = []
+    ticks = 0
+    now = 0
+    def clock():
+        global ticks
+        ticks += 1
+        return 0 if ticks <= 2 else now
+    def request(self, method, **kwargs):
+        global now
+        calls.append(kwargs["timeout"])
+        now = 81
+        response = Response(); response.url = kwargs["url"]; response.status_code = 200
+        response.reason = "OK"; response.encoding = "utf-8"; response.content = b"<p>Late model documentation</p>"
+        response.headers = {"content-type":"text/html"}; response.cookies = {}; response.request = None; response.history = []
+        return response
+    Session.request = request
+    adapter.time.monotonic = clock
+    now = dns_end
+    sys.stdin = io.StringIO(json.dumps({"url":"https://1.1.1.1/"}))
+    result = adapter.main()
+    assert result["status"] == "unavailable" and "deadline" in result["error"], result
+    assert calls == ([1] if dns_end == 79 else []), calls
+    results.append(result)
+print(json.dumps({"passed":True}))
+`;
+        assert.equal(run({}, script).passed, true);
+    },
+);
+
+test(
+    "interrupted browser transfers consume the shared byte budget before retrying",
+    { skip: !process.env.PYTHONPATH && process.env.RUN_BROWSER_FETCH !== "1" },
+    () => {
+        const { result, calls, cached, sleeps, receivedBytes } = runBrowser({
+            captureSleeps: true,
+            byteLimit: 250,
+            chunkSize: 10,
+            pages: {
+                "https://docs.example/": {
+                    status: 302,
+                    headers: { location: "/final" },
+                    body: "r".repeat(80),
+                },
+                "https://docs.example/final": {
+                    body: "x".repeat(80),
+                    timeoutAfterBody: true,
+                },
+            },
+        });
+        assert.equal(result.status, "unavailable");
+        assert.match(result.error, /byte limit/);
+        assert.equal(cached.length, 0);
+        assert.equal(calls.length, 4);
+        assert.deepEqual(sleeps, [2]);
+        assert.equal(
+            receivedBytes,
+            260,
+            "the crossing chunk must stop transfer and prevent another attempt",
+        );
+    },
+);
+
+test(
+    "real browser retries a transient subrequest once and caches only recovered content",
+    browserOptions,
+    () => {
+        const { result, calls, cached, sleeps } = runBrowser({
+            captureSleeps: true,
+            pages: {
+                "https://docs.example/": {
+                    body: '<html><body><p id="content">Loading</p><script>fetch("/data").then(r=>r.text()).then(t=>document.getElementById("content").textContent=t)</script></body></html>',
+                },
+                "https://docs.example/data": [
+                    { timeout: true },
+                    {
+                        body: "Recovered model documentation",
+                        headers: { "content-type": "text/plain" },
+                    },
+                ],
+            },
+        });
+        assert.equal(result.status, "fetched", result.error);
+        assert.equal(result.text, "Recovered model documentation");
+        assert.deepEqual(sleeps, [2]);
+        assert.deepEqual(
+            calls.map((call) => call.url),
+            [
+                "https://docs.example/",
+                "https://docs.example/data",
+                "https://docs.example/",
+                "https://docs.example/data",
+            ],
+        );
+        assert.equal(cached.length, 1);
+        assert.equal(cached[0].text, "Recovered model documentation");
+    },
+);
+
+test(
+    "real browser retry preserves cumulative request limits and prefetch retry honors backoff",
+    browserOptions,
+    () => {
+        const content =
+            '<html><body><p>Public model documentation</p><script>fetch("/data")</script></body></html>';
+        const capped = runBrowser({
+            captureSleeps: true,
+            requestLimit: 4,
+            pages: {
+                "https://docs.example/": { body: content },
+                "https://docs.example/data": { timeout: true },
+            },
+        });
+        assert.equal(capped.result.status, "unavailable");
+        assert.match(capped.result.error, /request.*limit/);
+        assert.equal(capped.calls.length, 2);
+        assert.deepEqual(capped.sleeps, [2]);
+        assert.equal(capped.cached.length, 0);
+        const recovered = runBrowser({
+            captureSleeps: true,
+            pages: {
+                "https://docs.example/": [
+                    { status: 503 },
+                    {
+                        body: "<html><body>Recovered prefetch documentation</body></html>",
+                    },
+                ],
+            },
+        });
+        assert.equal(
+            recovered.result.status,
+            "fetched",
+            recovered.result.error,
+        );
+        assert.equal(recovered.result.text, "Recovered prefetch documentation");
+        assert.equal(recovered.calls.length, 2);
+        assert.deepEqual(recovered.sleeps, [2]);
+    },
+);
+
+test("browser deadline and write-method rejection happen before DNS or transport", () => {
+    const script = `
+import importlib.util, json, sys, time
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+def forbidden(*args, **kwargs): raise AssertionError("DNS or transport executed")
+adapter.socket.getaddrinfo = forbidden
+for deadline, method, message in [(time.monotonic()-1,"GET","deadline"),(time.monotonic()+10,"POST","method")]:
+    guard = adapter._BrowserGuard(deadline)
+    try: guard.fetch("https://docs.example/", method)
+    except adapter.ValidationError as error: assert message in str(error)
+    else: raise AssertionError("request accepted")
+    assert guard.requests == 0 and guard.bytes == 0
+print(json.dumps({"passed": True}))
+`;
+    assert.equal(run({}, script).passed, true);
+});
+
+test(
+    "real stealth browser renders JavaScript through pinned GET transport and caches separate evidence",
+    browserOptions,
+    () => {
+        const { result, second, calls, cached, paths } = runBrowser({
+            readAgain: true,
+            pages: {
+                "https://docs.example/": {
+                    status: 302,
+                    headers: { location: "/final" },
+                },
+                "https://docs.example/final": {
+                    body: '<html><body><p id="content">Loading</p><a href="/models/new">New model</a><script>fetch("/data").then(r=>r.text()).then(t=>document.getElementById("content").textContent=t)</script></body></html>',
+                },
+                "https://docs.example/data": {
+                    body: "Rendered model documentation",
+                    headers: { "content-type": "text/plain" },
+                },
+            },
+        });
+        assert.equal(result.status, "fetched", result.error);
+        assert.equal(result.method, "scrapling-browser");
+        assert.equal(result.url, "https://docs.example/final");
+        assert.match(result.text, /Rendered model documentation/);
+        assert.equal(result.links[0].url, "https://docs.example/models/new");
+        assert.equal(second.cached, true);
+        assert.equal(second.pageDigest, result.pageDigest);
+        assert.equal(cached.length, 1);
+        assert.equal(cached[0].text, result.text);
+        assert.equal(cached[0].method, "scrapling-browser");
+        assert.equal(cached[0].url, result.url);
+        assert.deepEqual(cached[0].links, result.links);
+        assert.equal(paths.length, 1);
+        for (const call of calls) {
+            assert.equal(call.method, "GET");
+            assert.equal(call.trustEnv, false);
+            assert.equal(call.proxy, "");
+            assert.equal(call.redirects, false);
+            assert.equal(call.verify, true);
+            assert.ok(call.maxBytes <= 2 * 1024 * 1024);
+            assert.deepEqual(call.resolve, ["docs.example:443:93.184.216.34"]);
+            assert.ok(
+                Object.keys(call.headers).every((key) =>
+                    ["accept", "accept-language", "user-agent"].includes(
+                        key.toLowerCase(),
+                    ),
+                ),
+            );
+        }
+        assert.equal(
+            calls.filter((call) => call.url === "https://docs.example/final")
+                .length,
+            1,
+        );
+    },
+);
+
+test(
+    "real browser private subrequests, private redirects, and write methods never reach transport",
+    browserOptions,
+    () => {
+        for (const script of [
+            'fetch("https://private.example/models")',
+            'fetch("/redirect")',
+            'fetch("/write",{method:"POST",body:"fixture"})',
+            'fetch("https://private.example/models").catch(()=>fetch("/data"))',
+        ]) {
+            const { result, calls, cached, sleeps } = runBrowser({
+                captureSleeps: true,
+                dns: { "private.example": ["127.0.0.1"] },
+                pages: {
+                    "https://docs.example/": {
+                        body: `<html><body><p>Public model page</p><script>${script}</script></body></html>`,
+                    },
+                    "https://docs.example/redirect": {
+                        status: 302,
+                        headers: { location: "https://private.example/models" },
+                    },
+                    "https://docs.example/data": { timeout: true },
+                },
+            });
+            assert.equal(result.status, "unavailable", script);
+            assert.equal(cached.length, 0);
+            assert.deepEqual(
+                sleeps,
+                [],
+                "policy failures must not become retryable after a later timeout",
+            );
+            assert.equal(
+                calls.filter((call) => call.url === "https://docs.example/")
+                    .length,
+                1,
+            );
+            assert.ok(
+                calls.every(
+                    (call) =>
+                        !call.url.includes("private.example") &&
+                        call.method === "GET",
+                ),
+            );
+            assert.equal(
+                calls.filter((call) => call.url.endsWith("/write")).length,
+                0,
+            );
+        }
+    },
+);
+
+test(
+    "real browser has no WebRTC or worker realm and websocket egress is closed",
+    browserOptions,
+    () => {
+        const { result, calls } = runBrowser({
+            pages: {
+                "https://docs.example/": {
+                    body: '<html><body><p id="content">Waiting</p><script>const names=["RTCPeerConnection","webkitRTCPeerConnection","WebTransport","Worker","SharedWorker"];document.getElementById("content").textContent=names.every(n=>typeof globalThis[n]==="undefined")?"Egress constructors disabled":"Failed";new WebSocket("wss://private.example/")</script></body></html>',
+                },
+            },
+        });
+        assert.equal(result.status, "fetched", result.error);
+        assert.equal(result.text, "Egress constructors disabled");
+        assert.ok(calls.every((call) => !call.url.includes("private.example")));
+    },
+);
+
+test(
+    "real browser enforces request and cumulative byte ceilings before caching",
+    browserOptions,
+    () => {
+        const pages = {
+            "https://docs.example/": {
+                body: '<html><body><p>Public model page</p><script>fetch("/a").then(()=>fetch("/b"))</script></body></html>',
+            },
+            "https://docs.example/a": { body: "x".repeat(80) },
+            "https://docs.example/b": { body: "y".repeat(80) },
+        };
+        for (const limits of [{ requestLimit: 3 }, { byteLimit: 170 }]) {
+            const { result, cached, calls } = runBrowser({ ...limits, pages });
+            assert.equal(result.status, "unavailable");
+            assert.equal(cached.length, 0);
+            assert.ok(calls.length <= 2);
+            assert.match(result.error, /limit/);
+        }
+    },
+);
+
+test(
+    "real browser rejects HTTP200 challenges and login screens without caching",
+    browserOptions,
+    () => {
+        for (const body of [
+            "<html><head><title>Just a moment...</title></head><body>Enable JavaScript and cookies to continue</body></html>",
+            '<html><body><form action="/login"><input type="password"></form><p>Please sign in to continue</p></body></html>',
+            "<html><body><script>window.empty=true</script></body></html>",
+        ]) {
+            const { result, cached } = runBrowser({
+                pages: { "https://docs.example/": { body } },
+            });
+            assert.equal(result.status, "unavailable");
+            assert.match(result.error, /challenge|login|public/);
+            assert.equal(cached.length, 0);
+        }
+        const documentation = runBrowser({
+            pages: {
+                "https://docs.example/": {
+                    body: "<html><head><title>Authentication documentation</title></head><body><p>Use this public model API documentation to learn how to sign in and configure authentication.</p></body></html>",
+                },
+            },
+        });
+        assert.equal(
+            documentation.result.status,
+            "fetched",
+            documentation.result.error,
+        );
+    },
+);
+
+test(
+    "browser and HTTP caches for one URL cannot collide",
+    browserOptions,
+    () => {
+        const { result, second, paths, calls } = runBrowser({
+            readHttp: true,
+            pages: {
+                "https://docs.example/": {
+                    body: '<html><body><p id="content">Raw source</p><script>document.getElementById("content").textContent="Rendered source"</script></body></html>',
+                },
+            },
+        });
+        assert.equal(result.text, "Rendered source");
+        assert.equal(second.text, "Raw source");
+        assert.equal(second.method, "scrapling-http");
+        assert.equal(second.cached, false);
+        assert.equal(paths.length, 2);
+        assert.equal(calls.length, 2);
+    },
+);
+
+test(
+    "missing websocket interception closes the real browser context before navigation",
+    browserOptions,
+    () => {
+        const script = `
+import importlib.util, json, sys, time
+from patchright.sync_api import sync_playwright
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+with sync_playwright() as engine:
+    browser = engine.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    context.route_web_socket = None
+    guard = adapter._BrowserGuard(time.monotonic()+5)
+    try: guard.setup(page)
+    except adapter.ValidationError: pass
+    assert not guard.setup_complete
+    assert context.pages == []
+    assert guard.error == "browser egress guard setup failed"
+    assert guard.requests == 0
+    browser.close()
+print(json.dumps({"passed": True}))
+`;
+        const result = run({}, script);
+        assert.equal(result.passed, true);
+    },
+);

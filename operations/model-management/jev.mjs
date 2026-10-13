@@ -817,7 +817,9 @@ export function buildResearchControl({
                 url.protocol === "https:" &&
                     !url.username &&
                     !url.password &&
-                    ["auto", "http", "saved", "exa"].includes(action.mode),
+                    ["auto", "http", "dynamic", "saved", "exa"].includes(
+                        action.mode,
+                    ),
                 "Invalid controlled source read",
             );
         }

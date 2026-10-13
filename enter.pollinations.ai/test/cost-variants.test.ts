@@ -45,17 +45,20 @@ describe("long-context cost variants", () => {
     it.each([
         [198_999, undefined, 0.399698],
         [199_000, "long_context", 0.7994],
-    ] as const)("Grok reprices all billed tokens at %s uncached prompt tokens", (prompt, variant, price) => {
-        const billing = bill("x-ai/grok-4.7", {
-            promptTextTokens: prompt,
-            promptCachedTokens: 1000,
-            completionTextTokens: 100,
-            completionReasoningTokens: 100,
-        });
-        expect(billing.costVariant).toBe(variant);
-        expect(billing.cost.totalCost).toBeCloseTo(price, 10);
-        expect(billing.price.totalPrice).toBeCloseTo(price, 8);
-    });
+    ] as const)(
+        "Grok reprices all billed tokens at %s uncached prompt tokens",
+        (prompt, variant, price) => {
+            const billing = bill("x-ai/grok-4.7", {
+                promptTextTokens: prompt,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            });
+            expect(billing.costVariant).toBe(variant);
+            expect(billing.cost.totalCost).toBeCloseTo(price, 10);
+            expect(billing.price.totalPrice).toBeCloseTo(price, 8);
+        },
+    );
 
     it.each([
         ["openai/gpt-5.4", 272_000],

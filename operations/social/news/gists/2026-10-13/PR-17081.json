@@ -1,0 +1,32 @@
+{
+  "pr_number": 17081,
+  "title": "fix(cli): respect aspect-ratio in gen video and support multiple reference frames",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17081",
+  "merged_at": "2026-10-13T00:37:16Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "`polli gen video` now sends `width` and `height` only when explicitly provided, so `--aspect-ratio 16:9` no longer competes with an implicit 1024×1024 size. It still defaults to 1024×1024 when neither an aspect ratio nor dimensions are specified. `--image` now accepts multiple reference-frame URLs and joins them with `|`, matching `polli gen image` and supporting start and end frames. Unit tests cover the video command changes.",
+    "keywords": [
+      "polli CLI",
+      "video generation",
+      "aspect ratio",
+      "reference frames",
+      "dimensions"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17081.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli adjusts a wide video frame on a glowing terminal while two little picture frames mark its start and end; lime green (#ecf874) code-plants grow beside the desk. Polli, the main character, is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, rounded light blue translucent wings, and a tiny director's cap; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T00:38:24.697016+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "9ec395f3ae60238eed5dce35cc5148eb96ad4e52",
+  "announcements": []
+}

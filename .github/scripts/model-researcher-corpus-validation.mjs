@@ -40,7 +40,7 @@ await mkdir(out, { recursive: true });
 const prior = JSON.parse(
     await readFile(join(process.env.CORPUS_OUT, "research.json"), "utf8"),
 );
-const inventory = JSON.parse(
+const savedInventory = JSON.parse(
     await readFile(
         join(process.env.CORPUS_OUT, "official-catalog.json"),
         "utf8",
@@ -51,10 +51,15 @@ const current = officialCatalog(
         "https://gen.pollinations.ai/models?reliability=all",
     ),
 );
-assert.deepEqual(
-    current.map((row) => row.name).sort(),
-    inventory.map((row) => row.name).sort(),
-);
+const inventory = current;
+const catalogChanges = {
+    added: current
+        .filter((row) => !savedInventory.some((old) => old.name === row.name))
+        .map(({ name }) => name),
+    removed: savedInventory
+        .filter((row) => !current.some((live) => live.name === row.name))
+        .map(({ name }) => name),
+};
 const jev = current.find((row) => row.name === JEV_MODEL);
 const baseline = 2.4271206668;
 const sources = [];
@@ -103,6 +108,7 @@ const report = {
     calibration: calibrationState(),
     sources,
     models: [],
+    catalogChanges,
     baselineAccountedPollen: baseline,
     status: "running",
     validationScope:

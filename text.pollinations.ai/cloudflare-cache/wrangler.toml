@@ -19,6 +19,12 @@ pattern = "text.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+# The host the 402 challenge's resource.url names (src/pay.js)
+[[routes]]
+pattern = "text-origin.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 # R2 bucket for text storage
 [[r2_buckets]]
 binding = "TEXT_BUCKET"

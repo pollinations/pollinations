@@ -1,0 +1,32 @@
+{
+  "pr_number": 17260,
+  "title": "fix(enter): pay Join Discord once per Discord account",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17260",
+  "merged_at": "2026-10-13T04:59:39Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Join Discord rewards are now keyed to the Discord account rather than the Pollinations account, so relinking the same Discord account does not earn the Quest reward again. Migration 0073 re-keys existing rewards for owners who are still linked to Discord; owners who have unlinked retain their old keys. The account-linking test now checks that a second Pollinations account earns nothing for the same Discord account.",
+    "keywords": [
+      "Join Discord",
+      "Quests",
+      "Pollen",
+      "account linking",
+      "migration"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17260.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli checks a single Discord badge beside two linked account cards while a code-plant grows from a lime green (#ecf874) pot. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T05:00:55.811506+00:00",
+  "area": "Quests & rewards",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "28ae7bb510b2a42a4936fc1f7c62fa6c56b7345d",
+  "announcements": []
+}

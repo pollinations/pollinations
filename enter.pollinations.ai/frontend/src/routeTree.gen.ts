@@ -13,6 +13,7 @@ import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as GrantRouteImport } from './routes/grant'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
@@ -49,6 +50,11 @@ const RefundsRoute = RefundsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GrantRoute = GrantRouteImport.update({
+  id: '/grant',
+  path: '/grant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   DeviceRoute: typeof DeviceRoute
   EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
+  GrantRoute: typeof GrantRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   TermsRoute: typeof TermsRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grant': {
+      id: '/grant'
+      path: '/grant'
+      fullPath: '/grant'
+      preLoaderRoute: typeof GrantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeviceRoute: DeviceRoute,
   EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
+  GrantRoute: GrantRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   TermsRoute: TermsRoute,

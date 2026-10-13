@@ -1,4 +1,5 @@
-FROM grafana/grafana:11.4.0
+# -slim leaves out the bundled data source plugins; only ClickHouse is used.
+FROM grafana/grafana:13.2.3-slim
 
 # Install at build time: GF_INSTALL_PLUGINS would download the plugin on every
 # cold start, because the container disk is ephemeral.

@@ -1,9 +1,10 @@
 import { printInfo } from "./output.js";
 
 /**
- * Read piped stdin until EOF. With `waitMs`, stdin is optional: if no data
- * arrives within that time, stop reading and return "". Some callers (Node's
- * `exec`/`spawn`, agent harnesses) leave stdin open without writing to it.
+ * Read piped stdin until EOF, untrimmed. With `waitMs`, stdin is optional: if
+ * no data arrives within that time, stop reading and return "". Some callers
+ * (Node's `exec`/`spawn`, agent harnesses) leave stdin open without writing to
+ * it.
  */
 export async function readStdin(waitMs?: number): Promise<string> {
     if (process.stdin.isTTY) return "";
@@ -26,7 +27,7 @@ export async function readStdin(waitMs?: number): Promise<string> {
             })
             .once("end", () => {
                 clearTimeout(timer);
-                resolve(Buffer.concat(chunks).toString("utf-8").trim());
+                resolve(Buffer.concat(chunks).toString("utf-8"));
             })
             .once("error", reject);
     });

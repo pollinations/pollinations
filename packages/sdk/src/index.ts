@@ -21,8 +21,6 @@ export { Pollinations } from "./client.js";
 export {
     type AudioResponseExt,
     type ChatResponseExt,
-    // Conversation class
-    Conversation,
     // Extended response types with helpers
     type ImageResponseExt,
     type VideoResponseExt,
@@ -39,7 +37,6 @@ export {
     chat,
     chatStream,
     configure,
-    conversation,
     createKey,
     decision,
     editImage,
@@ -51,11 +48,9 @@ export {
     generateVideo,
     getBalance,
     getDailyUsage,
-    getImageModels,
     getKeyUsage,
     getModels,
     getProfile,
-    getTextModels,
     getUsage,
     imageGenerate,
     imageUrl,
@@ -151,6 +146,7 @@ export type {
     ModelCategory,
     ModelInfo,
     ModelInputModality,
+    ModelKind,
     ModelOutputModality,
     NoulAnswer,
     NoulQuestion,

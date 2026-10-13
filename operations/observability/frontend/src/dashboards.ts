@@ -63,7 +63,8 @@ export function readRange(search: string): Range {
 /**
  * Kiosk mode hides Grafana's navigation and time picker, so the range travels
  * in the URL, where `from`/`to` override the dashboard's saved time.
+ * `hideLogo` drops the "Powered by Grafana" footer kiosk mode adds.
  */
 export function dashboardSrc(uid: string, range: Range): string {
-    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&from=now-${range}/d&to=now-1d/d`;
+    return `/grafana/d/${encodeURIComponent(uid)}?kiosk&hideLogo&from=now-${range}/d&to=now-1d/d`;
 }

@@ -13,6 +13,7 @@ describe("Tooltip", () => {
         expect(markup).toContain('role="tooltip"');
         expect(markup).not.toContain('role="button"');
         expect(markup).not.toContain('tabindex="0"');
+        expect(markup).not.toContain("polli-control");
     });
 
     it("makes explicitly tap-enabled span triggers operable", () => {
@@ -24,5 +25,16 @@ describe("Tooltip", () => {
 
         expect(markup).toContain('role="button"');
         expect(markup).toContain('tabindex="0"');
+        expect(markup).toContain("polli-control");
+    });
+
+    it("gives button triggers the control class for touch tap sizing", () => {
+        const markup = renderToStaticMarkup(
+            <Tooltip triggerAs="button" content="Details">
+                Button
+            </Tooltip>,
+        );
+
+        expect(markup).toContain("polli-control");
     });
 });

@@ -18,6 +18,7 @@ import { inferenceQuote } from "../../operations/model-management/pricing.mjs";
 import {
     auditEvidence,
     budgetUsed,
+    exaSource,
     inferenceCost,
     officialCatalog,
     paidPost,
@@ -26,7 +27,6 @@ import {
     researchQuality,
     reserve,
     rpcJson,
-    sourceText,
 } from "../../operations/model-management/researcher.mjs";
 import { readJsonWithRetries } from "../../operations/model-management/retries.mjs";
 
@@ -45,7 +45,7 @@ const jev = inventory.find((row) => row.name === JEV_MODEL),
 const rates = (
     await readJsonWithRetries("https://gen.pollinations.ai/mcp")
 ).data.find((row) => row.id === "exa").pricing.rates;
-const baseline = 1.98439823882;
+const baseline = 2.07654579986;
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 12 * 60000).toISOString(),
@@ -158,20 +158,17 @@ const read = async (args) => {
     let source;
     try {
         if (args.mode === "exa") {
-            const text = sourceText(
+            const fetched = await exaSource(
                 await mcp(
                     "web_fetch_exa",
                     { urls: [url], maxCharacters: 4000 },
                     "page",
                 ),
             );
-            assert.ok(text.length > 40);
             source = {
-                url,
-                text,
-                method: "pollinations-exa",
+                ...fetched,
                 status: "fetched",
-                digest: hash(text),
+                digest: hash(fetched.text),
             };
         } else {
             const raw = execFileSync(
@@ -270,6 +267,11 @@ const services = {
 try {
     const prepared = await prepareResearch({}, services);
     await save();
+    assert.equal(
+        prepared.requiredEvidencePending,
+        false,
+        "Required free source reads were not attempted",
+    );
     const result = await research(
         {
             task: "Resolve only the discovery gaps selected by Jev; training knowledge is unusable as evidence.",

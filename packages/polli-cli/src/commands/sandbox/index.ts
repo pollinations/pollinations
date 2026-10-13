@@ -17,7 +17,6 @@ import {
     type LogEntry,
     listSandboxes,
     pauseSandbox,
-    RUN_SECONDS,
     sandboxLogs,
 } from "./e2b.js";
 import { proxy, setupSsh } from "./ssh.js";
@@ -34,12 +33,12 @@ function parseTimeout(value: string): number {
     return seconds || KEEP_SECONDS;
 }
 
-// Past E2B's 24-hour run, gen keeps a sandbox running until its timeout;
-// otherwise it runs until its lease ends at `endAt`.
+// Past one lease, gen keeps a sandbox running until its timeout, renewing it
+// 10 minutes at a time; otherwise it runs until its lease ends at `endAt`.
 const runsUntil = (seconds: number, endAt: number) =>
     seconds === KEEP_SECONDS
         ? "runs until you pause or kill it"
-        : `runs until ${new Date(seconds > RUN_SECONDS ? Date.now() + seconds * 1000 : endAt).toLocaleString()}, then pauses`;
+        : `runs until ${new Date(seconds > LEASE_SECONDS ? Date.now() + seconds * 1000 : endAt).toLocaleString()}, then pauses`;
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -71,7 +70,7 @@ export const sandboxCommand = new Command("sandbox")
             )
             .option(
                 "--timeout <seconds>",
-                "Keep it running this long without ssh, paid in advance; 0 never expires",
+                "Keep it running this long without ssh, paid 10 minutes at a time; 0 never expires",
                 parseTimeout,
             )
             .action(
@@ -125,7 +124,7 @@ export const sandboxCommand = new Command("sandbox")
                             size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
                             state:
                                 sandbox.state === "running"
-                                    ? `running until ${new Date(sandbox.endAt).toLocaleString()}`
+                                    ? `running until ${new Date(sandbox.keptUntil ?? sandbox.endAt).toLocaleString()}`
                                     : sandbox.state,
                         })),
                     );
@@ -137,7 +136,7 @@ export const sandboxCommand = new Command("sandbox")
     .addCommand(
         new Command("timeout")
             .description(
-                "Keep a sandbox running at least <seconds> from now, paid in advance; 0 never expires; resumes a paused one",
+                "Keep a sandbox running at least <seconds> from now, paid 10 minutes at a time; 0 never expires; resumes a paused one",
             )
             .argument("<id>")
             .argument("<seconds>", "seconds from now, or 0", parseTimeout)

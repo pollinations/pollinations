@@ -366,10 +366,10 @@ test("a lease runs to the end of E2B's 24-hour run at the latest; resuming start
     const owner = await sandboxKey();
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
-    // The run ends 600 s from now: an hour's timeout pays 300 s past the
+    // The run ends 450 s from now: an hour's timeout pays the 150 s past the
     // paid 300 and keeps the sandbox for the rest, in a new run.
     e2b.sandboxes[0].startedAt = new Date(
-        Date.now() - RUN_MS + 600_000,
+        Date.now() - RUN_MS + 450_000,
     ).toISOString();
 
     const extended = await post(owner.key, `/sandboxes/${sandboxID}/timeout`, {
@@ -389,9 +389,12 @@ test("a lease runs to the end of E2B's 24-hour run at the latest; resuming start
     expect(resumed.status).toBe(201);
 
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
-    expect(e2b.leases()[1].totalPrice).toBeCloseTo(LEASE_300S, 5);
+    expect(e2b.leases()[1].totalPrice).toBeCloseTo(LEASE_300S / 2, 5);
     expect(e2b.leases()[2].totalPrice).toBeCloseTo(LEASE_300S, 5);
-    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 5);
+    expect(await questPollen(owner.userId)).toBeCloseTo(
+        10 - 2.5 * LEASE_300S,
+        5,
+    );
 });
 
 test("refuses keys without the scope, unpaid leases and closed endpoints", async () => {
@@ -434,12 +437,12 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
 });
 
-test("a timeout past E2B's 24-hour run keeps the sandbox, paying an hour at a time", async () => {
+test("a timeout over 10 minutes keeps the sandbox, paying 10 minutes at a time", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
     const week = 7 * 86_400;
 
-    const created = await createSandbox(owner.key, { timeout: week });
+    const created = await createSandbox(owner.key, { timeout: 3600 });
     expect(created.status).toBe(201);
     const [sandbox] = e2b.sandboxes;
     const [keep] = await keeps();
@@ -447,15 +450,12 @@ test("a timeout past E2B's 24-hour run keeps the sandbox, paying an hour at a ti
         sandboxId: sandbox.sandboxID,
         apiKeyId: owner.id,
     });
-    expect(keep.until.getTime() - Date.now()).toBeCloseTo(week * 1000, -4);
-    // E2B gets an hour at a time, paid in advance.
+    expect(keep.until.getTime() - Date.now()).toBeCloseTo(3_600_000, -4);
+    // E2B gets 10 minutes at a time, paid in advance.
     expect(Date.parse(sandbox.endAt) - Date.parse(sandbox.startedAt)).toBe(
-        3_600_000,
+        600_000,
     );
-    expect(await questPollen(owner.userId)).toBeCloseTo(
-        10 - 12 * LEASE_300S,
-        8,
-    );
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 2 * LEASE_300S, 8);
 
     // Kept from the dashboard's session, the owner pays the renewals.
     const token = await signSessionToken({
@@ -496,15 +496,15 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
             timeout: seconds,
         });
 
-    // Kept from now: an hour paid, 3300 s past the paid 300.
+    // Kept from now: 10 minutes paid, 300 s past the paid 300.
     expect((await timeout(week)).status).toBe(204);
     expect(await keeps()).toHaveLength(1);
     expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
-        3590_000,
+        590_000,
     );
     expect((await connect(300)).status).toBe(200);
     expect(await keeps()).toHaveLength(1);
-    expect((await timeout(600)).status).toBe(204);
+    expect((await timeout(300)).status).toBe(204);
     expect(await keeps()).toHaveLength(0);
 
     // A paused sandbox resumed with a long timeout is kept again.
@@ -516,7 +516,7 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
     expect((await connect(week)).status).toBe(201);
     expect(await keeps()).toHaveLength(1);
     expect(Date.parse(e2b.sandboxes[0].endAt) - Date.now()).toBeGreaterThan(
-        3590_000,
+        590_000,
     );
 
     // A kept sandbox with a longer lease paid keeps all of it.
@@ -526,14 +526,14 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
         5 * 3600_000 - 10_000,
     );
 
-    // Created for 300 s, kept for 3300 s more, kept again 3000 s past the
-    // 600 s timeout, resumed for an hour; the longer lease costs nothing.
+    // Created for 300 s, kept for 300 s more, kept again 300 s past the 300 s
+    // timeout, resumed for 600 s; the longer lease costs nothing.
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(4));
     const paid = e2b.leases().map((lease) => lease.totalPrice as number);
     expect(paid[0]).toBeCloseTo(LEASE_300S, 5);
-    expect(paid[1]).toBeCloseTo(11 * LEASE_300S, 4);
-    expect(paid[2]).toBeCloseTo(10 * LEASE_300S, 4);
-    expect(paid[3]).toBeCloseTo(12 * LEASE_300S, 4);
+    expect(paid[1]).toBeCloseTo(LEASE_300S, 4);
+    expect(paid[2]).toBeCloseTo(LEASE_300S, 4);
+    expect(paid[3]).toBeCloseTo(2 * LEASE_300S, 4);
 });
 
 test("the cron renews kept sandboxes until their timeout, resumes paused ones, and ends a keep its key or owner cannot pay", async () => {
@@ -574,7 +574,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         sandbox("due", owner.userId),
         // Its run ends within the next lease, so it restarts.
         sandbox("old", owner.userId, {
-            startedAt: inSeconds(600 - RUN_MS / 1000),
+            startedAt: inSeconds(300 - RUN_MS / 1000),
         }),
         sandbox("ended", owner.userId),
         sandbox("ending", other.userId),
@@ -591,7 +591,7 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         sandbox("revoked", revoked.userId),
         sandbox("banned", banned.userId),
     );
-    const until = new Date(Date.now() + 1200_000);
+    const until = new Date(Date.now() + 450_000);
     const month = new Date(Date.now() + 30 * 86_400_000);
     await db.insert(sandboxKeep).values([
         { sandboxId: "due", apiKeyId: owner.id, until: month },
@@ -615,17 +615,17 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     await waitOnExecutionContext(ctx);
 
     const [due, old, , ending, paused, dashboard] = e2b.sandboxes;
-    expect(Date.parse(due.endAt) - Date.now()).toBeGreaterThan(3590_000);
+    expect(Date.parse(due.endAt) - Date.now()).toBeGreaterThan(590_000);
     expect(old.state).toBe("running");
     expect(Date.now() - Date.parse(old.startedAt)).toBeLessThan(10_000);
-    expect(Date.parse(old.endAt) - Date.now()).toBeGreaterThan(3590_000);
+    expect(Date.parse(old.endAt) - Date.now()).toBeGreaterThan(590_000);
     // Renewed only up to its timeout.
     expect(Math.abs(Date.parse(ending.endAt) - until.getTime())).toBeLessThan(
         2000,
     );
     expect(paused.state).toBe("running");
-    expect(Date.parse(paused.endAt) - Date.now()).toBeGreaterThan(3590_000);
-    expect(Date.parse(dashboard.endAt) - Date.now()).toBeGreaterThan(3590_000);
+    expect(Date.parse(paused.endAt) - Date.now()).toBeGreaterThan(590_000);
+    expect(Date.parse(dashboard.endAt) - Date.now()).toBeGreaterThan(590_000);
     expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(6)]).toEqual(untouched);
 
     // Kept on: the renewed, the waiting; ended: the expired, the gone, those
@@ -639,33 +639,30 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         "paused",
     ]);
 
-    // The renewals pay for 3300 s past the paid 300, the restart and the
-    // resume for an hour, and the ending sandbox for the 900 s left.
+    // The renewals pay for 300 s past the paid 300, the restart and the
+    // resume for 600 s, and the ending sandbox for the 150 s left.
     expect(e2b.leases()).toHaveLength(5);
     const paid = Object.fromEntries(
         e2b.leases().map((lease) => [lease.requestPath, lease]),
     );
     const renewal = paid["/alpha/e2b/sandboxes/due/timeout"];
     expect(renewal).toMatchObject({ userId: owner.userId, apiKeyId: owner.id });
-    expect(renewal.totalPrice).toBeCloseTo(11 * LEASE_300S, 4);
+    expect(renewal.totalPrice).toBeCloseTo(LEASE_300S, 4);
     expect(paid["/alpha/e2b/sandboxes/old/connect"].totalPrice).toBeCloseTo(
-        12 * LEASE_300S,
+        2 * LEASE_300S,
         4,
     );
     const last = paid["/alpha/e2b/sandboxes/ending/timeout"];
     expect(last).toMatchObject({ userId: other.userId, apiKeyId: other.id });
-    expect(last.totalPrice).toBeCloseTo(3 * LEASE_300S, 4);
+    expect(last.totalPrice).toBeCloseTo(LEASE_300S / 2, 4);
     expect(paid["/alpha/e2b/sandboxes/paused/connect"].totalPrice).toBeCloseTo(
-        12 * LEASE_300S,
+        2 * LEASE_300S,
         4,
     );
-    expect(await questPollen(owner.userId)).toBeCloseTo(
-        10 - 23 * LEASE_300S,
-        4,
-    );
+    expect(await questPollen(owner.userId)).toBeCloseTo(10 - 3 * LEASE_300S, 4);
     const byOwner = paid["/alpha/e2b/sandboxes/dashboard/timeout"];
     expect(byOwner).toMatchObject({ userId: viewer.userId });
-    expect(byOwner.totalPrice).toBeCloseTo(11 * LEASE_300S, 4);
+    expect(byOwner.totalPrice).toBeCloseTo(LEASE_300S, 4);
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(capped.userId)).toBe(10);
     expect(await questPollen(banned.userId)).toBe(10);
@@ -694,7 +691,6 @@ test("the dashboard prices a lease as gen charges it", async () => {
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 3,
-        maxRunSeconds: 86_400,
         templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.

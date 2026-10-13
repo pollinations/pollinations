@@ -37,13 +37,12 @@ type Sandbox = Size & {
     startedAt: string;
     // When a running sandbox's paid time ends, or when a paused one paused.
     endAt: string;
-    // Not E2B's: when gen keeps it running until, paying an hour at a time.
+    // Not E2B's: when gen keeps it running until, 10 minutes at a time.
     keptUntil?: string;
 };
 
 type Pricing = {
     maxRunning: number;
-    maxRunSeconds: number;
     vcpuSecond: number;
     gibSecond: number;
     templates: Record<string, Size>;
@@ -54,8 +53,8 @@ type Pricing = {
 const FOREVER = 2 ** 31 - 1;
 
 // How long a create, a resume or more time runs the sandbox for: at least 10
-// minutes, or until it's stopped. Up to the end of E2B's 24-hour run it's paid
-// up front; past it, gen keeps the sandbox running and pays an hour at a time.
+// minutes, or until it's stopped. Gen keeps it running until then and takes
+// the Pollen 10 minutes at a time.
 const UNITS = [
     { label: "minutes", seconds: 60 },
     { label: "hours", seconds: 3600 },
@@ -102,17 +101,17 @@ function customError(seconds: number) {
     return null;
 }
 
-// What the pending action costs for that many seconds, or per vCPU and GB
-// when the template's size isn't known.
-function upFront(pricing: Pricing, pending: Pending, seconds: number) {
+// What the pending action's sandbox costs an hour, or per vCPU and GB when
+// the template's size isn't known.
+function perHour(pricing: Pricing, pending: Pending) {
     if (pending.action === "create") {
         const size = pricing.templates[pending.template];
         if (!size) {
-            return `${pollen(pricing.vcpuSecond * seconds)} per vCPU and ${pollen(pricing.gibSecond * seconds)} per GB, depending on the template’s size`;
+            return `${pollen(pricing.vcpuSecond * 3600)} per vCPU and ${pollen(pricing.gibSecond * 3600)} per GB, depending on the template’s size`;
         }
-        return `${pollen(perSecond(pricing, size) * seconds)} (${sizeLabel(size)})`;
+        return `${pollen(perSecond(pricing, size) * 3600)} (${sizeLabel(size)})`;
     }
-    return pollen(perSecond(pricing, pending.sandbox) * seconds);
+    return pollen(perSecond(pricing, pending.sandbox) * 3600);
 }
 
 function SandboxCard({
@@ -264,14 +263,6 @@ export function Sandboxes() {
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.keptUntil ?? addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
-    const runEnd =
-        (addTo ? Date.parse(addTo.startedAt) : now) +
-        (pricing?.maxRunSeconds ?? 0) * 1000;
-    // Past the end of the run, gen keeps it running an hour at a time.
-    const kept = now + timeout * 1000 > runEnd;
-    const paidNow =
-        timeout -
-        (addTo ? Math.max(0, Date.parse(addTo.endAt) - now) / 1000 : 0);
 
     function confirm() {
         if (!pending) return;
@@ -401,7 +392,7 @@ export function Sandboxes() {
                                 {Object.entries(pricing.templates)
                                     .map(
                                         ([id, size]) =>
-                                            `${id} (${sizeLabel(size)})`,
+                                            `${id} (${sizeLabel(size)}, ${pollen(perSecond(pricing, size) * 3600)} an hour)`,
                                     )
                                     .join(" and ")}{" "}
                                 come with polli logged in. Or any public E2B
@@ -458,9 +449,17 @@ export function Sandboxes() {
                     How time works
                 </Text>
                 <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-theme-text-muted">
+                    {pricing && (
+                        <li>
+                            A running sandbox costs{" "}
+                            {pollen(pricing.vcpuSecond * 3600)} per vCPU and{" "}
+                            {pollen(pricing.gibSecond * 3600)} per GB of memory
+                            an hour.
+                        </li>
+                    )}
                     <li>
-                        Time comes out of your Pollen ahead of time; past 24
-                        hours, an hour at a time.
+                        While it runs, time comes out of your Pollen 10 minutes
+                        at a time.
                     </li>
                     <li>
                         When the time is up, the sandbox pauses. Paused
@@ -586,25 +585,14 @@ export function Sandboxes() {
                         </div>
                         {!durationError && (
                             <Alert intent="info">
-                                {kept ? (
-                                    <>
-                                        Runs until{" "}
-                                        {timeout === FOREVER
-                                            ? "you pause or kill it"
-                                            : new Date(
-                                                  now + timeout * 1000,
-                                              ).toLocaleString()}
-                                        , an hour at a time. From your Pollen
-                                        each hour:{" "}
-                                        {upFront(pricing, pending, 3600)}.
-                                    </>
-                                ) : (
-                                    <>
-                                        From your Pollen now:{" "}
-                                        {upFront(pricing, pending, paidNow)}.
-                                    </>
-                                )}{" "}
-                                Unused time isn’t refunded.
+                                Runs until{" "}
+                                {timeout === FOREVER
+                                    ? "you pause or kill it"
+                                    : new Date(
+                                          now + timeout * 1000,
+                                      ).toLocaleString()}
+                                , 10 minutes at a time. From your Pollen each
+                                hour: {perHour(pricing, pending)}.
                             </Alert>
                         )}
                     </>

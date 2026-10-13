@@ -14,6 +14,7 @@ import discord
 from .ai.client import pollinations_client
 from .context import ConversationSession, session_manager
 from .core.config import config
+from .discord.replies import deliver_reply, deliver_working_reactions
 from .discord.media import (
     BLOCK_LATEX_PATTERN,
     PIL_AVAILABLE,
@@ -389,15 +390,17 @@ def extract_media_urls(
     return image_urls, video_urls, file_urls
 
 
-async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT) -> list[dict]:
+async def fetch_thread_history(
+    thread: discord.Thread, limit: int = THREAD_HISTORY_LIMIT, *, exclude_message_ids: set[int]
+) -> list[dict]:
     """
     Fetch message history from a thread and format for AI context.
     This is our "memory" - pulled fresh from Discord each time.
 
     Also includes existing task state if there's an active coding task for this thread.
 
-    NOTE: We skip the most recent message (limit+1 then [1:]) because that's the
-    current message being processed - it gets added separately in process_with_tools.
+    Current and queued messages are supplied separately; skip them by ID, since
+    newer messages can arrive before this history fetch finishes.
     """
     messages = []
 
@@ -428,15 +431,10 @@ async def fetch_thread_history(thread: discord.Thread, limit: int = THREAD_HISTO
         except Exception as e:
             logger.warning(f"Failed to fetch starter message: {e}")
 
-        # Fetch most recent messages (newest first), then reverse to chronological order
-        # Skip the first message (newest) since that's the current message being processed
-        # It will be added separately in process_with_tools to avoid duplication
         fetched = []
-        is_first = True
-        async for msg in thread.history(limit=limit + 1):  # +1 to account for skipping current
-            if is_first:
-                is_first = False
-                continue  # Skip the current message (newest)
+        async for msg in thread.history(limit=limit + len(exclude_message_ids)):
+            if msg.id in exclude_message_ids:
+                continue
             content = msg.content
             if not content and msg.attachments:
                 names = []
@@ -471,7 +469,8 @@ class PolliBot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.members = True
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents,
+                         allowed_mentions=discord.AllowedMentions(everyone=False, roles=False))
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
@@ -690,7 +689,7 @@ async def assist_context_menu(interaction: discord.Interaction, message: discord
         )
 
         async with message.channel.typing():
-            thread_history = await fetch_thread_history(message.channel)
+            thread_history = await fetch_thread_history(message.channel, exclude_message_ids={message.id})
             await process_message(
                 channel=message.channel,
                 user=message.author,
@@ -791,6 +790,9 @@ async def on_message(message: discord.Message):
         asyncio.create_task(_sync_local_repo())
         return
 
+    if message.author.bot:
+        return
+
     # Handle DMs - only subscription commands allowed
     if isinstance(message.channel, discord.DMChannel):
         await handle_dm_message(message)
@@ -815,7 +817,7 @@ async def on_message(message: discord.Message):
         # Only call _check_reply_to_bot if not @mentioned AND it's a reply
         is_reply_to_bot = False
         ref_msg = None
-        if not is_mentioned:
+        if not is_mentioned and message.channel.id not in _conversation_queues:
             if is_reply:
                 is_reply_to_bot, ref_msg = await _check_reply_to_bot(message)
             if not is_reply_to_bot:
@@ -1126,7 +1128,13 @@ async def handle_inline_polli_mention(message: discord.Message):
         "discord_thread_id": None,
         "discord_bot": bot,
         "discord_guild": message.guild if hasattr(message, "guild") else None,
+        "discord_message": message,
     }
+
+    async def working_reaction(content):
+        await deliver_working_reactions(content, channel=message.channel, messages=[message], send=send_long_message)
+
+    tool_context["working_reaction"] = working_reaction
 
     async with message.channel.typing():
         try:
@@ -1175,12 +1183,9 @@ async def handle_inline_polli_mention(message: discord.Message):
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
-                await send_long_message(
-                    channel=message.channel,
-                    text=response_text or "Here's the result:",
-                    reply_to=message,
-                    files=image_files,
-                    mention_author=False,
+                await deliver_reply(
+                    message.channel, response_text or "Here's the result:", [message],
+                    send_long_message, files=image_files, mention_author=False,
                 )
         except Exception as e:
             logger.error(f"Error processing inline polli mention: {e}")
@@ -1213,7 +1218,7 @@ async def handle_thread_message(
 
     async with channel.typing():
         # Fetch thread history for context
-        thread_history = await fetch_thread_history(channel)
+        thread_history = await fetch_thread_history(channel, exclude_message_ids={message.id})
 
         await process_message(
             channel=channel,
@@ -1229,7 +1234,7 @@ async def handle_thread_message(
         )
 
 
-_active_conversations: set[int] = set()
+_conversation_queues: dict[int, list[dict]] = {}
 
 
 async def process_message(
@@ -1244,27 +1249,32 @@ async def process_message(
     video_urls: list[str] | None = None,
     file_urls: list[str] | None = None,
 ):
-    if channel.id in _active_conversations:
-        await channel.send(
-            "I'm still working on the previous request here. Please wait for that reply before retrying."
-        )
+    request = dict(
+        channel=channel, user=user, text=text, image_urls=image_urls, session=session,
+        thread_history=thread_history, reply_to=reply_to, source_message=source_message,
+        video_urls=video_urls, file_urls=file_urls,
+    )
+    if channel.id in _conversation_queues:
+        _conversation_queues[channel.id].append(request)
         return
-    _active_conversations.add(channel.id)
+    queue = _conversation_queues[channel.id] = [request]
+    completed = False
     try:
-        await _process_message(
-            channel,
-            user,
-            text,
-            image_urls,
-            session,
-            thread_history,
-            reply_to,
-            source_message,
-            video_urls,
-            file_urls,
-        )
+        while queue:
+            if completed and isinstance(channel, discord.Thread):
+                excluded = {item["source_message"].id for item in queue if item["source_message"]}
+                queue[0]["thread_history"] = await fetch_thread_history(channel, exclude_message_ids=excluded)
+            batch = [queue.pop(0)]
+            try:
+                deferred = await _process_message(**batch[0], batch=batch)
+                queue[:0] = deferred or []
+            except Exception:
+                logger.exception("Conversation request failed")
+                mentions = " ".join(dict.fromkeys(f"<@{item['user'].id}>" for item in batch))
+                await channel.send(f"{mentions} I couldn't finish this request. Please try again.")
+            completed = True
     finally:
-        _active_conversations.discard(channel.id)
+        _conversation_queues.pop(channel.id, None)
 
 
 async def _process_message(
@@ -1278,6 +1288,7 @@ async def _process_message(
     source_message: discord.Message | None = None,
     video_urls: list[str] | None = None,
     file_urls: list[str] | None = None,
+    batch: list[dict] | None = None,
 ):
     """
     Process a message using native tool calling.
@@ -1329,7 +1340,39 @@ async def _process_message(
         "discord_bot": bot,
         # For discord_search
         "discord_guild": channel.guild if hasattr(channel, "guild") else None,
+        "discord_message": source_message,
     }
+
+    def take_pending(*, allow_mixed):
+        queue = _conversation_queues.get(channel.id, [])
+        pending = []
+        remaining = []
+        for item in queue:
+            same_user = item["user"].id == user.id
+            permissions = channel.permissions_for(item["user"]) if not same_user and allow_mixed else None
+            if item["source_message"] and (same_user or (permissions and permissions.view_channel and permissions.read_message_history)):
+                pending.append(item)
+            else:
+                remaining.append(item)
+        queue[:] = remaining
+        batch.extend(pending)
+        if any(item["user"].id != user.id for item in pending):
+            tool_context["discord_mixed_batch"] = True
+            tool_context["is_admin"] = False
+            tool_context["is_collaborator"] = False
+        return pending
+
+    if batch is not None and source_message is not None:
+        tool_context["take_pending"] = take_pending
+
+    async def working_reaction(content):
+        messages = [item["source_message"] for item in batch or [] if item["source_message"]]
+        if not messages and source_message:
+            messages = [source_message]
+        if messages:
+            await deliver_working_reactions(content, channel=channel, messages=messages, send=send_long_message)
+
+    tool_context["working_reaction"] = working_reaction
 
     try:
         # Process with native tool calling
@@ -1385,16 +1428,23 @@ async def _process_message(
 
                     # Add link to response if not already there
                     if issue_url not in response_text:
-                        response_text += f"\n\n{link}"
+                        if response_text.lstrip().startswith("<polli_reply>"):
+                            await send_long_message(channel, link, reply_to=reply_to)
+                        else:
+                            response_text += f"\n\n{link}"
 
                     # Clear session after successful creation
                     session_manager.clear_session(session)
 
                     # Archive thread after issue creation
-                    if response_text:
-                        await send_long_message(channel, response_text, reply_to=reply_to)
-                    await archive_thread(channel)
-                    return
+                    # Pending requests must survive issue creation and thread archival.
+                    if len(batch or []) <= 1 and not _conversation_queues.get(channel.id):
+                        if source_message:
+                            await deliver_reply(channel, response_text, [source_message], send_long_message)
+                        elif response_text:
+                            await send_long_message(channel, response_text, reply_to=reply_to)
+                        await archive_thread(channel)
+                        return
 
         # Send response - if empty, ask AI to generate a proper response
         if not response_text:
@@ -1414,9 +1464,20 @@ async def _process_message(
                 response_text = "I couldn't generate a response for this request. Please try again shortly."
 
         if response_text or image_files:
-            await send_long_message(
-                channel, response_text or "Here's the result:", reply_to=reply_to, files=image_files
-            )
+            requests = batch or []
+            messages = [item["source_message"] for item in requests if item["source_message"]]
+            messages = messages or ([source_message] if source_message else [])
+            if messages:
+                try:
+                    deferred = await deliver_reply(
+                        channel, response_text or "Here's the result:", messages,
+                        send_long_message, files=image_files,
+                    )
+                except ValueError:
+                    await send_long_message(channel, "I couldn't format that reply. Please try again.", reply_to=reply_to)
+                    return requests[1:]
+                return [item for item in requests if str(item["source_message"].id) in deferred]
+            await send_long_message(channel, response_text or "Here's the result:", reply_to=reply_to, files=image_files)
 
     except Exception as e:
         logger.error(f"Error processing message: {e}")

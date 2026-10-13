@@ -406,13 +406,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.000002,
     },
     "price": {
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.000002,
     },
   },

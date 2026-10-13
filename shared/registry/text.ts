@@ -1895,7 +1895,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
             completionTextTokens: perMillion(10),
         },

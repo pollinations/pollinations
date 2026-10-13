@@ -1,0 +1,34 @@
+{
+  "pr_number": 17079,
+  "title": "Add GitHub ID for user floxygit",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/17079",
+  "merged_at": "2026-10-13T01:30:33Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added floxygit to the shared GitHub ID list used by authentication, closing #17052.",
+    "keywords": [
+      "GitHub",
+      "authentication",
+      "account IDs"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17079.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli pins a 'floxygit' name tag to a lime green (#ecf874) account ledger beside a sprouting code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and is small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, a soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) lettering, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-10-13T01:32:16.424087+00:00",
+  "area": "Accounts & keys",
+  "type": "Task",
+  "source": "Community",
+  "merge_commit_sha": "9fa289a8e8b63bd478af329de8da36e1f3f1cd35",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "9fa289a8e8b63bd478af329de8da36e1f3f1cd35^1",
+    "after_ref": "9fa289a8e8b63bd478af329de8da36e1f3f1cd35"
+  }
+}

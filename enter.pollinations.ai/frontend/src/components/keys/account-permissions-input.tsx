@@ -1,21 +1,26 @@
+import { BeakerIcon, Tooltip } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
-const permissions = [
+export const accountPermissions = [
     {
         id: "profile",
-        label: "See your name and email.",
+        section: "account",
+        label: "See your name and email",
     },
     {
         id: "usage",
-        label: "View balance, usage, earnings and quests.",
+        section: "account",
+        label: "See balance, usage, earnings and quests",
     },
     {
         id: "keys",
-        label: "Manage keys, agents and models.",
+        section: "account",
+        label: "Manage keys, agents and models",
     },
     {
         id: "machines",
-        label: "Run hosted sandboxes (alpha).",
+        section: "tools",
+        label: "Run hosted sandboxes",
     },
 ] as const;
 
@@ -25,19 +30,43 @@ export function AccountPermissionsInput({
     onChange,
     disabled = false,
     visiblePermissions,
+    section,
 }: {
     value: string[] | null;
     onChange: (permissions: string[]) => void;
     disabled?: boolean;
     visiblePermissions?: ReadonlySet<string>;
+    section: "account" | "tools";
 }) {
-    return permissions
-        .filter(({ id }) => !visiblePermissions || visiblePermissions.has(id))
+    return accountPermissions
+        .filter(
+            (permission) =>
+                permission.section === section &&
+                (!visiblePermissions || visiblePermissions.has(permission.id)),
+        )
         .map(({ id, label }) => (
             <AuthAccessItem
                 key={id}
                 checked={value?.includes(id) ?? false}
                 disabled={disabled}
+                info={
+                    id === "machines" ? (
+                        <Tooltip
+                            content="Alpha — experimental, may be unstable."
+                            ariaLabel="Sandboxes are in alpha"
+                            tapEnabled
+                            className="ml-1.5 inline-flex items-center text-intent-info-text"
+                        >
+                            <span className="inline-flex items-center gap-1 text-xs">
+                                <BeakerIcon
+                                    className="h-3.5 w-3.5"
+                                    aria-hidden="true"
+                                />
+                                alpha
+                            </span>
+                        </Tooltip>
+                    ) : undefined
+                }
                 onChange={(checked) =>
                     onChange(
                         checked

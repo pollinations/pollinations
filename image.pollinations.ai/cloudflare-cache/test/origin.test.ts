@@ -6,7 +6,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
-import { beforeAll, describe, expect, test, vi } from "vitest";
+import { beforeAll, describe, expect, test } from "vitest";
 import {
     gatedImageModelMessage,
     migrationInfo,
@@ -160,8 +160,6 @@ test("a free GET answers the branded JPEG with the VM's headers and is stored", 
     expect(response.status).toBe(200);
     // Every header of the live response, Content-Length absent as there
     const headers = Object.fromEntries(response.headers);
-    expect(headers["x-legacy-path"]).toBe("worker");
-    delete headers["x-legacy-path"];
     expect(headers).toEqual(Object.fromEntries(capturedHeaders(primeHeaders)));
     const image = PhotonImage.new_from_byteslice(bytes);
     expect([image.get_width(), image.get_height()]).toEqual([256, 256]);
@@ -229,7 +227,6 @@ test("a blocked model gets the VM's 500 JSON before the free limit, with no gen 
         migration: migrationInfo("image"),
     });
     const headers = Object.fromEntries(response.headers);
-    delete headers["x-legacy-path"];
     expect(headers).toEqual(
         Object.fromEntries(capturedHeaders(blockedHeaders)),
     );
@@ -310,7 +307,6 @@ test("the VM's other routes: models, about, crossdomain, register, .well-known a
     };
     const models = await call("/models");
     expect(models.text).toBe('["sana"]');
-    expect(models.response.headers.get("x-legacy-path")).toBeNull();
     expect(Object.fromEntries(models.response.headers)).toMatchObject({
         ...NO_STORE,
         "access-control-allow-methods": "GET, POST, OPTIONS",
@@ -706,46 +702,9 @@ describe("feed", () => {
     });
 });
 
-test("ADAPTER_SHARE 0 sends every generating path to the VM", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-        async () =>
-            new Response("from the vm", {
-                headers: { "content-type": "image/jpeg" },
-            }),
-    );
-    const testEnv = { ...env, ADAPTER_SHARE: "0" };
-
-    for (const [path, stored] of [
-        ["/prompt/to%20the%20vm", true],
-        ["/rewritten%20to%20the%20vm", false],
-    ] as const) {
-        const { response, text } = await call(path, { testEnv });
-        expect(text, path).toBe("from the vm");
-        expect(response.headers.get("x-legacy-path"), path).toBe("vm");
-        const key = path.startsWith("/prompt") ? path : `/prompt${path}`;
-        expect((await storedAt(key)) !== null, path).toBe(stored);
-    }
-    // Below 100 the feed is the VM's, which has most events
-    const feed = await call("/feed", {
-        testEnv: { ...env, ADAPTER_SHARE: "99" },
-    });
-    expect(feed.text).toBe("from the vm");
-    // The fixed routes are answered here at any share
-    expect((await call("/models", { testEnv })).text).toBe('["sana"]');
-});
-
-test("an exception on a miss path is Hono's 500, labelled with the path", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("tunnel down"));
-    const onVm = await call("/prompt/tunnel%20down", {
-        testEnv: { ...env, ADAPTER_SHARE: "0" },
-    });
-    expect(onVm.response.status).toBe(500);
-    expect(onVm.text).toBe("Internal Server Error");
-    expect(onVm.response.headers.get("x-legacy-path")).toBe("vm");
-
+test("an exception on a miss path is Hono's 500", async () => {
     // A side past 2^53 threw outside the VM's try (and crashed it)
     const huge = await call("/prompt/huge?width=9007199254740993");
     expect(huge.response.status).toBe(500);
     expect(huge.text).toBe("Internal Server Error");
-    expect(huge.response.headers.get("x-legacy-path")).toBe("worker");
 });

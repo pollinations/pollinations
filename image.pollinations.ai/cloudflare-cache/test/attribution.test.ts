@@ -4,8 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { Hono } from "hono";
-import { proxy } from "hono/proxy";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import worker from "../src";
 import {
     ATTRIBUTION_HEADERS,
@@ -13,7 +12,6 @@ import {
 } from "../src/attribution.ts";
 import { CACHE_VERSION, generateCacheKey } from "../src/cache-utils.ts";
 import { exactCache } from "../src/middleware/exact-cache.ts";
-import { originHeaders } from "../src/util.ts";
 
 describe("endpoint branding", () => {
     it("adds the Pollinations link and logo headers", () => {
@@ -40,36 +38,6 @@ describe("endpoint branding", () => {
 
         expect(first).toBe(reordered);
         expect(first.startsWith(`${CACHE_VERSION}-`)).toBe(true);
-    });
-});
-
-describe("origin request", () => {
-    it("drops a client-sent cloudfront-viewer-address so callers cannot pick their IP", async () => {
-        let sent: Request | undefined;
-        vi.stubGlobal("fetch", async (request: Request) => {
-            sent = request;
-            return new Response("ok");
-        });
-        try {
-            await proxy("https://image-origin.pollinations.ai/prompt/cat", {
-                headers: originHeaders(
-                    {
-                        host: "image.pollinations.ai",
-                        "cloudfront-viewer-address": "203.0.113.9:443",
-                    },
-                    "198.51.100.7",
-                ),
-            });
-        } finally {
-            vi.unstubAllGlobals();
-        }
-
-        expect(sent?.headers.get("cloudfront-viewer-address")).toBeNull();
-        expect(sent?.headers.get("x-forwarded-for")).toBe("198.51.100.7");
-        expect(sent?.headers.get("cf-connecting-ip")).toBe("198.51.100.7");
-        expect(sent?.headers.get("x-forwarded-host")).toBe(
-            "image.pollinations.ai",
-        );
     });
 });
 

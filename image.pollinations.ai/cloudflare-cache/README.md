@@ -86,5 +86,4 @@ This implementation is designed to be cost-efficient:
 If you need to modify the configuration:
 
 1. Update the bucket name in `wrangler.toml`
-2. Modify the origin host in `wrangler.toml` if needed
-3. Adjust caching logic in `src/cache-utils.js` if necessary
+2. Adjust caching logic in `src/cache-utils.js` if necessary

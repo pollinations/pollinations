@@ -28,7 +28,7 @@ const MAX_TOKENS = 1500;
 // target and each header name and value (no method, separators or line ends)
 // and answers 431 from this size on.
 const MAX_HEAD_BYTES = 16 * 1024;
-// The Host that proxyRequest's fetch sent to the VM
+// The Host that the Worker's proxy sent to the VM
 const VM_HOST = "text-origin.pollinations.ai";
 // What the edge and the tunnel added on the way to the VM. Measured on
 // 2026-10-12 with production GET /models (it never generates), by a binary
@@ -300,9 +300,9 @@ async function answer(request, env, ctx) {
 }
 
 /**
- * The head size Node counted on the VM for this request as proxyRequest
- * forwarded it: target, header names and values, its Host, and what the edge
- * and the tunnel added
+ * The head size Node counted on the VM for this request as the Worker's
+ * proxy forwarded it: target, header names and values, its Host, and what
+ * the edge and the tunnel added
  */
 function headSize(request, url) {
     const target = url.pathname.length + url.search.length;

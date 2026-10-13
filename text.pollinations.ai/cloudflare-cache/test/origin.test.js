@@ -6,7 +6,7 @@ import {
 } from "cloudflare:test";
 import { Buffer } from "node:buffer";
 import { deflateSync, gzipSync } from "node:zlib";
-import { expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import {
     MIGRATION_GUIDE_TEXT,
     migrationInfo,
@@ -84,7 +84,6 @@ test("a free GET answers gen's text with the VM's headers and is stored", async 
         "10",
     );
     expect(response.headers.get("x-usage-total-tokens")).toBe("368");
-    expect(response.headers.get("x-legacy-path")).toBe("worker");
     // Content-Length sends it through the cache code's regular branch
     expect(response.headers.get("x-cache")).toBeNull();
 
@@ -283,10 +282,9 @@ test("the VM's other routes: migration guide, models, crossdomain and feed", asy
         expect(response.status, accept).toBe(200);
         expect(text, accept).toBe(MIGRATION_GUIDE_TEXT);
     }
-    // HEAD / takes the cache path and its split
+    // HEAD / takes the cache path
     const head = await call("/", { method: "HEAD" });
     expect(head.response.status).toBe(200);
-    expect(head.response.headers.get("x-legacy-path")).toBe("worker");
     expect(head.response.headers.get("content-length")).toBe(
         String(new TextEncoder().encode(MIGRATION_GUIDE_TEXT).byteLength),
     );
@@ -492,7 +490,6 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
                 "Payment-Required,Payment-Response",
             "cache-control": "public, max-age=31536000, immutable",
             etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
-            "x-legacy-path": "worker",
             "x-model-used": "gpt-oss-20b",
             "x-powered-by": "Express",
             "x-usage-completion-reasoning-tokens": "10",
@@ -533,7 +530,6 @@ test("a preflight gets the live 204: cors() headers plus the cache code's, and n
         vary: "Access-Control-Request-Headers",
         "x-cache": "MISS",
         "x-cache-key": expect.stringMatching(/^[0-9a-f]{64}$/),
-        "x-legacy-path": "worker",
         "x-pollinations-logo":
             "https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.svg",
         "x-powered-by": "Pollinations.AI",
@@ -582,7 +578,6 @@ const pageHeaders = (cors) => ({
     "content-security-policy": "default-src 'none'",
     "content-type": "text/html; charset=utf-8",
     "x-content-type-options": "nosniff",
-    "x-legacy-path": "worker",
     "x-powered-by": "Express",
 });
 // What the cache code adds to a chunked response below 401
@@ -950,7 +945,7 @@ test("a head over 16 KB gets Node's empty chunked 431, but a stored answer is st
     // An empty body without Content-Length, sent chunked as the VM's was
     expect(miss.response.body).not.toBeNull();
     expect(Object.fromEntries(miss.response.headers)).toEqual(
-        withMigration({ "x-legacy-path": "worker" }),
+        withMigration({}),
     );
     expect(gen.bodies).toHaveLength(0);
     expect(await storedAt("/long%20headers%20miss")).toBeNull();
@@ -1128,47 +1123,4 @@ test("a HEAD miss is not stored, so the next GET returns the full text", async (
     const hit = await call("/head%20then%20get");
     expect(hit.response.headers.get("x-cache")).toBe("HIT");
     expect(hit.text).toBe("ok");
-});
-
-test("ADAPTER_SHARE 0 sends every generating path to the VM", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-        async () =>
-            new Response("from the vm", {
-                headers: { "content-length": "11" },
-            }),
-    );
-    const testEnv = { ...env, ADAPTER_SHARE: "0" };
-
-    for (const [path, options, stored] of [
-        ["/to%20the%20vm", {}, true],
-        ["/preflight%20to%20the%20vm", { method: "OPTIONS" }, true],
-        // POST /openai/models generates on the VM ("/openai*"), uncached
-        ["/openai/models", { method: "POST", headers: JSON_BODY, body: "{}" }],
-        ["/paid%20on%20the%20vm", { headers: { "payment-signature": "x" } }],
-    ]) {
-        const { response, text } = await call(path, { ...options, testEnv });
-        const label = `${options.method ?? "GET"} ${path}`;
-
-        expect(text, label).toBe("from the vm");
-        expect(response.headers.get("x-legacy-path"), label).toBe("vm");
-        expect((await storedAt(path, options.method)) !== null, label).toBe(
-            Boolean(stored),
-        );
-    }
-    // Below 100 the feed is the VM's, which has most events
-    const feed = await call("/feed", {
-        testEnv: { ...env, ADAPTER_SHARE: "99" },
-    });
-    expect(feed.text).toBe("from the vm");
-});
-
-test("an exception on a miss path is the Worker's 500, labelled with the path", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("tunnel down"));
-    const onVm = await call("/tunnel%20down", {
-        testEnv: { ...env, ADAPTER_SHARE: "0" },
-    });
-    expect(onVm.response.status).toBe(500);
-    expect(onVm.text).toBe("Worker error: tunnel down");
-    expect(onVm.response.headers.get("x-error")).toBe("tunnel down");
-    expect(onVm.response.headers.get("x-legacy-path")).toBe("vm");
 });

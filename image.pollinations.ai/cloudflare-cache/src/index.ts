@@ -1,6 +1,5 @@
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
-import { proxy } from "hono/proxy";
 import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
 import {
@@ -10,10 +9,8 @@ import {
 } from "./cache-utils.ts";
 import type { Env } from "./env";
 import { exactCache } from "./middleware/exact-cache";
-import { setConnectingIp } from "./middleware/set-connecting-ip.ts";
 import { turnstileVerification } from "./middleware/turnstile.ts";
 import { feed, generate, logFailure, utility } from "./origin.ts";
-import { originHeaders } from "./util.ts";
 
 const app = new Hono<Env>();
 
@@ -96,22 +93,16 @@ app.delete("/delete/prompt/:prompt", async (c) => {
     }
 });
 
-// cache image requests; misses are generated here or on the VM
-app.all(
-    "/prompt/:prompt",
-    setConnectingIp,
-    turnstileVerification,
-    exactCache,
-    async (c) => {
-        const url = new URL(c.req.url);
-        const response = await missToOrigin(c, url, "/prompt/:prompt");
-        response.headers.set("X-Cache", "MISS");
-        return response;
-    },
-);
+// cache image requests; misses are generated here
+app.all("/prompt/:prompt", turnstileVerification, exactCache, async (c) => {
+    const url = new URL(c.req.url);
+    const response = await generateOr500(c, url, "/prompt/:prompt");
+    response.headers.set("X-Cache", "MISS");
+    return response;
+});
 
 // answer known utility endpoints; every other path generates as /prompt{path}
-app.all("*", setConnectingIp, async (c) => {
+app.all("*", async (c) => {
     const url = new URL(c.req.url);
     const pathname = url.pathname;
 
@@ -129,8 +120,6 @@ app.all("*", setConnectingIp, async (c) => {
     );
 
     if (isUtility && pathname.startsWith("/feed")) {
-        // Until every generation runs here, the VM's feed has most events
-        if (Number(c.env.ADAPTER_SHARE ?? 0) < 100) return toVm(c, url);
         return feed(c.env, c.req.method, url.search);
     }
     if (isUtility) return utility(c.req.method, pathname);
@@ -139,44 +128,20 @@ app.all("*", setConnectingIp, async (c) => {
     if (!pathname.startsWith("/prompt") && !pathname.startsWith("/delete")) {
         url.pathname = `/prompt${pathname}`;
     }
-    return missToOrigin(c, url, "*");
+    return generateOr500(c, url, "*");
 });
 
 /**
- * Sends a request to generate() for ADAPTER_SHARE percent of requests and to
- * the VM otherwise, and labels the response, exceptions included, with the
- * path it took. `url` is the request URL after the /prompt rewrite.
+ * generate(), with an exception answered as Hono's default error handler
+ * would. `url` is the request URL after the /prompt rewrite.
  */
-async function missToOrigin(c: Context<Env>, url: URL, route: string) {
-    const path =
-        Math.random() * 100 < Number(c.env.ADAPTER_SHARE ?? 0)
-            ? "worker"
-            : "vm";
-    let response: Response;
+async function generateOr500(c: Context<Env>, url: URL, route: string) {
     try {
-        response =
-            path === "worker"
-                ? await generate(c, url, route)
-                : await toVm(c, url);
+        return await generate(c, url, route);
     } catch (error) {
-        // What Hono's default error handler answered
-        logFailure(route, { error: "exception", path, type: error.name });
-        response = c.text("Internal Server Error", 500);
+        logFailure(route, { error: "exception", type: error.name });
+        return c.text("Internal Server Error", 500);
     }
-    response.headers.set("X-Legacy-Path", path);
-    return response;
-}
-
-/** Proxies the request to the VM through the tunnel */
-function toVm(c: Context<Env>, url: URL) {
-    const clientIP = c.get("connectingIp");
-    url.hostname = c.env.ORIGIN_HOST;
-    url.port = "";
-    console.debug("[PROXY] Forwarding to origin:", url.toString());
-    return proxy(url, {
-        ...c.req,
-        headers: originHeaders(c.req.header(), clientIP),
-    });
 }
 
 // Durable Object classes must be exported by the Worker's main module

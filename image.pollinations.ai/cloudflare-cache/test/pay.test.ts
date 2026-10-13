@@ -146,13 +146,6 @@ async function payFor(
     });
 }
 
-const withoutLabel = (headers: Headers) => {
-    const all = Object.fromEntries(headers);
-    expect(all["x-legacy-path"]).toBe("worker");
-    delete all["x-legacy-path"];
-    return all;
-};
-
 test("the JSON 402 matches the VM's capture byte for byte, on both hosts and with any query", async () => {
     const vm = Object.fromEntries(capturedHeaders(jsonHeaders));
 
@@ -164,7 +157,7 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
 
         expect(response.status).toBe(402);
         expect(text).toBe("{}");
-        expect(withoutLabel(response.headers)).toEqual(vm);
+        expect(Object.fromEntries(response.headers)).toEqual(vm);
     }
 });
 
@@ -213,7 +206,7 @@ test("browsers get the VM's paywall page byte for byte", async () => {
     expect(response.status).toBe(402);
     expect(text).toBe(browserBody);
     // Every header of the live page, which had no Content-Length or ETag
-    expect(withoutLabel(response.headers)).toEqual(
+    expect(Object.fromEntries(response.headers)).toEqual(
         Object.fromEntries(capturedHeaders(browserHeaders)),
     );
 });
@@ -230,7 +223,7 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     });
 
     expect(response.status).toBe(200);
-    expect(withoutLabel(response.headers)).toEqual(
+    expect(Object.fromEntries(response.headers)).toEqual(
         Object.fromEntries(capturedHeaders(myceliHeadHeaders)),
     );
     expect(events).toEqual(["gen"]);
@@ -248,7 +241,7 @@ test("a rate-limited HEAD whose generation fails gets the paid handler's JSON", 
     // As the live 500 for a HEAD (gen failed then too): no X-Error-Type,
     // Express's X-Powered-By
     expect(response.status).toBe(500);
-    expect(withoutLabel(response.headers)).toEqual(
+    expect(Object.fromEntries(response.headers)).toEqual(
         Object.fromEntries(capturedHeaders(headFailureHeaders)),
     );
 });
@@ -266,7 +259,7 @@ test("a rate-limited POST, PUT, PATCH or DELETE gets Express's 404 page and no g
         expect(response.status, method).toBe(404);
         expect(text, method).toBe(postBody.replace("POST", method));
         // Every header of the live page, Content-Length absent as there
-        expect(withoutLabel(response.headers), method).toEqual(vm);
+        expect(Object.fromEntries(response.headers), method).toEqual(vm);
     }
     // finalhandler's encodeurl 2.0.0 keeps $ and | of the path the VM got
     // (^ arrives escaped); escape-html the quote

@@ -97,27 +97,13 @@ const worker = {
                 return turnstileResponse; // Return 403 if verification failed
             }
 
-            // The GET root redirect (POST / is cached) and the listed paths'
-            // static GET and HEAD answers come fresh from origin(), never R2
-            const read = request.method === "GET" || request.method === "HEAD";
-            // Until every generation runs here, the VM's feed has most events
-            if (
-                read &&
-                url.pathname === "/feed" &&
-                Number(env.ADAPTER_SHARE ?? 0) < 100
-            ) {
-                return await proxyRequest(request, env);
-            }
+            // The GET root redirect (POST / is cached) and every method on the
+            // listed paths come fresh from origin(), never R2
             if (
                 (url.pathname === "/" && request.method === "GET") ||
-                (read && NON_CACHE_PATHS.includes(url.pathname))
+                NON_CACHE_PATHS.includes(url.pathname)
             ) {
                 return await origin(request, env, ctx);
-            }
-            // Other methods there are uncached too, but can generate
-            // (POST /openai/models), so they follow the split
-            if (NON_CACHE_PATHS.includes(url.pathname)) {
-                return await missToOrigin(request, env, ctx);
             }
 
             // Generate a cache key for the request
@@ -149,19 +135,18 @@ const worker = {
                 request.headers.has("payment-signature") ||
                 request.headers.has("x-payment")
             ) {
-                return await missToOrigin(request, env, ctx);
+                return await origin(request, env, ctx);
             }
 
             // A HEAD response has no body. HEAD shares the GET cache key, so
             // storing it would serve an empty body to every later GET.
             if (request.method === "HEAD") {
-                return await missToOrigin(request, env, ctx);
+                return await origin(request, env, ctx);
             }
 
             log("cache", "Cache miss, proxying to origin...");
 
-            // Generate the response in the Worker or on the VM
-            const originResp = await missToOrigin(request, env, ctx);
+            const originResp = await origin(request, env, ctx);
 
             // Don't cache error responses
             if (originResp.status >= 401) {
@@ -376,67 +361,6 @@ export default {
 };
 
 /**
- * Sends a cache miss to origin() for ADAPTER_SHARE percent of requests and to
- * the VM otherwise, and labels the response, exceptions included, with the
- * path it took.
- */
-async function missToOrigin(request, env, ctx) {
-    const path =
-        Math.random() * 100 < Number(env.ADAPTER_SHARE ?? 0) ? "worker" : "vm";
-    let response;
-    try {
-        response =
-            path === "worker"
-                ? await origin(request, env, ctx)
-                : await proxyRequest(request, env);
-    } catch (err) {
-        response = workerError(err);
-    }
-    const headers = new Headers(response.headers);
-    headers.set("X-Legacy-Path", path);
-    return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-    });
-}
-
-/**
- * Proxy the request to the origin server
- */
-async function proxyRequest(request, env) {
-    const url = new URL(request.url);
-
-    // Construct origin URL
-    let originHost = env.ORIGIN_HOST;
-    if (
-        !originHost.startsWith("http://") &&
-        !originHost.startsWith("https://")
-    ) {
-        originHost = `https://${originHost}`;
-    }
-
-    // Append the path: resolved as a relative URL, a path starting with //
-    // would replace the origin host with any host the caller names
-    const originUrl = new URL(`${originHost}${url.pathname}${url.search}`);
-    log("proxy", `Proxying to: ${originUrl.toString()}`);
-
-    // Prepare forwarded headers
-    const headers = prepareForwardedHeaders(request.headers, url);
-
-    // Create origin request
-    const originRequest = new Request(originUrl.toString(), {
-        method: request.method,
-        headers: headers,
-        body: request.body,
-        redirect: "manual",
-    });
-
-    // Send the request to the origin
-    return await fetch(originRequest);
-}
-
-/**
  * Generate a cache key for the request
  */
 export async function generateCacheKey(request) {
@@ -561,7 +485,8 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 }
 
 /**
- * Prepare forwarded headers for proxying the request
+ * The headers the VM proxy forwarded, which origin.js's headSize counts for
+ * the VM's 431 limit
  */
 export function prepareForwardedHeaders(requestHeaders, url) {
     const headers = new Headers(requestHeaders);

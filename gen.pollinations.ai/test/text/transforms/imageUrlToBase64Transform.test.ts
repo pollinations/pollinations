@@ -196,56 +196,63 @@ describe("imageUrlToBase64Transform", () => {
         "moonshotai/kimi-k2.6",
         "moonshotai/kimi-k2.6:azure:sweden",
         "moonshotai/kimi-k2.7-code:openrouter:streamlake",
-    ] as const)("converts as many image URLs as %s advertises, and no more", async (model) => {
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async () =>
-                new Response(PNG_BYTES, {
-                    headers: { "content-type": "image/png" },
-                }),
-        );
-        const { options } = resolveModelConfig([], { model });
-        const limit = getRegistryModelDefinition(model).maxReferenceImages;
-        if (!limit) throw new Error(`${model} declares no image limit`);
-        const urls = (count: number) =>
-            imageMessage(
-                Array.from(
-                    { length: count },
-                    (_, index) => `https://example.com/${index}.png`,
-                ),
+    ] as const)(
+        "converts as many image URLs as %s advertises, and no more",
+        async (model) => {
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async () =>
+                    new Response(PNG_BYTES, {
+                        headers: { "content-type": "image/png" },
+                    }),
+            );
+            const { options } = resolveModelConfig([], { model });
+            const limit = getRegistryModelDefinition(model).maxReferenceImages;
+            if (!limit) throw new Error(`${model} declares no image limit`);
+            const urls = (count: number) =>
+                imageMessage(
+                    Array.from(
+                        { length: count },
+                        (_, index) => `https://example.com/${index}.png`,
+                    ),
+                );
+
+            const result = await transform(urls(limit), options);
+            const content = result.messages[0].content as {
+                image_url: { url: string };
+            }[];
+            expect(content).toHaveLength(limit);
+            for (const part of content) {
+                expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
+            }
+
+            await expect(
+                transform(urls(limit + 1), options),
+            ).rejects.toMatchObject({
+                status: 400,
+                errorCode: "image_too_large",
+            });
+        },
+    );
+
+    it.each([401, 403, 404, 429, 500])(
+        "returns 400 failed_to_download_image when the image host answers %i",
+        async (upstreamStatus) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response("nope", { status: upstreamStatus }),
             );
 
-        const result = await transform(urls(limit), options);
-        const content = result.messages[0].content as {
-            image_url: { url: string };
-        }[];
-        expect(content).toHaveLength(limit);
-        for (const part of content) {
-            expect(part.image_url.url).toMatch(/^data:image\/png;base64,/);
-        }
-
-        await expect(transform(urls(limit + 1), options)).rejects.toMatchObject(
-            { status: 400, errorCode: "image_too_large" },
-        );
-    });
-
-    it.each([
-        401, 403, 404, 429, 500,
-    ])("returns 400 failed_to_download_image when the image host answers %i", async (upstreamStatus) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response("nope", { status: upstreamStatus }),
-        );
-
-        await expect(
-            transform(
-                imageMessage(["https://example.com/image.png"]),
-                bedrockOptions,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            errorCode: "failed_to_download_image",
-            upstreamStatus,
-        });
-    });
+            await expect(
+                transform(
+                    imageMessage(["https://example.com/image.png"]),
+                    bedrockOptions,
+                ),
+            ).rejects.toMatchObject({
+                status: 400,
+                errorCode: "failed_to_download_image",
+                upstreamStatus,
+            });
+        },
+    );
 
     it("rejects non-image content before calling the provider", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

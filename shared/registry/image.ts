@@ -600,6 +600,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-1.5": {
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
@@ -624,6 +625,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-2": {
         aliases: ["gpt-image-2"],
@@ -670,6 +672,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "openai/gpt-image-2.5-sunburst": {
         aliases: [],
@@ -694,6 +697,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
@@ -1376,14 +1380,17 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-10-11").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Alibaba Singapore (International): $0.016 per image, per the Model Studio console.
+        // Alibaba Singapore (International) list price (2026-10-13): $0.016 per
+        // output image, whatever the reference image count.
         cost: {
             completionImageTokens: 0.016, // per image
         },
         title: "Qwen Image 2.1 Turbo",
-        description: "Low-cost text-to-image generation",
-        inputModalities: ["text"],
+        description:
+            "Low-cost generation and editing with up to 10 reference images",
+        inputModalities: ["text", "image"],
         outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
@@ -2048,42 +2055,59 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal published post-promotion rates (promotion ends 2026-09-30).
-        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
-        cost: {
-            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
-        },
+        // fal reports resolution-weighted units for the selected resolution.
+        // Keep output duration separate; charge the current endpoint price below.
+        cost: { completionVideoSeconds: 0 },
+        // Retain resolution selection for the catalog and analytics. All
+        // resolutions are billed by provider units, not output duration.
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.04 },
-                "1080p": { completionVideoSeconds: 0.08 },
+                "768p": { completionVideoSeconds: 0 },
+                "1080p": { completionVideoSeconds: 0 },
             },
             matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
-                        "Applies when the requested video resolution is 768p.",
+                        "768p video billed from provider-reported units.",
                 },
                 "1080p": {
                     label: "1080p",
                     description:
-                        "Applies when the requested video resolution is 1080p.",
+                        "1080p video billed from provider-reported units.",
                 },
             },
             "480p",
             [
                 {
-                    "key": "resolution",
-                    "label": "Resolution",
-                    "values": {
-                        "": "480p",
-                        "768p": "768p",
-                        "1080p": "1080p",
-                    },
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "480p", "768p": "768p", "1080p": "1080p" },
                 },
             ],
         ),
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.minimax_h3_max_turbo.provider_units.v1",
+                    description:
+                        "Provider cost including the selected resolution",
+                    kind: "video",
+                    unit: "provider unit",
+                    unitCost: 1,
+                    publicPricing: {
+                        label: "Provider cost",
+                        quantity: 1,
+                        unit: "USD",
+                    },
+                    countUnits: (_output, input) =>
+                        input?.providerBilling?.units ?? 0,
+                    resolveUnitCost: (_output, _model, input) =>
+                        input?.providerBilling?.unitCost ?? 0,
+                },
+            ],
+        },
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:
@@ -2221,6 +2245,54 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Video keyframe slots: start only.
         minDuration: 1,
         maxDuration: 10,
+        defaultDuration: 5,
+    },
+    "kandinskylab/kandinsky-6.0-lite": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kandinsky Lab",
+        category: "video",
+        addedDate: new Date("2026-10-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai list prices for one 5-second 480p video at the default 10
+        // steps. Charges use fal's reported units at its live endpoint price.
+        cost: {
+            completionVideoSeconds: 0.032, // $0.16 per video
+        },
+        ...defineCostVariants(
+            {
+                start_image: {
+                    completionVideoSeconds: 0.034, // $0.17 per video
+                },
+            },
+            ({ input }) => (input?.hasImage ? "start_image" : undefined),
+            {
+                start_image: {
+                    label: "From a start image",
+                    description:
+                        "Applies when the request includes a start image.",
+                },
+            },
+            "From text",
+            [
+                {
+                    key: "input",
+                    label: "Input",
+                    values: { "": "Text", start_image: "Image" },
+                },
+            ],
+        ),
+        resolutions: ["480p"],
+        title: "Kandinsky 6.0 Lite",
+        description:
+            "Fast 5-second video from text or start image with synchronized audio at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1,
+        minDuration: 5,
+        maxDuration: 5,
         defaultDuration: 5,
     },
 } as const satisfies Record<string, ModelDefinition>;

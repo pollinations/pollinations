@@ -52,14 +52,15 @@ const ALIBABA_IMAGE_ROUTES: Record<AlibabaImageModel, AlibabaImageRoute> = {
         countKey: "output_image_count",
         billsInputImages: true,
     },
-    // Text-to-image only. The console documents prompt_extend; size, n, seed
-    // and watermark are unconfirmed on this endpoint, so they are not sent.
+    // Any size from 512*512 to 2560*2560 pixels of area; Alibaba rejects the
+    // rest with a 400. Up to 10 reference images, billed per output image.
     "qwen-image-2.1-turbo": {
         path: "/services/aigc/multimodal-generation/generation",
         asynchronous: false,
-        common: false,
+        size: (params) => `${params.width}*${params.height}`,
+        common: true,
         extra: { prompt_extend: false },
-        acceptsImages: false,
+        acceptsImages: true,
         countKey: "image_count",
         billsInputImages: false,
     },

@@ -69,21 +69,36 @@ describe("whisper through the shared transcription formatter", () => {
         ]);
     });
 
-    it.each([
-        "srt",
-        "vtt",
-        "diarized_json",
-    ])("rejects %s, which whisper cannot produce", (responseFormat) => {
-        // OVH answers segments: [] on every request, so subtitles could
-        // only be invented here; #13552 was that they came back empty.
+    it("renders srt and vtt cues from the reported segments", async () => {
+        const srt = format(WHISPER, "srt");
+        expect(srt.headers.get("content-type")).toBe(
+            "text/plain; charset=utf-8",
+        );
+        expect(srt.headers.get("x-usage-seconds")).toBe("3.5");
+        expect(await srt.text()).toBe(
+            "1\n00:00:00,000 --> 00:00:01,500\nEl ciclo\n\n2\n00:00:01,500 --> 00:00:03,500\ndel agua\n",
+        );
+        expect(await format(WHISPER, "vtt").text()).toBe(
+            "WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nEl ciclo\n\n00:00:01.500 --> 00:00:03.500\ndel agua\n",
+        );
+    });
+
+    it("fails instead of returning empty subtitles without segments", () => {
+        // #13552: OVH answered segments: [] and srt came back as one newline.
+        expect(() => format({ ...WHISPER, segments: [] }, "srt")).toThrow(
+            "no segment timings",
+        );
+    });
+
+    it("rejects diarized_json, which whisper is never asked for", () => {
         expect(() =>
             assertTranscriptionResponseFormat(
-                responseFormat,
+                "diarized_json",
                 "whisper model",
                 UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
             ),
         ).toThrow(
-            `Unsupported response_format for whisper model: ${responseFormat}`,
+            "Unsupported response_format for whisper model: diarized_json",
         );
     });
 });

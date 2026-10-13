@@ -100,7 +100,8 @@ Never enable production data sources just to test local login.
 
 1. Open http://localhost:3000
 2. Edit dashboard in the UI (Grafana refuses to save provisioned dashboards)
-3. Dashboard -> Settings -> JSON Model -> Copy
+3. Export -> Export as code -> Advanced options -> Model: Classic -> Copy to clipboard
+   (the default V2 Resource JSON does not load from file provisioning)
 4. Replace the matching JSON in `provisioning/dashboards/`
 5. Restart to verify: `docker compose restart grafana`
 
@@ -127,7 +128,7 @@ docker compose logs -f grafana
 docker compose down
 
 # Reset admin password
-docker compose exec grafana grafana-cli admin reset-admin-password NEW_PASSWORD
+docker compose exec grafana grafana cli admin reset-admin-password NEW_PASSWORD
 
 # Test datasource health
 curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/PAD1A0A25CD30D456/health'

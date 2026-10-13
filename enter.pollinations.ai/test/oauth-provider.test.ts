@@ -119,25 +119,31 @@ describe("Better Auth OAuth Provider", () => {
     test.for([
         ["register", 403],
         ["create-client", 401],
-    ] as const)("rejects client creation through %s", async ([path, status], {
-        sessionToken,
-    }) => {
-        const response = await SELF.fetch(`${BASE}/api/auth/oauth2/${path}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-                Origin: BASE,
-            },
-            body: JSON.stringify({
-                client_name: "Unregistered dashboard",
-                redirect_uris: ["https://untrusted.pollinations.ai/callback"],
-                token_endpoint_auth_method: "none",
-                ...(path === "create-client" && { skip_consent: true }),
-            }),
-        });
-        expect(response.status).toBe(status);
-    });
+    ] as const)(
+        "rejects client creation through %s",
+        async ([path, status], { sessionToken }) => {
+            const response = await SELF.fetch(
+                `${BASE}/api/auth/oauth2/${path}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Origin: BASE,
+                    },
+                    body: JSON.stringify({
+                        client_name: "Unregistered dashboard",
+                        redirect_uris: [
+                            "https://untrusted.pollinations.ai/callback",
+                        ],
+                        token_endpoint_auth_method: "none",
+                        ...(path === "create-client" && { skip_consent: true }),
+                    }),
+                },
+            );
+            expect(response.status).toBe(status);
+        },
+    );
 
     test("continues the standard flow through sign-in", async () => {
         const response = await authorize();

@@ -1377,10 +1377,11 @@ const IMAGE_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         category: "image",
-        addedDate: new Date("2026-10-11").getTime(),
+        addedDate: new Date("2026-10-13").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Alibaba Singapore (International): $0.016 per image, per the Model Studio console.
+        // Alibaba Singapore (International): CNY 0.113362 ≈ $0.016 per image
+        // (Model Studio model page).
         cost: {
             completionImageTokens: 0.016, // per image
         },

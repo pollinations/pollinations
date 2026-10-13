@@ -247,6 +247,10 @@ describe("Alibaba media adapters", () => {
             "qwen-image-3.0-pro",
             ["size", "n", "seed", "watermark", "prompt_extend"],
         ],
+        [
+            "qwen-image-2.1-turbo",
+            ["size", "n", "seed", "watermark", "prompt_extend"],
+        ],
     ] as const)("keeps the %s request body shape", async (model, keys) => {
         const fetch = vi
             .spyOn(globalThis, "fetch")
@@ -328,7 +332,13 @@ describe("Alibaba media adapters", () => {
                     },
                 ],
             },
-            parameters: { prompt_extend: false },
+            parameters: {
+                size: "1024*1024",
+                n: 1,
+                seed: 42,
+                watermark: false,
+                prompt_extend: false,
+            },
         });
         expect(result.trackingData?.usage).toEqual({
             completionImageTokens: 1,
@@ -341,6 +351,61 @@ describe("Alibaba media adapters", () => {
             quotedBy: definition,
         });
         expect(billed.price.totalPrice).toBeCloseTo(0.016);
+    });
+
+    it.each([
+        [{ width: 1024, height: 1024, aspectRatio: "16:9" }, "1376*768"],
+        [{ width: 1536, height: 1024, dimensionsExplicit: true }, "1536*1024"],
+    ] as const)(
+        "sends Qwen Image 2.1 Turbo size %o as %s",
+        async (size, expected) => {
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({
+                        output: {
+                            choices: [
+                                {
+                                    message: {
+                                        content: [{ image: outputUrl }],
+                                    },
+                                },
+                            ],
+                        },
+                        usage: { image_count: 1 },
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    new Response("image", {
+                        headers: { "content-type": "image/png" },
+                    }),
+                );
+            await callAlibabaImage(
+                "Draw",
+                { ...params, ...size, model: "qwen/qwen-image-2.1-turbo" },
+                "qwen-image-2.1-turbo",
+            );
+            const request = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+            expect(request.parameters.size).toBe(expected);
+        },
+    );
+
+    it("fails instead of billing when Qwen Image 2.1 Turbo reports no image count", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                output: {
+                    choices: [{ message: { content: [{ image: outputUrl }] } }],
+                },
+                usage: {},
+            }),
+        );
+        await expect(
+            callAlibabaImage(
+                "Draw",
+                { ...params, model: "qwen/qwen-image-2.1-turbo" },
+                "qwen-image-2.1-turbo",
+            ),
+        ).rejects.toThrow("Alibaba returned invalid output image count usage");
     });
 
     it("rejects reference images on Qwen Image 2.1 Turbo before calling Alibaba", async () => {

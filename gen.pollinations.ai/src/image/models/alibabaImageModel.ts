@@ -18,22 +18,23 @@ export type AlibabaImageModel =
 type AlibabaImageRoute = {
     path: string;
     asynchronous: boolean;
-    /** Omitted where the route's size list is not yet confirmed. */
-    size?: (params: ImageParams) => string;
-    /** n, seed and watermark: sent on the routes already in production. */
-    common: boolean;
+    size: (params: ImageParams) => string;
     extra: Record<string, unknown>;
     acceptsImages: boolean;
     countKey: "image_count" | "output_image_count";
     billsInputImages: boolean;
 };
 
+function qwenImageSize(params: ImageParams) {
+    const { width, height } = resolveQwenImage3Size(params);
+    return `${width}*${height}`;
+}
+
 const ALIBABA_IMAGE_ROUTES: Record<AlibabaImageModel, AlibabaImageRoute> = {
     "wan2.7-image": {
         path: "/services/aigc/multimodal-generation/generation",
         asynchronous: false,
         size: resolveWanImageSize,
-        common: true,
         extra: { thinking_mode: false },
         acceptsImages: true,
         countKey: "image_count",
@@ -42,22 +43,18 @@ const ALIBABA_IMAGE_ROUTES: Record<AlibabaImageModel, AlibabaImageRoute> = {
     "qwen-image-3.0-pro": {
         path: "/services/aigc/image-generation/generation",
         asynchronous: true,
-        size: (params) => {
-            const { width, height } = resolveQwenImage3Size(params);
-            return `${width}*${height}`;
-        },
-        common: true,
+        size: qwenImageSize,
         extra: { prompt_extend: false },
         acceptsImages: true,
         countKey: "output_image_count",
         billsInputImages: true,
     },
-    // Text-to-image only. The console documents prompt_extend; size, n, seed
-    // and watermark are unconfirmed on this endpoint, so they are not sent.
+    // Text-to-image only. Uses the synchronous Qwen-Image 2.x contract: any
+    // W*H between 512*512 and 2048*2048 total pixels, watermark off.
     "qwen-image-2.1-turbo": {
         path: "/services/aigc/multimodal-generation/generation",
         asynchronous: false,
-        common: false,
+        size: qwenImageSize,
         extra: { prompt_extend: false },
         acceptsImages: false,
         countKey: "image_count",
@@ -78,8 +75,10 @@ export async function callAlibabaImage(
         });
     }
     const parameters = {
-        ...(route.size ? { size: route.size(params) } : {}),
-        ...(route.common ? { n: 1, seed: params.seed, watermark: false } : {}),
+        size: route.size(params),
+        n: 1,
+        seed: params.seed,
+        watermark: false,
         ...route.extra,
     };
     const imageUrls = await Promise.all(images.map(toDataUri));

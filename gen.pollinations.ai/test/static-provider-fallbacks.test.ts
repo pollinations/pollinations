@@ -270,7 +270,7 @@ describe("static provider fallbacks", () => {
             TEXT_SERVICES[
                 "google/gemini-3.1-pro-preview:openrouter:vertex-global"
             ];
-        expect(primary.priceMultiplier).toBe(1.055);
+        expect(primary.priceMultiplier).toBe(1);
         expect(fallback.priceMultiplier).toBe(1);
         for (const definition of [primary, fallback]) {
             const billed = calculateUsageBilling({
@@ -306,10 +306,8 @@ describe("static provider fallbacks", () => {
                     ? directCost * 1.055
                     : directCost;
             expect(billed.cost.totalCost).toBeCloseTo(expectedCost, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(directCost * 1.055, 8);
-            expect(billed.priceDefinition.promptTextTokens).toBe(
-                (4 / 1_000_000) * 1.055,
-            );
+            expect(billed.price.totalPrice).toBeCloseTo(directCost, 8);
+            expect(billed.priceDefinition.promptTextTokens).toBe(4 / 1_000_000);
         }
     });
 

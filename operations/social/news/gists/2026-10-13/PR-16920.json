@@ -1,0 +1,33 @@
+{
+  "pr_number": 16920,
+  "title": "fix(image): fall GPT Image back on every Azure-side failure",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16920",
+  "merged_at": "2026-10-13T18:10:31Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "GPT Image now tries the other Azure region, then OpenAI direct, when an Azure route fails with authentication, resource-block, timeout, or server errors; 429 and 404 already followed that route. Invalid caller requests, including content-policy refusals and dead reference images, still fail without trying another route. The change replaces a GPT Image-specific fallback rule with the shared isRetryableFallbackError rule. Customers are billed once at the Azure quote even when OpenAI serves the image, though a late Azure failure could result in up to three provider-side generations.",
+    "keywords": [
+      "GPT Image",
+      "image generation",
+      "Azure",
+      "OpenAI",
+      "fallback",
+      "routing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-16920.jpg",
+    "prompt": "In a cozy pixel art garden workstation, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene and wearing a tiny tool belt, she guides one picture card along a path between two Azure-marked flower pots and an OpenAI-marked terminal, while a code-plant grows beside them. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T18:11:53.947471+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "a3eccd8ba10ce667ae8587f77b31112378868a29",
+  "announcements": []
+}

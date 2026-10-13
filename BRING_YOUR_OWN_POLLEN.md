@@ -82,7 +82,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Model categories the key can use: `text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`. A model ID is accepted but allows its whole category, including models added later, so use `budget` to cap spending. | `image,text` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `flux,zimage` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 

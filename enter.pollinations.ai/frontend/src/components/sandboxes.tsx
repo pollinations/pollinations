@@ -15,6 +15,7 @@ import {
     Field,
     InlineLink,
     Input,
+    LoadingStatus,
     PauseIcon,
     PlayIcon,
     PlusIcon,
@@ -172,10 +173,8 @@ function TemplatePicker({
                         </p>
                     )}
                     <p>
-                        Pollinations templates include polli, already signed in.
-                    </p>
-                    <p>
-                        Or use any{" "}
+                        Pollinations templates include polli, already signed in,
+                        or use any{" "}
                         <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
                             public E2B template
                         </InlineLink>
@@ -488,7 +487,7 @@ export function Sandboxes() {
     const createAction = (
         <Button
             type="button"
-            className={busyId === "new" ? "gap-2" : "dashboard-add-button"}
+            className="dashboard-add-button"
             aria-label={
                 busyId === "new" ? "Creating sandbox…" : "Create sandbox"
             }
@@ -501,7 +500,9 @@ export function Sandboxes() {
             }
         >
             {busyId === "new" ? (
-                "Creating…"
+                <LoadingStatus>
+                    <span className="sr-only">Creating sandbox…</span>
+                </LoadingStatus>
             ) : (
                 <>
                     <PlusIcon className="h-4 w-4" />

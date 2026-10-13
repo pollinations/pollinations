@@ -126,6 +126,7 @@ jobs:
           const sample=async()=>{
             try{
               const r=JSON.parse(await readFile(process.env.RESEARCH_OUT+'/research.json','utf8'));
+              if(r.status==='initializing') return;
               const billed=await readBilledUsage(process.env.POLLINATIONS_API_KEY,r.startedAt);
               const checkpoint={observedAt:billed.observedAt,accountedPollen:budgetUsed(r),billedPollen:billed.pollen,cap,calls:r.calls.length,pending:r.calls.filter(c=>c.status==='pending').length,researched:r.models.filter(m=>m.status==='researched').length,blocked:r.models.filter(m=>m.status==='blocked').length,selected:r.selectedCount,quality:r.quality};
               await appendFile(process.env.RESEARCH_OUT+'/cost-monitor.jsonl',JSON.stringify(checkpoint)+'\n');

@@ -419,8 +419,10 @@ describe("ImageParamsSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it("rejects more reference images than the model declares", () => {
-        const model = "microsoft/mai-image-2.6";
+    it.each([
+        "microsoft/mai-image-2.6",
+        "bytedance/seedream-5.0-flash",
+    ] as const)("rejects more reference images than %s declares", (model) => {
         const max =
             (IMAGE_SERVICES[model] as ModelDefinition).maxReferenceImages ?? 0;
         const images = Array.from(

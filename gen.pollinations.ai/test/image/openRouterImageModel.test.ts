@@ -516,16 +516,16 @@ describe("OpenRouter Seedream 5.0 Flash", () => {
         },
     );
 
-    it("accepts 14 reference images", async () => {
+    it("accepts ten reference images", async () => {
         const requests: Record<string, unknown>[] = [];
         setEnvAndMock(requests);
 
         await callOpenRouterSeedreamFlashAPI("test prompt", {
             ...flashParams,
-            image: Array(14).fill(REFERENCE_IMAGE_URL),
+            image: Array(10).fill(REFERENCE_IMAGE_URL),
         });
 
-        expect(requests[0].input_references).toHaveLength(14);
+        expect(requests[0].input_references).toHaveLength(10);
     });
 });
 

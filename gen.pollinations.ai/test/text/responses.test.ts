@@ -276,25 +276,28 @@ describe("direct Responses transport", () => {
         ["required", "required", "none"],
         ["function object", { type: "function", name: "lookup" }, "none"],
         ["auto", "auto", "high"],
-    ])("normalizes Qwen3.8 Max 0902 reasoning for %s tool choice", (_label, toolChoice, expectedEffort) => {
-        const directRequest = request({
-            model: "qwen/qwen3.8-max-0902",
-            reasoning: { effort: "high" },
-            tool_choice: toolChoice,
-        });
-        const target = resolveDirectResponsesTarget(
-            directRequest.model,
-            directRequest,
-        );
-        if (!target) throw new Error("expected direct target");
+    ])(
+        "normalizes Qwen3.8 Max 0902 reasoning for %s tool choice",
+        (_label, toolChoice, expectedEffort) => {
+            const directRequest = request({
+                model: "qwen/qwen3.8-max-0902",
+                reasoning: { effort: "high" },
+                tool_choice: toolChoice,
+            });
+            const target = resolveDirectResponsesTarget(
+                directRequest.model,
+                directRequest,
+            );
+            if (!target) throw new Error("expected direct target");
 
-        expect(
-            buildDirectResponsesRequestBody(directRequest, target),
-        ).toMatchObject({
-            reasoning: { effort: expectedEffort },
-            tool_choice: toolChoice,
-        });
-    });
+            expect(
+                buildDirectResponsesRequestBody(directRequest, target),
+            ).toMatchObject({
+                reasoning: { effort: expectedEffort },
+                tool_choice: toolChoice,
+            });
+        },
+    );
 
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
         const body = {
@@ -516,41 +519,44 @@ it.each([
     ],
     [{ text: { format: { type: "json_object" } } }, "structured output"],
     [{ max_output_tokens: 16385 }, "16384 output tokens"],
-])("Scout capability errors use the Responses invalid-request envelope: %j", async (options, message) => {
-    const app = new Hono<Env>();
-    app.use("*", async (c, next) => {
-        c.set("model", {
-            requested: "llama-scout",
-            resolved: "meta/llama-4-scout",
-            definition: TEXT_SERVICES["meta/llama-4-scout"],
+])(
+    "Scout capability errors use the Responses invalid-request envelope: %j",
+    async (options, message) => {
+        const app = new Hono<Env>();
+        app.use("*", async (c, next) => {
+            c.set("model", {
+                requested: "llama-scout",
+                resolved: "meta/llama-4-scout",
+                definition: TEXT_SERVICES["meta/llama-4-scout"],
+            });
+            await next();
         });
-        await next();
-    });
-    app.post(
-        "/v1/responses",
-        validator("json", CreateResponseRequestSchema),
-        generateCreateResponse,
-    );
-    const response = await app.request(
-        "/v1/responses",
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "llama-scout",
-                input: "Hello",
-                safe: false,
-                ...options,
-            }),
-        },
-        env,
-    );
-    expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({
-        error: {
-            type: "invalid_request_error",
-            code: "unsupported_parameter",
-            message: expect.stringContaining(message),
-        },
-    });
-});
+        app.post(
+            "/v1/responses",
+            validator("json", CreateResponseRequestSchema),
+            generateCreateResponse,
+        );
+        const response = await app.request(
+            "/v1/responses",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "llama-scout",
+                    input: "Hello",
+                    safe: false,
+                    ...options,
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toMatchObject({
+            error: {
+                type: "invalid_request_error",
+                code: "unsupported_parameter",
+                message: expect.stringContaining(message),
+            },
+        });
+    },
+);

@@ -264,6 +264,51 @@ describe("gen worker routing", () => {
         expect(body).toContain(
             "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         );
+        expect(body).toContain(
+            "Sitemap: https://staging.gen.pollinations.ai/sitemap.xml",
+        );
+    });
+
+    it("serves a minimal sitemap for the public pages", async () => {
+        const response = await fetchWorker("/sitemap.xml");
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe(
+            "application/xml; charset=utf-8",
+        );
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).toContain(
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        );
+        const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+            (match) => match[1],
+        );
+        expect(locs).toEqual([
+            "https://staging.gen.pollinations.ai/",
+            "https://staging.gen.pollinations.ai/docs",
+        ]);
+
+        // A trusted forwarded host is reflected in both discovery files.
+        const forwarded = {
+            "x-forwarded-host": "gen.pollinations.ai",
+            "x-forwarded-proto": "https",
+        };
+        const prodSitemap = await fetchWorker("/sitemap.xml", envWithEnter(), {
+            headers: forwarded,
+        });
+        expect(await prodSitemap.text()).toContain(
+            "<loc>https://gen.pollinations.ai/docs</loc>",
+        );
+        const prodRobots = await fetchWorker("/robots.txt", envWithEnter(), {
+            headers: forwarded,
+        });
+        expect(await prodRobots.text()).toContain(
+            "Sitemap: https://gen.pollinations.ai/sitemap.xml",
+        );
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {
@@ -650,24 +695,24 @@ describe("gen worker routing", () => {
         expect(await retrieved.json()).toMatchObject({ paid_only: true });
     });
 
-    it.each([
-        "/models",
-        "/audio/models",
-    ] as const)("advertises transcription endpoints on %s", async (path) => {
-        const response = await fetchWorker(path, envWithEnter());
+    it.each(["/models", "/audio/models"] as const)(
+        "advertises transcription endpoints on %s",
+        async (path) => {
+            const response = await fetchWorker(path, envWithEnter());
 
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            supported_endpoints?: string[];
-        }[];
-        for (const name of TRANSCRIPTION_MODEL_IDS) {
-            expect(
-                models.find((model) => model.name === name)
-                    ?.supported_endpoints,
-            ).toEqual(["/v1/audio/transcriptions"]);
-        }
-    });
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as {
+                name: string;
+                supported_endpoints?: string[];
+            }[];
+            for (const name of TRANSCRIPTION_MODEL_IDS) {
+                expect(
+                    models.find((model) => model.name === name)
+                        ?.supported_endpoints,
+                ).toEqual(["/v1/audio/transcriptions"]);
+            }
+        },
+    );
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -875,33 +920,36 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it.each([
-        "all",
-        "regular",
-    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(
-                Response.json({ data: [{ model: "test" }] }),
+    it.each(["all", "regular"])(
+        "proxies %s traffic with a separate 60 second edge cache",
+        async (traffic) => {
+            const upstream = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({ data: [{ model: "test" }] }),
+                );
+
+            const response = await fetchWorker(
+                `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
             );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Cache-Control")).toBe(
+                "public, max-age=60",
+            );
+            expect(await response.json()).toEqual({
+                data: [{ model: "test" }],
+            });
 
-        const response = await fetchWorker(
-            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
-        );
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Cache-Control")).toBe(
-            "public, max-age=60",
-        );
-        expect(await response.json()).toEqual({
-            data: [{ model: "test" }],
-        });
-
-        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
-        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
-        expect(url.searchParams.get("minutes")).toBe("15");
-        expect(url.searchParams.get("traffic")).toBe(traffic);
-        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
-    });
+            const [url, init] = upstream.mock.calls[0] as [
+                URL,
+                { cf?: unknown },
+            ];
+            expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+            expect(url.searchParams.get("minutes")).toBe("15");
+            expect(url.searchParams.get("traffic")).toBe(traffic);
+            expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
+        },
+    );
 
     it("rejects unsupported traffic groups before contacting Tinybird", async () => {
         const response = await fetchWorker("/models/status?traffic=invalid");

@@ -7,6 +7,8 @@ export class PaymentRequiredError extends HTTPException {
             | "INSUFFICIENT_BALANCE"
             | "QUEST_POLLEN_ONLY",
         message: string,
+        /** The page where the key's owner fixes this. */
+        readonly fixUrl: string,
         /** Only paid Pollen can cover this model, so quests are no remedy. */
         readonly paidOnly = false,
     ) {

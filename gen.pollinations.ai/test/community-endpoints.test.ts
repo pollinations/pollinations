@@ -37,6 +37,7 @@ import {
     communityModelDefinition,
     communityModelId,
     communityPriceDefinition,
+    type EndpointAgentCapability,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
     isCommunityFallbackPricingAllowed,
@@ -273,6 +274,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
         outputModalities?: ModelOutputModality[];
+        capabilities?: EndpointAgentCapability[];
         baseUrl?: string | null;
         api?: CommunityEndpointApi | null;
         upstreamModel?: string;
@@ -296,6 +298,7 @@ function insertCommunityEndpoints(
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
             outputModalities,
+            capabilities,
             baseUrl,
             api: rawApi,
             upstreamModel,
@@ -330,6 +333,7 @@ function insertCommunityEndpoints(
                         api,
                         inputModalities: rawInputModalities ?? undefined,
                         outputModalities,
+                        capabilities,
                     }
                   : {
                         paidOnly: false,
@@ -721,41 +725,41 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([
-        null,
-        undefined,
-    ])("parses media payloads without a text API (%s)", (api) => {
-        const payload = parseListingPayload(
-            "proxy",
-            JSON.stringify({
+    it.each([null, undefined])(
+        "parses media payloads without a text API (%s)",
+        (api) => {
+            const payload = parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    paidOnly: false,
+                    modality: "image",
+                    api,
+                    imagePricing: "request",
+                    inputModalities: ["image", "image"],
+                    perUserRpm: null,
+                    fallbacks: ["owner/model"],
+                    prices: { completionImagePrice: 0.2 },
+                }),
+            );
+
+            expect(payload).toMatchObject({
                 bearerTokenCiphertext: "ciphertext",
+                api: null,
                 paidOnly: false,
                 modality: "image",
-                api,
                 imagePricing: "request",
-                inputModalities: ["image", "image"],
+                inputModalities: ["image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: { completionImagePrice: 0.2 },
-            }),
-        );
-
-        expect(payload).toMatchObject({
-            bearerTokenCiphertext: "ciphertext",
-            api: null,
-            paidOnly: false,
-            modality: "image",
-            imagePricing: "request",
-            inputModalities: ["image"],
-            perUserRpm: null,
-            fallbacks: ["owner/model"],
-            prices: {
-                promptTextPrice: 0,
-                completionImagePrice: 0.2,
-                completionVideoPrice: 0,
-            },
-        });
-    });
+                prices: {
+                    promptTextPrice: 0,
+                    completionImagePrice: 0.2,
+                    completionVideoPrice: 0,
+                },
+            });
+        },
+    );
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
@@ -1936,60 +1940,57 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        it.each([
-            undefined,
-            null,
-            {},
-            { duration: null },
-        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).resolves.toMatchObject({
-                durationSeconds: 5,
-                trackingData: { usage: { completionVideoSeconds: 5 } },
-            });
-        });
+        it.each([undefined, null, {}, { duration: null }])(
+            "falls back to requested duration when usage is missing: %j",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).resolves.toMatchObject({
+                    durationSeconds: 5,
+                    trackingData: { usage: { completionVideoSeconds: 5 } },
+                });
+            },
+        );
 
-        it.each([
-            { duration: 0 },
-            { duration: -1 },
-            { duration: "5" },
-        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                status: 502,
-                message: expect.stringContaining("usage.duration"),
-            });
-        });
+        it.each([{ duration: 0 }, { duration: -1 }, { duration: "5" }])(
+            "rejects invalid reported usage %j even when duration was requested",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).rejects.toMatchObject({
+                    status: 502,
+                    message: expect.stringContaining("usage.duration"),
+                });
+            },
+        );
 
         it("preserves upstream video failures", async () => {
             vi.stubGlobal(
@@ -2729,6 +2730,8 @@ describe("community endpoint helpers", () => {
             expect(await verifyAgentRunToken(token, secret)).toMatchObject({
                 parentApiKeyId: "parent-key-id",
                 parentRequestId: "parent-request-id",
+                // External agents get no managed scope but are still named.
+                agentModelId: endpoint.modelId,
             });
             const defaultContext = await contextFor(endpoint, "parent-key-id");
             expect(defaultContext.modelConfig?.model).toBe(
@@ -8552,6 +8555,112 @@ fixtureTest(
                 output_modalities: outputModalities,
             });
         }
+    },
+);
+
+fixtureTest(
+    "lists the declared capabilities of the Floret and Polli endpoint agents",
+    async () => {
+        const ownerUserId = await createTestUser({
+            githubUsername: `owner-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const suffix = crypto.randomUUID().slice(0, 8);
+        const agents = [
+            {
+                name: `floret-${suffix}`,
+                capabilities: [
+                    "web_search",
+                    "code_execution",
+                    "pollinations_models",
+                ],
+            },
+            {
+                name: `polli-${suffix}`,
+                capabilities: ["tool_calling", "web_search"],
+            },
+            { name: `plain-${suffix}`, capabilities: undefined },
+        ] satisfies {
+            name: string;
+            capabilities: EndpointAgentCapability[] | undefined;
+        }[];
+        const ids = agents.map(() => crypto.randomUUID());
+        await insertCommunityEndpoints(
+            agents.map(({ name, capabilities }, index) => ({
+                id: ids[index],
+                ownerUserId,
+                type: "endpoint_agent" as const,
+                name,
+                title: name,
+                baseUrl: `https://${name}.example.com/v1/chat/completions`,
+                upstreamModel: name,
+                visibility: "public" as const,
+                capabilities,
+            })),
+        );
+        const entries = await getCommunityModelRegistryEntries(env);
+        const [floret, polli, plain] = ids.map((id) =>
+            entries.find((entry) => entry.communityEndpoint.id === id),
+        );
+        // Media made by tools is linked in the text reply, so declaring traits
+        // leaves the text-in/text-out contract untouched.
+        for (const entry of [floret, polli, plain]) {
+            expect(entry?.info).toMatchObject({
+                agent: true,
+                input_modalities: ["text"],
+                output_modalities: ["text"],
+            });
+        }
+        expect(floret?.info.capabilities).toEqual([
+            "web_search",
+            "code_execution",
+            "pollinations_models",
+        ]);
+        expect(floret?.definition).toMatchObject({
+            search: true,
+            codeExecution: true,
+        });
+        expect(floret?.definition.tools).toBeUndefined();
+        expect(polli?.info.capabilities).toEqual([
+            "tool_calling",
+            "web_search",
+        ]);
+        expect(polli?.info.tools).toBe(true);
+        expect(polli?.definition.codeExecution).toBeUndefined();
+        expect(plain?.info.capabilities).toEqual([]);
+
+        const catalog = async (query: string) => {
+            const response = await fetchGen(
+                `https://gen.pollinations.ai/models?query=${suffix}${query}`,
+            );
+            expect(response.status).toBe(200);
+            return (
+                await response.json<
+                    { name: string; capabilities: string[] }[]
+                >()
+            )
+                .map(({ name, capabilities }) => ({ name, capabilities }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+        };
+        const [floretId, polliId, plainId] = ids.map(
+            (id) =>
+                entries.find((entry) => entry.communityEndpoint.id === id)?.id,
+        );
+        expect(await catalog("")).toEqual(
+            [
+                { name: floretId, capabilities: agents[0].capabilities },
+                { name: plainId, capabilities: [] },
+                { name: polliId, capabilities: agents[1].capabilities },
+            ].sort((a, b) => String(a.name).localeCompare(String(b.name))),
+        );
+        const names = async (query: string) =>
+            (await catalog(query)).map(({ name }) => name);
+        expect(await names("&capabilities=web_search")).toEqual(
+            [floretId, polliId].sort(),
+        );
+        expect(await names("&capabilities=pollinations_models")).toEqual([
+            floretId,
+        ]);
+        expect(await names("&capabilities=tool_calling")).toEqual([polliId]);
     },
 );
 

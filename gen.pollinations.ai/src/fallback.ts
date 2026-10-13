@@ -280,6 +280,26 @@ export function fallbackCandidates(
     return candidates;
 }
 
+/**
+ * A media fallback that takes fewer reference images than the request sends
+ * would silently drop the rest, so it is skipped. The requested model is always
+ * tried and answers for its own limits.
+ */
+export function mediaFallbackCandidates(
+    model: PrimaryModel | undefined,
+    referenceImages: number,
+) {
+    return fallbackCandidates(model)
+        .map((candidate, originalIndex) => ({ ...candidate, originalIndex }))
+        .filter(
+            ({ definition, originalIndex }) =>
+                originalIndex === 0 ||
+                referenceImages <=
+                    (definition?.maxReferenceImages ??
+                        Number.POSITIVE_INFINITY),
+        );
+}
+
 function isUsableCommunityFallback(
     from: GenerationModelEntry,
     target: GenerationModelEntry,

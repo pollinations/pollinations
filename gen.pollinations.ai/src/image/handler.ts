@@ -7,9 +7,9 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
     type FallbackCandidate,
-    fallbackCandidates,
     formatFallbackTarget,
     isRetryableFallbackError,
+    mediaFallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
@@ -307,8 +307,8 @@ async function generateMediaWithFallback(
         }
         return isRetryableFallbackError(error);
     };
-    const { result, index } = await withModelFallback(
-        fallbackCandidates(c.var.model),
+    const { result, candidate } = await withModelFallback(
+        mediaFallbackCandidates(c.var.model, safeParams.image.length),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
@@ -349,7 +349,7 @@ async function generateMediaWithFallback(
     );
     return {
         ...result,
-        servedIndex: index,
+        servedIndex: candidate.originalIndex,
     };
 }
 

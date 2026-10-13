@@ -62,10 +62,15 @@ async function download(file: FalFile | undefined, label: string) {
     };
 }
 
+// A supported aspectRatio wins unless the caller set width or height.
 function aspectRatio(
     params: ImageParams,
     ratios: readonly string[] = RATIOS,
 ): string {
+    const requested = params.aspectRatio;
+    if (!params.dimensionsExplicit && requested && ratios.includes(requested)) {
+        return requested;
+    }
     return closestRatioLogSpace(params.width, params.height, ratios);
 }
 

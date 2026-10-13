@@ -295,6 +295,32 @@ describe("Fal fallback media models", () => {
         expect(requests[0].body?.aspect_ratio).toBe("1:1");
     });
 
+    it.each([
+        ["x-ai/grok-imagine-video-1.5:fal", "9:16", false, "9:16"],
+        ["alibaba/wan-2.6:fal", "16:9", false, "16:9"],
+        ["alibaba/wan-2.2-fast:fal", "16:9", false, "16:9"],
+        ["bytedance/seedance-1-pro-fast:fal", "21:9", false, "21:9"],
+        // Wan 2.2 Turbo has no 4:3, so the default 1024×1024 decides.
+        ["alibaba/wan-2.2-fast:fal", "4:3", false, "1:1"],
+        // Explicit dimensions win over the requested ratio.
+        ["alibaba/wan-2.6:fal", "16:9", true, "1:1"],
+    ] as const)(
+        "sends %s aspectRatio %s (explicit dimensions: %s) as %s",
+        async (model, aspectRatio, dimensionsExplicit, expected) => {
+            const requests = mockFal({ video: { url: MEDIA_URL } });
+            const resultPromise = callFalFallbackVideo("a blue circle", {
+                ...baseParams,
+                model,
+                aspectRatio,
+                dimensionsExplicit,
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            await resultPromise;
+
+            expect(requests[0].body?.aspect_ratio).toBe(expected);
+        },
+    );
+
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },

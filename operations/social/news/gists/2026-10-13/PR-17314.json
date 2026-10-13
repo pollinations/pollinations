@@ -1,0 +1,32 @@
+{
+  "pr_number": 17314,
+  "title": "chore(news): remove the reddit tone and last reddit mentions",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17314",
+  "merged_at": "2026-10-13T15:20:15Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Removed the unused Reddit tone prompt after Reddit was taken out of the news pipeline in #17308. The gist and daily-summary prompts now refer to the X post generator and weekly platforms instead of Reddit. The architecture diagram no longer shows a Reddit VPS, and PIPELINE.md says Reddit posting will start fresh later. The public subreddit link remains in brand/links.md. A practice run for the 2026-10-12 daily summary produced new wording but kept its five arcs and five highlights: model, API, product, product, and app.",
+    "keywords": [
+      "social pipeline",
+      "Reddit",
+      "daily summary",
+      "prompts",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17314.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the frame and wearing tiny editor glasses, she sets an unused Reddit tone card on a shelf beside a retro terminal showing an X card and weekly post cards, with code-plants and flowers nearby. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), a warm cream background, dark purple (#110518) outlines, chunky sprites, and a gentle CRT glow."
+  },
+  "generated_at": "2026-10-13T15:21:48.465304+00:00",
+  "area": "Brand & news",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "fb1433bb6fa996dfdc7cb9039ebc1de676df18c5",
+  "announcements": []
+}

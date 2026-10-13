@@ -3,6 +3,10 @@ name: Models / Research pre-merge E2E
 on:
   workflow_dispatch:
     inputs:
+      native_only:
+        description: 'Validate saved evidence using native Jev; extra cap 0.05 Pollen, no Sol or search.'
+        type: boolean
+        default: false
       audit_only:
         description: 'Read aggregate current test spend only; no paid calls.'
         type: boolean
@@ -38,7 +42,7 @@ concurrency:
 
 jobs:
   researcher:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && !inputs.audit_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && !inputs.audit_only && !inputs.native_only
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -195,6 +199,40 @@ jobs:
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS
+  native-validation:
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'scrapling[fetchers]==0.4.15'
+      - uses: actions/download-artifact@v4
+        with:
+          name: model-research-38385169267-1
+          run-id: 38385169267
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/saved-corpus
+      - name: Replay copied official evidence through native Jev
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          CORPUS_OUT: ${{ runner.temp }}/saved-corpus
+          RESEARCH_OUT: ${{ runner.temp }}/native-validation
+        run: node .github/scripts/model-researcher-corpus-validation.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-validation-${{ github.run_id }}
+          path: ${{ runner.temp }}/native-validation/
+          if-no-files-found: error
+          retention-days: 14
   billing-audit:
     if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.audit_only
     runs-on: ubuntu-latest

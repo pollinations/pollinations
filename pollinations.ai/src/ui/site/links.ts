@@ -5,7 +5,6 @@ import {
     LinkedInIcon,
     XSocialIcon,
 } from "@pollinations/ui";
-import type { CSSProperties } from "react";
 
 /** Not docs.pollinations.ai — that is the investor data room. */
 export const DOCS_URL = "https://gen.pollinations.ai/docs";
@@ -37,20 +36,3 @@ export const SOCIAL = [
         Icon: LinkedInIcon,
     },
 ] as const;
-
-/** Paints a brand SVG in currentColor so it follows the theme. */
-export const maskStyle = (
-    url: string,
-    width: number,
-    height: number,
-): CSSProperties => {
-    const mask = `url('${url}') center / contain no-repeat`;
-
-    return {
-        width,
-        height,
-        backgroundColor: "currentColor",
-        WebkitMask: mask,
-        mask,
-    };
-};

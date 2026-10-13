@@ -108,6 +108,19 @@ export const portkeyConfig: PortkeyConfigMap = {
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "liquid/d1",
         }),
+    "gpt-6-luna-decisions": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.openai.com/v1/decisions",
+        authKey: textEnvironmentValue("OPENAI_API_KEY"),
+        model: "gpt-6-luna",
+        decisionsProtocol: "openai",
+    }),
+    "openai/gpt-6-luna-decisions:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "openai/gpt-6-luna-decisions",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
@@ -277,6 +290,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
     }),
 
     "grok-4.6-azure-sweden": () => ({
@@ -295,13 +309,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.6",
     }),
-
-    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
-    "Cohere-command-a-plus-05-2026": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-        ),
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
@@ -327,6 +340,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
+    "cohere/command-a-plus": createPinnedOpenRouterConfig(
+        "cohere/command-a-plus",
+        "Cohere",
+    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -354,8 +371,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
-    "inclusionai/ling-3.1-flash:openrouter:novita":
-        createPinnedOpenRouterConfig("inclusionai/ling-3.1-flash", "novita"),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
         createVercelAIGatewayModelConfig({
             model: "inclusionai/ling-3.1-flash",
@@ -431,9 +446,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
         "qwen/qwen3.8-27b",
-        "akashml/fp8",
+        "reka/fp8",
         64000,
     ),
     "qwen/qwen3.8-max": () =>
@@ -590,6 +605,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4.1-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -629,7 +650,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
+    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
+    // which bill above the quoted rate, so they are excluded explicitly.
+    "grok-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai"],
+                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -646,6 +679,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-5.5",
         "anthropic",
     ),
+    "claude-opus-5.5-fast-openrouter-anthropic-fast":
+        createPinnedOpenRouterConfig(
+            "anthropic/claude-opus-5.5",
+            "anthropic/fast",
+        ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
         "google-vertex/global",
@@ -739,10 +777,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.2",
         "z-ai/fp8",
     ),
-    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4-pro-0813",
-        "alibaba",
-    ),
+    // The base slug "alibaba" also matches alibaba/us-east-1, whose peak rate
+    // is above the quoted one, so it is excluded explicitly.
+    "deepseek-v4-pro-openrouter-alibaba": () =>
+        createOpenRouterModelConfig({
+            model: "deepseek/deepseek-v4-pro-0813",
+            defaultOptions: {
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",
@@ -774,10 +821,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
         }),
-    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
-    ),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>
@@ -1010,7 +1053,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "qwen/qwen3-vl-30b-a3b-instruct": createPinnedOpenRouterConfig(
         "qwen/qwen3-vl-30b-a3b-instruct",
-        "alibaba",
+        "deepinfra/fp8",
     ),
     "qwen3-vl-235b-a22b-thinking": () =>
         createAlibabaModelConfig({

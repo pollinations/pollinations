@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
-import { setOutputMode } from "../../lib/output.js";
+import { ExitSignal, setOutputMode } from "../../lib/output.js";
 import { createVoiceChangeCommand } from "./voice-change.js";
 
 const originalCwd = process.cwd();
@@ -48,6 +48,36 @@ describe("gen voice-change", () => {
             const meta = JSON.parse(output.join(""));
             expect(meta.path).toBe("voice.mp3");
             expect([...readFileSync("voice.mp3")]).toEqual([1, 2, 3]);
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
+    it("reports a missing input file as a CLI error instead of a raw ENOENT", async () => {
+        const folder = mkdtempSync(
+            join(tmpdir(), "polli-voice-change-missing-"),
+        );
+        try {
+            process.chdir(folder);
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const errors: string[] = [];
+            vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+                errors.push(String(value));
+                return true;
+            });
+            const fetch = vi.fn();
+            vi.stubGlobal("fetch", fetch);
+
+            await expect(
+                createVoiceChangeCommand().parseAsync(["nope.mp3"], {
+                    from: "user",
+                }),
+            ).rejects.toThrow(ExitSignal);
+
+            expect(fetch).not.toHaveBeenCalled();
+            expect(errors.join("")).toContain("File not found: nope.mp3");
         } finally {
             process.chdir(originalCwd);
             rmSync(folder, { recursive: true });

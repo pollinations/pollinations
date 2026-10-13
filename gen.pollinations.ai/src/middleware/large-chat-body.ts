@@ -10,7 +10,7 @@ import type { Env } from "../env.ts";
 
 export const MAX_LARGE_CHAT_BODY = 100 * 1024 * 1024;
 const EXISTING_CHAT_BODY_LIMIT = 32 * 1024 * 1024;
-// Validation, caching and the 32 MiB coordinator RPC each copy the compact body.
+// Validation and caching each copy the compact body.
 const MAX_REWRITTEN_BODY = 16 * 1024 * 1024;
 const MAX_MEDIA_DATA_URL = 20 * 1024 * 1024;
 const MAX_UNOFFLOADED_BYTES = MAX_REWRITTEN_BODY + MAX_MEDIA_DATA_URL;

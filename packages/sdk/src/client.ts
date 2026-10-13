@@ -36,6 +36,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     PollinationsConfig,
     RequestOptions,
     TextGenerateOptions,
@@ -322,7 +323,12 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
-    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
@@ -330,7 +336,7 @@ export class Pollinations {
             signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return response.json() as Promise<T>;
+                return read(response);
             },
         );
     }
@@ -346,6 +352,7 @@ export class Pollinations {
 
             if (Array.isArray(value)) {
                 const separator = [
+                    "image",
                     "reference_images",
                     "reference_videos",
                     "reference_audios",
@@ -478,7 +485,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -550,7 +557,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -691,7 +698,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -926,6 +933,7 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
+        let completed = false;
         let events: string[] = [];
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
@@ -944,10 +952,20 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) yield parseChatStreamData(data);
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
+                    yield chunk;
                 }
                 events = [];
-                if (done) return;
+                if (done) {
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
+                }
             }
         } catch (error) {
             if (options.signal?.aborted) {
@@ -979,7 +997,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1113,41 +1131,17 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
-    }
-
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
-     * Get all available models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
     // ============================================================================
@@ -1162,7 +1156,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1189,12 +1183,17 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        // Some providers read the format from the extension, so a File keeps
-        // its own name.
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
         formData.append(
             "file",
             blob,
-            (blob as Partial<File>).name || "audio.mp3",
+            (blob as Partial<File>).name || `audio.${extension}`,
         );
         if (options.model) formData.append("model", options.model);
 
@@ -1369,7 +1368,13 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
         }
@@ -1407,7 +1412,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });
@@ -1624,9 +1629,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1638,6 +1652,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<UsageResponse>(url);
     }
 
@@ -1651,8 +1667,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1664,6 +1686,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<DailyUsageResponse>(url);
     }
 

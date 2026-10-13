@@ -14,10 +14,9 @@ import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
 interface AudioOptions {
-    voice: string;
+    voice?: string;
     format: string;
     model?: string;
-    speed?: string;
     duration?: string;
     instrumental?: boolean;
     seed?: string;
@@ -27,10 +26,10 @@ async function generateSimple(
     text: string,
     opts: AudioOptions,
 ): Promise<Buffer> {
-    const params = new URLSearchParams({ voice: opts.voice });
+    const params = new URLSearchParams();
+    if (opts.voice) params.set("voice", opts.voice);
     if (opts.format !== "mp3") params.set("response_format", opts.format);
     if (opts.model) params.set("model", opts.model);
-    if (opts.speed) params.set("speed", opts.speed);
     if (opts.duration) params.set("duration", opts.duration);
     if (opts.instrumental) params.set("instrumental", "true");
     if (opts.seed) params.set("seed", opts.seed);
@@ -46,7 +45,8 @@ async function generateWithTimestamps(
     opts: AudioOptions,
     alignmentPath: string,
 ): Promise<Buffer> {
-    const body: Record<string, unknown> = { input: text, voice: opts.voice };
+    const body: Record<string, unknown> = { input: text };
+    if (opts.voice) body.voice = opts.voice;
     if (opts.model) body.model = opts.model;
     if (opts.format !== "mp3") body.response_format = opts.format;
     if (opts.seed) body.seed = Number(opts.seed);
@@ -82,13 +82,12 @@ export function createAudioCommand() {
         )
         .addHelpText(
             "after",
-            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
+            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice nova --play\n  polli gen audio --model elevenlabs --voice callum "the sky today" --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
-        .option("--voice <voice>", "Voice name", "sage")
+        .option("--voice <voice>", "Voice name (default: the model's own)")
         .option("--format <fmt>", "mp3/opus/aac/flac/wav", "mp3")
         .option("--model <model>", "Audio model")
-        .option("--speed <n>", "Playback speed (0.25-4)")
         .option("--duration <n>", "Music duration in seconds (elevenmusic)")
         .option("--instrumental", "Instrumental only (elevenmusic)")
         .option("--seed <n>", "Seed for deterministic output")
@@ -99,9 +98,16 @@ export function createAudioCommand() {
             "Also save character-level timing as JSON next to the audio",
         )
         .action(async (textArg, opts) => {
+            if (opts.timestamps && (opts.duration || opts.instrumental)) {
+                printError(
+                    "--timestamps cannot be combined with --duration or --instrumental (timestamps are only available for speech models)",
+                );
+                throw new ExitSignal(1);
+            }
+
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
-            const inputText = textArg || (await readStdin());
+            const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",
@@ -129,7 +135,7 @@ export function createAudioCommand() {
                 printMeta({
                     path: output,
                     size: buffer.length,
-                    voice: opts.voice,
+                    ...(opts.voice && { voice: opts.voice }),
                     ...(alignmentPath && { timestamps: alignmentPath }),
                 });
 

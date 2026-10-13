@@ -222,6 +222,9 @@ export function modelBody(
                 : commaSeparatedList(opts.requiredSafety);
     }
 
+    // Commander sets `streaming: false` only for --no-streaming.
+    if (opts.streaming === false) body.advertised = { streaming: false };
+
     if (includeRequired) {
         for (const required of ["name", "title"]) {
             if (!body[required]) {
@@ -373,6 +376,10 @@ const create = addPriceOptions(
         .option(
             "--image-pricing <mode>",
             "Image billing: request (per image, default) or tokens",
+        )
+        .option(
+            "--no-streaming",
+            "Text endpoint has no SSE (`my-models test` reports streaming: false); stream: true calls get the whole answer at once",
         ),
 ).action(async (opts) => {
     const key = requireKey();

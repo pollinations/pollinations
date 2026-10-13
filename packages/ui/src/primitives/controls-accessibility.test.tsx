@@ -322,3 +322,28 @@ it("renders editable and required permissions as labelled native checkboxes", ()
     expect(editable).not.toContain('disabled=""');
     expect(required).toContain('disabled=""');
 });
+
+it("keeps permission help outside checkbox labels with an explicit label association", () => {
+    const html = renderToStaticMarkup(
+        <AuthAccessItem
+            checked
+            onChange={() => {}}
+            info={<button type="button">Help</button>}
+        >
+            Receive earnings
+        </AuthAccessItem>,
+    );
+    const inputId = html.match(/<input[^>]*id="([^"]+)"/)?.[1];
+    expect(inputId).toBeDefined();
+    expect(html).toContain(`<label for="${inputId}"`);
+    const labels = [...html.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/g)].map(
+        (match) => match[1],
+    );
+    expect(labels.some((label) => label.includes('type="checkbox"'))).toBe(
+        true,
+    );
+    expect(labels.some((label) => label.includes("Receive earnings"))).toBe(
+        true,
+    );
+    expect(labels.every((label) => !label.includes("<button"))).toBe(true);
+});

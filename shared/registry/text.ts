@@ -3114,7 +3114,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Mistral regular rates; activate after the 50% launch promotion ends.
+            // Mistral direct regular rates (docs.mistral.ai, 2026-10-13); the
+            // 50% launch promotion is not passed on.
             promptTextTokens: perMillion(1.36),
             promptCachedTokens: perMillion(0.14),
             completionTextTokens: perMillion(4.18),

@@ -371,7 +371,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations/sdk';
+import { chat, chatStream } from '@pollinations/sdk';
 
 // Single message
 const response = await chat([
@@ -384,16 +384,6 @@ console.log(response.text);
 for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }])) {
   process.stdout.write(chunk.choices[0]?.delta?.content || '');
 }
-
-// Conversation (auto-manages history)
-const convo = conversation({ model: 'openai' });
-convo.system('You are a pirate');
-
-const r1 = await convo.say('Hello!');        // "Ahoy, matey!"
-const r2 = await convo.say('Where are we?'); // Remembers context
-
-console.log(convo.getHistory()); // Full message history
-convo.clear(); // Reset conversation
 ```
 
 ## Video Generation
@@ -537,10 +527,11 @@ See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`,
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels } from '@pollinations/sdk';
+import { getModels } from '@pollinations/sdk';
 
-const textModels = await getTextModels();
-const imageModels = await getImageModels();
+const textModels = await getModels('text');
+const imageModels = await getModels('image');
+const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
@@ -619,16 +610,13 @@ import type {
 | `generateTextStream(prompt, options?)` | Stream text |
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
-| `conversation(options?)` | Create conversation |
 | `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
-| `getTextModels()` | List text models |
-| `getImageModels()` | List image models |
-| `getModels()` | List all models |
+| `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
 
 ## Troubleshooting

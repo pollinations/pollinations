@@ -2,6 +2,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
@@ -161,6 +162,16 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {
@@ -463,13 +474,14 @@ function extractRegisterToken(
     return null;
 }
 
-function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterWrite(
     c: ImageContext,
     body: Record<string, unknown>,
-): boolean {
+): Promise<boolean> {
     const expected = getImageEnv("PLN_GPU_TOKEN");
-    if (!expected) return false;
-    return extractRegisterToken(c, body) === expected;
+    const presented = extractRegisterToken(c, body);
+    if (!expected || !presented) return false;
+    return secretEquals(presented, expected);
 }
 
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
@@ -488,7 +500,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!isAuthorizedRegisterWrite(c, {})) {
+        if (!(await isAuthorizedRegisterWrite(c, {}))) {
             return c.json({ success: false, message: "Unauthorized" }, 401);
         }
         if (!isValidType(typeParam)) {
@@ -512,7 +524,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!isAuthorizedRegisterWrite(c, body)) {
+    if (!(await isAuthorizedRegisterWrite(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

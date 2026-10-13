@@ -600,6 +600,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-1.5": {
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
@@ -624,6 +625,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
+        supportsTransparency: true,
     },
     "openai/gpt-image-2": {
         aliases: ["gpt-image-2"],
@@ -670,6 +672,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "openai/gpt-image-2.5-sunburst": {
         aliases: [],
@@ -694,6 +697,7 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 16,
+        supportsTransparency: true,
     },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
@@ -2031,42 +2035,59 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal published post-promotion rates (promotion ends 2026-09-30).
-        // Deploy ahead of the cutoff; a few hours of early activation is accepted.
-        cost: {
-            completionVideoSeconds: 0.025, // Also fal's rate per reported billing unit.
-        },
+        // fal reports resolution-weighted units for the selected resolution.
+        // Keep output duration separate; charge the current endpoint price below.
+        cost: { completionVideoSeconds: 0 },
+        // Retain resolution selection for the catalog and analytics. All
+        // resolutions are billed by provider units, not output duration.
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.04 },
-                "1080p": { completionVideoSeconds: 0.08 },
+                "768p": { completionVideoSeconds: 0 },
+                "1080p": { completionVideoSeconds: 0 },
             },
             matchResolution("768p", "1080p"),
             {
                 "768p": {
                     label: "768p",
                     description:
-                        "Applies when the requested video resolution is 768p.",
+                        "768p video billed from provider-reported units.",
                 },
                 "1080p": {
                     label: "1080p",
                     description:
-                        "Applies when the requested video resolution is 1080p.",
+                        "1080p video billed from provider-reported units.",
                 },
             },
             "480p",
             [
                 {
-                    "key": "resolution",
-                    "label": "Resolution",
-                    "values": {
-                        "": "480p",
-                        "768p": "768p",
-                        "1080p": "1080p",
-                    },
+                    key: "resolution",
+                    label: "Resolution",
+                    values: { "": "480p", "768p": "768p", "1080p": "1080p" },
                 },
             ],
         ),
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.minimax_h3_max_turbo.provider_units.v1",
+                    description:
+                        "Provider cost including the selected resolution",
+                    kind: "video",
+                    unit: "provider unit",
+                    unitCost: 1,
+                    publicPricing: {
+                        label: "Provider cost",
+                        quantity: 1,
+                        unit: "USD",
+                    },
+                    countUnits: (_output, input) =>
+                        input?.providerBilling?.units ?? 0,
+                    resolveUnitCost: (_output, _model, input) =>
+                        input?.providerBilling?.unitCost ?? 0,
+                },
+            ],
+        },
         resolutions: ["480p", "768p", "1080p"],
         title: "MiniMax H3 Max Turbo",
         description:

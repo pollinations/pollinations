@@ -274,6 +274,14 @@ describe("usage command output", () => {
         expect(urls[0]).toContain("/account/usage/daily?days=30");
     });
 
+    it("truncates daily rows to --limit instead of ignoring it (#16947)", async () => {
+        expect(JSON.parse(await run(["--daily", "--limit", "1"]))).toEqual([
+            daily,
+        ]);
+        // Without an explicit --limit, every daily row is still printed.
+        expect(JSON.parse(await run(["--daily"]))).toHaveLength(2);
+    });
+
     it("keeps the rounded human table and raw CSV/balance output", async () => {
         expect(await run(["--history"], "human")).toContain("$0.0000");
         expect(await run(["--history", "--csv"])).toBe("a,b\n1,2\n");

@@ -4,6 +4,7 @@ import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
     getVisibleTextModels,
+    resolveModelName,
 } from "@shared/registry/registry.ts";
 import {
     createTestApiKey,
@@ -16,11 +17,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import {
-    type AuthEnv,
-    authFromSnapshot,
-    keyPermissionsLink,
-} from "../src/middleware/auth.ts";
+import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -73,7 +70,7 @@ test("catalog metadata exposes publisher rather than author or brand", async () 
     }
 });
 
-test("model IDs and aliases widen to their categories when a key is saved", async () => {
+test("model IDs and aliases are saved as canonical model IDs beside categories", async () => {
     const { id } = await createTestApiKey({
         allowedModels: ["nanobanana2", RESTRICTED_TEXT_TEST_MODEL, "audio"],
     });
@@ -82,48 +79,63 @@ test("model IDs and aliases widen to their categories when a key is saved", asyn
         .from(apikey)
         .where(eq(apikey.id, id));
     expect(JSON.parse(stored.permissions ?? "null")).toEqual({
-        models: ["text", "image", "audio"],
+        models: [
+            "audio",
+            resolveModelName("nanobanana2"),
+            resolveModelName(RESTRICTED_TEXT_TEST_MODEL),
+        ],
     });
     await expect(
         createTestApiKey({ allowedModels: ["not-a-model"] }),
     ).rejects.toThrow("is not a model category");
 });
 
-test("a category allows every model in it and nothing else", async () => {
+function modelAccessApp(models: string[]) {
     const app = new Hono<AuthEnv>();
     app.use(
         "*",
         authFromSnapshot({
             user: { id: "permission-test", tier: "seed" },
-            apiKey: { id: "test", permissions: { models: ["image"] } },
+            apiKey: { id: "test", permissions: { models } },
         }),
     );
     app.get("/:category/:model", (c) => {
         const model = c.req.param("model");
+        const alias = c.req.query("alias");
         c.set("model", {
             requested: model,
             resolved: model,
             definition: {
                 category: c.req.param("category") as "image" | "text",
+                aliases: alias ? [alias] : [],
             },
         });
         c.var.auth.requireModelAccess();
         return c.text("ok");
     });
+    return app;
+}
+
+test("a category allows every model in it and nothing else", async () => {
+    const app = modelAccessApp(["image"]);
     expect((await app.request("/image/any-image-model")).status).toBe(200);
     const denied = await app.request("/text/openai");
     expect(denied.status).toBe(403);
     expect(await denied.text()).toBe(
-        "Model 'openai' is not allowed for this API key, which does not allow text models. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+        "Model 'openai' is not allowed for this API key, which is limited to image. Allow it at https://enter.pollinations.ai/grant?id=test&category=text&ref=agent_grant",
     );
 });
 
-test("keyPermissionsLink resolves production and staging editor links", () => {
-    expect(keyPermissionsLink("key-1")).toBe(
-        "https://enter.pollinations.ai/edit-key?id=key-1",
-    );
-    expect(keyPermissionsLink("key-1", "staging")).toBe(
-        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
+test("a model ID allows only that model, also after a rename keeps it as an alias", async () => {
+    const app = modelAccessApp(["text", "flux"]);
+    expect((await app.request("/image/flux")).status).toBe(200);
+    expect((await app.request("/text/openai")).status).toBe(200);
+    expect((await app.request("/image/flux-2?alias=flux")).status).toBe(200);
+    const denied = await app.request("/image/zimage");
+    expect(denied.status).toBe(403);
+    // A key limited to specific models asks for the one model, not its category.
+    expect(await denied.text()).toBe(
+        "Model 'zimage' is not allowed for this API key, which is limited to text, flux. Allow it at https://enter.pollinations.ai/grant?id=test&model=zimage&ref=agent_grant",
     );
 });
 
@@ -145,7 +157,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
         c.set("model", {
             requested: model,
             resolved: model,
-            definition: { category: "image" },
+            definition: { category: "image", aliases: [] },
         });
         c.var.auth.requireModelAccess();
         return c.json(c.var.auth.apiKey?.permissions);
@@ -156,7 +168,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key, which does not allow image models. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+        "Model 'forbidden-model' is not allowed for this API key, which is limited to text. Allow it at https://staging.enter.pollinations.ai/grant?id=staging-key-id&category=image&ref=agent_grant",
     );
 });
 
@@ -187,6 +199,24 @@ test("filters model lists to the API key's categories", async ({
     expect(data.map(({ id }) => id)).toEqual(models.map(({ name }) => name));
 });
 
+test("a key limited to model IDs lists and calls only those models", async () => {
+    const { key } = await createTestApiKey({
+        allowedModels: [RESTRICTED_IMAGE_TEST_MODEL],
+        user: { packBalance: 100 },
+    });
+    const headers = { Authorization: `Bearer ${key}` };
+    const response = await fetchWorker("/v1/models", { headers });
+    expect(response.status).toBe(200);
+    const { data } = (await response.json()) as { data: { id: string }[] };
+    expect(data.map(({ id }) => id)).toEqual([
+        resolveModelName(RESTRICTED_IMAGE_TEST_MODEL),
+    ]);
+    const sameCategory = await fetchWorker("/image/test?model=nanobanana2", {
+        headers,
+    });
+    expect(sameCategory.status).toBe(403);
+});
+
 test("applies the model list limit after API key permissions", async ({
     restrictedApiKey,
 }) => {
@@ -215,7 +245,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
     });
 
     const generationResponse = await fetchWorker(
-        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}&json=true`,
         { headers },
     );
     expect(generationResponse.status).toBe(403);

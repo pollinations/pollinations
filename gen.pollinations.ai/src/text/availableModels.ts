@@ -666,6 +666,25 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-4-argon",
+        config: portkeyConfig["google/gemini-4-argon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Argon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-argon:openrouter:ai-studio",
+        config: portkeyConfig["gemini-4-argon-openrouter-ai-studio"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "google/gemini-2.5-flash-lite:search:vercel",
         useVercelSearchFormatting: true,
         config: portkeyConfig["google/gemini-2.5-flash-lite:search:vercel"],

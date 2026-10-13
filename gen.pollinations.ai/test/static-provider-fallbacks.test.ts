@@ -86,6 +86,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "google/gemini-4-argon:openrouter:ai-studio",
+        "google/gemini-4-argon",
+        "google-ai-studio",
+    ],
+    [
         "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
         "google-ai-studio",
@@ -893,6 +898,46 @@ describe("static provider fallbacks", () => {
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
+        });
+    });
+
+    it("prices Gemini 4 Argon at Vertex list and records OpenRouter's fee on the fallback", () => {
+        const primary = TEXT_SERVICES["google/gemini-4-argon"];
+        const fallback =
+            TEXT_SERVICES["google/gemini-4-argon:openrouter:ai-studio"];
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: [],
+            fallbacks: ["google/gemini-4-argon:openrouter:ai-studio"],
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (4 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.2 / 1_000_000) * 1.055,
+            completionTextTokens: (20 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model: "google/gemini-4-argon",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.02532, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
+        expect(
+            findModelByName(
+                "google/gemini-4-argon:openrouter:ai-studio",
+            )?.config(),
+        ).toMatchObject({
+            defaultOptions: {
+                provider: {
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                },
+            },
         });
     });
 

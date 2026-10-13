@@ -1426,6 +1426,46 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000079125,
     },
   },
+  "google/gemini-4-argon": {
+    "cost": {
+      "completionTextTokens": 0.00002,
+      "promptAudioTokens": 0.000004,
+      "promptCacheWriteTokens": 0.000004,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+      "promptVideoTokens": 0.000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00002,
+      "promptAudioTokens": 0.000004,
+      "promptCacheWriteTokens": 0.000004,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.000004,
+      "promptTextTokens": 0.000004,
+      "promptVideoTokens": 0.000004,
+    },
+  },
+  "google/gemini-4-argon:openrouter:ai-studio": {
+    "cost": {
+      "completionTextTokens": 0.0000211,
+      "promptAudioTokens": 0.00000422,
+      "promptCacheWriteTokens": 0.00000422,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000422,
+      "promptTextTokens": 0.00000422,
+      "promptVideoTokens": 0.00000422,
+    },
+    "price": {
+      "completionTextTokens": 0.0000211,
+      "promptAudioTokens": 0.00000422,
+      "promptCacheWriteTokens": 0.00000422,
+      "promptCachedTokens": 0.000000211,
+      "promptImageTokens": 0.00000422,
+      "promptTextTokens": 0.00000422,
+      "promptVideoTokens": 0.00000422,
+    },
+  },
   "google/gemini-embedding-2": {
     "cost": {
       "promptAudioTokens": 0.0000065,

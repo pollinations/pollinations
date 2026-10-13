@@ -3472,90 +3472,99 @@ describe("trackResponse modelUsed", () => {
         ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
         ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
         ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
-    ] as const)("prices %s explicit-cache hits from response metadata", async (model, variant, explicitRate, _implicitRate) => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            Response.json(
-                { choices: [] },
-                {
-                    headers: {
-                        "x-model-used": model,
-                        "x-usage-prompt-cached-tokens": "1000000",
-                        "x-usage-prompt-cache-type": "ephemeral",
+    ] as const)(
+        "prices %s explicit-cache hits from response metadata",
+        async (model, variant, explicitRate, _implicitRate) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, model),
+                Response.json(
+                    { choices: [] },
+                    {
+                        headers: {
+                            "x-model-used": model,
+                            "x-usage-prompt-cached-tokens": "1000000",
+                            "x-usage-prompt-cache-type": "ephemeral",
+                        },
                     },
-                },
-            ),
-            candidateFixture(model),
-        );
+                ),
+                candidateFixture(model),
+            );
 
-        // Both the quote and serving cost use the direct explicit-cache rate.
-        expect(tracking.costVariant).toBe(variant);
-        expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
-    });
+            // Both the quote and serving cost use the direct explicit-cache rate.
+            expect(tracking.costVariant).toBe(variant);
+            expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
+        },
+    );
 
     it.each([
         ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
         ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
         ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
-    ] as const)("uses %s implicit rate unless the response confirms an explicit hit", async (model, _variant, _explicitRate, implicitRate) => {
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(false, model),
-            Response.json(
-                { choices: [] },
-                {
-                    headers: {
-                        "x-model-used": model,
-                        "x-usage-prompt-cached-tokens": "1000000",
+    ] as const)(
+        "uses %s implicit rate unless the response confirms an explicit hit",
+        async (model, _variant, _explicitRate, implicitRate) => {
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(false, model),
+                Response.json(
+                    { choices: [] },
+                    {
+                        headers: {
+                            "x-model-used": model,
+                            "x-usage-prompt-cached-tokens": "1000000",
+                        },
                     },
-                },
-            ),
-            candidateFixture(model),
-            // Even a stale request-side hint must not override what the
-            // provider actually reported on the response.
-            { hasExplicitCacheHit: true },
-        );
+                ),
+                candidateFixture(model),
+                // Even a stale request-side hint must not override what the
+                // provider actually reported on the response.
+                { hasExplicitCacheHit: true },
+            );
 
-        expect(tracking.cost?.totalCost).toBeCloseTo(implicitRate, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(implicitRate, 12);
-    });
+            expect(tracking.cost?.totalCost).toBeCloseTo(implicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(implicitRate, 12);
+        },
+    );
 
     it.each([
         ["qwen/qwen3.7-flash", "context_256k_explicit_cache", 0.02, 0.04],
         ["qwen/qwen3.8-max", "explicit_cache", 0.17, 0.25],
         ["qwen/qwen3.8-max-0902", "explicit_cache", 0.17, 0.25],
-    ] as const)("prices streamed %s explicit-cache hits from terminal usage", async (model, variant, explicitRate, _implicitRate) => {
-        const usageEvent = JSON.stringify({
-            model: model,
-            choices: [],
-            usage: {
-                prompt_tokens: 1_000_000,
-                completion_tokens: 0,
-                total_tokens: 1_000_000,
-                prompt_tokens_details: {
-                    cached_tokens: 1_000_000,
-                    cache_type: "ephemeral",
+    ] as const)(
+        "prices streamed %s explicit-cache hits from terminal usage",
+        async (model, variant, explicitRate, _implicitRate) => {
+            const usageEvent = JSON.stringify({
+                model: model,
+                choices: [],
+                usage: {
+                    prompt_tokens: 1_000_000,
+                    completion_tokens: 0,
+                    total_tokens: 1_000_000,
+                    prompt_tokens_details: {
+                        cached_tokens: 1_000_000,
+                        cache_type: "ephemeral",
+                    },
                 },
-            },
-        });
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true, model),
-            new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
-                headers: {
-                    "content-type": "text/event-stream",
-                    "x-model-used": model,
-                },
-            }),
-            candidateFixture(model),
-        );
+            });
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(true, model),
+                new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
+                    headers: {
+                        "content-type": "text/event-stream",
+                        "x-model-used": model,
+                    },
+                }),
+                candidateFixture(model),
+            );
 
-        expect(tracking.costVariant).toBe(variant);
-        expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
-        expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
-    });
+            expect(tracking.costVariant).toBe(variant);
+            expect(tracking.cost?.totalCost).toBeCloseTo(explicitRate, 12);
+            expect(tracking.price?.totalPrice).toBeCloseTo(explicitRate, 12);
+        },
+    );
 });
 
 describe("trackResponse missing usage", () => {

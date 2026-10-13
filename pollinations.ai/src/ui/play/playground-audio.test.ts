@@ -63,23 +63,25 @@ describe("catalog-driven audio requests", () => {
         expect(result.type).toBe("audio");
     });
 
-    it.each([
-        "/v1/audio/voice-changer",
-        "/v1/audio/voice-isolator",
-    ])("sends the file directly to %s with no prompt required", async (endpoint) => {
-        const fetchRequest = vi.fn().mockResolvedValue(new Response("audio"));
-        vi.stubGlobal("fetch", fetchRequest);
-        await generatePlaygroundAudio(client, model(endpoint), {
-            prompt: "",
-            file,
-            voice: "alloy",
-        });
-        expect(fetchRequest).toHaveBeenCalledTimes(1);
-        const [url, request] = fetchRequest.mock.calls[0];
-        expect(url).toBe(`https://example.test${endpoint}`);
-        expect(await request.body.get("audio").text()).toBe("audio bytes");
-        expect(request.body.get("model")).toBe("new-model-from-catalog");
-    });
+    it.each(["/v1/audio/voice-changer", "/v1/audio/voice-isolator"])(
+        "sends the file directly to %s with no prompt required",
+        async (endpoint) => {
+            const fetchRequest = vi
+                .fn()
+                .mockResolvedValue(new Response("audio"));
+            vi.stubGlobal("fetch", fetchRequest);
+            await generatePlaygroundAudio(client, model(endpoint), {
+                prompt: "",
+                file,
+                voice: "alloy",
+            });
+            expect(fetchRequest).toHaveBeenCalledTimes(1);
+            const [url, request] = fetchRequest.mock.calls[0];
+            expect(url).toBe(`https://example.test${endpoint}`);
+            expect(await request.body.get("audio").text()).toBe("audio bytes");
+            expect(request.body.get("model")).toBe("new-model-from-catalog");
+        },
+    );
 
     it("preserves video input for isolation", async () => {
         const fetchRequest = vi.fn().mockResolvedValue(new Response("audio"));
@@ -124,29 +126,31 @@ describe("catalog-driven audio requests", () => {
         expect(request.body.get("language")).toBe("de");
     });
 
-    it.each([
-        "/v1/audio/speech",
-        "/audio/{text}",
-    ])("keeps text-only speech working through %s", async (endpoint) => {
-        const fetchRequest = vi.fn().mockResolvedValue(new Response("audio"));
-        vi.stubGlobal("fetch", fetchRequest);
-        await generatePlaygroundAudio(client, model(endpoint, ["text"]), {
-            prompt: "hello",
-            voice: "alloy",
-        });
-        expect(fetchRequest).toHaveBeenCalledTimes(1);
-        const [url, request] = fetchRequest.mock.calls[0];
-        if (endpoint === "/v1/audio/speech") {
-            expect(JSON.parse(request.body)).toEqual({
-                input: "hello",
-                model: "new-model-from-catalog",
+    it.each(["/v1/audio/speech", "/audio/{text}"])(
+        "keeps text-only speech working through %s",
+        async (endpoint) => {
+            const fetchRequest = vi
+                .fn()
+                .mockResolvedValue(new Response("audio"));
+            vi.stubGlobal("fetch", fetchRequest);
+            await generatePlaygroundAudio(client, model(endpoint, ["text"]), {
+                prompt: "hello",
                 voice: "alloy",
             });
-        } else {
-            expect(new URL(url).pathname).toBe("/audio/hello");
-            expect(new URL(url).searchParams.get("voice")).toBe("alloy");
-        }
-    });
+            expect(fetchRequest).toHaveBeenCalledTimes(1);
+            const [url, request] = fetchRequest.mock.calls[0];
+            if (endpoint === "/v1/audio/speech") {
+                expect(JSON.parse(request.body)).toEqual({
+                    input: "hello",
+                    model: "new-model-from-catalog",
+                    voice: "alloy",
+                });
+            } else {
+                expect(new URL(url).pathname).toBe("/audio/hello");
+                expect(new URL(url).searchParams.get("voice")).toBe("alloy");
+            }
+        },
+    );
 
     it("reports missing or unsupported inputs", () => {
         expect(audioInputError(model("/v1/audio/voice-changer"), "")).toContain(

@@ -68,13 +68,16 @@ describe("Lyria 3.5", () => {
         { responseFormat: "wav" },
         { durationSeconds: 30 },
         { referenceAudio: new File(["audio"], "reference.mp3") },
-    ])("rejects unsupported options before starting a billable job: %j", async (unsupported) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            generateLyria35({ ...options, ...unsupported }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+    ])(
+        "rejects unsupported options before starting a billable job: %j",
+        async (unsupported) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
+            await expect(
+                generateLyria35({ ...options, ...unsupported }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 
     it("rejects incomplete Google output", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -88,85 +91,91 @@ describe("Lyria 3.5", () => {
         });
     });
 
-    it.each([
-        "1",
-        "2",
-    ])("preserves fal's reported %s units through fallback and retains the Google quote", async (reportedUnits) => {
-        vi.useFakeTimers();
-        const registry = await getGenerationModelRegistry(env);
-        const entry = registry.resolve(primary);
-        if (!entry) throw new Error("Lyria registry entry is missing");
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementation(async (url) => {
-                if (
-                    url ===
-                    "https://generativelanguage.googleapis.com/v1beta/interactions"
-                )
-                    return Response.json(
-                        { error: { message: "Busy" } },
-                        { status: 429 },
-                    );
-                if (url === "https://queue.fal.run/google/lyria-3.5")
-                    return Response.json({
-                        status_url: "https://queue.fal.run/status",
-                        response_url: "https://queue.fal.run/result",
+    it.each(["1", "2"])(
+        "preserves fal's reported %s units through fallback and retains the Google quote",
+        async (reportedUnits) => {
+            vi.useFakeTimers();
+            const registry = await getGenerationModelRegistry(env);
+            const entry = registry.resolve(primary);
+            if (!entry) throw new Error("Lyria registry entry is missing");
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementation(async (url) => {
+                    if (
+                        url ===
+                        "https://generativelanguage.googleapis.com/v1beta/interactions"
+                    )
+                        return Response.json(
+                            { error: { message: "Busy" } },
+                            { status: 429 },
+                        );
+                    if (url === "https://queue.fal.run/google/lyria-3.5")
+                        return Response.json({
+                            status_url: "https://queue.fal.run/status",
+                            response_url: "https://queue.fal.run/result",
+                        });
+                    if (url === "https://queue.fal.run/status")
+                        return Response.json({ status: "COMPLETED" });
+                    if (url === "https://queue.fal.run/result")
+                        return Response.json(
+                            { audio: { url: "https://fal.media/song.mp3" } },
+                            {
+                                headers: {
+                                    "x-fal-billable-units": reportedUnits,
+                                },
+                            },
+                        );
+                    return new Response("ID3fal", {
+                        headers: { "content-type": "audio/mpeg" },
                     });
-                if (url === "https://queue.fal.run/status")
-                    return Response.json({ status: "COMPLETED" });
-                if (url === "https://queue.fal.run/result")
-                    return Response.json(
-                        { audio: { url: "https://fal.media/song.mp3" } },
-                        { headers: { "x-fal-billable-units": reportedUnits } },
-                    );
-                return new Response("ID3fal", {
-                    headers: { "content-type": "audio/mpeg" },
                 });
+            const attempts: FallbackAttempt[] = [];
+            const pending = withModelFallbackResponse(
+                {
+                    resolved: primary,
+                    definition: entry.definition,
+                    fallbackEntries: entry.fallbackEntries,
+                },
+                (candidate) =>
+                    generateLyria35({
+                        ...options,
+                        model: candidate.id as typeof primary | typeof fallback,
+                    }),
+                attempts,
+            );
+            await vi.advanceTimersByTimeAsync(5000);
+            const response = await pending;
+            expect(new TextDecoder().decode(await response.arrayBuffer())).toBe(
+                "ID3fal",
+            );
+            expect(response.headers.get(MODEL_USED_HEADER)).toBe(fallback);
+            expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
+                primary,
+                fallback,
+            ]);
+            const usage = parseUsageHeaders(response.headers);
+            expect(usage).toMatchObject({
+                completionAudioTokens: Number(reportedUnits),
             });
-        const attempts: FallbackAttempt[] = [];
-        const pending = withModelFallbackResponse(
-            {
-                resolved: primary,
-                definition: entry.definition,
-                fallbackEntries: entry.fallbackEntries,
-            },
-            (candidate) =>
-                generateLyria35({
-                    ...options,
-                    model: candidate.id as typeof primary | typeof fallback,
-                }),
-            attempts,
-        );
-        await vi.advanceTimersByTimeAsync(5000);
-        const response = await pending;
-        expect(new TextDecoder().decode(await response.arrayBuffer())).toBe(
-            "ID3fal",
-        );
-        expect(response.headers.get(MODEL_USED_HEADER)).toBe(fallback);
-        expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
-            primary,
-            fallback,
-        ]);
-        const usage = parseUsageHeaders(response.headers);
-        expect(usage).toMatchObject({
-            completionAudioTokens: Number(reportedUnits),
-        });
-        const billed = calculateUsageBilling({
-            model: primary,
-            usage,
-            servedBy: AUDIO_SERVICES[fallback],
-            quotedBy: AUDIO_SERVICES[primary],
-        });
-        expect(billed.cost.totalCost).toBeCloseTo(0.1 * Number(reportedUnits));
-        expect(billed.price.totalPrice).toBeCloseTo(
-            0.08 * Number(reportedUnits),
-        );
-        expect(
-            fetchSpy.mock.calls.filter(
-                ([url]) => url === "https://queue.fal.run/google/lyria-3.5",
-            ),
-        ).toHaveLength(1);
-    });
+            const billed = calculateUsageBilling({
+                model: primary,
+                usage,
+                servedBy: AUDIO_SERVICES[fallback],
+                quotedBy: AUDIO_SERVICES[primary],
+            });
+            expect(billed.cost.totalCost).toBeCloseTo(
+                0.1 * Number(reportedUnits),
+            );
+            expect(billed.price.totalPrice).toBeCloseTo(
+                0.08 * Number(reportedUnits),
+            );
+            expect(
+                fetchSpy.mock.calls.filter(
+                    ([url]) => url === "https://queue.fal.run/google/lyria-3.5",
+                ),
+            ).toHaveLength(1);
+        },
+    );
 
     it("rejects fal output without provider billing units", async () => {
         vi.useFakeTimers();

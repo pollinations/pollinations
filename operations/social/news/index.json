@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T00:08:17.445443+00:00",
+  "generated_at": "2026-10-13T00:15:46.323004+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5854,6 +5854,32 @@
           "after": {
             "currency": "pollen",
             "completionAudioTokens": "0.00000099"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17176:minimax/minimax-h3-max-turbo",
+      "model_id": "minimax/minimax-h3-max-turbo",
+      "title": "MiniMax H3 Max Turbo",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "video",
+      "date": "2026-10-13",
+      "pr": 17176,
+      "url": "https://github.com/pollinations/pollinations/pull/17176",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.025"
+          },
+          "after": {
+            "currency": "pollen"
           }
         }
       }

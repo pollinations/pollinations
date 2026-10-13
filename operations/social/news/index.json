@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T03:37:23.429304+00:00",
+  "generated_at": "2026-10-13T06:12:36.197584+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -7926,6 +7926,56 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-12",
+      "emoji": "🤖",
+      "title": "Claude Opus 5.5 fast",
+      "text": "Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).",
+      "prs": [
+        16954
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🎯",
+      "title": "Keys scoped to models",
+      "text": "Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).",
+      "prs": [
+        17213
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "💡",
+      "title": "See usage your way",
+      "text": "Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.",
+      "prs": [
+        17165
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🔗",
+      "title": "API access for sandboxed agents",
+      "text": "The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).",
+      "prs": [
+        16945
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-12",
+      "emoji": "🎯",
+      "title": "A blacksmith who remembers",
+      "text": "Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).",
+      "prs": [
+        17147
+      ],
+      "kind": "app"
+    },
     {
       "date": "2026-10-11",
       "emoji": "🚀",

@@ -434,6 +434,16 @@ function createGenerationMocks() {
                             { error: { code: "RateLimitReached" } },
                             { status: gptImageState.azureStatus },
                         ),
+                "westus3.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
+                "polandcentral.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
                 "api.openai.com": async (request) => {
                     gptImageState.openAIRequests.push(
                         request.headers

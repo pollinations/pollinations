@@ -12,6 +12,8 @@ import type { ImageParams } from "../../src/image/params.ts";
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
+    AZURE_MYCELI_PROD_WESTUS3_API_KEY: "westus3-key",
+    AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY: "polandcentral-key",
     AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY: "flare-sweden-key",
     AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY: "sunburst-sweden-key",
     OPENAI_API_KEY: "openai-key",
@@ -24,6 +26,8 @@ const AZURE_KEY_NAMES = Object.keys(
 const EXPECTED_HOSTS = new Set([
     "myceli-prod-img-2-swedencentral.cognitiveservices.azure.com",
     "myceli-prod-img-2-eastus2.cognitiveservices.azure.com",
+    "westus3.api.cognitive.microsoft.com",
+    "polandcentral.api.cognitive.microsoft.com",
 ]);
 
 const params: ImageParams = {
@@ -125,7 +129,8 @@ describe("openai/gpt-image-2 Azure routing", () => {
 
             await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 
-            expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
+            expect(new Set(hosts).size).toBe(2);
+            expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
         });
 
         it(`fails a ${status} to the caller once every region failed`, async () => {
@@ -230,7 +235,8 @@ describe("GPT Image OpenAI fallback routing", () => {
         const azureHosts = urls
             .map((url) => new URL(url).host)
             .filter((host) => host !== "api.openai.com");
-        expect(new Set(azureHosts)).toEqual(EXPECTED_HOSTS);
+        // The direct OpenAI call does not advance the Azure rotation.
+        expect(new Set(azureHosts).size).toBe(2);
     });
 });
 

@@ -372,6 +372,22 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
             region: "eastus2",
         },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
+            region: "westus3",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
+            region: "polandcentral",
+        },
     ],
     "openai/gpt-image-1-mini:openai": [
         {

@@ -31,6 +31,7 @@ import {
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
+import { getJob, getJobResult } from "./jobs.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -1283,4 +1284,35 @@ export const proxyRoutes = new Hono<Env>()
         deduplicateGeneration,
         apiKeyBudgetReservation,
         handleImageGeneration,
+    )
+    .get(
+        "/v1/jobs/:id",
+        describeRoute({
+            tags: ["🖼️ Image"],
+            summary: "Get Async Job",
+            description: [
+                "Status of a generation submitted with the `Prefer: respond-async` header. Every image, video, audio and 3D endpoint accepts it and answers `202` with `{id, status, status_url}` instead of waiting for the file; a result that is already cached is still returned at once with `200`.",
+                "",
+                "`status` is `pending`, `succeeded` (with `result_url`) or `failed` (with `error`). Polling and resending the same request join the same job, so it runs and is billed once. Only the account that submitted the job can read it; the record is kept for 24 hours after the job finishes.",
+            ].join("\n"),
+            responses: {
+                200: { description: "Job status" },
+                ...errorResponseDescriptions(401, 404, 500),
+            },
+        }),
+        getJob,
+    )
+    .get(
+        "/v1/jobs/:id/result",
+        describeRoute({
+            tags: ["🖼️ Image"],
+            summary: "Get Async Job Result",
+            description:
+                "Downloads the generated file of a succeeded async job. Returns `409` while the job is pending or after it failed.",
+            responses: {
+                200: { description: "The generated media file" },
+                ...errorResponseDescriptions(401, 404, 409, 500),
+            },
+        }),
+        getJobResult,
     );

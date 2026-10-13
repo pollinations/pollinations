@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type {
     GenerationCacheIdentity,
+    GenerationErrorSnapshot,
     GenerationJob,
     GenerationJobHead,
     GenerationOutcome,
@@ -10,6 +11,20 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+const SUBMISSION_KEY = "submission";
+const SUBMISSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Written only for jobs submitted with `Prefer: respond-async`. */
+type Submission = {
+    cache: GenerationCacheIdentity;
+    owners: string[];
+    error?: GenerationErrorSnapshot;
+};
+
+export type GenerationJobStatus =
+    | { status: "pending" }
+    | { status: "succeeded"; cache: GenerationCacheIdentity }
+    | { status: "failed"; error: GenerationErrorSnapshot };
 
 type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
@@ -85,8 +100,45 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         job: GenerationJobHead,
         body?: ReadableStream<Uint8Array>,
     ): Promise<GenerationOutcome> {
-        let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
+        const immediate = await this.start(job, body, undefined, () => {
+            wait = new Promise<GenerationOutcome>((resolve) => {
+                this.waiters.add(resolve);
+            });
+        });
+        if (immediate) return immediate;
+        if (!wait) throw new Error("Generation waiter was not registered");
+        return wait;
+    }
+
+    /** Starts or joins the job for `owner` without waiting for its result. */
+    async submit(
+        job: GenerationJobHead,
+        body: ReadableStream<Uint8Array> | undefined,
+        owner: string,
+    ): Promise<void> {
+        await this.start(job, body, owner);
+    }
+
+    /** Null unless `owner` submitted this job and its record is still kept. */
+    async status(owner: string): Promise<GenerationJobStatus | null> {
+        const submission =
+            await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+        if (!submission?.owners.includes(owner)) return null;
+        if (await this.ctx.storage.get(JOB_KEY)) return { status: "pending" };
+        if (submission.error) {
+            return { status: "failed", error: submission.error };
+        }
+        return { status: "succeeded", cache: submission.cache };
+    }
+
+    private async start(
+        job: GenerationJobHead,
+        body: ReadableStream<Uint8Array> | undefined,
+        owner?: string,
+        onPending?: () => void,
+    ): Promise<GenerationOutcome | undefined> {
+        let immediate: GenerationOutcome | undefined;
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const cachePresent = await cacheExists(this.env, job.cache);
@@ -98,24 +150,36 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                     await this.clear(stored.bodyChunks, true);
                 }
                 immediate = { status: "cached" };
-                return;
-            }
-
-            if (stored) {
+            } else if (stored) {
                 // Joiners share the owner's persisted body.
                 await body?.cancel();
             } else {
                 await this.persist(job, body);
             }
 
-            wait = new Promise<GenerationOutcome>((resolve) => {
-                this.waiters.add(resolve);
-            });
+            if (owner) await this.addOwner(job.cache, owner, !immediate);
+            if (!immediate) onPending?.();
         });
 
-        if (immediate) return immediate;
-        if (!wait) throw new Error("Generation waiter was not registered");
-        return wait;
+        return immediate;
+    }
+
+    /** Lets an async caller read the job until a day after it settles. */
+    private async addOwner(
+        cache: GenerationCacheIdentity,
+        owner: string,
+        running: boolean,
+    ): Promise<void> {
+        const stored = await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+        // Either a new run or a cached result replaces an earlier failure.
+        await this.ctx.storage.put(SUBMISSION_KEY, {
+            cache,
+            owners: [...new Set(stored?.owners).add(owner)],
+        } satisfies Submission);
+        // A running job keeps its execution alarm; finish() sets the expiry.
+        if (!running) {
+            await this.ctx.storage.setAlarm(Date.now() + SUBMISSION_TTL_MS);
+        }
     }
 
     async alarm(): Promise<void> {
@@ -124,7 +188,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const job = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-            if (!job) return;
+            if (!job) {
+                // Without a job, the alarm is the async record's expiry.
+                await this.ctx.storage.delete(SUBMISSION_KEY);
+                return;
+            }
 
             // The alarm provides an independent timeout, not retry semantics.
             // Claim before the provider call so a restarted alarm fails closed.
@@ -233,6 +301,18 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     ): Promise<void> {
         await this.ctx.blockConcurrencyWhile(async () => {
             await this.clear(bodyChunks);
+            const submission =
+                await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+            if (submission) {
+                await this.ctx.storage.put(SUBMISSION_KEY, {
+                    cache: submission.cache,
+                    owners: submission.owners,
+                    ...(outcome.status === "failed" && {
+                        error: outcome.error,
+                    }),
+                } satisfies Submission);
+                await this.ctx.storage.setAlarm(Date.now() + SUBMISSION_TTL_MS);
+            }
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });

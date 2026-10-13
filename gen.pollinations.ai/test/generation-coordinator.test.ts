@@ -647,4 +647,189 @@ describe("GenerationCoordinator", () => {
             alarm: null,
         });
     });
+
+    it("runs a Prefer: respond-async job once and serves it to its owner only", async () => {
+        const owner = await createTestApiKey({ user: { packBalance: 100 } });
+        const other = await createTestApiKey({ user: { packBalance: 100 } });
+        env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
+        const tinybird = createMockTinybird();
+        let executions = 0;
+        let release!: () => void;
+        const providerWaiting = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const png = Buffer.from(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
+            "base64",
+        );
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(
+                    input instanceof Request ? input.url : String(input),
+                );
+                if (url.host === "api.replicate.com") {
+                    executions++;
+                    await providerWaiting;
+                    return Response.json(
+                        {
+                            id: "async-job-test",
+                            status: "succeeded",
+                            output: ["https://replicate.delivery/async.png"],
+                        },
+                        { status: 201 },
+                    );
+                }
+                if (url.host === "replicate.delivery") {
+                    return new Response(png, {
+                        headers: { "content-type": "image/png" },
+                    });
+                }
+                if (url.pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({ data: [] });
+                }
+                const handler = tinybird.handlerMap[url.host];
+                if (handler) return handler(new Request(input, init));
+                throw new Error(`Unexpected outbound request: ${url.host}`);
+            },
+        );
+        const prompt = `async job ${crypto.randomUUID()}`;
+        const submit = (key: string) =>
+            SELF.fetch("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                    prefer: "respond-async",
+                },
+                body: JSON.stringify({
+                    model: "bytedance/seedream-4.0",
+                    prompt,
+                    seed: 42,
+                    response_format: "url",
+                }),
+            });
+        const get = (key: string, path: string) =>
+            SELF.fetch(`https://gen.pollinations.ai${path}`, {
+                headers: { authorization: `Bearer ${key}` },
+            });
+        const before = await getUserBalance(drizzle(env.DB), owner.userId);
+
+        const submitted = await submit(owner.key);
+        expect(submitted.status).toBe(202);
+        expect(submitted.headers.get("preference-applied")).toBe(
+            "respond-async",
+        );
+        const { id, status, status_url } = await submitted.json<{
+            id: string;
+            status: string;
+            status_url: string;
+        }>();
+        expect(status).toBe("pending");
+        expect(status_url).toBe(`https://gen.pollinations.ai/v1/jobs/${id}`);
+        expect(submitted.headers.get("location")).toBe(status_url);
+        await vi.waitFor(() => expect(executions).toBe(1));
+
+        // Resending the same request joins the running job.
+        const resent = await submit(owner.key);
+        expect(resent.status).toBe(202);
+        expect((await resent.json<{ id: string }>()).id).toBe(id);
+
+        const pending = await get(owner.key, `/v1/jobs/${id}`);
+        expect(await pending.json()).toEqual({ id, status: "pending" });
+        expect((await get(owner.key, `/v1/jobs/${id}/result`)).status).toBe(
+            409,
+        );
+        expect((await get(other.key, `/v1/jobs/${id}`)).status).toBe(404);
+        expect((await get(owner.key, "/v1/jobs/not-a-job")).status).toBe(404);
+
+        release();
+        await vi.waitFor(
+            async () => {
+                const job = await (
+                    await get(owner.key, `/v1/jobs/${id}`)
+                ).json<{ status: string; result_url?: string }>();
+                expect(job).toEqual({
+                    id,
+                    status: "succeeded",
+                    result_url: `https://gen.pollinations.ai/v1/jobs/${id}/result`,
+                });
+            },
+            { timeout: 10_000 },
+        );
+        expect((await get(other.key, `/v1/jobs/${id}/result`)).status).toBe(
+            404,
+        );
+        const result = await get(owner.key, `/v1/jobs/${id}/result`);
+        expect(result.status).toBe(200);
+        expect(result.headers.get("content-type")).toContain("image/png");
+        expect(new Uint8Array(await result.arrayBuffer())).toEqual(
+            new Uint8Array(png),
+        );
+
+        // A later async request for the cached result is answered directly.
+        const cached = await submit(owner.key);
+        expect(cached.status).toBe(200);
+        expect(cached.headers.get("x-cache")).toBe("HIT");
+        await cached.text();
+
+        expect(executions).toBe(1);
+        await vi.waitFor(() =>
+            expect(
+                tinybird.state.events.filter((event) => event.isBilledUsage),
+            ).toHaveLength(1),
+        );
+        const billed = tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(billed[0].totalPrice).toBeGreaterThan(0);
+        const after = await getUserBalance(drizzle(env.DB), owner.userId);
+        expect(before.packBalance - after.packBalance).toBeCloseTo(
+            billed[0].totalPrice,
+            8,
+        );
+    }, 30_000);
+
+    it("keeps a failed async job readable and expires the record", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `async-${crypto.randomUUID()}`,
+        );
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                await coordinator.submit(
+                    testJob(`async-${crypto.randomUUID()}`),
+                    undefined,
+                    "user-1",
+                );
+                const pending = await coordinator.status("user-1");
+                const foreign = await coordinator.status("user-2");
+                await state.storage.put("job", {
+                    ...(await state.storage.get<object>("job")),
+                    started: true,
+                });
+                // A started job seen again by the alarm fails closed.
+                await coordinator.alarm();
+                const failed = await coordinator.status("user-1");
+                const expiry = await state.storage.getAlarm();
+                await coordinator.alarm();
+                return {
+                    pending,
+                    foreign,
+                    failed,
+                    expiry,
+                    expired: await coordinator.status("user-1"),
+                    keys: [...(await state.storage.list()).keys()],
+                };
+            },
+        );
+        expect(result.pending).toEqual({ status: "pending" });
+        expect(result.foreign).toBeNull();
+        expect(result.failed).toMatchObject({
+            status: "failed",
+            error: { httpStatus: 503 },
+        });
+        expect(result.expiry).toBeGreaterThan(Date.now() + 23 * 3600_000);
+        expect(result.expired).toBeNull();
+        expect(result.keys).toEqual([]);
+    });
 });

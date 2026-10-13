@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -171,6 +172,41 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+        // RFC 7240 `Prefer: respond-async`: media jobs answer with an id at
+        // once and are collected from /v1/jobs/:id. Text stays synchronous.
+        if (
+            cache.adapter.storage === "media" &&
+            /\brespond-async\b/i.test(c.req.header("prefer") ?? "")
+        ) {
+            try {
+                await stub.submit(
+                    job,
+                    body &&
+                        (new Response(body as Uint8Array<ArrayBuffer>).body ??
+                            undefined),
+                    job.auth.user.id,
+                );
+            } catch (error) {
+                c.get("log").error("Async generation submit failed: {error}", {
+                    error,
+                });
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+            // The detached execution tracks and bills the generation.
+            if (c.var.track) c.var.track.detachedExecutionTracked = true;
+            const statusUrl = `${getPublicOrigin(c)}/v1/jobs/${name}`;
+            c.header("Location", statusUrl);
+            c.header("Retry-After", "5");
+            c.header("Preference-Applied", "respond-async");
+            return c.json(
+                { id: name, status: "pending", status_url: statusUrl },
+                202,
+            );
+        }
+
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {

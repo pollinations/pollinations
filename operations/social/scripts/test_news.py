@@ -71,7 +71,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(model_changes([old], [], {"number": 3})[0]["action"], "RETIRE")
 
     def test_catalog_install_runs_only_for_model_comparison_when_missing(self):
-        pr = {"number": 1, "merge_commit_sha": "abc"}
+        pr = {"number": 1, "merge_commit_sha": "abc", "base": {"ref": "main"}}
         def run(args, **kwargs):
             if args[0] == sys.executable:
                 Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
@@ -79,17 +79,27 @@ class GistEnrichmentTest(unittest.TestCase):
         with patch("gist.subprocess.run", side_effect=run) as commands, \
              patch.object(Path, "is_dir", return_value=False), \
              patch("gist.pr_comparison_refs", return_value=("before", "after")), \
-             patch("gist.announcements_for_pr", return_value=[]):
+             patch("gist.announcements_for_pr", return_value=[]) as announcements, \
+             patch("gist.api_changes_for_pr", return_value=[]) as api:
             enrich_gist({}, pr, ["README.md"], "test")
             self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
             commands.reset_mock()
             enrich_gist({}, pr, ["shared/registry/text.ts"], "test")
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
+            # master holds the legacy APIs: its shared/ and APIDOCS.md carry no model or API changes.
+            commands.reset_mock()
+            announcements.reset_mock()
+            gist = {}
+            enrich_gist(gist, {**pr, "base": {"ref": "master"}}, ["shared/ipQueue.js", "APIDOCS.md"], "test")
+            self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
+            announcements.assert_not_called()
+            api.assert_not_called()
+            self.assertEqual(gist["announcements"], [])
 
     def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
-              "body": "Existing description", "merge_commit_sha": "abc", "labels": []}
+              "body": "Existing description", "merge_commit_sha": "abc", "labels": [], "base": {"ref": "main"}}
         ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
                   summary="Summary", keywords=[], image_prompt="Image")
         gist = build_full_gist(pr, ai, [])

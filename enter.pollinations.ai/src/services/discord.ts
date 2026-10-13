@@ -13,8 +13,14 @@ type DiscordConfig = {
     botToken: string;
 };
 
-type CachedDiscordMembership = {
-    member: boolean;
+/** A linked Discord account that is in the Pollinations server. */
+type PollinationsDiscordMember = {
+    discordId: string;
+    roles: string[];
+};
+
+type CachedDiscordMember = {
+    roles: string[] | null;
 };
 
 export function discordConfigFromEnv(env: object): DiscordConfig | null {
@@ -27,12 +33,16 @@ export function discordConfigFromEnv(env: object): DiscordConfig | null {
         : null;
 }
 
-export async function isPollinationsDiscordMember(
+/**
+ * Returns the user's linked Discord account and its server role ids, or null
+ * when no Discord account is linked or it is not in the Pollinations server.
+ */
+export async function getPollinationsDiscordMember(
     env: CloudflareBindings,
     userId: string,
-): Promise<boolean> {
+): Promise<PollinationsDiscordMember | null> {
     const config = discordConfigFromEnv(env);
-    if (!config) return false;
+    if (!config) return null;
 
     const account = await env.DB.prepare(
         `SELECT account_id AS accountId
@@ -43,17 +53,32 @@ export async function isPollinationsDiscordMember(
         .bind(userId)
         .first<{ accountId: string }>();
 
-    if (!account) return false;
+    if (!account) return null;
 
-    const cacheKey = `discord:membership:${account.accountId}`;
-    const cached = await env.KV.get<CachedDiscordMembership>(
+    const discordId = account.accountId;
+    const cacheKey = `discord:member:${discordId}`;
+    const cached = await env.KV.get<CachedDiscordMember>(
         cacheKey,
         "json",
     ).catch(() => null);
-    if (cached) return cached.member;
+    const roles = cached
+        ? cached.roles
+        : await fetchMemberRoles(config, discordId);
+    if (!cached) {
+        await env.KV.put(cacheKey, JSON.stringify({ roles }), {
+            expirationTtl: DISCORD_MEMBERSHIP_CACHE_TTL_SECONDS,
+        }).catch(() => undefined);
+    }
+    return roles ? { discordId, roles } : null;
+}
 
+/** The member's role ids, or null when they are not in the server. */
+async function fetchMemberRoles(
+    config: DiscordConfig,
+    discordId: string,
+): Promise<string[] | null> {
     const response = await fetch(
-        `https://discord.com/api/v10/guilds/${POLLINATIONS_DISCORD_GUILD_ID}/members/${account.accountId}`,
+        `https://discord.com/api/v10/guilds/${POLLINATIONS_DISCORD_GUILD_ID}/members/${discordId}`,
         {
             headers: {
                 Authorization: `Bot ${config.botToken}`,
@@ -74,19 +99,12 @@ export async function isPollinationsDiscordMember(
                 `Discord membership check failed: 404 code=${String(body?.code ?? "unknown")}`,
             );
         }
-        const membership = { member: false };
-        await env.KV.put(cacheKey, JSON.stringify(membership), {
-            expirationTtl: DISCORD_MEMBERSHIP_CACHE_TTL_SECONDS,
-        }).catch(() => undefined);
-        return false;
+        return null;
     }
     if (!response.ok) {
         throw new Error(`Discord membership check failed: ${response.status}`);
     }
 
-    const membership = { member: true };
-    await env.KV.put(cacheKey, JSON.stringify(membership), {
-        expirationTtl: DISCORD_MEMBERSHIP_CACHE_TTL_SECONDS,
-    }).catch(() => undefined);
-    return true;
+    const member = (await response.json()) as { roles: string[] };
+    return member.roles;
 }

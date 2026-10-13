@@ -9,6 +9,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   model, next to categories. A model ID no longer widens to its category.
 
 ### Added
+- `model3d(prompt, options)`: 3D models from `/3d/{prompt}` (GLB, or PLY for
+  `nvidia/asset-harvester`), and `models("3d")`.
+- `modelStatus({ traffic, minutes })`: typed live model health from
+  `/models/status`.
+- `audioSpeechWithTimestamps(text, options)`: speech plus word and character
+  timings from `/v1/audio/speech/with-timestamps`.
 - `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
   `video`, `audio` or `embeddings`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,

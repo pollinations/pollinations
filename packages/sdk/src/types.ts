@@ -124,6 +124,37 @@ export interface VideoResponse {
 }
 
 // ============================================================================
+// 3D Generation
+// ============================================================================
+
+/** 3D model (use models("3d") to list them) */
+export type Model3dModel = string;
+
+/** Options for 3D generation (GET /3d/{prompt}) */
+export interface Model3dGenerateOptions extends RequestOptions {
+    /** 3D model to use (server default: 'microsoft/trellis-2') */
+    model?: Model3dModel;
+    /** Reference image URL(s) for image-to-3D models such as Trellis 2 */
+    referenceImage?: string | string[];
+    /** Output detail and price tier where supported (server default: 'low') */
+    resolution?: "low" | "medium" | "high";
+    /** Seed; a new seed forces a fresh generation for the same prompt */
+    seed?: number;
+    /** Enable safety content filters (default: false) */
+    safe?: boolean;
+}
+
+/** Response from 3D generation */
+export interface Model3dResponse {
+    /** The model file: GLB, or PLY for `nvidia/asset-harvester` */
+    buffer: ArrayBuffer;
+    /** Content type (model/gltf-binary by default) */
+    contentType: string;
+    /** The URL that was used, without the API key */
+    url: string;
+}
+
+// ============================================================================
 // Text Generation
 // ============================================================================
 
@@ -506,6 +537,44 @@ export interface AudioBinaryResponse {
     buffer: ArrayBuffer;
     /** Content type (audio/mpeg) */
     contentType: string;
+}
+
+/** Options for POST /v1/audio/speech/with-timestamps */
+export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
+    /** Preset voice name or custom ElevenLabs voice ID (server default: 'alloy') */
+    voice?: AudioVoice;
+    /** A model listing /v1/audio/speech/with-timestamps in /audio/models (server default: 'elevenlabs/eleven-v3') */
+    model?: AudioModel;
+    /** Encoding of the returned audio (server default: 'mp3') */
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    /** Seed for reproducibility */
+    seed?: number;
+}
+
+/** Per-character timings in seconds, as the API returns them */
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+/** One word of the input text and when it is spoken, in seconds */
+export interface SpeechWord {
+    word: string;
+    start: number;
+    end: number;
+}
+
+/** Response from POST /v1/audio/speech/with-timestamps */
+export interface AudioSpeechWithTimestampsResponse {
+    /** The decoded audio, encoded as `responseFormat` */
+    buffer: ArrayBuffer;
+    /** Word timings built from `alignment`; whitespace separates words */
+    words: SpeechWord[];
+    /** Character timings for the original text */
+    alignment: SpeechAlignment;
+    /** Character timings for the normalized text (numbers spelled out, etc.) */
+    normalizedAlignment: SpeechAlignment;
 }
 
 /** Audio response from chat with audio modality */
@@ -1119,7 +1188,13 @@ export type ModelCapability =
 
 /** Model information */
 /** Model catalog to list: `/<kind>/models` on the API. */
-export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
 
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
@@ -1162,6 +1237,56 @@ export interface ModelInfo {
     /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+/** Options for GET /models/status */
+export interface ModelStatusOptions extends RequestOptions {
+    /** All requests (server default), or regular usage without legacy and internal traffic */
+    traffic?: "all" | "regular";
+    /** Rolling window in minutes (server default: 60, maximum: 10080) */
+    minutes?: number;
+}
+
+/**
+ * One row of GET /models/status. Each model has one rollup row (`is_rollup` 1)
+ * with the final outcome of every request, plus one row per execution route
+ * (`is_rollup` 0) counting every attempt, fallbacks included.
+ */
+export interface ModelStatusRow {
+    /** Columns added to the pipe pass through without an SDK release. */
+    [key: string]: unknown;
+    model: string;
+    /** e.g. `generate.text`, `generate.image` */
+    event_type: string;
+    /** Route that served the request; empty on rollup rows */
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    /** UTC `YYYY-MM-DD HH:MM:SS`; `1970-01-01 00:00:00` when there was none */
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    /** UTC `YYYY-MM-DD HH:MM:SS` */
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+/** Response from GET /models/status: the raw `model_route_health` pipe */
+export interface ModelStatusResponse {
+    /** Column names and their ClickHouse types */
+    meta: { name: string; type: string }[];
+    data: ModelStatusRow[];
+    rows: number;
+    statistics?: { elapsed: number; rows_read: number; bytes_read: number };
 }
 
 // ============================================================================

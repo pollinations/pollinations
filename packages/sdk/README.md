@@ -418,6 +418,25 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations();
+// The default model (microsoft/trellis-2) builds the mesh from a reference image.
+const { buffer, contentType } = await client.model3d('a low-poly treasure chest', {
+  referenceImage: 'https://example.com/chest.png',
+  resolution: 'medium', // 'low' | 'medium' | 'high'
+});
+await writeFile('chest.glb', Buffer.from(buffer)); // contentType: model/gltf-binary
+```
+
+Options: `model`, `referenceImage` (string or string[]), `resolution`, `seed`,
+`safe`. `nvidia/asset-harvester` returns PLY instead of GLB. List the models
+with `client.models('3d')`. 3D uses the video timeout (20 minutes).
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -455,6 +474,23 @@ audioEl.play();
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+### Speech with Word Timestamps
+
+For captions or highlighting each word as it is spoken:
+
+```javascript
+const client = new Pollinations();
+const { buffer, words } = await client.audioSpeechWithTimestamps('Hello from Pollinations', {
+  voice: 'nova',
+  responseFormat: 'mp3', // 'mp3' | 'opus' | 'aac' | 'wav' | 'pcm'
+});
+// words: [{ word: 'Hello', start: 0, end: 0.42 }, { word: 'from', start: 0.5, end: 0.71 }, ...]
+```
+
+Times are seconds from the start of the audio. `alignment` and
+`normalizedAlignment` keep the per-character timings from the API. The
+ElevenLabs models that serve this endpoint need Paid Pollen.
 
 ## Vision (Image Input)
 
@@ -534,6 +570,16 @@ const imageModels = await getModels('image');
 const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
+```
+
+### Model Health
+
+```javascript
+const client = new Pollinations();
+const { data } = await client.modelStatus({ minutes: 60 }); // traffic: 'all' | 'regular'
+// One rollup row per model (is_rollup 1), plus one row per route it ran on
+const failing = data.filter((row) => row.is_rollup && row.errors_5xx > 0);
+console.log(failing.map((row) => `${row.model}: ${row.errors_5xx}/${row.total_requests} 5xx`));
 ```
 
 ## Media Upload

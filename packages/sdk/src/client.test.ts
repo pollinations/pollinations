@@ -1732,6 +1732,7 @@ describe("Pollinations model discovery", () => {
         ["image", "https://example.test/image/models"],
         ["video", "https://example.test/video/models"],
         ["audio", "https://example.test/audio/models"],
+        ["3d", "https://example.test/3d/models"],
         ["embeddings", "https://example.test/embeddings/models"],
     ] as const)("models(%s) fetches %s", async (kind, expectedUrl) => {
         const client = newClient();
@@ -1750,6 +1751,231 @@ describe("Pollinations model discovery", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/video/models",
         );
+    });
+});
+
+describe("Pollinations 3D generation", () => {
+    it("gets /3d/{prompt} and returns the model file with a keyless URL", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/gltf-binary",
+            }),
+        );
+
+        const result = await newClient().model3d("a treasure chest", {
+            model: "microsoft/trellis-2",
+            referenceImage: [
+                "https://media.pollinations.ai/a.png",
+                "https://media.pollinations.ai/b.png",
+            ],
+            resolution: "high",
+            seed: 7,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        const parsed = new URL(url as string);
+        expect(parsed.pathname).toBe("/3d/a%20treasure%20chest");
+        expect(Object.fromEntries(parsed.searchParams)).toEqual({
+            model: "microsoft/trellis-2",
+            image: "https://media.pollinations.ai/a.png|https://media.pollinations.ai/b.png",
+            resolution: "high",
+            seed: "7",
+            key: "sk_test",
+        });
+        expect(init.headers.Authorization).toBe("Bearer sk_test");
+        expect(result.contentType).toBe("model/gltf-binary");
+        expect(result.buffer.byteLength).toBe(8);
+        expect(result.url).not.toContain("key=");
+    });
+
+    it("passes the server content type through (PLY) and leaves the model to the server", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        const result = await newClient().model3d("a statue");
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.has("model")).toBe(false);
+        expect(result.contentType).toBe("application/octet-stream");
+    });
+
+    it("rejects an empty prompt without a request", async () => {
+        await expect(newClient().model3d("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces API errors", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "needs paid Pollen" } },
+                { ok: false, status: 402 },
+            ),
+        );
+
+        await expect(newClient().model3d("a chest")).rejects.toMatchObject({
+            status: 402,
+        });
+    });
+});
+
+describe("Pollinations.modelStatus", () => {
+    const row = {
+        model: "openai",
+        event_type: "generate.text",
+        model_used: "",
+        provider: "azure",
+        is_rollup: 1,
+        fallback_used: false,
+        total_requests: 10,
+        status_2xx: 9,
+        errors_4xx: 0,
+        errors_5xx: 1,
+        served: 10,
+        fallback_rescues: 0,
+        retried_503s: 0,
+        last_error_at: "2026-10-13 08:00:00",
+        latency_p50_ms: 900,
+        latency_p95_ms: 2100,
+        avg_latency_ms: 1100,
+        last_request_at: "2026-10-13 08:59:00",
+        tokens_per_second: 55.5,
+    };
+
+    it("gets /models/status with the key in the header, not the URL", async () => {
+        const body = {
+            meta: [{ name: "model", type: "String" }],
+            data: [row],
+            rows: 1,
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(body));
+
+        await expect(
+            newClient().modelStatus({ traffic: "regular", minutes: 30 }),
+        ).resolves.toEqual(body);
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=30",
+        );
+        expect(init.headers.Authorization).toBe("Bearer sk_test");
+    });
+
+    it("sends no query string by default", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ meta: [], data: [], rows: 0 }),
+        );
+
+        await newClient().modelStatus();
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://example.test/models/status",
+        );
+    });
+
+    it("surfaces API errors", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: "traffic must be all or regular" },
+                { ok: false, status: 400 },
+            ),
+        );
+
+        await expect(newClient().modelStatus()).rejects.toMatchObject({
+            status: 400,
+        });
+    });
+});
+
+describe("Pollinations.audioSpeechWithTimestamps", () => {
+    const alignment = {
+        characters: ["H", "i", " ", "y", "o", "u", "!"],
+        character_start_times_seconds: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        character_end_times_seconds: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+    };
+
+    it("posts JSON and returns decoded audio, word timings and the raw alignments", async () => {
+        const normalized = {
+            ...alignment,
+            characters: [...alignment.characters],
+        };
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                audio_base64: btoa("ID3"),
+                alignment,
+                normalized_alignment: normalized,
+            }),
+        );
+
+        const result = await newClient().audioSpeechWithTimestamps("Hi you!", {
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            responseFormat: "wav",
+            seed: 3,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(init.method).toBe("POST");
+        expect(init.headers["Content-Type"]).toBe("application/json");
+        expect(JSON.parse(init.body)).toEqual({
+            input: "Hi you!",
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            response_format: "wav",
+            seed: 3,
+        });
+        expect(new TextDecoder().decode(result.buffer)).toBe("ID3");
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0, end: 0.2 },
+            { word: "you!", start: 0.3, end: 0.7 },
+        ]);
+        expect(result.alignment).toEqual(alignment);
+        expect(result.normalizedAlignment).toEqual(normalized);
+    });
+
+    it("leaves model, voice and format to the server when unset", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                audio_base64: "",
+                alignment,
+                normalized_alignment: alignment,
+            }),
+        );
+
+        await newClient().audioSpeechWithTimestamps("Hi you!");
+
+        expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+            input: "Hi you!",
+        });
+    });
+
+    it("rejects empty text without a request", async () => {
+        await expect(
+            newClient().audioSpeechWithTimestamps(""),
+        ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces API errors", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "This model needs paid Pollen" } },
+                { ok: false, status: 402 },
+            ),
+        );
+
+        await expect(
+            newClient().audioSpeechWithTimestamps("Hi"),
+        ).rejects.toMatchObject({ status: 402 });
     });
 });
 

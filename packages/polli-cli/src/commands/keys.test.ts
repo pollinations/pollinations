@@ -50,41 +50,42 @@ function prepare(permissions: unknown) {
 }
 
 describe("keys create permissions output", () => {
-    it.each(cases)("formats human permissions $permissions", async ({
-        permissions,
-        text,
-    }) => {
-        const { fetch, stdout } = prepare(permissions);
-        await keysCommand.parseAsync(["create", "--name", "test"], {
-            from: "user",
-        });
+    it.each(cases)(
+        "formats human permissions $permissions",
+        async ({ permissions, text }) => {
+            const { fetch, stdout } = prepare(permissions);
+            await keysCommand.parseAsync(["create", "--name", "test"], {
+                from: "user",
+            });
 
-        expect(fetch).toHaveBeenCalledOnce();
-        const output = stdout.mock.calls
-            .map(([chunk]) => String(chunk))
-            .join("");
-        expect(output).not.toContain("[object Object]");
-        if (text === null) {
-            expect(output).not.toContain("permissions:");
-        } else {
-            expect(output).toContain(`permissions: ${text}`);
-        }
-    });
+            expect(fetch).toHaveBeenCalledOnce();
+            const output = stdout.mock.calls
+                .map(([chunk]) => String(chunk))
+                .join("");
+            expect(output).not.toContain("[object Object]");
+            if (text === null) {
+                expect(output).not.toContain("permissions:");
+            } else {
+                expect(output).toContain(`permissions: ${text}`);
+            }
+        },
+    );
 
-    it.each(cases)("preserves JSON permissions $permissions", async ({
-        permissions,
-    }) => {
-        const { stdout } = prepare(permissions);
-        setOutputMode("json");
-        await keysCommand.parseAsync(["create", "--name", "test"], {
-            from: "user",
-        });
+    it.each(cases)(
+        "preserves JSON permissions $permissions",
+        async ({ permissions }) => {
+            const { stdout } = prepare(permissions);
+            setOutputMode("json");
+            await keysCommand.parseAsync(["create", "--name", "test"], {
+                from: "user",
+            });
 
-        const output = stdout.mock.calls
-            .map(([chunk]) => String(chunk))
-            .join("");
-        expect(JSON.parse(output).permissions).toEqual(permissions);
-    });
+            const output = stdout.mock.calls
+                .map(([chunk]) => String(chunk))
+                .join("");
+            expect(JSON.parse(output).permissions).toEqual(permissions);
+        },
+    );
 });
 
 describe("keys list permissions output", () => {
@@ -131,19 +132,37 @@ describe("keys create --expires-in validation", () => {
         expect(body.expiresIn).toBe(3600);
     });
 
-    it.each([
-        "0",
-        "-10",
-        "abc",
-        "1.5",
-        String(366 * 86400),
-    ])("rejects invalid expiresIn %s", async (invalidValue) => {
-        prepare(null);
-        await expect(
-            keysCommand.parseAsync(
-                ["create", "--name", "test", "--expires-in", invalidValue],
-                { from: "user" },
-            ),
-        ).rejects.toThrow();
+    it.each(["0", "-10", "abc", "1.5", String(366 * 86400)])(
+        "rejects invalid expiresIn %s",
+        async (invalidValue) => {
+            prepare(null);
+            await expect(
+                keysCommand.parseAsync(
+                    ["create", "--name", "test", "--expires-in", invalidValue],
+                    { from: "user" },
+                ),
+            ).rejects.toThrow();
+        },
+    );
+});
+
+describe("keys update", () => {
+    it("sends only the model list", async () => {
+        const { fetch, stdout } = prepare({ models: ["text", "flux"] });
+        await keysCommand.parseAsync(
+            ["update", "key-1", "--models", "flux", "text"],
+            { from: "user" },
+        );
+
+        const [url, init] = fetch.mock.calls[0];
+        expect(url).toMatch(/\/account\/keys\/key-1$/);
+        expect(init.method).toBe("PATCH");
+        expect(JSON.parse(String(init.body))).toEqual({
+            allowedModels: ["flux", "text"],
+        });
+        const output = stdout.mock.calls
+            .map(([chunk]) => String(chunk))
+            .join("");
+        expect(output).toContain("permissions: models:text|flux");
     });
 });

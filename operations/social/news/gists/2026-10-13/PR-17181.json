@@ -1,0 +1,141 @@
+{
+  "pr_number": 17181,
+  "title": "fix: correct Qwen Max explicit-cache pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17181",
+  "merged_at": "2026-10-13T00:44:56Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Corrected explicit-cache read pricing for qwen/qwen3.8-max and qwen/qwen3.8-max-0902, billed per million tokens. Both models now distinguish the explicit-cache variant from the default implicit/no-cache price. Paid access and model capabilities are unchanged; Max retains its OpenRouter-to-Alibaba fallback, while Max 0902 has no fallback. Pricing snapshots and tracking tests were updated.",
+    "keywords": [
+      "Qwen3.8 Max",
+      "explicit cache",
+      "pricing",
+      "Alibaba",
+      "model registry"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17181.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears tiny accountant glasses and checks two cache-labeled price cards beside a lime green (#ecf874) glowing terminal and sprouting code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T00:47:36.304985+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "964b98e9d03fd30fedfd7d9889367cd004bef427",
+  "announcements": [
+    {
+      "id": "pr-17181:qwen/qwen3.8-max",
+      "model_id": "qwen/qwen3.8-max",
+      "title": "Qwen3.8 Max",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_default_label": {
+          "before": null,
+          "after": "Implicit/no cache"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "cache",
+              "label": "Cache",
+              "values": {
+                "": "Implicit/no cache",
+                "explicit_cache": "Explicit"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "explicit_cache",
+              "label": "Explicit cache",
+              "description": "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000002",
+                "promptCachedTokens": "0.00000017",
+                "promptCacheWriteTokens": "0.0000025",
+                "promptImageTokens": "0.000002",
+                "promptVideoTokens": "0.000002",
+                "completionTextTokens": "0.000006"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17181:qwen/qwen3.8-max-0902",
+      "model_id": "qwen/qwen3.8-max-0902",
+      "title": "Qwen3.8 Max 0902",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing_default_label": {
+          "before": null,
+          "after": "Implicit/no cache"
+        },
+        "pricing_dimensions": {
+          "before": null,
+          "after": [
+            {
+              "key": "cache",
+              "label": "Cache",
+              "values": {
+                "": "Implicit/no cache",
+                "explicit_cache": "Explicit"
+              }
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": null,
+          "after": [
+            {
+              "name": "explicit_cache",
+              "label": "Explicit cache",
+              "description": "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000002",
+                "promptCachedTokens": "0.00000017",
+                "promptCacheWriteTokens": "0.0000025",
+                "promptImageTokens": "0.000002",
+                "promptVideoTokens": "0.000002",
+                "completionTextTokens": "0.000006"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "964b98e9d03fd30fedfd7d9889367cd004bef427^1",
+    "after_ref": "964b98e9d03fd30fedfd7d9889367cd004bef427"
+  }
+}

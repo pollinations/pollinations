@@ -140,7 +140,6 @@ describe("BYOP markup", () => {
         "lykon/dreamshaper-8-lcm",
         "assemblyai/universal-3.5-pro",
         "assemblyai/universal-2",
-        "openai/whisper-large-v3",
         "microsoft/trellis-2",
     ] as const)(
         "requires paid balance for %s and its fallback routes",

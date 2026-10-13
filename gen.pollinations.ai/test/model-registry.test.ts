@@ -56,6 +56,7 @@ describe("getGenerationModelRegistry", () => {
             "qwen/qwen3guard-gen-8b",
             "openai/gpt-oss-20b",
             "respan/span-01-lite",
+            "openai/whisper-large-v3",
             // Moves to paid with its post-promo price in #16256.
             "inclusionai/ling-3.1-flash",
         ]);

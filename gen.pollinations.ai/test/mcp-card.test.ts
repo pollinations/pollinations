@@ -30,16 +30,43 @@ describe("SEP-2127 MCP Server Cards", () => {
         );
         const catalog = (await res.json()) as {
             specVersion: string;
-            entries: { identifier: string; type: string; url: string }[];
+            entries: {
+                identifier: string;
+                displayName: string;
+                type: string;
+                url: string;
+            }[];
         };
         expect(catalog.specVersion).toBe("1.0");
         expect(catalog.entries).toEqual(
             MCP_SERVERS.map((server) => ({
                 identifier: `urn:air:pollinations.ai:mcp:${server.id}`,
+                displayName: server.name,
                 type: CARD_MEDIA_TYPE,
                 url: `${ORIGIN}/mcp/${server.id}/server-card`,
             })),
         );
+    });
+
+    it("serves the ARD manifest at /.well-known/ard.json with the same entries", async () => {
+        const res = await fetchWorker("/.well-known/ard.json");
+        expect(res.status).toBe(200);
+        expect(res.headers.get("Content-Type")).toContain("application/json");
+        expect(res.headers.get("Cache-Control")).toBe("public, max-age=3600");
+        const etag = res.headers.get("ETag");
+        expect(etag).toBeTruthy();
+        const manifest = (await res.json()) as { entries: unknown[] };
+
+        const catalog = (await (
+            await fetchWorker("/.well-known/ai-catalog.json")
+        ).json()) as { entries: unknown[] };
+        // The ARD envelope is exactly {entries} - no catalog specVersion.
+        expect(manifest).toEqual({ entries: catalog.entries });
+
+        const cached = await fetchWorker("/.well-known/ard.json", {
+            headers: { "If-None-Match": etag ?? "" },
+        });
+        expect(cached.status).toBe(304);
     });
 
     it("serves a Server Card at the reserved /server-card location without an API key", async () => {

@@ -330,24 +330,24 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // OpenRouter's standard OpenAI endpoint discounts Azure output more
-        // deeply than input/cache. One third matches its output rate and keeps
-        // the other dimensions below that endpoint under a uniform multiplier.
+        // Preserve the existing one-third customer price multiplier.
         priceMultiplier: 1 / 3,
         paidOnly: false,
+        // Azure Global Standard rates (retail prices API and billed meters,
+        // 2026-10-12).
         cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
+            promptTextTokens: perMillion(4.0),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(5.0),
+            completionTextTokens: perMillion(20.0),
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    promptCacheWriteTokens: perMillion(12.5),
-                    completionTextTokens: perMillion(45.0),
+                    promptTextTokens: perMillion(8.0),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(10.0),
+                    completionTextTokens: perMillion(30.0),
                 },
             },
             longContextAbove(272_000),
@@ -769,25 +769,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
-        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
         ],
-        provider: "azure",
+        provider: "openrouter",
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
-        // 2026-10-13 and its retirement schedule 2026-10-16.
-        // Provider retires this route on 2026-10-09.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.8),
-            completionTextTokens: perMillion(3.2),
+            // Cohere's OpenRouter route, including the 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(1.5) * 1.055,
         },
         title: "Cohere Command A+",
         description:
@@ -3304,14 +3303,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // OpenRouter Chutes FP8 route rates (2026-10-13), including the
             // account's 5.5% credit-purchase fee. OpenRouter publishes one
             // prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.24) * 1.055,
-            promptCachedTokens: perMillion(0.024) * 1.055,
-            promptImageTokens: perMillion(0.24) * 1.055,
-            promptVideoTokens: perMillion(0.24) * 1.055,
-            completionTextTokens: perMillion(2.2) * 1.055,
+            promptTextTokens: perMillion(0.039) * 1.055,
+            promptCachedTokens: perMillion(0.0039) * 1.055,
+            promptImageTokens: perMillion(0.039) * 1.055,
+            promptVideoTokens: perMillion(0.039) * 1.055,
+            completionTextTokens: perMillion(1.25) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:
@@ -3334,6 +3333,29 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
@@ -3365,6 +3387,29 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
         // hits (2026-09-03).
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),

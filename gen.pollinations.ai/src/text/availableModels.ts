@@ -278,7 +278,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "cohere/command-a-plus",
-        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
+        config: portkeyConfig["cohere/command-a-plus"],
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
@@ -323,8 +323,8 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        config: portkeyConfig["qwen3.8-27b-openrouter-akashml"],
+        name: "qwen/qwen3.8-27b:openrouter:reka-fp8",
+        config: portkeyConfig["qwen3.8-27b-openrouter-reka"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {

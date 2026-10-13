@@ -789,7 +789,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Restrict to specific models */
+    /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
@@ -1020,7 +1020,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
+    /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;

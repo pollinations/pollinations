@@ -151,7 +151,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
-- Run `npx biome check --write <file>` after edits and before commits.
+- Run `npx @biomejs/biome check --write <file>` after edits and before commits. It runs the repo's own Biome once `npm ci` has installed it; a bare `npx biome` can run an unrelated npm package.
 - Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.
@@ -263,7 +263,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

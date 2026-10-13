@@ -19,12 +19,7 @@ export type FilterState = {
     selectedModels: string[];
 };
 
-export type ModelBreakdown = {
-    model: string;
-    label: string;
-    requests: number;
-    pollen: number;
-};
+export type UsageGroupBy = "model" | "key";
 
 export type DataPoint = {
     label: string;

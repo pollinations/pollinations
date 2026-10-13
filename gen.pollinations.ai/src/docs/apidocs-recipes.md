@@ -214,7 +214,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "image=@./photo.png" \
   -F "prompt=replace the sky with a sunset" \
-  -F "model=kontext" \
+  -F "model=black-forest-labs/flux.1-kontext-pro" \
   -F "size=1024x1024"
 ```
 

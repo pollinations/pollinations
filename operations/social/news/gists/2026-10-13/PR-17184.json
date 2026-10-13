@@ -1,0 +1,36 @@
+{
+  "pr_number": 17184,
+  "title": "fix: correct Gemma 31B fallback costs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17184",
+  "merged_at": "2026-10-13T00:29:35Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Corrected the recorded DeepInfra FP8 fallback cost for google/gemma-4-31b-it from 0.13/0.38 to 0.20/0.40 per million input/output, matching the provider’s billed charge. Updated the effective-price snapshot. The model’s Paid-only access, Pollen price, primary Novita BF16 route, and capabilities are unchanged.",
+    "keywords": [
+      "Gemma 4 31B",
+      "DeepInfra",
+      "fallback",
+      "cost accounting",
+      "model registry"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17184.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli checks two routing paths on a retro terminal beside a lime green (#ecf874) ledger marked Gemma, with small code-plants growing nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant’s visor and stays small within the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T00:32:00.040523+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "d76af141d25ad4a7e4f17e65cf5c843fb065f34c",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "d76af141d25ad4a7e4f17e65cf5c843fb065f34c^1",
+    "after_ref": "d76af141d25ad4a7e4f17e65cf5c843fb065f34c"
+  }
+}

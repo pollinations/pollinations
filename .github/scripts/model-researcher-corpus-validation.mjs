@@ -61,7 +61,7 @@ const catalogChanges = {
         .map(({ name }) => name),
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
-const baseline = 2.4271206668;
+const baseline = 2.43229013726;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -102,7 +102,7 @@ for (const source of [
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 10 * 60000).toISOString(),
-    maxPollen: 0.05,
+    maxPollen: 0.02,
     reservedPollen: 0,
     calls: [],
     calibration: calibrationState(),
@@ -200,6 +200,7 @@ try {
         "https://developers.openai.com/api/docs/pricing.md",
         "https://docs.fireworks.ai/serverless/pricing",
         "https://deepinfra.com/Qwen/Qwen3-Embedding-8B",
+        "https://deepinfra.com/Qwen/Qwen3-Embedding-8B/api",
         "https://fireworks.ai/models/fireworks/qwen3-embedding-8b",
     ];
     for (const url of urls) {

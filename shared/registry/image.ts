@@ -469,10 +469,10 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["1k", "2k"],
         title: "Seedream 5.0 Flash",
         description:
-            "Image generation and editing at 1K or 2K with up to 14 references",
+            "Image generation and editing at 1K or 2K with up to ten references",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 14, // OpenRouter input_references limit.
+        maxReferenceImages: 10,
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],

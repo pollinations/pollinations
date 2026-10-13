@@ -2255,6 +2255,13 @@ const IMAGE_BASE_SERVICES = {
                 },
             },
             "From text",
+            [
+                {
+                    key: "input",
+                    label: "Input",
+                    values: { "": "Text", start_image: "Image" },
+                },
+            ],
         ),
         resolutions: ["480p"],
         title: "Kandinsky 6.0 Lite",

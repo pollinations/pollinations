@@ -111,9 +111,7 @@ export const wellKnownRoutes = new Hono<Env>()
         return c.json({
             resource: origin,
             authorization_servers: [
-                origin
-                    .replace("//gen.", "//enter.")
-                    .replace("//staging.gen.", "//staging.enter."),
+                origin.replace("gen.pollinations.ai", "enter.pollinations.ai"),
             ],
             bearer_methods_supported: ["header"],
             resource_documentation: `${origin}/docs/llm.txt`,

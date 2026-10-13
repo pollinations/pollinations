@@ -666,7 +666,6 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
-        // Approved Quest Pollen exception outside Azure and Fireworks.
         paidOnly: false,
         cost: {
             // OVHcloud USD list price: $0.163/hour.

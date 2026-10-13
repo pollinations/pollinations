@@ -238,7 +238,7 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
     mocks,
 }) => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1, packBalance: 1 },
+        user: { tierBalance: 1, packBalance: 0 },
     });
     const { response, wait } = await post("/alpha/decisions", key, {
         model: "respan/span-01-lite",
@@ -266,7 +266,7 @@ test("routes Span-01 Lite under its own id and bills nothing", async ({
     });
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 1,
-        packBalance: 1,
+        packBalance: 0,
     });
 });
 

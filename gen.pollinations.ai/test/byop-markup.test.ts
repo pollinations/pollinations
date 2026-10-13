@@ -137,7 +137,6 @@ describe("BYOP markup", () => {
         "amazon/nova-micro-v1",
         "jaredpalmer/kev-4b",
         "typesafe/jev-1.13",
-        "lykon/dreamshaper-8-lcm",
         "assemblyai/universal-3.5-pro",
         "assemblyai/universal-2",
         "microsoft/trellis-2",

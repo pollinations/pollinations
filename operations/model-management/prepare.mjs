@@ -522,7 +522,7 @@ export async function prepareResearch(task, services) {
               [
                   "discovery",
                   "providers",
-                  `${month} niche inference providers new model API pricing deals discounts serverless official release`,
+                  "niche inference providers OpenAI-compatible API model pricing throughput serverless deals independent providers official pricing",
               ],
           ];
     assert.ok(
@@ -1228,7 +1228,11 @@ export async function prepareResearch(task, services) {
                         offered.length >= 17
                     )
                         continue;
-                    const covered = [...names];
+                    const covered = Array.isArray(provider.modelNames)
+                        ? names.filter((name) =>
+                              provider.modelNames.includes(name),
+                          )
+                        : [...names];
                     let query;
                     do {
                         query = `${JSON.stringify(provider.name)} ${covered.map((name) => JSON.stringify(name.split("/").at(-1))).join(" OR ")} official managed inference API standard pricing TPS restrictions`;

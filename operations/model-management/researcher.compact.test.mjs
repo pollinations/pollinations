@@ -9,6 +9,7 @@ import timers from "node:timers/promises";
 import { EVIDENCE_CHECKS } from "./calibration.mjs";
 import { JEV_ENDPOINT, JEV_MODEL, validateClaimAudit } from "./jev.mjs";
 import { DISCOVERY_MODES, officialCandidates } from "./prepare.mjs";
+import { PROVIDER_INDEX_URL } from "./provider-index.mjs";
 import {
     assessGroup,
     auditEvidence,
@@ -799,6 +800,19 @@ async function fixture(t) {
             }),
         );
     }
+    const providerMetadata = JSON.stringify({ data: [] });
+    await writeFile(
+        join(out, "pages", `${hash(PROVIDER_INDEX_URL)}.json`),
+        JSON.stringify({
+            requestedUrl: PROVIDER_INDEX_URL,
+            url: PROVIDER_INDEX_URL,
+            text: providerMetadata,
+            pageDigest: hash(providerMetadata),
+            extractionVersion: 2,
+            fetchedAt: new Date().toISOString(),
+            links: [],
+        }),
+    );
     return {
         out,
         env: {
@@ -1766,6 +1780,75 @@ test(
             JSON.parse(await readFile(join(out, "research.json"), "utf8")),
             report,
         );
+    },
+);
+
+test(
+    "main fetches the free provider index and lets Jev investigate exact mapped providers without importing metadata prices",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const metadata = JSON.stringify({
+            data: [
+                {
+                    id: model.name,
+                    providers: [
+                        {
+                            provider: "niche-host",
+                            status: "live",
+                            pricing: { input: 0.0001 },
+                        },
+                    ],
+                },
+            ],
+        });
+        await writeFile(
+            join(out, "pages", `${hash(PROVIDER_INDEX_URL)}.json`),
+            JSON.stringify({
+                requestedUrl: PROVIDER_INDEX_URL,
+                url: PROVIDER_INDEX_URL,
+                text: metadata,
+                pageDigest: hash(metadata),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+        const calls = network(t, [model, sol, jev], {
+            marketFinish: true,
+            chooseControl: ({ state }) =>
+                state.stage === "search"
+                    ? state.actions[0].id
+                    : (state.actions.find(({ required }) => required)?.id ??
+                      state.actions.find(({ id }) => id.startsWith("niche-"))
+                          ?.id ??
+                      "finish"),
+        });
+        const report = await main({ ...env, MODELS: "" });
+        assert.equal(report.status, "complete", report.discovery.reason);
+        assert.equal(calls.sol.length, 0);
+        assert.equal(report.providerIndex.status, "fetched");
+        assert.equal(report.providerIndex.officialMatches, 1);
+        assert.deepEqual(report.providerIndex.providers[0].modelNames, [
+            model.name,
+        ]);
+        assert.ok(
+            calls.search.some(
+                ({
+                    params: {
+                        arguments: { query },
+                    },
+                }) =>
+                    query.includes('"niche-host"') &&
+                    query.includes('"fixture-embedding-8b"'),
+            ),
+        );
+        const row = report.models.find(({ name }) => name === model.name);
+        assert.equal(row.routes[0].pricing.input, 0.01);
+        assert.ok(
+            row.routes.every(({ provider }) => provider !== "niche-host"),
+        );
+        assert.ok(report.sources.some(({ url }) => url === PROVIDER_INDEX_URL));
     },
 );
 

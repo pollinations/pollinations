@@ -95,20 +95,20 @@ function renderMessage(message, sender, footerDelivery) {
                 const cells = (row, tag) =>
                     row
                         .map(
-                            (cell) =>
-                                `<${tag} style="text-align:left;vertical-align:top;padding:8px;border:1px solid #dadce0;overflow-wrap:anywhere;">${escapeHtml(cell)}</${tag}>`,
+                            (cell, index) =>
+                                `<${tag} style="${tag === "th" ? `background:${palette.bgActive.accent};` : ""}text-align:left;vertical-align:top;padding:12px;border:0;border-bottom:1px solid #ece5d6;overflow-wrap:anywhere;${tag === "td" && index === 0 ? "font-weight:bold;" : ""}">${escapeHtml(cell)}</${tag}>`,
                         )
                         .join("");
-                return `<table style="width:100%;table-layout:fixed;border-collapse:collapse;margin:12px 0;font:inherit;"><thead><tr>${cells(headers, "th")}</tr></thead><tbody>${rows.map((row) => `<tr>${cells(row, "td")}</tr>`).join("")}</tbody></table>`;
+                return `<table style="width:100%;max-width:600px;table-layout:fixed;border-collapse:collapse;margin:12px 0;font:inherit;"><thead><tr>${cells(headers, "th")}</tr></thead><tbody>${rows.map((row) => `<tr>${cells(row, "td")}</tr>`).join("")}</tbody></table>`;
             }
             const body = escapeHtml(text);
             if (type === "callout")
-                return `<div style="border-left:3px solid #dadce0;padding:8px 12px;margin:12px 0;">${body.replaceAll("\n", "<br>")}</div>`;
+                return `<div style="border-left:4px solid ${palette.bgActive.accent};padding:12px 16px;margin:12px 0;">${body.replaceAll("\n", "<br>")}</div>`;
             if (type === "heading")
-                return `<h2 style="font-size:14px;margin:20px 0 8px;">${body}</h2>`;
+                return `<h2 style="font-size:15px;margin:20px 0 8px;">${body}</h2>`;
             if (type === "code")
                 return `<pre style="margin:12px 0;font:13px/1.6 Menlo,Consolas,monospace;white-space:pre;overflow-x:auto;">${body}</pre>`;
-            return `<p style="margin:0 0 12px;">${body.replaceAll("\n", "<br>")}</p>`;
+            return `<p style="margin:0 0 18px;">${body.replaceAll("\n", "<br>")}</p>`;
         },
     );
     const docs = message.docs
@@ -122,6 +122,7 @@ function renderMessage(message, sender, footerDelivery) {
         title: escapeHtml(message.title),
         closing: escapeHtml(message.closing),
         sender: escapeHtml(sender),
+        ink: palette.brandDark,
         branding: footerDelivery === "inline" ? branding : "",
         content: parts.join("\n"),
         docs: docs ? `<p style="margin:12px 0;">${docs}</p>` : "",

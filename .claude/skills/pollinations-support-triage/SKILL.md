@@ -101,6 +101,12 @@ browser tab throughout the session.
   callouts only when they help the reader. No newsletter headline, decorative
   banner, shadows, large cards or colored page background. The local review
   screen may use richer styling; it is not the outgoing email design.
+- Approved body style: branding example C, "Confident and crisp". Keep the
+  white background; use 15px system text, 1.6 line height, generous paragraph
+  spacing, brand-yellow table headers, bold first-column labels and yellow
+  callout edges. Read colors from the shared palette. Apply these accents only
+  where the content needs a table or callout; do not add decorative sections.
+  The shared clickable-wordmark footer remains unchanged.
 - Do not recreate branding or keep a second logo/palette. The renderer reads the
   existing palette and links the existing PNG logo. System fonts are the email
   fallback; no web fonts, tracking pixels or scripts in outgoing HTML.

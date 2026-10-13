@@ -708,7 +708,6 @@ const client = new Pollinations({
   textTimeout: 300000,   // 5 minutes for text
   imageTimeout: 600000,  // 10 minutes for images
   videoTimeout: 1200000, // 20 minutes for videos
-  videoTimeout: 1200000, // 20 minutes for videos
   model3dTimeout: 1200000, // 20 minutes for 3D models
 });
 ```

@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DISCOVERY_MODES, parseLeads, prepareResearch } from "./prepare.mjs";
+import {
+    DISCOVERY_MODES,
+    officialCandidates,
+    parseLeads,
+    prepareResearch,
+} from "./prepare.mjs";
 
 test("two discovery runs read older deferred URLs and retain failed and skipped crawl receipts", async () => {
     const run = async (deferredSources = []) => {
@@ -304,6 +309,78 @@ test("provider index followups use only checkpoints explicitly mapped by the sou
     const followup = f.searches.at(-1);
     assert.match(followup.query, /"niche-host".*"Beta-v4"/);
     assert.ok(!followup.query.includes("Alpha-v3"));
+});
+
+test("availability quotes prefer explicit serverless statements over an API page title", () => {
+    const name = "qwen/qwen3-embedding-8b";
+    const result = officialCandidates(
+        [{ name, category: "embedding" }],
+        [
+            {
+                id: "s1",
+                status: "fetched",
+                url: "https://fireworks.ai/models/example",
+                text: "Qwen3 Embedding 8B API & Playground | Fireworks\nQwen3 Embedding 8B is available via Fireworks' serverless API, where you pay per token.",
+            },
+        ],
+    );
+    const quote = result.models[0].routes[0].claims.find(
+        ({ kind }) => kind === "availability",
+    ).quote;
+    assert.match(quote, /available via Fireworks' serverless API/);
+    assert.ok(!quote.includes("Playground"));
+});
+
+test("Jev can read same-origin API documentation before paying for a followup search", async () => {
+    const f = fixture([
+        { url: "https://niche.example/model", text: "Alpha-v3 model" },
+    ]);
+    f.services.remainingPollen = () => 1;
+    f.services.read = async (args) => {
+        f.reads.push(args);
+        return {
+            id: `s${f.reads.length}`,
+            url: args.url,
+            status: "fetched",
+            text: args.url.endsWith("/api")
+                ? "Alpha-v3 is available via serverless API inference."
+                : "Alpha-v3 model",
+            links: args.url.endsWith("/api")
+                ? []
+                : [
+                      {
+                          url: "https://niche.example/model/api",
+                          text: "API documentation",
+                      },
+                      {
+                          url: "https://other.example/api",
+                          text: "API documentation",
+                      },
+                  ],
+        };
+    };
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ kind }) => kind === "read") ??
+                  actions.find(({ kind }) => kind === "finish")),
+    });
+    const result = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3", category: "text" }] },
+        f.services,
+    );
+    assert.equal(f.searches.length, 4);
+    assert.ok(
+        f.reads.some(({ url }) => url === "https://niche.example/model/api"),
+    );
+    assert.ok(!f.reads.some(({ url }) => url.includes("other.example")));
+    assert.ok(
+        result.actions.some(
+            ({ parentSourceId, status }) =>
+                parentSourceId === "s1" && status === "fetched",
+        ),
+    );
 });
 
 function fixture(results, decisions = {}) {

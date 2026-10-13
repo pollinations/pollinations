@@ -2320,10 +2320,31 @@ export async function auditEvidence(proposal, models, sources, decision) {
                                 (source) => source.id === claim.sourceId,
                             )?.text ?? "";
                         const position = norm(text).indexOf(norm(claim.quote));
-                        return norm(text).slice(
+                        const surrounding = norm(text).slice(
                             Math.max(0, position - 400),
                             position + norm(claim.quote).length + 700,
                         );
+                        if (kind !== "availability") return surrounding;
+                        const api = [
+                            ...norm(text).matchAll(
+                                /\b(?:serverless API|OpenAI-compatible HTTP API|supports the OpenAI|curl)\b/gi,
+                            ),
+                        ]
+                            .map((match) =>
+                                norm(text).slice(
+                                    Math.max(0, match.index - 200),
+                                    match.index + 1000,
+                                ),
+                            )
+                            .find((window) =>
+                                mentionsModelIdentity(
+                                    window,
+                                    route.upstreamModel,
+                                ),
+                            );
+                        return api
+                            ? `${surrounding.slice(0, 400)}\n${api}`
+                            : surrounding;
                     })
                     .join("\n---\n")
                     .slice(0, 1600);
@@ -3063,8 +3084,7 @@ export async function main(env = process.env) {
                 try {
                     prepared = await prepareResearch(task, {
                         search: services.search,
-                        read: (args) =>
-                            read({ ...args, includeLinks: !task.models }),
+                        read: (args) => read({ ...args, includeLinks: true }),
                         triage: services.triage,
                         control: services.control,
                         extract: services.extract,

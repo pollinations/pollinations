@@ -172,16 +172,17 @@ export function mentions(text, name) {
 export function officialCandidates(models, sources, gaps = []) {
     const pricingProviders =
         /(?:^|\.)(?:microsoft\.com|azure\.com|fireworks\.ai|amazon\.com|openai\.com|anthropic\.com|claude\.com|google\.com|x\.ai|deepseek\.com|mistral\.ai|cohere\.com|together\.ai|groq\.com|cerebras\.ai|nvidia\.com|cloudflare\.com|replicate\.com|fal\.ai|runware\.ai|bfl\.ai|recraft\.ai|ideogram\.ai|minimax\.io|kimi\.ai|aliyun\.com|alibabacloud\.com|byteplus\.com|digitalocean\.com|openrouter\.ai)$/;
-    const quoteFor = (text, name, predicate = () => true) => {
+    const quoteFor = (text, name, predicate = () => true, score = () => 0) => {
+        const matches = [];
         for (const segment of text.split(/\n|(?<=[.!?])\s+/)) {
             if (!mentions(segment, name) || !predicate(segment)) continue;
             if (
                 segment.trim().length >= 8 &&
                 segment.trim().split(/\s+/).length <= 25
             )
-                return segment.trim();
+                matches.push(segment.trim());
         }
-        return null;
+        return matches.sort((a, b) => score(b) - score(a))[0] ?? null;
     };
     return {
         routes: [],
@@ -260,6 +261,14 @@ export function officialCandidates(models, sources, gaps = []) {
                         !/\b(?:weights|download|dedicated|not available|unavailable|retired)\b/i.test(
                             text,
                         ),
+                    (text) =>
+                        Number(
+                            /\b(?:available|serves|provides|supports|call|invoke)\b/i.test(
+                                text,
+                            ),
+                        ) *
+                            2 +
+                        Number(/\bserverless\b/i.test(text)),
                 );
                 if (!pricingProviders.test(url.hostname) && !availability) {
                     unresolved.push(
@@ -1168,6 +1177,74 @@ export async function prepareResearch(task, services) {
         }
         let followed = 0;
         if (services.control) {
+            if (names.length) {
+                const seen = new Set(sources.map(({ url }) => url));
+                for (
+                    let readCount = 0;
+                    readCount < 2 && sources.length < 24;
+                    readCount++
+                ) {
+                    const documents = [];
+                    for (const source of sources) {
+                        if (source.status !== "fetched") continue;
+                        const matched = names.filter(
+                            (name) =>
+                                source.focus === name.split("/").at(-1) ||
+                                mentions(source.text, name),
+                        );
+                        if (!matched.length) continue;
+                        for (const link of source.links ?? []) {
+                            const url = safeUrl(link.url);
+                            if (
+                                !url ||
+                                seen.has(url) ||
+                                new URL(url).origin !==
+                                    new URL(source.url).origin ||
+                                !/\bapi\b|pricing|serverless|documentation/i.test(
+                                    `${link.text ?? ""} ${new URL(url).pathname}`,
+                                )
+                            )
+                                continue;
+                            if (
+                                documents.some((item) => item.url === url) ||
+                                documents.length >= 12
+                            )
+                                continue;
+                            documents.push({
+                                id: `document-${documents.length}`,
+                                kind: "read",
+                                url,
+                                mode: "http",
+                                sourceId: source.id,
+                                models: matched,
+                                text: "Free linked provider API/pricing evidence; use before buying another search.",
+                            });
+                        }
+                    }
+                    if (!documents.length) break;
+                    const selected = await control("followup", [
+                        ...documents,
+                        { id: "finish", kind: "finish" },
+                    ]);
+                    if (!selected || selected.kind === "finish") break;
+                    seen.add(selected.url);
+                    const action = {
+                        tool: "fetch",
+                        url: selected.url,
+                        mode: "http",
+                        focus: selected.models[0].split("/").at(-1),
+                        maxCharacters: 4000,
+                        models: selected.models,
+                        parentSourceId: selected.sourceId,
+                        status: "pending",
+                    };
+                    actions.push(action);
+                    const source = await services.read(action);
+                    sources.push(source);
+                    action.sourceId = source.id;
+                    action.status = source.status;
+                }
+            }
             const attempted = new Set();
             const attemptedModels = new Set();
             const followupActions = () => {

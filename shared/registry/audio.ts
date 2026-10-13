@@ -864,7 +864,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
@@ -918,7 +918,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,

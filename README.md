@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
 | [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
 | [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
 | [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
@@ -37,7 +38,6 @@
 | [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
 | [📚 Text Comparison](https://mahmoudpov373-star.github.io/Comart) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@mahmoudpov373-star](https://github.com/mahmoudpov373-star) |
 | [🖼️ InkBloom](https://coloring-project1.ismailbanouigu.workers.dev) | Turn photos or text prompts into printable coloring pages. Text-to-coloring generation is powered by Pollinations. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
-| [🤖 MebelSmetaBot](https://t.me/MebelSmetaBot) | Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al | [@druzhininige-dotcom](https://github.com/druzhininige-dotcom) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-12** – **🤖 Claude Opus 5.5 fast** Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).
+- **2026-10-12** – **🎯 Keys scoped to models** Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).
+- **2026-10-12** – **💡 See usage your way** Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.
+- **2026-10-12** – **🔗 API access for sandboxed agents** The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).
+- **2026-10-12** – **🎯 A blacksmith who remembers** Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).
 - **2026-10-11** – **🚀 Longer, larger sandboxes** Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.
 - **2026-10-11** – **🎨 InkBloom coloring pages** Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).
 - **2026-10-11** – **💡 Text Comparison joins Learn** Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).
 - **2026-10-11** – **🎵 Compose with Midi Journey** Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).
 - **2026-10-11** – **🤖 Polli keeps the conversation going** Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).
-- **2026-10-10** – **🎨 A new Play page** Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).
-- **2026-10-10** – **💡 PDFs for Claude and GPT** Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).
-- **2026-10-10** – **🤖 Catalogs for agent discovery** Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
-- **2026-10-10** – **📱 Furniture ideas from a photo** Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).
-- **2026-10-09** – **🎵 MAI voices for speech** Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).
 ---
 
 ## 🌱 Introduction
@@ -179,7 +179,7 @@ curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&k
 curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
+  -d '{"model": "openai/tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
   -o speech.mp3
 ```
 
@@ -191,7 +191,7 @@ Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+
 curl 'https://gen.pollinations.ai/v1/audio/transcriptions' \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F file=@audio.mp3 \
-  -F model=whisper-large-v3
+  -F model=openai/whisper-large-v3
 ```
 
 ### Video Generation
@@ -205,7 +205,7 @@ Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]
 ### 3D Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
+curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=microsoft/trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
 ```
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models (put `image=` last in the URL, or URL-encode it). See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
@@ -216,7 +216,7 @@ Pass reference image URL(s) via the `image` parameter for image-to-3D models (pu
 curl 'https://gen.pollinations.ai/v1/embeddings' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "openai-3-small", "input": "Hello world!"}'
+  -d '{"model": "openai/text-embedding-3-small", "input": "Hello world!"}'
 ```
 
 Pass a string or an array of up to 32 strings (text or multimodal content parts). See available embedding models at [gen.pollinations.ai/embeddings/models](https://gen.pollinations.ai/embeddings/models).
@@ -226,7 +226,7 @@ Pass a string or an array of up to 32 strings (text or multimodal content parts)
 Generate text, images, audio, video, and more right from your terminal:
 
 ```bash
-npx @pollinations/cli gen image "cyberpunk city at night" --model flux --output city.png
+npx @pollinations/cli gen image "cyberpunk city at night" --model black-forest-labs/flux.1-schnell --output city.png
 npx @pollinations/cli gen text "Explain quantum tunneling in one sentence"
 npx @pollinations/cli gen audio "Hello world" --voice nova --output speech.mp3
 npx @pollinations/cli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
@@ -240,7 +240,7 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=pk_YOUR_API_KEY
 ```
 
 Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
@@ -278,7 +278,7 @@ Each API key can be scoped to model categories or specific models. When creating
 
 - **Allow all models** — key works with any available model
 - **Restrict to categories** — e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later
-- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models flux zimage`; a model ID allows only that model
+- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo`; a model ID allows only that model
 
 ### Usage
 
@@ -327,7 +327,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "openai",
+  model: "openai/gpt-5.4-nano",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);
@@ -341,7 +341,7 @@ from openai import OpenAI
 client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
@@ -362,7 +362,7 @@ const pollinations = createOpenAICompatible({
 });
 
 const { text } = await generateText({
-  model: pollinations.chatModel("openai"),
+  model: pollinations.chatModel("openai/gpt-5.4-nano"),
   prompt: "Hello!",
 });
 console.log(text);

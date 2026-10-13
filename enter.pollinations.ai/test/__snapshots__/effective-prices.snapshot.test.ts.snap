@@ -1665,38 +1665,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "inclusionai/ling-3.1-flash": {
     "cost": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
+      "completionTextTokens": 0.0000009,
+      "promptCachedTokens": 0.00000006,
+      "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
-    },
-  },
-  "inclusionai/ling-3.1-flash:openrouter:novita": {
-    "cost": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
-    },
-    "price": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
+      "completionTextTokens": 0.0000009,
+      "promptCachedTokens": 0.00000006,
+      "promptTextTokens": 0.0000003,
     },
   },
   "inclusionai/ling-3.1-flash:vercel:novita": {
     "cost": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
+      "completionTextTokens": 0.0000009,
+      "promptCachedTokens": 0.00000006,
+      "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0,
-      "promptCachedTokens": 0,
-      "promptTextTokens": 0,
+      "completionTextTokens": 0.0000009,
+      "promptCachedTokens": 0.00000006,
+      "promptTextTokens": 0.0000003,
     },
   },
   "inferenceport-ai/lightning-image-turbo": {
@@ -1715,6 +1703,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "price": {
       "completionTextTokens": 0,
       "promptTextTokens": 0.00000004431,
+    },
+  },
+  "kandinskylab/kandinsky-6.0-lite": {
+    "cost": {
+      "completionVideoSeconds": 0.032,
+    },
+    "costVariants": {
+      "start_image": {
+        "completionVideoSeconds": 0.034,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.032,
     },
   },
   "krea/krea-2-medium": {
@@ -4177,13 +4178,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "z-ai/glm-5.3-flash": {
     "cost": {
       "completionTextTokens": 0.0000005,
-      "promptCachedTokens": 0.000000029,
+      "promptCachedTokens": 0.00000003,
       "promptImageTokens": 0.00000015,
       "promptTextTokens": 0.00000015,
     },
     "price": {
       "completionTextTokens": 0.0000005,
-      "promptCachedTokens": 0.000000029,
+      "promptCachedTokens": 0.00000003,
       "promptImageTokens": 0.00000015,
       "promptTextTokens": 0.00000015,
     },
@@ -4205,12 +4206,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "z-ai/glm-5.3-flashx": {
     "cost": {
       "completionTextTokens": 0.00000131875,
-      "promptCachedTokens": 0.000000079125,
+      "promptCachedTokens": 0.00000009495,
       "promptTextTokens": 0.00000039035,
     },
     "price": {
       "completionTextTokens": 0.00000131875,
-      "promptCachedTokens": 0.000000079125,
+      "promptCachedTokens": 0.00000009495,
       "promptTextTokens": 0.00000039035,
     },
   },

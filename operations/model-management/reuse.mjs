@@ -98,7 +98,7 @@ export async function reuseModel(
                 source?.status === "fetched" &&
                     typeof source.id === "string" &&
                     source.id.length &&
-                    source.extractionVersion === 1 &&
+                    source.extractionVersion === 2 &&
                     digest(source.pageDigest),
             );
             assert.ok(
@@ -148,7 +148,7 @@ export async function reuseModel(
                     (!refreshed.status || refreshed.status === "fetched"),
             );
             assert.equal(refreshed.method, "scrapling-http");
-            assert.equal(refreshed.extractionVersion, 1);
+            assert.equal(refreshed.extractionVersion, 2);
             assert.equal(refreshed.pageDigest, source.pageDigest);
             assert.ok(
                 typeof refreshed.text === "string" && refreshed.text.trim(),

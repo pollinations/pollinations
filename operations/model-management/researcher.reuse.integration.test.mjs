@@ -100,7 +100,7 @@ test("main reuses valid rows from a partial artifact through free HTTP and resea
         text,
         digest: hash(text),
         pageDigest: hash(page),
-        extractionVersion: 1,
+        extractionVersion: 2,
         at: oldAt,
         fetchedAt: oldAt,
         focus: "example-v1",
@@ -252,7 +252,7 @@ test("main reuses valid rows from a partial artifact through free HTTP and resea
     assert.equal(refreshed.fetchedAt, refreshedAt);
     assert.equal(refreshed.pageDigest, hash(page));
     assert.equal(refreshed.digest, hash(text));
-    assert.equal(refreshed.extractionVersion, 1);
+    assert.equal(refreshed.extractionVersion, 2);
     assert.equal(refreshed.cached, false);
     assert.ok(
         Date.parse(persisted.models[0].refreshedAt) >= Date.parse(refreshedAt),

@@ -22,7 +22,7 @@ function fixture() {
         text,
         digest: hash(text),
         pageDigest: hash(`${text} unchanged whole page`),
-        extractionVersion: 1,
+        extractionVersion: 2,
         at,
         fetchedAt: at,
         method: "scrapling-http",
@@ -365,7 +365,8 @@ test("model or guidance mismatch invalidates without any fetch", async () => {
 test("failed, expired, and unsupported extraction data cannot be reused", async () => {
     for (const change of [
         { status: "failed" },
-        { extractionVersion: 2 },
+        { extractionVersion: 1 },
+        { extractionVersion: 3 },
         { pageDigest: "bad" },
         { fetchedAt: new Date(Date.now() - 31 * 86400000).toISOString() },
         { fetchedAt: "invalid" },

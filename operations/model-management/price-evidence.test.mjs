@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { extractPrices } from "./price-evidence.mjs";
+import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
 
 // Exact short excerpts from saved s106, s9 and s22; no network fixtures.
 const table = `Prices per 1M tokens.
@@ -185,13 +185,18 @@ test("saved DeepInfra input-only embedding price has null output and exact prove
 });
 
 test("saved Fireworks model page serverless price has null output", () => {
-    const result = extractPrices(fireworks, {
-        ...embedding,
-        quote: "$0.10\nPer 1M Tokens",
-    });
-    assert.equal(result.input, 0.1);
-    assert.equal(result.output, null);
-    verifyPositions(fireworks, result);
+    for (const source of [
+        fireworks,
+        fireworks.replace("Available Serverless", "### Available Serverless"),
+    ]) {
+        const result = extractPrices(source, {
+            ...embedding,
+            quote: "$0.10\nPer 1M Tokens",
+        });
+        assert.equal(result.input, 0.1);
+        assert.equal(result.output, null);
+        verifyPositions(source, result);
+    }
 });
 
 test("embedding neighbors, missing units, cached or wrong-currency blocks are rejected", () => {
@@ -303,4 +308,117 @@ test("embedding table input-only price preserves null output and refuses output 
         ),
         null,
     );
+});
+
+// Exact layout refetched from https://docs.fireworks.ai/serverless/pricing.
+const orderedTable = `## Text and vision models
+Per-model pricing for headline models. Fast variants appear as adjacent rows. In each Standard or Priority cell, prices are input / cached input / output (USD per 1M tokens), in that order.
+| Model | Standard | Priority |
+| --- | --- | --- |
+| Kimi K3 | $3.00 / $0.30 / $15.00 | $3.75 / $0.375 / $18.75 |
+| Kimi K3 Fast | $4.50 / $0.45 / $22.50 | — |
+| Kimi K3 (US) | $4.50 / $0.45 / $22.50 | $5.625 / $0.5625 / $28.125 |`;
+
+test("observed ordered standard cell selects input/output with exact offsets", () => {
+    const options = { upstreamModel: "kimi-k3", category: "text" };
+    const result = extractPrices(orderedTable, options);
+    assert.equal(result.input, 3);
+    assert.equal(result.output, 15);
+    assert.deepEqual(result.conditions, ["standard"]);
+    verifyPositions(orderedTable, result);
+    for (const quote of ["$0.30", "$3.75", "$22.50"])
+        assert.equal(extractPrices(orderedTable, { ...options, quote }), null);
+    for (const source of [
+        orderedTable.replace(
+            "input / cached input / output",
+            "output / cached input / input",
+        ),
+        orderedTable.replace("USD per 1M tokens", "CAD per 1M tokens"),
+        orderedTable.replace("USD per 1M tokens", "USD per tokens"),
+        orderedTable.replace("| Standard |", "| Batch |"),
+        orderedTable.replace(
+            "## Text and vision models",
+            "## Promotional pricing",
+        ),
+        orderedTable.replace(
+            "## Text and vision models",
+            "Only for requests below 128K tokens.",
+        ),
+        orderedTable.replace("| Kimi K3 |", "| Kimi K3 Fast |"),
+    ])
+        assert.equal(extractPrices(source, options), null);
+});
+
+test("formatting equivalence preserves full checkpoint versions and suffixes", () => {
+    assert.equal(exactModelIdentity("Kimi K3", "kimi-k3"), true);
+    assert.equal(
+        exactModelIdentity("# Qwen3-Embedding-8B", "Qwen/Qwen3-Embedding-8B"),
+        true,
+    );
+    for (const value of [
+        "kimi-k3-fast",
+        "kimi-k3-us",
+        "kimi-k3-2026",
+        "kimi-k3.1",
+        "kimi-k-3",
+    ])
+        assert.equal(exactModelIdentity(value, "kimi-k3"), false);
+});
+
+test("nested standard sections retain ancestor currency and billing restrictions", () => {
+    const source =
+        "Prices per 1M tokens USD\n| Model | Input | Output |\n| --- | --- | --- |\n| gpt-5.4-nano | $0.20 | $1.25 |";
+    for (const heading of [
+        "Prices in CAD",
+        "Prices in EUR",
+        "Batch pricing",
+        "Only for requests below 128K tokens.",
+    ]) {
+        assert.equal(
+            extractPrices(`# ${heading}\n## Standard\n${source}`, {
+                ...nano,
+                quote: undefined,
+            }),
+            null,
+        );
+    }
+    const reset = `# Prices in CAD\n# Standard\n${source}`;
+    verifyPositions(reset, extractPrices(reset, { ...nano, quote: undefined }));
+});
+
+test("compound time or request billing units remain unknown", () => {
+    for (const suffix of [" per hour", " per request", " / day", " per second"])
+        assert.equal(
+            extractPrices(
+                table.replace(
+                    "Prices per 1M tokens.",
+                    `USD per 1M tokens${suffix}`,
+                ),
+                { ...nano, quote: undefined },
+            ),
+            null,
+        );
+});
+
+test("plain currency scope survives Standard until a section boundary", () => {
+    const source =
+        "per 1M tokens\n| Model | Input | Output |\n| --- | --- | --- |\n| gpt-5.4-nano | $1 | $2 |";
+    assert.equal(
+        extractPrices(`Prices in CAD\nStandard\n${source}`, {
+            ...nano,
+            quote: undefined,
+        }),
+        null,
+    );
+    assert.equal(
+        extractPrices(`# Parent\nPrices in CAD\n## Standard\n${source}`, {
+            ...nano,
+            quote: undefined,
+        }),
+        null,
+    );
+    const reset = `# CAD section\nPrices in CAD\n# Standard\n${source}`;
+    verifyPositions(reset, extractPrices(reset, { ...nano, quote: undefined }));
+    const usd = source.replace("per 1M tokens", "Prices per 1M tokens (USD).");
+    verifyPositions(usd, extractPrices(usd, { ...nano, quote: undefined }));
 });

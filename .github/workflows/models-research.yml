@@ -85,7 +85,7 @@ jobs:
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/model-research-previous
           merge-multiple: true
-      - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
+      - name: Research providers with Jev and optional Sol reasoning
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           MODELS: ${{ inputs.models }}

@@ -1,4 +1,5 @@
 import { Button, ContentHeader, cn } from "@pollinations/ui";
+import polliUrl from "@pollinations/ui/brand/polli/polli.png";
 import {
     createRootRoute,
     HeadContent,
@@ -7,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useLayoutEffect, useRef } from "react";
 import { routeHead } from "../routeMeta";
+import { Analytics } from "../ui/site/Analytics";
 import { pageCardClassName } from "../ui/site/PageCard";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
@@ -17,28 +19,42 @@ export const Route = createRootRoute({
     notFoundComponent: NotFoundPage,
 });
 
+/**
+ * Polli, the package's bee, keeps the lost visitor company: a still image,
+ * tilted a little. On phones she sits above the copy, left, clear of the
+ * floating menu pill.
+ */
 function NotFoundPage() {
     return (
-        <section className="flex min-h-[28rem] flex-col justify-center gap-8">
-            <ContentHeader
-                eyebrow="404"
-                title="That page flew away."
-                subtitle="The link may be outdated, or the page may have moved."
-                variant="page"
+        <section className="flex min-h-[28rem] flex-col justify-center gap-8 sm:flex-row sm:items-center sm:justify-between">
+            <img
+                src={polliUrl}
+                alt=""
+                aria-hidden="true"
+                width={540}
+                height={527}
+                className="h-auto w-[7.5rem] -rotate-6 select-none max-sm:mt-10 sm:order-last sm:w-[13.75rem] sm:shrink-0"
             />
-            <div>
-                <Button as="a" href="/" intent="brand" size="lg">
-                    Back to Pollinations
-                </Button>
+            <div className="flex flex-col gap-8">
+                <ContentHeader
+                    eyebrow="404"
+                    title="That page flew away."
+                    subtitle="The link may be outdated, or the page may have moved."
+                    variant="page"
+                />
+                <div>
+                    <Button as="a" href="/" intent="brand" size="lg">
+                        Back to Pollinations
+                    </Button>
+                </div>
             </div>
         </section>
     );
 }
 
 /**
- * One sheet and one vertical beat by default, owned here rather than repeated
- * per route. Play opts into two sibling sheets because its hero and workspace
- * are separate pieces of the interface.
+ * One sheet and one vertical beat for every route, owned here rather than
+ * repeated per route.
  *
  * The gap lives on this flex column, so sections carry no spacing of their
  * own.
@@ -57,9 +73,6 @@ function RootLayout() {
         select: (state) => (state.resolvedLocation ?? state.location).pathname,
     });
     const previousPath = useRef(pathname);
-    const isPlay = useRouterState({
-        select: (state) => state.location.pathname === "/play",
-    });
 
     useLayoutEffect(() => {
         if (previousPath.current === pathname) return;
@@ -78,14 +91,12 @@ function RootLayout() {
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <HeadContent />
+            <Analytics />
             <SiteHeader />
             <div className="site-shell site-page-shell flex flex-1 flex-col sm:mb-6 sm:pt-4 min-[700px]:pt-0">
                 <main
                     ref={mainRef}
-                    className={cn(
-                        "flex flex-1 flex-col",
-                        isPlay ? "gap-6" : pageCardClassName,
-                    )}
+                    className={cn("flex flex-1 flex-col", pageCardClassName)}
                 >
                     <Outlet />
                 </main>

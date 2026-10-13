@@ -70,7 +70,7 @@ https://enter.pollinations.ai/authorize
 
 With restrictions:
 ```text
-https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=image,text&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
@@ -82,7 +82,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://
 | `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
 | `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `black-forest-labs/flux.1-schnell,openai/gpt-5.4-nano,openai/gpt-image-1-mini` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `flux,zimage` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 

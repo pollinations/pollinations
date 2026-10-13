@@ -103,10 +103,12 @@ polli keys create --name mybot --budget 100                    # secret (default
 polli keys create --name myapp --type publishable              # API publishable
 polli keys create --name myapp --type publishable \            # 3rd-party app key
   --redirect-uri https://myapp.com/callback --earnings
+polli keys create --name server --models flux zimage            # only these models
+polli keys update <id> --models text flux                       # change the model list
 polli keys revoke <id>
 ```
 
-Keys can't be edited — to change a name, budget, or model list, revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
 
 ```bash
 polli usage                  # pollen balance
@@ -190,12 +192,15 @@ Linux VMs from E2B, paid from your wallet (alpha).
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
+polli sandbox create --timeout 0  # runs until you pause or kill it
+polli sandbox create pollinations-large  # 4 vCPU, 8 GB
 ssh <id>.polli                    # scp and rsync work too
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
+polli sandbox pause <id>
 polli sandbox kill <id>
 ```
 
-The default template comes logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
+The default template, and `pollinations-large`, come logged in with the coding harnesses installed; the first interactive `ssh` connects them. See [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) for cost, limits, and using E2B's own CLI and SDKs.
 
 ## Links
 

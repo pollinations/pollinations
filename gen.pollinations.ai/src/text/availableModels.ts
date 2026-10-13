@@ -12,6 +12,7 @@ import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { mediaToBedrock } from "./transforms/mediaToBedrock.ts";
 import { mediaToVercelFiles } from "./transforms/mediaToVercelFiles.ts";
 import {
     omitParameters,
@@ -585,6 +586,11 @@ const models: ModelDefinition[] = [
         transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {
+        name: "anthropic/claude-opus-5.5:fast",
+        config: portkeyConfig["claude-opus-5.5-fast-openrouter-anthropic-fast"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
         name: "anthropic/claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
@@ -920,6 +926,7 @@ const models: ModelDefinition[] = [
     {
         name: "amazon/nova-2-lite-v1",
         config: portkeyConfig["nova-2-lite"],
+        transform: mediaToBedrock,
     },
     {
         name: "z-ai/glm-5.2",

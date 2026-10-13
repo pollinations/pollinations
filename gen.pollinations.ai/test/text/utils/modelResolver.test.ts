@@ -99,32 +99,33 @@ describe("resolveModelConfig", () => {
         ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
-    it.each([
-        "gpt-6-sol",
-        "gpt-6.1-sol",
-        "gpt-6-luna",
-    ])("routes %s through Azure with direct OpenAI fallback", (model) => {
-        const canonical = `openai/${model}`;
-        const result = resolveModelConfig(messages, { model: canonical });
+    it.each(["gpt-6-sol", "gpt-6.1-sol", "gpt-6-luna"])(
+        "routes %s through Azure with direct OpenAI fallback",
+        (model) => {
+            const canonical = `openai/${model}`;
+            const result = resolveModelConfig(messages, { model: canonical });
 
-        expect(result.options.model).toBe(model);
-        expect(result.options.modelConfig).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-eastus",
-            "azure-deployment-id": model,
-            responsesEndpoint:
-                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
-        });
-        expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
-        expect(findModelByName(`${canonical}:openai`)?.config()).toMatchObject({
-            provider: "openai",
-            model,
-            responsesEndpoint: "https://api.openai.com/v1/responses",
-        });
-        expect(() => resolveModelConfig(messages, { model })).toThrow(
-            `Model configuration not found for: ${model}`,
-        );
-    });
+            expect(result.options.model).toBe(model);
+            expect(result.options.modelConfig).toMatchObject({
+                provider: "azure-openai",
+                "azure-resource-name": "myceli-prod-eastus",
+                "azure-deployment-id": model,
+                responsesEndpoint:
+                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+            });
+            expect(findModelByName(canonical)?.useResponsesApi).toBe(true);
+            expect(
+                findModelByName(`${canonical}:openai`)?.config(),
+            ).toMatchObject({
+                provider: "openai",
+                model,
+                responsesEndpoint: "https://api.openai.com/v1/responses",
+            });
+            expect(() => resolveModelConfig(messages, { model })).toThrow(
+                `Model configuration not found for: ${model}`,
+            );
+        },
+    );
 
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
@@ -298,6 +299,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("x-ai/grok-4.7");
         expect(result.options.provider).toEqual({
             only: ["xai"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Opus 5.5 fast mode through OpenRouter's Anthropic fast endpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "anthropic/claude-opus-5.5:fast",
+        });
+
+        expect(result.options.model).toBe("anthropic/claude-opus-5.5");
+        expect(result.options.provider).toEqual({
+            only: ["anthropic/fast"],
             allow_fallbacks: false,
         });
     });
@@ -539,16 +552,19 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
-        const definition = findModelByName("qwen/qwen3.8-max-0902");
-        const transformed = await definition?.transform?.(messages, {
-            model: "qwen/qwen3.8-max-0902",
-            reasoning_effort: "high",
-            tool_choice: toolChoice,
-        });
+    ])(
+        "disables Qwen3.8 Max 0902 thinking for %s tool choice",
+        async (_label, toolChoice) => {
+            const definition = findModelByName("qwen/qwen3.8-max-0902");
+            const transformed = await definition?.transform?.(messages, {
+                model: "qwen/qwen3.8-max-0902",
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
 
-        expect(transformed?.options.reasoning_effort).toBe("none");
-    });
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        },
+    );
 
     it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-max-0902");
@@ -614,21 +630,24 @@ describe("resolveModelConfig", () => {
                 function: { name: "get_weather" },
             },
         ],
-    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
-        for (const name of [
-            "qwen/qwen3.8-flash",
-            "qwen/qwen3.8-flash:openrouter:alibaba",
-        ]) {
-            const definition = findModelByName(name);
-            const transformed = await definition?.transform?.(messages, {
-                model: name,
-                reasoning_effort: "high",
-                tool_choice: toolChoice,
-            });
+    ])(
+        "disables Qwen3.8 Flash thinking for %s tool choice",
+        async (_label, toolChoice) => {
+            for (const name of [
+                "qwen/qwen3.8-flash",
+                "qwen/qwen3.8-flash:openrouter:alibaba",
+            ]) {
+                const definition = findModelByName(name);
+                const transformed = await definition?.transform?.(messages, {
+                    model: name,
+                    reasoning_effort: "high",
+                    tool_choice: toolChoice,
+                });
 
-            expect(transformed?.options.reasoning_effort).toBe("none");
-        }
-    });
+                expect(transformed?.options.reasoning_effort).toBe("none");
+            }
+        },
+    );
 
     it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
         const definition = findModelByName("qwen/qwen3.8-flash");
@@ -735,7 +754,7 @@ describe("resolveModelConfig", () => {
 
     it.each([
         ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
-        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "deepinfra/fp8"],
         [
             "mistral-small-3.2",
             "mistralai/mistral-small-3.2-24b-instruct",
@@ -758,15 +777,18 @@ describe("resolveModelConfig", () => {
             "meta-llama/llama-4-scout",
             "novita/bf16",
         ],
-    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
-        const result = resolveModelConfig(messages, { model });
+    ])(
+        "pins %s to %s through %s without fallback",
+        (model, route, provider) => {
+            const result = resolveModelConfig(messages, { model });
 
-        expect(result.options.model).toBe(route);
-        expect(result.options.provider).toEqual({
-            only: [provider],
-            allow_fallbacks: false,
-        });
-    });
+            expect(result.options.model).toBe(route);
+            expect(result.options.provider).toEqual({
+                only: [provider],
+                allow_fallbacks: false,
+            });
+        },
+    );
 
     it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, {
@@ -849,6 +871,7 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("deepseek/deepseek-v4-pro-0813");
         expect(result.options.provider).toEqual({
             only: ["alibaba"],
+            ignore: ["alibaba/us-east-1"],
             allow_fallbacks: false,
         });
     });
@@ -873,57 +896,63 @@ describe("resolveModelConfig", () => {
         "sonar-deep",
         "perplexity/sonar-pro",
         "sonar-reasoning-pro",
-    ])("resolves %s to Sonar with search options on its web_search tool", async (modelName) => {
-        const model = findModelByName(modelName);
-        expect(model?.name).toBe("perplexity/sonar");
+    ])(
+        "resolves %s to Sonar with search options on its web_search tool",
+        async (modelName) => {
+            const model = findModelByName(modelName);
+            expect(model?.name).toBe("perplexity/sonar");
 
-        const transformed = await model?.transform?.(messages, {
-            model: modelName,
-            web_search_options: { search_context_size: "high" },
-            search_recency_filter: "day",
-            presence_penalty: 1,
-        });
-        if (!transformed) throw new Error("Sonar transform missing");
-        const result = resolveModelConfig(
-            transformed.messages,
-            transformed.options,
-        );
-        expect(result.options.model).toBe("perplexity/sonar");
-        expect(result.options).not.toHaveProperty("presence_penalty");
-        expect(result.options).not.toHaveProperty("web_search_options");
-        expect(result.options.modelConfig).toMatchObject({
-            responsesEndpoint: "https://api.perplexity.ai/v1/agent",
-            responsesDefaults: {
-                tools: [
-                    {
-                        type: "web_search",
-                        search_context_size: "high",
-                        filters: { search_recency_filter: "day" },
-                    },
-                ],
-            },
-        });
-    });
+            const transformed = await model?.transform?.(messages, {
+                model: modelName,
+                web_search_options: { search_context_size: "high" },
+                search_recency_filter: "day",
+                presence_penalty: 1,
+            });
+            if (!transformed) throw new Error("Sonar transform missing");
+            const result = resolveModelConfig(
+                transformed.messages,
+                transformed.options,
+            );
+            expect(result.options.model).toBe("perplexity/sonar");
+            expect(result.options).not.toHaveProperty("presence_penalty");
+            expect(result.options).not.toHaveProperty("web_search_options");
+            expect(result.options.modelConfig).toMatchObject({
+                responsesEndpoint: "https://api.perplexity.ai/v1/agent",
+                responsesDefaults: {
+                    tools: [
+                        {
+                            type: "web_search",
+                            search_context_size: "high",
+                            filters: { search_recency_filter: "day" },
+                        },
+                    ],
+                },
+            });
+        },
+    );
 
     it.each([
         ["grok", undefined, "grok-4-20-non-reasoning"],
         ["grok-4-20-reasoning", undefined, "grok-4-20-non-reasoning"],
         ["grok", "high", "grok-4-20-reasoning"],
         ["grok-4-20-reasoning", "none", "grok-4-20-non-reasoning"],
-    ] as const)("routes %s with reasoning_effort=%s to %s", async (model, reasoningEffort, deployment) => {
-        const definition = findModelByName(model);
-        const transformed = await definition?.transform?.(messages, {
-            model,
-            reasoning_effort: reasoningEffort,
-        });
-        if (!transformed) throw new Error("Grok transform missing");
+    ] as const)(
+        "routes %s with reasoning_effort=%s to %s",
+        async (model, reasoningEffort, deployment) => {
+            const definition = findModelByName(model);
+            const transformed = await definition?.transform?.(messages, {
+                model,
+                reasoning_effort: reasoningEffort,
+            });
+            if (!transformed) throw new Error("Grok transform missing");
 
-        const result = resolveModelConfig(messages, transformed.options);
-        expect(result.options.model).toBe(deployment);
-        if (deployment === "grok-4-20-non-reasoning") {
-            expect(result.options.reasoning_effort).toBeUndefined();
-        }
-    });
+            const result = resolveModelConfig(messages, transformed.options);
+            expect(result.options.model).toBe(deployment);
+            if (deployment === "grok-4-20-non-reasoning") {
+                expect(result.options.reasoning_effort).toBeUndefined();
+            }
+        },
+    );
 
     it("marks missing model configs as 404 errors", () => {
         expect(() =>

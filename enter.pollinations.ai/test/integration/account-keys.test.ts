@@ -1,5 +1,10 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
+import {
+    initialKeyEditValues,
+    keyEditUpdates,
+} from "../../frontend/src/components/keys/key-edit-values.ts";
+import type { ApiKey } from "../../frontend/src/components/keys/types.ts";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
 
 describe("Account Key Management API", () => {
@@ -114,7 +119,10 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.permissions).toEqual({
-                models: ["text", "image"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "openai/gpt-5.4-nano",
+                ],
                 account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
@@ -350,6 +358,62 @@ describe("Account Key Management API", () => {
     });
 
     describe("PATCH /api/account/keys/:id (update)", () => {
+        test("saving an older editor preserves concurrent budget, expiry and permission changes", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "before-edit",
+                pollenBudget: 10,
+            });
+            const url = `http://localhost:3000/api/account/keys/${key.id}`;
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
+            };
+            const prepared = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ expiresAt: "2030-01-07T23:54:52.123Z" }),
+            });
+            expect(prepared.status).toBe(200);
+            const initial = initialKeyEditValues(
+                (await prepared.json()) as ApiKey,
+                Date.parse("2030-01-01T00:00:00Z"),
+            );
+
+            // Spending and another editor can change these while this form is open.
+            const concurrent = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({
+                    pollenBudget: 4.9987342,
+                    expiresAt: "2030-01-03T11:22:33.456Z",
+                    accountPermissions: ["usage"],
+                    questPollenOnly: true,
+                }),
+            });
+            expect(concurrent.status).toBe(200);
+            const concurrentKey = (await concurrent.json()) as ApiKey;
+            const updates = keyEditUpdates(
+                initial,
+                { ...initial, name: "after-edit" },
+                Date.parse("2030-01-01T01:00:00Z"),
+            );
+            const saved = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify(updates),
+            });
+            expect(saved.status).toBe(200);
+            expect(await saved.json()).toMatchObject({
+                name: "after-edit",
+                pollenBalance: 4.9987342,
+                expiresAt: concurrentKey.expiresAt,
+                permissions: { account: ["usage"] },
+                questPollenOnly: true,
+            });
+        });
+
         test("accepts an ISO 8601 expiry with a UTC offset", async ({
             accountToken,
         }) => {

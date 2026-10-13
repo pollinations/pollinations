@@ -50,7 +50,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
-| Start a Linux sandbox (alpha) | `polli sandbox create` (then `list`, `logs <id>`, `timeout <id> <seconds>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
+| Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
 | ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
@@ -188,7 +188,7 @@ polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window
-polli quests             # your quests + claim state (open/claimable/claimed/coming)
+polli quests             # your quests + claim state (open/claimable/claimed/closed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
@@ -240,8 +240,11 @@ polli keys list                                                    # list all ke
 polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
 polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
+polli keys create --name "server" --models flux zimage           # only these two models
+polli keys update <id> --models text flux                          # every text model plus flux
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

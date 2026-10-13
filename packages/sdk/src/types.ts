@@ -1118,6 +1118,9 @@ export type ModelCapability =
     | "pollinations_models";
 
 /** Model information */
+/** Model catalog to list: `/<kind>/models` on the API. */
+export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
     [key: string]: unknown;

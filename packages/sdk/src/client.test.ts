@@ -10,12 +10,7 @@ import {
     generateImage,
     generateText,
     generateVideo,
-    getAudioModels,
-    getEmbeddingModels,
-    getImageModels,
     getModels,
-    getTextModels,
-    getVideoModels,
     resetClient,
 } from "./helpers.js";
 import type { EmbeddingInput } from "./index.js";
@@ -1732,39 +1727,29 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
 
 describe("Pollinations model discovery", () => {
     it.each([
-        ["models", "https://example.test/models"],
-        ["textModels", "https://example.test/text/models"],
-        ["imageModels", "https://example.test/image/models"],
-        ["videoModels", "https://example.test/video/models"],
-        ["audioModels", "https://example.test/audio/models"],
-        ["embeddingModels", "https://example.test/embeddings/models"],
-    ] as const)("client.%s fetches models from %s", async (method, expectedUrl) => {
+        [undefined, "https://example.test/models"],
+        ["text", "https://example.test/text/models"],
+        ["image", "https://example.test/image/models"],
+        ["video", "https://example.test/video/models"],
+        ["audio", "https://example.test/audio/models"],
+        ["embeddings", "https://example.test/embeddings/models"],
+    ] as const)("models(%s) fetches %s", async (kind, expectedUrl) => {
         const client = newClient();
         const models = [{ name: "test-model", title: "Test Model" }];
         fetchMock.mockResolvedValueOnce(makeResponse(models));
 
-        await expect(client[method]()).resolves.toEqual(models);
+        await expect(client.models(kind)).resolves.toEqual(models);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(expectedUrl);
     });
 
-    it.each([
-        ["getModels", getModels, "https://example.test/models"],
-        ["getTextModels", getTextModels, "https://example.test/text/models"],
-        ["getImageModels", getImageModels, "https://example.test/image/models"],
-        ["getVideoModels", getVideoModels, "https://example.test/video/models"],
-        ["getAudioModels", getAudioModels, "https://example.test/audio/models"],
-        [
-            "getEmbeddingModels",
-            getEmbeddingModels,
-            "https://example.test/embeddings/models",
-        ],
-    ] as const)("helper %s fetches models from %s", async (_, helper, expectedUrl) => {
+    it("getModels passes the kind through", async () => {
         configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
-        const models = [{ name: "test-model", title: "Test Model" }];
-        fetchMock.mockResolvedValueOnce(makeResponse(models));
+        fetchMock.mockResolvedValueOnce(makeResponse([]));
 
-        await expect(helper()).resolves.toEqual(models);
-        expect(fetchMock.mock.calls[0]?.[0]).toBe(expectedUrl);
+        await getModels("video");
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/video/models",
+        );
     });
 });
 

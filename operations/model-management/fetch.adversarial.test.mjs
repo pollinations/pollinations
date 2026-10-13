@@ -485,6 +485,8 @@ test("HTTP200 challenge and login screens cannot become evidence", () => {
     for (const html_content of [
         "<title>Just a moment...</title><p>Enable JavaScript and cookies to continue</p>",
         '<form action="/login"><input type="password"></form><p>Please sign in to continue</p>',
+        `<title>Verifying your browser…</title><h1>Verifying your browser…</h1><p>${"Anubis public challenge. ".repeat(100)}</p>`,
+        `<title>Making sure you're not a bot!</title><h1>Making sure you're not a bot!</h1><p>${"Anubis public challenge. ".repeat(100)}</p>`,
     ]) {
         const { result } = run({ pages: [{ status: 200, html_content }] });
         assert.equal(result.status, "unavailable");
@@ -499,6 +501,23 @@ test("Unicode survives HTML parsing and truncation by code point", () => {
     });
     assert.equal(result.status, "fetched");
     assert.equal(result.text, "🪴é中文");
+});
+
+test("previously cached challenge text is rejected for HTTP and browser reads", () => {
+    for (const mode of ["http", "dynamic"]) {
+        const setup = `import tempfile, hashlib, os\nfrom pathlib import Path\nfrom datetime import datetime, timezone\ncache=tempfile.TemporaryDirectory(); os.environ["FETCH_CACHE_DIR"]=cache.name\nurl="https://docs.example/"\ntext="Making sure you're not a bot!\\n" + "Anubis public challenge. "*100\nmode=case["request"]["mode"]\npage={"requestedUrl":url,"url":url,"text":text,"method":"scrapling-browser" if mode=="dynamic" else "scrapling-http","pageDigest":hashlib.sha256(text.encode()).hexdigest(),"extractionVersion":2,"fetchedAt":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),"links":[]}\nkey=("dynamic:" if mode=="dynamic" else "")+url\nPath(cache.name,hashlib.sha256(key.encode()).hexdigest()+".json").write_text(json.dumps(page))\n`;
+        const script = harness.replace(
+            "sys.stdin = io.StringIO",
+            `${setup}sys.stdin = io.StringIO`,
+        );
+        const { result, calls } = run(
+            { request: { url: "https://docs.example/", mode } },
+            script,
+        );
+        assert.equal(result.status, "unavailable");
+        assert.match(result.error, /cached page failed validation/);
+        assert.equal(calls.length, 0);
+    }
 });
 
 test("hidden script, style, template, and noscript text is excluded", () => {
@@ -992,6 +1011,8 @@ test(
         for (const body of [
             "<html><head><title>Just a moment...</title></head><body>Enable JavaScript and cookies to continue</body></html>",
             '<html><body><form action="/login"><input type="password"></form><p>Please sign in to continue</p></body></html>',
+            `<html><head><title>Verifying your browser…</title></head><body><h1>Verifying your browser…</h1><p>${"Anubis public challenge. ".repeat(100)}</p></body></html>`,
+            `<html><head><title>Making sure you're not a bot!</title></head><body><h1>Making sure you're not a bot!</h1><p>${"Anubis public challenge. ".repeat(100)}</p></body></html>`,
             "<html><body><script>window.empty=true</script></body></html>",
         ]) {
             const { result, cached } = runBrowser({

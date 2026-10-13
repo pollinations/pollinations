@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { setKeyOverride } from "../lib/config.js";
-import { setOutputMode } from "../lib/output.js";
+import { saveCredentials, setKeyOverride } from "../lib/config.js";
+import { ExitSignal, setOutputMode } from "../lib/output.js";
 import { authCommand } from "./auth.js";
+
+vi.mock("../lib/config.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../lib/config.js")>();
+    return { ...actual, saveCredentials: vi.fn() };
+});
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -34,5 +39,20 @@ describe("auth status", () => {
             pollen: 0,
             key_budget: 4.4691,
         });
+    });
+});
+
+describe("auth login with a key", () => {
+    it("saves nothing when the API rejects the key", async () => {
+        vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+        vi.stubGlobal("fetch", async () => Response.json({}, { status: 401 }));
+
+        await expect(
+            authCommand.parseAsync(["login", "--token", "sk_invalid"], {
+                from: "user",
+            }),
+        ).rejects.toThrow(ExitSignal);
+
+        expect(saveCredentials).not.toHaveBeenCalled();
     });
 });

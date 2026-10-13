@@ -1,4 +1,6 @@
+import { ValidationError } from "@shared/http/validation-error.ts";
 import { describe, expect, it } from "vitest";
+import { throwTextError } from "../../src/text/errors.js";
 import {
     normalizeOptions,
     prepareMessages,
@@ -59,6 +61,19 @@ describe("prepareMessages", () => {
                 { role: "user", name: "invalid name", content: "hello" },
             ]),
         ).toEqual([{ role: "user", content: "hello" }]);
+    });
+});
+
+describe("local request validation", () => {
+    it("keeps an empty messages array a ValidationError, not an UpstreamError", () => {
+        let error: ValidationError | undefined;
+        try {
+            prepareMessages([]);
+        } catch (e) {
+            error = e as ValidationError;
+        }
+        expect(error).toBeInstanceOf(ValidationError);
+        expect(() => throwTextError(error as ValidationError)).toThrow(error);
     });
 });
 

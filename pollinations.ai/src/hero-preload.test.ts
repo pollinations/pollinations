@@ -54,41 +54,44 @@ describe("early responsive hero preload", () => {
         ["/apps", "apps"],
         ["/community", "community"],
         ["/PLAY/", "play"],
-    ])("preloads exactly one matching hero for %s in either theme", (path, page) => {
-        for (const mode of ["light", "dark"]) {
-            // Saved preference must win even when the OS preference disagrees.
-            const { links, classes } = runBootstrap(
-                path,
-                mode,
-                mode === "light",
-            );
-            const base = `/art/${page}-hero-${mode === "dark" ? "night" : "day"}`;
-            expect(links).toEqual([
-                {
-                    rel: "preload",
-                    as: "image",
-                    type: "image/webp",
-                    fetchPriority: "high",
-                    imageSrcset: `${base}-1024.webp 1024w, ${base}.webp 2048w`,
-                    imageSizes: HERO_IMAGE_SIZES,
-                    href: `${base}.webp`,
-                },
-            ]);
-            expect(classes).toEqual(mode === "dark" ? ["dark"] : []);
-        }
-    });
+    ])(
+        "preloads exactly one matching hero for %s in either theme",
+        (path, page) => {
+            for (const mode of ["light", "dark"]) {
+                // Saved preference must win even when the OS preference disagrees.
+                const { links, classes } = runBootstrap(
+                    path,
+                    mode,
+                    mode === "light",
+                );
+                const base = `/art/${page}-hero-${mode === "dark" ? "night" : "day"}`;
+                expect(links).toEqual([
+                    {
+                        rel: "preload",
+                        as: "image",
+                        type: "image/webp",
+                        fetchPriority: "high",
+                        imageSrcset: `${base}-1024.webp 1024w, ${base}.webp 2048w`,
+                        imageSizes: HERO_IMAGE_SIZES,
+                        href: `${base}.webp`,
+                    },
+                ]);
+                expect(classes).toEqual(mode === "dark" ? ["dark"] : []);
+            }
+        },
+    );
 
-    test.each([
-        null,
-        "invalid",
-    ])("uses the system theme when saved mode is %s", (saved) => {
-        for (const dark of [false, true]) {
-            const { links } = runBootstrap("/", saved, dark);
-            expect(links[0].href).toBe(
-                `/art/home-hero-${dark ? "night" : "day"}.webp`,
-            );
-        }
-    });
+    test.each([null, "invalid"])(
+        "uses the system theme when saved mode is %s",
+        (saved) => {
+            for (const dark of [false, true]) {
+                const { links } = runBootstrap("/", saved, dark);
+                expect(links[0].href).toBe(
+                    `/art/home-hero-${dark ? "night" : "day"}.webp`,
+                );
+            }
+        },
+    );
 
     test("blocked storage still allows the system theme and preload", () => {
         const { links, classes } = runBootstrap("/", "light", true, true);
@@ -97,13 +100,10 @@ describe("early responsive hero preload", () => {
         expect(links[0].href).toContain("home-hero-night.webp");
     });
 
-    test.each([
-        "/terms",
-        "/privacy",
-        "/refunds",
-        "/missing",
-        "/play/missing",
-    ])("does not preload unrelated artwork on %s", (path) => {
-        expect(runBootstrap(path, "light", false).links).toEqual([]);
-    });
+    test.each(["/terms", "/privacy", "/refunds", "/missing", "/play/missing"])(
+        "does not preload unrelated artwork on %s",
+        (path) => {
+            expect(runBootstrap(path, "light", false).links).toEqual([]);
+        },
+    );
 });

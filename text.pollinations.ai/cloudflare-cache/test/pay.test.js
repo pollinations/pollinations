@@ -172,8 +172,6 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
         expect(response.status).toBe(402);
         expect(text).toBe("{}");
         const headers = Object.fromEntries(response.headers);
-        expect(headers["x-legacy-path"]).toBe("worker");
-        delete headers["x-legacy-path"];
         expect(headers).toEqual(vm);
         // The challenge names the VM's origin host and path, without the query
         const challenge = JSON.parse(atob(headers["payment-required"]));
@@ -321,7 +319,6 @@ test("a payment header is ignored while the slot is free, and on a cache hit", a
     });
     expect(free.response.status).toBe(200);
     expect(free.text).toBe("ok");
-    expect(free.response.headers.get("x-legacy-path")).toBe("worker");
     expect(await storedAt("/free%20with%20a%20payment")).toBeNull();
 
     await call("/cached%20before%20a%20payment", { ip: nextIp() });

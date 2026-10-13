@@ -335,8 +335,11 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
                  "CLASSIFICATION_OUTPUT": str(output)}, check=True,
         )
         gist.update(json.loads(output.read_text()))
-    changed = any(path.startswith("shared/") for path in files)
-    if changed or announces_retirement(pr):
+    # Model and API changes describe main; master (the legacy APIs) has its own
+    # unrelated shared/ folder and APIDOCS.md.
+    on_main = pr["base"]["ref"] == "main"
+    changed = on_main and any(path.startswith("shared/") for path in files)
+    if changed or (on_main and announces_retirement(pr)):
         if not (root / "node_modules/tsx").is_dir():
             subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
         # Rebase detection needs original commits as well as the merged history.
@@ -361,7 +364,7 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
         if refs:
             gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
     # The docs PR regenerated after each production deploy carries the live API changes.
-    if API_DOCS in files:
+    if on_main and API_DOCS in files:
         gist["api_changes"] = api_changes_for_pr(pr, root)
 
 # ── App catalog lookup ──────────────────────────────────────────────

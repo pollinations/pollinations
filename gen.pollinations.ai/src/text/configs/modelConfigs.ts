@@ -713,6 +713,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
+    // The base slug "google-ai-studio" also matches its priority tier (1.8x the
+    // rate) and its flex tier, so both are excluded explicitly.
+    "gemini-4-argon-openrouter-ai-studio": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemini-4-argon",
+            defaultOptions: {
+                provider: {
+                    only: ["google-ai-studio"],
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
         "google-ai-studio",
@@ -971,6 +987,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
     "google/gemini-3.8-flash": createVertexGeminiConfig(
         "gemini-3.8-flash",
+        "global",
+    ),
+    "google/gemini-4-argon": createVertexGeminiConfig(
+        "gemini-4-argon",
         "global",
     ),
 

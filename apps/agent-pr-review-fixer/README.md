@@ -22,7 +22,9 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -d '{"model":"<github-username>/pr-review-fixer","messages":[{"role":"user","content":"Review https://github.com/pollinations/pollinations/pull/123 and push to https://github.com/me/pollinations with github_pat_..."}]}'
 ```
 
-The fork must contain the PR head commit. A GitHub fork of the base repository has it once you fetch it (`git fetch upstream pull/123/head && git push origin FETCH_HEAD:refs/heads/pr-123`), or for PRs opened from your own fork it is already there. Use a fine-grained token with **Contents: read and write** on that fork only, and a short expiry.
+The fork must contain the PR head commit. A GitHub fork of the base repository has it once you fetch it (`git fetch upstream pull/123/head && git push origin FETCH_HEAD:refs/heads/pr-123`), or for PRs opened from your own fork it is already there.
+
+The token goes only in the private API request above. Never paste it in a PR, issue or any other public place: the agent reads it from the request, and it never posts a comment anywhere. Only a fine-grained token (`github_pat_...`) is used, because it can be limited to one repository. Give it **Contents: read and write** on that fork only and a short expiry, and revoke it after the run. A classic token (`ghp_...`) can write to every repository of its owner, so the agent removes it from the text and does not push with it.
 
 ## Deploy
 
@@ -43,7 +45,7 @@ The tests use real code with GitHub and model doubles: request parsing and token
 ## What works, what blocks
 
 - **Reading a PR works today** with anonymous GitHub API calls (60 requests/hour per IP; a token raises it). A run makes 2 + one per loaded file.
-- **Pushing is the boundary.** Pollinations has no per-caller GitHub write credential. `computer` pushes only to the shared collective-memory repository, and Composio's GitHub connection is reachable from MCP tools but not as a git credential. So the caller sends a token in the message. The agent keeps it out of the model input and the reply, but the message itself still passes through the gateway. What agents need: a per-user GitHub connection the agent runtime can use for scoped writes, like Composio connections, so no token travels in a prompt.
+- **Pushing is the boundary.** Pollinations has no per-caller GitHub write credential. `computer` pushes only to the shared collective-memory repository, and Composio's GitHub connection is reachable from MCP tools but not as a git credential. So the caller sends a short-lived fine-grained token in the request. The agent removes every GitHub token from the PR text, patches and files before the prompt is built, keeps it out of the reply, and sends it only in the `Authorization` header to `api.github.com`. The request itself still passes through the gateway, so this is a workaround, not a safe default. What agents need: a per-user GitHub connection the agent runtime can use for scoped writes, like Composio connections, so no token travels in a request.
 - **Running the repo's tests is missing.** Code agents run in a Worker with no shell, and `computer` has no Node or Python. The fix is proposed and diffed, not tested; the review says so instead of claiming checks.
 - **Long runs.** One model call keeps a review well under Worker time limits; a multi-step "fix, test, retry" loop would need a sandbox with language runtimes.
 - **Cost.** Input dominates: GPT-6.1 Sol is 2 Pollen per million input tokens and 10 per million output tokens. A small PR cost 0.0023 Pollen; a 20k-token review comes to about 0.04 plus output. The reply prints the exact figure for each run.

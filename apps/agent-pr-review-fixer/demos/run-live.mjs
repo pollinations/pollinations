@@ -1,6 +1,7 @@
 // Run the agent's real code locally against live GitHub and gen.pollinations.ai.
 //   POLLINATIONS_API_KEY=... GITHUB_TOKEN=... node demos/run-live.mjs <pr-url> [model] [fork-url]
-// GITHUB_TOKEN is used for reads (rate limit) and, when a fork URL is given, for the push.
+// GITHUB_TOKEN is used for reads (rate limit) and, when a fork URL is given and it is a
+// fine-grained token (github_pat_...), for the push. Classic tokens are never used to push.
 import { review } from "../agent.ts";
 
 const [url, model = "openai/gpt-6.1-sol", fork] = process.argv.slice(2);

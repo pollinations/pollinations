@@ -1,0 +1,33 @@
+{
+  "pr_number": 17357,
+  "title": "Track Free API Classic referrers and cover Classic in the privacy policy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17357",
+  "merged_at": "2026-10-13T19:42:14Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Added an `api_referrers` dataset to the daily Cloudflare-to-Tinybird sync for text.pollinations.ai and image.pollinations.ai. It groups requests by day, referring host and status, without storing paths, and retains the 10,000 largest groups per API host per day. A dry run produced about 2,800 text groups (0.6 MB) and 10,000 image groups (2.2 MB) per day; on 2026-10-12, the retained groups covered all text requests and 99.7% of image requests across about 7,800 sites. It uses the existing `cloudflare_traffic_raw` datasource and dashboard dataset filter, so no Tinybird deploy is needed. The workflow accepts `dataset: api_referrers` for a backfill of up to 89 days. The privacy policy now includes Free API Classic, describes its processed data, and clarifies that Classic analytics use the keyed IP hash rather than raw IP addresses. Cloudflare and Tinybird remain the listed sub-processors.",
+    "keywords": [
+      "Free API Classic",
+      "referrers",
+      "Cloudflare",
+      "Tinybird",
+      "privacy policy",
+      "analytics"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17357.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny analyst's visor and sorts little flower-shaped request counters into two baskets labeled TEXT and IMAGE beside a warmly glowing CRT chart, with lime green (#ecf874) leaves and soft pastel gradients throughout. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene and strictly pixel art, never realistic, in a cozy pixel art, 8-bit aesthetic with soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T19:43:34.762290+00:00",
+  "area": "Data & insights",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "42eb3e629c6f2f8b37e49d83b4adb59cee7ef9bc",
+  "announcements": []
+}

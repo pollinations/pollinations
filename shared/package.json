@@ -1,16 +1,6 @@
 {
     "name": "pollinations-shared",
-    "version": "1.0.0",
-    "description": "Shared utilities for Pollinations services",
-    "type": "module",
-    "main": "index.js",
-    "scripts": {
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
-    },
-    "devDependencies": {
-        "typescript": "^5.9.3",
-        "vitest": "^3.2.4"
-    }
+    "private": true,
+    "description": "Code shared by the Free API Classic Workers",
+    "type": "module"
 }

@@ -27,12 +27,12 @@ import {
     auth,
     authFromSnapshot,
     type GenerationAuthSnapshot,
-    keyPermissionsLink,
 } from "@/middleware/auth.ts";
 import { logger } from "@/middleware/logger.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
-import { requireFunds } from "@/utils/generation-access.ts";
+import { requireAccountFunds } from "@/utils/generation-access.ts";
+import { permissionRequired } from "@/utils/refusals.ts";
 
 // E2B's control API, forwarded under Pollinations keys. The SDKs talk to the
 // sandboxes themselves (commands, files, ports) directly at E2B with the
@@ -205,7 +205,7 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             userId: c.var.auth.requireUser().id,
             apiKeyId: c.var.auth.apiKey?.id,
             apiKeyPollenBalance: c.var.auth.apiKey?.pollenBalance,
-            // requireFunds checked the key budget; nothing was reserved.
+            // requireAccountFunds checked the key budget; nothing was reserved.
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
@@ -277,7 +277,7 @@ async function extendLease(
     const runEnd = (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
     const endAt = Math.min(now + timeout * 1000, runEnd);
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
-    if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
+    if (bill.price > 0) await requireAccountFunds(c, bill.price);
     const response = await e2b(c.env, c.req.path.slice(E2B_PATH.length), {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -400,9 +400,11 @@ async function requireSandboxAccess(c: E2bContext, next: Next) {
     c.var.auth.requireUser();
     const apiKey = c.var.auth.apiKey;
     if (!hasAccountPermission(apiKey, "machines")) {
-        throw new HTTPException(403, {
-            message: `API key does not have 'account:machines' permission. Manage key permissions at ${keyPermissionsLink(apiKey?.id ?? "", c.env.ENVIRONMENT)}`,
-        });
+        throw permissionRequired(
+            c,
+            { permission: "machines" },
+            "API key does not have 'account:machines' permission.",
+        );
     }
     await next();
 }
@@ -431,7 +433,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             const until = keepUntil(c, body.timeout);
             // An empty wallet cannot pay for any lease.
-            await requireFunds(c, 0, "sandbox lease");
+            await requireAccountFunds(c, 0);
             await requireCapacity(c);
 
             const response = await e2b(
@@ -471,7 +473,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                         Date.parse(sandbox.startedAt)) /
                         1000,
                 );
-                await requireFunds(c, bill.price, "sandbox lease");
+                await requireAccountFunds(c, bill.price);
                 if (until) await setKeep(c, created.sandboxID, until);
             } catch (error) {
                 // Never leave an unpaid sandbox running.

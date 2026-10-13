@@ -18,7 +18,7 @@ import {
  *   - early_adopter  -> user.created_at           (registered 9+ months ago)
  *   - top_up_since_launch -> stripe_checkout_credits (one launch-era checkout)
  *   - top_up_100_since_launch -> stripe_checkout_credits (>=100 launch-era Pollen)
- *   - first_auto_top_up -> stripe_auto_top_up_attempt (first paid auto top-up
+ *   - first_auto_top_up -> stripe_auto_top_up_attempt (one paid auto top-up
  *                          on or after the quest's launch)
  *
  * The SQL decides whether the current user qualifies. The rewards table is the
@@ -39,7 +39,7 @@ const QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS = 1_782_000_000; // 2026-06-21T00:00:0
 const QUEST_REWARDS_LAUNCH_CUTOFF_MILLIS =
     QUEST_REWARDS_LAUNCH_CUTOFF_SECONDS * 1000;
 const TIMESTAMP_MILLIS_THRESHOLD = 100_000_000_000;
-// Users who already had a paid auto top-up before this date don't qualify.
+// Only auto top-ups from the quest's launch count.
 const AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL = "13/10/26";
 const AUTO_TOP_UP_QUEST_LAUNCH_MILLIS = Date.parse("2026-10-13T00:00:00Z");
 
@@ -136,7 +136,7 @@ const overHundredPollenSinceLaunchQuest = {
 const firstAutoTopUpQuest: QuestDefinition = {
     id: "first_auto_top_up",
     title: "First auto top-up",
-    description: `Turn on [auto top-up](/pollen#buy-pollen) for the first time and complete one paid auto top-up. _(from ${AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL})_`,
+    description: `Turn on [auto top-up](/pollen#buy-pollen) and complete one paid auto top-up. _(from ${AUTO_TOP_UP_QUEST_LAUNCH_DATE_LABEL})_`,
     category: "grow",
     scope: "perUser",
     rewardAmount: 20,
@@ -256,8 +256,8 @@ export async function evaluateUser(
         FROM stripe_auto_top_up_attempt
         WHERE stripe_auto_top_up_attempt.user_id = ${user.id}
           AND stripe_auto_top_up_attempt.status = 'paid'
-        GROUP BY stripe_auto_top_up_attempt.user_id
-        HAVING MIN(stripe_auto_top_up_attempt.created_at) >= ${AUTO_TOP_UP_QUEST_LAUNCH_MILLIS}`)
+          AND stripe_auto_top_up_attempt.created_at >= ${AUTO_TOP_UP_QUEST_LAUNCH_MILLIS}
+        LIMIT 1`)
             : [],
     ]);
 

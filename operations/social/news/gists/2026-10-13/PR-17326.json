@@ -1,0 +1,32 @@
+{
+  "pr_number": 17326,
+  "title": "feat(image): add West US 3 and Poland regions for GPT Image 2",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17326",
+  "merged_at": "2026-10-13T16:26:21Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added West US 3 and Poland Central to GPT Image 2’s Azure image routing, with 12 images per minute of quota in each region. Combined Azure capacity increases from 24 to 48 images per minute, easing quota pressure on East US 2 and Sweden. The new deployments use gpt-image-2 version 2026-04-21 on Global Standard; price, access, and OpenAI fallback behavior are unchanged.",
+    "keywords": [
+      "GPT Image 2",
+      "Azure",
+      "image generation",
+      "regional routing",
+      "quota"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17326.jpg",
+    "prompt": "In a cozy pixel art garden, four small server towers sit among flowers and code-plants, with bold lime green (#ecf874) paths connecting them; Polli wears a tiny map-reader hat and points toward two newly added towers. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines, and subtle CRT glow."
+  },
+  "generated_at": "2026-10-13T16:27:30.817547+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "8cb62cf0bf163e5b41d0c3fba70baab52359371b",
+  "announcements": []
+}

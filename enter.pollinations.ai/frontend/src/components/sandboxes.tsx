@@ -62,6 +62,10 @@ const UNITS = [
     { label: "days", seconds: 86_400 },
 ];
 
+// Installs polli, logs in and adds the `*.polli` ssh hosts.
+const SSH_SETUP =
+    "npm i -g @pollinations/cli && polli auth login && polli sandbox ssh-config";
+
 // What E2B accepts: `name`, `name:tag` or `team/name:tag`.
 const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 
@@ -402,7 +406,10 @@ export function Sandboxes() {
                                     .join(" and ")}{" "}
                                 come with polli logged in. Or any public E2B
                                 template, e.g. claude, codex, opencode or base;
-                                team/name:tag works too.
+                                team/name:tag works too.{" "}
+                                <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
+                                    See E2B’s templates
+                                </InlineLink>
                             </Text>
                         )}
                         <Text size="sm" tone={full ? "strong" : "muted"}>
@@ -446,16 +453,39 @@ export function Sandboxes() {
                     </div>
                 )}
             </SectionContent>
-            <Text size="sm" tone="muted">
-                Sandbox time comes out of your Pollen ahead of time, past 24
-                hours an hour at a time. Unused time isn’t refunded when you
-                pause or kill a sandbox early. A sandbox pauses when its time
-                ends; paused ones keep their files and cost nothing. To ssh in,
-                install polli (<code>npm i -g @pollinations/cli</code>), run{" "}
-                <code>polli auth login</code> and{" "}
-                <code>polli sandbox ssh-config</code> once. ssh resumes a paused
-                sandbox and adds 10 minutes at a time while connected.
-            </Text>
+            <div className="flex flex-col gap-1">
+                <Text size="sm" tone="strong" weight="semibold">
+                    How time works
+                </Text>
+                <ul className="flex list-disc flex-col gap-1 pl-5 text-sm text-theme-text-muted">
+                    <li>
+                        Time comes out of your Pollen ahead of time; past 24
+                        hours, an hour at a time.
+                    </li>
+                    <li>
+                        When the time is up, the sandbox pauses. Paused
+                        sandboxes keep their files and cost nothing.
+                    </li>
+                    <li>Unused time isn’t refunded.</li>
+                </ul>
+            </div>
+            <div className="flex flex-col gap-2">
+                <Text size="sm" tone="strong" weight="semibold">
+                    Connect with ssh
+                </Text>
+                <Text size="sm" tone="muted">
+                    Set up polli once:
+                </Text>
+                <CopyField
+                    label="Copy the polli setup command"
+                    value={SSH_SETUP}
+                />
+                <Text size="sm" tone="muted">
+                    Then copy a sandbox’s ssh command above. ssh resumes a
+                    paused sandbox and adds 10 minutes at a time while you’re
+                    connected.
+                </Text>
+            </div>
 
             <ConfirmationDialog
                 open={!!pending}

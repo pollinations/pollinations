@@ -22,6 +22,7 @@ import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSignInRouteImport } from './routes/app.sign-in'
 import { Route as DashboardSignInRouteImport } from './routes/_dashboard.sign-in'
+import { Route as DashboardSandboxesRouteImport } from './routes/_dashboard.sandboxes'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
@@ -95,6 +96,11 @@ const DashboardSignInRoute = DashboardSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardSandboxesRoute = DashboardSandboxesRouteImport.update({
+  id: '/sandboxes',
+  path: '/sandboxes',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
   id: '/quests',
   path: '/quests',
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sandboxes': typeof DashboardSandboxesRoute
   '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sandboxes': typeof DashboardSandboxesRoute
   '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/_dashboard/sandboxes': typeof DashboardSandboxesRoute
   '/_dashboard/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sandboxes'
     | '/sign-in'
     | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sandboxes'
     | '/sign-in'
     | '/app/sign-in'
   id:
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/_dashboard/sandboxes'
     | '/_dashboard/sign-in'
     | '/app/sign-in'
   fileRoutesById: FileRoutesById
@@ -382,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSignInRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/sandboxes': {
+      id: '/_dashboard/sandboxes'
+      path: '/sandboxes'
+      fullPath: '/sandboxes'
+      preLoaderRoute: typeof DashboardSandboxesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/_dashboard/quests': {
       id: '/_dashboard/quests'
       path: '/quests'
@@ -450,6 +469,7 @@ interface DashboardRouteChildren {
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
+  DashboardSandboxesRoute: typeof DashboardSandboxesRoute
   DashboardSignInRoute: typeof DashboardSignInRoute
 }
 
@@ -462,6 +482,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,
+  DashboardSandboxesRoute: DashboardSandboxesRoute,
   DashboardSignInRoute: DashboardSignInRoute,
 }
 

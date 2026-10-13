@@ -7,7 +7,7 @@ import {
 } from "cloudflare:test";
 import { signSessionToken } from "@shared/auth/session-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { apikey } from "@shared/db/better-auth.ts";
+import { apikey, user } from "@shared/db/better-auth.ts";
 import { sandboxKeep } from "@shared/db/sandbox.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { eq } from "drizzle-orm";
@@ -225,6 +225,8 @@ const sandboxKey = (tierBalance = 10, pollenBudget?: number) =>
 const questPollen = async (userId: string) =>
     (await getUserBalance(drizzle(env.DB), userId)).tierBalance;
 
+const keeps = () => drizzle(env.DB).select().from(sandboxKeep);
+
 afterEach(() => {
     vi.unstubAllGlobals();
 });
@@ -364,7 +366,8 @@ test("a lease runs to the end of E2B's 24-hour run at the latest; resuming start
     const owner = await sandboxKey();
     const created = await createSandbox(owner.key);
     const { sandboxID } = await created.json<{ sandboxID: string }>();
-    // The run ends 600 s from now: an hour's lease gets 300 s past the paid 300.
+    // The run ends 600 s from now: an hour's timeout pays 300 s past the
+    // paid 300 and keeps the sandbox for the rest, in a new run.
     e2b.sandboxes[0].startedAt = new Date(
         Date.now() - RUN_MS + 600_000,
     ).toISOString();
@@ -373,6 +376,9 @@ test("a lease runs to the end of E2B's 24-hour run at the latest; resuming start
         timeout: 3600,
     });
     expect(extended.status).toBe(204);
+    const [keep] = await keeps();
+    expect(keep.sandboxId).toBe(sandboxID);
+    expect(keep.until.getTime() - Date.now()).toBeCloseTo(3_600_000, -4);
 
     // E2B pauses the sandbox when the run ends; resuming pays a whole lease.
     await post(owner.key, `/sandboxes/${sandboxID}/pause`);
@@ -428,8 +434,6 @@ test("refuses keys without the scope, unpaid leases and closed endpoints", async
     await vi.waitFor(() => expect(e2b.leases()).toHaveLength(3));
 });
 
-const keeps = () => drizzle(env.DB).select().from(sandboxKeep);
-
 test("a timeout past E2B's 24-hour run keeps the sandbox, paying an hour at a time", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
@@ -453,14 +457,28 @@ test("a timeout past E2B's 24-hour run keeps the sandbox, paying an hour at a ti
         8,
     );
 
-    // A session token leaves no key to renew it with.
+    // Kept from the dashboard's session, the owner pays the renewals.
     const token = await signSessionToken({
         secret: env.BETTER_AUTH_SECRET,
         userId: owner.userId,
     });
-    const refused = await createSandbox(token, { timeout: week });
-    expect(refused.status).toBe(400);
-    expect(e2b.sandboxes).toHaveLength(1);
+    expect((await createSandbox(token, { timeout: week })).status).toBe(201);
+    expect((await keeps())[1]).toMatchObject({
+        sandboxId: e2b.sandboxes[1].sandboxID,
+        apiKeyId: null,
+    });
+
+    // The list says until when gen keeps each one.
+    expect((await createSandbox(owner.key)).status).toBe(201);
+    const listed = await (await call(owner.key, "/v2/sandboxes")).json<
+        { keptUntil?: string }[]
+    >();
+    expect(listed.map((sandbox) => Boolean(sandbox.keptUntil))).toEqual([
+        true,
+        true,
+        false,
+    ]);
+    expect(Date.parse(listed[0].keptUntil ?? "")).toBe(keep.until.getTime());
 });
 
 test("like E2B's timeout, a later timeout or a pause ends the keep, and connect never does", async () => {
@@ -518,7 +536,7 @@ test("like E2B's timeout, a later timeout or a pause ends the keep, and connect 
     expect(paid[3]).toBeCloseTo(12 * LEASE_300S, 4);
 });
 
-test("the cron renews kept sandboxes until their timeout, resumes paused ones, and ends a keep its key cannot pay", async () => {
+test("the cron renews kept sandboxes until their timeout, resumes paused ones, and ends a keep its key or owner cannot pay", async () => {
     const e2b = stubE2b();
     const db = drizzle(env.DB);
     // Each user runs at most three sandboxes.
@@ -531,6 +549,13 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         .update(apikey)
         .set({ enabled: false })
         .where(eq(apikey.id, revoked.id));
+    // Kept from the dashboard, without a key.
+    const viewer = await sandboxKey();
+    const banned = await sandboxKey();
+    await db
+        .update(user)
+        .set({ banned: true })
+        .where(eq(user.id, banned.userId));
     const sandbox = (
         sandboxID: string,
         userId: string,
@@ -557,12 +582,14 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
             state: "paused",
             endAt: inSeconds(-600),
         }),
+        sandbox("dashboard", viewer.userId),
         sandbox("later", other.userId, { endAt: inSeconds(1800) }),
         // Another user's: `other` already runs three, the most it may.
         sandbox("unkept", broke.userId),
         sandbox("broke", broke.userId),
         sandbox("capped", capped.userId),
         sandbox("revoked", revoked.userId),
+        sandbox("banned", banned.userId),
     );
     const until = new Date(Date.now() + 1200_000);
     const month = new Date(Date.now() + 30 * 86_400_000);
@@ -577,15 +604,17 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         { sandboxId: "broke", apiKeyId: broke.id, until: month },
         { sandboxId: "capped", apiKeyId: capped.id, until: month },
         { sandboxId: "revoked", apiKeyId: revoked.id, until: month },
+        { sandboxId: "dashboard", apiKeyId: null, until: month },
+        { sandboxId: "banned", apiKeyId: null, until: month },
     ]);
-    const untouched = structuredClone(e2b.sandboxes.slice(5));
+    const untouched = structuredClone(e2b.sandboxes.slice(6));
     untouched.unshift(structuredClone(e2b.sandboxes[2]));
 
     const ctx = createExecutionContext();
     await worker.scheduled(createScheduledController(), env, ctx);
     await waitOnExecutionContext(ctx);
 
-    const [due, old, , ending, paused] = e2b.sandboxes;
+    const [due, old, , ending, paused, dashboard] = e2b.sandboxes;
     expect(Date.parse(due.endAt) - Date.now()).toBeGreaterThan(3590_000);
     expect(old.state).toBe("running");
     expect(Date.now() - Date.parse(old.startedAt)).toBeLessThan(10_000);
@@ -596,11 +625,13 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
     );
     expect(paused.state).toBe("running");
     expect(Date.parse(paused.endAt) - Date.now()).toBeGreaterThan(3590_000);
-    expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(5)]).toEqual(untouched);
+    expect(Date.parse(dashboard.endAt) - Date.now()).toBeGreaterThan(3590_000);
+    expect([e2b.sandboxes[2], ...e2b.sandboxes.slice(6)]).toEqual(untouched);
 
-    // Kept on: the renewed, the waiting; ended: the expired, the gone, and
-    // those whose key cannot pay or is revoked.
+    // Kept on: the renewed, the waiting; ended: the expired, the gone, those
+    // whose key cannot pay or is revoked, and the banned owner's.
     expect((await keeps()).map((keep) => keep.sandboxId).sort()).toEqual([
+        "dashboard",
         "due",
         "ending",
         "later",
@@ -608,9 +639,9 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         "paused",
     ]);
 
-    // The renewal pays for 3300 s past the paid 300, the restart and the
+    // The renewals pay for 3300 s past the paid 300, the restart and the
     // resume for an hour, and the ending sandbox for the 900 s left.
-    expect(e2b.leases()).toHaveLength(4);
+    expect(e2b.leases()).toHaveLength(5);
     const paid = Object.fromEntries(
         e2b.leases().map((lease) => [lease.requestPath, lease]),
     );
@@ -632,8 +663,12 @@ test("the cron renews kept sandboxes until their timeout, resumes paused ones, a
         10 - 23 * LEASE_300S,
         4,
     );
+    const byOwner = paid["/alpha/e2b/sandboxes/dashboard/timeout"];
+    expect(byOwner).toMatchObject({ userId: viewer.userId });
+    expect(byOwner.totalPrice).toBeCloseTo(11 * LEASE_300S, 4);
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(capped.userId)).toBe(10);
+    expect(await questPollen(banned.userId)).toBe(10);
 });
 
 test("the account owner's session token runs sandboxes without a key scope", async () => {
@@ -646,6 +681,26 @@ test("the account owner's session token runs sandboxes without a key scope", asy
 
     expect((await call(token, "/v2/sandboxes")).status).toBe(200);
     expect((await createSandbox(token)).status).toBe(201);
+});
+
+test("the dashboard prices a lease as gen charges it", async () => {
+    stubE2b();
+    const owner = await sandboxKey();
+    const pricing = await (await call(owner.key, "/pricing")).json<{
+        maxRunning: number;
+        vcpuSecond: number;
+        gibSecond: number;
+        templates: Record<string, { cpuCount: number; memoryMB: number }>;
+    }>();
+    expect(pricing).toMatchObject({
+        maxRunning: 3,
+        maxRunSeconds: 86_400,
+        templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
+    });
+    // The fake's 2 vCPU, 512 MiB sandbox for 300 s.
+    expect(
+        300 * (2 * pricing.vcpuSecond + 0.5 * pricing.gibSecond),
+    ).toBeCloseTo(LEASE_300S, 12);
 });
 
 test("the pollinations templates come logged in with a key from enter's key API", async () => {

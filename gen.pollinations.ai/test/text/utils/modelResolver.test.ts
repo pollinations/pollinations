@@ -212,18 +212,6 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins the Ling OpenRouter fallback to Novita without gateway fallback", () => {
-        const result = resolveModelConfig(messages, {
-            model: "inclusionai/ling-3.1-flash:openrouter:novita",
-        });
-
-        expect(result.options.model).toBe("inclusionai/ling-3.1-flash");
-        expect(result.options.provider).toEqual({
-            only: ["novita"],
-            allow_fallbacks: false,
-        });
-    });
-
     it("pins Nex N2.5 Mini to Nex AGI on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "nex-agi/nex-n2.5-mini",

@@ -371,8 +371,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "tencent/hy3": createPinnedOpenRouterConfig("tencent/hy3", "novita"),
     "inclusionai/ling-3.1-flash": () =>
         createNovitaModelConfig({ model: "inclusionai/ling-3.1-flash" }),
-    "inclusionai/ling-3.1-flash:openrouter:novita":
-        createPinnedOpenRouterConfig("inclusionai/ling-3.1-flash", "novita"),
     "inclusionai/ling-3.1-flash:vercel:novita": () =>
         createVercelAIGatewayModelConfig({
             model: "inclusionai/ling-3.1-flash",

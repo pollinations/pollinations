@@ -52,16 +52,6 @@ export const TEXT_FALLBACKS = {
         },
     },
     "inclusionai/ling-3.1-flash": {
-        "inclusionai/ling-3.1-flash:openrouter:novita": {
-            provider: "openrouter",
-            // The primary's provisional rate plus the account's 5.5%
-            // credit-purchase fee, until Novita publishes its paid rate.
-            cost: {
-                promptTextTokens: perMillion(0.3) * 1.055,
-                promptCachedTokens: perMillion(0.06) * 1.055,
-                completionTextTokens: perMillion(0.9) * 1.055,
-            },
-        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
             // Same Novita checkpoint through a separate gateway, which adds

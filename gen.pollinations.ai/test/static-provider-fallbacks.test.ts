@@ -1192,30 +1192,10 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("orders Ling gateways behind direct Novita and keeps fallback costs separate", () => {
+    it("falls back from direct Novita to Novita through Vercel at the same cost", () => {
         const primary = "inclusionai/ling-3.1-flash";
         const route = `${primary}:vercel:novita`;
-        expect(TEXT_SERVICES[primary].fallbacks).toEqual([
-            `${primary}:openrouter:novita`,
-            route,
-        ]);
-        expect(TEXT_SERVICES[`${primary}:openrouter:novita`]).toMatchObject({
-            provider: "openrouter",
-            hidden: true,
-            fallbackOnly: true,
-            aliases: [],
-            cost: {
-                promptTextTokens:
-                    TEXT_SERVICES[primary].cost.promptTextTokens * 1.055,
-                promptCachedTokens:
-                    TEXT_SERVICES[primary].cost.promptCachedTokens * 1.055,
-                completionTextTokens:
-                    TEXT_SERVICES[primary].cost.completionTextTokens * 1.055,
-            },
-        });
-        expect(getVisibleTextModels()).not.toContain(
-            `${primary}:openrouter:novita`,
-        );
+        expect(TEXT_SERVICES[primary].fallbacks).toEqual([route]);
         expect(TEXT_SERVICES[route]).toMatchObject({
             provider: "vercel",
             hidden: true,
@@ -1234,13 +1214,13 @@ describe("static provider fallbacks", () => {
         const billed = calculateUsageBilling({
             model: primary,
             usage: { promptTextTokens: 1000, completionTextTokens: 100 },
-            servedBy: TEXT_SERVICES[`${primary}:openrouter:novita`],
+            servedBy: TEXT_SERVICES[route],
             quotedBy: TEXT_SERVICES[primary],
         });
         const { promptTextTokens, completionTextTokens } =
             TEXT_SERVICES[primary].cost;
         const quoted = 1000 * promptTextTokens + 100 * completionTextTokens;
-        expect(billed.cost.totalCost).toBeCloseTo(quoted * 1.055, 12);
+        expect(billed.cost.totalCost).toBeCloseTo(quoted, 12);
         expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });
 

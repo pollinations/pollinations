@@ -1016,10 +1016,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },
     {
-        name: "inclusionai/ling-3.1-flash:openrouter:novita",
-        config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
-    },
-    {
         name: "nex-agi/nex-n2.5-mini",
         config: portkeyConfig["nex-agi/nex-n2.5-mini"],
     },

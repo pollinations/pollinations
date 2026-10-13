@@ -1675,18 +1675,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
   },
-  "inclusionai/ling-3.1-flash:openrouter:novita": {
-    "cost": {
-      "completionTextTokens": 0.0000009495,
-      "promptCachedTokens": 0.0000000633,
-      "promptTextTokens": 0.0000003165,
-    },
-    "price": {
-      "completionTextTokens": 0.0000009495,
-      "promptCachedTokens": 0.0000000633,
-      "promptTextTokens": 0.0000003165,
-    },
-  },
   "inclusionai/ling-3.1-flash:vercel:novita": {
     "cost": {
       "completionTextTokens": 0.0000009,

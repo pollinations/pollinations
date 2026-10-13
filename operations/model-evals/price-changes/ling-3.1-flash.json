@@ -3,7 +3,7 @@
     "runtime_change": true,
     "currency": "USD",
     "price_multiplier": 1,
-    "merge_policy": "Merge on the promotion end. The price is provisional (Artificial Analysis rate on inclusionAI's API); replace it with Novita's published paid rate on all three routes as soon as it appears.",
+    "merge_policy": "Merge on the promotion end. The price is provisional (Artificial Analysis rate on inclusionAI's API); replace it with Novita's published paid rate on both routes as soon as it appears.",
     "model": "inclusionai/ling-3.1-flash",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16604",
     "current_price": {
@@ -22,17 +22,16 @@
     "merge_date_confirmed": false,
     "unknowns": [
         "Exact October 13 promotion cutoff and timezone",
-        "Novita's published paid rate, which serves all three routes"
+        "Novita's published paid rate, which serves both routes"
     ],
     "sources": [
         "https://developer.ant-ling.com/en/docs/models/price/",
         "https://vercel.com/changelog/ling-3-1-flash-is-now-available-on-ai-gateway",
         "https://hokai.io/hub/models/ling-3.1-flash",
-        "https://novita.ai/pricing",
-        "https://openrouter.ai/inclusionai/ling-3.1-flash"
+        "https://novita.ai/pricing"
     ],
     "required_changes": [
-        "Replace the provisional rate with Novita's paid rate on all three routes, including OpenRouter's 5.5% fee",
+        "Replace the provisional rate with Novita's paid rate on the primary and the Vercel fallback",
         "Keep paidOnly: true (Novita primary)"
     ]
 }

@@ -23,7 +23,7 @@ jobs:
       - name: Check for project manager changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts operations/social/prompts .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- operations/github operations/social/scripts operations/social/prompts operations/app-management/ingestion .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-python@v6
@@ -35,7 +35,7 @@ jobs:
         run: pip install requests
       - name: Test PR classification and gist enrichment
         if: steps.changes.outputs.changed == 'true'
-        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py
+        run: python3 -m unittest operations/github/test_project_manager.py operations/social/scripts/test_news.py operations/app-management/ingestion/test_review_agent.py
 
   gpu-tunnels:
     name: Test GPU tunnel recovery

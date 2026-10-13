@@ -1,45 +1,58 @@
-"""Keyless NomNom-style Reddit JSON and public Redlib content probe."""
-import importlib.util, json, os, time
+"""Keyless direct/Tor public-content and exact NomNom rnet transport comparison."""
+import asyncio, importlib.util, json, os, subprocess, time
 from pathlib import Path
+from urllib.parse import urlsplit
 root = Path(__file__).resolve().parents[2]
-spec = importlib.util.spec_from_file_location("fetch_adapter", root / "operations/model-management/fetch.py")
+spec = importlib.util.spec_from_file_location('fetch_adapter', root / 'operations/model-management/fetch.py')
 adapter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
-adapter.HTTP_DEADLINE_SECONDS = 12
-adapter.MAX_HTTP_ATTEMPTS = 1
-out = Path(os.environ["SOURCE_PROBE_OUT"])
-out.mkdir(parents=True, exist_ok=True)
-os.environ['FETCH_CACHE_DIR'] = str(out / 'pages')
+out = Path(os.environ['SOURCE_PROBE_OUT']); out.mkdir(parents=True, exist_ok=True)
 results = []
-ua = 'linux:nomnom:v4.1 (by /u/nomnom-research-agent)'
+ua = 'PollinationsModelResearch/1.0 (+https://github.com/pollinations/pollinations/issues/16544)'
+def save(row):
+    results.append(row)
+    (out / 'proxy-probe.json').write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(json.dumps({key: value for key, value in row.items() if key != 'text'}), flush=True)
+def cli_read(url, via_tor):
+    deadline = time.monotonic() + 25
+    target = adapter._validate_url(url, deadline)
+    host = urlsplit(target).hostname
+    address = next((ip for ip in adapter._public_addresses(host, deadline) if ':' not in ip), None)
+    if not address: raise ValueError('No public IPv4 for fixed-target diagnostic')
+    dest = out / ('body-' + str(len(results)) + '.txt')
+    args = ['curl', '--silent', '--show-error', '--proto', '=https', '--max-time', '20', '--max-filesize', '2097152', '--resolve', f'{host}:443:{address}', '-A', ua, '-o', str(dest), '-w', '%{http_code}', target]
+    args[1:1] = ['--socks5', '127.0.0.1:9150'] if via_tor else ['--proxy', '']
+    process = subprocess.run(args, capture_output=True, text=True, timeout=25, env={'PATH': os.environ['PATH']})
+    body = dest.read_text(encoding='utf-8', errors='replace') if dest.exists() else ''
+    parser = adapter._TextParser(); parser.feed(body); parser.close()
+    text = parser.text()
+    return {'url': target, 'transport': 'tor' if via_tor else 'direct', 'exitCode': process.returncode, 'httpStatus': process.stdout, 'text': text[:18000], 'challenge': adapter._blocked_content(body, text), 'threadLinks': text.count('/comments/') + body.count('/comments/'), 'characters': len(text)}
+check = cli_read('https://check.torproject.org/api/ip', True)
+try: check['confirmedTor'] = json.loads(check['text']).get('IsTor') is True
+except json.JSONDecodeError: check['confirmedTor'] = False
+save(check)
+assert check['confirmedTor'], 'Tor positive control failed'
 for url in [
-    'https://www.reddit.com/r/python/top/.json?limit=1',
-    'https://old.reddit.com/r/Python/top/.json?t=week&limit=5',
+    'https://www.reddit.com/r/LocalLLaMA/top/?t=week',
     'https://old.reddit.com/r/LocalLLaMA/top/.json?t=week&limit=20',
+    'https://www.reddit.com/r/LocalLLaMA/.rss',
+    'https://redlib.r4fo.com/r/LocalLLaMA/top/?t=week',
+    'https://redlib.cow.rip/r/LocalLLaMA/top/?t=week',
+    'https://r.jina.ai/https://www.reddit.com/r/LocalLLaMA/top/?t=week',
+    'https://farside.link/reddit.com/r/LocalLLaMA/top/?t=week',
 ]:
-    deadline = time.monotonic() + 12
-    result = {'requestedUrl': url, 'kind': 'nomnom-json', 'paidCalls': 0}
+    for via_tor in [False, True]:
+        try: save(cli_read(url, via_tor))
+        except Exception as error: save({'url': url, 'transport': 'tor' if via_tor else 'direct', 'error': type(error).__name__})
+async def nomnom_rnet():
+    from rnet import Client
+    url = 'https://www.reddit.com/r/python/top/.json?limit=1'
+    adapter._validate_url(url, time.monotonic()+12)
+    client = Client(timeout=10, redirect=0, headers={'User-Agent':'linux:nomnom:v4.1 (by /u/nomnom-research-agent)'})
     try:
-        response = adapter._pinned_fetch(adapter._validate_url(url, deadline), deadline, raw=True, headers={'User-Agent': ua, 'Accept': 'application/json'})
-        result['httpStatus'] = response.status
-        if response.status == 200:
-            data = json.loads(response.body)
-            listing = data[0] if isinstance(data, list) else data
-            posts = [row['data'] for row in listing.get('data', {}).get('children', []) if row.get('kind') == 't3']
-            result.update({'postCount': len(posts), 'posts': [{'title': row.get('title'), 'created_utc': row.get('created_utc'), 'permalink': row.get('permalink')} for row in posts]})
-    except Exception as error:
-        result['error'] = type(error).__name__
-    results.append(result)
-    print(json.dumps(result), flush=True)
-index_url = 'https://raw.githubusercontent.com/redlib-org/redlib-instances/main/instances.json'
-index = adapter._read_http(index_url, 18000)
-if index['status'] == 'fetched':
-    instances = json.loads(index['text'])['instances']
-    for instance in [item for item in instances if item.get('url', '').startswith('https://') and not item.get('cloudflare')][:6]:
-        url = instance['url'].rstrip('/') + '/r/LocalLLaMA/top/?t=week'
-        started = time.monotonic()
-        result = adapter._read_http(url, 18000, include_links=True)
-        result.update({'requestedUrl': url, 'kind': 'public-redlib', 'elapsedSeconds': round(time.monotonic()-started, 2), 'paidCalls': 0})
-        results.append(result)
-        print(json.dumps({key: result.get(key) for key in ['requestedUrl','url','status','method','error','elapsedSeconds']}), flush=True)
-(out / 'reddit-alternatives.json').write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding='utf-8')
+        response = await client.get(url)
+        body = bytes(await response.bytes())
+        data = json.loads(body) if response.status == 200 else {}
+        save({'url':url, 'transport':'nomnom-rnet-2.4.2', 'httpStatus': response.status, 'posts': len(data.get('data',{}).get('children',[]))})
+    except Exception as error: save({'url':url, 'transport':'nomnom-rnet-2.4.2','error':type(error).__name__})
+asyncio.run(nomnom_rnet())

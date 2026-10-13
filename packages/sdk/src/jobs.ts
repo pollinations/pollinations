@@ -61,9 +61,7 @@ async function fetchWithTimeout<T>(
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     // If an external signal is provided, abort our controller when it aborts
-    const abortHandler = externalSignal
-        ? () => controller.abort()
-        : undefined;
+    const abortHandler = externalSignal ? () => controller.abort() : undefined;
     if (externalSignal && abortHandler) {
         externalSignal.addEventListener("abort", abortHandler);
     }
@@ -437,9 +435,7 @@ export class PollinationsJob {
     // ============================================================================
 
     private getHeaders(): Record<string, string> {
-        return this.apiKey
-            ? { Authorization: `Bearer ${this.apiKey}` }
-            : {};
+        return this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {};
     }
 
     /** Append the API key to a job URL (same convention as the media endpoints) */
@@ -564,7 +560,9 @@ export class PollinationsJob {
      * const { buffer, contentType } = await job.waitForResult({ interval: 1000 });
      * ```
      */
-    async waitForResult(options: JobPollOptions = {}): Promise<JobResultResponse> {
+    async waitForResult(
+        options: JobPollOptions = {},
+    ): Promise<JobResultResponse> {
         const status = await this.poll(options);
         if (status.status === "failed") {
             throw new PollinationsError(

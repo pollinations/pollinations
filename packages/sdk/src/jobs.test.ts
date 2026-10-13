@@ -61,8 +61,6 @@ function submitResponse(overrides: Partial<JobInfo> = {}): Response {
     return makeResponse(jobInfo(overrides), { status: 202 });
 }
 
-const nativeFetch = globalThis.fetch;
-
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
@@ -191,14 +189,12 @@ describe("PollinationsJob.submitVideo / submitAudio / submitUrl", () => {
 
 describe("PollinationsJob.status", () => {
     it("polls status with auth and resolves relative URLs", async () => {
-        fetchMock
-            .mockResolvedValueOnce(submitResponse())
-            .mockResolvedValueOnce(
-                makeResponse({
-                    status: "succeeded",
-                    result_url: "/v1/jobs/job_1/result",
-                }),
-            );
+        fetchMock.mockResolvedValueOnce(submitResponse()).mockResolvedValueOnce(
+            makeResponse({
+                status: "succeeded",
+                result_url: "/v1/jobs/job_1/result",
+            }),
+        );
 
         const job = await PollinationsJob.submitImage("a cat", {
             apiKey: "k",
@@ -233,14 +229,17 @@ describe("PollinationsJob.status", () => {
     });
 
     it("maps status errors to PollinationsError", async () => {
-        fetchMock
-            .mockResolvedValueOnce(submitResponse())
-            .mockResolvedValueOnce(
-                makeResponse(
-                    { error: { message: "forbidden", code: "PERMISSION_DENIED" } },
-                    { status: 403 },
-                ),
-            );
+        fetchMock.mockResolvedValueOnce(submitResponse()).mockResolvedValueOnce(
+            makeResponse(
+                {
+                    error: {
+                        message: "forbidden",
+                        code: "PERMISSION_DENIED",
+                    },
+                },
+                { status: 403 },
+            ),
+        );
 
         const job = await PollinationsJob.submitImage("a cat", {
             apiKey: "k",
@@ -254,14 +253,12 @@ describe("PollinationsJob.status", () => {
 
 describe("PollinationsJob.result", () => {
     it("returns the result bytes once succeeded", async () => {
-        fetchMock
-            .mockResolvedValueOnce(submitResponse())
-            .mockResolvedValueOnce(
-                makeResponse(null, {
-                    kind: "binary",
-                    contentType: "image/png",
-                }),
-            );
+        fetchMock.mockResolvedValueOnce(submitResponse()).mockResolvedValueOnce(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "image/png",
+            }),
+        );
 
         const job = await PollinationsJob.submitImage("a cat", {
             apiKey: "k",
@@ -403,14 +400,12 @@ describe("PollinationsJob.waitForResult", () => {
     });
 
     it("throws JOB_FAILED when the job fails", async () => {
-        fetchMock
-            .mockResolvedValueOnce(submitResponse())
-            .mockResolvedValueOnce(
-                makeResponse({
-                    status: "failed",
-                    error: { message: "model exploded", code: "MODEL_ERROR" },
-                }),
-            );
+        fetchMock.mockResolvedValueOnce(submitResponse()).mockResolvedValueOnce(
+            makeResponse({
+                status: "failed",
+                error: { message: "model exploded", code: "MODEL_ERROR" },
+            }),
+        );
 
         const job = await PollinationsJob.submitImage("a cat", {
             apiKey: "k",

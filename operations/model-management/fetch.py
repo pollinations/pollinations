@@ -242,7 +242,9 @@ def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_lim
                                              CurlOpt.PROXY: ""}
         session._curl_session.trust_env = False
         if not raw:
-            page = session.get(url, follow_redirects=False, timeout=min(20, remaining), retries=0)
+            feed_request = urlsplit(url).hostname in {"reddit.com", "www.reddit.com", "old.reddit.com"} and urlsplit(url).path.endswith(".rss")
+            options = {"stealthy_headers": False, "impersonate": None, "headers": {"User-Agent": "PollinationsModelResearch/1.0 (+https://github.com/pollinations/pollinations/issues/16544)", "Accept": "application/atom+xml, application/rss+xml, application/xml;q=0.9"}} if feed_request else {}
+            page = session.get(url, follow_redirects=False, timeout=min(20, remaining), retries=0, **options)
             if time.monotonic() >= deadline:
                 raise ValidationError("fetch deadline exceeded")
             return page

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T00:15:46.323004+00:00",
+  "generated_at": "2026-10-13T00:24:04.468447+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5827,6 +5827,39 @@
             "promptCachedTokens": "0.0000001",
             "promptCacheWriteTokens": "0.0000025",
             "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17185:openai/gpt-5.6-sol",
+      "model_id": "openai/gpt-5.6-sol",
+      "title": "GPT-5.6 Sol",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17185,
+      "url": "https://github.com/pollinations/pollinations/pull/17185",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001666667",
+            "promptCachedTokens": "0.000000166667",
+            "promptCacheWriteTokens": "0.000002083333",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001333333",
+            "promptCachedTokens": "0.000000133333",
+            "promptCacheWriteTokens": "0.000001666667",
+            "completionTextTokens": "0.000006666667"
           }
         }
       }

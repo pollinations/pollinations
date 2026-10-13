@@ -12,7 +12,7 @@ print(response.choices[0].message.content)
 ### Image (URL — no code needed)
 
 ```plaintext
-https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
+https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell
 ```
 
 ### Audio (cURL)

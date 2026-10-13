@@ -30,7 +30,10 @@ export type Request_ = {
     repo: string;
     number: number;
     fork?: { owner: string; repo: string };
+    /** Only a fine-grained token is kept; it can be limited to the one fork. */
     token?: string;
+    /** A classic token was sent: it is removed from the text but never used. */
+    classicToken?: boolean;
 };
 
 type Finding = { file: string; line?: number; problem: string };
@@ -60,8 +63,9 @@ export function parseRequest(text: string): Request_ | null {
     const fork = rest.match(/https:\/\/github\.com\/([\w.-]+)\/([\w.-]+)/);
     if (fork)
         request.fork = { owner: fork[1], repo: fork[2].replace(/\.git$/, "") };
-    const token = text.match(TOKEN_RE);
-    if (token) request.token = token[0];
+    const token = text.match(TOKEN_RE)?.[0];
+    if (token?.startsWith("github_pat_")) request.token = token;
+    else if (token) request.classicToken = true;
     return request;
 }
 
@@ -200,7 +204,7 @@ export function buildPrompt(request: Request_, context: Context): string {
         "DIFF:",
         ...files.map(
             (f) =>
-                `--- ${f.filename} (${f.status})\n${f.patch ?? "(no textual patch)"}`,
+                `--- ${f.filename} (${f.status})\n${redact(f.patch ?? "(no textual patch)")}`,
         ),
     ];
     for (const [name, text] of contents) {
@@ -214,7 +218,7 @@ export function buildPrompt(request: Request_, context: Context): string {
             .map(([from, to]) =>
                 lines
                     .slice(from - 1, to)
-                    .map((line, i) => `${from + i}| ${line}`)
+                    .map((line, i) => `${from + i}| ${redact(line)}`)
                     .join("\n"),
             )
             .join("\n...\n");
@@ -455,7 +459,10 @@ export async function review(
             } catch (error) {
                 pushed = `Push failed, nothing was pushed: ${redact(String((error as Error).message))}`;
             }
-        } else pushed = "Not pushed: send a fork URL and a token to push.";
+        } else
+            pushed = request.classicToken
+                ? "Not pushed: only a fine-grained token (github_pat_...) limited to the fork is used. A classic token can write to every repository its owner can, so it was removed and ignored."
+                : "Not pushed: send a fork URL and a fine-grained token to push.";
         lines.push(
             "",
             "**Fix**",

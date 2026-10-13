@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import agent, {
     applyEdits,
+    buildPrompt,
     hunkRanges,
     parseRequest,
     parseReview,
@@ -28,6 +29,53 @@ test("reads the PR link, fork and token from free text", () => {
     );
     assert.equal(parseRequest("review my code please"), null);
     assert.equal(redact(`token ${TOKEN} here`), "token [token removed] here");
+});
+
+test("a classic token is removed and never used to push", async () => {
+    const classic = `ghp_${"B2".repeat(18)}`;
+    const request = parseRequest(
+        `https://github.com/acme/app/pull/42 https://github.com/me/app ${classic}`,
+    );
+    assert.equal(request?.token, undefined);
+    assert.equal(request?.classicToken, true);
+    const writes: Write[] = [];
+    const bodies: string[] = [];
+    const { report } = await review(
+        `https://github.com/acme/app/pull/42 https://github.com/me/app ${classic}`,
+        modelDouble(bodies, BUG),
+        githubDouble(writes),
+    );
+    assert.equal(writes.length, 0);
+    assert.match(report, /only a fine-grained token/);
+    assert.ok(!bodies[0].includes(classic), "token reached the model");
+    assert.ok(!report.includes(classic), "token in the report");
+});
+
+test("tokens inside the PR's patches and files never reach the model", () => {
+    const leaked = `ghs_${"C3".repeat(15)}`;
+    const prompt = buildPrompt(
+        { owner: "acme", repo: "app", number: 42 },
+        {
+            pull: {
+                title: "t",
+                body: null,
+                base: { ref: "main" },
+                head: { sha: "h", repo: null },
+            },
+            files: [
+                {
+                    filename: "ci.yml",
+                    status: "modified",
+                    changes: 1,
+                    patch: `@@ -1 +1 @@\n+token: ${TOKEN}`,
+                },
+            ],
+            contents: new Map([["ci.yml", `token: ${leaked}\n`]]),
+            skipped: [],
+        },
+    );
+    assert.ok(!prompt.includes(TOKEN) && !prompt.includes(leaked));
+    assert.match(prompt, /1\| token: \[token removed\]/);
 });
 
 test("edits apply only when their text matches exactly once", () => {

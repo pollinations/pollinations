@@ -20,6 +20,7 @@ import {
 } from "../../operations/model-management/jev.mjs";
 import { officialCandidates } from "../../operations/model-management/prepare.mjs";
 import {
+    assess,
     assessGroup,
     auditEvidence,
     budgetUsed,
@@ -61,7 +62,7 @@ const catalogChanges = {
         .map(({ name }) => name),
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
-const baseline = 2.43229013726;
+const baseline = 4.18;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -114,7 +115,7 @@ const report = {
     validationScope:
         "Saved official evidence and free primary refresh; no new market search or Sol inference",
 };
-assert.ok(baseline + report.maxPollen <= 2.5);
+assert.ok(baseline + report.maxPollen <= 4.25);
 await writeFile(
     join(out, "official-catalog.json"),
     JSON.stringify(inventory, null, 2),
@@ -300,6 +301,39 @@ try {
         await save();
     }
     const rates = new Map(report.models.map((row) => [row.name, row.routes]));
+    const discoveryCandidates = (
+        prior.discovery?.preparation?.extraction?.discoveries ?? []
+    ).map((item) => ({
+        ...item,
+        sourceIds: item.sourceIds
+            .map((id) => {
+                const original = prior.sources.find(
+                    (source) => source.id === id,
+                );
+                return report.sources.find(
+                    (source) => source.url === original?.url,
+                )?.id;
+            })
+            .filter(Boolean),
+    }));
+    const market = assess(
+        { routes: [], discoveries: discoveryCandidates, gaps: [] },
+        report.sources,
+        new Map(),
+        null,
+        inventory,
+        false,
+    );
+    report.discovery = await auditEvidence(
+        market,
+        null,
+        report.sources,
+        decision,
+    );
+    assert.ok(
+        report.discovery.discoveries.length > 0,
+        "Source-grounded discovery leads must survive the actual evidence audit",
+    );
     for (const [name, provider, input, output] of [
         ["openai/gpt-5.4-nano", "openai.com", 0.2, 1.25],
         ["openai/gpt-5.4-mini", "openai.com", 0.75, 4.5],
@@ -354,7 +388,7 @@ report.billing = {
     ...(await readBilledUsage(key, report.startedAt)),
     callCount: report.calls.length,
 };
-assert.ok(baseline + budgetUsed(report) <= 2.5);
+assert.ok(baseline + budgetUsed(report) <= 4.25);
 await save();
 console.log(
     JSON.stringify({
@@ -368,5 +402,6 @@ console.log(
         postedPrices: report.models
             .flatMap((row) => row.routes)
             .filter((route) => route.pricing.input !== null).length,
+        acceptedDiscoveryLeads: report.discovery?.discoveries.length,
     }),
 );

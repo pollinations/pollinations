@@ -2188,6 +2188,31 @@ export function sourceText(raw) {
             !/^(?:Could not fetch |# Page not found)/i.test(text.trim()),
         "Exa source unavailable",
     );
+    const heading = norm(
+        text
+            .trim()
+            .split(/\r?\n/)[0]
+            .replace(/^#{1,6}\s*/, ""),
+    )
+        .toLowerCase()
+        .replace(/…/g, "...");
+    assert.ok(
+        ![
+            "just a moment...",
+            "attention required! | cloudflare",
+            "verify you are human",
+            "access denied",
+            "verifying your browser...",
+            "making sure you're not a bot!",
+        ].includes(heading) &&
+            !(
+                text.length < 1000 &&
+                /checking your browser|enable javascript and cookies to continue|please sign in to continue|sign in to view this page|verify you are human/i.test(
+                    text,
+                )
+            ),
+        "Exa returned a challenge or login screen",
+    );
     return text;
 }
 

@@ -61,6 +61,41 @@ test("Exa fetch applies the public HTTPS boundary to its actual URL", async () =
         await assert.rejects(exaSource(`# Model\nURL: ${url}\n\n${body}`));
 });
 
+test("Exa cannot turn successful challenge or login pages into fetched evidence", async () => {
+    for (const text of [
+        "# Verifying your browser…\nAnubis challenge page requiring an additional browser proof.",
+        "# Just a moment...\nEnable JavaScript and cookies to continue accessing this website.",
+        "# Account access\nPlease sign in to continue and view this page containing model information.",
+    ]) {
+        await assert.rejects(
+            exaSource(
+                JSON.stringify({
+                    results: [{ url: "https://8.8.8.8/forum", text }],
+                }),
+            ),
+            /challenge|login/,
+        );
+        await assert.rejects(
+            exaSource(`# Forum\nURL: https://8.8.8.8/forum\n\n${text}`),
+            /challenge|login/,
+        );
+    }
+    const documentation =
+        "# Authentication documentation\nThis public model API documentation explains how to configure authentication and sign in.";
+    assert.equal(
+        (
+            await exaSource(
+                JSON.stringify({
+                    results: [
+                        { url: "https://8.8.8.8/docs", text: documentation },
+                    ],
+                }),
+            )
+        ).text,
+        documentation,
+    );
+});
+
 test("research retains Exa's actual provider URL when it differs from the request", async () => {
     const requestedUrl = "https://1.1.1.1/requested-provider/model";
     const actualUrl = "https://8.8.8.8/actual-provider/model";

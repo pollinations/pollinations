@@ -27,11 +27,26 @@ RUN apt-get update \
     && systemctl disable ssh \
     && systemctl mask ssh.socket
 
-# rclone mounts a bucket (S3, R2, GCS) as a folder, for big files that should
-# outlive the sandbox; the base image's fuse3 lets `user` mount it.
+# Everyday tools the base image lacks, about 400 MB together: cron, which
+# systemd starts in every sandbox; ffmpeg; git-lfs; pdftotext and friends;
+# ripgrep and fd; sqlite3; tmux; editors; network and process checks. rclone
+# mounts a bucket (S3, R2, GCS) as a folder, for big files that should outlive
+# the sandbox; the base image's fuse3 lets `user` mount it.
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends rclone \
-    && rm -rf /var/lib/apt/lists/*
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        cron ffmpeg git-lfs poppler-utils rclone ripgrep fd-find tree bc zip zstd \
+        p7zip-full sqlite3 tmux nano vim-tiny htop lsof strace dnsutils netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/fdfind /usr/local/bin/fd \
+    && git lfs install --system \
+    && printf '# Cron jobs find commands only on this PATH; keep it when replacing the crontab.\nPATH=/home/user/.local/bin:/usr/local/bin:/usr/bin:/bin\n' | crontab -u user -
+
+# uv runs Python tools and MCP servers (`uvx`), and installs newer Pythons than
+# the base image's 3.11.
+RUN curl -fsSL -o /tmp/uv.tar.gz https://github.com/astral-sh/uv/releases/download/0.12.21/uv-x86_64-unknown-linux-gnu.tar.gz \
+    && echo "23f02075b652bb1df64178cfae41b5caf160822e720e2663568f3f5d63bc52c0  /tmp/uv.tar.gz" | sha256sum -c \
+    && tar -xzf /tmp/uv.tar.gz -C /usr/local/bin --strip-components=1 \
+    && rm /tmp/uv.tar.gz
 
 # Same release and checksum as bootstrap.sh.
 RUN curl -fsSL -o /usr/local/bin/websocat https://github.com/vi/websocat/releases/download/v1.14.1/websocat.x86_64-unknown-linux-musl \
@@ -47,7 +62,7 @@ RUN curl -fsSL -o /usr/local/bin/herdr https://github.com/herdrdev/herdr/release
 
 # polli needs Node 20.12 or newer; the base image has 20.9. Then the harnesses
 # `polli harness` connects, from the installers its hints name. Not Codex:
-# its router runs as a systemd user service, and sandboxes have no systemd.
+# its router runs as a systemd user service, and sandboxes start none.
 RUN npx -y n@10.2.0 24.21.0 && rm -rf /usr/local/n \
     && npm install -g @pollinations/cli@0.1.44 @anthropic-ai/claude-code@2.1.296 \
         opencode-ai@1.19.0 openclaw@2026.10.2 \

@@ -36,8 +36,7 @@ const VIDEO_FRAME_LIMITS = [
     ["minimax/minimax-h3-max", 2],
     ["minimax/minimax-h3-max-turbo", 2],
     ["prunaai/p-video", 1],
-    ["kandinsky/kandinsky-6-lite", 1],
-    ["kandinsky/kandinsky-6-pro", 1],
+    ["kandinskylab/kandinsky-6.0-lite", 1],
 ] as const satisfies readonly (readonly [ImageModelName, number])[];
 
 describe("video frame capabilities", () => {

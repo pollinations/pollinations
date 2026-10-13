@@ -66,8 +66,7 @@ export async function createAndReturnVideo(
         case "alibaba/wan-2.2-fast:fal":
         case "x-ai/grok-imagine-video":
         case "x-ai/grok-imagine-video-1.5:fal":
-        case "kandinsky/kandinsky-6-lite":
-        case "kandinsky/kandinsky-6-pro":
+        case "kandinskylab/kandinsky-6.0-lite":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "bytedance/seedance-2.0":

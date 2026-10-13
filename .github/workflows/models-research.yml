@@ -49,9 +49,12 @@ jobs:
           python-version: '3.12'
       - name: Install local Scrapling fetcher
         run: python -m pip install 'scrapling[fetchers]==0.4.15'
+      - name: Install guarded Scrapling browser runtime
+        run: python -m patchright install --with-deps chromium
       - name: Validate researcher
         env:
           RUN_LIVE_FETCH: '1'
+          RUN_BROWSER_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
       - name: Find previous completed main research evidence
         id: previous

@@ -664,6 +664,79 @@ const available =
         encoding: "utf8",
     }).status === 0;
 
+for (const shape of ["successful", "blocked"])
+    test(
+        `main restores ${shape} discovery frontier before reading current evidence`,
+        { skip: !available && "Python with Scrapling unavailable" },
+        async (t) => {
+            const { out, env } = await fixture(t);
+            delete env.MODELS;
+            const deferredUrl = "https://example.org/deferred-observed-release";
+            const deferred = {
+                url: deferredUrl,
+                title: "Original observed title",
+                text: "Stale snippet must not be fetched evidence",
+                modes: ["news"],
+                scopes: ["discovery"],
+                sourceId: "old-source",
+            };
+            const previousPath = join(out, "previous.json");
+            await writeFile(
+                previousPath,
+                JSON.stringify({
+                    discovery:
+                        shape === "successful"
+                            ? {
+                                  status: "researched",
+                                  preparation: { unselectedLeads: [deferred] },
+                              }
+                            : {
+                                  status: "blocked",
+                                  unselectedLeads: [deferred],
+                              },
+                }),
+            );
+            const currentText =
+                "Current publisher release text with no model identity";
+            await writeFile(
+                join(out, "pages", `${hash(deferredUrl)}.json`),
+                JSON.stringify({
+                    requestedUrl: deferredUrl,
+                    url: deferredUrl,
+                    text: currentText,
+                    pageDigest: hash(currentText),
+                    extractionVersion: 2,
+                    fetchedAt: new Date().toISOString(),
+                    links: [],
+                }),
+            );
+            network(t, [sol, jev], { marketFinish: true });
+            const report = await main({
+                ...env,
+                PREVIOUS_RESEARCH: previousPath,
+            });
+            const source = report.sources.find(
+                ({ url }) => url === deferredUrl,
+            );
+            assert.ok(
+                source,
+                `Deferred URL must receive a current page read before discovery completes: ${report.discovery.reason}`,
+            );
+            assert.equal(source.status, "fetched");
+            assert.equal(source.text, currentText);
+            const lead = report.discovery.preparation.leads.find(
+                ({ url }) => url === deferredUrl,
+            );
+            assert.equal(lead.title, deferred.title);
+            assert.equal(lead.sourceId, "old-source");
+            assert.ok(
+                !report.discovery.sources.some(
+                    ({ text }) => text === deferred.text,
+                ),
+            );
+        },
+    );
+
 async function fixture(t) {
     const base = join(tmpdir(), "pollinations-compact-tests");
     await mkdir(base, { recursive: true });
@@ -1617,6 +1690,8 @@ for (const invalid of ["usage", "answer"])
                     scopes,
                     modes: ["web"],
                     queryModels: [model.name, second.name].sort(),
+                    status: "pending",
+                    attempted: false,
                 },
             ]);
             assert.deepEqual(

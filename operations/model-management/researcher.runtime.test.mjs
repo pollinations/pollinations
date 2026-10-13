@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -708,6 +708,110 @@ test("main preserves fetched Exa text under its returned source URL in partial e
             .sources,
         report.discovery.sources,
     );
+});
+
+test("main routes dynamic fetch through the browser cache without exposing workflow secrets", async (t) => {
+    const out = await output(t);
+    const requested = "https://1.1.1.1/rendered-model";
+    const resolved = "https://8.8.8.8/actual-model";
+    const text = "Exact rendered provider model evidence. ".repeat(80);
+    const digest = createHash("sha256").update(text).digest("hex");
+    await mkdir(join(out, "pages"));
+    await mkdir(join(out, "probe"));
+    await writeFile(
+        join(out, "probe", "sitecustomize.py"),
+        `import json, os\nfrom pathlib import Path\nPath(os.environ['FETCH_CACHE_DIR']).parent.joinpath('child-env.json').write_text(json.dumps(sorted(os.environ)))\n`,
+    );
+    await writeFile(
+        join(
+            out,
+            "pages",
+            `${createHash("sha256").update(`dynamic:${requested}`).digest("hex")}.json`,
+        ),
+        JSON.stringify({
+            requestedUrl: requested,
+            url: resolved,
+            method: "scrapling-browser",
+            text,
+            pageDigest: digest,
+            extractionVersion: 2,
+            fetchedAt: new Date().toISOString(),
+            links: [],
+        }),
+    );
+    let turns = 0;
+    const action = (name, args) => ({
+        role: "assistant",
+        content: null,
+        tool_calls: [
+            {
+                id: `browser-${turns}`,
+                type: "function",
+                function: { name, arguments: JSON.stringify(args) },
+            },
+        ],
+    });
+    t.mock.method(globalThis, "fetch", async (url, options) => {
+        const free = catalog(url);
+        if (free) return free;
+        const context = JSON.parse(
+            JSON.parse(options.body).messages[1].content,
+        );
+        if (context.model) return noAction();
+        turns++;
+        const message =
+            turns === 1
+                ? action("research", {
+                      action: "plan",
+                      questions: [
+                          "Which exact checkpoint is offered?",
+                          "What pricing is published?",
+                          "Which evidence contradicts the offer?",
+                      ],
+                      routes: [],
+                      discoveries: [],
+                      gaps: [],
+                  })
+                : turns === 2
+                  ? action("fetch", {
+                        url: requested,
+                        mode: "dynamic",
+                        maxCharacters: 1000,
+                    })
+                  : {
+                        role: "assistant",
+                        content: "Interrupted before final submission",
+                    };
+        return Response.json({
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+            choices: [{ message }],
+        });
+    });
+    const report = await main({
+        ...envFor(out),
+        MODELS: "",
+        PYTHON: process.env.PYTHON ?? "python",
+        PYTHONPATH: join(out, "probe"),
+        PLAYWRIGHT_BROWSERS_PATH: "isolated-browser-cache",
+        GITHUB_TOKEN: "workflow-secret-marker",
+    });
+    const source = report.discovery.sources[0];
+    assert.equal(source.status, "fetched");
+    assert.equal(source.method, "scrapling-browser");
+    assert.equal(source.url, resolved);
+    assert.equal(source.text, text.slice(0, 1000));
+    assert.equal(source.pageDigest, digest);
+    assert.equal(source.cached, true);
+    const names = JSON.parse(
+        await readFile(join(out, "child-env.json"), "utf8"),
+    );
+    assert.ok(names.includes("PLAYWRIGHT_BROWSERS_PATH"));
+    assert.ok(!names.includes("GITHUB_TOKEN"));
+    assert.ok(!names.includes("POLLINATIONS_API_KEY"));
 });
 
 for (const usage of [

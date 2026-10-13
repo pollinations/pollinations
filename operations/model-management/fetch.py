@@ -8,11 +8,13 @@ import os
 import re
 import socket
 import sys
+import tempfile
 import time
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from urllib.parse import parse_qsl, urljoin, urlsplit, urlunsplit
 
 
@@ -22,6 +24,8 @@ MAX_REDIRECTS = 5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_HTTP_ATTEMPTS = 3
 HTTP_DEADLINE_SECONDS = 80
+MAX_BROWSER_REQUESTS = 64
+MAX_BROWSER_BYTES = 8 * 1024 * 1024
 RETRYABLE_CURL_CODES = {6, 7, 18, 28, 52, 55, 56, 81, 89, 92, 95, 96}
 SENSITIVE_QUERY_NAMES = {"access_key", "access_token", "api_key", "apikey", "auth", "authorization", "bearer", "client_secret", "credential", "key", "password", "secret", "signature", "sig", "token"}
 
@@ -214,7 +218,53 @@ def _retry_delay(headers, attempt):
 
 def _retryable_network_error(error):
     code = getattr(error, "code", None)
-    return isinstance(error, (TimeoutError, ConnectionError)) or code in RETRYABLE_CURL_CODES
+    return (isinstance(error, (TimeoutError, ConnectionError)) or code in RETRYABLE_CURL_CODES
+            or (type(error).__name__ == "TimeoutError" and type(error).__module__.startswith(("playwright.", "patchright."))))
+
+
+def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_limit=MAX_RESPONSE_BYTES, remaining=None, on_bytes=None):
+    from curl_cffi import CurlOpt
+    from scrapling.fetchers import FetcherSession
+
+    remaining = deadline - time.monotonic() if remaining is None else remaining
+    if remaining <= 0:
+        raise ValidationError("fetch deadline exceeded")
+    host = urlsplit(url).hostname.encode("idna").decode("ascii")
+    addresses = _public_addresses(host, deadline)
+    resolved = ",".join(f"[{address}]" if ":" in address else address for address in addresses)
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise ValidationError("fetch deadline exceeded")
+    with FetcherSession() as session:
+        # Pinned Scrapling 0.4.15 has no public transport-options hook.
+        session._curl_session.curl_options = {CurlOpt.RESOLVE: [f"{host}:443:{resolved}"], CurlOpt.MAXFILESIZE_LARGE: byte_limit,
+                                             CurlOpt.PROXY: ""}
+        session._curl_session.trust_env = False
+        if not raw:
+            page = session.get(url, follow_redirects=False, timeout=min(20, remaining), retries=0)
+            if time.monotonic() >= deadline:
+                raise ValidationError("fetch deadline exceeded")
+            return page
+        chunks = []
+        size = 0
+
+        def receive(chunk):
+            nonlocal size
+            if on_bytes:
+                on_bytes(len(chunk))
+            size += len(chunk)
+            if size > byte_limit or time.monotonic() >= deadline:
+                raise ValidationError("browser response exceeded the fetch limit")
+            chunks.append(chunk)
+
+        response = session._curl_session.request(
+            method, url=url, headers=headers or {}, allow_redirects=False,
+            timeout=min(20, remaining), verify=True, impersonate="chrome",
+            content_callback=receive,
+        )
+        if time.monotonic() >= deadline:
+            raise ValidationError("fetch deadline exceeded")
+        return SimpleNamespace(status=response.status_code, headers=dict(response.headers), body=b"".join(chunks))
 
 
 def _excerpt(page, max_characters, focus, cached):
@@ -228,7 +278,7 @@ def _excerpt(page, max_characters, focus, cached):
             start = max(0, match.start() - context)
         metadata = {"excerptStart": start, "totalCharacters": len(text), "focusMatched": match is not None}
     return {
-        "status": "fetched", "url": page["url"], "method": "scrapling-http",
+        "status": "fetched", "url": page["url"], "method": page.get("method", "scrapling-http"),
         "text": text[start:start + max_characters],
         "pageDigest": page["pageDigest"], "extractionVersion": page["extractionVersion"],
         "fetchedAt": page["fetchedAt"], "cached": cached, **metadata,
@@ -251,6 +301,7 @@ def _read_http(url, max_characters, focus=None, include_links=False):
             page = json.loads(content)
             text = page["text"]
             if (page["requestedUrl"] != requested or type(page["extractionVersion"]) is not int
+                    or page.get("method", "scrapling-http") != "scrapling-http"
                     or page["extractionVersion"] not in (1, EXTRACTION_VERSION) or not isinstance(text, str) or not text.strip()
                     or len(text.encode("utf-8")) > MAX_RESPONSE_BYTES
                     or page["pageDigest"] != hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -263,23 +314,13 @@ def _read_http(url, max_characters, focus=None, include_links=False):
         if page["extractionVersion"] == EXTRACTION_VERSION and (not include_links or "links" in page):
             return _excerpt(page, max_characters, focus, True)
 
-    from curl_cffi import CurlOpt
-    from scrapling.fetchers import FetcherSession
-
     for _ in range(MAX_REDIRECTS + 1):
-        host = urlsplit(current).hostname
-        addresses = _public_addresses(host, deadline)
-        resolved = ",".join(f"[{address}]" if ":" in address else address for address in addresses)
         for attempt in range(MAX_HTTP_ATTEMPTS):
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return _result(current, "scrapling-http", "HTTP fetch failed")
             try:
-                with FetcherSession() as session:
-                    # Pinned Scrapling 0.4.15 has no public transport-options hook.
-                    session._curl_session.curl_options = {CurlOpt.RESOLVE: [f"{host}:443:{resolved}"], CurlOpt.MAXFILESIZE_LARGE: MAX_RESPONSE_BYTES}
-                    session._curl_session.trust_env = False
-                    page = session.get(current, follow_redirects=False, timeout=min(20, remaining), retries=0)
+                page = _pinned_fetch(current, deadline, remaining=remaining)
                 status = int(getattr(page, "status", 0))
                 headers = getattr(page, "headers", {})
                 retryable = status in {408, 429} or 500 <= status < 600
@@ -313,6 +354,8 @@ def _read_http(url, max_characters, focus=None, include_links=False):
         text = parser.text()
         if not text.strip():
             return _result(current, "scrapling-http", "upstream returned no readable content")
+        if _blocked_content(content, text):
+            return _result(current, "scrapling-http", "upstream returned a challenge or login screen")
         if len(text.encode("utf-8")) > MAX_RESPONSE_BYTES:
             return _result(current, "scrapling-http", "extracted content exceeded the fetch limit")
         page = {
@@ -327,6 +370,211 @@ def _read_http(url, max_characters, focus=None, include_links=False):
             cache_path.write_text(json.dumps(page, ensure_ascii=False), encoding="utf-8")
         return _excerpt(page, max_characters, focus, False)
     return _result(current, "scrapling-http", "too many redirects")
+
+
+def _blocked_content(content, text):
+    # Reject interstitials, not documentation that merely discusses authentication.
+    title = re.search(r"<title[^>]*>(.*?)</title>", content, re.I | re.S)
+    title = " ".join(title.group(1).split()).lower() if title else ""
+    if title in {"just a moment...", "attention required! | cloudflare", "verify you are human", "access denied"}:
+        return True
+    if re.search(r"<(?:input|form)\b[^>]*(?:type\s*=\s*['\"]password['\"]|action\s*=\s*['\"][^'\"]*(?:login|signin))", content, re.I) and len(text) < 2_000:
+        return True
+    return len(text) < 1_000 and bool(re.search(r"(?:checking your browser|enable javascript and cookies to continue|verify you are human|please sign in to continue|sign in to view this page)", text, re.I))
+
+
+class _BrowserGuard:
+    def __init__(self, deadline):
+        self.deadline = deadline
+        self.requests = 0
+        self.bytes = 0
+        self.setup_complete = False
+        self.error = None
+        self.retryable = False
+        self.document_url = None
+        self.preloaded = None
+
+    def fetch(self, url, method="GET", headers=None):
+        if time.monotonic() >= self.deadline:
+            raise ValidationError("browser fetch deadline exceeded")
+        if method not in {"GET", "HEAD"}:
+            raise ValidationError("browser request method is not allowed")
+        if self.requests >= MAX_BROWSER_REQUESTS or self.bytes >= MAX_BROWSER_BYTES:
+            raise ValidationError("browser request or byte limit exceeded")
+        current = _validate_url(url, self.deadline)
+        for _ in range(MAX_REDIRECTS + 1):
+            if self.requests >= MAX_BROWSER_REQUESTS or self.bytes >= MAX_BROWSER_BYTES:
+                raise ValidationError("browser request or byte limit exceeded")
+            self.requests += 1
+            response = _pinned_fetch(current, self.deadline, method, headers, raw=True,
+                                     byte_limit=min(MAX_RESPONSE_BYTES, MAX_BROWSER_BYTES - self.bytes), on_bytes=self.received)
+            if response.status in {301, 302, 303, 307, 308}:
+                location = response.headers.get("location") or response.headers.get("Location")
+                if not location:
+                    raise ValidationError("redirect response did not include a location")
+                current = _validate_url(urljoin(current, location), self.deadline)
+                continue
+            return current, response
+        raise ValidationError("too many redirects")
+
+    def received(self, size):
+        self.bytes += size
+        if self.bytes > MAX_BROWSER_BYTES:
+            raise ValidationError("browser byte limit exceeded")
+
+    def route(self, route):
+        try:
+            request = route.request
+            if self.requests >= MAX_BROWSER_REQUESTS:
+                raise ValidationError("browser request limit exceeded")
+            self.requests += 1
+            if time.monotonic() >= self.deadline:
+                raise ValidationError("browser fetch deadline exceeded")
+            if request.method not in {"GET", "HEAD"}:
+                raise ValidationError("browser request method is not allowed")
+            url = _validate_url(request.url, self.deadline)
+            if self.preloaded and url == self.document_url and request.is_navigation_request():
+                final, response = self.preloaded
+                self.preloaded = None
+            else:
+                headers = {key: value for key, value in request.headers.items()
+                           if key.lower() in {"accept", "accept-language", "user-agent"}}
+                final, response = self.fetch(url, request.method, headers)
+            # Fulfillment cannot change the browser's origin or a module's base URL.
+            if final != url:
+                raise ValidationError("redirected browser resource cannot preserve its source URL")
+            if request.is_navigation_request() and request.frame == request.frame.page.main_frame:
+                self.document_url = final
+            headers = {str(key): str(value) for key, value in response.headers.items()
+                       if key.lower() not in {"content-encoding", "content-length", "transfer-encoding", "connection", "set-cookie"}}
+            route.fulfill(status=response.status, headers=headers, body=response.body)
+        except Exception as error:
+            retryable = _retryable_network_error(error)
+            if self.error is None or not retryable:
+                self.error = str(error) if isinstance(error, ValidationError) else "browser resource fetch failed"
+                self.retryable = retryable
+            route.abort("blockedbyclient")
+
+    def setup(self, page):
+        context = page.context
+        try:
+            context.route("**/*", self.route)
+            context.route_web_socket("**/*", lambda socket: socket.close())
+            context.add_init_script("""(() => {
+              for (const name of ['RTCPeerConnection', 'webkitRTCPeerConnection', 'RTCDataChannel',
+                                  'WebTransport', 'Worker', 'SharedWorker']) {
+                Object.defineProperty(globalThis, name, {value: undefined, configurable: false, writable: false});
+              }
+            })();""")
+            self.setup_complete = True
+        except Exception:
+            self.error = "browser egress guard setup failed"
+            # Scrapling logs and swallows page_setup errors; closing prevents its goto.
+            context.close()
+            raise ValidationError(self.error)
+
+
+def _read_browser(url, max_characters, focus=None, include_links=False):
+    method = "scrapling-browser"
+    deadline = time.monotonic() + HTTP_DEADLINE_SECONDS
+    requested = _validate_url(url, deadline)
+    cache_dir = os.environ.get("FETCH_CACHE_DIR")
+    cache_path = Path(cache_dir) / (hashlib.sha256(("dynamic:" + requested).encode()).hexdigest() + ".json") if cache_dir else None
+    if cache_path and cache_path.exists():
+        try:
+            with cache_path.open("rb") as handle:
+                content = handle.read(MAX_RESPONSE_BYTES * 6 + 8_193)
+            if len(content) > MAX_RESPONSE_BYTES * 6 + 8_192:
+                raise ValueError("oversized cache entry")
+            page = json.loads(content)
+            text = page["text"]
+            if (page["requestedUrl"] != requested or page["method"] != method
+                    or type(page["extractionVersion"]) is not int or page["extractionVersion"] != EXTRACTION_VERSION
+                    or not isinstance(text, str) or not text.strip() or len(text.encode()) > MAX_RESPONSE_BYTES
+                    or page["pageDigest"] != hashlib.sha256(text.encode()).hexdigest()
+                    or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")
+                    or not isinstance(page["links"], list) or len(page["links"]) > 12):
+                raise ValueError("invalid cache entry")
+            datetime.fromisoformat(page["fetchedAt"].replace("Z", "+00:00"))
+            page["url"] = _validate_url(page["url"], deadline)
+            if _source_links(page["url"], [{"href": link["url"], "text": link["text"]} for link in page["links"]]) != page["links"]:
+                raise ValueError("invalid cache links")
+        except Exception as error:
+            raise ValidationError("cached page failed validation") from error
+        return _excerpt(page, max_characters, focus, True)
+
+    from scrapling.fetchers import StealthyFetcher
+
+    guard = _BrowserGuard(deadline)
+    for attempt in range(MAX_HTTP_ATTEMPTS):
+        try:
+            final, initial = guard.fetch(requested)
+            if not (200 <= initial.status < 300 or initial.status == 403):
+                if initial.status in {408, 429} or 500 <= initial.status < 600:
+                    delay = _retry_delay(initial.headers, attempt)
+                    if attempt < MAX_HTTP_ATTEMPTS - 1 and delay is not None and delay < deadline - time.monotonic():
+                        time.sleep(delay)
+                        continue
+                return _result(final, method, f"upstream returned HTTP {initial.status}")
+            guard.document_url = final
+            guard.preloaded = (final, initial)
+            guard.setup_complete = False
+            guard.error = None
+            guard.retryable = False
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ValidationError("browser fetch deadline exceeded")
+            with tempfile.TemporaryDirectory(prefix="public-research-browser-") as profile:
+                page = StealthyFetcher.fetch(
+                    final, headless=True, page_setup=guard.setup, retries=1,
+                    timeout=min(20_000, max(1, int(remaining * 1000))), wait=1_000,
+                    network_idle=True, solve_cloudflare=False, google_search=False,
+                    block_webrtc=True, user_data_dir=profile,
+                    extra_flags=["--disable-quic", "--disable-background-networking",
+                                 "--host-resolver-rules=MAP * ~NOTFOUND", "--no-proxy-server"],
+                    additional_args={"service_workers": "block", "ignore_https_errors": False,
+                                     "permissions": [], "accept_downloads": False,
+                                     "timeout": min(20_000, max(1, int(remaining * 1000)))},
+                )
+            if guard.error and guard.retryable:
+                raise ConnectionError("browser resource fetch failed")
+            if not guard.setup_complete or guard.error:
+                raise ValidationError(guard.error or "browser egress guard setup failed")
+            current = _validate_url(page.url, deadline)
+            if current != guard.document_url or time.monotonic() >= deadline:
+                raise ValidationError("browser render source or deadline could not be verified")
+            if not 200 <= int(page.status) < 300:
+                return _result(current, method, f"upstream returned HTTP {page.status}")
+            content = _page_html(page)
+            if len(content.encode()) > MAX_RESPONSE_BYTES:
+                raise ValidationError("browser content exceeded the fetch limit")
+            parser = _TextParser()
+            parser.feed(content)
+            parser.close()
+            text = parser.text()
+            if not text.strip() or _blocked_content(content, text):
+                return _result(current, method, "upstream returned a challenge, login, or no public readable content")
+            if len(text.encode()) > MAX_RESPONSE_BYTES:
+                raise ValidationError("extracted content exceeded the fetch limit")
+            page = {"requestedUrl": requested, "url": current, "method": method, "text": text,
+                    "pageDigest": hashlib.sha256(text.encode()).hexdigest(), "extractionVersion": EXTRACTION_VERSION,
+                    "links": _source_links(current, parser.links),
+                    "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+            if cache_path:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_text(json.dumps(page, ensure_ascii=False), encoding="utf-8")
+            return _excerpt(page, max_characters, focus, False)
+        except ValidationError:
+            raise
+        except Exception as error:
+            if ((guard.error and not guard.retryable) or not (_retryable_network_error(error) or guard.retryable)
+                    or attempt == MAX_HTTP_ATTEMPTS - 1):
+                return _result(requested, method, guard.error or "browser fetch failed")
+            delay = _retry_delay({}, attempt)
+            if delay >= deadline - time.monotonic():
+                break
+            time.sleep(delay)
+    return _result(requested, method, "browser fetch failed")
 
 
 def main():
@@ -344,18 +592,15 @@ def main():
             raise ValidationError("mode must be http or dynamic")
         if not isinstance(max_characters, int) or isinstance(max_characters, bool) or not 1 <= max_characters <= MAX_CHARACTERS:
             raise ValidationError(f"maxCharacters must be an integer from 1 to {MAX_CHARACTERS}")
-        if mode == "dynamic":
-            # Scrapling's DynamicFetcher has no documented per-request DNS/IP policy hook.
-            url = _validate_url(url)
-            return _result(url, "scrapling-dynamic", "dynamic mode is unavailable because browser subrequests cannot be safely validated")
         include_links = request.get("includeLinks", False)
         if type(include_links) is not bool:
             raise ValidationError("includeLinks must be boolean")
-        return _read_http(url, max_characters, focus, include_links)
+        return (_read_browser if mode == "dynamic" else _read_http)(url, max_characters, focus, include_links)
     except ValidationError as error:
-        return _result(_safe_url(locals().get("url", "")), "scrapling-http", str(error))
+        return _result(_safe_url(locals().get("url", "")), "scrapling-browser" if locals().get("mode") == "dynamic" else "scrapling-http", str(error))
     except Exception:
-        return _result(_safe_url(locals().get("url", "")), "scrapling-http", "HTTP fetch failed")
+        method = "scrapling-browser" if locals().get("mode") == "dynamic" else "scrapling-http"
+        return _result(_safe_url(locals().get("url", "")), method, "browser fetch failed" if method == "scrapling-browser" else "HTTP fetch failed")
 
 
 if __name__ == "__main__":

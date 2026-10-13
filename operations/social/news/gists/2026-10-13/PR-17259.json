@@ -1,0 +1,33 @@
+{
+  "pr_number": 17259,
+  "title": "feat(enter): reward Discord level milestones as quests",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17259",
+  "merged_at": "2026-10-13T04:42:00Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added Discord quests for reaching level 10 (2 Quest Pollen) and level 20 (5 Quest Pollen). The quests read the existing “Level N+” roles assigned by Arcane and award each milestone once per Discord account, even if that account is relinked to another Pollinations account. No new bot or Discord permission is needed. Added account-linking tests for both milestones and relinking.",
+    "keywords": [
+      "Discord",
+      "Quests",
+      "Pollen",
+      "level milestones",
+      "Arcane",
+      "account linking"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17259.jpg",
+    "prompt": "In a cozy pixel art community garden, Polli wears a tiny graduation cap and pins two lime green (#ecf874) milestone badges marked “10” and “20” beside a glowing Discord-style chat terminal, with pixel flowers growing around it. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, strictly pixel art, and the only bee in the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream background, dark purple (#110518) outlines, and a soft CRT glow."
+  },
+  "generated_at": "2026-10-13T04:43:09.159205+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "a0ce95252e51f70427e3a15ba137db693cbe4a56",
+  "announcements": []
+}

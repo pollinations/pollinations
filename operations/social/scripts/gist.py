@@ -132,6 +132,7 @@ def api_changes_for_pr(pr: Dict, root) -> List[Dict]:
 # ── Model changes: exact official changes from merged registry revisions ──
 
 ROOT = Path(__file__).resolve().parents[3]
+LEGACY_BRANCH = "master"
 IGNORED = {"health", "pending_change", "name", "title", "description", "publisher",
            "brand_url", "brand_icon_url", "added_date", "community", "agent"}
 
@@ -262,8 +263,23 @@ def announced_retirements(pr, catalog):
     return events
 
 
+def tracks_main_catalog(pr):
+    """Model and API changes are read from main's shared/registry and APIDOCS.md.
+
+    PRs merged into master (the legacy APIs) touch the same paths with another layout:
+    master has no model-info.ts, and its APIDOCS.md documents Free API Classic.
+    """
+    return (pr.get("base") or {}).get("ref") != LEGACY_BRANCH
+
+
+def registry_changed(pr, files):
+    return tracks_main_catalog(pr) and any(path.startswith("shared/") for path in files)
+
+
 def announcements_for_pr(pr, files, root=ROOT, refs=None):
-    changed = any(path.startswith("shared/") for path in files)
+    if not tracks_main_catalog(pr):
+        return []
+    changed = registry_changed(pr, files)
     if not changed and not announces_retirement(pr):
         return []
     # Announcement-only PRs need just the merged catalog to check the model IDs.
@@ -335,8 +351,8 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
                  "CLASSIFICATION_OUTPUT": str(output)}, check=True,
         )
         gist.update(json.loads(output.read_text()))
-    changed = any(path.startswith("shared/") for path in files)
-    if changed or announces_retirement(pr):
+    changed = registry_changed(pr, files)
+    if changed or (tracks_main_catalog(pr) and announces_retirement(pr)):
         if not (root / "node_modules/tsx").is_dir():
             subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
         # Rebase detection needs original commits as well as the merged history.
@@ -361,7 +377,7 @@ def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
         if refs:
             gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
     # The docs PR regenerated after each production deploy carries the live API changes.
-    if API_DOCS in files:
+    if API_DOCS in files and tracks_main_catalog(pr):
         gist["api_changes"] = api_changes_for_pr(pr, root)
 
 # ── App catalog lookup ──────────────────────────────────────────────

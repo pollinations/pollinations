@@ -22,8 +22,8 @@ from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollination
                     filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
 from contributors import github_account, rank_contributors
 from discord_pr import generate_snippet
-from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
-                  enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
+from gist import (analyze_pr, announced_retirements, announcements_for_pr, api_changes, api_changes_for_pr,
+                  api_surface, build_full_gist, enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
 from news_index import api_entries, build_index, highlight_entries, model_entries
 from readme import get_top_highlights
 
@@ -86,6 +86,25 @@ class GistEnrichmentTest(unittest.TestCase):
             enrich_gist({}, pr, ["shared/registry/text.ts"], "test")
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
+
+    def test_master_prs_skip_main_catalog_and_api_docs_comparison(self):
+        # Legacy master PRs touch shared/ and APIDOCS.md, but master has no model-info.ts.
+        pr = {"number": 1, "merge_commit_sha": "abc", "commits": 8, "base": {"ref": "master"},
+              "body": "| `example/model` | RETIRE | Availability | Available | Retired | 2099-01-01 |"}
+        def run(args, **kwargs):
+            if args[0] == sys.executable:
+                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
+                    {"area": "API & reliability", "type": "Task", "source": "Team"}))
+            else:
+                raise AssertionError(f"unexpected command {args}")
+        gist = {}
+        with patch("gist.subprocess.run", side_effect=run), \
+             patch("gist.github_api_request", side_effect=AssertionError("no commit lookup")):
+            enrich_gist(gist, pr, ["shared/registry/text.ts", "APIDOCS.md"], "test")
+        self.assertEqual(gist["announcements"], [])
+        self.assertNotIn("api_changes", gist)
+        self.assertNotIn("announcement_evidence", gist)
+        self.assertEqual(announcements_for_pr(pr, ["shared/registry/text.ts"]), [])
 
     def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",

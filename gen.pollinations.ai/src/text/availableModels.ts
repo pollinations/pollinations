@@ -278,7 +278,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "cohere/command-a-plus",
-        config: portkeyConfig["Cohere-command-a-plus-05-2026"],
+        config: portkeyConfig["cohere/command-a-plus"],
     },
     {
         name: "qwen/qwen3-coder-30b-a3b-instruct",
@@ -323,8 +323,8 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        config: portkeyConfig["qwen3.8-27b-openrouter-akashml"],
+        name: "qwen/qwen3.8-27b:openrouter:reka-fp8",
+        config: portkeyConfig["qwen3.8-27b-openrouter-reka"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -424,13 +424,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
-        transform: fireworksThinkingWithoutCacheControl,
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash"],
+        transform: fireworksThinking,
     },
     {
-        name: "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
-        config: portkeyConfig["deepseek-v41-flash-openrouter-deepinfra"],
-        transform: fireworksThinking,
+        name: "deepseek/deepseek-v4.1-flash:fireworks",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -495,7 +495,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "x-ai/grok-4.7",
-        config: portkeyConfig["x-ai/grok-4.7"],
+        config: portkeyConfig["grok-4.7-xai"],
+    },
+    {
+        name: "x-ai/grok-4.7:openrouter",
+        config: portkeyConfig["grok-4.7-openrouter"],
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",
@@ -583,6 +587,11 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-opus-5.5:openrouter:anthropic",
         config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
+        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-opus-5.5:fast",
+        config: portkeyConfig["claude-opus-5.5-fast-openrouter-anthropic-fast"],
         transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {

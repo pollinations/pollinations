@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Seed a known API key into gen's LOCAL D1 so local end-to-end tests work.
+ * Seed a known API key into the LOCAL D1 that Enter and gen share, and give
+ * every local user (including GitHub sign-ins to local Enter) Quest Pollen.
  *
  * Why this exists
  * ---------------
@@ -21,7 +22,7 @@
  *   POLLINATIONS_TOKEN_LOCAL=sk_xxx npm run seed:local
  *
  * If no token is found it generates one, seeds it, and appends it to _local/.env.
- * Boot the worker first (`npm run dev`) so the D1 + schema exist.
+ * Create the D1 + schema first: `npm run migrate:development` in enter.pollinations.ai.
  */
 import { execFileSync } from "node:child_process";
 import { createHash, getRandomValues } from "node:crypto";
@@ -39,11 +40,13 @@ const GEN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(GEN_ROOT, "..");
 const ENV_FILE = join(REPO_ROOT, "_local", ".env");
 const D1_DIR = join(
-    GEN_ROOT,
-    ".wrangler/state/v3/d1/miniflare-D1DatabaseObject",
+    REPO_ROOT,
+    "enter.pollinations.ai/.wrangler/state/v3/d1/miniflare-D1DatabaseObject",
 );
 const USER_ID = "local-e2e-user";
 const KEY_ID = "local-e2e-key";
+const MIGRATE_HINT =
+    "Create it first: npm run migrate:development (in enter.pollinations.ai)";
 
 const die = (msg) => {
     console.error(`\n✖ ${msg}\n`);
@@ -75,17 +78,12 @@ function generateToken() {
 
 function findDb() {
     if (!existsSync(D1_DIR))
-        die(
-            `No local D1 found at ${D1_DIR}\n  Boot the worker once first: npm run dev`,
-        );
+        die(`No local D1 found at ${D1_DIR}\n  ${MIGRATE_HINT}`);
     const files = readdirSync(D1_DIR)
-        .filter((f) => f.endsWith(".sqlite"))
+        .filter((f) => f.endsWith(".sqlite") && f !== "metadata.sqlite")
         .map((f) => join(D1_DIR, f))
         .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
-    if (!files.length)
-        die(
-            `No .sqlite in ${D1_DIR}\n  Boot the worker once first: npm run dev`,
-        );
+    if (!files.length) die(`No .sqlite in ${D1_DIR}\n  ${MIGRATE_HINT}`);
     return files[0];
 }
 
@@ -110,10 +108,7 @@ const hasTable = sql(
     db,
     "SELECT name FROM sqlite_master WHERE type='table' AND name='apikey';",
 );
-if (!hasTable)
-    die(
-        "Local D1 has no `apikey` table yet.\n  Boot the worker once first: npm run dev",
-    );
+if (!hasTable) die(`Local D1 has no \`apikey\` table yet.\n  ${MIGRATE_HINT}`);
 
 let token = readEnvToken();
 let generated = false;
@@ -147,14 +142,21 @@ sql(
         '${USER_ID}', 1, 0, 0, strftime('%s','now'), strftime('%s','now'));`,
 );
 
+// Quest Pollen for every local account, e.g. one signed in through GitHub.
+const users = sql(
+    db,
+    "UPDATE user SET tier_balance = MAX(COALESCE(tier_balance, 0), 1000000); SELECT changes();",
+);
+
 if (generated && existsSync(ENV_FILE)) {
     appendFileSync(ENV_FILE, `\nPOLLINATIONS_TOKEN_LOCAL=${token}\n`);
 }
 
 console.log(`
-✔ Seeded local API key into gen's D1
+✔ Seeded local API key into the shared local D1
   db:    ${db}
   user:  ${USER_ID} (balances=1,000,000)
+  users: ${users} local users have at least 1,000,000 Quest Pollen
   key:   ${KEY_ID} (enabled, no expiry, full access)
   token: ${token}${generated ? "  (generated → appended to _local/.env)" : "  (from _local/.env)"}
 

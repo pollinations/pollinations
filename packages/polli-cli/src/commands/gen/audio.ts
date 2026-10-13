@@ -82,7 +82,7 @@ export function createAudioCommand() {
         )
         .addHelpText(
             "after",
-            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
+            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice nova --play\n  polli gen audio --model elevenlabs --voice callum "the sky today" --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
         .option("--voice <voice>", "Voice name (default: the model's own)")
@@ -107,7 +107,7 @@ export function createAudioCommand() {
 
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
-            const inputText = textArg || (await readStdin());
+            const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(
                     "No text provided. Pass as argument or pipe via stdin.",

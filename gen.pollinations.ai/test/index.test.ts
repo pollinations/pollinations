@@ -259,7 +259,11 @@ describe("gen worker routing", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toBe("text/plain");
-        await expect(response.text()).resolves.toContain("Disallow: /api/");
+        const body = await response.text();
+        expect(body).toContain("Disallow: /api/");
+        expect(body).toContain(
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+        );
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {
@@ -288,7 +292,7 @@ describe("gen worker routing", () => {
         }
     });
 
-    it("publishes the polli skill through Agent Skills well-known discovery", async () => {
+    it("publishes agent skills through Agent Skills well-known discovery", async () => {
         const index = await fetchWorker("/.well-known/agent-skills/index.json");
         expect(index.status).toBe(200);
         expect(index.headers.get("Content-Type")).toContain("application/json");
@@ -306,32 +310,53 @@ describe("gen worker routing", () => {
         expect(body.$schema).toBe(
             "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
         );
-        expect(body.skills).toHaveLength(1);
-        const [skill] = body.skills;
-        expect(skill).toMatchObject({
-            name: "polli",
-            type: "skill-md",
-            url: "/.well-known/agent-skills/polli/SKILL.md",
-        });
-        expect(skill.description).toMatch(/^Generate images/);
+        expect(body.skills.map((s) => s.name)).toEqual([
+            "polli",
+            "pollinations-api",
+            "quest-contributor",
+        ]);
+        const [polli, apiSkill] = body.skills;
+        expect(polli.description).toMatch(/^Generate images/);
+        expect(apiSkill.description).toMatch(/without installing/);
 
-        const skillFile = await fetchWorker(skill.url);
-        expect(skillFile.status).toBe(200);
-        expect(skillFile.headers.get("Content-Type")).toContain(
-            "text/markdown",
-        );
-        const bytes = new Uint8Array(await skillFile.arrayBuffer());
-        expect(new TextDecoder().decode(bytes)).toMatch(/^---\nname: polli\n/);
-        const hash = await crypto.subtle.digest("SHA-256", bytes);
-        const hex = [...new Uint8Array(hash)]
-            .map((byte) => byte.toString(16).padStart(2, "0"))
-            .join("");
-        expect(skill.digest).toBe(`sha256:${hex}`);
+        for (const skill of body.skills) {
+            expect(skill.type).toBe("skill-md");
+            expect(skill.url).toBe(
+                `/.well-known/agent-skills/${skill.name}/SKILL.md`,
+            );
+            expect(skill.description.length).toBeGreaterThan(0);
+            const skillFile = await fetchWorker(skill.url);
+            expect(skillFile.status).toBe(200);
+            expect(skillFile.headers.get("Content-Type")).toContain(
+                "text/markdown",
+            );
+            expect(skillFile.headers.get("Cache-Control")).toBe(
+                "public, max-age=3600",
+            );
+            const bytes = new Uint8Array(await skillFile.arrayBuffer());
+            expect(new TextDecoder().decode(bytes)).toMatch(
+                new RegExp(`^---\\nname: ${skill.name}\\n`),
+            );
+            const hash = await crypto.subtle.digest("SHA-256", bytes);
+            const hex = [...new Uint8Array(hash)]
+                .map((byte) => byte.toString(16).padStart(2, "0"))
+                .join("");
+            expect(skill.digest).toBe(`sha256:${hex}`);
+        }
 
-        const llms = await fetchWorker("/llms.txt");
-        expect(await llms.text()).toContain(
-            "/.well-known/agent-skills/index.json",
+        const missing = await fetchWorker(
+            "/.well-known/agent-skills/no-such-skill/SKILL.md",
         );
+        expect(missing.status).toBe(404);
+
+        const llms = await (await fetchWorker("/llms.txt")).text();
+        for (const path of [
+            "index.json",
+            "pollinations-api/SKILL.md",
+            "quest-contributor/SKILL.md",
+        ]) {
+            expect(llms).toContain(`/.well-known/agent-skills/${path}`);
+        }
     });
 
     it("publishes an RFC 9727 API catalog and links it from llms.txt", async () => {
@@ -375,6 +400,24 @@ describe("gen worker routing", () => {
 
         const llms = await fetchWorker("/llms.txt");
         expect(await llms.text()).toContain("/.well-known/api-catalog");
+    });
+
+    it("serves Markdown at the docs landing for agents that ask for it", async () => {
+        const agentHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/markdown" },
+        });
+        expect(agentHome.status).toBe(200);
+        expect(agentHome.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(agentHome.headers.get("Vary")).toBe("Accept");
+        expect(await agentHome.text()).toMatch(/^# Pollinations\n/);
+
+        const browserHome = await fetchWorker("/", envWithEnter(), {
+            headers: { Accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
+        });
+        expect(browserHome.headers.get("Content-Type")).toContain("text/html");
+        expect(browserHome.headers.get("Vary")).toBe("Accept");
     });
 
     it("does not expose /api routes on gen", async () => {
@@ -607,24 +650,24 @@ describe("gen worker routing", () => {
         expect(await retrieved.json()).toMatchObject({ paid_only: true });
     });
 
-    it.each([
-        "/models",
-        "/audio/models",
-    ] as const)("advertises transcription endpoints on %s", async (path) => {
-        const response = await fetchWorker(path, envWithEnter());
+    it.each(["/models", "/audio/models"] as const)(
+        "advertises transcription endpoints on %s",
+        async (path) => {
+            const response = await fetchWorker(path, envWithEnter());
 
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            supported_endpoints?: string[];
-        }[];
-        for (const name of TRANSCRIPTION_MODEL_IDS) {
-            expect(
-                models.find((model) => model.name === name)
-                    ?.supported_endpoints,
-            ).toEqual(["/v1/audio/transcriptions"]);
-        }
-    });
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as {
+                name: string;
+                supported_endpoints?: string[];
+            }[];
+            for (const name of TRANSCRIPTION_MODEL_IDS) {
+                expect(
+                    models.find((model) => model.name === name)
+                        ?.supported_endpoints,
+                ).toEqual(["/v1/audio/transcriptions"]);
+            }
+        },
+    );
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -832,33 +875,36 @@ fixtureTest(
 );
 
 describe("model status", () => {
-    it.each([
-        "all",
-        "regular",
-    ])("proxies %s traffic with a separate 60 second edge cache", async (traffic) => {
-        const upstream = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(
-                Response.json({ data: [{ model: "test" }] }),
+    it.each(["all", "regular"])(
+        "proxies %s traffic with a separate 60 second edge cache",
+        async (traffic) => {
+            const upstream = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({ data: [{ model: "test" }] }),
+                );
+
+            const response = await fetchWorker(
+                `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
             );
+            expect(response.status).toBe(200);
+            expect(response.headers.get("Cache-Control")).toBe(
+                "public, max-age=60",
+            );
+            expect(await response.json()).toEqual({
+                data: [{ model: "test" }],
+            });
 
-        const response = await fetchWorker(
-            `/models/status?minutes=15${traffic === "regular" ? "&traffic=regular" : ""}`,
-        );
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Cache-Control")).toBe(
-            "public, max-age=60",
-        );
-        expect(await response.json()).toEqual({
-            data: [{ model: "test" }],
-        });
-
-        const [url, init] = upstream.mock.calls[0] as [URL, { cf?: unknown }];
-        expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
-        expect(url.searchParams.get("minutes")).toBe("15");
-        expect(url.searchParams.get("traffic")).toBe(traffic);
-        expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
-    });
+            const [url, init] = upstream.mock.calls[0] as [
+                URL,
+                { cf?: unknown },
+            ];
+            expect(url.pathname).toBe("/v0/pipes/model_route_health.json");
+            expect(url.searchParams.get("minutes")).toBe("15");
+            expect(url.searchParams.get("traffic")).toBe(traffic);
+            expect(init.cf).toEqual({ cacheTtl: 60, cacheEverything: true });
+        },
+    );
 
     it("rejects unsupported traffic groups before contacting Tinybird", async () => {
         const response = await fetchWorker("/models/status?traffic=invalid");

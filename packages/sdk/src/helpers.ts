@@ -19,7 +19,6 @@ import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
-    Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
     wrapAudioResponse,
@@ -52,6 +51,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -308,20 +308,6 @@ export async function* chatStream(
     yield* getClient().chatStream(messages, options);
 }
 
-/**
- * Create a new conversation with the configured client
- *
- * @example
- * ```ts
- * const convo = conversation({ model: 'openai' });
- * convo.system('You are a helpful assistant');
- * const response = await convo.say('Hello!');
- * ```
- */
-export function conversation(options?: ChatOptions): Conversation {
-    return new Conversation(options, getClient());
-}
-
 // ============================================================================
 // Audio Functions
 // ============================================================================
@@ -354,24 +340,10 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
+ * Get available models, or only one kind of them
  */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
- * Get all available models
- */
-export async function getModels(): Promise<ModelInfo[]> {
-    return getClient().models();
+export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {
+    return getClient().models(kind);
 }
 
 // ============================================================================

@@ -151,7 +151,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
-- Run `npx biome check --write <file>` after edits and before commits.
+- Run `npx @biomejs/biome check --write <file>` after edits and before commits. It runs the repo's own Biome once `npm ci` has installed it; a bare `npx biome` can run an unrelated npm package.
 - Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.
@@ -194,6 +194,13 @@ npx vitest run test/file.test.ts
 - Test keys: `enter.pollinations.ai/.testingtokens` contains `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
+
+## Data-processing documentation maintenance
+
+- Maintain `pollinations.ai/public/legal/SUBPROCESSORS.md`, the Privacy Policy, and the internal draft `operations/legal/DATA_PROCESSING_ADDENDUM.md` when model, fallback, GPU host, region, infrastructure, hosted-tool, logging, caching, retention, training-use, or supplier changes affect personal-data processing. Update them in the same change; an unchanged public model name does not exempt a provider or location change. Keep the draft outside website assets and navigation until its commitments can be supported and an effective agreement is approved.
+- Verify the live route and all intermediaries/fallbacks, contracted legal entity, processing countries, data categories, retention/training settings, written processing terms, and transfer safeguards from operational and contractual evidence. Model publishers, supplier headquarters, and endpoint hostnames are not sufficient evidence. Mark unknowns explicitly; do not invent compliance or publish draft entries as approved.
+- Check the Terms, Privacy Policy, and any applicable customer agreement's notice and objection requirements before a sub-processor addition/replacement or material processing change takes effect. A provider-list edit alone is not customer notice. If an incident requires an urgent change, record and escalate the notice/contract impact to the maintainer; do not silently certify the new arrangement.
+- Keep legal documents as the single source of truth, update their version dates and links when applicable, and obtain legal/operator review before introducing or changing contractual commitments. Pricing-only edits and read-only health checks need no legal edit when processing is unchanged.
 
 ## Models & API Changes
 
@@ -256,7 +263,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

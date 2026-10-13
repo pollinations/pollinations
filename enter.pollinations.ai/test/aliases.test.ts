@@ -28,6 +28,7 @@ function serviceAliasTestCases(
 
 test("OpenAI speech model names resolve to the OpenAI TTS models", () => {
     expect(resolveModelName("tts-1")).toBe("openai/tts-1");
+    expect(resolveModelName("tts")).toBe("openai/tts-1");
     expect(resolveModelName("tts-1-hd")).toBe("openai/tts-1-hd");
 });
 
@@ -46,50 +47,53 @@ function requiredCostRate(model: ModelName, field: UsageType): number {
     return rate as number;
 }
 
-test.for(
-    serviceAliasTestCases(TEXT_SERVICES),
-)("Text service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(TEXT_SERVICES))(
+    "Text service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(IMAGE_SERVICES),
-)("Image service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(IMAGE_SERVICES))(
+    "Image service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(AUDIO_SERVICES),
-)("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(AUDIO_SERVICES))(
+    "Audio service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(EMBEDDING_SERVICES),
-)("Embedding service alias %s is resolved to %s", ([
-    alias,
-    shouldResolveTo,
-]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(EMBEDDING_SERVICES))(
+    "Embedding service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(REALTIME_SERVICES),
-)("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(REALTIME_SERVICES))(
+    "Realtime service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
-test.for(
-    serviceAliasTestCases(MODEL3D_SERVICES),
-)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
-    const resolved = resolveModelName(alias);
-    expect(resolved).toBe(shouldResolveTo);
-});
+test.for(serviceAliasTestCases(MODEL3D_SERVICES))(
+    "3D service alias %s is resolved to %s",
+    ([alias, shouldResolveTo]) => {
+        const resolved = resolveModelName(alias);
+        expect(resolved).toBe(shouldResolveTo);
+    },
+);
 
 test("every public model has a publisher-qualified canonical ID", () => {
     for (const model of getModels()) {
@@ -243,12 +247,12 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "azure",
-        "deepseek/deepseek-v4.1-flash": "fireworks",
+        "deepseek/deepseek-v4.1-flash": "deepinfra",
         "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": false,
-        "deepseek/deepseek-v4.1-flash": false,
+        "deepseek/deepseek-v4.1-flash": true,
         "deepseek/deepseek-v4-pro": true,
     } as const;
     const expectedMultipliers = {

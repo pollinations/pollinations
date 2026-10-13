@@ -3302,14 +3302,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // OpenRouter Chutes FP8 route rates (2026-10-13), including the
             // account's 5.5% credit-purchase fee. OpenRouter publishes one
             // prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.24) * 1.055,
-            promptCachedTokens: perMillion(0.024) * 1.055,
-            promptImageTokens: perMillion(0.24) * 1.055,
-            promptVideoTokens: perMillion(0.24) * 1.055,
-            completionTextTokens: perMillion(2.2) * 1.055,
+            promptTextTokens: perMillion(0.039) * 1.055,
+            promptCachedTokens: perMillion(0.0039) * 1.055,
+            promptImageTokens: perMillion(0.039) * 1.055,
+            promptVideoTokens: perMillion(0.039) * 1.055,
+            completionTextTokens: perMillion(1.25) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:

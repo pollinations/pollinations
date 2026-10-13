@@ -92,6 +92,15 @@ test("known-answer controls cycle through pricing, identity, capabilities, lifec
     assert.equal(state.accuracy, 1);
     assert.ok(state.meanBrier > 0 && state.meanBrier < 0.01);
 });
+test("passing canaries distinguish low-confidence evidence from failed controls", () => {
+    const state = calibrationState();
+    const result = run(state, { "real-claim": { p: 0.8 } });
+    assert.equal(state.errors, 0);
+    assert.equal(result.grades[0].relation, "insufficient");
+    assert.equal(result.grades[0].calibrationAccepted, false);
+    assert.equal(result.grades[0].calibrationPassed, true);
+});
+
 test("a confident wrong canary rejects the entire batch and tightens later acceptance", () => {
     const state = calibrationState();
     const result = run(state, {

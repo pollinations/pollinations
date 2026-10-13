@@ -197,6 +197,7 @@ export function applyCalibration(state, result, response, controls) {
                     ...grade,
                     rawRelation: grade.relation,
                     relation: accepted ? grade.relation : "insufficient",
+                    calibrationPassed: passed && !state.disabled,
                     calibrationAccepted: accepted,
                     calibrationThreshold: state.threshold,
                 };

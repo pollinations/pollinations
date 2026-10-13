@@ -3,8 +3,7 @@ const test = require("node:test");
 const sharp = require("sharp");
 const { screenshotErrors, toCatalogWebp } = require("./screenshot.js");
 
-const RULES =
-    "it must be PNG, JPEG, or WebP, at most 5 MB, 16:9 landscape, at least 1280×720.";
+const RULES = "it must be PNG, JPEG, or WebP, at most 5 MB.";
 
 function image(width, height, format = "png") {
     return sharp({
@@ -26,16 +25,22 @@ test("accepts 16:9 screenshots in supported formats", async () => {
     );
 });
 
-test("rejects screenshots outside the size and format rules", async () => {
+test("accepts other ratios and lower resolutions", async () => {
     for (const [width, height] of [
         [1080, 1920],
         [1280, 800],
         [960, 540],
+        [338, 338],
     ]) {
-        assert.deepEqual(await screenshotErrors(await image(width, height)), [
-            `Screenshot is ${width}×${height}; ${RULES}`,
-        ]);
+        const source = await image(width, height);
+        assert.deepEqual(await screenshotErrors(source), []);
+        const output = await sharp(await toCatalogWebp(source)).metadata();
+        assert.equal(output.width, 1280);
+        assert.equal(output.height, 720);
     }
+});
+
+test("rejects invalid images, unsupported formats and oversized files", async () => {
     assert.deepEqual(await screenshotErrors(await image(1920, 1080, "gif")), [
         `Screenshot is gif; ${RULES}`,
     ]);

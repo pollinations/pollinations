@@ -47,20 +47,21 @@ test("blocks deployment when a pipe is absent or malformed", async () => {
     ).rejects.toThrow(/economics_pollen_usage_api: invalid shape/);
 });
 
-test.each(
-    REQUIRED_PIPES,
-)("rejects an empty required dataset: %s", async (pipe) => {
-    await expect(
-        checkTinybirdContract({
-            api: "https://tinybird.test",
-            token: "redacted",
-            fetchImpl: async (url) =>
-                pipeName(url) === pipe
-                    ? Response.json({ data: [] })
-                    : validResponse(url),
-        }),
-    ).rejects.toThrow(`${pipe}: no rows`);
-});
+test.each(REQUIRED_PIPES)(
+    "rejects an empty required dataset: %s",
+    async (pipe) => {
+        await expect(
+            checkTinybirdContract({
+                api: "https://tinybird.test",
+                token: "redacted",
+                fetchImpl: async (url) =>
+                    pipeName(url) === pipe
+                        ? Response.json({ data: [] })
+                        : validResponse(url),
+            }),
+        ).rejects.toThrow(`${pipe}: no rows`);
+    },
+);
 
 test.each([
     ["economics_bank_ledger_api", "amount", "100", "amount: expected number"],

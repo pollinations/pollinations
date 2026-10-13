@@ -453,8 +453,6 @@ export async function listQuestCards(
 
 async function reportedIssueProposals(token: string, user: QuestUser) {
     if (!user.githubUsername || user.githubId === null) return [];
-    // The maintainer opted out of reporter rewards; keep other GitHub quests.
-    if (user.githubId === 5099901) return [];
 
     const proposals: QuestEvaluation["proposals"] = [];
     let after: string | null = null;

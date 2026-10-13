@@ -405,6 +405,94 @@ test("Jev controls concrete search and named Sol work without inventing actions"
     );
 });
 
+test("live 0.99 probability mass rejects only that evidence grade without normalization", () => {
+    const payload = buildTriage(
+        ["publisher/checkpoint"],
+        [
+            { id: "bad", text: "Exact checkpoint source" },
+            { id: "good", text: "Exact checkpoint source" },
+        ],
+    );
+    const native = response(payload, "relevant", {
+        relevant: 0.94,
+        irrelevant: 0,
+        insufficient: 0.06,
+    });
+    native.answers.source_0 = {
+        type: "choice",
+        choice: "insufficient",
+        confidence: 0.52,
+        probabilities: { relevant: 0.03, irrelevant: 0.28, insufficient: 0.68 },
+    };
+    assert.throws(() => validateTriage(payload, native), /probability sum/);
+    const result = validateTriage(payload, native, {
+        rejectInvalidChoices: true,
+    });
+    assert.deepEqual(result.prioritizedIds, ["good"]);
+    assert.deepEqual(result.ambiguousIds, ["bad"]);
+    assert.equal(result.grades[0].selectedProbability, 0);
+    assert.equal(result.grades[0].rejected, true);
+    assert.match(result.grades[0].validationError, /probability sum/);
+    assert.equal(native.answers.source_0.probabilities.insufficient, 0.68);
+    native.usage.input_tokens = 0;
+    assert.throws(
+        () => validateTriage(payload, native, { rejectInvalidChoices: true }),
+        /native usage/,
+    );
+});
+
+test("planning can use a bound categorical choice with rejected calibration but evidence cannot", () => {
+    const state = {
+        stage: "search",
+        models: [],
+        actions: [
+            {
+                id: "required-reddit",
+                kind: "search",
+                query: "site:reddit.com model demand",
+                engine: "exa",
+                scope: "discovery",
+                mode: "reddit",
+                models: [],
+            },
+            {
+                id: "required-replit",
+                kind: "search",
+                query: "site:replit.com model demand",
+                engine: "exa",
+                scope: "discovery",
+                mode: "replit",
+                models: [],
+            },
+        ],
+        evidence: "Both platform searches are required coverage",
+        remainingPollen: 1,
+    };
+    const payload = buildResearchControl(state);
+    const native = response(payload, "required-reddit", {
+        "required-reddit": 0.68,
+        "required-replit": 0.28,
+        insufficient: 0.03,
+    });
+    assert.throws(
+        () => validateResearchControl(payload, native),
+        /probability sum/,
+    );
+    const result = validateResearchControl(payload, native, {
+        rejectInvalidChoices: true,
+    });
+    assert.deepEqual(result.action, state.actions[0]);
+    assert.equal(result.selectedProbability, 0);
+    assert.equal(result.rejected, true);
+    native.answers.next_action.choice = "required-replit";
+    assert.equal(
+        validateResearchControl(payload, native, { rejectInvalidChoices: true })
+            .action,
+        null,
+        "A contradicting argmax cannot execute an action",
+    );
+});
+
 test("atomic claim grades remain advisory, including quoted malicious instructions", () => {
     const items = [
         {

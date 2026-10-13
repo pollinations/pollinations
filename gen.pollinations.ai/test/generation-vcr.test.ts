@@ -3288,43 +3288,42 @@ test("OpenAI image generation returns token usage", async ({
     await wait();
 });
 
-test("gpt-image-2 rejects transparent backgrounds with 400", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
+test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
+    "%s rejects transparent backgrounds with 400",
+    async (model, { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird");
 
-    const { response, wait } = await fetchWorker("/v1/images/generations", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-image-2",
-            prompt: "transparent",
-            transparent: true,
-        }),
-    });
+        const { response, wait } = await fetchWorker("/v1/images/generations", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                prompt: "transparent",
+                transparent: true,
+            }),
+        });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        success: false,
-        error: {
-            code: "BAD_REQUEST",
-            message:
-                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
-        },
-    });
-    await wait();
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message: `Invalid parameters: Transparent backgrounds are not supported by ${model}.`,
+            },
+        });
+        await wait();
 
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.image",
-        modelRequested: "openai/gpt-image-2",
-        responseStatus: 400,
-    });
-});
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.image",
+            modelRequested: model,
+            responseStatus: 400,
+        });
+    },
+);
 
 // 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
 test.for([429, 404])(

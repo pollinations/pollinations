@@ -150,14 +150,6 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "openai/gpt-image-2" && data.transparent) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
         const references = [
             {

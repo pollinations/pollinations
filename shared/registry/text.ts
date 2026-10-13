@@ -98,7 +98,8 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        // Approved Quest Pollen exception outside Azure and Fireworks.
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.05),
             completionTextTokens: perMillion(0.18),
@@ -1494,7 +1495,8 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Free upstream, so billed at zero.
-        paidOnly: true,
+        // Free upstream, so Quest Pollen keeps it.
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0),
             completionTextTokens: perMillion(0),
@@ -3751,7 +3753,8 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-02-15").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        // Free upstream, so Quest Pollen keeps it.
+        paidOnly: false,
         cost: {
             // OVHcloud lists this moderation endpoint as free (2026-10-12).
             promptTextTokens: perMillion(0),

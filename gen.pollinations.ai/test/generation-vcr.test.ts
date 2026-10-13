@@ -1307,7 +1307,7 @@ test("whisper srt cues are the segments OVH is asked for", async ({
         ...env,
         OVHCLOUD_API_KEY: "ovh-test-key",
     });
-    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
     const form = new FormData();
     // Unique bytes so the transcription cache cannot answer instead.
     form.append("file", new File([crypto.randomUUID()], "clip.wav"));

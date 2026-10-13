@@ -48,11 +48,14 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
-    it("requires paid Pollen outside Azure and Fireworks except the three approved image models", () => {
+    it("requires paid Pollen outside Azure and Fireworks except the approved exceptions", () => {
         const exceptions = new Set([
             "tongyi-mai/z-image-turbo",
             "black-forest-labs/flux.1-schnell",
             "black-forest-labs/flux.2-klein-4b",
+            "qwen/qwen3guard-gen-8b",
+            "openai/gpt-oss-20b",
+            "respan/span-01-lite",
         ]);
         const questModels = [];
         for (const id of getModels()) {

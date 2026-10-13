@@ -133,56 +133,56 @@ async function createBalanceUser(
 
 describe("BYOP markup", () => {
     it.each([
-        "qwen/qwen3guard-gen-8b",
         "amazon/nova-2-lite-v1",
         "amazon/nova-micro-v1",
         "inclusionai/ling-3.1-flash",
         "jaredpalmer/kev-4b",
         "typesafe/jev-1.13",
-        "respan/span-01-lite",
-        "openai/gpt-oss-20b",
         "lykon/dreamshaper-8-lcm",
         "assemblyai/universal-3.5-pro",
         "assemblyai/universal-2",
         "openai/whisper-large-v3",
         "microsoft/trellis-2",
-    ] as const)("requires paid balance for %s and its fallback routes", async (model) => {
-        const userId = await createBalanceUser("paid-model", {
-            tier: 100,
-            pack: 0,
-        });
-        const vars = {
-            auth: { user: { id: userId } },
-            balance: { getBalance: (id: string) => getUserBalance(db, id) },
-            model: testModel(model),
-            log: fakeLog(),
-        } as unknown as Parameters<typeof checkBalance>[0];
-
-        for (const route of [
-            model,
-            ...(vars.model.definition.fallbacks ?? []),
-        ]) {
-            vars.model = testModel(route as ModelName);
-            await expect(
-                checkBalance(vars, fakeStatsEnv(0, route)),
-            ).rejects.toMatchObject({
-                status: 402,
-                errorCode: "INSUFFICIENT_BALANCE",
-                paidOnly: true,
+    ] as const)(
+        "requires paid balance for %s and its fallback routes",
+        async (model) => {
+            const userId = await createBalanceUser("paid-model", {
+                tier: 100,
+                pack: 0,
             });
-            await db
-                .update(userTable)
-                .set({ packBalance: 1 })
-                .where(sql`${userTable.id} = ${userId}`);
-            await expect(
-                checkBalance(vars, fakeStatsEnv(0, route)),
-            ).resolves.toBeUndefined();
-            await db
-                .update(userTable)
-                .set({ packBalance: 0 })
-                .where(sql`${userTable.id} = ${userId}`);
-        }
-    });
+            const vars = {
+                auth: { user: { id: userId } },
+                balance: { getBalance: (id: string) => getUserBalance(db, id) },
+                model: testModel(model),
+                log: fakeLog(),
+            } as unknown as Parameters<typeof checkBalance>[0];
+
+            for (const route of [
+                model,
+                ...(vars.model.definition.fallbacks ?? []),
+            ]) {
+                vars.model = testModel(route as ModelName);
+                await expect(
+                    checkBalance(vars, fakeStatsEnv(0, route)),
+                ).rejects.toMatchObject({
+                    status: 402,
+                    errorCode: "INSUFFICIENT_BALANCE",
+                    paidOnly: true,
+                });
+                await db
+                    .update(userTable)
+                    .set({ packBalance: 1 })
+                    .where(sql`${userTable.id} = ${userId}`);
+                await expect(
+                    checkBalance(vars, fakeStatsEnv(0, route)),
+                ).resolves.toBeUndefined();
+                await db
+                    .update(userTable)
+                    .set({ packBalance: 0 })
+                    .where(sql`${userTable.id} = ${userId}`);
+            }
+        },
+    );
 
     it("computes the dev credit from the baseline price", () => {
         expect(computeDevCredit(0)).toBe(0);

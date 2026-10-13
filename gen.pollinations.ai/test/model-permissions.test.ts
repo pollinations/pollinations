@@ -289,13 +289,25 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
+    // Approved Quest Pollen exceptions outside Azure and Fireworks.
+    const questExceptions = [
+        "qwen/qwen3guard-gen-8b",
+        "openai/gpt-oss-20b",
+        "respan/span-01-lite",
+    ];
     const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
-        return !["azure", "fireworks"].includes(definition.provider);
+        return (
+            !["azure", "fireworks"].includes(definition.provider) &&
+            !questExceptions.includes(model)
+        );
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
+    for (const model of questExceptions) {
+        expect(freeModelNames.has(model), model).toBe(true);
+    }
     expect(paidProviderModelNames.length).toBeGreaterThan(0);
     expect(
         paidProviderModelNames.every((model) => !freeModelNames.has(model)),

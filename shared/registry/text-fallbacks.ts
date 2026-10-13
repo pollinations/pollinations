@@ -700,6 +700,30 @@ export const TEXT_FALLBACKS = {
             }),
         },
     },
+    "google/gemini-4-argon": {
+        "google/gemini-4-argon:openrouter:ai-studio": {
+            supportedParameters: CHAT_PARAMETERS.gemini35AiStudio,
+            provider: "openrouter",
+            priceMultiplier: 1,
+            addedDate: new Date("2026-10-13").getTime(),
+            // OpenRouter Google AI Studio rates (2026-10-13), including the 5.5%
+            // credit-purchase fee. Introductory until 2026-11-30.
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.1) * 1.055,
+                promptCacheWriteTokens: perMillion(2) * 1.055,
+                promptAudioTokens: perMillion(2) * 1.055,
+                promptImageTokens: perMillion(2) * 1.055,
+                promptVideoTokens: perMillion(2) * 1.055,
+                completionTextTokens: perMillion(10) * 1.055,
+            },
+            // Implicit caching only, so no explicit cache storage is billed.
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14 * 1.055,
+                storageCostPerMillionTokenHours: 0,
+            }),
+        },
+    },
     "google/gemini-2.5-flash-lite": {
         "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
             supportedParameters: CHAT_PARAMETERS.gemini25,

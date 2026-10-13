@@ -1043,6 +1043,39 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-4-argon": {
+        supportedParameters: CHAT_PARAMETERS.vertexGemini35,
+        aliases: [],
+        provider: "google",
+        publisher: "Google",
+        category: "text",
+        addedDate: new Date("2026-10-13").getTime(),
+        priceMultiplier: 1.055,
+        paidOnly: true,
+        // Google's introductory pricing runs through 2026-11-30. List rates
+        // ($4 input, $0.20 cached, $20 output) apply from 2026-12-01.
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.1),
+            promptCacheWriteTokens: perMillion(2),
+            promptAudioTokens: perMillion(2),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(10),
+        },
+        billing: GEMINI_3_SEARCH_BILLING,
+        title: "Gemini 4 Argon",
+        description:
+            "Flagship reasoning over text, images, audio and video, with web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "google/gemini-3.5-flash-lite": {
         supportedParameters: CHAT_PARAMETERS.vertexGemini35,
         aliases: [

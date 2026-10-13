@@ -110,6 +110,27 @@ were copied.
   The blocker is real for CI, but `biome check --write` fixes it. It says
   nothing about the fix itself.
 
+### Why DeepSeek ran out of time
+
+Added after the run, from gen's records of the run's own calls:
+
+| Review of #16911 | Model calls | Output tokens | of which reasoning | Model time |
+|---|---:|---:|---:|---:|
+| gpt-6.1-sol | 10 | 4,484 | 2,288 | 112 s |
+| DeepSeek v4.1-flash (Fireworks) | 37 | 59,339 | 52,981 | 534 s |
+
+- It hit the hospital's 600 s stage limit, not a provider timeout. All 37 calls
+  succeeded; the slowest took 43 s.
+- DeepSeek ran one shell command per call. gpt-6.1-sol batched several per
+  call.
+- DeepSeek wrote 13 times as much output, mostly reasoning. Per token it was
+  faster (about 110 tokens/s), so the time went to how much it thought.
+- The #17045 review needed the same: 29 calls, 55,051 reasoning tokens, and
+  560 s in all, just under the limit. Both DeepSeek reviews needed about 9.5
+  minutes, so whether one fits under 600 s is a coin toss.
+- Not tested: a lower reasoning effort (`claude --effort low|medium`) or a
+  prompt that asks it to batch commands.
+
 ## Head-to-head
 
 | Case | Quick review, gpt-6.1-sol | Quick review, DeepSeek | Hospital |

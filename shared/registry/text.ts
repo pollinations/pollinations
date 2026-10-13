@@ -3333,6 +3333,29 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
@@ -3364,6 +3387,29 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
         // hits (2026-09-03).
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),

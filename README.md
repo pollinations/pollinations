@@ -1,10 +1,7 @@
-# pollinations — legacy API branch
+# Pollinations Free API Classic
 
-This branch serves the legacy text and image APIs. Everything else lives on `main`.
+Generate images and text with a plain URL: no signup, no key. This branch runs Pollinations Free API Classic, free and rate-limited, at `image.pollinations.ai` and `text.pollinations.ai`.
 
-| Host | Cloudflare Worker | Code |
-|---|---|---|
-| `text.pollinations.ai`, `text.myceli.ai` | `pollinations-text-cache` | `text.pollinations.ai/cloudflare-cache/` |
-| `image.pollinations.ai`, `image.myceli.ai` | `pollinations-image-cache` | `image.pollinations.ai/cloudflare-cache/` |
-
-Both Workers call [gen.pollinations.ai](https://gen.pollinations.ai) and share code from `shared/`. They are deployed by the manual "Deploy / Legacy Cloudflare caches" workflow on `main`. API reference: [APIDOCS.md](APIDOCS.md).
+- **Use it:** [API docs](APIDOCS.md)
+- **Building an app?** Get your own key, every model and higher limits at [enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-readme).
+- **Code:** two Cloudflare Workers, `text.pollinations.ai/cloudflare-cache/` and `image.pollinations.ai/cloudflare-cache/`, deployed from `main` by a manual workflow. Everything else lives on [`main`](https://github.com/pollinations/pollinations).

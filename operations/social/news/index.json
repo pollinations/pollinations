@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T12:50:39.396688+00:00",
+  "generated_at": "2026-10-13T16:00:58.298955+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5799,6 +5799,48 @@
       }
     },
     {
+      "id": "pr-16686:assemblyai/universal-2",
+      "model_id": "assemblyai/universal-2",
+      "title": "AssemblyAI Universal-2",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-16686:assemblyai/universal-3.5-pro",
+      "model_id": "assemblyai/universal-3.5-pro",
+      "title": "AssemblyAI Universal-3.5 Pro",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
       "id": "pr-17187:anthropic/claude-sonnet-5.5",
       "model_id": "anthropic/claude-sonnet-5.5",
       "title": "Claude Sonnet 5.5",
@@ -6020,6 +6062,48 @@
       }
     },
     {
+      "id": "pr-16686:typesafe/jev-1.13",
+      "model_id": "typesafe/jev-1.13",
+      "title": "Jev",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-16686:jaredpalmer/kev-4b",
+      "model_id": "jaredpalmer/kev-4b",
+      "title": "Kev 4B",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
       "id": "pr-17178:hexgrad/kokoro-82m",
       "model_id": "hexgrad/kokoro-82m",
       "title": "Kokoro 82M",
@@ -6073,6 +6157,48 @@
       }
     },
     {
+      "id": "pr-16686:amazon/nova-2-lite-v1",
+      "model_id": "amazon/nova-2-lite-v1",
+      "title": "Nova 2 Lite",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-16686:amazon/nova-micro-v1",
+      "model_id": "amazon/nova-micro-v1",
+      "title": "Nova Micro",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        }
+      }
+    },
+    {
       "id": "pr-17194:qwen/qwen3.8-27b",
       "model_id": "qwen/qwen3.8-27b",
       "title": "Qwen3.8 27B",
@@ -6104,6 +6230,27 @@
             "promptVideoTokens": "0.000000041145",
             "completionTextTokens": "0.00000131875"
           }
+        }
+      }
+    },
+    {
+      "id": "pr-16686:microsoft/trellis-2",
+      "model_id": "microsoft/trellis-2",
+      "title": "Trellis 2",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "3d",
+      "date": "2026-10-13",
+      "pr": 16686,
+      "url": "https://github.com/pollinations/pollinations/pull/16686",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
         }
       }
     },

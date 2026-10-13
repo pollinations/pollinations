@@ -1,9 +1,15 @@
-import { env } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { expect } from "vitest";
 import { processAutoTopUpForUser } from "@/utils/stripe-billing/auto-top-up.ts";
 import { test } from "./fixtures.ts";
 
-type SentEmail = { to: string; subject: string; text: string; html: string };
+type SentEmail = {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    headers: Record<string, string>;
+};
 
 function withOutbox(fail = false) {
     const sent: SentEmail[] = [];
@@ -61,6 +67,15 @@ const notifiedAt = async (userId: string) =>
     (
         await env.DB.prepare(
             "SELECT low_balance_notified_at AS at FROM user WHERE id = ?",
+        )
+            .bind(userId)
+            .first<{ at: number | null }>()
+    )?.at;
+
+const unsubscribedAt = async (userId: string) =>
+    (
+        await env.DB.prepare(
+            "SELECT email_unsubscribed_at AS at FROM user WHERE id = ?",
         )
             .bind(userId)
             .first<{ at: number | null }>()
@@ -125,4 +140,47 @@ test("switching auto top-up off emails once and replaces the running-low email",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up is off"]);
     expect(sent[0].text).toContain("paid balance of 2.00 Pollen");
+});
+
+test("the unsubscribe link stops every email", async () => {
+    const { sent, notifyEnv } = withOutbox();
+    await addUser("leaver", { packBalance: 3 });
+    await processAutoTopUpForUser(notifyEnv, "leaver");
+    expect(sent[0].headers["List-Unsubscribe-Post"]).toBe(
+        "List-Unsubscribe=One-Click",
+    );
+    const link = sent[0].headers["List-Unsubscribe"].slice(1, -1);
+    expect(sent[0].text).toContain(link);
+
+    const forged = new URL(link);
+    forged.searchParams.set("u", "healthy");
+    expect((await SELF.fetch(forged, { method: "POST" })).status).toBe(400);
+
+    // Opening the link only asks, so mail scanners can't unsubscribe anyone.
+    expect(await (await SELF.fetch(link)).text()).toContain(
+        '<form method="post">',
+    );
+    expect(await unsubscribedAt("leaver")).toBeNull();
+    // A mail client's one-click unsubscribe posts this body to the link.
+    const unsubscribed = await SELF.fetch(link, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "List-Unsubscribe=One-Click",
+    });
+    expect(unsubscribed.status).toBe(200);
+    expect(await unsubscribedAt("leaver")).not.toBeNull();
+
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = NULL WHERE id = 'leaver'",
+    ).run();
+    await processAutoTopUpForUser(notifyEnv, "leaver");
+    // Auto top-up still switches off, but without an email.
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1 WHERE id = 'leaver'",
+    ).run();
+    expect(await processAutoTopUpForUser(notifyEnv, "leaver")).toEqual({
+        status: "skipped",
+        reason: "missing Stripe customer",
+    });
+    expect(sent).toHaveLength(1);
 });

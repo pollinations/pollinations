@@ -1,8 +1,11 @@
+import { Buffer } from "node:buffer";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { getLogger } from "@logtape/logtape";
 
 // Account emails: facts about the user's own account, sent through the
 // Cloudflare Email Service binding. A user gets at most one balance email
-// (running low or auto top-up off) per 30 days.
+// (running low or auto top-up off) per 30 days, and none after they
+// unsubscribe.
 
 const log = getLogger(["enter", "account-notices"]);
 
@@ -63,10 +66,30 @@ export function autoTopUpOffNotice(balance: number): Notice {
     };
 }
 
+/** Signs a user id for the unsubscribe link, so the link needs no login. */
+export function signUnsubscribe(secret: string, userId: string): string {
+    return createHmac("sha256", `pollinations-unsubscribe:v1\0${secret}`)
+        .update(userId)
+        .digest("base64url");
+}
+
+export function verifyUnsubscribe(
+    secret: string,
+    userId: string,
+    sig: string,
+): boolean {
+    const expected = Buffer.from(signUnsubscribe(secret, userId));
+    const actual = Buffer.from(sig);
+    return (
+        expected.length === actual.length && timingSafeEqual(expected, actual)
+    );
+}
+
 /** One notice as a short HTML email plus its plain-text twin. */
 export function renderNotice(
     notice: Notice,
     baseUrl: string,
+    unsubscribeUrl: string,
 ): { html: string; text: string } {
     const href = (link: Link) => new URL(link.path, baseUrl).toString();
     const footer =
@@ -87,7 +110,7 @@ ${notice.paragraphs.map(p).join("\n")}
 <a href="${href(notice.button)}" style="display:inline-block;margin-top:4px;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
 ${footnote}
 </div>
-<p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">${footer}<br>${ADDRESS}</p>
+<p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">${footer} <a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe</a> from all our emails.<br>${ADDRESS}</p>
 </body></html>`;
 
     const text = [
@@ -101,6 +124,7 @@ ${footnote}
         "",
         "--",
         footer,
+        `Unsubscribe from all our emails: ${unsubscribeUrl}`,
         ADDRESS,
     ].join("\n");
 
@@ -110,16 +134,26 @@ ${footnote}
 /** Send one notice. False when sending failed; the failure is logged. */
 export async function sendNotice(
     env: CloudflareBindings,
-    to: string,
+    user: { id: string; email: string },
     notice: Notice,
 ): Promise<boolean> {
+    const unsubscribeUrl = new URL("/api/unsubscribe", env.BETTER_AUTH_URL);
+    unsubscribeUrl.search = new URLSearchParams({
+        u: user.id,
+        s: signUnsubscribe(env.BETTER_AUTH_SECRET, user.id),
+    }).toString();
     try {
         await env.EMAIL.send({
-            to,
+            to: user.email,
             from: FROM,
             replyTo: REPLY_TO,
             subject: notice.subject,
-            ...renderNotice(notice, env.BETTER_AUTH_URL),
+            // One-click unsubscribe (RFC 8058), which Gmail and Yahoo expect.
+            headers: {
+                "List-Unsubscribe": `<${unsubscribeUrl}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+            ...renderNotice(notice, env.BETTER_AUTH_URL, unsubscribeUrl.href),
         });
         return true;
     } catch (error) {
@@ -146,6 +180,7 @@ export async function sendRunningLowNotice(
         `UPDATE user SET low_balance_notified_at = ?
             WHERE id = ?
                 AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
+                AND email_unsubscribed_at IS NULL
             RETURNING email, COALESCE(pack_balance, 0) AS balance`,
     )
         .bind(now, userId, now - NOTICE_COOLDOWN_MS)
@@ -171,7 +206,9 @@ export async function sendRunningLowNotice(
             days: Math.max(1, Math.round((now - lastPack.createdMs) / DAY_MS)),
         },
     );
-    if (await sendNotice(env, user.email, notice)) return;
+    if (await sendNotice(env, { id: userId, email: user.email }, notice)) {
+        return;
+    }
     // A failed send frees the slot for the next crossing.
     await env.DB.prepare(
         "UPDATE user SET low_balance_notified_at = NULL WHERE id = ?",

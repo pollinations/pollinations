@@ -800,12 +800,21 @@ async function disableAutoTopUp(
         `UPDATE user
             SET auto_top_up_enabled = 0, low_balance_notified_at = ?
             WHERE id = ? AND auto_top_up_enabled = 1
-            RETURNING email, COALESCE(pack_balance, 0) AS balance`,
+            RETURNING email, COALESCE(pack_balance, 0) AS balance,
+                email_unsubscribed_at AS unsubscribedAt`,
     )
         .bind(Date.now(), userId)
-        .first<{ email: string; balance: number }>();
-    if (user) {
-        await sendNotice(env, user.email, autoTopUpOffNotice(user.balance));
+        .first<{
+            email: string;
+            balance: number;
+            unsubscribedAt: number | null;
+        }>();
+    if (user && !user.unsubscribedAt) {
+        await sendNotice(
+            env,
+            { id: userId, email: user.email },
+            autoTopUpOffNotice(user.balance),
+        );
     }
 }
 

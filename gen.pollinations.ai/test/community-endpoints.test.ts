@@ -153,7 +153,7 @@ fixtureTest(
         );
         const oldPolli = communityModelId("pollinations-router", "polli");
         const newPolli = communityModelId("pollinations-ai", "polli");
-        const oldKey = await createTestApiKey({ allowedModels: [oldPolli] });
+        const oldKey = await createTestApiKey({ allowedModels: ["text"] });
 
         const catalogIdsFor = async (key: string) => {
             const response = await fetchGen(
@@ -195,7 +195,7 @@ fixtureTest(
                 ),
             ).toBe(current);
         }
-        // Keys hold categories, so a text key keeps the agent under its new ID.
+        // A text key keeps the agent under its new ID.
         expect(await catalogIdsFor(oldKey.key)).toContain(newPolli);
     },
 );
@@ -721,41 +721,41 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([
-        null,
-        undefined,
-    ])("parses media payloads without a text API (%s)", (api) => {
-        const payload = parseListingPayload(
-            "proxy",
-            JSON.stringify({
+    it.each([null, undefined])(
+        "parses media payloads without a text API (%s)",
+        (api) => {
+            const payload = parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    paidOnly: false,
+                    modality: "image",
+                    api,
+                    imagePricing: "request",
+                    inputModalities: ["image", "image"],
+                    perUserRpm: null,
+                    fallbacks: ["owner/model"],
+                    prices: { completionImagePrice: 0.2 },
+                }),
+            );
+
+            expect(payload).toMatchObject({
                 bearerTokenCiphertext: "ciphertext",
+                api: null,
                 paidOnly: false,
                 modality: "image",
-                api,
                 imagePricing: "request",
-                inputModalities: ["image", "image"],
+                inputModalities: ["image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: { completionImagePrice: 0.2 },
-            }),
-        );
-
-        expect(payload).toMatchObject({
-            bearerTokenCiphertext: "ciphertext",
-            api: null,
-            paidOnly: false,
-            modality: "image",
-            imagePricing: "request",
-            inputModalities: ["image"],
-            perUserRpm: null,
-            fallbacks: ["owner/model"],
-            prices: {
-                promptTextPrice: 0,
-                completionImagePrice: 0.2,
-                completionVideoPrice: 0,
-            },
-        });
-    });
+                prices: {
+                    promptTextPrice: 0,
+                    completionImagePrice: 0.2,
+                    completionVideoPrice: 0,
+                },
+            });
+        },
+    );
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
@@ -1936,60 +1936,57 @@ describe("community endpoint helpers", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        it.each([
-            undefined,
-            null,
-            {},
-            { duration: null },
-        ])("falls back to requested duration when usage is missing: %j", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).resolves.toMatchObject({
-                durationSeconds: 5,
-                trackingData: { usage: { completionVideoSeconds: 5 } },
-            });
-        });
+        it.each([undefined, null, {}, { duration: null }])(
+            "falls back to requested duration when usage is missing: %j",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).resolves.toMatchObject({
+                    durationSeconds: 5,
+                    trackingData: { usage: { completionVideoSeconds: 5 } },
+                });
+            },
+        );
 
-        it.each([
-            { duration: 0 },
-            { duration: -1 },
-            { duration: "5" },
-        ])("rejects invalid reported usage %j even when duration was requested", async (usage) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json({
-                        data: [{ b64_json: TEST_MP4_BASE64 }],
-                        usage,
-                    }),
-                ),
-            );
-            await expect(
-                callCommunityVideoEndpoint(
-                    await videoEndpoint(),
-                    "a sprout",
-                    { duration: 5 },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                status: 502,
-                message: expect.stringContaining("usage.duration"),
-            });
-        });
+        it.each([{ duration: 0 }, { duration: -1 }, { duration: "5" }])(
+            "rejects invalid reported usage %j even when duration was requested",
+            async (usage) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async () =>
+                        Response.json({
+                            data: [{ b64_json: TEST_MP4_BASE64 }],
+                            usage,
+                        }),
+                    ),
+                );
+                await expect(
+                    callCommunityVideoEndpoint(
+                        await videoEndpoint(),
+                        "a sprout",
+                        { duration: 5 },
+                        secret,
+                    ),
+                ).rejects.toMatchObject({
+                    status: 502,
+                    message: expect.stringContaining("usage.duration"),
+                });
+            },
+        );
 
         it("preserves upstream video failures", async () => {
             vi.stubGlobal(

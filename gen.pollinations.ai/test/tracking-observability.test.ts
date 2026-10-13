@@ -705,64 +705,62 @@ describe("tracking observability", () => {
         expect(event.requestId).not.toBe("req-parent");
     });
 
-    it.each([
-        "proxy",
-        "endpoint_agent",
-        "code_agent",
-        "prompt_agent",
-    ] as const)("records the resolved listing type (%s) for KPI attribution", async (type) => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const endpoint: CommunityEndpointRuntime = {
-            ...createCommunityEndpoint(trackingUser.id),
-            type,
-        };
-        const entry = createCommunityEntry(endpoint);
-        const ctx = createExecutionContext();
-        const response = await createTestApp(
-            async () => {},
-            trackingUser,
-            {
-                requested: endpoint.modelId,
-                resolved: endpoint.modelId,
-                definition: entry.definition,
-                communityEndpoint: endpoint,
-            },
-            entry,
-        ).fetch(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    messages: [{ role: "user", content: "test" }],
+    it.each(["proxy", "endpoint_agent", "code_agent", "prompt_agent"] as const)(
+        "records the resolved listing type (%s) for KPI attribution",
+        async (type) => {
+            const tinybirdRequests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    tinybirdRequests.push(new Request(input, init));
+                    return new Response("ok");
+                },
+            );
+            const endpoint: CommunityEndpointRuntime = {
+                ...createCommunityEndpoint(trackingUser.id),
+                type,
+            };
+            const entry = createCommunityEntry(endpoint);
+            const ctx = createExecutionContext();
+            const response = await createTestApp(
+                async () => {},
+                trackingUser,
+                {
+                    requested: endpoint.modelId,
+                    resolved: endpoint.modelId,
+                    definition: entry.definition,
+                    communityEndpoint: endpoint,
+                },
+                entry,
+            ).fetch(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        messages: [{ role: "user", content: "test" }],
+                    }),
                 }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
-        expect(await tinybirdRequests[0].json()).toMatchObject({
-            communityEndpointType: type,
-            resolvedModelRequested: endpoint.modelId,
-            isFinal: true,
-        });
-    });
+                {
+                    DB: env.DB,
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(200);
+            expect(tinybirdRequests).toHaveLength(1);
+            expect(await tinybirdRequests[0].json()).toMatchObject({
+                communityEndpointType: type,
+                resolvedModelRequested: endpoint.modelId,
+                isFinal: true,
+            });
+        },
+    );
 
     it("leaves the parent request id unset for an ordinary call", async () => {
         const tinybirdRequests: Request[] = [];
@@ -1086,71 +1084,74 @@ describe("tracking observability", () => {
             "Upstream error from DeepInfra: Tool call id was 2tpesxk_0 but must be a-z, A-Z, 0-9, with a length of 9.",
             400,
         ],
-    ] as const)("tracks a streamed rejection as unbilled 4xx (%s, %s)", async (nested, message, status) => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const consumePollen = vi.fn(async (_amount: number) => {});
-        const error = {
-            code: 400,
-            message,
-            metadata: { error_type: "invalid_request" },
-        };
-        const event = nested
-            ? { choices: [{ finish_reason: "error", error }] }
-            : { choices: [], error };
-        const upstreamBody = `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`;
-        const ctx = createExecutionContext();
-        const response = await createTrackedResponseApp(
-            consumePollen,
-            "generate.text",
-            new Response(upstreamBody, {
-                headers: { "content-type": "text/event-stream" },
-            }),
-        ).fetch(
-            new Request("https://gen.pollinations.ai/upstream", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({
-                    model: "openai/gpt-5.4-nano",
-                    stream: true,
-                    messages: [{ role: "user", content: "test" }],
+    ] as const)(
+        "tracks a streamed rejection as unbilled 4xx (%s, %s)",
+        async (nested, message, status) => {
+            const tinybirdRequests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    tinybirdRequests.push(new Request(input, init));
+                    return new Response("ok");
+                },
+            );
+            const consumePollen = vi.fn(async (_amount: number) => {});
+            const error = {
+                code: 400,
+                message,
+                metadata: { error_type: "invalid_request" },
+            };
+            const event = nested
+                ? { choices: [{ finish_reason: "error", error }] }
+                : { choices: [], error };
+            const upstreamBody = `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`;
+            const ctx = createExecutionContext();
+            const response = await createTrackedResponseApp(
+                consumePollen,
+                "generate.text",
+                new Response(upstreamBody, {
+                    headers: { "content-type": "text/event-stream" },
                 }),
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-        // Already-started streams keep their status and complete provider error.
-        expect(response.status).toBe(200);
-        await expect(response.text()).resolves.toBe(upstreamBody);
-        await waitOnExecutionContext(ctx);
-        expect(tinybirdRequests).toHaveLength(1);
-        expect(new URL(tinybirdRequests[0].url).searchParams.get("name")).toBe(
-            "generation_event_v2",
-        );
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
-            responseStatus: status,
-            isBilledUsage: false,
-            errorResponseCode:
-                status === 422
-                    ? "content_policy_violation"
-                    : "upstream_finish_reason_error",
-        });
-        expect(consumePollen).toHaveBeenCalledWith(0);
-    });
+            ).fetch(
+                new Request("https://gen.pollinations.ai/upstream", {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                        model: "openai/gpt-5.4-nano",
+                        stream: true,
+                        messages: [{ role: "user", content: "test" }],
+                    }),
+                }),
+                {
+                    DB: env.DB,
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
+            // Already-started streams keep their status and complete provider error.
+            expect(response.status).toBe(200);
+            await expect(response.text()).resolves.toBe(upstreamBody);
+            await waitOnExecutionContext(ctx);
+            expect(tinybirdRequests).toHaveLength(1);
+            expect(
+                new URL(tinybirdRequests[0].url).searchParams.get("name"),
+            ).toBe("generation_event_v2");
+            await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+                responseStatus: status,
+                isBilledUsage: false,
+                errorResponseCode:
+                    status === 422
+                        ? "content_policy_violation"
+                        : "upstream_finish_reason_error",
+            });
+            expect(consumePollen).toHaveBeenCalledWith(0);
+        },
+    );
 
     it("tracks infrastructure exceptions through the shared error handler", async () => {
         const tinybirdRequests: Request[] = [];
@@ -2312,81 +2313,84 @@ describe("tracking observability", () => {
     it.each([
         [5, 0.125],
         [6.25, 0.15625],
-    ])("charges MiniMax Turbo at provider cost for %s reported units", async (units, totalCost) => {
-        const tinybirdRequests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                tinybirdRequests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
-        const model = "minimax/minimax-h3-max-turbo";
-        const upstream = new Response("video", {
-            headers: {
-                "content-type": "video/mp4",
-                ...buildTrackingHeaders(model, {
-                    actualModel: model,
-                    usage: { completionVideoSeconds: 5 },
-                    providerBilling: { units, unitCost: 0.025 },
+    ])(
+        "charges MiniMax Turbo at provider cost for %s reported units",
+        async (units, totalCost) => {
+            const tinybirdRequests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    tinybirdRequests.push(new Request(input, init));
+                    return new Response("ok");
+                },
+            );
+            const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+                async () => {},
+            );
+            const model = "minimax/minimax-h3-max-turbo";
+            const upstream = new Response("video", {
+                headers: {
+                    "content-type": "video/mp4",
+                    ...buildTrackingHeaders(model, {
+                        actualModel: model,
+                        usage: { completionVideoSeconds: 5 },
+                        providerBilling: { units, unitCost: 0.025 },
+                    }),
+                },
+            });
+            const balanceBefore = await getUserBalance(
+                drizzle(env.DB),
+                trackingUser.id,
+            );
+            const ctx = createExecutionContext();
+            const response = await createTrackedResponseApp(
+                consumePollen,
+                "generate.image",
+                upstream,
+                model,
+            ).fetch(
+                new Request("https://gen.pollinations.ai/upstream", {
+                    method: "POST",
                 }),
-            },
-        });
-        const balanceBefore = await getUserBalance(
-            drizzle(env.DB),
-            trackingUser.id,
-        );
-        const ctx = createExecutionContext();
-        const response = await createTrackedResponseApp(
-            consumePollen,
-            "generate.image",
-            upstream,
-            model,
-        ).fetch(
-            new Request("https://gen.pollinations.ai/upstream", {
-                method: "POST",
-            }),
-            {
-                DB: env.DB,
-                ENVIRONMENT: "test",
-                LOG_LEVEL: "debug",
-                LOG_FORMAT: "text",
-                BETTER_AUTH_SECRET: "test_secret",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-            } as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
-            modelUsed: model,
-            isBilledUsage: true,
-            tokenCountCompletionVideoSeconds: 5,
-            tokenPriceCompletionVideoSeconds: 0,
-            adjustmentUnits: {
-                "fal.minimax_h3_max_turbo.provider_units.v1": units,
-            },
-            adjustmentCosts: {
-                "fal.minimax_h3_max_turbo.provider_units.v1": totalCost,
-            },
-            totalCost,
-            totalPrice: totalCost,
-        });
-        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(totalCost);
-        const balanceAfter = await getUserBalance(
-            drizzle(env.DB),
-            trackingUser.id,
-        );
-        expect(balanceAfter.tierBalance).toBe(balanceBefore.tierBalance);
-        expect(balanceAfter.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - totalCost,
-        );
-    });
+                {
+                    DB: env.DB,
+                    ENVIRONMENT: "test",
+                    LOG_LEVEL: "debug",
+                    LOG_FORMAT: "text",
+                    BETTER_AUTH_SECRET: "test_secret",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                } as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(200);
+            expect(tinybirdRequests).toHaveLength(1);
+            await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+                modelUsed: model,
+                isBilledUsage: true,
+                tokenCountCompletionVideoSeconds: 5,
+                tokenPriceCompletionVideoSeconds: 0,
+                adjustmentUnits: {
+                    "fal.minimax_h3_max_turbo.provider_units.v1": units,
+                },
+                adjustmentCosts: {
+                    "fal.minimax_h3_max_turbo.provider_units.v1": totalCost,
+                },
+                totalCost,
+                totalPrice: totalCost,
+            });
+            expect(consumePollen).toHaveBeenCalledExactlyOnceWith(totalCost);
+            const balanceAfter = await getUserBalance(
+                drizzle(env.DB),
+                trackingUser.id,
+            );
+            expect(balanceAfter.tierBalance).toBe(balanceBefore.tierBalance);
+            expect(balanceAfter.packBalance).toBeCloseTo(
+                balanceBefore.packBalance - totalCost,
+            );
+        },
+    );
 
     it("bills a failed video for the usage the provider charged", async () => {
         const tinybirdRequests: Request[] = [];
@@ -2729,193 +2733,205 @@ describe("tracking observability", () => {
         expect(fallback.isBilledUsage).toBe(true);
     });
 
-    it.each([
-        "valid",
-        "missing",
-        "malformed",
-        "recovered",
-    ])("settles community Chat with %s usage/delivery and no model metadata", async (usageKind) => {
-        const caller = await createTestApiKey({
-            user: { tierBalance: 0, packBalance: 10 },
-        });
-        const db = drizzle(env.DB);
-        const before = await getUserBalance(db, caller.userId);
-        const publisher = `usage-${crypto.randomUUID().slice(0, 8)}`;
-        const endpoint = createCommunityEndpoint(
-            await createTestUser({ githubUsername: publisher }),
-            {
-                id: crypto.randomUUID(),
-                modelId: `${publisher}/test-model`,
-                paidOnly: false,
-                bearerTokenCiphertext: await encryptSecret(
-                    "test-upstream-key",
-                    env.BETTER_AUTH_SECRET,
-                ),
-            },
-        );
-        await db.insert(communityEndpointTable).values({
-            id: endpoint.id,
-            ownerUserId: endpoint.ownerUserId,
-            name: endpoint.name,
-            title: endpoint.title,
-            type: "proxy",
-            baseUrl: endpoint.baseUrl,
-            upstreamModel: endpoint.upstreamModel,
-            visibility: "public",
-            payload: JSON.stringify({
-                api: "chat_completions",
-                modality: "text",
-                imagePricing: "request",
-                inputModalities: ["text"],
-                perUserRpm: null,
-                fallbacks: [],
-                paidOnly: false,
-                bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
-                prices: communityEndpointPrices(endpoint),
-            }),
-        });
-        const model = endpoint.modelId;
-        const events: Record<string, unknown>[] = [];
-        let upstreamCalls = 0;
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const request = new Request(input, init);
-                const url = new URL(request.url);
-                if (request.url === endpoint.baseUrl) {
-                    upstreamCalls++;
-                    expect(init?.redirect).toBe("manual");
-                    expect(request.headers.get("authorization")).toBe(
-                        "Bearer test-upstream-key",
-                    );
-                    const terminal =
-                        usageKind === "missing"
-                            ? {}
-                            : {
-                                  usage: {
-                                      prompt_tokens:
-                                          usageKind === "malformed" ? -1 : 10,
-                                      completion_tokens: 5,
-                                      total_tokens: 15,
-                                  },
-                              };
-                    if (usageKind === "recovered") {
-                        return Response.json({
-                            choices: [
-                                {
-                                    index: 0,
-                                    message: {
-                                        role: "assistant",
-                                        content: "saved result",
-                                    },
-                                    finish_reason: "stop",
-                                },
-                            ],
-                            ...terminal,
-                        });
-                    }
-                    return new Response(
-                        'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
-                            `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
-                        { headers: { "Content-Type": "text/event-stream" } },
-                    );
-                }
-                if (url.pathname === "/v0/events") {
-                    events.push(
-                        ...(await request.text())
-                            .split("\n")
-                            .filter(Boolean)
-                            .map((line) => JSON.parse(line)),
-                    );
-                }
-                return Response.json({ data: [] });
-            },
-        );
-        const bindings = withInlineGenerationCoordinator(env);
-        const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
-            bindings.GENERATION_COORDINATOR,
-        );
-        const startAndWait = vi.fn(async (job, body) => {
-            await getByName("recovery-test").startAndWait(job, body);
-            throw new Error(
-                "RPC connection lost after cache write and settlement",
-            );
-        });
-        if (usageKind === "recovered") {
-            bindings.GENERATION_COORDINATOR = {
-                getByName: () => ({ startAndWait }),
-            } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
-        }
-        const ctx = createExecutionContext();
-        const request = (): Parameters<typeof worker.fetch>[0] =>
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${caller.key}`,
-                    "Content-Type": "application/json",
+    it.each(["valid", "missing", "malformed", "recovered"])(
+        "settles community Chat with %s usage/delivery and no model metadata",
+        async (usageKind) => {
+            const caller = await createTestApiKey({
+                user: { tierBalance: 0, packBalance: 10 },
+            });
+            const db = drizzle(env.DB);
+            const before = await getUserBalance(db, caller.userId);
+            const publisher = `usage-${crypto.randomUUID().slice(0, 8)}`;
+            const endpoint = createCommunityEndpoint(
+                await createTestUser({ githubUsername: publisher }),
+                {
+                    id: crypto.randomUUID(),
+                    modelId: `${publisher}/test-model`,
+                    paidOnly: false,
+                    bearerTokenCiphertext: await encryptSecret(
+                        "test-upstream-key",
+                        env.BETTER_AUTH_SECRET,
+                    ),
                 },
-                body: JSON.stringify({
-                    model,
-                    stream: usageKind !== "recovered",
-                    messages: [{ role: "user", content: "stream usage check" }],
+            );
+            await db.insert(communityEndpointTable).values({
+                id: endpoint.id,
+                ownerUserId: endpoint.ownerUserId,
+                name: endpoint.name,
+                title: endpoint.title,
+                type: "proxy",
+                baseUrl: endpoint.baseUrl,
+                upstreamModel: endpoint.upstreamModel,
+                visibility: "public",
+                payload: JSON.stringify({
+                    api: "chat_completions",
+                    modality: "text",
+                    imagePricing: "request",
+                    inputModalities: ["text"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    paidOnly: false,
+                    bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
+                    prices: communityEndpointPrices(endpoint),
                 }),
             });
-        const response = await worker.fetch(request(), bindings, ctx);
-        const body = await response.text();
-        await waitOnExecutionContext(ctx);
-        expect(response.status, body).toBe(200);
-        if (usageKind === "recovered") {
-            expect(
-                await env.TEXT_BUCKET.head(
-                    startAndWait.mock.calls[0][0].cache.key,
-                ),
-            ).not.toBeNull();
-            const rejoinCtx = createExecutionContext();
-            const rejoined = await worker.fetch(request(), bindings, rejoinCtx);
-            expect(rejoined.headers.get("x-cache")).toBe("HIT");
-            expect(await rejoined.text()).toBe(body);
-            await waitOnExecutionContext(rejoinCtx);
-        }
-        expect(upstreamCalls).toBe(1);
-        const after = await getUserBalance(db, caller.userId);
-        const rows = events.filter((event) => event.modelRequested === model);
-        expect(rows).toHaveLength(1);
-        if (usageKind === "valid" || usageKind === "recovered") {
-            const expectedPrice = calculateUsageBilling({
-                model,
-                usage: { promptTextTokens: 10, completionTextTokens: 5 },
-                servedBy: communityModelDefinition(endpoint),
-            }).price.totalPrice;
-            expect(expectedPrice).toBeGreaterThan(0);
-            expect(body).not.toContain('"error"');
-            expect(rows[0]).toMatchObject({
-                isBilledUsage: true,
-                // A legacy request alias still attributes billing to the canonical ID.
-                modelUsed: communityModelId(publisher, endpoint.name),
-                tokenCountPromptText: 10,
-                tokenCountCompletionText: 5,
-                totalPrice: expectedPrice,
-            });
-            expect(before.packBalance - after.packBalance).toBeCloseTo(
-                expectedPrice,
-                9,
+            const model = endpoint.modelId;
+            const events: Record<string, unknown>[] = [];
+            let upstreamCalls = 0;
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const request = new Request(input, init);
+                    const url = new URL(request.url);
+                    if (request.url === endpoint.baseUrl) {
+                        upstreamCalls++;
+                        expect(init?.redirect).toBe("manual");
+                        expect(request.headers.get("authorization")).toBe(
+                            "Bearer test-upstream-key",
+                        );
+                        const terminal =
+                            usageKind === "missing"
+                                ? {}
+                                : {
+                                      usage: {
+                                          prompt_tokens:
+                                              usageKind === "malformed"
+                                                  ? -1
+                                                  : 10,
+                                          completion_tokens: 5,
+                                          total_tokens: 15,
+                                      },
+                                  };
+                        if (usageKind === "recovered") {
+                            return Response.json({
+                                choices: [
+                                    {
+                                        index: 0,
+                                        message: {
+                                            role: "assistant",
+                                            content: "saved result",
+                                        },
+                                        finish_reason: "stop",
+                                    },
+                                ],
+                                ...terminal,
+                            });
+                        }
+                        return new Response(
+                            'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
+                                `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
+                            {
+                                headers: {
+                                    "Content-Type": "text/event-stream",
+                                },
+                            },
+                        );
+                    }
+                    if (url.pathname === "/v0/events") {
+                        events.push(
+                            ...(await request.text())
+                                .split("\n")
+                                .filter(Boolean)
+                                .map((line) => JSON.parse(line)),
+                        );
+                    }
+                    return Response.json({ data: [] });
+                },
             );
-            if (usageKind === "recovered") {
-                expect(startAndWait).toHaveBeenCalledTimes(1);
-                expect(response.headers.get("x-cache")).toBe("HIT");
-                expect(body).toContain("saved result");
-                expect(
-                    events.filter((event) => event.kind === "server_error"),
-                ).toHaveLength(0);
-            }
-        } else {
-            expect(body).toContain('"error"');
-            expect(rows[0]).toMatchObject({
-                isBilledUsage: false,
-                totalPrice: 0,
+            const bindings = withInlineGenerationCoordinator(env);
+            const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
+                bindings.GENERATION_COORDINATOR,
+            );
+            const startAndWait = vi.fn(async (job, body) => {
+                await getByName("recovery-test").startAndWait(job, body);
+                throw new Error(
+                    "RPC connection lost after cache write and settlement",
+                );
             });
-            expect(after.packBalance).toBe(before.packBalance);
-        }
-    });
+            if (usageKind === "recovered") {
+                bindings.GENERATION_COORDINATOR = {
+                    getByName: () => ({ startAndWait }),
+                } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
+            }
+            const ctx = createExecutionContext();
+            const request = (): Parameters<typeof worker.fetch>[0] =>
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${caller.key}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model,
+                        stream: usageKind !== "recovered",
+                        messages: [
+                            { role: "user", content: "stream usage check" },
+                        ],
+                    }),
+                });
+            const response = await worker.fetch(request(), bindings, ctx);
+            const body = await response.text();
+            await waitOnExecutionContext(ctx);
+            expect(response.status, body).toBe(200);
+            if (usageKind === "recovered") {
+                expect(
+                    await env.TEXT_BUCKET.head(
+                        startAndWait.mock.calls[0][0].cache.key,
+                    ),
+                ).not.toBeNull();
+                const rejoinCtx = createExecutionContext();
+                const rejoined = await worker.fetch(
+                    request(),
+                    bindings,
+                    rejoinCtx,
+                );
+                expect(rejoined.headers.get("x-cache")).toBe("HIT");
+                expect(await rejoined.text()).toBe(body);
+                await waitOnExecutionContext(rejoinCtx);
+            }
+            expect(upstreamCalls).toBe(1);
+            const after = await getUserBalance(db, caller.userId);
+            const rows = events.filter(
+                (event) => event.modelRequested === model,
+            );
+            expect(rows).toHaveLength(1);
+            if (usageKind === "valid" || usageKind === "recovered") {
+                const expectedPrice = calculateUsageBilling({
+                    model,
+                    usage: { promptTextTokens: 10, completionTextTokens: 5 },
+                    servedBy: communityModelDefinition(endpoint),
+                }).price.totalPrice;
+                expect(expectedPrice).toBeGreaterThan(0);
+                expect(body).not.toContain('"error"');
+                expect(rows[0]).toMatchObject({
+                    isBilledUsage: true,
+                    // A legacy request alias still attributes billing to the canonical ID.
+                    modelUsed: communityModelId(publisher, endpoint.name),
+                    tokenCountPromptText: 10,
+                    tokenCountCompletionText: 5,
+                    totalPrice: expectedPrice,
+                });
+                expect(before.packBalance - after.packBalance).toBeCloseTo(
+                    expectedPrice,
+                    9,
+                );
+                if (usageKind === "recovered") {
+                    expect(startAndWait).toHaveBeenCalledTimes(1);
+                    expect(response.headers.get("x-cache")).toBe("HIT");
+                    expect(body).toContain("saved result");
+                    expect(
+                        events.filter((event) => event.kind === "server_error"),
+                    ).toHaveLength(0);
+                }
+            } else {
+                expect(body).toContain('"error"');
+                expect(rows[0]).toMatchObject({
+                    isBilledUsage: false,
+                    totalPrice: 0,
+                });
+                expect(after.packBalance).toBe(before.packBalance);
+            }
+        },
+    );
 
     it("bills cache-write tokens reported by a Chat stream", async () => {
         const tinybirdRequests: Request[] = [];
@@ -3517,40 +3533,40 @@ describe("trackResponse modelUsed", () => {
 });
 
 describe("trackResponse missing usage", () => {
-    it.each([
-        false,
-        true,
-    ])("classifies content_filter without changing usage billing (usage present: %s)", async (hasUsage) => {
-        const event = {
-            model: "openai/gpt-5.4-nano",
-            choices: [{ delta: {}, finish_reason: "content_filter" }],
-            usage: hasUsage
-                ? {
-                      prompt_tokens: 2,
-                      completion_tokens: 1,
-                      total_tokens: 3,
-                  }
-                : null,
-        };
-        const upstream = new Blob([
-            `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
-        ]).stream();
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true),
-            new Response(requireChatStreamUsage(upstream), {
-                headers: { "content-type": "text/event-stream" },
-            }),
-            candidateFixture(),
-        );
-        expect(tracking.responseStatus).toBe(hasUsage ? 200 : 422);
-        expect(tracking.isBilledUsage).toBe(hasUsage);
-        expect(tracking.errorTracking?.errorResponseCode).toBe(
-            hasUsage ? undefined : "content_policy_violation",
-        );
-        if (hasUsage) expect(tracking.cost?.totalCost).toBeGreaterThan(0);
-        else expect(tracking.cost?.totalCost).toBe(0);
-    });
+    it.each([false, true])(
+        "classifies content_filter without changing usage billing (usage present: %s)",
+        async (hasUsage) => {
+            const event = {
+                model: "openai/gpt-5.4-nano",
+                choices: [{ delta: {}, finish_reason: "content_filter" }],
+                usage: hasUsage
+                    ? {
+                          prompt_tokens: 2,
+                          completion_tokens: 1,
+                          total_tokens: 3,
+                      }
+                    : null,
+            };
+            const upstream = new Blob([
+                `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+            ]).stream();
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(true),
+                new Response(requireChatStreamUsage(upstream), {
+                    headers: { "content-type": "text/event-stream" },
+                }),
+                candidateFixture(),
+            );
+            expect(tracking.responseStatus).toBe(hasUsage ? 200 : 422);
+            expect(tracking.isBilledUsage).toBe(hasUsage);
+            expect(tracking.errorTracking?.errorResponseCode).toBe(
+                hasUsage ? undefined : "content_policy_violation",
+            );
+            if (hasUsage) expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+            else expect(tracking.cost?.totalCost).toBe(0);
+        },
+    );
 
     it("does not bill earlier usage when the stream subsequently fails validation", async () => {
         const event = {
@@ -3607,24 +3623,34 @@ describe("trackResponse missing usage", () => {
         { choices: null },
         { choices: [{ content_filter_results: "unrecognized metadata" }] },
         { prompt_filter_results: [{}] },
-    ])("does not mistake valid usage for a failure because of unrelated metadata: %j", async (metadata) => {
-        const event = {
-            model: "openai/gpt-5.4-nano",
-            ...metadata,
-            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
-        };
-        const tracking = await trackResponse(
-            "generate.text",
-            requestTrackingFixture(true),
-            new Response(`data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`, {
-                headers: { "content-type": "text/event-stream" },
-            }),
-            candidateFixture(),
-        );
-        expect(tracking.responseStatus).toBe(200);
-        expect(tracking.isBilledUsage).toBe(true);
-        expect(tracking.errorTracking).toBeUndefined();
-    });
+    ])(
+        "does not mistake valid usage for a failure because of unrelated metadata: %j",
+        async (metadata) => {
+            const event = {
+                model: "openai/gpt-5.4-nano",
+                ...metadata,
+                usage: {
+                    prompt_tokens: 2,
+                    completion_tokens: 1,
+                    total_tokens: 3,
+                },
+            };
+            const tracking = await trackResponse(
+                "generate.text",
+                requestTrackingFixture(true),
+                new Response(
+                    `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`,
+                    {
+                        headers: { "content-type": "text/event-stream" },
+                    },
+                ),
+                candidateFixture(),
+            );
+            expect(tracking.responseStatus).toBe(200);
+            expect(tracking.isBilledUsage).toBe(true);
+            expect(tracking.errorTracking).toBeUndefined();
+        },
+    );
 
     const emptyStream = () =>
         new Response("data: [DONE]\n\n", {
@@ -3808,24 +3834,27 @@ describe("trackResponse model identity", () => {
         expect(differentModel.price).not.toEqual(sameModel.price);
     });
 
-    it.each([
-        200, 502,
-    ])("distinguishes same-provider routes on HTTP %i", async (status) => {
-        const primary = "openai/gpt-6-astra" as const;
-        const fallback = "openai/gpt-6-astra:azure:datazone" as const;
-        for (const attempted of [primary, fallback]) {
-            const tracking = await trackResponse(
-                "generate.text",
-                requestTrackingFixture(false, primary),
-                status === 200 ? response() : new Response(null, { status }),
-                candidateFixture(attempted),
-            );
-            expect(tracking).toMatchObject({
-                responseStatus: status,
-                modelUsed: attempted,
-                modelProviderUsed: "azure",
-                fallbackUsed: attempted !== primary,
-            });
-        }
-    });
+    it.each([200, 502])(
+        "distinguishes same-provider routes on HTTP %i",
+        async (status) => {
+            const primary = "openai/gpt-6-astra" as const;
+            const fallback = "openai/gpt-6-astra:azure:datazone" as const;
+            for (const attempted of [primary, fallback]) {
+                const tracking = await trackResponse(
+                    "generate.text",
+                    requestTrackingFixture(false, primary),
+                    status === 200
+                        ? response()
+                        : new Response(null, { status }),
+                    candidateFixture(attempted),
+                );
+                expect(tracking).toMatchObject({
+                    responseStatus: status,
+                    modelUsed: attempted,
+                    modelProviderUsed: "azure",
+                    fallbackUsed: attempted !== primary,
+                });
+            }
+        },
+    );
 });

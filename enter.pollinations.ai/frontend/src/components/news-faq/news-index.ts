@@ -11,7 +11,7 @@ const NEWS_INDEX_URL =
 
 type Change = { before: unknown; after: unknown };
 
-/** One official model change, built from PR gists by build_news_index.py. */
+/** One official model change, built from PR gists by news_index.py. */
 export type ModelNews = {
     id: string;
     model_id: string;

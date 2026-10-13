@@ -187,129 +187,146 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         [15, "480p", "480P"],
         [15, "768p", "768P"],
         [15, "1080p", "1080P"],
-    ] as const)("routes %ss at %s with deterministic billing", async (duration, resolution, upstreamResolution) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests);
+    ] as const)(
+        "routes %ss at %s with deterministic billing",
+        async (duration, resolution, upstreamResolution) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests);
 
-        const result = await callMinimaxH3MaxTurboAPI(
-            "a paper windmill turning gently",
-            {
-                ...baseParams,
-                model: "minimax/minimax-h3-max-turbo",
-                duration,
-                resolution,
-                aspectRatio: "21:9",
-            },
-        );
+            const result = await callMinimaxH3MaxTurboAPI(
+                "a paper windmill turning gently",
+                {
+                    ...baseParams,
+                    model: "minimax/minimax-h3-max-turbo",
+                    duration,
+                    resolution,
+                    aspectRatio: "21:9",
+                },
+            );
 
-        expect(requests[1]).toEqual({
-            url: H3_MAX_TURBO_TEXT_ENDPOINT,
-            body: {
-                prompt: "a paper windmill turning gently",
-                duration,
-                resolution: upstreamResolution,
-                aspect_ratio: "21:9",
-                seed: 42,
-                enable_safety_checker: true,
-                prompt_expansion_mode: "balanced",
-            },
-        });
-        expect(result).toMatchObject({
-            buffer: Buffer.from(VIDEO_BYTES),
-            mimeType: "video/mp4",
-            durationSeconds: duration,
-            trackingData: {
-                actualModel: "minimax/minimax-h3-max-turbo",
-                usage: { completionVideoSeconds: duration },
-            },
-        });
-    });
+            expect(requests[1]).toEqual({
+                url: H3_MAX_TURBO_TEXT_ENDPOINT,
+                body: {
+                    prompt: "a paper windmill turning gently",
+                    duration,
+                    resolution: upstreamResolution,
+                    aspect_ratio: "21:9",
+                    seed: 42,
+                    enable_safety_checker: true,
+                    prompt_expansion_mode: "balanced",
+                },
+            });
+            expect(result).toMatchObject({
+                buffer: Buffer.from(VIDEO_BYTES),
+                mimeType: "video/mp4",
+                durationSeconds: duration,
+                trackingData: {
+                    actualModel: "minimax/minimax-h3-max-turbo",
+                    usage: { completionVideoSeconds: duration },
+                },
+            });
+        },
+    );
 
     it.each([
         [false, 1024, 1024, "16:9"],
         [true, 480, 640, "3:4"],
-    ] as const)("uses the expected aspect ratio when dimensionsExplicit is %s", async (dimensionsExplicit, width, height, expectedAspectRatio) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests);
+    ] as const)(
+        "uses the expected aspect ratio when dimensionsExplicit is %s",
+        async (dimensionsExplicit, width, height, expectedAspectRatio) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests);
 
-        await callMinimaxH3MaxTurboAPI("a paper windmill", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max-turbo",
-            aspectRatio: undefined,
-            dimensionsExplicit,
-            width,
-            height,
-        });
+            await callMinimaxH3MaxTurboAPI("a paper windmill", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+                aspectRatio: undefined,
+                dimensionsExplicit,
+                width,
+                height,
+            });
 
-        expect(requests[1]?.body?.aspect_ratio).toBe(expectedAspectRatio);
-    });
+            expect(requests[1]?.body?.aspect_ratio).toBe(expectedAspectRatio);
+        },
+    );
 
     it.each([
         ["768p", "768P"],
         ["1080p", "1080P"],
-    ] as const)("forwards first and last frame URLs at %s to the image route", async (resolution, upstreamResolution) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests);
-        const start = "https://media.pollinations.ai/start.png";
-        const end = "https://media.pollinations.ai/end.png";
+    ] as const)(
+        "forwards first and last frame URLs at %s to the image route",
+        async (resolution, upstreamResolution) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests);
+            const start = "https://media.pollinations.ai/start.png";
+            const end = "https://media.pollinations.ai/end.png";
 
-        await callMinimaxH3MaxTurboAPI("a seamless camera move", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max-turbo",
-            duration: 10,
-            resolution,
-            image: [start, end],
-        });
-
-        expect(requests[1]).toEqual({
-            url: H3_MAX_TURBO_IMAGE_ENDPOINT,
-            body: {
-                prompt: "a seamless camera move",
+            await callMinimaxH3MaxTurboAPI("a seamless camera move", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
                 duration: 10,
-                resolution: upstreamResolution,
-                seed: 42,
-                enable_safety_checker: true,
-                prompt_expansion_mode: "balanced",
-                image_url: start,
-                end_image_url: end,
-            },
-        });
-    });
+                resolution,
+                image: [start, end],
+            });
+
+            expect(requests[1]).toEqual({
+                url: H3_MAX_TURBO_IMAGE_ENDPOINT,
+                body: {
+                    prompt: "a seamless camera move",
+                    duration: 10,
+                    resolution: upstreamResolution,
+                    seed: 42,
+                    enable_safety_checker: true,
+                    prompt_expansion_mode: "balanced",
+                    image_url: start,
+                    end_image_url: end,
+                },
+            });
+        },
+    );
 
     it.each([
         [5, "480p", "5", 0.125],
         [10, "768p", "16", 0.4],
         [15, "1080p", "48", 1.2],
         [5, "480p", "6.25", 0.15625],
-    ] as const)("charges provider cost at multiplier 1 for %ss at %s", async (duration, resolution, units, cost) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", units);
-        const result = await callMinimaxH3MaxTurboAPI("billing regression", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max-turbo",
-            duration,
-            resolution,
-        });
-        expect(requests[1]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
-        expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
-        expect(result.trackingData.providerBilling).toEqual({
-            units: Number(units),
-            unitCost: 0.025,
-        });
-        const billing = calculateUsageBilling({
-            model: "minimax/minimax-h3-max-turbo",
-            usage: result.trackingData.usage,
-            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
-            input: {
-                resolution,
-                providerBilling: result.trackingData.providerBilling,
-            },
-        });
-        expect(Object.keys(billing.cost)).toEqual(["totalCost"]);
-        expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(cost);
-        expect(billing.servedPrice).toBeCloseTo(cost);
-    });
+    ] as const)(
+        "charges provider cost at multiplier 1 for %ss at %s",
+        async (duration, resolution, units, cost) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests, "COMPLETED", units);
+            const result = await callMinimaxH3MaxTurboAPI(
+                "billing regression",
+                {
+                    ...baseParams,
+                    model: "minimax/minimax-h3-max-turbo",
+                    duration,
+                    resolution,
+                },
+            );
+            expect(requests[1]?.url).toBe(H3_MAX_TURBO_TEXT_ENDPOINT);
+            expect(result.trackingData.usage.completionVideoSeconds).toBe(
+                duration,
+            );
+            expect(result.trackingData.providerBilling).toEqual({
+                units: Number(units),
+                unitCost: 0.025,
+            });
+            const billing = calculateUsageBilling({
+                model: "minimax/minimax-h3-max-turbo",
+                usage: result.trackingData.usage,
+                servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+                input: {
+                    resolution,
+                    providerBilling: result.trackingData.providerBilling,
+                },
+            });
+            expect(Object.keys(billing.cost)).toEqual(["totalCost"]);
+            expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+            expect(billing.price.totalPrice).toBeCloseTo(cost);
+            expect(billing.servedPrice).toBeCloseTo(cost);
+        },
+    );
 
     it("rejects missing provider billing units before downloading the video", async () => {
         const requests: ProviderRequest[] = [];
@@ -328,35 +345,36 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         );
     });
 
-    it.each([
-        0.015, 0.025,
-    ])("bills the live endpoint rate %s before and after promotion expiry", async (unitPrice) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", "8", unitPrice);
-        const result = await callMinimaxH3MaxTurboAPI("live pricing", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max-turbo",
-            resolution: "768p",
-            image: ["https://media.pollinations.ai/start.png"],
-        });
-        expect(new URL(requests[0].url).searchParams.get("endpoint_id")).toBe(
-            "minimax/h3-max-turbo/image-to-video",
-        );
-        expect(result.trackingData.providerBilling).toEqual({
-            units: 8,
-            unitCost: unitPrice,
-        });
-        const billing = calculateUsageBilling({
-            model: "minimax/minimax-h3-max-turbo",
-            usage: result.trackingData.usage,
-            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
-            input: {
+    it.each([0.015, 0.025])(
+        "bills the live endpoint rate %s before and after promotion expiry",
+        async (unitPrice) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests, "COMPLETED", "8", unitPrice);
+            const result = await callMinimaxH3MaxTurboAPI("live pricing", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
                 resolution: "768p",
-                providerBilling: result.trackingData.providerBilling,
-            },
-        });
-        expect(billing.price.totalPrice).toBeCloseTo(8 * unitPrice);
-    });
+                image: ["https://media.pollinations.ai/start.png"],
+            });
+            expect(
+                new URL(requests[0].url).searchParams.get("endpoint_id"),
+            ).toBe("minimax/h3-max-turbo/image-to-video");
+            expect(result.trackingData.providerBilling).toEqual({
+                units: 8,
+                unitCost: unitPrice,
+            });
+            const billing = calculateUsageBilling({
+                model: "minimax/minimax-h3-max-turbo",
+                usage: result.trackingData.usage,
+                servedBy: IMAGE_SERVICES["minimax/minimax-h3-max-turbo"],
+                input: {
+                    resolution: "768p",
+                    providerBilling: result.trackingData.providerBilling,
+                },
+            });
+            expect(billing.price.totalPrice).toBeCloseTo(8 * unitPrice);
+        },
+    );
 
     it("surfaces a terminal provider failure", async () => {
         mockH3Fetch([], "FAILED");
@@ -397,75 +415,81 @@ describe("callMinimaxH3MaxAPI", () => {
         [15, "480p", "480P"],
         [15, "768p", "768P"],
         [15, "1080p", "1080P"],
-    ] as const)("routes %ss at %s with deterministic billing", async (duration, resolution, upstreamResolution) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests);
+    ] as const)(
+        "routes %ss at %s with deterministic billing",
+        async (duration, resolution, upstreamResolution) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests);
 
-        const result = await callMinimaxH3MaxAPI(
-            "a paper windmill turning gently",
-            {
-                ...baseParams,
-                model: "minimax/minimax-h3-max",
-                duration,
-                resolution,
-                aspectRatio: "21:9",
-            },
-        );
+            const result = await callMinimaxH3MaxAPI(
+                "a paper windmill turning gently",
+                {
+                    ...baseParams,
+                    model: "minimax/minimax-h3-max",
+                    duration,
+                    resolution,
+                    aspectRatio: "21:9",
+                },
+            );
 
-        expect(requests.find((request) => request.body)).toEqual({
-            url: H3_MAX_TEXT_ENDPOINT,
-            body: {
-                prompt: "a paper windmill turning gently",
-                duration,
-                resolution: upstreamResolution,
-                aspect_ratio: "21:9",
-                seed: 42,
-                enable_safety_checker: true,
-                prompt_expansion_mode: "balanced",
-            },
-        });
-        expect(result).toMatchObject({
-            buffer: Buffer.from(VIDEO_BYTES),
-            mimeType: "video/mp4",
-            durationSeconds: duration,
-            trackingData: {
-                actualModel: "minimax/minimax-h3-max",
-                usage: { completionVideoSeconds: duration },
-            },
-        });
-    });
+            expect(requests.find((request) => request.body)).toEqual({
+                url: H3_MAX_TEXT_ENDPOINT,
+                body: {
+                    prompt: "a paper windmill turning gently",
+                    duration,
+                    resolution: upstreamResolution,
+                    aspect_ratio: "21:9",
+                    seed: 42,
+                    enable_safety_checker: true,
+                    prompt_expansion_mode: "balanced",
+                },
+            });
+            expect(result).toMatchObject({
+                buffer: Buffer.from(VIDEO_BYTES),
+                mimeType: "video/mp4",
+                durationSeconds: duration,
+                trackingData: {
+                    actualModel: "minimax/minimax-h3-max",
+                    usage: { completionVideoSeconds: duration },
+                },
+            });
+        },
+    );
 
     it.each([
         ["768p", "768P"],
         ["1080p", "1080P"],
-    ] as const)("forwards first and last frame URLs at %s to the image route", async (resolution, upstreamResolution) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests);
-        const start = "https://media.pollinations.ai/start.png";
-        const end = "https://media.pollinations.ai/end.png";
+    ] as const)(
+        "forwards first and last frame URLs at %s to the image route",
+        async (resolution, upstreamResolution) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests);
+            const start = "https://media.pollinations.ai/start.png";
+            const end = "https://media.pollinations.ai/end.png";
 
-        await callMinimaxH3MaxAPI("a seamless camera move", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max",
-            duration: 10,
-            resolution,
-            image: [start, end],
-        });
-
-        expect(requests.find((request) => request.body)).toEqual({
-            url: H3_MAX_IMAGE_ENDPOINT,
-            body: {
-                prompt: "a seamless camera move",
+            await callMinimaxH3MaxAPI("a seamless camera move", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max",
                 duration: 10,
-                resolution: upstreamResolution,
-                seed: 42,
-                enable_safety_checker: true,
-                prompt_expansion_mode: "balanced",
-                image_url: start,
-                end_image_url: end,
-            },
-        });
-    });
+                resolution,
+                image: [start, end],
+            });
+
+            expect(requests.find((request) => request.body)).toEqual({
+                url: H3_MAX_IMAGE_ENDPOINT,
+                body: {
+                    prompt: "a seamless camera move",
+                    duration: 10,
+                    resolution: upstreamResolution,
+                    seed: 42,
+                    enable_safety_checker: true,
+                    prompt_expansion_mode: "balanced",
+                    image_url: start,
+                    end_image_url: end,
+                },
+            });
+        },
+    );
 
     it("surfaces a terminal provider failure", async () => {
         mockH3Fetch([], "FAILED");
@@ -535,79 +559,77 @@ describe("callMinimaxH3MaxAPI", () => {
         [10, "768p", "16", 0.025, false, 0.4],
         [15, "1080p", "48", 0.025, false, 1.2],
         [5, "768p", "21.28", 0.05, true, 1.064],
-    ] as const)("bills provider units separately from %ss output at %s", async (duration, resolution, units, rate, reference, cost) => {
-        mockH3Fetch([], "COMPLETED", units, rate);
-        const result = await callMinimaxH3MaxAPI("billing regression", {
-            ...baseParams,
-            model: "minimax/minimax-h3-max",
-            duration,
-            resolution,
-            ...(reference ? { reference_videos: [VIDEO_URL] } : {}),
-        });
-        expect(result.durationSeconds).toBe(duration);
-        expect(result.trackingData.usage.completionVideoSeconds).toBe(duration);
-        expect(result.trackingData.providerBilling).toEqual({
-            units: Number(units),
-            unitCost: rate,
-        });
-        const billing = calculateUsageBilling({
-            model: "minimax/minimax-h3-max",
-            usage: result.trackingData.usage,
-            servedBy: IMAGE_SERVICES["minimax/minimax-h3-max"],
-            input: {
+    ] as const)(
+        "bills provider units separately from %ss output at %s",
+        async (duration, resolution, units, rate, reference, cost) => {
+            mockH3Fetch([], "COMPLETED", units, rate);
+            const result = await callMinimaxH3MaxAPI("billing regression", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max",
+                duration,
                 resolution,
-                providerBilling: result.trackingData.providerBilling,
-            },
-        });
-        expect(billing.costVariant).toBe(
-            resolution === "480p" ? undefined : resolution,
-        );
-        expect(billing.cost.totalCost).toBeCloseTo(cost);
-        expect(billing.price.totalPrice).toBeCloseTo(cost);
-    });
-
-    it.each([
-        null,
-        "",
-        "invalid",
-        "NaN",
-        "Infinity",
-        "-1",
-        "0",
-    ])("rejects invalid reported billing units %s", async (units) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", units);
-        await expect(
-            callMinimaxH3MaxAPI("invalid units", {
-                ...baseParams,
+                ...(reference ? { reference_videos: [VIDEO_URL] } : {}),
+            });
+            expect(result.durationSeconds).toBe(duration);
+            expect(result.trackingData.usage.completionVideoSeconds).toBe(
+                duration,
+            );
+            expect(result.trackingData.providerBilling).toEqual({
+                units: Number(units),
+                unitCost: rate,
+            });
+            const billing = calculateUsageBilling({
                 model: "minimax/minimax-h3-max",
-            }),
-        ).rejects.toMatchObject({
-            status: 502,
-            message: "MiniMax H3 Max returned invalid billing units",
-        });
-        expect(requests.some((request) => request.url === VIDEO_URL)).toBe(
-            false,
-        );
-    });
+                usage: result.trackingData.usage,
+                servedBy: IMAGE_SERVICES["minimax/minimax-h3-max"],
+                input: {
+                    resolution,
+                    providerBilling: result.trackingData.providerBilling,
+                },
+            });
+            expect(billing.costVariant).toBe(
+                resolution === "480p" ? undefined : resolution,
+            );
+            expect(billing.cost.totalCost).toBeCloseTo(cost);
+            expect(billing.price.totalPrice).toBeCloseTo(cost);
+        },
+    );
 
-    it.each([
-        0,
-        -1,
-        Number.NaN,
-        Number.POSITIVE_INFINITY,
-    ])("rejects invalid pricing %s before submitting a billable job", async (price) => {
-        const requests: ProviderRequest[] = [];
-        mockH3Fetch(requests, "COMPLETED", "5", price);
-        await expect(
-            callMinimaxH3MaxAPI("invalid price", {
-                ...baseParams,
-                model: "minimax/minimax-h3-max",
-            }),
-        ).rejects.toMatchObject({
-            status: 502,
-            message: "MiniMax H3 Max returned invalid pricing",
-        });
-        expect(requests.some((request) => request.body)).toBe(false);
-    });
+    it.each([null, "", "invalid", "NaN", "Infinity", "-1", "0"])(
+        "rejects invalid reported billing units %s",
+        async (units) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests, "COMPLETED", units);
+            await expect(
+                callMinimaxH3MaxAPI("invalid units", {
+                    ...baseParams,
+                    model: "minimax/minimax-h3-max",
+                }),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "MiniMax H3 Max returned invalid billing units",
+            });
+            expect(requests.some((request) => request.url === VIDEO_URL)).toBe(
+                false,
+            );
+        },
+    );
+
+    it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+        "rejects invalid pricing %s before submitting a billable job",
+        async (price) => {
+            const requests: ProviderRequest[] = [];
+            mockH3Fetch(requests, "COMPLETED", "5", price);
+            await expect(
+                callMinimaxH3MaxAPI("invalid price", {
+                    ...baseParams,
+                    model: "minimax/minimax-h3-max",
+                }),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: "MiniMax H3 Max returned invalid pricing",
+            });
+            expect(requests.some((request) => request.body)).toBe(false);
+        },
+    );
 });

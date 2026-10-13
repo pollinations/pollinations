@@ -57,8 +57,10 @@ const DEFAULT_TIMEOUT_SECONDS = 300;
 // coding harnesses in two sizes, with a key of the sandbox's own. Exact names
 // only: E2B resolves them to our team's templates.
 const LOGGED_IN_TEMPLATES = ["pollinations", "pollinations-large"];
-// What `polli auth login` asks for.
-const POLLI_PERMISSIONS = ["profile", "usage", "keys", "machines"];
+// What `polli auth login` asks for, except `keys`: every process in the box can
+// read the login, and `keys` would let it raise any key's budget. polli's
+// harnesses then use the login itself instead of keys of their own.
+const POLLI_PERMISSIONS = ["profile", "usage", "machines"];
 // E2B takes a timeout as 32-bit seconds.
 const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
 // A timeout past the 24-hour run keeps the sandbox, as on an E2B team with a

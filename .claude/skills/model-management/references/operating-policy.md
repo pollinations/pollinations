@@ -5,7 +5,9 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 ## Route selection
 
 - Prefer managed serverless inference.
-- For equivalent primary and fallback routes, prefer **Azure**, then **Fireworks**.
+- Primary is the cheapest route at its normal, non-promo price; count credit-funded routes at their real cost to us. Price = primary cost.
+- Fallback is the next cheapest route, on another provider where possible.
+- A promo never chooses the primary or sets the price, except on routes billed at the provider's live price.
 - Before choosing a route, enumerate the exact model across the preferred providers, the current provider, and other already-integrated providers. Compare current posted price, credit eligibility, availability, quotas, capabilities, latency, and maturity.
 - Do not route to a provider solely because an old model name matches. Verify the exact canonical checkpoint, capabilities, limits, latency, and pricing.
 - Direct providers remain valid when the preferred platforms lack an equivalent route or the direct API has a material capability advantage.
@@ -38,7 +40,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 - Add or change a fallback only after explicit confirmation of the exact pair. Use the shared generic fallback system; do not build a model-specific retry layer.
 - Directly probe both routes and force the configured fallback through the full applicable local E2E matrix. Prove permissions, billing, provider attribution, cache behavior, errors, and burst capacity independently for the fallback.
 - Provider-managed fallback is distinct from Pollinations fallback. Preserve the provider default unless its tradeoffs require a product decision, and disclose those tradeoffs before editing.
-- Never add a more expensive fallback when users are billed from the cheaper primary quote unless the economics are explicitly accepted.
+- Flag a fallback that costs more than the price in the PR.
 
 ## GPUs and latency
 

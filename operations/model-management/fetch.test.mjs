@@ -84,7 +84,7 @@ import importlib.util, json, sys, types
 spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
 fetch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fetch)
-fetch._public_addresses = lambda host: ["1.1.1.1"]
+fetch._public_addresses = lambda host, *args: ["1.1.1.1"]
 text = "before " * 3000 + "GPT-Model-Example" + " after" * 4000
 class Session:
     def __init__(self):

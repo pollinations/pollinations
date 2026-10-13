@@ -1,3 +1,5 @@
+import { readJsonWithRetries } from "./retries.mjs";
+
 function timestamp(value, rawUtc = false) {
     if (typeof value !== "string") throw new Error("Invalid billing timestamp");
     const text =
@@ -52,13 +54,15 @@ export async function readBilledUsage(
             url.searchParams.set("before_event_id", beforeId);
         let data;
         try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${key}` },
-                signal: AbortSignal.timeout(30000),
-                redirect: "error",
-            });
-            if (!response.ok) throw new Error();
-            data = await response.json();
+            data = await readJsonWithRetries(
+                url,
+                {
+                    headers: { Authorization: `Bearer ${key}` },
+                    signal: AbortSignal.timeout(30000),
+                    redirect: "error",
+                },
+                fetch,
+            );
         } catch {
             throw new Error("Billing usage request failed");
         }

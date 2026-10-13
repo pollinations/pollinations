@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { mkdir, open, readFile, rename, writeFile } from "node:fs/promises";
 import { isIP } from "node:net";
 import { join } from "node:path";
+import timers from "node:timers/promises";
 import { pathToFileURL } from "node:url";
 import {
     buildClaimAudit,
@@ -28,6 +29,12 @@ import {
 } from "./prepare.mjs";
 import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
 import { inferenceQuote } from "./pricing.mjs";
+import {
+    readJsonWithRetries,
+    retryDelay,
+    transientHttp,
+    transientNetwork,
+} from "./retries.mjs";
 
 const API = "https://gen.pollinations.ai";
 export const PREFERENCE = ["azure", "fireworks", "bedrock"];
@@ -120,7 +127,7 @@ export function inferenceCost(usage, pricing) {
     );
 }
 
-export function reserve(report, cost, kind) {
+export function reserve(report, cost, kind, operationId) {
     assert.ok(Number.isFinite(cost) && cost > 0, "Missing finite tool quote");
     assert.ok(
         !report.billingGap,
@@ -133,8 +140,14 @@ export function reserve(report, cost, kind) {
         "Runner research deadline reached; preserving partial evidence",
     );
     assert.ok(
-        !report.calls.some((call) => call.status === "pending"),
-        "Prior paid operation uncertain; no automatic retry",
+        !report.calls.some(
+            (call) =>
+                call.status === "pending" &&
+                (operationId === undefined ||
+                    call.operationId !== operationId ||
+                    call.kind !== kind),
+        ),
+        "Prior paid operation uncertain; only its bounded retry may proceed",
     );
     report.reservedPollen += cost;
     const receipt = {
@@ -146,6 +159,111 @@ export function reserve(report, cost, kind) {
     report.calls.push(receipt);
     report.budgetUsedPollen = budgetUsed(report);
     return receipt;
+}
+
+export async function paidPost(report, path, payload, initial, key, save) {
+    const operationId = report.calls.indexOf(initial);
+    assert.ok(operationId >= 0, "Missing paid operation receipt");
+    let receipt = initial;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        receipt.operationId = operationId;
+        receipt.attempt = attempt;
+        let body = payload;
+        if (
+            path === "/v1/chat/completions" &&
+            payload.model === "openai/gpt-6.1-sol"
+        ) {
+            // Sol strips sampler seeds; vary retry context without changing the evidence.
+            receipt.contextSeed = randomBytes(8).toString("hex");
+            const note = `\nAttempt context (not evidence): attempt ${attempt}, seed ${receipt.contextSeed}. Reassess the same task independently; preserve all evidence and output constraints.`;
+            assert.ok(
+                Buffer.byteLength(note) <= 256,
+                "Retry context exceeds quote",
+            );
+            body = {
+                ...payload,
+                messages: payload.messages.map((message, index) =>
+                    index === 0
+                        ? { ...message, content: `${message.content}${note}` }
+                        : message,
+                ),
+            };
+        }
+        await save();
+        let retryable = false;
+        let delay = attempt * 2000;
+        try {
+            const remaining = report.deadlineAt
+                ? Date.parse(report.deadlineAt) - Date.now()
+                : 120000;
+            assert.ok(
+                remaining > 0,
+                "Runner research deadline reached before request",
+            );
+            const result = await fetch(`${API}${path}`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json, text/event-stream",
+                },
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(Math.min(120000, remaining)),
+            });
+            receipt.requestId = result.headers.get("x-request-id");
+            receipt.http = result.status;
+            if (transientHttp(result.status)) {
+                delay = retryDelay(result.headers, attempt);
+                retryable = true;
+            }
+            if (!result.ok && !retryable) receipt.status = "failed";
+            assert.ok(result.ok, `Pollinations HTTP ${result.status}`);
+            const raw = await result.text();
+            assert.ok(
+                !report.deadlineAt ||
+                    Date.now() < Date.parse(report.deadlineAt),
+                "Runner research deadline reached while reading response",
+            );
+            return { raw, receipt };
+        } catch (error) {
+            retryable ||= transientNetwork(error);
+            receipt.transportFailure = retryable
+                ? "transient"
+                : "non-retryable";
+            await save();
+            if (!retryable || attempt === 3) throw error;
+            assert.ok(
+                !report.deadlineAt ||
+                    Date.now() + delay < Date.parse(report.deadlineAt),
+                "Runner research deadline reached before retry",
+            );
+            receipt.retryDelayMs = delay;
+            await save();
+            await timers.setTimeout(delay);
+            const prior = receipt;
+            receipt = reserve(
+                report,
+                initial.reserved,
+                initial.kind,
+                operationId,
+            );
+            for (const field of ["promptUpperBound", "requestDigest"]) {
+                if (prior[field] !== undefined) receipt[field] = prior[field];
+            }
+        }
+    }
+}
+
+function completePaidOperation(report, receipt) {
+    receipt.status = "received";
+    for (const prior of report.calls)
+        if (
+            prior !== receipt &&
+            prior.operationId === receipt.operationId &&
+            prior.status === "pending"
+        )
+            // Recovery permits more work, but every possible duplicate charge stays reserved.
+            prior.status = "uncertain";
 }
 
 export function officialCatalog(rows) {
@@ -2164,11 +2282,7 @@ export async function main(env = process.env) {
             );
         throw error;
     });
-    const response = await fetch(`${API}/models?reliability=all`, {
-        signal: AbortSignal.timeout(30000),
-    });
-    assert.ok(response.ok, `Catalog HTTP ${response.status}`);
-    const rows = await response.json(),
+    const rows = await readJsonWithRetries(`${API}/models?reliability=all`),
         inventory = officialCatalog(rows);
     const requested = (env.MODELS ?? "")
         .split(",")
@@ -2231,6 +2345,7 @@ export async function main(env = process.env) {
             "prepare.mjs",
             "price-evidence.mjs",
             "fetch.py",
+            "retries.mjs",
         ].map(async (name) =>
             hash(await readFile(join(import.meta.dirname, name), "utf8")),
         ),
@@ -2295,58 +2410,53 @@ export async function main(env = process.env) {
     );
     await save();
     const post = async (path, payload, receipt) => {
-        await save();
-        const result = await fetch(`${API}${path}`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${env.POLLINATIONS_API_KEY}`,
-                "Content-Type": "application/json",
-                Accept: "application/json, text/event-stream",
-            },
-            body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(120000),
-        });
-        receipt.requestId = result.headers.get("x-request-id");
-        receipt.http = result.status;
-        if (!result.ok && result.status !== 408 && result.status < 500)
-            receipt.status = "failed";
-        assert.ok(result.ok, `Pollinations HTTP ${result.status}`);
-        const raw = await result.text();
-        return raw;
+        return paidPost(
+            report,
+            path,
+            payload,
+            receipt,
+            env.POLLINATIONS_API_KEY,
+            save,
+        );
     };
     let rpcId = 0;
     const mcp = async (name, args, cost) => {
-        const receipt = reserve(report, cost, name);
-        const data = rpcJson(
-            await post(
-                "/mcp/exa",
-                {
-                    jsonrpc: "2.0",
-                    id: ++rpcId,
-                    method: "tools/call",
-                    params: { name, arguments: args },
-                },
-                receipt,
-            ),
+        let receipt = reserve(report, cost, name);
+        const response = await post(
+            "/mcp/exa",
+            {
+                jsonrpc: "2.0",
+                id: ++rpcId,
+                method: "tools/call",
+                params: { name, arguments: args },
+            },
+            receipt,
         );
+        receipt = response.receipt;
+        const data = rpcJson(response.raw);
         assert.ok(
-            !data.error && data.result && !data.result.isError,
+            !data.error &&
+                data.result &&
+                !data.result.isError &&
+                Array.isArray(data.result.content) &&
+                data.result.content.every(
+                    (block) =>
+                        block &&
+                        (block.type !== "text" ||
+                            typeof block.text === "string"),
+                ),
             "Exa tool failed",
         );
-        receipt.status = "received";
+        completePaidOperation(report, receipt);
         await save();
         return data.result.content
             .filter((block) => block.type === "text")
             .map((block) => block.text)
             .join("\n");
     };
-    const mcpCatalog = await fetch(`${API}/mcp`, {
-        signal: AbortSignal.timeout(30000),
-    });
-    assert.ok(mcpCatalog.ok, "MCP catalog unavailable");
-    const rates = (await mcpCatalog.json()).data.find(
-        (server) => server.id === "exa",
-    )?.pricing.rates;
+    const mcpCatalog = await readJsonWithRetries(`${API}/mcp`);
+    const rates = mcpCatalog.data.find((server) => server.id === "exa")?.pricing
+        .rates;
     const searchPrice = Number(
             rates?.find((rate) => rate.kind === "search_request")?.price,
         ),
@@ -2360,35 +2470,35 @@ export async function main(env = process.env) {
             "Invalid inference output limit",
         );
         const promptUpperBound =
-            Buffer.byteLength(JSON.stringify({ messages, tools })) + 4096;
+            Buffer.byteLength(JSON.stringify({ messages, tools })) + 4096 + 256;
         const quote = inferenceQuote(model, promptUpperBound, maxTokens);
-        const receipt = reserve(
+        let receipt = reserve(
             report,
             quote.reserved,
             `inference:${model.name}`,
         );
         receipt.promptUpperBound = promptUpperBound;
-        const data = JSON.parse(
-            await post(
-                "/v1/chat/completions",
-                {
-                    model: model.name,
-                    messages,
-                    ...(model.name === inference.name
-                        ? { reasoning_effort: "medium" }
-                        : {}),
-                    ...(tools
-                        ? {
-                              tools,
-                              tool_choice: "required",
-                          }
-                        : { temperature: 0 }),
-                    max_tokens: maxTokens,
-                    stream: false,
-                },
-                receipt,
-            ),
+        const response = await post(
+            "/v1/chat/completions",
+            {
+                model: model.name,
+                messages,
+                ...(model.name === inference.name
+                    ? { reasoning_effort: "medium" }
+                    : {}),
+                ...(tools
+                    ? {
+                          tools,
+                          tool_choice: "required",
+                      }
+                    : { temperature: 0 }),
+                max_tokens: maxTokens,
+                stream: false,
+            },
+            receipt,
         );
+        receipt = response.receipt;
+        const data = JSON.parse(response.raw);
         receipt.usage = data.usage;
         if (
             /only spends Quest Pollen|model needs paid Pollen/i.test(
@@ -2418,20 +2528,18 @@ export async function main(env = process.env) {
             "Inference usage exceeded reserved quote; no further spending",
         );
         assert.ok(data.choices?.[0]?.message, "Inference returned no message");
-        receipt.status = "received";
+        completePaidOperation(report, receipt);
         await save();
         return data.choices[0].message;
     };
     const decision = async (payload, validate) => {
         const quote = jevQuote(decisionModel, payload);
-        const receipt = reserve(
-            report,
-            quote.reserved,
-            `inference:${JEV_MODEL}`,
-        );
+        let receipt = reserve(report, quote.reserved, `inference:${JEV_MODEL}`);
         receipt.requestDigest = quote.requestDigest;
         receipt.promptUpperBound = quote.inputUpperBound;
-        const data = JSON.parse(await post(JEV_ENDPOINT, payload, receipt));
+        const response = await post(JEV_ENDPOINT, payload, receipt);
+        receipt = response.receipt;
+        const data = JSON.parse(response.raw);
         receipt.nativeResponse = {
             model: data.model,
             id: data.id,
@@ -2483,7 +2591,7 @@ export async function main(env = process.env) {
         );
         receipt.usage = data.usage;
         receipt.accountedPollen = receipt.observedPollen;
-        receipt.status = "received";
+        completePaidOperation(report, receipt);
         await save();
         return result;
     };
@@ -2655,10 +2763,7 @@ export async function main(env = process.env) {
         await save();
     };
     const wholePage = async (url, page) => {
-        if (
-            (page.excerptStart ?? 0) === 0 &&
-            (page.totalCharacters ?? page.text.length) === page.text.length
-        )
+        if (hash(page.text) === page.pageDigest)
             return { ...page, fullPage: true };
         const handle = await open(join(out, "pages", `${hash(url)}.json`), "r");
         const buffer = Buffer.alloc(2 * 1024 * 1024 * 6 + 8193);
@@ -2812,6 +2917,9 @@ export async function main(env = process.env) {
                                     prepared.sources,
                                     task.models,
                                 )
+                                    .filter(
+                                        ({ status }) => status === "fetched",
+                                    )
                                     .slice(0, 4)
                                     .map(({ id, url, excerpt }) => ({
                                         id,
@@ -3042,7 +3150,7 @@ export async function main(env = process.env) {
             for (const target of targets) {
                 target.status = "blocked";
                 target.reason =
-                    "Budget/deadline exhausted or prior paid operation uncertain; no automatic retry";
+                    "Budget/deadline exhausted or paid operation still uncertain after bounded retries";
             }
             continue;
         }

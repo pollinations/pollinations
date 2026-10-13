@@ -521,7 +521,11 @@ test("the next quote exceeding the remaining budget stops before payment and pre
     assert.equal(report.calls[0].status, "received");
     assert.deepEqual(report.calls[0].usage, bill);
     assert.equal(report.calls[0].accountedPollen, 0.08);
-    assert.equal(report.reservedPollen, firstQuote);
+    assert.ok(report.reservedPollen >= firstQuote);
+    assert.ok(
+        report.reservedPollen - firstQuote <= 256 * rates.promptTextTokens,
+        "Only the bounded retry context may add input reservation",
+    );
     assert.equal(report.budgetUsedPollen, 0.08);
     assert.ok(
         report.budgetUsedPollen < report.maxPollen,

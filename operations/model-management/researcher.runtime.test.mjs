@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import timers from "node:timers/promises";
 import {
     budgetUsed,
     main,
@@ -211,7 +212,7 @@ test("explicit model selection spends inference only on its group; full catalog 
     });
 });
 
-test("uncertain HTTP failures retain quotes and stop later groups; definite 4xx remain failed", async (t) => {
+test("uncertain HTTP failures exhaust bounded retries and stop later groups; definite 4xx remain failed", async (t) => {
     const exit = process.exitCode;
     const selected = Array.from({ length: 9 }, (_, index) => ({
         ...model,
@@ -221,6 +222,8 @@ test("uncertain HTTP failures retain quotes and stop later groups; definite 4xx 
     for (const status of [408, 502, 503, 400]) {
         const out = await output(t);
         let paid = 0;
+        const waits = [];
+        t.mock.method(timers, "setTimeout", async (delay) => waits.push(delay));
         t.mock.method(globalThis, "fetch", async (url) => {
             if (url.includes("/models?"))
                 return Response.json([...selected, inference]);
@@ -233,7 +236,8 @@ test("uncertain HTTP failures retain quotes and stop later groups; definite 4xx 
             ...envFor(out),
             MODELS: selected.map(({ name }) => name).join(","),
         });
-        assert.equal(paid, status === 400 ? 2 : 1);
+        assert.equal(paid, status === 400 ? 2 : 3);
+        assert.deepEqual(waits, status === 400 ? [] : [2000, 4000]);
         assert.equal(
             report.calls[0].status,
             status === 400 ? "failed" : "pending",

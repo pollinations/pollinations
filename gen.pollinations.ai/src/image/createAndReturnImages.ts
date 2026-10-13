@@ -1,6 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import debug from "debug";
-import { UserImageError } from "../userImage.ts";
+import { isRetryableFallbackError } from "../fallback.ts";
 import {
     fetchFromWeightedServer,
     type ServerType,
@@ -467,20 +467,6 @@ function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
     return [...configs.slice(index), ...configs.slice(0, index)];
 }
 
-/**
- * Azure refused before generating anything: a rate limit or a missing
- * deployment. Only these are safe to send elsewhere, because Azure bills a
- * generation it completed even when we never saw the response. A reference
- * image host's error is not Azure's and is left to the caller.
- */
-export function isGPTImageRefusedByAzure(error: unknown): boolean {
-    return (
-        error instanceof UpstreamError &&
-        !(error instanceof UserImageError) &&
-        (error.upstreamStatus === 429 || error.upstreamStatus === 404)
-    );
-}
-
 const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
@@ -751,8 +737,9 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    // The next region refused before generating: try the other one. Timeouts
-    // and 5xx never move on, or a second region would pay for a second image.
+    // Any Azure-side failure, timeouts and 5xx included, moves on to the next
+    // region; only the caller's own request errors stop here. A timeout may
+    // already have been billed, which is accepted to keep the request alive.
     const configs = gptImageConfigsInTurn(model);
     for (const [index, config] of configs.entries()) {
         try {
@@ -769,7 +756,7 @@ export const callGPTImage = async (
             );
             if (
                 index === configs.length - 1 ||
-                !isGPTImageRefusedByAzure(error)
+                !isRetryableFallbackError(error)
             ) {
                 throw error;
             }

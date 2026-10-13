@@ -1,4 +1,5 @@
 import {
+    Alert,
     ArrowLeftIcon,
     Button,
     KeyIcon,
@@ -11,10 +12,14 @@ import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
-import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import {
+    isLoopbackHostname,
+    redirectUriMatchesAllowlistExact,
+} from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { accountClient, apiClient } from "../../api.ts";
@@ -37,6 +42,8 @@ type Attribution = {
     userName?: string;
     githubUsername?: string;
     appName?: string;
+    /** Host serving a Client ID Metadata Document; set instead of a pk_ owner. */
+    clientHost?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
 };
@@ -73,6 +80,8 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    // MCP clients identify with a metadata-document URL instead of a pk_.
+    const isMetadataClient = isCodeFlow && isClientMetadataUrl(app_key);
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -315,15 +324,19 @@ export function Authorize() {
             } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const appName = attribution?.clientHost
+                ? `${attribution.appName} (${attribution.clientHost})`
+                : attribution?.appName || redirectHostname;
             const { key, id, expiresIn } = await createKeyWithPermissions({
-                name: isDeviceMode
-                    ? `Device ${user_code}`
-                    : attribution?.appName || redirectHostname,
+                name: isDeviceMode ? `Device ${user_code}` : appName,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
                 consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    // A metadata client has no pk_ to bind; POST
+                    // /api/oauth/code checks its redirect instead.
                     ...(app_key &&
+                        !isMetadataClient &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -551,6 +564,15 @@ export function Authorize() {
                 </>
             }
         >
+            {isMetadataClient &&
+                parsedRedirectUrl &&
+                isLoopbackHostname(parsedRedirectUrl.hostname) && (
+                    <Alert intent="warning" className="mb-4">
+                        Access goes to a program on this computer, and any
+                        program can use this app's name. Only allow it if you
+                        just started this sign-in yourself.
+                    </Alert>
+                )}
             <form
                 id="authorize-permissions"
                 className="space-y-4"

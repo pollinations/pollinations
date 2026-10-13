@@ -36,6 +36,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     PollinationsConfig,
     RequestOptions,
     TextGenerateOptions,
@@ -484,7 +485,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -556,7 +557,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -697,7 +698,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -996,7 +997,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1130,41 +1131,17 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
-    }
-
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
-     * Get all available models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
     // ============================================================================
@@ -1179,7 +1156,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1206,12 +1183,17 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        // Some providers read the format from the extension, so a File keeps
-        // its own name.
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
         formData.append(
             "file",
             blob,
-            (blob as Partial<File>).name || "audio.mp3",
+            (blob as Partial<File>).name || `audio.${extension}`,
         );
         if (options.model) formData.append("model", options.model);
 
@@ -1430,7 +1412,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });

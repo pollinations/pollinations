@@ -119,11 +119,6 @@ export async function callAzureMaiImage(
     if (!route) {
         throw new Error(`Unknown Azure MAI image route: ${safeParams.model}`);
     }
-    if (safeParams.transparent) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
-        });
-    }
     const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
         validateMaiDimensions(safeParams.width, safeParams.height, route);

@@ -1,12 +1,16 @@
-import { AccountIcon, InfoTip } from "@pollinations/ui";
+import { AccountIcon, InfoTip, InlineLink } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
 import { useRef, useState } from "react";
-import { useModelCatalog } from "../models/use-model-catalog.ts";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { KeyLimitInput } from "./key-limit-input.tsx";
 import { ModelPermissionsInput } from "./model-permissions-input.tsx";
+
+const POLLI_CLI_KEYS_URL =
+    "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli#account";
+const KEY_API_URL =
+    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md#patch-accountkeysid--update-api-key";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
@@ -80,7 +84,6 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setAccountPermissions,
         setQuestPollenOnly,
     } = value;
-    const catalog = useModelCatalog();
     const generateInput = useRef<HTMLInputElement>(null);
     const [previousModels, setPreviousModels] = useState<string[] | null>(
         requestedModels?.length ? requestedModels : null,
@@ -181,12 +184,23 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                             />
                         </div>
                         <ModelPermissionsInput
-                            catalog={catalog}
                             selected={permissions.allowedModels}
                             onChange={changeModels}
                             disabled={disabled || !hasModels}
                         />
                     </div>
+                    <p className="text-xs text-theme-text-muted">
+                        To limit this {accessContext ?? "key"} to specific
+                        models, use the{" "}
+                        <InlineLink href={POLLI_CLI_KEYS_URL} tone="quiet">
+                            polli CLI
+                        </InlineLink>{" "}
+                        or the{" "}
+                        <InlineLink href={KEY_API_URL} tone="quiet">
+                            API
+                        </InlineLink>
+                        .
+                    </p>
                     {(!visiblePermissions ||
                         visiblePermissions.has("machines")) && (
                         <ul className="text-sm">

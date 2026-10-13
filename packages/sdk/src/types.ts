@@ -23,7 +23,7 @@ export interface RequestOptions {
 // Image Generation
 // ============================================================================
 
-/** Image model (use getImageModels() to fetch available models) */
+/** Image model (use getModels("image") to fetch available models) */
 export type ImageModel = string;
 
 /** Available video models */
@@ -37,7 +37,7 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (server default: 'zimage') */
+    /** Image model to use (server default: 'tongyi-mai/z-image-turbo') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
@@ -67,7 +67,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (server default: 'flux') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -89,7 +89,7 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (server default: 'veo') */
+    /** Video model to use (server default: 'google/veo-3.1-fast') */
     model?: VideoModel;
     /** Duration in seconds (supported range varies by model) */
     duration?: number;
@@ -127,7 +127,7 @@ export interface VideoResponse {
 // Text Generation
 // ============================================================================
 
-/** Text model (use getTextModels() to fetch available models) */
+/** Text model (use getModels("text") to fetch available models) */
 export type TextModel = string;
 
 /** Message roles for chat */
@@ -208,7 +208,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (server default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -282,7 +282,7 @@ export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
 
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (server default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /**
      * Per-capability downstream model overrides for router models. Sent as
@@ -478,7 +478,7 @@ export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 export interface AudioGenerateOptions extends RequestOptions {
     /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (server default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs/eleven-v3') */
     model?: AudioModel;
     /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
@@ -544,7 +544,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (server default: 'whisper-large-v3') */
+    /** Model to use (server default: 'openai/whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -789,7 +789,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Model categories the key can use (e.g. `image`, `text`); a model ID allows its whole category */
+    /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
@@ -1020,7 +1020,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
+    /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -1118,6 +1118,9 @@ export type ModelCapability =
     | "pollinations_models";
 
 /** Model information */
+/** Model catalog to list: `/<kind>/models` on the API. */
+export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
     [key: string]: unknown;
@@ -1221,7 +1224,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (server default: 'flux') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

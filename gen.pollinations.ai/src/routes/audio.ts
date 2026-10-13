@@ -159,6 +159,11 @@ const CreateSpeechRequestSchema = z
                 "Emotion/style instruction (Gemini TTS and qwen/qwen-audio-3.0-tts-flash). e.g. 'excited and cheerful'.",
             example: "speak softly and warmly",
         }),
+        speed: z.number().optional().meta({
+            description:
+                "Speech speed, 0.25-4 (openai/tts-1 and openai/tts-1-hd only; other models accept only 1).",
+            example: 1.25,
+        }),
     })
     .meta({ $id: "CreateSpeechRequest" });
 
@@ -851,15 +856,19 @@ export async function transcribeWithAzure(opts: {
             message: "Azure transcription service is not configured",
         });
     }
+    // OpenAI documents only json for gpt-4o-transcribe; text is the same
+    // transcript without the JSON wrapper, so callers that send it get it.
     assertTranscriptionResponseFormat(responseFormat, "openai/gpt-transcribe", [
         "json",
+        "text",
     ]);
 
     const formData = new FormData();
     formData.append("model", "gpt-transcribe");
     if (language) formData.append("language", language);
     if (prompt) formData.append("prompt", prompt);
-    formData.append("response_format", responseFormat);
+    // Only the json answer carries usage.seconds, which the request bills on.
+    formData.append("response_format", "json");
     if (temperature !== undefined) {
         formData.append("temperature", String(temperature));
     }
@@ -2208,7 +2217,7 @@ async function parseSpeechRequest(
                     | "flac"
                     | "opus"
                     | "aac"
-                    | "pcm") || "mp3",
+                    | "pcm") || undefined,
             duration: parseOptionalNumber(formData.get("duration"), "duration"),
             // fal-ai/stable-audio-3/medium controls.
             seconds: parseOptionalNumber(formData.get("seconds"), "seconds"),
@@ -2226,6 +2235,7 @@ async function parseSpeechRequest(
             seed: parseOptionalNumber(formData.get("seed"), "seed"),
             instructions:
                 (formData.get("instructions") as string | null) || undefined,
+            speed: parseOptionalNumber(formData.get("speed"), "speed"),
             loop: parseOptionalBoolean(formData.get("loop"), "loop"),
             prompt_influence: parseOptionalNumber(
                 formData.get("prompt_influence"),
@@ -2999,9 +3009,10 @@ export async function generateAzureSpeech(opts: {
     text: string;
     voice: string;
     responseFormat: string;
+    speed?: number;
     apiKey: string;
 }): Promise<Response> {
-    const { modelName, text, voice, responseFormat, apiKey } = opts;
+    const { modelName, text, voice, responseFormat, speed, apiKey } = opts;
     if (!apiKey) {
         throw new UpstreamError(500 as ContentfulStatusCode, {
             message: "Azure speech service is not configured",
@@ -3019,6 +3030,7 @@ export async function generateAzureSpeech(opts: {
                 input: text,
                 voice,
                 response_format: responseFormat,
+                speed,
             }),
         }),
         endpoint,
@@ -3411,6 +3423,7 @@ async function dispatchAudioGeneration(
         compositionPlan?: unknown;
         referenceAudio?: File;
         instructions?: string;
+        speed?: number;
         loop?: boolean;
         promptInfluence?: number;
         apiKey: string;
@@ -3437,6 +3450,7 @@ async function dispatchAudioGeneration(
         compositionPlan,
         referenceAudio,
         instructions,
+        speed,
         loop,
         promptInfluence,
         apiKey,
@@ -3617,6 +3631,7 @@ async function dispatchAudioGeneration(
                     text,
                     voice,
                     responseFormat,
+                    speed,
                     apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
                 }),
             );
@@ -3756,9 +3771,23 @@ async function generateAudioFromSpeechRequest(
         reference_audio,
         seed,
         instructions,
+        speed,
         loop,
         prompt_influence,
     } = request;
+
+    // Speed 1 is every model's normal output, so clients that always send the
+    // OpenAI default keep working on other models.
+    if (
+        speed !== undefined &&
+        speed !== 1 &&
+        !["openai/tts-1", "openai/tts-1-hd"].includes(c.var.model.resolved)
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message:
+                "The speed parameter is only supported by openai/tts-1 and openai/tts-1-hd",
+        });
+    }
 
     requireElevenMusicOptions(c.var.model.resolved, {
         referenceAudio: reference_audio,
@@ -3809,6 +3838,7 @@ async function generateAudioFromSpeechRequest(
             compositionPlan: composition_plan,
             referenceAudio,
             instructions,
+            speed,
             loop,
             promptInfluence: prompt_influence,
             apiKey: c.env.ELEVENLABS_API_KEY,
@@ -4113,11 +4143,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                     "Transcription service is not configured (missing API key)",
             });
         }
-        assertTranscriptionResponseFormat(
-            responseFormat,
-            "whisper model",
-            UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
-        );
+        assertTranscriptionResponseFormat(responseFormat, "whisper model", [
+            ...UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
+            "srt",
+            "vtt",
+        ]);
 
         const whisperFormData = new FormData();
         const filename =
@@ -4129,12 +4159,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             "model",
             isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
         );
-        whisperFormData.append(
-            isDeepInfra
-                ? "timestamp_granularities"
-                : "timestamp_granularities[]",
-            "word",
-        );
+        if (isDeepInfra) {
+            // DeepInfra returns segments either way, and drops words when
+            // both granularities are requested.
+            whisperFormData.append("timestamp_granularities", "word");
+        } else {
+            // OVH leaves segments empty unless asked; srt/vtt cues are those.
+            whisperFormData.append("timestamp_granularities[]", "word");
+            whisperFormData.append("timestamp_granularities[]", "segment");
+        }
 
         const whisperUrl = isDeepInfra
             ? "https://api.deepinfra.com/v1/audio/transcriptions"
@@ -4660,7 +4693,7 @@ export const audioRoutes = new Hono<Env>()
                                     ],
                                     default: "json",
                                     description:
-                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
+                                        "The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts.",
                                 },
                                 temperature: {
                                     type: "number",

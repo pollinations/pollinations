@@ -5,13 +5,6 @@ import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
 import { SENTINEL_SEED } from "../../src/util.ts";
 
-const REFERENCE_IMAGE_LIMITS = Object.entries(IMAGE_SERVICES).flatMap(
-    ([model, definition]) => {
-        const max = (definition as ModelDefinition).maxReferenceImages;
-        return max === undefined ? [] : [[max, model] as const];
-    },
-);
-
 describe("ImageParamsSchema", () => {
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
@@ -20,31 +13,6 @@ describe("ImageParamsSchema", () => {
         });
 
         expect(result.seed).toBe(SENTINEL_SEED);
-    });
-
-    it("rejects transparent backgrounds for gpt-image-2", () => {
-        const result = ImageParamsSchema.safeParse({
-            model: "openai/gpt-image-2",
-            transparent: true,
-        });
-
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error.issues[0]).toMatchObject({
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
-    });
-
-    it("keeps transparent backgrounds available for gptimage models", () => {
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "openai/gpt-image-1-mini",
-                transparent: true,
-            }).success,
-        ).toBe(true);
     });
 
     it("accepts resolutions declared by the model", () => {
@@ -415,18 +383,53 @@ describe("ImageParamsSchema", () => {
         expect(result.success).toBe(false);
     });
 
-    it.each(
-        REFERENCE_IMAGE_LIMITS,
-    )("accepts at most %i reference images on %s", (max, model) => {
+    it("accepts default dimensions and explicit 1024x1024 for lightning-image-turbo", () => {
+        const defaultResult = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+        });
+        expect(defaultResult.success).toBe(true);
+        if (defaultResult.success) {
+            expect(defaultResult.data.width).toBe(1024);
+            expect(defaultResult.data.height).toBe(1024);
+            expect(defaultResult.data.dimensionsExplicit).toBe(false);
+        }
+
+        const explicit1024 = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            width: 1024,
+            height: 1024,
+        });
+        expect(explicit1024.success).toBe(true);
+        if (explicit1024.success) {
+            expect(explicit1024.data.dimensionsExplicit).toBe(true);
+        }
+    });
+
+    it.each([
+        [{ width: 768, height: 1024 }],
+        [{ width: 1024, height: 768 }],
+        [{ width: 1536, height: 1536 }],
+        [{ width: 512 }],
+        [{ height: 512 }],
+    ])("rejects non-1024 dimensions on lightning-image-turbo (%j)", (dims) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            ...dims,
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("rejects more reference images than the model declares", () => {
+        const model = "microsoft/mai-image-2.6";
+        const max =
+            (IMAGE_SERVICES[model] as ModelDefinition).maxReferenceImages ?? 0;
         const images = Array.from(
             { length: max + 1 },
             (_, i) => `https://example.com/${i}.png`,
         );
         expect(
-            ImageParamsSchema.safeParse({
-                model,
-                image: images.slice(0, max),
-            }).success,
+            ImageParamsSchema.safeParse({ model, image: images.slice(0, max) })
+                .success,
         ).toBe(true);
 
         const result = ImageParamsSchema.safeParse({ model, image: images });

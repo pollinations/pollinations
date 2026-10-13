@@ -8,8 +8,8 @@ import { createMiddleware } from "hono/factory";
 import type { AuthVariables } from "./auth.ts";
 import type { LoggerVariables } from "./logger.ts";
 
-export { getAvailableBalance };
 export type { UserBalance };
+export { getAvailableBalance };
 
 export type BalanceVariables = {
     balance: {

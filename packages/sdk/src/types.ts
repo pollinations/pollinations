@@ -1324,6 +1324,78 @@ export interface ImageGenerateV1Options extends RequestOptions {
 }
 
 // ============================================================================
+// Async Jobs
+// ============================================================================
+
+/** Job lifecycle status (GET /v1/jobs/:id) */
+export type JobStatus = "pending" | "succeeded" | "failed";
+
+/** Response from submitting a media request with `Prefer: respond-async` (HTTP 202) */
+export interface JobInfo {
+    /** Unique job identifier */
+    id: string;
+    /** Initial status; always "pending" on submit */
+    status: JobStatus;
+    /** URL to poll job status (relative or absolute) */
+    status_url: string;
+    /** URL where the result will be available once the job succeeds */
+    location: string;
+}
+
+/** Response from GET /v1/jobs/:id */
+export interface JobStatusInfo {
+    /** Current job status */
+    status: JobStatus;
+    /** URL of the finished result (present once succeeded) */
+    result_url?: string;
+    /** Error detail (present when the job failed) */
+    error?:
+        | string
+        | { message?: string; code?: string; [key: string]: unknown };
+}
+
+/** Response from GET /v1/jobs/:id/result (raw file bytes) */
+export interface JobResultResponse {
+    /** The generated file as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type of the generated file */
+    contentType: string;
+}
+
+/** Options shared by the async job submit methods */
+export interface JobSubmitOptions extends RequestOptions {
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
+    apiKey?: string;
+    /** Base URL for the API (defaults to https://gen.pollinations.ai) */
+    baseUrl?: string;
+    /** Timeout in ms for submit/status/result requests (default: 300000 = 5min) */
+    timeout?: number;
+}
+
+/** Options for submitting an image job (same params as image generation) */
+export interface SubmitImageOptions
+    extends ImageGenerateOptions,
+        JobSubmitOptions {}
+
+/** Options for submitting a video job (same params as video generation) */
+export interface SubmitVideoOptions
+    extends VideoGenerateOptions,
+        JobSubmitOptions {}
+
+/** Options for submitting an audio job (same params as audio generation) */
+export interface SubmitAudioOptions
+    extends AudioGenerateOptions,
+        JobSubmitOptions {}
+
+/** Options for polling a job to a terminal status */
+export interface JobPollOptions extends RequestOptions {
+    /** Delay between status checks in ms (default: 2000) */
+    interval?: number;
+    /** Maximum time to wait for a terminal status in ms (default: 1200000 = 20min) */
+    timeout?: number;
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

@@ -63,6 +63,8 @@ export {
     validateKey,
     videoUrl,
 } from "./helpers.js";
+// Async jobs
+export { PollinationsJob } from "./jobs.js";
 export {
     type FetchModelCatalogOptions,
     fetchModelCatalog,
@@ -136,6 +138,12 @@ export type {
     ImageModel,
     ImageQuality,
     ImageResponse,
+    JobInfo,
+    JobPollOptions,
+    JobResultResponse,
+    JobStatus,
+    JobStatusInfo,
+    JobSubmitOptions,
     JsonSchema,
     KeyAccountPermission,
     KeyInfo,
@@ -167,6 +175,9 @@ export type {
     ScoreQuestion,
     SpeechAlignment,
     SpeechWordTiming,
+    SubmitAudioOptions,
+    SubmitImageOptions,
+    SubmitVideoOptions,
     TextContentPart,
     TextGenerateOptions,
     // Text

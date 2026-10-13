@@ -149,40 +149,42 @@ describe("Vercel search then JSON formatting", () => {
         undefined,
         { ...firstUsage, cost: undefined },
         { ...firstUsage, cost: -1 },
-    ])("stops before formatting when search usage or charge is invalid %j", async (usage) => {
-        const { config, requests } = upstream([
-            Response.json(completion(usage)),
-        ]);
-        await expect(
-            callVercelSearch(messages, options, config),
-        ).rejects.toThrow();
-        expect(requests).toHaveLength(1);
-    });
-    it.each([
-        null,
-        "",
-        "   ",
-    ])("rejects an empty search answer %j before formatting", async (content) => {
-        const { config, requests } = upstream([
-            Response.json({
-                ...completion(firstUsage),
-                choices: [
-                    {
-                        message: {
-                            role: "assistant",
-                            content,
-                            tool_calls: [{ id: "search" }],
+    ])(
+        "stops before formatting when search usage or charge is invalid %j",
+        async (usage) => {
+            const { config, requests } = upstream([
+                Response.json(completion(usage)),
+            ]);
+            await expect(
+                callVercelSearch(messages, options, config),
+            ).rejects.toThrow();
+            expect(requests).toHaveLength(1);
+        },
+    );
+    it.each([null, "", "   "])(
+        "rejects an empty search answer %j before formatting",
+        async (content) => {
+            const { config, requests } = upstream([
+                Response.json({
+                    ...completion(firstUsage),
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content,
+                                tool_calls: [{ id: "search" }],
+                            },
+                            finish_reason: "tool_calls",
                         },
-                        finish_reason: "tool_calls",
-                    },
-                ],
-            }),
-        ]);
-        await expect(
-            callVercelSearch(messages, options, config),
-        ).rejects.toMatchObject({ status: 502 });
-        expect(requests).toHaveLength(1);
-    });
+                    ],
+                }),
+            ]);
+            await expect(
+                callVercelSearch(messages, options, config),
+            ).rejects.toMatchObject({ status: 502 });
+            expect(requests).toHaveLength(1);
+        },
+    );
     it("rejects a formatting answer without usage", async () => {
         const { config } = upstream([
             Response.json(completion(firstUsage)),
@@ -204,62 +206,66 @@ describe("Vercel search then JSON formatting", () => {
         ).rejects.toThrow("Unavailable");
         expect(requests).toHaveLength(1);
     });
-    it.each([
-        false,
-        true,
-    ])("streams JSON with combined usage even when cost arrives late: %s", async (late) => {
-        const { cost, ...tokens } = lastUsage;
-        const events = [
-            {
-                choices: [
-                    { index: 0, delta: { content: '{"answer":"Bonjour"}' } },
-                ],
-            },
-            { choices: [], usage: late ? tokens : lastUsage },
-            ...(late ? [{ choices: [], usage: { cost } }] : []),
-            "[DONE]",
-        ];
-        const { config, requests } = upstream([
-            Response.json(completion(firstUsage)),
-            sse(events),
-        ]);
-        const result = await callVercelSearch(
-            messages,
-            { ...options, stream: true },
-            config,
-        );
-        const text = await new Response(result.responseStream).text();
-        const chunks = text
-            .split("\n")
-            .filter((l) => l.startsWith("data: ") && !l.includes("[DONE]"))
-            .map((l) => JSON.parse(l.slice(6)));
-        expect(chunks[0].choices[0].delta).toEqual({
-            content: '{"answer":"Bonjour"}',
-            provider_metadata: metadata,
-        });
-        expect(chunks.at(-1).usage).toEqual(combined);
-        expect(text).toContain("data: [DONE]");
-        expect(requests[0].stream).toBe(false);
-        expect(requests[1].stream).toBe(true);
-    });
+    it.each([false, true])(
+        "streams JSON with combined usage even when cost arrives late: %s",
+        async (late) => {
+            const { cost, ...tokens } = lastUsage;
+            const events = [
+                {
+                    choices: [
+                        {
+                            index: 0,
+                            delta: { content: '{"answer":"Bonjour"}' },
+                        },
+                    ],
+                },
+                { choices: [], usage: late ? tokens : lastUsage },
+                ...(late ? [{ choices: [], usage: { cost } }] : []),
+                "[DONE]",
+            ];
+            const { config, requests } = upstream([
+                Response.json(completion(firstUsage)),
+                sse(events),
+            ]);
+            const result = await callVercelSearch(
+                messages,
+                { ...options, stream: true },
+                config,
+            );
+            const text = await new Response(result.responseStream).text();
+            const chunks = text
+                .split("\n")
+                .filter((l) => l.startsWith("data: ") && !l.includes("[DONE]"))
+                .map((l) => JSON.parse(l.slice(6)));
+            expect(chunks[0].choices[0].delta).toEqual({
+                content: '{"answer":"Bonjour"}',
+                provider_metadata: metadata,
+            });
+            expect(chunks.at(-1).usage).toEqual(combined);
+            expect(text).toContain("data: [DONE]");
+            expect(requests[0].stream).toBe(false);
+            expect(requests[1].stream).toBe(true);
+        },
+    );
     it.each([
         { events: [] },
         { events: [{ choices: [], usage: { cost: 0.01 } }] },
         { events: [{ choices: [], usage: { ...lastUsage, cost: undefined } }] },
-    ])("fails a stream missing final token usage or charge %j", async ({
-        events,
-    }) => {
-        const { config } = upstream([
-            Response.json(completion(firstUsage)),
-            sse([...events, "[DONE]"]),
-        ]);
-        const result = await callVercelSearch(
-            messages,
-            { ...options, stream: true },
-            config,
-        );
-        await expect(
-            new Response(result.responseStream).text(),
-        ).rejects.toThrow();
-    });
+    ])(
+        "fails a stream missing final token usage or charge %j",
+        async ({ events }) => {
+            const { config } = upstream([
+                Response.json(completion(firstUsage)),
+                sse([...events, "[DONE]"]),
+            ]);
+            const result = await callVercelSearch(
+                messages,
+                { ...options, stream: true },
+                config,
+            );
+            await expect(
+                new Response(result.responseStream).text(),
+            ).rejects.toThrow();
+        },
+    );
 });

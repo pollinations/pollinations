@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     fail,
     getOutputMode,
@@ -49,6 +50,9 @@ interface SingleKeyInfo {
     questPollenOnly?: boolean;
     rateLimitEnabled: boolean;
 }
+
+const MODELS_HELP =
+    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
 
 const formatPerms = (p: KeyInfo["permissions"]) => {
     if (!p) return "-";
@@ -162,10 +166,7 @@ const create = new Command("create")
         "secret",
     )
     .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
-    .option(
-        "--models <models...>",
-        "Restrict to model categories (text, image, video, audio, 3d, embedding, realtime); a model ID allows its whole category",
-    )
+    .option("--models <models...>", MODELS_HELP)
     .option("--budget <pollen>", "Pollen budget cap")
     .option(
         "--quest-pollen-only",
@@ -203,8 +204,15 @@ Examples:
             if (opts.earnings === true && opts.type !== "publishable") {
                 fail("--earnings requires --type publishable");
             }
-            if (opts.expiresIn !== undefined)
-                body.expiresIn = Number(opts.expiresIn);
+            if (opts.expiresIn !== undefined) {
+                body.expiresIn = numberOption(
+                    "--expires-in",
+                    opts.expiresIn,
+                    1,
+                    365 * 86400,
+                    true,
+                );
+            }
             if (opts.models) body.allowedModels = opts.models;
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);
@@ -250,6 +258,42 @@ Examples:
         }
     });
 
+const update = new Command("update")
+    .description("Change which models an API key can use")
+    .argument("<id>", "Key ID to update (see `polli keys list`)")
+    .requiredOption("--models <models...>", MODELS_HELP)
+    .addHelpText(
+        "after",
+        `
+Examples:
+  polli keys update <id> --models flux zimage
+  polli keys update <id> --models text flux
+`,
+    )
+    .action(async (id, opts) => {
+        const key = requireKey();
+
+        try {
+            const updated = await gen<KeyInfo>(`/account/keys/${id}`, {
+                apiKey: key,
+                method: "PATCH",
+                body: { allowedModels: opts.models },
+            });
+
+            printSuccess(`Key ${id} updated.`);
+            printResult({
+                id: updated.id,
+                name: updated.name,
+                permissions:
+                    getOutputMode() === "human" && updated.permissions
+                        ? formatPerms(updated.permissions)
+                        : updated.permissions,
+            });
+        } catch (err) {
+            fail("Failed to update key", err);
+        }
+    });
+
 const revoke = new Command("revoke")
     .description("Revoke an API key by ID")
     .argument("<id>", "Key ID to revoke")
@@ -269,8 +313,9 @@ const revoke = new Command("revoke")
     });
 
 export const keysCommand = new Command("keys")
-    .description("Manage API keys (create, list, revoke)")
+    .description("Manage API keys (create, list, update, revoke)")
     .addCommand(list)
     .addCommand(info)
     .addCommand(create)
+    .addCommand(update)
     .addCommand(revoke);

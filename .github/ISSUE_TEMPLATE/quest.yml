@@ -52,7 +52,7 @@ body:
         - [ ]
         - [ ]
         - [ ] Tests passing locally (`npm run test`)
-        - [ ] `npx biome check --write` run on modified files
+        - [ ] `npx @biomejs/biome check --write` run on modified files
     validations:
       required: true
 

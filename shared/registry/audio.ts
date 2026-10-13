@@ -1178,8 +1178,8 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra bills hexgrad/Kokoro-82M at $0.62 per 1M input characters.
-            completionAudioTokens: 0.62 / 1_000_000,
+            // DeepInfra bills hexgrad/Kokoro-82M at $0.99 per 1M input characters.
+            completionAudioTokens: 0.99 / 1_000_000,
         },
         title: "Kokoro 82M",
         description:

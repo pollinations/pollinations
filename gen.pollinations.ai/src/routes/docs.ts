@@ -951,6 +951,9 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 });
             }
             const response = await Scalar<Env>({
+                // Pinned: the unversioned CDN URL serves every new release, and
+                // 1.74.0 broke the sidebar our CSS and nav script target.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,

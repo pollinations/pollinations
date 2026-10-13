@@ -94,13 +94,12 @@ export default {
         const canonical = `https://pollinations.ai${page === "/" ? "" : page}`;
         const jsonLd = page ? getJsonLd(page) : null;
 
-        const htmlResponse = page
-            ? response
-            : new Response(response.body, {
-                  status: 404,
-                  statusText: "Not Found",
-                  headers: response.headers,
-              });
+        // Asset responses have immutable headers; copy before adding page metadata.
+        const htmlResponse = new Response(response.body, {
+            status: page ? response.status : 404,
+            statusText: page ? response.statusText : "Not Found",
+            headers: response.headers,
+        });
 
         const rewriter = new HTMLRewriter().on("title", {
             element: (el) => el.setInnerContent(meta.title),

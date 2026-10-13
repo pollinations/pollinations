@@ -36,6 +36,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     PollinationsConfig,
     RequestOptions,
     TextGenerateOptions,
@@ -1130,41 +1131,17 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
-    }
-
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
-     * Get all available models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
     // ============================================================================

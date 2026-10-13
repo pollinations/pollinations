@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Deliver the saved news posts, as today: Buffer posts scheduled at today's slots,
-Discord and Reddit sends.
+"""Deliver the saved news posts: Buffer posts scheduled at today's slots, Discord sends.
 
     python deliver.py schedule JOB DATE                 # Buffer: X, LinkedIn, Instagram
-    python deliver.py send     JOB DATE [--work WORK]   # Discord and Reddit; WORK for models
+    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models
     python deliver.py mark     JOB DATE POST done|failed
 
 Each post folder on the news branch gets a delivery.json with one entry per post.
@@ -16,7 +15,6 @@ waits for a person to check the channel and run mark.
 import argparse
 import base64
 import hashlib
-import io
 import json
 import os
 import sys
@@ -35,7 +33,6 @@ from common import (
     REPO,
     _github_headers,
     chunk_message,
-    deploy_reddit_post,
     get_env,
     get_post_image_urls,
     safe_truncate,
@@ -52,15 +49,14 @@ BUFFER_CHANNELS = {
 }
 BUFFER_URL = "https://api.buffer.com"
 
-# Each job's post files and where they go; Discord before Reddit, so a Reddit timeout can't delay it.
+# Each job's post files and where they go.
 POSTS = {
-    "daily": {"twitter.json": "twitter", "reddit.json": "reddit"},
+    "daily": {"twitter.json": "twitter"},
     "weekly": {
         "twitter.json": "twitter",
         "linkedin.json": "linkedin",
         "instagram.json": "instagram",
         "discord.json": "discord",
-        "reddit.json": "reddit",
     },
     "models": {"discord.json": "discord"},
 }
@@ -172,8 +168,8 @@ def deliver(folder: str, post: str, prepare, **extra) -> str:
     """
     record, sha = read_record(folder)
     state = (record.get(post) or {}).get("state")
-    if state in ("done", "started"):
-        return "already " + state
+    if state == "done":
+        return "already done"
     if state == "attempt":
         return "stuck"
     try:
@@ -292,7 +288,7 @@ def create_buffer_post(post_input: dict, token: str) -> tuple[str, dict]:
     return "attempt", error
 
 
-# ── Discord and Reddit ───────────────────────────────────────────────
+# ── Discord ──────────────────────────────────────────────────────────
 
 
 def send_discord(webhook: str, payloads: list[dict], picture: bytes | None = None):
@@ -354,32 +350,6 @@ def weekly_discord(post: dict):
     return lambda: send_discord(webhook, payloads, picture)
 
 
-def reddit_settings() -> tuple:
-    host, user, key = (
-        os.environ.get(name)
-        for name in ("REDDIT_VPS_HOST", "REDDIT_VPS_USER", "REDDIT_VPS_SSH_KEY")
-    )
-    if not (host and user and key and key.strip()):
-        raise ValueError(
-            "REDDIT_VPS_HOST, REDDIT_VPS_USER and REDDIT_VPS_SSH_KEY are needed"
-        )
-    import paramiko
-
-    try:
-        pkey = paramiko.Ed25519Key.from_private_key(
-            io.StringIO(base64.b64decode(key.strip()).decode())
-        )
-    except Exception as error:
-        raise ValueError(f"the Reddit key doesn't load: {error}") from error
-    return host, user, pkey
-
-
-def reddit_post(post: dict):
-    settings = reddit_settings()
-    # deploy_reddit_post raises only after the deploy command was sent: deliver() records attempt.
-    return lambda: ("started" if deploy_reddit_post(post, *settings) else "failed", {})
-
-
 # ── Commands ─────────────────────────────────────────────────────────
 
 
@@ -390,7 +360,7 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             f"{job} {date} is before deliver.py's start date ({START[job]}); the old senders deliver it"
         )
     folder = f"{JOB_DIRS[job]}/{date}"
-    channels = SLOTS if command == "schedule" else ("discord", "reddit")
+    channels = SLOTS if command == "schedule" else ("discord",)
     targets = {
         post: channel for post, channel in POSTS[job].items() if channel in channels
     }
@@ -448,8 +418,6 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
                 if content is None:
                     raise ValueError("the post file is missing")
                 data = json.loads(content)
-                if channel == "reddit":
-                    return reddit_post(data)
                 if channel == "discord":
                     return weekly_discord(data)
                 return buffer_post(channel, data)

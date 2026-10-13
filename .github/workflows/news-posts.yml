@@ -2,21 +2,19 @@ name: News / Posts
 
 # Writes, saves and delivers the news posts at today's times. 06:00 writes
 # yesterday's daily (on Sunday also the week, on the 1st also last month) and
-# schedules their Buffer posts; Mon–Sat 15:00 sends yesterday's Reddit post,
-# Sunday 18:00 the week's Reddit and Discord posts. Wednesday 14:00 writes the
+# schedules their Buffer posts; Sunday 18:00 sends the week's Discord post. Wednesday 14:00 writes the
 # model post, sends it to Discord and only then saves it, so a failed send never
 # moves next week's comparison. A run started by hand practises by default: it
 # shows what it would save, and saves and delivers nothing.
 on:
   schedule:
     - cron: '0 6 * * *'
-    - cron: '0 15 * * 1-6'
     - cron: '0 18 * * 0'
     - cron: '0 14 * * 3'
   workflow_dispatch:
     inputs:
       job:
-        description: 'morning = what the 06:00 run does on that day; afternoon = its 15:00 (Sunday 18:00) run'
+        description: 'morning = what the 06:00 run does on that day; afternoon = the Sunday 18:00 run (the week''s Discord post)'
         required: true
         type: choice
         options:
@@ -216,7 +214,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests paramiko
+        run: pip install requests
 
       - name: Fetch the model post
         if: ${{ env.JOB == 'models' }}
@@ -234,12 +232,9 @@ jobs:
           DISCORD_WEEKLY_WEBHOOK_URL: ${{ secrets.DISCORD_WEEKLY_WEBHOOK_URL }}
           DISCORD_MODELS_WEBHOOK_URL: ${{ secrets.DISCORD_MODELS_WEBHOOK_URL }}
           DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
-          REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
-          REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
-          REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
-        # The morning schedules the Buffer posts of what it wrote; the afternoon
-        # sends Reddit, and on Sunday the week's Discord post. Every delivery is
-        # tried, then the run fails if one did.
+        # The morning schedules the Buffer posts of what it wrote; the Sunday
+        # afternoon sends the week's Discord post. Every delivery is tried, then
+        # the run fails if one did.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
           commands=()
@@ -253,7 +248,7 @@ jobs:
               commands=("schedule daily $yesterday")
               [ "$weekday" = 7 ] && commands+=("schedule weekly $DATE") ;;
             afternoon)
-              if [ "$weekday" = 7 ]; then commands=("send weekly $DATE"); else commands=("send daily $yesterday"); fi ;;
+              [ "$weekday" = 7 ] && commands=("send weekly $DATE") ;;
             daily|weekly)
               commands=("schedule $JOB $DATE") ;;
             models)

@@ -1,0 +1,32 @@
+{
+  "pr_number": 17299,
+  "title": "fix(enter): move the event code input to the bottom of the quests page",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17299",
+  "merged_at": "2026-10-13T10:42:42Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Moved the Event code section from below the summary to the bottom of the Quests page. Links with a `?code=` parameter now scroll the prefilled input into view and focus it after quests load, so the scroll targets the section's final position.",
+    "keywords": [
+      "quests",
+      "event codes",
+      "redemption",
+      "prefilled links",
+      "navigation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17299.jpg",
+    "prompt": "On a cozy pixel art Quests page, Polli points to a lime green (#ecf874) event-code input at the bottom of a scrollable list, beside a small flower pot. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene and wears tiny reading glasses. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T10:43:54.312804+00:00",
+  "area": "Quests & rewards",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "26b52be20cd99b84cc396b9c32de3433e383a303",
+  "announcements": []
+}

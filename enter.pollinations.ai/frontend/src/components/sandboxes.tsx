@@ -163,24 +163,14 @@ function TemplatePicker({
         <ModelFormRow
             label="Template"
             note={
-                <div className="-mt-1 space-y-1 text-xs text-theme-text-muted">
-                    {error && (
-                        <p
-                            id="sandbox-template-error"
-                            className="text-intent-danger-text"
-                        >
-                            {error}
-                        </p>
-                    )}
-                    <p>
-                        Pollinations templates include polli, already signed in,
-                        or use any{" "}
-                        <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
-                            public E2B template
-                        </InlineLink>
-                        .
+                error && (
+                    <p
+                        id="sandbox-template-error"
+                        className="text-xs text-intent-danger-text"
+                    >
+                        {error}
                     </p>
-                </div>
+                )
             }
         >
             <div className="space-y-2">
@@ -622,21 +612,20 @@ export function Sandboxes() {
                     free. Unused time isn’t refunded.
                 </span>
             </p>
-            <Alert intent="info" title="Connect with SSH">
-                <div className="flex flex-col gap-2">
-                    <Text size="sm" tone="muted">
-                        Run once, then use your sandbox card’s SSH command:
-                    </Text>
+            <div className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <p>
+                        Connect with SSH: run this setup once, then use your
+                        sandbox card’s SSH command. SSH resumes paused sandboxes
+                        and adds 10 minutes at a time while connected.
+                    </p>
                     <CopyField
                         label="Copy the polli setup command"
                         value={SSH_SETUP}
                     />
-                    <Text size="sm" tone="muted">
-                        SSH resumes paused sandboxes and adds 10 minutes at a
-                        time while connected.
-                    </Text>
                 </div>
-            </Alert>
+            </div>
 
             <ConfirmationDialog
                 open={pending?.action === "kill"}
@@ -904,6 +893,22 @@ export function Sandboxes() {
                                             </dl>
                                         </Surface>
                                     )}
+                                {pending.action === "create" && (
+                                    <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
+                                        <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        <span>
+                                            Pollinations templates include the{" "}
+                                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
+                                                polli CLI
+                                            </InlineLink>
+                                            , already signed in, or use any{" "}
+                                            <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
+                                                public E2B template
+                                            </InlineLink>
+                                            .
+                                        </span>
+                                    </p>
+                                )}
                             </>
                         )}
                     </DialogBody>

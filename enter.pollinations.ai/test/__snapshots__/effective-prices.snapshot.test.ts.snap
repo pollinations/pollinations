@@ -1745,6 +1745,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000004431,
     },
   },
+  "kandinskylab/kandinsky-6.0-lite": {
+    "cost": {
+      "completionVideoSeconds": 0.032,
+    },
+    "costVariants": {
+      "start_image": {
+        "completionVideoSeconds": 0.034,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.032,
+    },
+  },
   "krea/krea-2-medium": {
     "cost": {
       "completionImageTokens": 0.03,

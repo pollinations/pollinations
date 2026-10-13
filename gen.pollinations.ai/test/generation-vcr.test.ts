@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { remapUpstreamStatus } from "@shared/error.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -3336,7 +3337,8 @@ test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
 );
 
 // 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
-test.for([429, 404])(
+// 403: Azure blocked the resource. 500 and 524: Azure failed or timed out.
+test.for([429, 404, 403, 500, 524])(
     "gpt-image-2 falls back to OpenAI direct on an Azure %i",
     async (azureStatus, { mocks }) => {
         await mocks.enable("tinybird", "gptImage");
@@ -3371,7 +3373,7 @@ test.for([429, 404])(
         expect(mocks.tinybird.state.events[0]).toMatchObject({
             modelUsed: "openai/gpt-image-2",
             modelProviderUsed: "azure",
-            responseStatus: 502,
+            responseStatus: remapUpstreamStatus(azureStatus),
             isFinal: false,
         });
         expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -3438,35 +3440,6 @@ test("gpt-image-2 does not retry a dead reference image link on OpenAI", async (
     await wait();
     expect(mocks.gptImage.state.imageHostRequests).toBe(1);
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-});
-
-test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "gptImage");
-    mocks.gptImage.state.azureStatus = 524;
-    const { key } = await createTestApiKey({
-        allowedModels: ["openai/gpt-image-2"],
-        user: { tierBalance: 100 },
-    });
-
-    const { response, wait } = await fetchWorker(
-        "/image/timeout%20probe?model=gpt-image-2&quality=low&seed=9348",
-        { headers: { authorization: `Bearer ${key}` } },
-    );
-
-    expect(response.status).toBe(502);
-    await response.arrayBuffer();
-    await wait();
-    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2",
-        modelProviderUsed: "azure",
-        responseStatus: 502,
-        isFinal: true,
-        isBilledUsage: false,
-    });
 });
 
 test("the sana alias routes to the dreamshaper pool and records its flat price", async ({

@@ -30,7 +30,6 @@ import {
     type AuthResult,
     createAndReturnImageCached,
     type ImageGenerationResult,
-    isGPTImageRefusedByAzure,
 } from "./createAndReturnImages.ts";
 import {
     createAndReturnVideo,
@@ -298,11 +297,10 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
-            // Every Azure region refused, or the reference image host is
-            // rate limiting. Timeouts and 5xx stay terminal so an image Azure
-            // may have produced is not paid for twice.
+            // Every Azure region failed, or the reference image host is rate
+            // limiting and the next target downloads it again.
             return (
-                isGPTImageRefusedByAzure(error) ||
+                isRetryableFallbackError(error) ||
                 (error instanceof UserImageError &&
                     error.upstreamStatus === 429)
             );

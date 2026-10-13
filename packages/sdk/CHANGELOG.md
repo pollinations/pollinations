@@ -32,6 +32,13 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
   File names, upload contents, and the MP3 fallback are preserved.
 
+## [5.1.0-alpha.15] - 2026-10-13
+
+### Fixed
+- Errors whose body is `{ error: "message" }`, such as `accountEarnings()`
+  failures, keep the server's message instead of a generic
+  `Request failed with status N`.
+
 ## [5.1.0-alpha.14] - 2026-10-08
 
 ### Changed

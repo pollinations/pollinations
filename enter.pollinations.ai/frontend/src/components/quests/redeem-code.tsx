@@ -7,7 +7,7 @@ import {
     Section,
 } from "@pollinations/ui";
 import { formatPollen } from "@pollinations/ui/wallet";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
 
 const REDEEM_FAILED = "Couldn’t redeem the code. Please try again.";
@@ -20,6 +20,17 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
     const [error, setError] = useState<string | null>(null);
     const [credited, setCredited] = useState<number | null>(null);
     const [redeeming, setRedeeming] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // A `?code=` link opens the page with the code filled in; bring it into view.
+    useEffect(() => {
+        if (!new URLSearchParams(window.location.search).has("code")) return;
+        inputRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+        inputRef.current?.focus({ preventScroll: true });
+    }, []);
 
     async function handleSubmit(event: FormEvent): Promise<void> {
         event.preventDefault();
@@ -58,6 +69,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
                 <FieldStack error={error} className="flex-1">
                     <Field.Input asChild>
                         <Input
+                            ref={inputRef}
                             type="text"
                             aria-label="Event code"
                             value={code}

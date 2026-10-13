@@ -400,15 +400,30 @@ if (process.argv.includes("--check")) {
     );
     process.exit(0);
 }
-assert.ok(process.env.POLLINATIONS_API_KEY && process.env.RESEARCH_OUT);
+const checkResume = process.argv.includes("--check-resume");
+assert.ok(
+    (checkResume || process.env.POLLINATIONS_API_KEY) &&
+        process.env.RESEARCH_OUT,
+);
 assert.equal(process.env.GITHUB_RUN_ATTEMPT, "1");
 const out = process.env.RESEARCH_OUT;
 await mkdir(out, { recursive: true });
-const inventory = officialCatalog(
-    await readJsonWithRetries(
-        "https://gen.pollinations.ai/models?reliability=all",
+const prior = JSON.parse(
+    await readFile(
+        join(process.env.COMPARISON_PREVIOUS, "comparison.json"),
+        "utf8",
     ),
 );
+const inventory = checkResume
+    ? prior.pricing.map((model) => ({
+          ...model,
+          supported_endpoints: [JEV_ENDPOINT],
+      }))
+    : officialCatalog(
+          await readJsonWithRetries(
+              "https://gen.pollinations.ai/models?reliability=all",
+          ),
+      );
 const candidates = inventory.filter((model) =>
     model.supported_endpoints?.includes(JEV_ENDPOINT),
 );
@@ -442,12 +457,6 @@ const report = {
     })),
     scope: "Fixed text-grounded researcher cases, both option orders. Synthetic task comparison, not a general model benchmark or proof of web coverage.",
 };
-const prior = JSON.parse(
-    await readFile(
-        join(process.env.COMPARISON_PREVIOUS, "comparison.json"),
-        "utf8",
-    ),
-);
 const priorTasks = JSON.parse(
     await readFile(
         join(process.env.COMPARISON_PREVIOUS, "labelled-suite.json"),
@@ -469,8 +478,9 @@ report.results = prior.results
         const expected = tasks[row.task].labels[row.id];
         const call = prior.calls.find(
             (call) =>
-                call.task === row.task &&
-                call.order === 0 &&
+                (call.task ?? prior.calls[call.operationId]?.task) ===
+                    row.task &&
+                (call.order ?? prior.calls[call.operationId]?.order) === 0 &&
                 call.kind === `inference:${row.model}` &&
                 call.status === "received",
         );
@@ -510,6 +520,19 @@ report.labelCorrections = [
 ];
 report.selectionPolicy =
     "Pass deployed known-answer canaries, avoid falsely accepting supported evidence at 0.9, then maximize task accuracy; Brier and cost break ties.";
+if (checkResume) {
+    assert.equal(report.results.length, (expectedPerModel * models.length) / 2);
+    assert.ok(report.calls.some((call) => call.status === "uncertain"));
+    console.log(
+        JSON.stringify({
+            restoredAnswers: report.results.length,
+            retainedAccountedPollen: budgetUsed(report),
+            labelCorrections: report.labelCorrections,
+            paidCalls: 0,
+        }),
+    );
+    process.exit(0);
+}
 const save = () =>
     writeFile(
         join(out, "comparison.json"),

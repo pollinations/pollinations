@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+// Sets this herdr pane's card on Thomas's agent dashboard (http://127.0.0.1:7320/).
+// Pass the card as JSON on stdin; every field is optional except "doing":
+//
+//   dash-status <<'EOF'
+//   {"doing": "Opened PR #17213; CI is running.",
+//    "next": "Merge once CI is green.",
+//    "waiting": [{"q": "Merge #17213 when CI is green?", "choices": ["Merge it", "I'll review first"]}],
+//    "done": ["Consent screen shows requested models as chips."]}
+//   EOF
+//
+// "waiting" holds questions only Thomas can answer; leave it empty when none.
+// Each call replaces the whole card. Writes ~/.config/herdr/dashboard/status/<pane>.json.
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+const pane = process.env.HERDR_PANE_ID;
+if (!pane) {
+    console.error("dash-status: HERDR_PANE_ID is not set (not running in a herdr pane)");
+    process.exit(1);
+}
+let card;
+try {
+    card = JSON.parse(fs.readFileSync(0, "utf8"));
+} catch (e) {
+    console.error(`dash-status: stdin is not valid JSON: ${e.message}`);
+    process.exit(1);
+}
+const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+if (!str(card.doing)) {
+    console.error('dash-status: "doing" is required');
+    process.exit(1);
+}
+const out = {
+    pane,
+    at: new Date().toISOString(),
+    doing: str(card.doing),
+    next: str(card.next),
+    waiting: (card.waiting ?? []).filter((w) => str(w?.q)).map((w) => ({ q: w.q.trim(), choices: (w.choices ?? []).filter(str) })),
+    done: (card.done ?? []).filter(str),
+};
+const dir = path.join(os.homedir(), ".config/herdr/dashboard/status");
+fs.mkdirSync(dir, { recursive: true });
+const file = path.join(dir, `${pane.replace(/[^\w:-]/g, "_")}.json`);
+fs.writeFileSync(`${file}.tmp`, JSON.stringify(out, null, 1));
+fs.renameSync(`${file}.tmp`, file);
+console.log(`dashboard card updated for ${pane}`);

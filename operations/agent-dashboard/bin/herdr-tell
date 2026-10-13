@@ -1,0 +1,29 @@
+#!/bin/zsh
+# Usage: herdr-tell [--machine <label>] <pane> <message> [--wait]
+#
+# Types a message into the agent in <pane> right away; a busy Claude or Codex
+# queues it itself. Not while the pane shows a question or permission prompt
+# (typing there would answer it): herdr refuses on permission prompts, and
+# Claude's question dialogs are spotted by their footer at the bottom of the
+# screen. Either way it retries every 10 s until that's gone. With --wait it
+# also waits for the turn to finish, so a background caller is notified when
+# the agent is done.
+m=(); [[ $1 == --machine ]] && { m=(--machine "$2"); shift 2; }
+pane=$1; msg=$2; mode=$3
+w=(); [[ $mode == --wait ]] && w=(--wait --until idle --until done --until blocked)
+
+dialog_open() {
+  herdr $m pane read "$pane" --source visible 2>/dev/null | sed 's/ *│.*//' | grep -v '^[[:space:]]*$' | tail -4 | grep -q 'Enter to select.*Esc to cancel'
+}
+
+while true; do
+  if dialog_open; then
+    echo "$pane has a question open in its terminal; retrying in 10 s"
+  else
+    out=$(herdr $m agent prompt "$pane" "$msg" $w 2>&1) && break
+    [[ $out == *agent_blocked* ]] || { print -r -- "$out"; exit 1; }
+    echo "$pane is stuck on a question or permission prompt; retrying in 10 s"
+  fi
+  sleep 10
+done
+print -r -- "$out"

@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Threads</title>
+<style>
+:root {
+  --bg: #f4f4f0; --card: #ffffff; --ink: #1b1b18; --soft: #6b6b63; --line: #e3e2dc; --lane: #f9f9f6; --code: #f0efe9;
+  --work: #c47f00; --work-bg: #fff4dc; --done: #2f7d4f; --done-bg: #e3f3e8; --idle: #9a9a92; --idle-bg: #ececea;
+  --ask: #8a3ffc; --ask-bg: #f1e9ff; --new: #0b62d6; --new-bg: #e5efff; --bad: #d23f31; --bad-bg: #fde8e5;
+  --by-dash: #2f7ae6; --by-term: #0f9d8a; --by-coord: #e29a12; --by-self: #c4c3bb;
+  --k-edit: #2f9e5b; --k-read: #3b82f6; --k-shell: #e08a00; --k-web: #a855f7; --k-agent: #ec4899; --k-other: #a1a1aa;
+  --shadow: rgba(0, 0, 0, .08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121211; --card: #1c1c1a; --ink: #ecebe5; --soft: #9d9c94; --line: #302f2b; --lane: #181816; --code: #2a2a26;
+    --work: #f0b13c; --work-bg: #3a2c10; --done: #6cc890; --done-bg: #173323; --idle: #77766f; --idle-bg: #2a2a26;
+    --ask: #b88cff; --ask-bg: #2c2140; --new: #6aa8ff; --new-bg: #172a46; --bad: #ff6b5e; --bad-bg: #3d1a16;
+    --by-dash: #5b9dff; --by-term: #2cc4b0; --by-coord: #f0b13c; --by-self: #4a4944;
+    --k-edit: #4ade80; --k-read: #60a5fa; --k-shell: #fbbf24; --k-web: #c084fc; --k-agent: #f472b6; --k-other: #71717a;
+    --shadow: rgba(0, 0, 0, .4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121211; --card: #1c1c1a; --ink: #ecebe5; --soft: #9d9c94; --line: #302f2b; --lane: #181816; --code: #2a2a26;
+  --work: #f0b13c; --work-bg: #3a2c10; --done: #6cc890; --done-bg: #173323; --idle: #77766f; --idle-bg: #2a2a26;
+  --ask: #b88cff; --ask-bg: #2c2140; --new: #6aa8ff; --new-bg: #172a46; --bad: #ff6b5e; --bad-bg: #3d1a16;
+  --by-dash: #5b9dff; --by-term: #2cc4b0; --by-coord: #f0b13c; --by-self: #4a4944;
+  --k-edit: #4ade80; --k-read: #60a5fa; --k-shell: #fbbf24; --k-web: #c084fc; --k-agent: #f472b6; --k-other: #71717a;
+  --shadow: rgba(0, 0, 0, .4);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+header { position: sticky; top: 0; z-index: 3; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+header h1 { font-size: 16px; margin: 0; }
+.fleetbar { display: flex; width: 220px; height: 10px; border-radius: 99px; overflow: hidden; background: var(--idle-bg); gap: 2px; }
+.fleetbar span { background: var(--c); min-width: 6px; }
+.counts { display: flex; gap: 8px; flex-wrap: wrap; }
+.count { padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.updated { color: var(--soft); font-size: 12px; margin-left: auto; }
+main { padding: 12px 16px 40px; max-width: 1500px; margin: 0 auto; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--soft); margin: 18px 0 8px; }
+
+/* state colours, shared by rings, nodes, the fleet bar and timeline dots */
+.st-mine, .st-busy { --c: var(--work); }
+.st-queued, .st-news { --c: var(--new); }
+.st-needs { --c: var(--ask); }
+.st-blocked { --c: var(--bad); }
+.st-idle { --c: var(--idle); }
+.fleetbar .st-mine, .fleetbar .st-busy { background-image: repeating-linear-gradient(-45deg, transparent 0 4px, rgba(255, 255, 255, .28) 4px 8px); background-size: 11.31px 11.31px; animation: stripes .8s linear infinite; }
+.fleetbar .st-busy { opacity: .6; }
+@keyframes stripes { to { background-position: 11.31px 0; } }
+
+/* status ring: spinning arc while working, breathing with a ripple when it needs you */
+.ring { --s: 40px; position: relative; display: inline-grid; place-items: center; flex: none; width: var(--s); height: var(--s); }
+.ring svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ring circle { fill: none; stroke-width: 3.4; }
+.ring .track { stroke: var(--line); }
+.ring .arc { stroke: var(--c); stroke-linecap: round; transform-box: fill-box; transform-origin: center; }
+.ring b { position: relative; font-size: calc(var(--s) * .27); font-weight: 700; color: var(--c); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ring.st-idle b { color: var(--soft); font-weight: 500; font-size: calc(var(--s) * .32); }
+.ring.st-mine .arc { stroke-dasharray: 32 69; animation: spin 1s linear infinite; filter: drop-shadow(0 0 2.5px var(--work)); }
+.ring.st-busy .arc { stroke-dasharray: 16 85; animation: spin 2.6s linear infinite; opacity: .7; }
+.ring.st-queued .arc { stroke-dasharray: 3 6; animation: spin 7s linear infinite; }
+.ring.st-needs .arc, .ring.st-news .arc, .ring.st-blocked .arc { animation: breathe 2.2s ease-in-out infinite; }
+.ring.st-needs::before, .ring.st-blocked::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--c); animation: ripple 2.2s ease-out infinite; }
+.ring.st-idle .arc { opacity: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 50% { opacity: .35; } }
+@keyframes ripple { from { transform: scale(.9); opacity: .7; } to { transform: scale(1.45); opacity: 0; } }
+
+/* fleet: one tile per thread */
+.nodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; margin: 4px 0 6px; }
+.node { all: unset; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px 8px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); text-align: center; min-width: 0; transition: transform .15s, box-shadow .15s; }
+.node:hover { transform: translateY(-2px); box-shadow: 0 6px 18px var(--shadow); }
+.node:focus-visible { outline: 2px solid var(--new); }
+.node .ring { --s: 50px; }
+.node .nname { font-size: 12px; font-weight: 600; line-height: 1.25; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.node .nsub { font-size: 11px; color: var(--c); font-weight: 500; }
+.node.st-idle { opacity: .7; }
+.node.st-idle .nsub { color: var(--soft); }
+.node.st-needs, .node.st-blocked, .node.st-news { border-color: color-mix(in srgb, var(--c) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 14%, transparent); }
+.node.coord { background: linear-gradient(160deg, var(--card), var(--new-bg)); }
+
+/* activity timeline */
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 8px; margin-top: 10px; }
+.phead { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.phead h2 { margin: 0; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--soft); align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+.legend .mk { font-size: 10px; margin-right: 4px; }
+.legend .mk.sent { color: var(--by-dash); } .legend .mk.ask { color: var(--ask); }
+.range { margin-left: auto; display: flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.range button { all: unset; cursor: pointer; font-size: 12px; padding: 2px 10px; color: var(--soft); }
+.range button.on { background: var(--ink); color: var(--bg); }
+#timeline { margin-top: 8px; min-height: 40px; }
+#timeline svg { display: block; }
+#timeline .lane { cursor: pointer; }
+#timeline .lbg { fill: transparent; }
+#timeline .lbg.odd { fill: var(--lane); }
+#timeline .lane:hover .lbg { fill: var(--code); }
+#timeline .grid { stroke: var(--line); stroke-dasharray: 2 3; }
+#timeline .tick { fill: var(--soft); font-size: 10.5px; text-anchor: middle; }
+#timeline .lname { fill: var(--ink); font-size: 12px; }
+#timeline .ldot { fill: var(--c); }
+#timeline .seg { opacity: .9; }
+#timeline .seg:hover { opacity: 1; stroke: var(--ink); stroke-width: 1; }
+#timeline .by-dash { fill: var(--by-dash); } #timeline .by-term { fill: var(--by-term); }
+#timeline .by-coord { fill: var(--by-coord); } #timeline .by-self { fill: var(--by-self); }
+#timeline .heat { fill: var(--ink); }
+#timeline .nowl { stroke: var(--bad); stroke-width: 1.5; opacity: .6; }
+#timeline .nowt { fill: var(--bad); font-size: 10.5px; font-weight: 600; text-anchor: middle; }
+#timeline .head { fill: var(--work); animation: breathe 1.2s ease-in-out infinite; }
+#timeline .mk-sent { fill: var(--by-dash); stroke: var(--card); stroke-width: 1; }
+#timeline .mk-ask { fill: var(--ask); stroke: var(--card); stroke-width: 1; animation: breathe 1.6s ease-in-out infinite; }
+#timeline .mk-news { fill: var(--new); stroke: var(--card); stroke-width: 1.5; }
+.kinds { margin-top: 6px; }
+
+/* cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } .fleetbar { width: 120px; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.needs { border-left: 4px solid var(--ask); }
+.card.working { border-left: 4px solid var(--work); }
+.card.flash { animation: flash 1.4s ease-out; }
+@keyframes flash { 0%, 35% { box-shadow: 0 0 0 4px var(--new); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.chead { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
+.dyn { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.top { display: flex; gap: 8px; align-items: center; min-height: 22px; }
+.name { font-weight: 650; font-size: 15px; }
+.meta { color: var(--soft); font-size: 11.5px; margin-left: auto; white-space: nowrap; }
+.spark { width: 90px; height: 16px; flex: none; }
+.spark rect { fill: var(--idle); }
+.spark.on rect { fill: var(--work); }
+.row { display: grid; grid-template-columns: 62px 1fr; gap: 6px; }
+.row .k { color: var(--soft); font-size: 12px; padding-top: 1px; }
+.now { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--code); border-radius: 6px; padding: 3px 7px; overflow-wrap: anywhere; }
+.sq { display: inline-block; width: 9px; height: 9px; border-radius: 2.5px; background: var(--kc); flex: none; }
+.now .sq { margin-right: 6px; vertical-align: 0; }
+.k-edit { --kc: var(--k-edit); } .k-read { --kc: var(--k-read); } .k-shell { --kc: var(--k-shell); }
+.k-web { --kc: var(--k-web); } .k-agent { --kc: var(--k-agent); } .k-other { --kc: var(--k-other); }
+.legend i[class^="k-"] { background: var(--kc); }
+.trail { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; padding-top: 3px; }
+.trail .hint { margin-left: 4px; }
+.trail:not(.on) .sq { opacity: .55; }
+.trail.on .sq:last-of-type { animation: breathe .9s ease-in-out infinite; box-shadow: 0 0 0 2px color-mix(in srgb, var(--kc) 35%, transparent); }
+
+/* where your last message is: sent, arrived, working, answered */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); padding: 2px 0 0; }
+.step { display: flex; flex-direction: column; align-items: center; gap: 1px; position: relative; font-size: 11px; color: var(--soft); text-align: center; min-width: 0; }
+.step::before { content: ""; position: absolute; top: 6px; left: -50%; right: 50%; height: 2px; background: var(--line); }
+.step:first-child::before { display: none; }
+.step.done::before, .step.bad::before { background: var(--done); }
+.step.cur::before { background: linear-gradient(90deg, var(--done), var(--work), var(--done)); background-size: 200% 100%; animation: flow 1.3s linear infinite; }
+@keyframes flow { to { background-position: -200% 0; } }
+.step .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--card); position: relative; z-index: 1; display: grid; place-items: center; font-size: 9px; line-height: 1; color: #fff; font-weight: 800; }
+.step.done .dot { background: var(--done); border-color: var(--done); }
+.step.done .dot::after { content: "✓"; }
+.step.cur .dot { border-color: var(--work) var(--work) transparent transparent; animation: spin .9s linear infinite; }
+.step.bad .dot { background: var(--bad); border-color: var(--bad); }
+.step.bad .dot::after { content: "!"; }
+.step .sl { font-weight: 600; color: var(--ink); margin-top: 2px; }
+.step.todo .sl { color: var(--soft); font-weight: 500; }
+.step.bad .ss { color: var(--bad); }
+.step.cur .ss { color: var(--work); }
+
+.asks { background: var(--ask-bg); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+.asks .q { font-size: 13px; }
+.choices { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.choice { border: 1px solid var(--ask); color: var(--ask); background: transparent; border-radius: 99px; padding: 2px 10px; font: inherit; font-size: 12px; cursor: pointer; text-align: left; }
+.choice:hover { background: var(--card); }
+.newrep { background: var(--new-bg); color: var(--new); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; }
+details { border-top: 1px dashed var(--line); padding-top: 6px; }
+summary { cursor: pointer; color: var(--soft); font-size: 12.5px; user-select: none; }
+.md { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; margin-top: 6px; max-height: 420px; overflow: auto; }
+.md code { background: var(--code); border-radius: 4px; padding: 0 4px; font-size: 12px; }
+a { color: var(--new); }
+ul.done { margin: 6px 0 0; padding-left: 18px; font-size: 13px; }
+.turn { border-left: 2px solid var(--line); padding: 2px 0 2px 8px; margin: 6px 0; }
+.turn .when { color: var(--soft); font-size: 11.5px; }
+.turn .p { font-weight: 600; font-size: 12.5px; }
+.turn .a { font-size: 12.5px; color: var(--soft); }
+.reply { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
+textarea { width: 100%; min-height: 38px; resize: vertical; font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.send { display: flex; gap: 8px; align-items: center; }
+button.go { background: var(--ink); color: var(--bg); border: 0; border-radius: 6px; padding: 5px 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.hint { color: var(--soft); font-size: 11.5px; }
+.sent { font-size: 12px; color: var(--soft); }
+.sent b { color: var(--ink); font-weight: 500; }
+.answered { opacity: .7; }
+.phase { font-size: 13.5px; font-weight: 600; border-radius: 8px; padding: 7px 10px; }
+.phase.mine { color: var(--work); background: var(--work-bg); }
+.phase.busy, .phase.idle { color: var(--soft); background: var(--idle-bg); }
+.phase.queued, .phase.news { color: var(--new); background: var(--new-bg); }
+.phase.needs { color: var(--ask); background: var(--ask-bg); }
+.phase.blocked { color: var(--bad); background: var(--bad-bg); }
+.empty { color: var(--soft); font-size: 13px; }
+#tip { position: fixed; z-index: 10; pointer-events: none; max-width: 440px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--ink); color: var(--bg); font-size: 12px; line-height: 1.4; padding: 6px 9px; border-radius: 7px; box-shadow: 0 6px 20px var(--shadow); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Agent threads</h1>
+  <div class="fleetbar" id="fleetbar"></div>
+  <div class="counts" id="counts"></div>
+  <div class="updated" id="updated">loading…</div>
+</header>
+<main>
+  <div class="nodes" id="nodes"></div>
+  <section class="panel">
+    <div class="phead">
+      <h2>Activity</h2>
+      <div class="legend">
+        <span><i style="background:var(--by-dash)"></i>your message from here</span>
+        <span><i style="background:var(--by-term)"></i>typed in its terminal</span>
+        <span><i style="background:var(--by-coord)"></i>passed on by the coordinator</span>
+        <span><i style="background:var(--by-self)"></i>carrying on by itself</span>
+        <span><b class="mk sent">▼</b>you sent</span>
+        <span><b class="mk ask">◆</b>question for you</span>
+      </div>
+      <div class="range" id="range"><button data-h="1">1h</button><button data-h="6">6h</button><button data-h="24">24h</button></div>
+    </div>
+    <div id="timeline"></div>
+    <div class="legend kinds">Steps in a turn:
+      <span><i class="k-edit"></i>edit</span><span><i class="k-read"></i>read</span><span><i class="k-shell"></i>shell</span>
+      <span><i class="k-web"></i>web</span><span><i class="k-agent"></i>agents</span><span><i class="k-other"></i>other</span>
+    </div>
+  </section>
+  <h2>Coordinator</h2><div class="grid" id="sec-coord"></div>
+  <h2>Needs you</h2><div class="grid" id="sec-needs"></div>
+  <h2>Working</h2><div class="grid" id="sec-working"></div>
+  <h2>Parked</h2><div class="grid" id="sec-parked"></div>
+</main>
+<div id="tip" hidden></div>
+<script>
+const TOKEN = "__TOKEN__";
+const cards = new Map();   // pane -> {el, ring, dyn, sentEl, ta, hint, last, sentLast}
+const nodes = new Map();   // pane -> {el, ring, name, sub}
+const open = new Set();    // keys of <details> the user opened
+const histories = new Map(); // pane -> rendered history html
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function md(s) {
+  let h = esc(s);
+  h = h.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  h = h.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+  h = h.replace(/\[([^\]\n]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  h = h.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank">$2</a>');
+  h = h.replace(/(^|[\s(])#(1\d{4})\b/g, '$1<a href="https://github.com/pollinations/pollinations/issues/$2" target="_blank">#$2</a>');
+  h = h.replace(/^#{1,4} (.*)$/gm, "<b>$1</b>");
+  return h;
+}
+const first = (s, n = 160) => { const l = String(s ?? "").split("\n").find((x) => x.trim()) ?? ""; return l.length > n ? l.slice(0, n) + "…" : l; };
+const hm = (t) => t ? new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+const day = (iso) => { if (!iso) return ""; const d = new Date(iso); return d.toDateString() === new Date().toDateString() ? hm(iso) : d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " + hm(iso); };
+const ago = (iso) => { if (!iso) return ""; const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`; };
+// compact duration for rings and labels: <1m, 12m, 3h, 2d
+const short = (ms) => { const m = Math.floor(ms / 60000); if (m < 1) return "<1m"; if (m < 60) return `${m}m`; const h = Math.floor(m / 60); return h < 48 ? `${h}h` : `${Math.floor(h / 24)}d`; };
+const since = (t) => t ? short(Date.now() - (typeof t === "number" ? t : Date.parse(t))) : "";
+const det = (key, label, body) => `<details data-k="${esc(key)}"${open.has(key) ? " open" : ""}><summary>${label}</summary>${body}</details>`;
+const setT = (el, t) => { if (el.textContent !== t) el.textContent = t; };
+const cardName = (a) => a.card?.name || a.label || a.title || a.pane;
+const glyph = (a) => a.kind === "codex" ? "◎" : "✳";
+
+const qKey = (q) => `Re "${first(q, 90)}": `;
+function answerFor(a, q) {
+  const k = qKey(q);
+  for (const s of (a.sent || []).slice().reverse()) {
+    const line = s.text.split("\n").find((l) => l.startsWith(k));
+    if (line) return { text: line.slice(k.length), status: s.status, ts: s.ts };
+  }
+  return null;
+}
+const openQs = (a) => (a.card?.waiting || []).filter((w) => !answerFor(a, w.q));
+
+// Is it busy with something you sent, waiting for you, or idle?
+// sec: section, st: state style, c: ring centre, sub: tile caption, text: banner.
+function phase(a) {
+  const last = (a.sent || []).at(-1);
+  const p = a.live?.prompt;
+  if (last && last.status !== "delivered" && !last.status.startsWith("failed"))
+    return a.status === "blocked"
+      ? { sec: "needs", st: "blocked", c: "✋", sub: "can't take your message", text: `✋ Your ${hm(last.ts)} message can't go in: the thread is stuck on a question or permission prompt in its terminal.` }
+      : { sec: "working", st: "queued", c: "…", sub: "sending your message", text: `⏳ Your ${hm(last.ts)} message is being sent…` };
+  if (last?.status.startsWith("failed")) return { sec: "needs", st: "blocked", c: "!", sub: "message didn't arrive", text: `⚠ Your ${hm(last.ts)} message didn't arrive: ${last.status.slice(0, 120)}` };
+  if (a.dialog) return { sec: "needs", st: "blocked", c: "✋", sub: "question in its terminal", text: `✋ A question is open in its terminal: "${a.dialog.q}"${a.dialog.tabs ? ` (${a.dialog.tabs.replace(/^←\s*|\s*→$/g, "")})` : ""}. Answer it there (pane ${a.pane}); messages from here wait until it's closed.` };
+  if (a.status === "blocked") return { sec: "needs", st: "blocked", c: "✋", sub: "stuck on a prompt", text: "✋ Stuck on a permission prompt in its terminal." };
+  if (a.status === "working") {
+    // who started the stretch of work it's in now (see BY)
+    const by = a.live?.segs?.at(-1)?.by ?? p?.by;
+    const t = since(a.live?.segs?.at(-1)?.s || p?.ts);
+    if (by === "dash") return { sec: "working", st: "mine", c: t, sub: "on your message", text: `⚙ Working on your ${hm(last?.ts)} message · ${ago(last?.doneAt)}` };
+    if (by === "coord") return { sec: "working", st: "mine", c: t, sub: "on your task", text: `⚙ Working on a task the coordinator passed on · ${ago(p?.ts)}` };
+    if (by === "term") return { sec: "working", st: "mine", c: t, sub: "on your request", text: `⚙ Working on what was typed in its terminal at ${hm(p?.ts)} · ${ago(p?.ts)}` };
+    return { sec: "working", st: "busy", c: t, sub: "on its own", text: `⚙ Carrying on by itself · ${ago(p?.ts)}` };
+  }
+  const qs = openQs(a).length;
+  if (qs) return { sec: "needs", st: "needs", c: qs > 1 ? `${qs}?` : "?", sub: `asked ${since(a.card.at)} ago`, text: `❓ Waiting for your answer${qs > 1 ? ` (${qs} questions)` : ""} since ${hm(a.card.at)}.` };
+  if (a.newReport) return { sec: "needs", st: "news", c: "✉", sub: `replied ${since(a.live.report.ts)} ago`, text: `📄 Replied at ${hm(a.live.report.ts)}. Read it below.` };
+  if (last?.doneAt && a.live?.answeredAt > last.doneAt) return { sec: "parked", st: "idle", c: "", sub: `answered ${since(a.live.answeredAt)} ago`, text: `✓ Answered your ${hm(last.ts)} message at ${hm(a.live.answeredAt)}. Nothing open.` };
+  return { sec: "parked", st: "idle", c: "", sub: a.live?.lastAt ? `idle ${since(a.live.lastAt)}` : "idle", text: "💤 Idle. Nothing open." };
+}
+
+// ---------- graphics ----------
+
+function makeRing() {
+  const w = document.createElement("span");
+  w.className = "ring";
+  w.innerHTML = `<svg viewBox="0 0 40 40"><circle class="track" cx="20" cy="20" r="16"/><circle class="arc" cx="20" cy="20" r="16"/></svg><b></b>`;
+  return w;
+}
+// only touches what changed, so the spinning arc keeps turning smoothly
+function setRing(w, a) {
+  const cls = `ring st-${a.ph.st}`;
+  if (w.className !== cls) w.className = cls;
+  setT(w.lastChild, a.ph.c || glyph(a));
+}
+
+// steps per 2 minutes over the last hour
+function spark(a) {
+  const mins = new Map(a.live?.mins || []);
+  const now = Math.floor(Date.now() / 60000);
+  const bins = [];
+  for (let i = 29; i >= 0; i--) bins.push((mins.get(now - 2 * i) || 0) + (mins.get(now - 2 * i - 1) || 0));
+  if (!bins.some(Boolean)) return "";
+  const max = Math.max(6, ...bins);
+  return `<svg class="spark${a.status === "working" ? " on" : ""}" viewBox="0 0 90 16" data-tip="Activity in the last hour (steps per 2 minutes)">` +
+    bins.map((n, i) => { const h = n ? Math.max(2, (n / max) * 16) : 0; return h ? `<rect x="${i * 3}" y="${16 - h}" width="2.2" height="${h}" rx=".6"/>` : ""; }).join("") + `</svg>`;
+}
+
+// Sent → Arrived → Working → Answered for your latest message
+function stepper(a) {
+  const m = (a.sent || []).at(-1);
+  if (!m) return "";
+  const L = a.live || {};
+  const done = m.doneAt ? Date.parse(m.doneAt) : 0, pt = L.prompt?.ts ? Date.parse(L.prompt.ts) : 0;
+  // a newer turn someone else started: your message is old news
+  if (done && pt > done + 120000 && L.prompt.by !== "dash") return "";
+  const onIt = a.status === "working" && L.prompt?.by === "dash" && pt >= done - 120000;
+  const answered = done && !onIt && L.answeredAt > m.doneAt && a.status !== "working";
+  if (answered && Date.now() - Date.parse(L.answeredAt) > 3600e3) return "";
+  if (!answered && done && a.status !== "working" && Date.now() - done > 6 * 3600e3) return "";
+  const sentAt = ["done", hm(m.ts)], arrived = ["done", hm(m.doneAt)];
+  let s;
+  if (m.status === "queued") s = [["cur", "sending"], ["todo"], ["todo"], ["todo"]];
+  else if (m.status.startsWith("waiting")) s = [sentAt, ["bad", "held: question open"], ["todo"], ["todo"]];
+  else if (m.status.startsWith("failed")) s = [sentAt, ["bad", "failed"], ["todo"], ["todo"]];
+  else if (answered) s = [sentAt, arrived, ["done", short(Date.parse(L.answeredAt) - done)], ["done", hm(L.answeredAt)]];
+  else if (onIt) s = [sentAt, arrived, ["cur", since(m.doneAt)], ["todo"]];
+  else if (a.status === "working") s = [sentAt, ["cur", "after its current step"], ["todo"], ["todo"]];
+  else if (Date.now() - done < 60000) s = [sentAt, arrived, ["cur", "starting"], ["todo"]];
+  else s = [sentAt, ["bad", "typed in, never started"], ["todo"], ["todo"]];
+  const names = ["Sent", "Arrived", "Working", "Answered"];
+  return `<div class="steps" data-tip="Your ${hm(m.ts)} message: ${esc(first(m.text, 140))}">` +
+    s.map(([st, sub], i) => `<div class="step ${st}"><span class="dot"></span><span class="sl">${names[i]}</span><span class="ss">${esc(sub || "")}</span></div>`).join("") + `</div>`;
+}
+
+// the kinds of the last 40 tool calls in the current (or last) turn
+function trailRow(a) {
+  const t = a.live?.trail || [];
+  if (!t.length) return "";
+  const on = a.status === "working";
+  const n = a.live.steps;
+  return `<div class="row"><span class="k">${on ? "Steps" : "Last turn"}</span><span class="trail${on ? " on" : ""}">` +
+    (n > t.length ? `<span class="hint">+${n - t.length}</span>` : "") +
+    t.map((s) => `<i class="sq k-${s.k}" data-tip="${esc(s.t)}"></i>`).join("") +
+    `<span class="hint">${n} step${n === 1 ? "" : "s"}</span></span></div>`;
+}
+
+let range = 6;
+try { range = Number(localStorage.getItem("tl-range")) || 6; } catch {}
+let tlSig = "", tlAt = 0;
+const BY = { dash: "your message from the dashboard", term: "typed in its terminal", coord: "passed on by the coordinator", self: "carrying on by itself" };
+
+// one lane per thread: bars for each stretch of work coloured by who started it,
+// a heat strip of steps per minute underneath, and markers for your messages and its questions
+function drawTimeline(order, force) {
+  const box = document.getElementById("timeline");
+  const W = box.clientWidth;
+  if (!W) return;
+  const sig = `${range}|${W}|` + order.map((a) => a.pane + a.ph.st + (a.live?.lastAt || "") + (a.sent || []).length).join(",");
+  if (!force && sig === tlSig && Date.now() - tlAt < 20000) return;
+  tlSig = sig; tlAt = Date.now();
+  const now = Date.now(), span = range * 3600e3;
+  const LW = Math.min(190, Math.round(W * 0.28)), top = 22, LH = 24, H = top + order.length * LH + 4;
+  const x0 = now - span, x1 = now + span * 0.012, PW = W - LW - 6;
+  const X = (ms) => LW + ((ms - x0) / (x1 - x0)) * PW;
+  const chars = Math.floor((LW - 24) / 6.6);
+  let g = "";
+  const step = { 1: 10, 6: 60, 24: 180 }[range] * 60000;
+  for (let t = Math.ceil(x0 / step) * step; t < now - step * 0.3; t += step)
+    g += `<line class="grid" x1="${X(t)}" x2="${X(t)}" y1="${top - 4}" y2="${H}"/><text class="tick" x="${X(t)}" y="${top - 8}">${hm(t)}</text>`;
+  const binMin = Math.max(1, Math.ceil(((range * 60) / PW) * 2.5));
+  order.forEach((a, i) => {
+    const y = top + i * LH, mid = y + LH / 2;
+    const nm = cardName(a);
+    g += `<g class="lane" data-pane="${esc(a.pane)}">`;
+    g += `<rect class="lbg${i % 2 ? " odd" : ""}" x="0" y="${y}" width="${W}" height="${LH}" rx="4"/>`;
+    g += `<circle class="ldot st-${a.ph.st}" cx="9" cy="${mid}" r="4.5"><title>${esc(a.ph.sub)}</title></circle>`;
+    g += `<text class="lname" x="20" y="${mid + 4}">${esc(nm.length > chars ? nm.slice(0, chars - 1) + "…" : nm)}</text>`;
+    const bins = new Map();
+    for (const [m, n] of a.live?.mins || []) if (m * 60000 >= x0) bins.set(Math.floor(m / binMin), (bins.get(Math.floor(m / binMin)) || 0) + n);
+    for (const [b, n] of bins) {
+      const xa = X(b * binMin * 60000), w = Math.max(1, X((b + 1) * binMin * 60000) - xa - 0.6);
+      g += `<rect class="heat" x="${xa}" y="${y + LH - 6}" width="${w}" height="3" opacity="${Math.min(0.85, 0.15 + n / (binMin * 5)).toFixed(2)}"/>`;
+    }
+    const segs = a.live?.segs || [];
+    segs.forEach((s, j) => {
+      const running = a.status === "working" && j === segs.length - 1;
+      const e = running ? now : s.e;
+      if (e < x0) return;
+      const xa = Math.max(LW, X(s.s)), xb = X(e);
+      const tip = `${hm(s.s)}–${running ? "now" : hm(e)} · ${short(e - s.s)} · ${s.n} step${s.n === 1 ? "" : "s"}\n${BY[s.by]}${s.p ? ": " + s.p : ""}`;
+      g += `<rect class="seg by-${s.by}" x="${xa}" y="${y + 5}" width="${Math.max(2.5, xb - xa)}" height="${LH - 13}" rx="3" data-tip="${esc(tip)}"/>`;
+      if (running) g += `<circle class="head" cx="${xb}" cy="${y + 5 + (LH - 13) / 2}" r="4.5"/>`;
+    });
+    for (const s of a.sent || []) {
+      const t = Date.parse(s.ts);
+      if (t < x0) continue;
+      g += `<path class="mk-sent" d="M${X(t) - 4.5},${y} h9 l-4.5,6 z" data-tip="${esc(`You sent at ${hm(t)} (${s.status})\n${first(s.text, 200)}`)}"/>`;
+    }
+    const qs = openQs(a);
+    if (qs.length && a.card?.at) {
+      const x = Math.max(LW + 6, X(Date.parse(a.card.at)));
+      g += `<path class="mk-ask" d="M${x},${mid - 6} l6,6 l-6,6 l-6,-6 z" data-tip="${esc(`Asked you at ${hm(a.card.at)}:\n` + qs.map((w) => "• " + first(w.q, 140)).join("\n"))}"/>`;
+    }
+    if (a.newReport && Date.parse(a.live.report.ts) >= x0)
+      g += `<circle class="mk-news" cx="${X(Date.parse(a.live.report.ts))}" cy="${mid}" r="5" data-tip="${esc(`New reply at ${hm(a.live.report.ts)}:\n${first(a.live.report.text, 200)}`)}"/>`;
+    g += `</g>`;
+  });
+  g += `<line class="nowl" x1="${X(now)}" x2="${X(now)}" y1="${top - 4}" y2="${H}"/><text class="nowt" x="${Math.min(X(now), W - 14)}" y="${top - 8}">now</text>`;
+  box.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+function focusCard(pane) {
+  const c = cards.get(pane);
+  if (!c) return;
+  c.el.scrollIntoView({ behavior: "smooth", block: "center" });
+  c.el.classList.remove("flash");
+  void c.el.offsetWidth;
+  c.el.classList.add("flash");
+}
+
+function nodeFor(a) {
+  let n = nodes.get(a.pane);
+  if (n) return n;
+  const el = document.createElement("button");
+  const ring = makeRing();
+  el.append(ring);
+  el.insertAdjacentHTML("beforeend", `<span class="nname"></span><span class="nsub"></span>`);
+  el.onclick = () => focusCard(a.pane);
+  n = { el, ring, name: el.children[1], sub: el.children[2] };
+  nodes.set(a.pane, n);
+  return n;
+}
+
+// ---------- cards ----------
+
+function dynHtml(a) {
+  const c = a.card || {};
+  let h = `<div class="top"><span class="name">${esc(cardName(a))}</span>${spark(a)}<span class="meta">${esc(a.pane)} · ${esc(a.kind)}</span></div>`;
+  h += `<div class="phase ${a.ph.st}">${esc(a.ph.text)}</div>`;
+  h += stepper(a);
+  if (c.at) h += `<div class="hint">Card by ${c.by === "thread" ? "the thread itself" : "the coordinator"} · ${day(c.at)}</div>`;
+  if (a.status === "working" && a.live?.now) h += `<div class="row"><span class="k">Now</span><span class="now">${a.live.now.k ? `<i class="sq k-${a.live.now.k}"></i>` : ""}${esc(first(a.live.now.text, 200))}</span></div>`;
+  if (c.doing) h += `<div class="row"><span class="k">${a.status === "working" ? "Task" : "State"}</span><span>${md(c.doing)}</span></div>`;
+  else if (a.live?.prompt) h += `<div class="row"><span class="k">Task</span><span>${esc(first(a.live.prompt.text))}</span></div>`;
+  if (c.next) h += `<div class="row"><span class="k">Next</span><span>${md(c.next)}</span></div>`;
+  h += trailRow(a);
+  if (a.newReport) h += `<div class="newrep">New report at ${hm(a.live.report.ts)}, not summarized yet: ${esc(first(a.live.report.text, 140))}</div>`;
+  if (c.waiting?.length) {
+    h += `<div class="asks">` + c.waiting.map((w) => {
+      const ans = answerFor(a, w.q);
+      if (ans) return `<div class="answered"><div class="q">${md(w.q)}</div><div class="hint">✓ You answered: <b>${esc(ans.text)}</b> · ${esc(ans.status)}</div></div>`;
+      return `<div><div class="q">${md(w.q)}</div><div class="choices">${(w.choices || []).map((ch) =>
+        `<button class="choice" data-pane="${esc(a.pane)}" data-text="${esc(qKey(w.q) + ch)}">${esc(ch)}</button>`).join("")}</div></div>`;
+    }).join("") + `</div>`;
+  }
+  if (a.live?.report) h += det(`${a.pane}:report`, `Latest report · ${day(a.live.report.ts)}`, `<div class="md">${md(a.live.report.text)}</div>`);
+  if (c.done?.length) h += det(`${a.pane}:done`, `Done so far (${c.done.length})`, `<ul class="done">${c.done.map((d) => `<li>${md(d)}</li>`).join("")}</ul>`);
+  h += det(`${a.pane}:history`, "History", histories.get(a.pane) || `<div class="hint">loading…</div>`);
+  return h;
+}
+
+function sentHtml(a) {
+  return (a.sent || []).slice(-3).reverse().map((s) =>
+    `<div class="sent">${hm(s.ts)} · ${esc(s.status)}<br><b>${s.text.split("\n").map((l) => esc(l.length > 140 ? l.slice(0, 140) + "…" : l)).join("<br>")}</b></div>`).join("");
+}
+
+function makeCard(a) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `<div class="chead"><div class="dyn"></div></div><div class="reply"><textarea placeholder="Reply or give feedback… (⌘↵ to send)"></textarea><div class="send"><button class="go">Send</button><span class="hint"></span></div><div class="sents"></div></div>`;
+  const ring = makeRing();
+  el.querySelector(".chead").prepend(ring);
+  const c = { el, ring, dyn: el.querySelector(".dyn"), sentEl: el.querySelector(".sents"), ta: el.querySelector("textarea"), hint: el.querySelector(".send .hint"), last: "" };
+  const send = async () => {
+    const text = c.ta.value.trim();
+    if (!text) return;
+    c.hint.textContent = "sending…";
+    const r = await fetch("/api/send", { method: "POST", headers: { "content-type": "application/json", "x-token": TOKEN }, body: JSON.stringify({ pane: a.pane, text }) });
+    if (r.ok) { c.ta.value = ""; c.hint.textContent = "queued"; refresh(); }
+    else c.hint.textContent = "failed: " + (await r.text());
+  };
+  el.querySelector(".go").onclick = send;
+  c.ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); });
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest(".choice");
+    if (!b) return;
+    if (!c.ta.value.split("\n").includes(b.dataset.text)) c.ta.value = c.ta.value ? c.ta.value + "\n" + b.dataset.text : b.dataset.text;
+    c.ta.focus();
+  });
+  el.addEventListener("toggle", (e) => {
+    const k = e.target.dataset?.k;
+    if (!k) return;
+    e.target.open ? open.add(k) : open.delete(k);
+    if (e.target.open && k.endsWith(":history")) loadHistory(a.pane);
+  }, true);
+  cards.set(a.pane, c);
+  return c;
+}
+
+async function loadHistory(pane) {
+  const turns = await (await fetch("/api/history?pane=" + encodeURIComponent(pane))).json();
+  const html = turns.length ? turns.slice().reverse().map((t) =>
+    `<div class="turn"><div class="when">${day(t.ts)}${t.tools ? ` · ${t.tools} steps` : ""}</div><div class="p">${esc(first(t.prompt, 200)) || "<i>(no prompt)</i>"}</div>` +
+    (t.answer ? det(`${pane}:t:${t.ts}`, esc(first(t.answer, 160)), `<div class="md">${md(t.answer)}</div>`) : "") + `</div>`).join("")
+    : `<div class="empty">No history found.</div>`;
+  histories.set(pane, `<div>${html}</div>`);
+  refresh();
+}
+
+// keeps children of box in the given order, moving only what's out of place
+function place(box, els) {
+  els.forEach((el, i) => { if (box.children[i] !== el) box.insertBefore(el, box.children[i] || null); });
+  while (box.children.length > els.length) box.lastChild.remove();
+}
+
+let busy = false, order = [];
+async function refresh() {
+  if (busy) return;
+  busy = true;
+  try {
+    const s = await (await fetch("/api/state", { cache: "no-store" })).json();
+    for (const a of s.agents) a.ph = phase(a);
+    const secs = { coord: [], needs: [], working: [], parked: [] };
+    for (const a of s.agents) secs[a.pane === s.coordinator ? "coord" : a.ph.sec].push(a);
+    const urgent = { blocked: 0, needs: 1, news: 2 };
+    secs.needs.sort((x, y) => (urgent[x.ph.st] - urgent[y.ph.st]) || ((y.card?.priority || 0) - (x.card?.priority || 0)) || (openQs(y).length - openQs(x).length));
+    const rank = { queued: 0, mine: 1, busy: 2 }; // your messages first
+    secs.working.sort((x, y) => rank[x.ph.st] - rank[y.ph.st]);
+    secs.parked.sort((x, y) => (y.live?.lastAt || "").localeCompare(x.live?.lastAt || ""));
+    order = [...secs.coord, ...secs.needs, ...secs.working, ...secs.parked];
+
+    for (const [k, list] of Object.entries(secs)) {
+      const box = document.getElementById("sec-" + k);
+      if (!list.length) { if (!box.querySelector(".empty")) box.innerHTML = `<div class="empty">Nothing here.</div>`; continue; }
+      box.querySelector(".empty")?.remove();
+      place(box, list.map((a) => {
+        const c = cards.get(a.pane) || makeCard(a);
+        c.el.classList.toggle("needs", k === "needs");
+        c.el.classList.toggle("working", k === "working");
+        setRing(c.ring, a);
+        c.ring.dataset.tip = a.ph.sub;
+        const html = dynHtml(a);
+        if (html !== c.last) { c.dyn.innerHTML = html; c.last = html; }
+        const sh = sentHtml(a);
+        if (sh !== c.sentLast) { c.sentEl.innerHTML = sh; c.sentLast = sh; }
+        return c.el;
+      }));
+    }
+    const live = new Set(s.agents.map((a) => a.pane));
+    for (const [p, c] of cards) if (!live.has(p)) { c.el.remove(); cards.delete(p); }
+    for (const [p, n] of nodes) if (!live.has(p)) nodes.delete(p);
+
+    place(document.getElementById("nodes"), order.map((a) => {
+      const n = nodeFor(a);
+      const cls = `node st-${a.ph.st}${a.pane === s.coordinator ? " coord" : ""}`;
+      if (n.el.className !== cls) n.el.className = cls;
+      setRing(n.ring, a);
+      setT(n.name, cardName(a));
+      setT(n.sub, a.ph.sub);
+      n.el.dataset.tip = a.ph.text;
+      return n.el;
+    }));
+
+    const by = {};
+    for (const a of order) by[a.ph.st] = (by[a.ph.st] || 0) + 1;
+    const labels = { blocked: "stuck", needs: "waiting for your answer", news: "with a new reply", queued: "receiving your message", mine: "working on your requests", busy: "working on their own", idle: "idle" };
+    const fb = Object.entries(labels).filter(([k]) => by[k]).map(([k, l]) => `<span class="st-${k}" style="flex:${by[k]}" data-tip="${by[k]} ${l}"></span>`).join("");
+    const bar = document.getElementById("fleetbar");
+    if (bar.innerHTML !== fb) bar.innerHTML = fb;
+
+    const col = { needs: ["--ask", "--ask-bg", "need you"], working: ["--work", "--work-bg", "working"], parked: ["--idle", "--idle-bg", "parked"] };
+    document.getElementById("counts").innerHTML = Object.entries(col).map(([k, [f, b, l]]) =>
+      `<span class="count" style="color:var(${f});background:var(${b})">${secs[k].length} ${l}</span>`).join("");
+    document.title = secs.needs.length ? `(${secs.needs.length}) Agent Threads` : "Agent Threads";
+    drawTimeline(order);
+    document.getElementById("updated").textContent = "updated " + new Date(s.at).toLocaleTimeString();
+  } catch (e) {
+    console.error(e);
+    document.getElementById("updated").textContent = "server not reachable";
+  } finally { busy = false; }
+}
+
+// range buttons, lane clicks, tooltips
+const rangeBox = document.getElementById("range");
+const markRange = () => rangeBox.querySelectorAll("button").forEach((b) => b.classList.toggle("on", Number(b.dataset.h) === range));
+markRange();
+rangeBox.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  range = Number(b.dataset.h);
+  try { localStorage.setItem("tl-range", String(range)); } catch {}
+  markRange();
+  drawTimeline(order, true);
+});
+document.getElementById("timeline").addEventListener("click", (e) => {
+  const lane = e.target.closest(".lane");
+  if (lane) focusCard(lane.dataset.pane);
+});
+window.addEventListener("resize", () => drawTimeline(order, true));
+const tip = document.getElementById("tip");
+document.addEventListener("mouseover", (e) => {
+  const t = e.target.closest?.("[data-tip]");
+  if (!t) { tip.hidden = true; return; }
+  tip.textContent = t.dataset.tip;
+  tip.hidden = false;
+});
+document.addEventListener("mousemove", (e) => {
+  if (tip.hidden) return;
+  const r = tip.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(e.clientX + 14, innerWidth - r.width - 8)) + "px";
+  tip.style.top = (e.clientY + 18 + r.height > innerHeight ? e.clientY - r.height - 10 : e.clientY + 18) + "px";
+});
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

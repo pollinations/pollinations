@@ -56,11 +56,11 @@ function successResponse(): Response {
     });
 }
 
-/** Client error, and timeouts or server errors that may already have been billed. */
-const UPSTREAM_FAILURES = [400, 408, 500, 524];
+/** The caller's own request errors: every region would reject them. */
+const CALLER_ERRORS = [400, 422];
 
-/** Bad key, quota, blocked resource, missing deployment, rate limit: Azure generated nothing. */
-const AZURE_REFUSALS = [401, 402, 403, 404, 429];
+/** Azure-side failures: bad key, quota, blocked resource, missing deployment, rate limit, timeout, server error. */
+const AZURE_FAILURES = [401, 402, 403, 404, 408, 429, 500, 503, 524];
 
 /** Azure's per-resource abuse block, which quotes content-policy wording. */
 const AZURE_RESOURCE_BLOCK = JSON.stringify({
@@ -95,9 +95,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
     });
 
-    // A second region would pay Azure for a second image, and a timeout is
-    // exactly the case where the first one may already have been generated.
-    for (const status of UPSTREAM_FAILURES) {
+    for (const status of CALLER_ERRORS) {
         it(`fails a ${status} to the caller instead of trying another region`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
@@ -115,7 +113,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         });
     }
 
-    for (const status of AZURE_REFUSALS) {
+    for (const status of AZURE_FAILURES) {
         it(`tries the other region after a ${status}`, async () => {
             const hosts: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -130,7 +128,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
             expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
         });
 
-        it(`fails a ${status} to the caller once every region refused`, async () => {
+        it(`fails a ${status} to the caller once every region failed`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
                 .mockImplementation(

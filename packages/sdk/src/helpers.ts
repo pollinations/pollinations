@@ -51,6 +51,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -339,24 +340,10 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
+ * Get available models, or only one kind of them
  */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
- * Get all available models
- */
-export async function getModels(): Promise<ModelInfo[]> {
-    return getClient().models();
+export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {
+    return getClient().models(kind);
 }
 
 // ============================================================================

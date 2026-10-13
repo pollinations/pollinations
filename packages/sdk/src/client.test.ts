@@ -10,6 +10,7 @@ import {
     generateImage,
     generateText,
     generateVideo,
+    getModels,
     resetClient,
 } from "./helpers.js";
 import type { EmbeddingInput } from "./index.js";
@@ -1725,14 +1726,29 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
 });
 
 describe("Pollinations model discovery", () => {
-    it("returns the model array from the registry endpoint", async () => {
+    it.each([
+        [undefined, "https://example.test/models"],
+        ["text", "https://example.test/text/models"],
+        ["image", "https://example.test/image/models"],
+        ["video", "https://example.test/video/models"],
+        ["audio", "https://example.test/audio/models"],
+        ["embeddings", "https://example.test/embeddings/models"],
+    ] as const)("models(%s) fetches %s", async (kind, expectedUrl) => {
         const client = newClient();
-        const models = [{ name: "openai", title: "OpenAI" }];
+        const models = [{ name: "test-model", title: "Test Model" }];
         fetchMock.mockResolvedValueOnce(makeResponse(models));
 
-        await expect(client.models()).resolves.toEqual(models);
+        await expect(client.models(kind)).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(expectedUrl);
+    });
+
+    it("getModels passes the kind through", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValueOnce(makeResponse([]));
+
+        await getModels("video");
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            "https://example.test/models",
+            "https://example.test/video/models",
         );
     });
 });

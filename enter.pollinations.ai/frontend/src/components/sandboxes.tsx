@@ -6,6 +6,7 @@ import {
     ChevronIcon,
     Chip,
     ClockIcon,
+    ConfirmationDialog,
     CopyField,
     DialogBody,
     DialogHeader,
@@ -32,6 +33,7 @@ import { useCallback, useEffect, useState } from "react";
 import { genFetch } from "../api.ts";
 import { genDocsUrl } from "../config.ts";
 import { ModelFormRow } from "./community-endpoints/model-form-row.tsx";
+import { ResourceConfirmationContent } from "./community-endpoints/resource-confirmation-content.tsx";
 import { readError } from "./community-endpoints/types.ts";
 import { LoadError, SectionContent } from "./layout/dashboard-loading.tsx";
 import { ResourceDialog } from "./layout/resource-dialog.tsx";
@@ -197,6 +199,17 @@ function TemplatePicker({
                                     ? "Other E2B template"
                                     : templateLabel(template)}
                             </span>
+                            {!custom && pricing.templates[template] && (
+                                <span className="ml-auto whitespace-nowrap text-xs font-normal">
+                                    {pollen(
+                                        perSecond(
+                                            pricing,
+                                            pricing.templates[template],
+                                        ) * 3600,
+                                    )}
+                                    /hour
+                                </span>
+                            )}
                             <ChevronIcon
                                 expanded={open}
                                 className="h-4 w-4 shrink-0"
@@ -427,15 +440,19 @@ export function Sandboxes() {
     const now = Date.now();
     const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
+    const loading = !pricing && !loadError;
+    const running = sandboxes.filter((s) => s.state === "running").length;
+    const full = !!pricing && running >= pricing.maxRunning;
+    const spends = pending && pending.action !== "kill";
+    const canConfirm =
+        !!pending &&
+        (pending.action === "kill" ||
+            (!durationError &&
+                (pending.action !== "create" ||
+                    (!!template.trim() && !templateError && !full))));
 
     function confirm() {
-        if (
-            !pending ||
-            (pending.action === "create" &&
-                (!template.trim() || templateError || full)) ||
-            (pending.action !== "kill" && durationError)
-        )
-            return;
+        if (!pending || !canConfirm) return;
         if (pending.action === "create") {
             // The same request as `polli sandbox create`.
             void run("new", () =>
@@ -468,27 +485,29 @@ export function Sandboxes() {
         );
     }
 
-    const loading = !pricing && !loadError;
-    const running = sandboxes.filter((s) => s.state === "running").length;
-    const full = !!pricing && running >= pricing.maxRunning;
-    const spends = pending && pending.action !== "kill";
-
     const createAction = (
         <Button
             type="button"
-            className="dashboard-add-button"
+            className={busyId === "new" ? "gap-2" : "dashboard-add-button"}
             aria-label={
                 busyId === "new" ? "Creating sandbox…" : "Create sandbox"
             }
-            title="Create sandbox"
+            title={busyId === "new" ? "Creating sandbox…" : "Create sandbox"}
+            aria-busy={busyId === "new"}
             aria-haspopup="dialog"
             disabled={full || busyId === "new"}
             onClick={() =>
                 setPending({ action: "create", template: "pollinations" })
             }
         >
-            <PlusIcon className="h-4 w-4" />
-            <TerminalIcon className="h-5 w-5" />
+            {busyId === "new" ? (
+                "Creating…"
+            ) : (
+                <>
+                    <PlusIcon className="h-4 w-4" />
+                    <TerminalIcon className="h-5 w-5" />
+                </>
+            )}
         </Button>
     );
 
@@ -618,10 +637,28 @@ export function Sandboxes() {
                 </div>
             </Alert>
 
+            <ConfirmationDialog
+                open={pending?.action === "kill"}
+                title="Kill sandbox?"
+                confirmLabel="Kill"
+                onConfirm={confirm}
+                onCancel={() => setPending(null)}
+            >
+                <ResourceConfirmationContent
+                    resource={
+                        pending?.action === "kill"
+                            ? pending.sandbox.sandboxID
+                            : ""
+                    }
+                >
+                    This deletes the sandbox and its files and can’t be undone.
+                    Unused time isn’t refunded.
+                </ResourceConfirmationContent>
+            </ConfirmationDialog>
             <ResourceDialog
-                open={!!pending}
+                open={!!spends}
                 onOpenChange={(open) => !open && setPending(null)}
-                size={spends ? "lg" : "md"}
+                size="lg"
             >
                 <form
                     className="flex min-h-0 flex-1 flex-col"
@@ -644,35 +681,25 @@ export function Sandboxes() {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    intent={spends ? "commit" : "danger"}
+                                    intent="commit"
                                     icon={
                                         pending?.action === "create" ? (
                                             <TerminalIcon />
-                                        ) : spends ? (
-                                            <PlayIcon />
                                         ) : (
-                                            <TrashIcon />
+                                            <PlayIcon />
                                         )
                                     }
-                                    disabled={
-                                        (!!spends && !!durationError) ||
-                                        (pending?.action === "create" &&
-                                            (!template.trim() ||
-                                                !!templateError ||
-                                                full))
-                                    }
+                                    disabled={!canConfirm}
                                 >
                                     {!pending
                                         ? ""
                                         : pending.action === "create"
                                           ? "Create sandbox"
-                                          : pending.action === "kill"
-                                            ? "Kill"
-                                            : pending.action === "limit"
-                                              ? "Set time limit"
-                                              : addTo
-                                                ? "Add time"
-                                                : "Resume"}
+                                          : pending.action === "limit"
+                                            ? "Set time limit"
+                                            : addTo
+                                              ? "Add time"
+                                              : "Resume"}
                                 </Button>
                             </>
                         }
@@ -684,13 +711,11 @@ export function Sandboxes() {
                                     ? ""
                                     : pending.action === "create"
                                       ? "Create sandbox"
-                                      : pending.action === "kill"
-                                        ? "Kill sandbox?"
-                                        : pending.action === "limit"
-                                          ? "Set a time limit"
-                                          : addTo
-                                            ? "Add time"
-                                            : "Resume sandbox"
+                                      : pending.action === "limit"
+                                        ? "Set a time limit"
+                                        : addTo
+                                          ? "Add time"
+                                          : "Resume sandbox"
                             }
                             description={
                                 pending?.action === "create" && (
@@ -706,7 +731,7 @@ export function Sandboxes() {
                                 )
                             }
                         />
-                        {pending && pending.action !== "create" && (
+                        {spends && pending.action !== "create" && (
                             <Surface>
                                 <dl className="grid gap-2 text-sm sm:grid-cols-[11rem_minmax(0,1fr)]">
                                     <dt className="font-semibold text-theme-text-strong">
@@ -725,7 +750,7 @@ export function Sandboxes() {
                                                 pending.sandbox.state ===
                                                 "running"
                                                     ? "success"
-                                                    : "info"
+                                                    : "neutral"
                                             }
                                         >
                                             {pending.sandbox.state === "running"
@@ -756,12 +781,6 @@ export function Sandboxes() {
                                     )}
                                 </dl>
                             </Surface>
-                        )}
-                        {pending?.action === "kill" && (
-                            <p className="text-sm leading-relaxed text-theme-text-base">
-                                This deletes the sandbox and its files and can’t
-                                be undone. Unused time isn’t refunded.
-                            </p>
                         )}
                         {spends && pricing && (
                             <>
@@ -871,11 +890,8 @@ export function Sandboxes() {
                                         </div>
                                     </ModelFormRow>
                                 </Surface>
-                                {!durationError &&
-                                    !templateError &&
-                                    pending.action === "create" &&
-                                    template.trim() &&
-                                    !pricing.templates[template.trim()] && (
+                                {pending.action === "create" &&
+                                    pending.custom && (
                                         <Surface>
                                             <dl className="grid gap-1 text-sm sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-2">
                                                 <dt className="text-theme-text-muted">

@@ -204,6 +204,32 @@ test("gen gets the VM's request: bridge key, sana, at least a megapixel, the see
     );
 });
 
+test("gen gets the caller's IP and referrer: the query, then the headers", async () => {
+    const gen = recordingGen();
+    const ip = nextIp();
+    const site = { referer: "https://site.example/page" };
+    await call("/prompt/caller-query?referrer=my-app", {
+        ip,
+        headers: site,
+        testEnv: gen.testEnv,
+    });
+    await call("/prompt/caller-header", {
+        headers: site,
+        testEnv: gen.testEnv,
+    });
+    await call("/prompt/caller-odd?referrer=caf%C3%A9", {
+        testEnv: gen.testEnv,
+    });
+
+    const [query, header, odd] = gen.requests;
+    expect(query.headers.get("cf-connecting-ip")).toBe(ip);
+    expect(query.headers.get("referer")).toBe("my-app");
+    expect(header.headers.get("referer")).toBe("https://site.example/page");
+    // A value no header can carry is left out, and the generation still runs
+    expect(odd.headers.get("referer")).toBeNull();
+    expect(odd.headers.get("authorization")).toBe("Bearer test-gen-key");
+});
+
 test("a blocked model gets the VM's 500 JSON before the free limit, with no gen call", async () => {
     const gen = recordingGen();
     const ip = nextIp();

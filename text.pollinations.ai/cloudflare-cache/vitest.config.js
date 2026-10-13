@@ -85,7 +85,12 @@ async function gen(req, res) {
         return res.end();
     }
     if (prompt === "gen:echo") {
-        const echo = { authorization: req.headers.authorization, body };
+        const echo = {
+            authorization: req.headers.authorization,
+            ip: req.headers["cf-connecting-ip"],
+            referer: req.headers.referer,
+            body,
+        };
         const message = { role: "assistant", content: JSON.stringify(echo) };
         return send(res, 200, { ...COMPLETION, choices: [{ message }] });
     }

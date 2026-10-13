@@ -140,6 +140,41 @@ test("gen gets the VM's request: bridge key, gpt-oss, system prompt, 1500 tokens
     });
 });
 
+test("gen gets the caller's IP and referrer: the query, then the body, then the headers", async () => {
+    const ip = nextIp();
+    const site = { referer: "https://site.example/page" };
+    const echoOf = async (path, init) =>
+        JSON.parse((await call(path, init)).text);
+
+    const query = await echoOf("/gen:echo?seed=101&referrer=my-app", {
+        ip,
+        headers: site,
+    });
+    expect(query).toMatchObject({ ip, referer: "my-app" });
+    const post = await echoOf("/v1/chat/completions", {
+        method: "POST",
+        headers: { ...JSON_BODY, ...site },
+        body: JSON.stringify({
+            referrer: "body-app",
+            messages: [{ role: "user", content: "gen:echo" }],
+        }),
+    });
+    expect(JSON.parse(post.choices[0].message.content).referer).toBe(
+        "body-app",
+    );
+    const header = await echoOf("/gen:echo?seed=102", { headers: site });
+    expect(header.referer).toBe("https://site.example/page");
+    // A value no header can carry is left out, and the generation still runs
+    for (const [seed, referrer] of [
+        [103, "caf%C3%A9"],
+        [104, "x".repeat(2049)],
+    ]) {
+        const odd = await echoOf(`/gen:echo?seed=${seed}&referrer=${referrer}`);
+        expect(odd.referer, String(seed)).toBeUndefined();
+        expect(odd.authorization).toBe("Bearer test-gen-key");
+    }
+});
+
 test("POST /openai and /v1/chat/completions answer OpenAI JSON with a pllns_ id", async () => {
     for (const path of ["/openai", "/v1/chat/completions"]) {
         const { response, text } = await call(path, {

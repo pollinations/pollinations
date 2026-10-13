@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
@@ -424,9 +425,14 @@ export async function generate(c: Context, url: URL, route: string) {
 
 /**
  * callGenSana's request: the prompt and seed as given, the size scaled up to
- * at least a megapixel
+ * at least a megapixel. gen records the caller from `caller`.
  */
-async function callGenSana(env: Env, prompt: string, params: ImageParams) {
+async function callGenSana(
+    env: Env,
+    prompt: string,
+    params: ImageParams,
+    caller: Record<string, string>,
+) {
     const { width, height, seed, safe } = params;
     let [scaledWidth, scaledHeight] = [width, height];
     if (width * height < TARGET_PIXEL_COUNT) {
@@ -443,6 +449,7 @@ async function callGenSana(env: Env, prompt: string, params: ImageParams) {
     url.searchParams.set("private", "true");
     const response = await env.GEN.fetch(url, {
         headers: {
+            ...caller,
             Accept: "image/jpeg",
             Authorization: `Bearer ${env.GEN_API_KEY}`,
         },
@@ -477,7 +484,17 @@ async function generateImage(job: Job, paid: boolean, ended: () => void) {
         timing.push(step("Start prompt normalization and translation"));
         const prompt = sanitizeString(job.originalPrompt as string);
         timing.push(step("End prompt normalization and translation"));
-        const image = await callGenSana(env, prompt, safeParams);
+        const { searchParams } = job.url;
+        const referrer =
+            searchParams.get("referrer") ||
+            searchParams.get("referer") ||
+            job.referrer;
+        const image = await callGenSana(
+            env,
+            prompt,
+            safeParams,
+            callerHeaders(job.request, referrer),
+        );
         // Loaded here so that cold starts serving cache hits skip photon
         const { brand } = await import("./brand.ts");
         const jpeg = brand(image, safeParams.width, safeParams.height, {

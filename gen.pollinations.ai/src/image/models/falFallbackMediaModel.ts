@@ -1,9 +1,14 @@
 import { UpstreamError } from "@shared/error.ts";
-import { FalError, runFalJob } from "../../model3d/models/falClient.ts";
+import {
+    FalError,
+    runFalJob,
+    runFalJobResponse,
+} from "../../model3d/models/falClient.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     resolveGrokAspectRatio,
@@ -57,10 +62,15 @@ async function download(file: FalFile | undefined, label: string) {
     };
 }
 
+// A supported aspectRatio wins unless the caller set width or height.
 function aspectRatio(
     params: ImageParams,
     ratios: readonly string[] = RATIOS,
 ): string {
+    const requested = params.aspectRatio;
+    if (!params.dimensionsExplicit && requested && ratios.includes(requested)) {
+        return requested;
+    }
     return closestRatioLogSpace(params.width, params.height, ratios);
 }
 
@@ -145,6 +155,8 @@ type FalVideoConfig = {
     ) => Record<string, unknown>;
     // fal bills a video that xAI's moderation rejects after generating it.
     billsRejectedVideos?: boolean;
+    // Charge fal's reported units at the endpoint's live price.
+    providerPriced?: boolean;
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
@@ -206,6 +218,27 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             camera_fixed: false,
         }),
     },
+    // Renders 5 seconds only; image-to-video follows the source ratio.
+    "kandinskylab/kandinsky-6.0-lite": {
+        textEndpoint: "fal-ai/kandinsky6-lite/text-to-video",
+        imageEndpoint: "fal-ai/kandinsky6-lite/image-to-video",
+        duration: () => 5,
+        input: (params, _duration, hasImage) => ({
+            generate_audio: params.audio ?? true,
+            ...(!hasImage
+                ? {
+                      aspect_ratio:
+                          !params.dimensionsExplicit &&
+                          WAN_RATIOS.some(
+                              (ratio) => ratio === params.aspectRatio,
+                          )
+                              ? params.aspectRatio
+                              : aspectRatio(params, WAN_RATIOS),
+                  }
+                : {}),
+        }),
+        providerPriced: true,
+    },
 };
 
 export async function callFalFallbackVideo(
@@ -225,9 +258,14 @@ export async function callFalFallbackVideo(
         completionVideoSeconds: duration,
     };
     try {
-        const result = await runFalJob(
+        const endpoint = image ? config.imageEndpoint : config.textEndpoint;
+        const apiKey = requireFalKey();
+        const unitCost = config.providerPriced
+            ? await falUnitPrice(endpoint, apiKey)
+            : undefined;
+        const response = await runFalJobResponse(
             {
-                endpoint: image ? config.imageEndpoint : config.textEndpoint,
+                endpoint,
                 input: withSeed(
                     {
                         prompt,
@@ -237,8 +275,13 @@ export async function callFalFallbackVideo(
                     params,
                 ),
             },
-            requireFalKey(),
+            apiKey,
         );
+        const providerBilling =
+            unitCost === undefined
+                ? undefined
+                : { units: falBillableUnits(response), unitCost };
+        const result = (await response.json()) as Record<string, unknown>;
         const { buffer, mimeType } = await download(
             result.video as FalFile | undefined,
             params.model,
@@ -247,7 +290,11 @@ export async function callFalFallbackVideo(
             buffer,
             mimeType: mimeType || "video/mp4",
             durationSeconds: duration,
-            trackingData: { actualModel: params.model, usage },
+            trackingData: {
+                actualModel: params.model,
+                usage,
+                ...(providerBilling ? { providerBilling } : {}),
+            },
         };
     } catch (error) {
         if (config.billsRejectedVideos && isRejectedAfterGeneration(error)) {

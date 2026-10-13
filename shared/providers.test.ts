@@ -35,26 +35,24 @@ describe("API provider identities", () => {
         expect(resolveProvider(name)?.id).toBe(expected);
     });
 
-    it.each([
-        "",
-        "new-api-provider",
-        "open-router",
-        "aws-bedrok",
-    ])("leaves the unregistered name %s unresolved", (name) =>
-        expect(resolveProvider(name)?.id).toBeUndefined());
+    it.each(["", "new-api-provider", "open-router", "aws-bedrok"])(
+        "leaves the unregistered name %s unresolved",
+        (name) => expect(resolveProvider(name)?.id).toBeUndefined(),
+    );
 
     // getModels includes every bundled modality and hidden fallback route.
     // MCP billing and arbitrary community endpoints are outside this contract.
-    it.each(
-        getModels(),
-    )("maps model route %s to a registered vendor", (model) => {
-        const { provider } = getRegistryModelDefinition(model);
-        expect(provider).toBe(provider.trim().toLowerCase());
-        expect(
-            resolveProvider(provider)?.id,
-            `${model}: register provider "${provider}" in operations/economics/provider-registry.json`,
-        ).toBe(provider);
-    });
+    it.each(getModels())(
+        "maps model route %s to a registered vendor",
+        (model) => {
+            const { provider } = getRegistryModelDefinition(model);
+            expect(provider).toBe(provider.trim().toLowerCase());
+            expect(
+                resolveProvider(provider)?.id,
+                `${model}: register provider "${provider}" in operations/economics/provider-registry.json`,
+            ).toBe(provider);
+        },
+    );
 });
 
 // These are routing expectations, not another provider catalog. Compare the
@@ -88,40 +86,43 @@ describe("text API provider attribution", () => {
         );
     });
 
-    it.each(
-        availableModels.map((model) => [model.name, model] as const),
-    )("%s attributes cost to its configured API supplier", (name, model) => {
-        const vendor = resolveProvider(
-            getRegistryModelDefinition(resolveModelName(name)).provider,
-        )?.id;
-        expect(vendor).toBeDefined();
-        const config = model.config();
-        const protocol = String(config.provider);
-        const endpoints = [
-            config.directEndpoint,
-            config["custom-host"],
-            config.responsesEndpoint,
-        ].filter((value): value is string => typeof value === "string");
+    it.each(availableModels.map((model) => [model.name, model] as const))(
+        "%s attributes cost to its configured API supplier",
+        (name, model) => {
+            const vendor = resolveProvider(
+                getRegistryModelDefinition(resolveModelName(name)).provider,
+            )?.id;
+            expect(vendor).toBeDefined();
+            const config = model.config();
+            const protocol = String(config.provider);
+            const endpoints = [
+                config.directEndpoint,
+                config["custom-host"],
+                config.responsesEndpoint,
+            ].filter((value): value is string => typeof value === "string");
 
-        // "openai" is a wire protocol for several unrelated suppliers.
-        // OpenRouter's nested provider.only selects its own upstream; we
-        // still buy that request from OpenRouter, not that nested provider.
-        if (protocol !== "openai") {
-            expect(PROTOCOL_VENDORS[protocol], protocol).toBeDefined();
-            expect(vendor).toBe(PROTOCOL_VENDORS[protocol]);
-        } else {
-            expect(endpoints.length).toBeGreaterThan(0);
-        }
-        for (const endpoint of endpoints) {
-            const host = new URL(endpoint).hostname;
-            const expectedVendor = host.endsWith(".azure.com")
-                ? "azure"
-                : HOST_VENDORS[host];
-            expect(
-                expectedVendor,
-                `Unreviewed API host: ${host}`,
-            ).toBeDefined();
-            expect(vendor, `${name} connects to ${host}`).toBe(expectedVendor);
-        }
-    });
+            // "openai" is a wire protocol for several unrelated suppliers.
+            // OpenRouter's nested provider.only selects its own upstream; we
+            // still buy that request from OpenRouter, not that nested provider.
+            if (protocol !== "openai") {
+                expect(PROTOCOL_VENDORS[protocol], protocol).toBeDefined();
+                expect(vendor).toBe(PROTOCOL_VENDORS[protocol]);
+            } else {
+                expect(endpoints.length).toBeGreaterThan(0);
+            }
+            for (const endpoint of endpoints) {
+                const host = new URL(endpoint).hostname;
+                const expectedVendor = host.endsWith(".azure.com")
+                    ? "azure"
+                    : HOST_VENDORS[host];
+                expect(
+                    expectedVendor,
+                    `Unreviewed API host: ${host}`,
+                ).toBeDefined();
+                expect(vendor, `${name} connects to ${host}`).toBe(
+                    expectedVendor,
+                );
+            }
+        },
+    );
 });

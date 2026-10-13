@@ -54,39 +54,38 @@ describe("client gateway metadata", () => {
             ])?.[0].message?.provider_metadata,
         ).toBeUndefined();
     });
-    it.each([
-        "\n",
-        "\r\n",
-        "\r",
-    ])("keeps billing metadata, usage, content and terminal marker across split %j frames", async (newline) => {
-        const text =
-            `id: first\nevent: message\ndata: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼", provider_metadata: metadata } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]`.replaceAll(
-                "\n",
-                newline,
-            );
-        const bytes = encoder.encode(text);
-        for (let split = 1; split < bytes.length; split++) {
-            const source = new ReadableStream<Uint8Array<ArrayBuffer>>({
-                start(c) {
-                    c.enqueue(bytes.slice(0, split));
-                    c.enqueue(bytes.slice(split));
-                    c.close();
-                },
-            });
-            const [client, tracking] = requireChatStreamUsage(source).tee();
-            const [publicText, billingText] = await Promise.all([
-                new Response(publicChatStream(client)).text(),
-                new Response(tracking).text(),
-            ]);
-            expect(billingText).toBe(text);
-            expect(publicText).not.toContain('"gateway"');
-            expect(publicText).toContain('"other"');
-            expect(publicText).toContain("🌼");
-            expect(publicText).toContain("id: first\nevent: message\n");
-            expect(publicText).toContain("data: [DONE]\n\n");
-            expect(publicText).toContain(JSON.stringify(usage));
-        }
-    });
+    it.each(["\n", "\r\n", "\r"])(
+        "keeps billing metadata, usage, content and terminal marker across split %j frames",
+        async (newline) => {
+            const text =
+                `id: first\nevent: message\ndata: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼", provider_metadata: metadata } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]`.replaceAll(
+                    "\n",
+                    newline,
+                );
+            const bytes = encoder.encode(text);
+            for (let split = 1; split < bytes.length; split++) {
+                const source = new ReadableStream<Uint8Array<ArrayBuffer>>({
+                    start(c) {
+                        c.enqueue(bytes.slice(0, split));
+                        c.enqueue(bytes.slice(split));
+                        c.close();
+                    },
+                });
+                const [client, tracking] = requireChatStreamUsage(source).tee();
+                const [publicText, billingText] = await Promise.all([
+                    new Response(publicChatStream(client)).text(),
+                    new Response(tracking).text(),
+                ]);
+                expect(billingText).toBe(text);
+                expect(publicText).not.toContain('"gateway"');
+                expect(publicText).toContain('"other"');
+                expect(publicText).toContain("🌼");
+                expect(publicText).toContain("id: first\nevent: message\n");
+                expect(publicText).toContain("data: [DONE]\n\n");
+                expect(publicText).toContain(JSON.stringify(usage));
+            }
+        },
+    );
     it("preserves retry instructions on sanitized Vercel streams", async () => {
         const body = new Response("retry: 1500\n\ndata: [DONE]\n\n").body;
         if (!body) throw new Error("Test response has no body");

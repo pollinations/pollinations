@@ -45,7 +45,7 @@ import {
     getVideoModelIds,
 } from "@shared/registry/image.ts";
 import { ModelInfoSchema } from "@shared/registry/model-info.ts";
-import { keyAllowsCategory } from "@shared/registry/model-permissions.ts";
+import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
 import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
@@ -263,7 +263,7 @@ function filterEntriesByPermissions(
     hasPaidBalance?: boolean,
 ): GenerationModelEntry[] {
     return entries.filter((entry) => {
-        if (!keyAllowsCategory(allowedModels, entry.definition.category)) {
+        if (!keyAllowsModel(allowedModels, entry.id, entry.definition)) {
             return false;
         }
         if (entry.info.paid_only && hasPaidBalance === false) return false;

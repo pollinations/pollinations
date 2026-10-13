@@ -188,52 +188,56 @@ describe("Alibaba media adapters", () => {
         ).rejects.toThrow("invalid output video duration");
         expect(fetch).toHaveBeenCalledTimes(1);
     });
-    it.each([
-        "wan2.7-image",
-        "qwen-image-3.0-pro",
-    ] as const)("maps %s edit inputs and provider image usage", async (model) => {
-        const fetch = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(
-                Response.json({
-                    output: {
-                        task_id: "job",
-                        task_status: "SUCCEEDED",
-                        choices: [
-                            { message: { content: [{ image: outputUrl }] } },
-                        ],
-                    },
-                    usage: {
-                        image_count: 1,
-                        output_image_count: 1,
-                        input_image_count: 1,
-                    },
-                }),
-            )
-            .mockResolvedValueOnce(
-                new Response("image", {
-                    headers: { "content-type": "image/png" },
-                }),
+    it.each(["wan2.7-image", "qwen-image-3.0-pro"] as const)(
+        "maps %s edit inputs and provider image usage",
+        async (model) => {
+            const fetch = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValueOnce(
+                    Response.json({
+                        output: {
+                            task_id: "job",
+                            task_status: "SUCCEEDED",
+                            choices: [
+                                {
+                                    message: {
+                                        content: [{ image: outputUrl }],
+                                    },
+                                },
+                            ],
+                        },
+                        usage: {
+                            image_count: 1,
+                            output_image_count: 1,
+                            input_image_count: 1,
+                        },
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    new Response("image", {
+                        headers: { "content-type": "image/png" },
+                    }),
+                );
+            const result = await callAlibabaImage(
+                "Edit",
+                { ...params, image: ["data:image/png;base64,AQID"] },
+                model,
             );
-        const result = await callAlibabaImage(
-            "Edit",
-            { ...params, image: ["data:image/png;base64,AQID"] },
-            model,
-        );
-        const request = JSON.parse(fetch.mock.calls[0][1]?.body as string);
-        expect(request.input.messages[0].content).toEqual([
-            { image: "data:image/png;base64,AQID" },
-            { text: "Edit" },
-        ]);
-        expect(result.trackingData?.usage).toEqual(
-            model === "wan2.7-image"
-                ? { completionImageTokens: 1 }
-                : { completionImageTokens: 1, promptImageTokens: 1 },
-        );
-        expect(
-            new Headers(fetch.mock.calls[0][1]?.headers).get(
-                "X-DashScope-Async",
-            ),
-        ).toBe(model === "wan2.7-image" ? null : "enable");
-    });
+            const request = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+            expect(request.input.messages[0].content).toEqual([
+                { image: "data:image/png;base64,AQID" },
+                { text: "Edit" },
+            ]);
+            expect(result.trackingData?.usage).toEqual(
+                model === "wan2.7-image"
+                    ? { completionImageTokens: 1 }
+                    : { completionImageTokens: 1, promptImageTokens: 1 },
+            );
+            expect(
+                new Headers(fetch.mock.calls[0][1]?.headers).get(
+                    "X-DashScope-Async",
+                ),
+            ).toBe(model === "wan2.7-image" ? null : "enable");
+        },
+    );
 });

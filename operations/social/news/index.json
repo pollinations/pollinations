@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T06:12:36.197584+00:00",
+  "generated_at": "2026-10-13T12:50:39.396688+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6102,6 +6102,70 @@
             "promptCachedTokens": "0.000000004115",
             "promptImageTokens": "0.000000041145",
             "promptVideoTokens": "0.000000041145",
+            "completionTextTokens": "0.00000131875"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17183:z-ai/glm-5.3-flash",
+      "model_id": "z-ai/glm-5.3-flash",
+      "title": "Z.ai GLM-5.3 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17183,
+      "url": "https://github.com/pollinations/pollinations/pull/17183",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000029",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000003",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17183:z-ai/glm-5.3-flashx",
+      "model_id": "z-ai/glm-5.3-flashx",
+      "title": "Z.ai GLM-5.3 FlashX",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17183,
+      "url": "https://github.com/pollinations/pollinations/pull/17183",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.00000131875"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.00000009495",
             "completionTextTokens": "0.00000131875"
           }
         }

@@ -1,8 +1,7 @@
-"""Keyless public-source diagnostic; failed reads are results, not acceptance."""
+"""Keyless diagnosis of public forum denial pages; these are not research evidence."""
 import importlib.util
 import json
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -10,34 +9,26 @@ root = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("fetch_adapter", root / "operations/model-management/fetch.py")
 adapter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(adapter)
-adapter.HTTP_DEADLINE_SECONDS = 25
-adapter.MAX_HTTP_ATTEMPTS = 2
 out = Path(os.environ["SOURCE_PROBE_OUT"])
 out.mkdir(parents=True, exist_ok=True)
-os.environ["FETCH_CACHE_DIR"] = str(out / "pages")
-targets = [
+results = []
+for url in [
     "https://www.reddit.com/r/LocalLLaMA/top/?t=week",
     "https://old.reddit.com/r/LocalLLaMA/top/?t=week",
-    "https://www.reddit.com/r/LocalLLaMA/top/.rss?t=week",
-    "https://old.reddit.com/r/LocalLLaMA/top/.rss?t=week",
-    "https://www.reddit.com/r/LocalLLaMA/top.json?t=week&limit=25",
-    "https://www.reddit.com/r/StableDiffusion/top/.rss?t=week",
     "https://www.quora.com/What-is-the-prognosis-for-OpenAIs-high-performing-GPT-5-6-Sol-model-in-light-of-its-price-compared-to-Chinese-models-like-Moonshots-Kimi-K3",
-    "https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=20",
-    "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=20",
-]
-browser_targets = [targets[0], targets[1], targets[6], "https://quotes.toscrape.com/js/"]
-results = []
-for mode, url in [("http", url) for url in targets] + [("dynamic", url) for url in browser_targets]:
-    started = time.monotonic()
+]:
+    deadline = time.monotonic() + 25
+    result = {"url": url, "paidCalls": 0}
     try:
-        result = (adapter._read_browser if mode == "dynamic" else adapter._read_http)(url, 18000, include_links=True)
-    except adapter.ValidationError as error:
-        result = {"status": "unavailable", "url": url, "error": str(error)}
-    result["requestedMode"] = mode
-    result["elapsedSeconds"] = round(time.monotonic() - started, 2)
-    result["requestedUrl"] = url
+        target = adapter._validate_url(url, deadline)
+        response = adapter._pinned_fetch(target, deadline, raw=True)
+        parser = adapter._TextParser()
+        parser.feed(response.body.decode("utf-8", errors="replace"))
+        parser.close()
+        text = parser.text()
+        result.update({"httpStatus": response.status, "diagnosticText": text[:450]})
+    except Exception as error:
+        result["error"] = type(error).__name__
     results.append(result)
-    (out / "results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({key: result.get(key) for key in ["requestedMode", "requestedUrl", "url", "status", "method", "error", "elapsedSeconds"]}), flush=True)
-print(json.dumps({"successful": sum(row["status"] == "fetched" for row in results), "attempted": len(results), "paidCalls": 0}), flush=True)
+    print(json.dumps(result), flush=True)
+(out / "denial-diagnostics.json").write_text(json.dumps(results, indent=2), encoding="utf-8")

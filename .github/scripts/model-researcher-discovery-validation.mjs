@@ -45,7 +45,7 @@ const jev = inventory.find((row) => row.name === JEV_MODEL),
 const rates = (
     await readJsonWithRetries("https://gen.pollinations.ai/mcp")
 ).data.find((row) => row.id === "exa").pricing.rates;
-const baseline = 2.07654579986;
+const baseline = 2.13728930974;
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 12 * 60000).toISOString(),
@@ -161,7 +161,7 @@ const read = async (args) => {
             const fetched = await exaSource(
                 await mcp(
                     "web_fetch_exa",
-                    { urls: [url], maxCharacters: 4000 },
+                    { urls: [url], maxCharacters: args.maxCharacters ?? 4000 },
                     "page",
                 ),
             );
@@ -266,6 +266,12 @@ const services = {
 };
 try {
     const prepared = await prepareResearch({}, services);
+    report.prepared = {
+        actions: prepared.actions,
+        gaps: prepared.gaps,
+        extraction: prepared.extraction,
+        requiredEvidencePending: prepared.requiredEvidencePending,
+    };
     await save();
     assert.equal(
         prepared.requiredEvidencePending,

@@ -1,0 +1,612 @@
+{
+  "pr_number": 17354,
+  "title": "fix: price direct-Vertex Gemini at cost",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17354",
+  "merged_at": "2026-10-13T20:20:00Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Removed the former OpenRouter fee from direct-Vertex pricing for Gemini 3 Flash Preview, Gemini 3.7 Flash, Gemini 3.8 Flash, Gemini 3.5 Flash Lite, Gemini 3.1 Pro Preview, Nano Banana, Nano Banana 2, Nano Banana 2 Lite and Nano Banana Pro. Their input and output token rates, along with applicable search rates per 1,000 queries and cache-storage rates per 1 million tokens written for one hour, decrease by about 5.2% to match Google's list cost. Gemini 3.1 Pro Preview's long-context rates also decrease. OpenRouter fallback requests still cost 5.5% more than users are charged at the revised rates. Local Vertex tests confirmed that wallet debits matched provider cost for Gemini 3.5 Flash Lite and Nano Banana 2 Lite.",
+    "keywords": [
+      "Gemini",
+      "Vertex",
+      "Nano Banana",
+      "pricing",
+      "Pollen",
+      "fallback"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17354.jpg",
+    "prompt": "In a cozy pixel art garden workshop, Polli adjusts nine little Gemini and Nano Banana price tags beside a glowing Vertex terminal while code-plants grow from prominent lime green (#ecf874) pots. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny accountant glasses, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T20:21:52.947415+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "6ce0ba93e02c3ff009fa135f09a2790c8366cb7c",
+  "announcements": [
+    {
+      "id": "pr-17354:google/gemini-2.5-flash-image",
+      "model_id": "google/gemini-2.5-flash-image",
+      "title": "Nano Banana",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptImageTokens": "0.0000003165",
+            "completionTextTokens": "0.0000026375",
+            "completionImageTokens": "0.00003165"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptImageTokens": "0.0000003",
+            "completionTextTokens": "0.0000025",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3-flash-preview",
+      "model_id": "google/gemini-3-flash-preview",
+      "title": "Gemini 3 Flash Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptCachedTokens": "0.00000005275",
+            "promptCacheWriteTokens": "0.0000005275",
+            "promptAudioTokens": "0.000001055",
+            "promptImageTokens": "0.0000005275",
+            "promptVideoTokens": "0.0000005275",
+            "completionTextTokens": "0.000003165"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptCachedTokens": "0.00000005",
+            "promptCacheWriteTokens": "0.0000005",
+            "promptAudioTokens": "0.000001",
+            "promptImageTokens": "0.0000005",
+            "promptVideoTokens": "0.0000005",
+            "completionTextTokens": "0.000003"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3-pro-image",
+      "model_id": "google/gemini-3-pro-image",
+      "title": "Nano Banana Pro",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptImageTokens": "0.00000211",
+            "completionTextTokens": "0.00001266",
+            "completionImageTokens": "0.0001266"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000012",
+            "completionImageTokens": "0.00012"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.1-flash-image",
+      "model_id": "google/gemini-3.1-flash-image",
+      "title": "Nano Banana 2",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005275",
+            "promptImageTokens": "0.0000005275",
+            "completionTextTokens": "0.000003165",
+            "completionImageTokens": "0.0000633"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000005",
+            "promptImageTokens": "0.0000005",
+            "completionTextTokens": "0.000003",
+            "completionImageTokens": "0.00006"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.1-flash-lite-image",
+      "model_id": "google/gemini-3.1-flash-lite-image",
+      "title": "Nano Banana 2 Lite",
+      "action": "UPDATE",
+      "category": "image",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000026375",
+            "promptImageTokens": "0.00000026375",
+            "completionTextTokens": "0.0000015825",
+            "completionImageTokens": "0.00003165"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000025",
+            "promptImageTokens": "0.00000025",
+            "completionTextTokens": "0.0000015",
+            "completionImageTokens": "0.00003"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.1-pro-preview",
+      "model_id": "google/gemini-3.1-pro-preview",
+      "title": "Gemini 3.1 Pro Preview",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000211",
+            "promptCachedTokens": "0.000000211",
+            "promptCacheWriteTokens": "0.00000211",
+            "promptAudioTokens": "0.00000211",
+            "promptImageTokens": "0.00000211",
+            "promptVideoTokens": "0.00000211",
+            "completionTextTokens": "0.00001266"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000002",
+            "promptAudioTokens": "0.000002",
+            "promptImageTokens": "0.000002",
+            "promptVideoTokens": "0.000002",
+            "completionTextTokens": "0.000012"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "4.7475",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "4.5",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "long_context",
+              "label": "Long context (200K+)",
+              "description": "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.00000422",
+                "promptCachedTokens": "0.000000422",
+                "promptCacheWriteTokens": "0.00000422",
+                "promptAudioTokens": "0.00000422",
+                "promptImageTokens": "0.00000211",
+                "promptVideoTokens": "0.00000422",
+                "completionTextTokens": "0.00001899"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (200K+)",
+              "description": "At least 200,000 prompt tokens; text, cached, cache-write, audio, video, and output rates increase while image input stays at its separately advertised base price.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000004",
+                "promptCachedTokens": "0.0000004",
+                "promptCacheWriteTokens": "0.000004",
+                "promptAudioTokens": "0.000004",
+                "promptImageTokens": "0.000002",
+                "promptVideoTokens": "0.000004",
+                "completionTextTokens": "0.000018"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.5-flash-lite",
+      "model_id": "google/gemini-3.5-flash-lite",
+      "title": "Gemini 3.5 Flash Lite",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptCachedTokens": "0.00000003165",
+            "promptCacheWriteTokens": "0.0000003165",
+            "promptAudioTokens": "0.0000003165",
+            "promptImageTokens": "0.0000003165",
+            "promptVideoTokens": "0.0000003165",
+            "completionTextTokens": "0.0000026375"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000003",
+            "promptCacheWriteTokens": "0.0000003",
+            "promptAudioTokens": "0.0000003",
+            "promptImageTokens": "0.0000003",
+            "promptVideoTokens": "0.0000003",
+            "completionTextTokens": "0.0000025"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1.055",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "1",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.7-flash",
+      "model_id": "google/gemini-3.7-flash",
+      "title": "Gemini 3.7 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000079125",
+            "promptCachedTokens": "0.000000079125",
+            "promptCacheWriteTokens": "0.00000079125",
+            "promptAudioTokens": "0.00000079125",
+            "promptImageTokens": "0.00000079125",
+            "promptVideoTokens": "0.00000079125",
+            "completionTextTokens": "0.00000395625"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.00000075",
+            "promptAudioTokens": "0.00000075",
+            "promptImageTokens": "0.00000075",
+            "promptVideoTokens": "0.00000075",
+            "completionTextTokens": "0.00000375"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5275",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17354:google/gemini-3.8-flash",
+      "model_id": "google/gemini-3.8-flash",
+      "title": "Gemini 3.8 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000079125",
+            "promptCachedTokens": "0.000000079125",
+            "promptCacheWriteTokens": "0.00000079125",
+            "promptAudioTokens": "0.00000079125",
+            "promptImageTokens": "0.00000079125",
+            "promptVideoTokens": "0.00000079125",
+            "completionTextTokens": "0.00000395625"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "promptCachedTokens": "0.000000075",
+            "promptCacheWriteTokens": "0.00000075",
+            "promptAudioTokens": "0.00000075",
+            "promptImageTokens": "0.00000075",
+            "promptVideoTokens": "0.00000075",
+            "completionTextTokens": "0.00000375"
+          }
+        },
+        "pricing_adjustments": {
+          "before": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14.77",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5275",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ],
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            },
+            {
+              "name": "google.vertex.cache_storage.v1",
+              "kind": "cache_storage",
+              "price": "0.5",
+              "currency": "pollen",
+              "label": "Cache storage",
+              "quantity": 1000000,
+              "unit": "tokens written",
+              "suffix": "1 hour"
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "6ce0ba93e02c3ff009fa135f09a2790c8366cb7c^1",
+    "after_ref": "6ce0ba93e02c3ff009fa135f09a2790c8366cb7c"
+  }
+}

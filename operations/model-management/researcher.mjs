@@ -11,7 +11,7 @@ import {
     calibratedAudit,
     calibrationState,
 } from "./calibration.mjs";
-import { extractDiscoveries } from "./discovery.mjs";
+import { discoveryLeadReason, extractDiscoveries } from "./discovery.mjs";
 import {
     buildClaimAudit,
     buildProviderComparison,
@@ -2260,7 +2260,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
     if (!models)
         for (const [index, discovery] of next.discoveries.entries()) {
             delete discovery.semanticAudit;
-            const claim = `The source identifies ${discovery.name} as a ${discovery.kind} and explicitly supports this reason for discovery: ${discovery.reason}`;
+            const claim = `The source identifies ${discovery.name} as a ${discovery.kind}${discovery.reason === discoveryLeadReason(discovery.kind) ? " research lead." : ` and explicitly supports this reason for discovery: ${discovery.reason}`}`;
             if (claim.length > 1000) {
                 rejected.add(discovery);
                 next.gaps.push(
@@ -2320,11 +2320,16 @@ export async function auditEvidence(proposal, models, sources, decision) {
                                 (source) => source.id === claim.sourceId,
                             )?.text ?? "";
                         const position = norm(text).indexOf(norm(claim.quote));
+                        if (position < 0) return "";
                         const surrounding = norm(text).slice(
                             Math.max(0, position - 400),
                             position + norm(claim.quote).length + 700,
                         );
-                        if (kind !== "availability") return surrounding;
+                        if (kind !== "availability")
+                            return `${norm(claim.quote)}\n${surrounding}`.slice(
+                                0,
+                                Math.floor(1550 / claims.length),
+                            );
                         const api = [
                             ...norm(text).matchAll(
                                 /\b(?:serverless API|OpenAI-compatible HTTP API|supports the OpenAI|curl)\b/gi,
@@ -2342,15 +2347,26 @@ export async function auditEvidence(proposal, models, sources, decision) {
                                     route.upstreamModel,
                                 ),
                             );
-                        return api
-                            ? `${surrounding.slice(0, 400)}\n${api}`
-                            : surrounding;
+                        // Keep each literal quote first; navigation and earlier sources must not crowd it out.
+                        return `${norm(claim.quote)}\n${api ?? surrounding}`.slice(
+                            0,
+                            Math.floor(1550 / claims.length),
+                        );
                     })
+                    .filter(Boolean)
                     .join("\n---\n")
                     .slice(0, 1600);
+                if (!excerpt) {
+                    if (kind === "availability") route.available = null;
+                    else route.capabilitiesMatch = null;
+                    row.gaps.push(
+                        `${route.provider} ${kind}: literal quote missing from supplied provider evidence`,
+                    );
+                    continue;
+                }
                 const claim =
                     kind === "availability"
-                        ? `The provider documentation explicitly offers exact checkpoint ${row.name} (provider model ${route.upstreamModel}) through ${route.provider} as a hosted or serverless inference API, rather than only downloadable weights or a dedicated deployment. Runtime availability and account access remain unknown.`
+                        ? `${route.provider} offers exact checkpoint ${row.name} (provider model ${route.upstreamModel}) through a hosted or serverless inference API.`
                         : `The excerpt explicitly supports the quoted capability statements for the exact ${route.upstreamModel} checkpoint, rather than a different model: ${claims.map(({ quote }) => quote).join("; ")}`;
                 const id = `${row.name}:${index}:${kind}`;
                 if (claim.length > 1000) {
@@ -2383,7 +2399,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
                 ) {
                     rejected.add(discovery);
                     next.gaps.push(
-                        `${discovery.name}: discovery evidence ${grade.relation}${grade.calibrationAccepted === false ? "; known-answer calibration rejected this audit" : ""}`,
+                        `${discovery.name}: discovery evidence ${grade.relation}${grade.calibrationPassed === false ? "; known-answer calibration rejected this audit" : ""}`,
                     );
                 }
                 continue;
@@ -2407,7 +2423,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
                 route.available = contradicted ? false : null;
             else route.capabilitiesMatch = contradicted ? false : null;
             row.gaps.push(
-                `${route.provider} ${kind}: semantic evidence ${grade.relation}${grade.calibrationAccepted === false ? "; known-answer calibration rejected this audit" : ""}; account/runtime verification remains required`,
+                `${route.provider} ${kind}: semantic evidence ${grade.relation}${grade.calibrationPassed === false ? "; known-answer calibration rejected this audit" : ""}; account/runtime verification remains required`,
             );
         }
     }

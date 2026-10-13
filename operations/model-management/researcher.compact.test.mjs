@@ -7,6 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import timers from "node:timers/promises";
 import { EVIDENCE_CHECKS } from "./calibration.mjs";
+import { discoveryLeadReason } from "./discovery.mjs";
 import { JEV_ENDPOINT, JEV_MODEL, validateClaimAudit } from "./jev.mjs";
 import { DISCOVERY_MODES, officialCandidates } from "./prepare.mjs";
 import { PROVIDER_INDEX_URL } from "./provider-index.mjs";
@@ -627,6 +628,89 @@ test("availability audit includes distant exact-checkpoint API examples instead 
     });
     assert.equal(calls, 1);
 });
+test("discovery identity audits do not require sources to prove the researcher's investigative intent", async () => {
+    const reason = discoveryLeadReason("model");
+    const source = {
+        id: "discovery-source",
+        status: "fetched",
+        url: "https://models.example/new-model",
+        text: "publisher/new-model is a text generation model with downloadable weights.",
+    };
+    const proposal = {
+        discoveries: [
+            {
+                name: "publisher/new-model",
+                kind: "model",
+                sourceIds: [source.id],
+                reason,
+            },
+        ],
+        gaps: [],
+    };
+    const result = await auditEvidence(
+        proposal,
+        null,
+        [source],
+        async (payload) => {
+            assert.ok(!payload.state.items[0].claim.includes(reason));
+            assert.match(
+                payload.state.items[0].claim,
+                /publisher\/new-model.*model/,
+            );
+            return validateClaimAudit(payload, nativeResponse(payload));
+        },
+    );
+    assert.equal(result.discoveries.length, 1);
+    assert.equal(result.discoveries[0].reason, reason);
+});
+
+test("availability audits retain literal quotes from every supplied source", async () => {
+    const model = { name: "qwen/qwen3-embedding-8b", category: "embedding" };
+    const quotes = [
+        "Qwen3-Embedding-8B is available through serverless inference.",
+        "DeepInfra serves Qwen3-Embedding-8B through an OpenAI-compatible hosted API.",
+    ];
+    const sources = quotes.map((quote, index) => ({
+        id: `api-${index}`,
+        status: "fetched",
+        url: `https://deepinfra.com/Qwen/Qwen3-Embedding-8B/${index ? "details" : "api"}`,
+        text: `Qwen3-Embedding-8B\n${"navigation ".repeat(250)}\n${quote}\n${"details ".repeat(250)}\nOpenAI-compatible HTTP API curl https://api.deepinfra.com/v1/openai/embeddings model Qwen/Qwen3-Embedding-8B`,
+    }));
+    const initial = assessGroup(
+        officialCandidates([model], sources),
+        sources,
+        new Map(),
+        [model],
+        [model],
+        false,
+    );
+    assert.equal(
+        initial.models[0].routes[0].claims.filter(
+            ({ kind }) => kind === "availability",
+        ).length,
+        2,
+    );
+    let calls = 0;
+    await auditEvidence(initial, [model], sources, async (payload) => {
+        calls++;
+        const item = payload.state.items.find(({ id }) =>
+            id.endsWith(":availability"),
+        );
+        for (const quote of quotes)
+            assert.ok(
+                item.excerpt.includes(quote),
+                "A known literal API quote was lost",
+            );
+        assert.ok(item.excerpt.length <= 1600);
+        assert.ok(
+            !item.claim.includes("account access"),
+            "Account access is outside the document-offering claim",
+        );
+        return validateClaimAudit(payload, nativeResponse(payload));
+    });
+    assert.equal(calls, 1);
+});
+
 test("compact source windows preserve distant model evidence and exact table fragments", () => {
     const text =
         "navigation\n".repeat(550) +

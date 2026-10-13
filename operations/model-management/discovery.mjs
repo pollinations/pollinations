@@ -4,6 +4,9 @@ import {
 } from "./jev.mjs";
 import { exactModelIdentity } from "./price-evidence.mjs";
 
+export const discoveryLeadReason = (kind) =>
+    `Source identifies a ${kind} research lead; popularity, release recency, pricing and API availability require verification.`;
+
 export function discoveryCandidates(sources, inventory) {
     const candidates = [],
         seen = new Set();
@@ -161,7 +164,7 @@ export async function extractDiscoveries(sources, inventory, decision) {
             extracted.discoveries.push({
                 name: selected.name,
                 kind: selected.choice,
-                reason: `Source identifies a ${selected.choice} research lead; popularity, release recency, pricing and API availability require verification.`,
+                reason: discoveryLeadReason(selected.choice),
                 sourceIds: [selected.sourceId],
                 extraction: {
                     id: selected.id,

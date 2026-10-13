@@ -2334,14 +2334,14 @@ const TEXT_BASE_SERVICES = {
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
-        paidOnly: false,
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Free during the launch promotion on direct Novita and both
-            // gateway routes. Paid pricing belongs in a separate cutover PR.
-            promptTextTokens: perMillion(0),
-            promptCachedTokens: perMillion(0),
-            completionTextTokens: perMillion(0),
+            // Novita's paid rate since its free launch promotion ended
+            // (2026-10-13 16:00 UTC).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.06),
+            completionTextTokens: perMillion(0.9),
         },
         title: "Ling 3.1 Flash",
         description:

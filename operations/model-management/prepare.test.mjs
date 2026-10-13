@@ -1185,6 +1185,10 @@ test("blocked required community seeds fallback only after HTTP and remain insid
             args.url.includes("/top/") && args.mode === "http"
                 ? "unavailable"
                 : "fetched",
+        url:
+            args.mode === "dynamic"
+                ? args.url.replace("/top/", "/canonical/")
+                : args.url,
         links: [
             {
                 url: `https://publisher.example.org/${f.reads.length}`,

@@ -389,6 +389,18 @@ export async function prepareResearch(task, services) {
     let reasoningAction = null;
     let extraction = null;
     let requiredEvidencePending = !names.length;
+    const readsFor = (url) =>
+        sources.filter(
+            (source) =>
+                source.url === url ||
+                actions.some(
+                    (action) =>
+                        action.tool === "fetch" &&
+                        action.url === url &&
+                        action.sourceId === source.id &&
+                        source.id !== undefined,
+                ),
+        );
     const evidence = () => {
         // Persist observed URLs only; fetched page text is never restored as evidence.
         if (!names.length)
@@ -405,17 +417,7 @@ export async function prepareResearch(task, services) {
             }
         unselectedLeads.splice(0, unselectedLeads.length);
         for (const lead of candidates.values()) {
-            const reads = sources.filter(
-                (source) =>
-                    source.url === lead.url ||
-                    actions.some(
-                        (action) =>
-                            action.tool === "fetch" &&
-                            action.url === lead.url &&
-                            action.sourceId === source.id &&
-                            source.id !== undefined,
-                    ),
-            );
+            const reads = readsFor(lead.url);
             if (reads.some((source) => source.status === "fetched")) continue;
             const attempted =
                 lead.attempted === true ||
@@ -1063,10 +1065,8 @@ export async function prepareResearch(task, services) {
                         .filter(({ status }) => status === "unavailable")
                         .filter(
                             ({ url }) =>
-                                !sources.some(
-                                    (source) =>
-                                        source.url === url &&
-                                        source.status === "fetched",
+                                !readsFor(url).some(
+                                    (source) => source.status === "fetched",
                                 ),
                         )
                         .sort(

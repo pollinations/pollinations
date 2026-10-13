@@ -626,9 +626,10 @@ export function Sandboxes() {
                 <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <p>
-                        Connect with SSH: run this setup once, then use your
-                        sandbox card’s SSH command. SSH resumes paused sandboxes
-                        and adds 10 minutes at a time while connected.
+                        Connect to your sandbox with SSH: run this once, then
+                        use the ssh command on its card. A paused sandbox
+                        resumes, and it keeps running while you’re connected,
+                        paid 10 minutes at a time.
                     </p>
                     <CopyField
                         label="Copy the polli setup command"

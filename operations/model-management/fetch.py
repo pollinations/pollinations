@@ -303,7 +303,7 @@ def _read_http(url, max_characters, focus=None, include_links=False):
             if (page["requestedUrl"] != requested or type(page["extractionVersion"]) is not int
                     or page.get("method", "scrapling-http") != "scrapling-http"
                     or page["extractionVersion"] not in (1, EXTRACTION_VERSION) or not isinstance(text, str) or not text.strip()
-                    or len(text.encode("utf-8")) > MAX_RESPONSE_BYTES
+                    or len(text.encode("utf-8")) > MAX_RESPONSE_BYTES or _blocked_content("", text)
                     or page["pageDigest"] != hashlib.sha256(text.encode("utf-8")).hexdigest()
                     or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")):
                 raise ValueError("invalid cache entry")
@@ -375,8 +375,8 @@ def _read_http(url, max_characters, focus=None, include_links=False):
 def _blocked_content(content, text):
     # Reject interstitials, not documentation that merely discusses authentication.
     title = re.search(r"<title[^>]*>(.*?)</title>", content, re.I | re.S)
-    title = " ".join(title.group(1).split()).lower() if title else ""
-    if title in {"just a moment...", "attention required! | cloudflare", "verify you are human", "access denied"}:
+    title = " ".join((title.group(1) if title else text.splitlines()[0] if text else "").split()).lower().replace("…", "...")
+    if title in {"just a moment...", "attention required! | cloudflare", "verify you are human", "access denied", "verifying your browser...", "making sure you're not a bot!"}:
         return True
     if re.search(r"<(?:input|form)\b[^>]*(?:type\s*=\s*['\"]password['\"]|action\s*=\s*['\"][^'\"]*(?:login|signin))", content, re.I) and len(text) < 2_000:
         return True
@@ -490,7 +490,7 @@ def _read_browser(url, max_characters, focus=None, include_links=False):
             text = page["text"]
             if (page["requestedUrl"] != requested or page["method"] != method
                     or type(page["extractionVersion"]) is not int or page["extractionVersion"] != EXTRACTION_VERSION
-                    or not isinstance(text, str) or not text.strip() or len(text.encode()) > MAX_RESPONSE_BYTES
+                    or not isinstance(text, str) or not text.strip() or len(text.encode()) > MAX_RESPONSE_BYTES or _blocked_content("", text)
                     or page["pageDigest"] != hashlib.sha256(text.encode()).hexdigest()
                     or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")
                     or not isinstance(page["links"], list) or len(page["links"]) > 12):

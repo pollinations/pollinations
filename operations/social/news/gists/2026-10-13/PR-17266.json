@@ -1,0 +1,38 @@
+{
+  "pr_number": 17266,
+  "title": "feat(sandboxes): run every timeout in 10-minute steps",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17266",
+  "merged_at": "2026-10-13T07:38:21Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Sandbox timeouts now use 10-minute leases: timeouts of 10 minutes or less are paid up front, while longer timeouts keep the sandbox until its requested end, whether that is an hour or a month. Previously, timeouts within E2B's 24-hour run were paid up front and only longer runs were kept in hourly steps. Gen's renewal cron runs every 5 minutes instead of 10 and renews whenever doing so adds time. The dashboard replaces its 24-hour explanation with the timeout end and hourly Pollen cost, shows each template's hourly price, and reads per-vCPU and per-GB prices from `/pricing`. Running “Until I stop it” sandboxes gain “Set time limit,” which sets a timeout from now through `/timeout` and can shorten the keep. Sandbox list responses and `GET /sandboxes/:id` now use `endAt` for the requested timeout end rather than the paid-ahead lease end; `keptUntil` and `/pricing`'s `maxRunSeconds` are removed. Polli drops its 24-hour cutoff and reads that same `endAt`; the sandbox docs are updated. Kept sandboxes have at most 10 minutes paid ahead: if two cron ticks are missed, an auto-pausing sandbox can pause until the next tick resumes it. The docs specify `lifecycle: { onTimeout: \"pause\" }` for E2B SDK users.",
+    "keywords": [
+      "sandboxes",
+      "timeouts",
+      "E2B",
+      "Pollen",
+      "dashboard",
+      "polli-cli",
+      "lease renewal"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17266.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli adjusts a little clock beside a lime green (#ecf874) sandbox planter while a CRT monitor shows neat 10-minute steps and small code-plants grow nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny watchmaker's cap and is small-to-medium sized within the scene, sharing the frame with the clock and planter—never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream backdrop and subtle CRT glow."
+  },
+  "generated_at": "2026-10-13T07:40:53.355828+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "b5e10349792222416971b3bd66a8247f9e498433",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "b5e10349792222416971b3bd66a8247f9e498433^1",
+    "after_ref": "b5e10349792222416971b3bd66a8247f9e498433"
+  }
+}

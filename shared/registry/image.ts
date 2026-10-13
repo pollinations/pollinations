@@ -305,7 +305,7 @@ const IMAGE_BASE_SERVICES = {
         // Vertex AI model page.
         // Provider retires this route on 2027-03-15.
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
@@ -327,7 +327,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.5), // per 1M tokens
@@ -349,7 +349,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
             promptTextTokens: perMillion(0.25), // per 1M tokens
@@ -393,7 +393,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -1372,6 +1372,26 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "qwen/qwen-image-2.1-turbo": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-10-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore (International) list price (2026-10-13): $0.016 per
+        // output image, whatever the reference image count.
+        cost: {
+            completionImageTokens: 0.016, // per image
+        },
+        title: "Qwen Image 2.1 Turbo",
+        description:
+            "Low-cost generation and editing with up to 10 reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "alibaba",
@@ -2225,6 +2245,54 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Video keyframe slots: start only.
         minDuration: 1,
         maxDuration: 10,
+        defaultDuration: 5,
+    },
+    "kandinskylab/kandinsky-6.0-lite": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Kandinsky Lab",
+        category: "video",
+        addedDate: new Date("2026-10-11").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal.ai list prices for one 5-second 480p video at the default 10
+        // steps. Charges use fal's reported units at its live endpoint price.
+        cost: {
+            completionVideoSeconds: 0.032, // $0.16 per video
+        },
+        ...defineCostVariants(
+            {
+                start_image: {
+                    completionVideoSeconds: 0.034, // $0.17 per video
+                },
+            },
+            ({ input }) => (input?.hasImage ? "start_image" : undefined),
+            {
+                start_image: {
+                    label: "From a start image",
+                    description:
+                        "Applies when the request includes a start image.",
+                },
+            },
+            "From text",
+            [
+                {
+                    key: "input",
+                    label: "Input",
+                    values: { "": "Text", start_image: "Image" },
+                },
+            ],
+        ),
+        resolutions: ["480p"],
+        title: "Kandinsky 6.0 Lite",
+        description:
+            "Fast 5-second video from text or start image with synchronized audio at 480p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1,
+        minDuration: 5,
+        maxDuration: 5,
         defaultDuration: 5,
     },
 } as const satisfies Record<string, ModelDefinition>;

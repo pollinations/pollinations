@@ -27,3 +27,22 @@ class InspectAppTest(unittest.TestCase):
         self.assertEqual([call.args[0] for call in fetch.call_args_list], [APP_URL, APP_URL + "app.js"])
         self.assertEqual(evidence["scripts_checked"], 1)
         self.assertIn("gen.pollinations.ai", evidence["pollinations_markers"])
+
+
+class InspectRepoTest(unittest.TestCase):
+    def test_folder_url_reads_that_folders_readme_and_code(self):
+        readme_url = "https://raw.githubusercontent.com/o/mono/main/apps/npc/README.md"
+        responses = {
+            "/repos/o/mono": {},
+            "/repos/o/mono/readme/apps/npc": {"download_url": readme_url},
+            "/search/code?q=pollinations+repo:o/mono+path:apps/npc": {"total_count": 3},
+        }
+        badge = "[![Made with pollinations.ai](https://x/badge-made-with.svg)](https://pollinations.ai)"
+        with (
+            patch.object(review_agent, "github_api", side_effect=lambda path: responses[path]),
+            patch.object(review_agent.session, "get", return_value=type("R", (), {"text": badge})()),
+        ):
+            evidence = review_agent.inspect_repo("https://github.com/o/mono/tree/main/apps/npc")
+        self.assertEqual(evidence["folder"], "apps/npc")
+        self.assertTrue(evidence["badge_in_readme"])
+        self.assertEqual(evidence["code_search_matches"], 3)

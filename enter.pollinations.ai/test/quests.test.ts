@@ -409,6 +409,16 @@ test("catalog returns quest definitions without ledger stats", async ({
         rewardAmount: 1,
         balanceBucket: "tier",
     });
+    expectStableCatalogFields("discord_level_10", {
+        state: "available",
+        rewardAmount: 2,
+        balanceBucket: "tier",
+    });
+    expectStableCatalogFields("discord_level_20", {
+        state: "available",
+        rewardAmount: 5,
+        balanceBucket: "tier",
+    });
     expectStableCatalogFields("app_active", {
         state: "completed",
         rewardAmount: 7,

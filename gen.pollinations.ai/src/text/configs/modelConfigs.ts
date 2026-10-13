@@ -607,6 +607,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4.1-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -817,10 +823,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
         }),
-    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
-    ),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>

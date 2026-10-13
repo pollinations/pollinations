@@ -1799,10 +1799,10 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].input_modalities` | `string`[] | — |
 | `data[].output_modalities` | `string`[] | — |
 | `data[].supported_endpoints` | `string`[] | — |
-| `data[].agent` | `boolean` | — |
-| `data[].base_model` | `string` | — |
+| `data[].agent` | `boolean` | True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free. |
+| `data[].base_model` | `string` | Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `data[].pricing` | `object` | — |
+| `data[].pricing` | `object` | Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free. |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -1906,10 +1906,10 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `input_modalities` | `string`[] | — |
 | `output_modalities` | `string`[] | — |
 | `supported_endpoints` | `string`[] | — |
-| `agent` | `boolean` | — |
-| `base_model` | `string` | — |
+| `agent` | `boolean` | True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free. |
+| `base_model` | `string` | Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `pricing` | `object` | — |
+| `pricing` | `object` | Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |

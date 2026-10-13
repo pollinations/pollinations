@@ -57,3 +57,12 @@ test("listModels returns the live response without filtering it", async (t) => {
 
     assert.deepEqual(JSON.parse(result.content[0].text), body);
 });
+
+test("listModels tells callers that agents are never free", () => {
+    const [, description] = discoveryTools.find(
+        ([name]) => name === "listModels",
+    );
+
+    assert.match(description, /Agents are never free/);
+    assert.match(description, /without base_model lists only a currency/);
+});

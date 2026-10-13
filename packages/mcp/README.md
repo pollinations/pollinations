@@ -51,6 +51,12 @@ consume model context. Anyone with the link can access it; expired files return 
 Models, voices, capabilities, and pricing come from the live registry. Use
 `listModels` before selecting a model or voice.
 
+Agents (`agent: true`) are never free. An agent adds no charge of its own, but
+each model and tool call it makes is billed to the caller. A prompt agent lists
+its `base_model` and that model's rates. An agent without `base_model` lists
+only `currency` in `pricing`, because its cost depends on the calls it makes.
+`getUsage` lists these charges under the models the agent called.
+
 ## Development
 
 Requires Node.js 20 or newer. Run the tests with:

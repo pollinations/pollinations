@@ -75,12 +75,25 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     community: z.boolean(),
-    agent: z.boolean().optional(),
-    base_model: z.string().optional(),
+    agent: z
+        .boolean()
+        .optional()
+        .describe(
+            "True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free.",
+        ),
+    base_model: z
+        .string()
+        .optional()
+        .describe(
+            "Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls.",
+        ),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
-        .and(z.object({ currency: z.literal("pollen") })),
+        .and(z.object({ currency: z.literal("pollen") }))
+        .describe(
+            "Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free.",
+        ),
     pricing_variants: z
         .array(
             z.object({

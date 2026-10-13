@@ -114,6 +114,7 @@ export const accountTools = [
         "getUsage",
         "List recent requests with model, tokens, and cost (like `polli usage --history`), " +
             "or set daily=true for a per-day summary (`polli usage --daily`). " +
+            "A call to an agent is listed under the models the agent called, not under the agent. " +
             "Requires 'account:usage' permission.",
         {
             daily: z

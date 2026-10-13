@@ -294,6 +294,8 @@ test("filters non-Azure and non-Fireworks text models by paid balance", async ({
         "qwen/qwen3guard-gen-8b",
         "openai/gpt-oss-20b",
         "respan/span-01-lite",
+        // Moves to paid with its post-promo price in #16256.
+        "inclusionai/ling-3.1-flash",
     ];
     const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);

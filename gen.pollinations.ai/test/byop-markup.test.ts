@@ -135,7 +135,6 @@ describe("BYOP markup", () => {
     it.each([
         "amazon/nova-2-lite-v1",
         "amazon/nova-micro-v1",
-        "inclusionai/ling-3.1-flash",
         "jaredpalmer/kev-4b",
         "typesafe/jev-1.13",
         "lykon/dreamshaper-8-lcm",

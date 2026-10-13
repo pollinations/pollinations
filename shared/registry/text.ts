@@ -2335,7 +2335,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "inclusionAI",
         category: "text",
         addedDate: new Date("2026-10-02").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 1,
         cost: {
             // Free during the launch promotion on direct Novita and both

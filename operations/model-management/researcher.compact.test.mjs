@@ -497,6 +497,45 @@ async function fixture(t) {
             links: [],
         }),
     );
+    for (const sort of ["trendingScore", "downloads"]) {
+        const feed = `https://huggingface.co/api/models?sort=${sort}&direction=-1&limit=20`;
+        const metadata = JSON.stringify([
+            {
+                id: sol.name,
+                private: false,
+                pipeline_tag: "text-generation",
+                downloads: 0,
+            },
+        ]);
+        await writeFile(
+            join(out, "pages", `${hash(feed)}.json`),
+            JSON.stringify({
+                requestedUrl: feed,
+                url: feed,
+                text: metadata,
+                pageDigest: hash(metadata),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+    }
+    for (const community of ["LocalLLaMA", "StableDiffusion"]) {
+        const seed = `https://www.reddit.com/r/${community}/top/?t=week`;
+        const body = `Fixture community discussion: ${sol.name} is already an official model.`;
+        await writeFile(
+            join(out, "pages", `${hash(seed)}.json`),
+            JSON.stringify({
+                requestedUrl: seed,
+                url: seed,
+                text: body,
+                pageDigest: hash(body),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+    }
     return {
         out,
         env: {
@@ -527,13 +566,16 @@ function nativeResponse(
         (payload.state.actions
             ? payload.state.stage === "search"
                 ? payload.state.actions[0].id
-                : payload.state.stage === "reasoning" &&
-                    !marketFinish &&
-                    payload.state.actions.some(
-                        ({ id }) => id === "reason-discovery",
-                    )
-                  ? "reason-discovery"
-                  : "finish"
+                : payload.state.stage === "crawl" &&
+                    payload.state.actions.some(({ required }) => required)
+                  ? payload.state.actions.find(({ required }) => required).id
+                  : payload.state.stage === "reasoning" &&
+                      !marketFinish &&
+                      payload.state.actions.some(
+                          ({ id }) => id === "reason-discovery",
+                      )
+                    ? "reason-discovery"
+                    : "finish"
             : payload.state.providerPolicy
               ? `route_${payload.state.items[0].allowedIndexes[0]}`
               : payload.state.items
@@ -703,6 +745,17 @@ function network(
             });
         assert.equal(payload.model, sol.name);
         const context = JSON.parse(payload.messages[1].content);
+        if (context.preparation && !context.models) {
+            assert.equal(payload.max_tokens, 1800);
+            assert.deepEqual(
+                context.officialModelInventory,
+                inventory.map(({ name, aliases }) => ({
+                    name,
+                    aliases: aliases ?? [],
+                })),
+                "Sol must receive the exact official inventory to reason about novelty",
+            );
+        }
         if (optionQueries && !context.preparation) {
             assert.equal(payload.tools, undefined);
             assert.equal(payload.max_tokens, 800);
@@ -728,7 +781,10 @@ function network(
             context.models ? 4 : 1,
         );
         if (!marketRelation || !context.models)
-            assert.equal(context.preparation.sources.length, 1);
+            assert.ok(
+                context.preparation.sources.length >= 1 &&
+                    context.preparation.sources.length <= 16,
+            );
         assert.equal(
             context.savedSources,
             undefined,
@@ -1146,8 +1202,8 @@ test(
             report.quality.discoveryCoverage.find(
                 ({ mode }) => mode === "reddit",
             ).platformPages,
-            0,
-            "Search queries alone cannot claim Reddit pages were crawled",
+            2,
+            "Only the two fetched community seed pages count as Reddit coverage",
         );
     },
 );

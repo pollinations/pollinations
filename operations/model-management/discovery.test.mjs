@@ -73,6 +73,31 @@ test("ordinary release prose and providers sharing model aliases reach typed ext
     );
 });
 
+test("discovery ignores domain paths, throughput units and article titles while keeping literal names", () => {
+    const text =
+        "45tok/sec https://github.com/niko1221 and openrouter.ai/models. meta.ai/v1.\n# Prime Inference: Fast reliable inference\nPrime Inference offers hosted inference.\n# Meta Ships A New Model With A Long Article Title\nLiquidAI/LFM2.5-Encoder-350M is a model repository.";
+    const { candidates } = discoveryCandidates(
+        [
+            {
+                id: "s1",
+                url: "https://publisher.example/release",
+                status: "fetched",
+                text,
+            },
+        ],
+        [],
+    );
+    assert.deepEqual(
+        candidates.map(({ name }) => name).sort(),
+        ["Prime Inference", "LiquidAI/LFM2.5-Encoder-350M"].sort(),
+    );
+    for (const candidate of candidates)
+        assert.equal(
+            text.slice(candidate.start, candidate.end),
+            candidate.quote,
+        );
+});
+
 test("literal extraction exposes truncation and preserves multiple source origins", () => {
     const sources = Array.from({ length: 20 }, (_, i) => ({
         id: `s${i}`,
@@ -90,5 +115,27 @@ test("literal extraction exposes truncation and preserves multiple source origin
     assert.equal(
         new Set(result.candidates.map(({ sourceId }) => sourceId)).size,
         16,
+    );
+});
+
+test("numeric publisher namespaces in public Hub metadata remain research leads", () => {
+    const text = JSON.stringify([
+        { id: "01-ai/Yi-1.5-34B-Chat", downloads: 123 },
+        { id: "1bitLLM/bitnet_b1_58-large", downloads: 456 },
+    ]);
+    const result = discoveryCandidates(
+        [
+            {
+                id: "hub",
+                status: "fetched",
+                url: "https://huggingface.co/api/models",
+                text,
+            },
+        ],
+        [],
+    );
+    assert.deepEqual(
+        result.candidates.map(({ name }) => name),
+        ["01-ai/Yi-1.5-34B-Chat", "1bitLLM/bitnet_b1_58-large"],
     );
 });

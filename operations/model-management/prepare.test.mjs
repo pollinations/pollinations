@@ -2,6 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseLeads, prepareResearch } from "./prepare.mjs";
 
+const discoveryHosts = [
+    "reddit.com",
+    "quora.com",
+    "huggingface.co",
+    "replit.com",
+    "github.com",
+    "news.ycombinator.com",
+    "news.example.org",
+    "provider.example.org",
+];
+
 test("discovered niche providers become Jev-controlled official checkpoint followups", async () => {
     const f = fixture([]);
     f.services.remainingPollen = () => 1;
@@ -444,7 +455,8 @@ test("market discovery uses eight dated modes with no identity triage or Sol cal
         ),
     );
     assert.equal(f.triages.length, 0);
-    assert.equal(f.reads.length, 4);
+    assert.equal(f.reads.length, 8);
+    assert.equal(result.requiredEvidencePending, false);
 });
 
 test("discovery preserves eight-mode diversity within sixty-four candidates and sixteen reads", async () => {
@@ -454,7 +466,7 @@ test("discovery preserves eight-mode diversity within sixty-four candidates and 
         const current = bucket++;
         return JSON.stringify({
             results: Array.from({ length: 20 }, (_, index) => ({
-                url: `https://bucket${current}.example.org/${index}`,
+                url: `https://${discoveryHosts[current]}/${index}`,
                 text: "Actual release lead",
             })),
         });
@@ -462,7 +474,7 @@ test("discovery preserves eight-mode diversity within sixty-four candidates and 
     const result = await prepareResearch({}, f.services);
     assert.equal(result.leads.length, 16);
     assert.equal(result.unselectedLeads.length, 48);
-    assert.equal(f.reads.length, 16);
+    assert.equal(f.reads.length, 20);
     const modes = [
         "reddit",
         "quora",
@@ -495,7 +507,7 @@ test("discovery crawl reads only copied Jev links, dedupes URLs and caps each pa
         const current = bucket++;
         return JSON.stringify({
             results: Array.from({ length: 2 }, (_, index) => ({
-                url: `https://bucket${current}.example.org/${index}`,
+                url: `https://${discoveryHosts[current]}/${index}`,
                 text: "Actual model release",
             })),
         });
@@ -517,7 +529,10 @@ test("discovery crawl reads only copied Jev links, dedupes URLs and caps each pa
             crawlChoices++;
             assert.ok(actions.length <= 13);
             assert.ok(
-                actions.some(({ text }) => text === "Model release pricing"),
+                actions.every(({ required }) => required) ||
+                    actions.some(
+                        ({ text }) => text === "Model release pricing",
+                    ),
             );
         }
         return {
@@ -590,11 +605,13 @@ test("Jev can choose the free official Hub metric feed without a Sol call", asyn
                 ? actions[0]
                 : stage === "crawl"
                   ? (actions.find(({ id }) => id === "hub-feed-0") ??
+                    actions.find(({ required }) => required) ??
                     actions.find(({ kind }) => kind === "finish"))
                   : actions.find(({ kind }) => kind === "finish"),
     });
     const result = await prepareResearch({}, f.services);
-    assert.equal(f.reads.length, 1);
+    assert.equal(f.reads.length, 4);
+    assert.equal(result.requiredEvidencePending, false);
     assert.equal(
         f.reads[0].url,
         "https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=20",
@@ -623,21 +640,23 @@ test("a blocked page gets an Exa fallback only when Jev selects it", async () =>
             stage === "search"
                 ? actions[0]
                 : stage === "crawl"
-                  ? (actions.find(({ id }) => id.startsWith("fallback-")) ??
+                  ? (actions.find(({ required }) => required) ??
                     actions.find(({ kind }) => kind === "finish"))
                   : actions.find(({ kind }) => kind === "finish"),
     });
     const result = await prepareResearch({}, f.services);
     assert.deepEqual(
         f.reads.map(({ mode }) => mode),
-        ["http", "exa"],
+        ["http", "http", "http", "http", "http", "exa", "exa", "exa", "exa"],
     );
     assert.equal(result.sources[0].status, "unavailable");
-    assert.equal(result.sources[1].status, "fetched");
+    assert.equal(result.sources[5].status, "fetched");
+    assert.ok(f.reads.length <= 24);
+    assert.equal(result.requiredEvidencePending, false);
     assert.ok(
         result.actions.some(
             (action) =>
-                action.mode === "exa" && action.parentSourceId === "source-1",
+                action.mode === "exa" && action.parentSourceId === "source-4",
         ),
     );
 });
@@ -792,4 +811,209 @@ test("unselected IDs resolve to bounded preserved records without entering triag
         ),
     );
     assert.ok(result.gaps.some((gap) => gap.includes("thirty-two-candidate")));
+});
+
+test("Exa Highlights and Published preserve literal plain-text and JSON receipts", () => {
+    const lead = {
+        url: "https://www.reddit.com/r/LocalLLaMA/comments/actual",
+        title: "Release discussion",
+        text: "Literal model release excerpt",
+        publishedAt: "2026-10-12T00:00:00Z",
+    };
+    assert.deepEqual(
+        parseLeads(
+            `Title: ${lead.title}\nURL: ${lead.url}\nPublished: ${lead.publishedAt}\nHighlights: ${lead.text}`,
+        ),
+        [lead],
+    );
+    assert.deepEqual(
+        parseLeads(
+            JSON.stringify({
+                results: [
+                    { ...lead, text: undefined, highlights: [lead.text, 123] },
+                ],
+            }),
+        ),
+        [lead],
+    );
+});
+
+test("platform modes exclude off-domain and lookalike results while broad searches retain them", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () => {
+        const root = discoveryHosts[bucket++];
+        return JSON.stringify({
+            results: [
+                {
+                    url: "https://en.wikipedia.org/wiki/AI",
+                    text: "Off-platform",
+                },
+                { url: `https://${root}.example.org/fake`, text: "Lookalike" },
+                {
+                    url: `https://sub.${root}/actual`,
+                    text: "Actual platform source",
+                },
+            ],
+        });
+    };
+    const result = await prepareResearch({}, f.services);
+    for (const [index, mode] of [
+        "reddit",
+        "quora",
+        "huggingface",
+        "replit",
+        "github",
+        "hackernews",
+    ].entries()) {
+        const rows = result.leads.filter((lead) => lead.modes.includes(mode));
+        assert.equal(rows.length, 1);
+        assert.equal(
+            new URL(rows[0].url).hostname,
+            `sub.${discoveryHosts[index]}`,
+        );
+        assert.ok(
+            result.gaps.some((gap) =>
+                gap.startsWith(`${mode}: discarded 2 off-platform`),
+            ),
+        );
+    }
+    const wiki = result.leads.find(({ url }) => url.includes("wikipedia.org"));
+    assert.deepEqual(wiki.modes, ["news", "providers"]);
+});
+
+test("required free feeds all precede optional finish and insufficient selection stays pending", async () => {
+    const f = fixture([]);
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ required }) => required) ??
+                  actions.find(({ kind }) => kind === "finish")),
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.equal(f.reads.length, 4);
+    assert.ok(f.reads.every(({ mode }) => mode === "http"));
+    assert.deepEqual(
+        f.reads.slice(2).map(({ url }) => url),
+        [
+            "https://www.reddit.com/r/LocalLLaMA/top/?t=week",
+            "https://www.reddit.com/r/StableDiffusion/top/?t=week",
+        ],
+    );
+    assert.equal(result.requiredEvidencePending, false);
+    f.reads.length = 0;
+    f.services.control = async ({ stage, actions }) => ({
+        action: stage === "search" ? actions[0] : null,
+    });
+    const partial = await prepareResearch({}, f.services);
+    assert.equal(f.reads.length, 0);
+    assert.equal(partial.requiredEvidencePending, true);
+});
+
+test("blocked required community seeds fallback only after HTTP and remain inside the shared read bounds", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () =>
+        JSON.stringify({
+            results: Array.from({ length: 2 }, (_, index) => ({
+                url: `https://${discoveryHosts[bucket]}/${index}`,
+                text: "Release lead",
+            })),
+        });
+    const search = f.services.search;
+    f.services.search = async (...args) => {
+        const raw = await search(...args);
+        bucket++;
+        return raw;
+    };
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        status:
+            args.url.includes("/top/") && args.mode === "http"
+                ? "unavailable"
+                : "fetched",
+        links: [
+            {
+                url: `https://publisher.example.org/${f.reads.length}`,
+                text: "Model release",
+            },
+        ],
+    });
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "reasoning"
+                ? actions.find(({ kind }) => kind === "finish")
+                : actions[0],
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.equal(f.reads.filter(({ mode }) => mode === "http").length, 24);
+    assert.equal(
+        f.reads.slice(16).filter(({ mode }) => mode === "http").length,
+        8,
+    );
+    assert.equal(f.reads.filter(({ mode }) => mode === "exa").length, 2);
+    assert.equal(f.reads.length, 26);
+    for (const action of result.actions.filter(({ mode }) => mode === "exa")) {
+        const parent = result.sources.find(
+            ({ id }) => id === action.parentSourceId,
+        );
+        assert.equal(parent.status, "unavailable");
+        assert.equal(parent.url, action.url);
+        const first = f.reads.findIndex(({ url }) => url === action.url);
+        assert.equal(f.reads[first].mode, "http");
+        assert.ok(
+            first <
+                f.reads.findIndex(
+                    ({ url, mode }) => url === action.url && mode === "exa",
+                ),
+        );
+    }
+    assert.equal(result.requiredEvidencePending, false);
+});
+
+test("all blocked discovery reads keep fallback menus bounded and record unresolved fetched coverage", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () => {
+        const host = discoveryHosts[bucket++];
+        return JSON.stringify({
+            results: Array.from({ length: 2 }, (_, index) => ({
+                url: `https://${host}/${index}`,
+                text: "Release lead",
+            })),
+        });
+    };
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        status: "unavailable",
+    });
+    f.services.control = async ({ stage, actions }) => {
+        assert.ok(actions.length <= 13);
+        return {
+            action:
+                stage === "reasoning"
+                    ? actions.find(({ kind }) => kind === "finish")
+                    : actions[0],
+        };
+    };
+    const result = await prepareResearch({}, f.services);
+    assert.equal(f.reads.filter(({ mode }) => mode === "http").length, 20);
+    assert.equal(f.reads.filter(({ mode }) => mode === "exa").length, 4);
+    assert.equal(result.requiredEvidencePending, false);
+    assert.ok(
+        result.gaps.includes(
+            "reddit: fetched discovery evidence remains unresolved",
+        ),
+    );
+    assert.equal(
+        result.actions.filter(({ status }) => status === "searched").length,
+        8,
+    );
+    assert.equal(
+        result.sources.filter(({ status }) => status === "fetched").length,
+        0,
+    );
 });

@@ -2,10 +2,130 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
     assess,
+    exaSource,
     officialCatalog,
     research,
     sourceText,
 } from "./researcher.mjs";
+
+test("Exa fetch records the actual public URL and only its page body", async () => {
+    const body =
+        "Exact checkpoint available for managed inference. Input costs $2 per million tokens.";
+    const actualUrl = "https://8.8.8.8/actual-provider/model";
+    for (const raw of [
+        `# A different provider\nURL: ${actualUrl}\n\n${body}`,
+        JSON.stringify({ results: [{ url: actualUrl, text: body }] }),
+    ]) {
+        assert.deepEqual(await exaSource(raw), {
+            url: actualUrl,
+            text: body,
+            method: "pollinations-exa",
+        });
+    }
+});
+
+test("Exa fetch rejects failures, missing bodies and ambiguous provenance", async () => {
+    const body =
+        "Exact checkpoint available for managed inference. Input costs $2 per million tokens.";
+    const page = `# Model\nURL: https://8.8.8.8/model\n\n${body}`;
+    for (const raw of [
+        "Could not fetch https://8.8.8.8/model: SOURCE_UNAVAILABLE",
+        "No content found.",
+        "# A title long enough to exceed the minimum excerpt length by itself\nURL: https://8.8.8.8/model",
+        "# Model\nURL: https://8.8.8.8/model\n\nNo content found.",
+        `# Page not found\nURL: https://8.8.8.8/model\n\n${body}`,
+        `${page}\n\n---\n\nCould not fetch https://8.8.8.8/model: error`,
+        `${page}\n\n---\n\n${page}`,
+        JSON.stringify({ results: [{ text: body }] }),
+        JSON.stringify({
+            results: [{ url: "https://8.8.8.8/model", text: body }],
+            statuses: [{ status: "error" }],
+        }),
+        body,
+    ])
+        await assert.rejects(exaSource(raw), /Exa source|successful Exa/);
+});
+
+test("Exa fetch applies the public HTTPS boundary to its actual URL", async () => {
+    const body =
+        "Exact checkpoint available for managed inference. Input costs $2 per million tokens.";
+    for (const url of [
+        "http://8.8.8.8/model",
+        "https://127.0.0.1/model",
+        "https://10.0.0.1/model",
+        "https://user:pass@8.8.8.8/model",
+        "https://8.8.8.8:444/model",
+        "https://8.8.8.8/model?token=private",
+        "not-a-url",
+    ])
+        await assert.rejects(exaSource(`# Model\nURL: ${url}\n\n${body}`));
+});
+
+test("research retains Exa's actual provider URL when it differs from the request", async () => {
+    const requestedUrl = "https://1.1.1.1/requested-provider/model";
+    const actualUrl = "https://8.8.8.8/actual-provider/model";
+    const body =
+        "Exact checkpoint available for managed inference. Input costs $2 per million tokens.";
+    const calls = [
+        [
+            "research",
+            {
+                action: "plan",
+                questions: [
+                    "Which checkpoint?",
+                    "What prices?",
+                    "What contradicts the offer?",
+                ],
+                routes: [],
+                discoveries: [],
+                gaps: [],
+            },
+        ],
+        ["fetch", { url: requestedUrl, mode: "exa" }],
+    ];
+    let index = 0;
+    await assert.rejects(
+        research(
+            { model },
+            {
+                infer: async () => {
+                    const [name, args] = calls[index++];
+                    return {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: `call-${index}`,
+                                type: "function",
+                                function: {
+                                    name,
+                                    arguments: JSON.stringify(args),
+                                },
+                            },
+                        ],
+                    };
+                },
+                fetch: async (url, mode) => {
+                    assert.equal(url, requestedUrl);
+                    assert.equal(mode, "exa");
+                    return exaSource(
+                        `# Different provider\nURL: ${actualUrl}\n\n${body}`,
+                    );
+                },
+            },
+            [model],
+            calls.length,
+        ),
+        (error) => {
+            assert.match(error.message, /turn budget/);
+            assert.equal(error.evidence.sources.length, 1);
+            assert.equal(error.evidence.sources[0].url, actualUrl);
+            assert.equal(error.evidence.sources[0].text, body);
+            assert.equal(error.evidence.sources[0].status, "fetched");
+            return true;
+        },
+    );
+});
 
 const model = {
     name: "publisher/example-v1",

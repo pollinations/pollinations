@@ -1,0 +1,90 @@
+{
+  "pr_number": 16589,
+  "title": "🕒 2026-10-13 | fix: restore Eleven v4 regular prices",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/16589",
+  "merged_at": "2026-10-13T03:34:50Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "major",
+    "summary": "Restored regular Pollen pricing for ElevenLabs v4 and v4 Turbo speech generation, billed per 1,000 characters. Both models retain multiplier 1. Updated the effective-price test snapshots.",
+    "keywords": [
+      "ElevenLabs",
+      "v4",
+      "v4 Turbo",
+      "audio",
+      "speech",
+      "pricing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-16589.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli checks two speech-wave displays labeled 'Eleven v4' and 'v4 Turbo' beside a lime green (#ecf874) code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, small rounded light blue translucent wings, and tiny headphones; she is small within the scene, in strictly pixel art style. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T03:36:41.695747+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "fdbb95240bd7d94f6bd92bcead183497d9696a23",
+  "announcements": [
+    {
+      "id": "pr-16589:elevenlabs/eleven-v4",
+      "model_id": "elevenlabs/eleven-v4",
+      "title": "ElevenLabs v4",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000022"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00008"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-16589:elevenlabs/eleven-v4-turbo",
+      "model_id": "elevenlabs/eleven-v4-turbo",
+      "title": "ElevenLabs v4 Turbo",
+      "action": "UPDATE",
+      "category": "audio",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000011"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00004"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "fdbb95240bd7d94f6bd92bcead183497d9696a23^1",
+    "after_ref": "fdbb95240bd7d94f6bd92bcead183497d9696a23"
+  }
+}

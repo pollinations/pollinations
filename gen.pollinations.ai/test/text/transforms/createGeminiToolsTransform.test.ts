@@ -34,6 +34,12 @@ describe("Vertex Gemini routing with OpenRouter fallback", () => {
             "google-vertex/global",
         ],
         [
+            "google/gemini-4-argon",
+            "gemini-4-argon",
+            "google/gemini-4-argon:openrouter:ai-studio",
+            "google-ai-studio",
+        ],
+        [
             "gemini-flash-lite-3.5",
             "gemini-3.5-flash-lite",
             "google/gemini-3.5-flash-lite:openrouter:vertex-global",

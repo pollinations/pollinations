@@ -71,7 +71,12 @@ describe("Gemini reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it.each(["gemini", "google/gemini-3.8-flash"])(
+    it.each([
+        "gemini",
+        "google/gemini-3.8-flash",
+        "google/gemini-4-argon",
+        "google/gemini-4-argon:openrouter:ai-studio",
+    ])(
         "maps reasoning_effort=none to low for mandatory-reasoning %s",
         async (model) => {
             const transform = findModelByName(model)?.transform;

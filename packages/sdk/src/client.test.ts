@@ -1735,6 +1735,98 @@ describe("Pollinations model discovery", () => {
             "https://example.test/models",
         );
     });
+
+    it("returns model health for a window without the key in the URL", async () => {
+        const status = {
+            meta: [{ name: "model", type: "LowCardinality(String)" }],
+            data: [{ model: "openai", is_rollup: 1, errors_5xx: 0 }],
+            rows: 1,
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(status));
+
+        await expect(
+            newClient().modelStatus({ traffic: "regular", minutes: 1440 }),
+        ).resolves.toEqual(status);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=1440",
+        );
+    });
+});
+
+describe("Pollinations.model3d", () => {
+    it("requests /3d with reference images and returns the file with a keyless URL", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                contentType: "model/gltf-binary",
+                kind: "binary",
+            }),
+        );
+
+        const result = await newClient().model3d("a chest", {
+            model: "microsoft/trellis-2",
+            resolution: "medium",
+            referenceImage: [
+                "https://example.com/front.png",
+                "https://example.com/back.png",
+            ],
+            seed: 7,
+        });
+
+        const url = new URL(fetchMock.mock.calls[0][0]);
+        expect(url.pathname).toBe("/3d/a%20chest");
+        expect(Object.fromEntries(url.searchParams)).toEqual({
+            model: "microsoft/trellis-2",
+            resolution: "medium",
+            image: "https://example.com/front.png|https://example.com/back.png",
+            seed: "7",
+            key: "sk_test",
+        });
+        expect(result.buffer.byteLength).toBe(8);
+        expect(result.contentType).toBe("model/gltf-binary");
+        expect(result.url).not.toContain("sk_test");
+    });
+});
+
+describe("Pollinations.audioSpeechWithTimestamps", () => {
+    it("decodes the audio and groups character timings into words", async () => {
+        const alignment = {
+            characters: [..."Hi there"],
+            character_start_times_seconds: [
+                0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7,
+            ],
+            character_end_times_seconds: [
+                0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            ],
+        };
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                audio_base64: btoa("abc"),
+                alignment,
+                normalized_alignment: alignment,
+            }),
+        );
+
+        const result = await newClient().audioSpeechWithTimestamps("Hi there", {
+            voice: "rachel",
+            responseFormat: "wav",
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(JSON.parse(init.body)).toEqual({
+            input: "Hi there",
+            voice: "rachel",
+            response_format: "wav",
+        });
+        expect(new TextDecoder().decode(result.buffer)).toBe("abc");
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0, end: 0.2 },
+            { word: "there", start: 0.3, end: 0.8 },
+        ]);
+        expect(result.normalizedAlignment).toEqual(alignment);
+    });
 });
 
 describe("Pollinations.authorizeDevice", () => {

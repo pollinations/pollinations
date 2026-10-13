@@ -8,6 +8,8 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechTimestampsOptions,
+    AudioTimestampsResponse,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -35,9 +37,15 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3dOptions,
+    Model3dResponse,
     ModelInfo,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechAlignment,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -180,6 +188,38 @@ function stripKeyFromUrl(url: string): string {
     const urlObj = new URL(url);
     urlObj.searchParams.delete("key");
     return urlObj.toString();
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer as ArrayBuffer;
+}
+
+// Group character timings into words, splitting on whitespace.
+function wordTimings(alignment: SpeechAlignment): SpeechWordTiming[] {
+    const words: SpeechWordTiming[] = [];
+    let word: SpeechWordTiming | undefined;
+    alignment.characters.forEach((char, i) => {
+        if (/\s/.test(char)) {
+            word = undefined;
+            return;
+        }
+        if (!word) {
+            word = {
+                word: "",
+                start: alignment.character_start_times_seconds[i],
+                end: 0,
+            };
+            words.push(word);
+        }
+        word.word += char;
+        word.end = alignment.character_end_times_seconds[i];
+    });
+    return words;
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -644,13 +684,8 @@ export class Pollinations {
             );
         }
         if (item.b64_json) {
-            const binary = atob(item.b64_json);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
             return {
-                buffer: bytes.buffer as ArrayBuffer,
+                buffer: base64ToArrayBuffer(item.b64_json),
                 contentType: item.media_type || "image/png",
                 url: "",
             };
@@ -745,6 +780,60 @@ export class Pollinations {
                     response.headers.get("content-type") || "video/mp4";
 
                 return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
+
+    // ============================================================================
+    // 3D Generation
+    // ============================================================================
+
+    /**
+     * Generate a 3D model file: GLB, or PLY for nvidia/asset-harvester.
+     * Image-only models such as the default microsoft/trellis-2 ignore the prompt and need a referenceImage.
+     *
+     * @example
+     * ```ts
+     * const { buffer } = await pollinations.model3d('a treasure chest', {
+     *     referenceImage: 'https://example.com/chest.png',
+     * });
+     * ```
+     */
+    async model3d(
+        prompt: string,
+        options: Model3dOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const queryString = this.buildQueryParams({
+            model: options.model,
+            resolution: options.resolution,
+            image: options.referenceImage,
+            seed: options.seed,
+            safe: options.safe,
+        });
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${queryString ? `?${queryString}` : ""}`;
+
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.imageTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url: stripKeyFromUrl(url),
+                };
             },
         );
     }
@@ -1093,6 +1182,62 @@ export class Pollinations {
         );
     }
 
+    /**
+     * Generate speech with the time each word is spoken (POST /v1/audio/speech/with-timestamps).
+     * Only models listing that endpoint in /audio/models support it.
+     *
+     * @example
+     * ```ts
+     * const { buffer, words } = await pollinations.audioSpeechWithTimestamps('Hello world');
+     * // words: [{ word: 'Hello', start: 0, end: 0.42 }, { word: 'world', start: 0.5, end: 0.93 }]
+     * ```
+     */
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechTimestampsOptions = {},
+    ): Promise<AudioTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input: text,
+            model: options.model,
+            voice: options.voice,
+            response_format: options.responseFormat,
+            seed: options.seed,
+        };
+
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const result = (await response.json()) as {
+                    audio_base64: string;
+                    alignment: SpeechAlignment;
+                    normalized_alignment: SpeechAlignment;
+                };
+                return {
+                    buffer: base64ToArrayBuffer(result.audio_base64),
+                    words: wordTimings(result.alignment),
+                    alignment: result.alignment,
+                    normalizedAlignment: result.normalized_alignment,
+                };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1165,6 +1310,28 @@ export class Pollinations {
      */
     async models(): Promise<ModelInfo[]> {
         return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    }
+
+    /**
+     * Get live model health: a rollup row per model (`is_rollup` 1) and a row per execution route.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.modelStatus({ minutes: 60 });
+     * const failing = data.filter((row) => row.is_rollup && row.errors_5xx > 0);
+     * ```
+     */
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
+        );
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================

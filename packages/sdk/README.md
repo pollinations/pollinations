@@ -418,6 +418,32 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import fs from 'node:fs';
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations();
+
+// microsoft/trellis-2 (the default) builds the model from the image and ignores the prompt
+const { buffer } = await client.model3d('a treasure chest', {
+  referenceImage: 'https://example.com/chest.png',
+  resolution: 'medium',
+});
+fs.writeFileSync('chest.glb', Buffer.from(buffer));
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | `'microsoft/trellis-2'` | See [`/3d/models`](https://gen.pollinations.ai/3d/models) |
+| `referenceImage` | string or string[] | - | Image URL(s), required by image-only models |
+| `resolution` | string | `'low'` | `'low'`, `'medium'` or `'high'` (Trellis 2) |
+| `seed` | number | - | Varied generations |
+| `safe` | boolean | `false` | Safety filter |
+
+Returns GLB (`model/gltf-binary`), or PLY for `nvidia/asset-harvester`.
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -455,6 +481,22 @@ audioEl.play();
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+### Speech with Timestamps
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations();
+const { buffer, words } = await client.audioSpeechWithTimestamps('Hello world', {
+  voice: 'rachel',
+});
+// words: [{ word: 'Hello', start: 0, end: 0.42 }, { word: 'world', start: 0.5, end: 0.93 }]
+```
+
+Works with the models that list `/v1/audio/speech/with-timestamps` in
+[`/audio/models`](https://gen.pollinations.ai/audio/models) (ElevenLabs, Paid
+Pollen). `alignment` and `normalizedAlignment` keep the per-character timings.
 
 ## Vision (Image Input)
 
@@ -533,6 +575,18 @@ const textModels = await getTextModels();
 const imageModels = await getImageModels();
 
 console.log(textModels.map(m => m.name));
+```
+
+### Model Status
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations();
+const { data } = await client.modelStatus({ minutes: 60 });
+
+// One rollup row per model (is_rollup: 1), plus one row per execution route
+const failing = data.filter((row) => row.is_rollup && row.errors_5xx > 0);
 ```
 
 ## Media Upload

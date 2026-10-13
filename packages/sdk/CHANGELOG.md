@@ -9,6 +9,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   model, next to categories. A model ID no longer widens to its category.
 
 ### Added
+- `model3d()` generates a 3D model file from `/3d`: GLB, or PLY for
+  `nvidia/asset-harvester`.
+- `modelStatus()` returns live model health from `/models/status`, typed as
+  `ModelStatusRow`.
+- `audioSpeechWithTimestamps()` returns speech plus word and character timings
+  from `/v1/audio/speech/with-timestamps`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 

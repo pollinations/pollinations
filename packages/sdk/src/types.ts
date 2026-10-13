@@ -124,6 +124,34 @@ export interface VideoResponse {
 }
 
 // ============================================================================
+// 3D Generation
+// ============================================================================
+
+/** Options for 3D generation */
+export interface Model3dOptions extends RequestOptions {
+    /** 3D model to use (server default: 'microsoft/trellis-2'). See https://gen.pollinations.ai/3d/models */
+    model?: string;
+    /** Output detail for microsoft/trellis-2 (server default: 'low') */
+    resolution?: "low" | "medium" | "high";
+    /** Reference image URL(s). Required by image-only models such as microsoft/trellis-2, which ignore the prompt. */
+    referenceImage?: string | string[];
+    /** Seed for varied generations */
+    seed?: number;
+    /** Enable safety content filters (default: false) */
+    safe?: boolean;
+}
+
+/** Response from 3D generation */
+export interface Model3dResponse {
+    /** The model file: GLB, or PLY for nvidia/asset-harvester */
+    buffer: ArrayBuffer;
+    /** Content type (model/gltf-binary) */
+    contentType: string;
+    /** The URL that was used to generate the model */
+    url: string;
+}
+
+// ============================================================================
 // Text Generation
 // ============================================================================
 
@@ -506,6 +534,44 @@ export interface AudioBinaryResponse {
     buffer: ArrayBuffer;
     /** Content type (audio/mpeg) */
     contentType: string;
+}
+
+/** Options for POST /v1/audio/speech/with-timestamps */
+export interface AudioSpeechTimestampsOptions extends RequestOptions {
+    /** A model listing /v1/audio/speech/with-timestamps in /audio/models (server default: 'elevenlabs/eleven-v3') */
+    model?: AudioModel;
+    /** Preset voice name or custom ElevenLabs voice ID (server default: 'alloy') */
+    voice?: AudioVoice;
+    /** Encoding of the returned audio (default: 'mp3') */
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    /** Seed for reproducibility */
+    seed?: number;
+}
+
+/** Per-character timings, in seconds */
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+/** A word of the input text and when it is spoken, in seconds */
+export interface SpeechWordTiming {
+    word: string;
+    start: number;
+    end: number;
+}
+
+/** Response from speech with timestamps */
+export interface AudioTimestampsResponse {
+    /** The decoded audio, in the requested responseFormat */
+    buffer: ArrayBuffer;
+    /** Words of the input text, split on whitespace */
+    words: SpeechWordTiming[];
+    /** Character timings for the input text */
+    alignment: SpeechAlignment;
+    /** Character timings for the text as the model read it (numbers spelled out, etc.) */
+    normalizedAlignment: SpeechAlignment;
 }
 
 /** Audio response from chat with audio modality */
@@ -1159,6 +1225,51 @@ export interface ModelInfo {
     /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+/** Options for GET /models/status */
+export interface ModelStatusOptions extends RequestOptions {
+    /** All requests (default), or regular usage without legacy APIs and Pollinations-internal traffic */
+    traffic?: "all" | "regular";
+    /** Rolling window in minutes (default 60, maximum 10080) */
+    minutes?: number;
+}
+
+/**
+ * One row of /models/status. Each model has a rollup row (`is_rollup` 1) with the final
+ * outcome of every request, plus one row per execution route it used (`is_rollup` 0).
+ */
+export interface ModelStatusRow {
+    model: string;
+    /** e.g. generate.text, generate.image, generate.audio */
+    event_type: string;
+    /** Route that served the attempts; empty on rollup rows */
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    /** UTC "YYYY-MM-DD hh:mm:ss"; "1970-01-01 00:00:00" when there was no error */
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    /** UTC "YYYY-MM-DD hh:mm:ss" */
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+/** Response from /models/status: the raw rows plus a column list */
+export interface ModelStatusResponse {
+    data: ModelStatusRow[];
+    meta: { name: string; type: string }[];
+    rows: number;
 }
 
 // ============================================================================

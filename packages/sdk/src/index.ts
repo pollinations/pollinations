@@ -88,6 +88,8 @@ export type {
     AudioModel,
     AudioResponse,
     AudioSpeechOptions,
+    AudioSpeechTimestampsOptions,
+    AudioTimestampsResponse,
     AudioTransformOptions,
     AudioVoice,
     AuthorizeDeviceOptions,
@@ -144,11 +146,17 @@ export type {
     MessageContent,
     MessageContentPart,
     MessageRole,
+    // 3D
+    Model3dOptions,
+    Model3dResponse,
     // Models
     ModelCategory,
     ModelInfo,
     ModelInputModality,
     ModelOutputModality,
+    ModelStatusOptions,
+    ModelStatusResponse,
+    ModelStatusRow,
     NoulAnswer,
     NoulQuestion,
     // Config
@@ -159,6 +167,8 @@ export type {
     ResponseFormat,
     ScoreAnswer,
     ScoreQuestion,
+    SpeechAlignment,
+    SpeechWordTiming,
     TextContentPart,
     TextGenerateOptions,
     // Text

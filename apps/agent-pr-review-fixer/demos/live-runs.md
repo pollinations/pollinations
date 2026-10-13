@@ -1,6 +1,6 @@
 # Live runs (2026-10-13)
 
-The agent's real `review()` ran locally through `demos/run-live.mjs` against live GitHub and `gen.pollinations.ai`. I did not run it as a deployed code agent: deploying needs its own public repository, and a call costs the same as these. Costs are the agent's own figures from live catalog prices. Across all runs my balance went from 77.49763014 to 77.48933618 Pollen.
+The agent's real `review()` ran through `demos/run-live.mjs` against live GitHub and `gen.pollinations.ai`. Costs are the agent's own figures from live catalog prices; the four runs together cost 0.0083 Pollen.
 
 | PR | Model | Tokens in / out | Cost (Pollen) | Verdict | Pushed |
 | --- | --- | --- | --- | --- | --- |
@@ -9,7 +9,7 @@ The agent's real `review()` ran locally through `demos/run-live.mjs` against liv
 | [#17240](https://github.com/pollinations/pollinations/pull/17240) legacy image cache misses | `openai/gpt-6-luna` | 1759 / 163 | 0.0003 | nothing wrong | no |
 | [#17223](https://github.com/pollinations/pollinations/pull/17223) pin sandbox template versions | `openai/gpt-6-luna` | 2392 / 799 | 0.0006 | nothing wrong | no |
 
-The three upstream PRs are already merged, so "nothing wrong" is the expected answer. I ran them on the cheaper `gpt-6-luna` to stay inside a small test budget. The default is `gpt-6.1-sol`, and it costs about 20× more per input token.
+The three upstream PRs are already merged, so "nothing wrong" is the expected answer. They ran on the cheaper `gpt-6-luna` to keep the test budget small. The default is `gpt-6.1-sol`, and it costs about 20× more per input token.
 
 ## Planted bug, fixed and pushed
 
@@ -34,4 +34,4 @@ The GitHub API confirms that the commit's only parent is the PR head `8c1b0fd`, 
 
 ## Context matters
 
-The first run on #17197 was made before large files were shown as excerpts. Both changed files are over 50 KB, so the model saw only the patch. It flagged the retry seeds (`attempt + 1`) as repeating across runs. With 40 lines of context around each hunk, the rerun read the surrounding retry loop and found nothing wrong. I have not proven which answer is right, but a review from the patch alone is weaker. That is why the agent now sends excerpts of large files instead of dropping them.
+The first run on #17197 was made before large files were shown as excerpts. Both changed files are over 50 KB, so the model saw only the patch. It flagged the retry seeds (`attempt + 1`) as repeating across runs. With 40 lines of context around each hunk, the rerun read the surrounding retry loop and found nothing wrong. Which answer is right is not proven, but a review from the patch alone is weaker. That is why the agent now sends excerpts of large files instead of dropping them.

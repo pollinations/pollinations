@@ -6,20 +6,40 @@ or that another operator uses the same account/profile. This skill contains no
 credentials and performs no login, token creation or secret mutation itself.
 Follow `AGENTS.md` for access, secret and production-operation boundaries.
 
-## Mail and sender
+## Mail coverage
 
 - Use `gog` with explicit `--client` and `--account` on every mail command.
   Inspect authenticated account metadata to find the Pollinations mailbox;
   never choose the first/default mailbox. Keep machine-specific account/client
   configuration outside this shared skill.
-- Verify the chosen account can access the requested support aliases and that
-  the sender is a verified Gmail send-as identity. Reply from the addressed
-  support alias (`hello@pollinations.ai` or `billing@pollinations.ai`) when
-  available, unless the operator has chosen another sender. Pass it explicitly
-  with `--from` on both draft creation and updates. If that identity is unavailable,
-  ask the operator; do not silently fall back to a personal address.
-  Use the operator's name in the signature. Ask only
-  when the account or sender cannot be uniquely established from the session.
+- Start with `hello@pollinations.ai`, `billing@pollinations.ai`, historical
+  `billing@myceli.ai`, and the active operator's current and historical work
+  addresses. For Elliot, include `elliot@pollinations.ai` and `elliot@myceli.ai`.
+  These are recipient search addresses, not fixed CLI account/client settings.
+- Discover additional historical addresses from authorized account/alias
+  metadata, forwarding configuration when available, and prior correspondence
+  headers. Do not assume the Gmail send-as list includes retired inbound aliases.
+  Search confirmed addresses across accessible relevant mailboxes; forwarding
+  may put several addresses in one mailbox. Ask the operator about unresolved
+  historical coverage while continuing the known scope. Do not invent aliases
+  or search unrelated personal accounts. Address history does not widen the
+  requested date range to all time.
+
+## Reply identity
+
+- Identify the active operator from the session and verified account metadata.
+  Always reply from that person's verified `@pollinations.ai` address, regardless
+  of the address that received the message. Elliot uses `elliot@pollinations.ai`;
+  for Thomas, discover and verify his own Pollinations address rather than
+  guessing its local part. Sign with the actual operator's name.
+- Verify the selected mailbox can send as that address. Pass it explicitly with
+  `--from` on draft creation and updates, and display it in `envelope.from` in
+  the preview. Do not default to a shared support alias, a legacy `@myceli.ai`
+  address, or another operator's identity. Do not set Reply-To to a legacy or
+  different address unless the operator explicitly requests it.
+- If the operator or authorized sender is ambiguous or unavailable, ask which
+  existing account/identity to use; continue read-only triage. Do not create an
+  alias or change account settings as part of triage.
 - Read threads without changing unread state. After creating/sending a draft,
   read it back and verify From, recipient, subject, thread and exact HTML/plain-text content.
 

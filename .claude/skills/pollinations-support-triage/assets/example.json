@@ -1,7 +1,7 @@
 {
     "sender": "Your name",
     "envelope": {
-        "from": "hello@pollinations.ai",
+        "from": "operator@pollinations.ai",
         "to": "customer@example.com",
         "subject": "Re: Restrict a key to Z-Image Turbo"
     },

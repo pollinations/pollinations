@@ -15,13 +15,16 @@ read its `AGENTS.md`, and resolve every path below relative to the repo root.
    sender and production accounts before querying. Reuse existing local access.
 2. Use the requested dates; otherwise the last seven complete days plus today,
    in the operator's timezone. Search all inbound mail, not only unread, and
-   paginate. Include `hello@pollinations.ai`, `billing@pollinations.ai` and the
-   operator's direct support mail. Read complete threads and existing replies.
+   paginate. Discover current and historical recipient addresses using
+   [local-access.md](references/local-access.md), including the operator's
+   direct mail. Match To, Cc and available original-delivery headers, including
+   archived mail. Deduplicate threads across aliases; reconcile forwarded or
+   cross-mailbox copies using Message-ID and content. Read complete threads and
+   existing replies. Preserve unresolved cases from earlier sweeps.
 3. Queue unresolved billing, account access, privacy, security, data loss and
    failures blocking supported use. Urgent first, then oldest unanswered.
-   Exclude resolved duplicates, routine notifications, ordinary feature ideas,
-   app submissions and team backlog. Commercial pitches: show sender, subject,
-   one sentence, then ask whether to ignore; do not research them by default.
+   Classify with the local inbox review categories below. Keep relevant
+   collaboration proposals visible; do not research generic sales pitches.
 4. Investigate the next case using the evidence table below. Never compose a
    factual conclusion while an available, relevant check remains undone.
 5. Render and open the next email's HTML preview in the local agent browser
@@ -54,6 +57,34 @@ email. Prefer focused, batched read-only queries. Record source IDs/timestamps
 and distinguish facts, inference and unknowns. If access is missing, ask for its
 secure location or connection, never a credential in chat; continue independent
 checks. Do not replace unavailable evidence with a confident guess.
+
+## Local inbox review
+
+Generate a local HTML review page per session; no maintained dashboard code is
+required. Layout may vary. Reuse the brand sources below and keep the same
+browser tab throughout the session.
+
+- Show addresses/mailboxes checked, date range and timezone, last checked time,
+  and scan completeness. List inaccessible or unconfirmed historical addresses
+  as coverage gaps; never claim all past addresses are covered without evidence.
+- Show four filters with unique-thread counts: **Urgent** (time-sensitive reply),
+  **To answer** (other replies needed), **To read** (operator judgment needed),
+  **Ignored** (generic sales, spam, routine notifications or resolved cases).
+  Give each case one category. At top right show **Needs reply**, the sum of
+  Urgent and To answer. Label counts provisional while scanning is incomplete.
+- Each item shows sender, subject, date and one sentence explaining the request
+  and its relevance. Concrete partnerships, integrations or contributions with
+  plausible mutual benefit stay visible; uncertain opportunities go to To read.
+  Generic paid-service pitches go to Ignored without interrupting the operator.
+- Selecting an item shows its inbound message and any prepared reply, with full
+  English translations and a language switch for non-English content. Review
+  one case at a time. Escape inbound content; do not execute email HTML/scripts.
+- Embed the exact renderer-produced outgoing HTML in the review page; keep the
+  template for outgoing branding. Store each case's rendered files separately
+  so rendering a reply does not overwrite the queue page. Refresh after edits.
+- Keep categories and queue progress locally with source IDs. They do not change
+  Gmail labels, unread state, archive state or delete mail. Page interactions
+  never send messages; sending requires the operator's approval in the chat.
 
 ## Tone and email design
 

@@ -1,0 +1,103 @@
+{
+  "pr_number": 15504,
+  "title": "fix: reroute Cohere Command A+ through OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/15504",
+  "merged_at": "2026-10-13T00:51:13Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Cohere Command A+ is rerouted from Azure to OpenRouter, pinned to Cohere with no fallback providers, ahead of Azure's listed October 16 retirement. The model now requires Paid Pollen, has lower input and output rates plus a cached-input rate, and adds tools, tool choice, response format, reasoning controls and top_k. Input, cached input and output are billed per million tokens; the pricing multiplier is 1 and the rates include OpenRouter's 5.5% fee. Aliases and the model-name-based Cohere response sanitizer are unchanged. Gen caps reported reasoning tokens at the completion-token total and bills them at the completion rate.",
+    "keywords": [
+      "Cohere Command A+",
+      "OpenRouter",
+      "model routing",
+      "Paid Pollen",
+      "tools",
+      "reasoning",
+      "pricing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-15504.jpg",
+    "prompt": "In a cozy pixel art garden workshop, a single route of lime green (#ecf874) stepping stones leads from a retro terminal to a monitor labeled 'COMMAND A+', while one small Polli adjusts the route with a tiny tool belt. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with code-plants and the terminal, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T00:53:06.572709+00:00",
+  "area": "Models",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "ad4a64b4265c9194608022767e2a87fd79f059ee",
+  "announcements": [
+    {
+      "id": "pr-15504:cohere/command-a-plus",
+      "model_id": "cohere/command-a-plus",
+      "title": "Cohere Command A+",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "completionTextTokens": "0.0000024"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptCachedTokens": "0.00000015825",
+            "completionTextTokens": "0.0000015825"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "temperature",
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "seed",
+            "stop"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "reasoning",
+            "include_reasoning",
+            "reasoning_effort",
+            "seed",
+            "top_k"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ad4a64b4265c9194608022767e2a87fd79f059ee^1",
+    "after_ref": "ad4a64b4265c9194608022767e2a87fd79f059ee"
+  }
+}

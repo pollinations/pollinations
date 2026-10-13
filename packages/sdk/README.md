@@ -229,6 +229,63 @@ inside a `"use client"` component:
   }
   ```
 
+### Generation hooks
+
+Use `useImage`, `useVideo`, `useText`, and `useAudio` inside `<PolliProvider>` to
+generate media with the signed-in user's key. Each hook returns
+`{ result, isLoading, error, run, rerun, cancel }`.
+
+```tsx
+import { useImage, useText } from '@pollinations/sdk/react';
+
+function ImageGen() {
+  const { result, isLoading, error, run, cancel } = useImage();
+  if (error) return <p>Error: {error.message}</p>;
+  return (
+    <div>
+      <button onClick={() => run('a cat in a hat')} disabled={isLoading}>
+        Generate
+      </button>
+      {isLoading && <button onClick={cancel}>Cancel</button>}
+      {result && <img src={URL.createObjectURL(new Blob([result.buffer]))} />}
+    </div>
+  );
+}
+```
+
+- `run(...args)` starts a generation, cancelling any in-flight request.
+- `rerun()` re-executes with the same arguments.
+- `cancel()` aborts the current request.
+- `401` responses trigger `logout()` automatically.
+- All hooks require a `<PolliProvider>` ancestor.
+
+### Chat transport (Vercel AI SDK)
+
+`usePollinationsTransport` returns a Vercel AI SDK `ChatTransport` backed by
+`/v1/responses`, streamed in the browser with the signed-in user's key.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePollinationsTransport } from '@pollinations/sdk/react';
+
+function Chat() {
+  const transport = usePollinationsTransport();
+  const { messages, input, handleSubmit, handleInputChange } = useChat({ transport });
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map((m) => <p key={m.id}>{m.content}</p>)}
+      <input value={input} onChange={handleInputChange} />
+    </form>
+  );
+}
+```
+
+Install `ai` (v5+) and `@ai-sdk/react` in your app; both are optional peers.
+
+Tool calls are fully supported: `function_call_arguments.delta` events are
+accumulated and published as `tool-input-available` once the complete argument
+string is received, so streamed tool inputs are never empty.
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:

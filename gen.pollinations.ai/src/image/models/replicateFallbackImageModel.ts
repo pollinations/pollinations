@@ -163,16 +163,18 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "qwen/qwen-image-3:replicate": {
+            // Replicate takes one image and would silently drop the rest. The
+            // request is valid on the primary routes, so this is unavailability.
             if (params.image.length > 1) {
-                throw UpstreamError.fromProvider(400, {
+                throw UpstreamError.fromProvider(503, {
                     message:
-                        "Qwen Image 3 on Replicate supports at most 1 reference image",
+                        "Qwen Image 3 is temporarily available with at most 1 reference image",
                 });
             }
             const image = params.image[0]
                 ? await toDataUri(params.image[0])
                 : undefined;
-            promptImageTokens = image ? 1 : 0;
+            promptImageTokens = params.image.length;
             buffer = await runReplicateImage(
                 "alibaba/qwen-image-3",
                 {

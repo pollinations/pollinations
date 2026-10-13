@@ -100,31 +100,32 @@ describe("callReplicateFallbackImage", () => {
         });
     });
 
-    it.each([
-        2, 3,
-    ])("rejects %i Qwen Image 3 references before downloading or submitting them", async (count) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it.each([2, 3])(
+        "rejects %i Qwen Image 3 references before downloading or submitting them",
+        async (count) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(
-            callReplicateFallbackImage(
-                "make it blue",
-                params(
-                    "qwen/qwen-image-3:replicate",
-                    Array.from(
-                        { length: count },
-                        (_, index) =>
-                            `https://media.example.test/reference-${index}.png`,
+            await expect(
+                callReplicateFallbackImage(
+                    "make it blue",
+                    params(
+                        "qwen/qwen-image-3:replicate",
+                        Array.from(
+                            { length: count },
+                            (_, index) =>
+                                `https://media.example.test/reference-${index}.png`,
+                        ),
                     ),
                 ),
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message:
-                "Qwen Image 3 on Replicate supports at most 1 reference image",
-            billedUsage: undefined,
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+            ).rejects.toMatchObject({
+                status: 503,
+                message:
+                    "Qwen Image 3 is temporarily available with at most 1 reference image",
+                billedUsage: undefined,
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 
     it("sends Krea's requested aspect ratio like the primary route", async () => {
         const fetchSpy = mockPrediction();

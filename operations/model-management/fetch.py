@@ -57,11 +57,16 @@ class _TextParser(HTMLParser):
         self.row = None
         self.cell = None
         self.heading = None
+        self.links = []
+        self.anchor = None
 
     def handle_starttag(self, tag, attrs):
         if tag in {"script", "style", "noscript", "template"}:
             self.ignored += 1
         elif not self.ignored:
+            if tag == "a" and len(self.links) < 100:
+                href = dict(attrs).get("href", "")
+                self.anchor = (href, []) if isinstance(href, str) and len(href) <= 2048 else None
             if tag == "table":
                 self.table = {"rows": [], "simple": True}
             elif self.table is not None and tag == "tr":
@@ -80,6 +85,9 @@ class _TextParser(HTMLParser):
         if tag in {"script", "style", "noscript", "template"} and self.ignored:
             self.ignored -= 1
         elif not self.ignored:
+            if tag == "a" and self.anchor:
+                self.links.append({"href": self.anchor[0], "text": " ".join("".join(self.anchor[1]).split())[:300]})
+                self.anchor = None
             if tag in {"th", "td"} and self.cell is not None:
                 value = " ".join("".join(self.cell).split()).replace("|", "&#124;")
                 self.row.append((value, tag == "th"))
@@ -105,11 +113,41 @@ class _TextParser(HTMLParser):
 
     def handle_data(self, data):
         if not self.ignored:
+            if self.anchor and sum(map(len, self.anchor[1])) < 1000:
+                self.anchor[1].append(data[:1000])
             (self.cell if self.cell is not None else self.heading[1] if self.heading else self.parts).append(data)
 
     def text(self):
         return "\n".join(line.strip() for line in "".join(self.parts).splitlines() if line.strip())
 
+
+def _source_links(url, anchors):
+    links = []
+    seen = {url}
+    for anchor in anchors:
+        try:
+            target = urlsplit(urljoin(url, anchor["href"]))
+            if target.port not in (None, 443):
+                continue
+        except ValueError:
+            continue
+        if (target.scheme != "https" or not target.hostname or target.username or target.password
+                or any(_is_sensitive_query_name(key) for key, _ in parse_qsl(target.query))):
+            continue
+        try:
+            address = ipaddress.ip_address(target.hostname)
+            if not address.is_global:
+                continue
+        except ValueError:
+            pass
+        value = target._replace(fragment="").geturl()
+        if value in seen or not re.search(r"model|pricing|inference|release|checkpoint|github|huggingface|provider|serverless", value + " " + anchor["text"], re.I):
+            continue
+        seen.add(value)
+        links.append({"url": value, "text": anchor["text"]})
+        if len(links) == 12:
+            break
+    return links
 
 def _result(url, method, error):
     return {"status": "unavailable", "url": url, "method": method, "text": "", "error": error}
@@ -194,10 +232,11 @@ def _excerpt(page, max_characters, focus, cached):
         "text": text[start:start + max_characters],
         "pageDigest": page["pageDigest"], "extractionVersion": page["extractionVersion"],
         "fetchedAt": page["fetchedAt"], "cached": cached, **metadata,
+        "links": page.get("links", []),
     }
 
 
-def _read_http(url, max_characters, focus=None):
+def _read_http(url, max_characters, focus=None, include_links=False):
     deadline = time.monotonic() + HTTP_DEADLINE_SECONDS
     current = _validate_url(url, deadline)
     requested = current
@@ -221,7 +260,7 @@ def _read_http(url, max_characters, focus=None):
             page["url"] = _validate_url(page["url"], deadline)
         except Exception as error:
             raise ValidationError("cached page failed validation") from error
-        if page["extractionVersion"] == EXTRACTION_VERSION:
+        if page["extractionVersion"] == EXTRACTION_VERSION and (not include_links or "links" in page):
             return _excerpt(page, max_characters, focus, True)
 
     from curl_cffi import CurlOpt
@@ -280,6 +319,7 @@ def _read_http(url, max_characters, focus=None):
             "requestedUrl": requested, "url": current, "text": text,
             "pageDigest": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "extractionVersion": EXTRACTION_VERSION,
+            "links": _source_links(current, parser.links),
             "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
         if cache_path:
@@ -308,7 +348,10 @@ def main():
             # Scrapling's DynamicFetcher has no documented per-request DNS/IP policy hook.
             url = _validate_url(url)
             return _result(url, "scrapling-dynamic", "dynamic mode is unavailable because browser subrequests cannot be safely validated")
-        return _read_http(url, max_characters, focus)
+        include_links = request.get("includeLinks", False)
+        if type(include_links) is not bool:
+            raise ValidationError("includeLinks must be boolean")
+        return _read_http(url, max_characters, focus, include_links)
     except ValidationError as error:
         return _result(_safe_url(locals().get("url", "")), "scrapling-http", str(error))
     except Exception:

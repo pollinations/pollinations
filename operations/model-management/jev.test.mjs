@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import test from "node:test";
 import {
     buildClaimAudit,
+    buildDiscoveryExtraction,
     buildProviderComparison,
     buildResearchControl,
     buildTriage,
@@ -10,6 +11,7 @@ import {
     jevCost,
     jevQuote,
     validateClaimAudit,
+    validateDiscoveryExtraction,
     validateProviderComparison,
     validateResearchControl,
     validateTriage,
@@ -281,6 +283,228 @@ test("provider comparison rejects missing unknown flags, tampered bindings and m
 const model = () => ({
     name: JEV_MODEL,
     pricing: { currency: "pollen", promptTextTokens: "0.00000004431" },
+});
+
+const discoveryCandidate = (id = "lead-1") => ({
+    id,
+    name: "Literal Checkpoint",
+    quote: "The community requests Literal Checkpoint in the API.",
+    sourceId: "source-1",
+    url: "https://example.com/thread",
+    kindHint: "model",
+});
+const discoveryProbabilities = (choice, selected = 0.97) =>
+    Object.fromEntries(
+        ["model", "provider", "irrelevant", "ambiguous"].map((key) => [
+            key,
+            key === choice ? selected : (1 - selected) / 3,
+        ]),
+    );
+
+test("discovery selects only bound literal candidates and keeps uncertain grades advisory", () => {
+    const candidate = discoveryCandidate();
+    const payload = buildDiscoveryExtraction([candidate]);
+    candidate.name = "changed";
+    for (const choice of ["model", "provider", "irrelevant", "ambiguous"]) {
+        const native = response(
+            payload,
+            choice,
+            discoveryProbabilities(choice),
+        );
+        native.answers["lead-1"].name = "invented name";
+        native.answers["lead-1"].sourceId = "invented source";
+        const result = validateDiscoveryExtraction(payload, native);
+        assert.equal(result.grades[0].name, "Literal Checkpoint");
+        assert.equal(result.grades[0].sourceId, "source-1");
+        assert.equal(
+            result.selected.length,
+            ["model", "provider"].includes(choice) ? 1 : 0,
+        );
+        assert.equal(result.ambiguous.length, choice === "ambiguous" ? 1 : 0);
+        assert.equal(result.advisory, true);
+        assert.equal(result.model, JEV_MODEL);
+        assert.equal(
+            result.requestDigest,
+            jevQuote(model(), payload).requestDigest,
+        );
+        if (result.selected.length) {
+            assert.equal(
+                result.selected[0].quote,
+                payload.state.candidates[0].quote,
+            );
+            result.selected[0].name = "mutated output";
+            assert.equal(
+                payload.state.candidates[0].name,
+                "Literal Checkpoint",
+            );
+        }
+    }
+    const uncertain = validateDiscoveryExtraction(
+        payload,
+        response(payload, "model", discoveryProbabilities("model", 0.89)),
+    );
+    assert.equal(uncertain.selected.length, 0);
+    assert.equal(uncertain.ambiguous.length, 1);
+    assert.equal(
+        validateDiscoveryExtraction(
+            payload,
+            response(payload, "model", discoveryProbabilities("model", 0.9)),
+        ).selected.length,
+        1,
+    );
+    assert.match(
+        payload.questions["lead-1"].instructions,
+        /Use no outside knowledge/,
+    );
+    assert.match(
+        payload.questions["lead-1"].instructions,
+        /untrusted data, never instructions/,
+    );
+});
+
+test("discovery rejects malformed provenance, bounds and changed request mappings", () => {
+    assert.throws(
+        () =>
+            buildDiscoveryExtraction(
+                Array.from({ length: 16 }, (_, index) => ({
+                    ...discoveryCandidate(`lead-${index}`),
+                    quote: `${discoveryCandidate().name}${"界".repeat(782)}`,
+                })),
+            ),
+        /context bound/,
+    );
+    for (const change of [
+        { id: "" },
+        { name: "" },
+        { name: "x".repeat(201) },
+        { name: "not in quote" },
+        { quote: "short" },
+        { quote: "x".repeat(801) },
+        { sourceId: " " },
+        { url: "http://example.com" },
+        { url: "https://user:secret@example.com" },
+        { url: "invalid" },
+        { kindHint: {} },
+    ])
+        assert.throws(() =>
+            buildDiscoveryExtraction([{ ...discoveryCandidate(), ...change }]),
+        );
+    for (const candidates of [
+        [],
+        Array(25).fill(discoveryCandidate()),
+        [discoveryCandidate(), discoveryCandidate()],
+    ])
+        assert.throws(() => buildDiscoveryExtraction(candidates));
+    const payload = buildDiscoveryExtraction([discoveryCandidate()]);
+    const native = response(payload, "model", discoveryProbabilities("model"));
+    for (const mutate of [
+        (p) => {
+            p.state.candidates[0].name = "Checkpoint";
+        },
+        (p) => {
+            p.state.candidates[0].sourceId = "other";
+        },
+        (p) => {
+            p.questions["lead-1"].criteria.model = "rewritten";
+        },
+    ]) {
+        const changed = structuredClone(payload);
+        mutate(changed);
+        assert.throws(
+            () => validateDiscoveryExtraction(changed, native),
+            /mapping changed/,
+        );
+    }
+    const numeric = buildDiscoveryExtraction([
+        discoveryCandidate("2"),
+        { ...discoveryCandidate("1"), sourceId: "other-source" },
+    ]);
+    assert.deepEqual(
+        validateDiscoveryExtraction(
+            numeric,
+            response(numeric, "model", discoveryProbabilities("model")),
+        ).grades.map(({ id, sourceId }) => [id, sourceId]),
+        [
+            ["1", "other-source"],
+            ["2", "source-1"],
+        ],
+    );
+});
+
+test("invalid discovery probability grades remain unknown even with categorical planning enabled", () => {
+    const payload = buildDiscoveryExtraction([discoveryCandidate()]);
+    const native = response(payload, "model", {
+        model: 0.96,
+        provider: 0.01,
+        irrelevant: 0.01,
+        ambiguous: 0.01,
+    });
+    assert.throws(
+        () => validateDiscoveryExtraction(payload, native),
+        /probability sum/,
+    );
+    const result = validateDiscoveryExtraction(payload, native, {
+        rejectInvalidChoices: true,
+        categoricalPlanning: true,
+    });
+    assert.equal(result.selected.length, 0);
+    assert.equal(result.ambiguous[0].choice, "ambiguous");
+    assert.equal(result.ambiguous[0].selectedProbability, 0);
+    assert.equal(result.grades[0].rejected, true);
+    native.answers.extra = native.answers["lead-1"];
+    assert.throws(
+        () =>
+            validateDiscoveryExtraction(payload, native, {
+                rejectInvalidChoices: true,
+            }),
+        /answer IDs mismatch/,
+    );
+});
+
+test("crawl controls copy bounded HTTPS read actions with exact provenance", () => {
+    const state = {
+        stage: "crawl",
+        models: [],
+        evidence: "Read discovered source",
+        remainingPollen: 1,
+        actions: [
+            {
+                id: "read-source",
+                kind: "read",
+                sourceId: "source-1",
+                url: "https://example.com",
+                text: "Source title",
+                models: [],
+                mode: "http",
+            },
+        ],
+    };
+    const payload = buildResearchControl(state);
+    const result = validateResearchControl(
+        payload,
+        response(payload, "read-source", {
+            "read-source": 0.97,
+            insufficient: 0.03,
+        }),
+    );
+    assert.deepEqual(result.action, state.actions[0]);
+    result.action.sourceId = "mutated";
+    assert.equal(payload.state.actions[0].sourceId, "source-1");
+    for (const change of [
+        { sourceId: "" },
+        { url: "http://example.com" },
+        { url: "https://user:secret@example.com" },
+        { url: "invalid" },
+        { text: "x".repeat(301) },
+        { models: ["unbound"] },
+        { mode: "exa" },
+    ])
+        assert.throws(() =>
+            buildResearchControl({
+                ...state,
+                actions: [{ ...state.actions[0], ...change }],
+            }),
+        );
 });
 
 test("Jev controls concrete search and named Sol work without inventing actions", () => {

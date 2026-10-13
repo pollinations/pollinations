@@ -387,7 +387,16 @@ test("single and discovery reports verify then submit the exact audited candidat
             gaps: ["Exact routes and pricing remain unknown"],
         };
         const searches = discovery
-            ? ["web", "reddit", "huggingface", "replit"].map((mode) =>
+            ? [
+                  "reddit",
+                  "quora",
+                  "huggingface",
+                  "replit",
+                  "github",
+                  "hackernews",
+                  "news",
+                  "providers",
+              ].map((mode) =>
                   call("search", {
                       ...search("discovery", selected),
                       mode,
@@ -481,7 +490,7 @@ test("failed single and discovery audits retain concise action reasons after tur
             status: "rejected",
             reason: task.model
                 ? "Required search coverage missing"
-                : "Discovery needs four distinct platform modes",
+                : "Discovery needs broad community, model-platform and provider coverage",
         });
         assert.equal(observed.error.evidence.actions.length, 3);
     }

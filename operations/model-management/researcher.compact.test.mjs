@@ -494,6 +494,7 @@ async function fixture(t) {
             pageDigest: hash(text),
             extractionVersion: 2,
             fetchedAt: new Date().toISOString(),
+            links: [],
         }),
     );
     return {
@@ -537,7 +538,9 @@ function nativeResponse(
               ? `route_${payload.state.items[0].allowedIndexes[0]}`
               : payload.state.items
                 ? relation
-                : "relevant");
+                : payload.state.candidates
+                  ? relation
+                  : "relevant");
     return {
         id: "fixture-native-response",
         model: JEV_MODEL,
@@ -583,6 +586,7 @@ function network(
         leadTitle = model.name,
         nativeFailures = [],
         solFailures = [],
+        extractRelation = "irrelevant",
     } = {},
 ) {
     const calls = { search: [], native: [], sol: [] };
@@ -660,7 +664,9 @@ function network(
                     id.startsWith("discovery:"),
                 )
                     ? marketRelation
-                    : "supported",
+                    : payload.state.candidates
+                      ? extractRelation
+                      : "supported",
                 marketFinish,
                 payload.state.actions
                     ? chooseControl?.(payload, calls)
@@ -1083,6 +1089,103 @@ test(
     },
 );
 
+test(
+    "native discovery extraction publishes literal model leads without Sol or invented facts",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const release = `${model.name} was newly released in 2026-10 and community members request this embedding model. ${text}`;
+        await writeFile(
+            join(out, "pages", `${hash(url)}.json`),
+            JSON.stringify({
+                requestedUrl: url,
+                url,
+                text: release,
+                pageDigest: hash(release),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+                links: [],
+            }),
+        );
+        const calls = network(t, [sol, jev], {
+            marketFinish: true,
+            extractRelation: "model",
+            leadText: release,
+        });
+        const report = await main({ ...env, MODELS: "" });
+        assert.equal(
+            report.discovery.status,
+            "researched",
+            report.discovery.reason,
+        );
+        assert.equal(calls.sol.length, 0);
+        const extractionCalls = calls.native.filter(
+            ({ state }) => state.candidates,
+        );
+        assert.equal(extractionCalls.length, 1);
+        const discovery = report.discovery.discoveries.find(
+            (item) => item.name === model.name,
+        );
+        assert.ok(discovery);
+        const source = report.discovery.sources.find(
+            ({ id }) => id === discovery.sourceIds[0],
+        );
+        assert.equal(
+            source.text.slice(
+                discovery.extraction.start,
+                discovery.extraction.end,
+            ),
+            discovery.extraction.quote,
+        );
+        assert.match(discovery.extraction.requestDigest, /^[a-f0-9]{64}$/);
+        assert.equal(discovery.pricing, undefined);
+        assert.ok(
+            report.quality.discoveryCoverage.every(({ searched }) => searched),
+        );
+        assert.equal(
+            report.quality.discoveryCoverage.find(
+                ({ mode }) => mode === "reddit",
+            ).platformPages,
+            0,
+            "Search queries alone cannot claim Reddit pages were crawled",
+        );
+    },
+);
+
+test(
+    "Sol consolidation cannot drop Jev's source-supported discovery lead",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { env } = await fixture(t);
+        const calls = network(t, [sol, jev], {
+            extractRelation: "model",
+            marketRelation: "supported",
+        });
+        const report = await main({ ...env, MODELS: "" });
+        assert.equal(
+            report.discovery.status,
+            "researched",
+            report.discovery.reason,
+        );
+        assert.equal(calls.sol.length, 1);
+        const context = JSON.parse(calls.sol[0].messages[1].content);
+        assert.ok(
+            context.preparation.extractedDiscoveries.some(
+                ({ name }) => name === model.name,
+            ),
+        );
+        assert.ok(
+            report.discovery.discoveries.some(
+                ({ name }) => name === model.name,
+            ),
+        );
+        assert.equal(
+            report.discovery.preparation.extraction.discoveries.length,
+            1,
+        );
+    },
+);
+
 for (const relation of [
     "supported",
     "insufficient",
@@ -1270,6 +1373,7 @@ for (const invalid of ["usage", "answer"])
                     text,
                     models: [model.name],
                     scopes,
+                    modes: ["web"],
                     queryModels: [model.name, second.name].sort(),
                 },
             ]);
@@ -1331,7 +1435,14 @@ test(
             nativeAt: 2,
         });
         const report = await main(env);
-        assert.equal(calls.search.length, 4);
+        assert.equal(
+            calls.search.length,
+            4,
+            JSON.stringify({
+                reason: report.models[0].reason,
+                last: report.calls.at(-1)?.validationError,
+            }),
+        );
         assert.equal(calls.native.length, 7);
         assert.equal(calls.sol.length, 0);
         assert.ok(

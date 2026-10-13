@@ -248,7 +248,7 @@ test("surfaces Discord membership rate limits", async ({
     expect(mocks.discord.state.membershipRequestCount).toBe(1);
 });
 
-test("pays Discord level milestones once per Discord account", async ({
+test("pays Discord quests once per Discord account", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -302,9 +302,7 @@ test("pays Discord level milestones once per Discord account", async ({
         { questId: "discord_level_20", pollenAmount: 5 },
         { questId: "join_discord", pollenAmount: 1 },
     ]);
-    expect(await discordRewards(secondUserId)).toEqual([
-        { questId: "join_discord", pollenAmount: 1 },
-    ]);
+    expect(await discordRewards(secondUserId)).toEqual([]);
 });
 
 test("rejects Discord as a standalone sign-in provider", async () => {

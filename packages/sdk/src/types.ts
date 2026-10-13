@@ -11,6 +11,8 @@ export interface PollinationsConfig {
     imageTimeout?: number;
     /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
+    /** Timeout in ms for 3D requests (default: 1200000 = 20min) */
+    model3dTimeout?: number;
 }
 
 /** Common options for all request methods */
@@ -120,6 +122,40 @@ export interface VideoResponse {
     /** Content type (video/mp4) */
     contentType: string;
     /** The URL that was used to generate the video */
+    url: string;
+}
+
+// ============================================================================
+// 3D Generation
+// ============================================================================
+
+/** 3D model (see https://gen.pollinations.ai/3d/models for the full list) */
+export type Model3dModel = string;
+
+/** Output detail for `microsoft/trellis-2` (defaults to `low`) */
+export type Model3dResolution = "low" | "medium" | "high";
+
+/** Options for 3D generation (GET /3d/{prompt}) */
+export interface Model3dGenerateOptions extends RequestOptions {
+    /** 3D model to use (server default: 'microsoft/trellis-2') */
+    model?: Model3dModel;
+    /** Output detail for `microsoft/trellis-2` (default: 'low') */
+    resolution?: Model3dResolution;
+    /** Reference image URL(s) for image-to-3D. Required for image-only models. */
+    image?: string | string[];
+    /** Seed for varied generations (also busts the media cache) */
+    seed?: number;
+    /** Enable safety content filters (default: false) */
+    safe?: boolean;
+}
+
+/** Response from 3D generation */
+export interface Model3dResponse {
+    /** The generated model as a Buffer (Node.js) or ArrayBuffer (browser) */
+    buffer: ArrayBuffer;
+    /** Content type (`model/gltf-binary` for GLB, `model/ply` for Gaussian splats) */
+    contentType: string;
+    /** The URL that was used to generate the model */
     url: string;
 }
 
@@ -506,6 +542,32 @@ export interface AudioBinaryResponse {
     buffer: ArrayBuffer;
     /** Content type (audio/mpeg) */
     contentType: string;
+}
+
+/** Output encoding for `/v1/audio/speech/with-timestamps` (`flac` is rejected) */
+export type TimestampedSpeechFormat = "mp3" | "opus" | "aac" | "wav" | "pcm";
+
+/** Options for POST /v1/audio/speech/with-timestamps */
+export interface AudioSpeechWithTimestampsOptions extends AudioSpeechOptions {
+    /** Encoding used for audio_base64 (server default: 'mp3') */
+    responseFormat?: TimestampedSpeechFormat;
+}
+
+/** Character-level timing for the original or normalized text */
+export interface SpeechCharacterAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+/** Response from POST /v1/audio/speech/with-timestamps (ElevenLabs JSON shape) */
+export interface SpeechWithTimestampsResponse {
+    /** Base64-encoded speech audio */
+    audio_base64: string;
+    /** Timing for the original text */
+    alignment: SpeechCharacterAlignment;
+    /** Timing for the normalized text */
+    normalized_alignment: SpeechCharacterAlignment;
 }
 
 /** Audio response from chat with audio modality */
@@ -1162,6 +1224,58 @@ export interface ModelInfo {
     /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
     paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
+}
+
+/** Traffic population for GET /models/status */
+export type ModelStatusTraffic = "all" | "regular";
+
+/** Options for GET /models/status */
+export interface ModelStatusOptions extends RequestOptions {
+    /** Traffic population (server default: 'all') */
+    traffic?: ModelStatusTraffic;
+    /** Rolling window in minutes, 1-10080 (server default: 60) */
+    minutes?: number;
+}
+
+/** One Tinybird `model_route_health` pipe column descriptor */
+export interface ModelStatusMeta {
+    /** Fields added by the pipe pass through without an SDK release. */
+    [key: string]: unknown;
+    name: string;
+    type: string;
+}
+
+/** One Tinybird `model_route_health` pipe row */
+export interface ModelStatusRow {
+    /** Fields added by the pipe pass through without an SDK release. */
+    [key: string]: unknown;
+    model?: string;
+    event_type?: string;
+    model_used?: string;
+    provider?: string;
+    is_rollup?: number | boolean;
+    fallback_used?: boolean;
+    total_requests?: number;
+    status_2xx?: number;
+    errors_4xx?: number;
+    errors_5xx?: number;
+    served?: number;
+    fallback_rescues?: number;
+    retried_503s?: number;
+    last_error_at?: string;
+    latency_p50_ms?: number | null;
+    latency_p95_ms?: number | null;
+    avg_latency_ms?: number | null;
+    last_request_at?: string;
+    tokens_per_second?: number | null;
+}
+
+/** Response from GET /models/status (raw Tinybird pipe response) */
+export interface ModelStatusResponse {
+    /** Fields added by the pipe pass through without an SDK release. */
+    [key: string]: unknown;
+    meta: ModelStatusMeta[];
+    data: ModelStatusRow[];
 }
 
 // ============================================================================

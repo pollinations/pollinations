@@ -1944,3 +1944,159 @@ describe("response body cancellation", () => {
         }
     }
 });
+
+describe("Pollinations 3D generation", () => {
+    it("builds the /3d URL with model, resolution, image, seed and safe", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/gltf-binary",
+            }),
+        );
+
+        const result = await newClient().model3d("a dragon", {
+            model: "microsoft/trellis-2",
+            resolution: "high",
+            image: "https://example.test/ref.png",
+            seed: 7,
+            safe: true,
+        });
+
+        const [url] = fetchMock.mock.calls[0];
+        const parsed = new URL(url as string);
+        expect(parsed.pathname).toBe("/3d/a%20dragon");
+        expect(parsed.searchParams.get("model")).toBe("microsoft/trellis-2");
+        expect(parsed.searchParams.get("resolution")).toBe("high");
+        expect(parsed.searchParams.get("image")).toBe(
+            "https://example.test/ref.png",
+        );
+        expect(parsed.searchParams.get("seed")).toBe("7");
+        expect(parsed.searchParams.get("safe")).toBe("true");
+        expect(parsed.searchParams.get("key")).toBe("sk_test");
+        expect(result.contentType).toBe("model/gltf-binary");
+        expect(result.url).not.toContain("sk_test");
+    });
+
+    it("omits the unset model and joins multiple images with pipes", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/ply",
+            }),
+        );
+
+        const result = await newClient().model3d("a chair", {
+            image: ["https://a.test/1.png", "https://b.test/2.png"],
+        });
+
+        const [url] = fetchMock.mock.calls[0];
+        const parsed = new URL(url as string);
+        expect(parsed.searchParams.has("model")).toBe(false);
+        expect(parsed.searchParams.get("image")).toBe(
+            "https://a.test/1.png|https://b.test/2.png",
+        );
+        expect(result.contentType).toBe("model/ply");
+    });
+
+    it("rejects an empty prompt without fetching", async () => {
+        await expect(newClient().model3d("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("Pollinations model status", () => {
+    it("fetches /models/status with traffic and minutes", async () => {
+        const payload = {
+            meta: [{ name: "model", type: "String" }],
+            data: [
+                {
+                    model: "openai",
+                    event_type: "generate.text",
+                    is_rollup: 1,
+                    status_2xx: 10,
+                    errors_5xx: 0,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValue(makeResponse(payload));
+
+        const result = await newClient().modelStatus({
+            traffic: "regular",
+            minutes: 5,
+        });
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=5",
+        );
+        expect(result).toEqual(payload);
+    });
+
+    it("omits unset options without leaking the key into the URL", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ meta: [], data: [] }));
+
+        await newClient().modelStatus();
+
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://example.test/models/status",
+        );
+    });
+});
+
+describe("Pollinations timestamped speech", () => {
+    const alignment = {
+        characters: ["H", "i"],
+        character_start_times_seconds: [0, 0.1],
+        character_end_times_seconds: [0.1, 0.2],
+    };
+
+    it("posts the input and returns audio plus timings", async () => {
+        const payload = {
+            audio_base64: "QUJD",
+            alignment,
+            normalized_alignment: alignment,
+        };
+        fetchMock.mockResolvedValue(makeResponse(payload));
+
+        const result = await newClient().audioSpeechWithTimestamps("Hi", {
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            responseFormat: "mp3",
+            seed: 1,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({
+            input: "Hi",
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            response_format: "mp3",
+            seed: 1,
+        });
+        expect(result).toEqual(payload);
+    });
+
+    it("rejects a non-JSON success body instead of relabeling it", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, { contentType: "audio/mpeg" }),
+        );
+
+        await expect(
+            newClient().audioSpeechWithTimestamps("Hi"),
+        ).rejects.toMatchObject({ code: "INVALID_RESPONSE", status: 502 });
+    });
+
+    it("rejects a JSON body without audio", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ alignment: {} }));
+
+        await expect(
+            newClient().audioSpeechWithTimestamps("Hi"),
+        ).rejects.toMatchObject({ code: "INVALID_RESPONSE", status: 502 });
+    });
+});

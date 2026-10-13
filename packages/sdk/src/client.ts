@@ -8,6 +8,7 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -35,10 +36,15 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
     ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechWithTimestampsResponse,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -61,6 +67,7 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
+const DEFAULT_MODEL3D_TIMEOUT = 1_200_000; // 20min for 3D models
 
 /** One item of an OpenAI-style image response */
 type ImageItem = { url?: string; b64_json?: string; media_type?: string };
@@ -277,6 +284,7 @@ export class Pollinations {
     private textTimeout: number;
     private imageTimeout: number;
     private videoTimeout: number;
+    private model3dTimeout: number;
 
     constructor(config: PollinationsConfig = {}) {
         // Auto-detect API key from environment if not provided
@@ -302,6 +310,9 @@ export class Pollinations {
         this.videoTimeout =
             config.videoTimeout ??
             (config.timeout ? config.timeout : DEFAULT_VIDEO_TIMEOUT);
+        this.model3dTimeout =
+            config.model3dTimeout ??
+            (config.timeout ? config.timeout : DEFAULT_MODEL3D_TIMEOUT);
     }
 
     // ============================================================================
@@ -750,6 +761,82 @@ export class Pollinations {
         );
     }
 
+    /** Build 3D URL with all params (internal use) */
+    private buildModel3dUrl(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): string {
+        const params: Record<string, unknown> = {
+            model: options.model,
+            resolution: options.resolution,
+            image: options.image,
+            seed: options.seed,
+            safe: options.safe,
+        };
+
+        const queryString = this.buildQueryParams(params);
+        const encodedPrompt = encodeURIComponent(prompt);
+
+        return `${this.baseUrl}/3d/${encodedPrompt}${queryString ? `?${queryString}` : ""}`;
+    }
+
+    /**
+     * Generate a 3D model URL from a text prompt.
+     * Hits the API first to authenticate, then returns a keyless URL that can be shared.
+     *
+     * @example
+     * ```ts
+     * const url = await pollinations.model3dUrl('a low-poly dragon');
+     * ```
+     */
+    async model3dUrl(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<string> {
+        const response = await this.model3d(prompt, options);
+        return response.url; // Already has key stripped
+    }
+
+    /**
+     * Generate a 3D model and return it as binary data (GLB, or PLY for Gaussian splats).
+     * Note: 3D generation can take several minutes - timeout is set to 20 minutes.
+     *
+     * @example
+     * ```ts
+     * const { buffer } = await pollinations.model3d('a low-poly dragon');
+     * ```
+     */
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const url = this.buildModel3dUrl(prompt, options);
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.model3dTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "model/gltf-binary";
+
+                return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
     // ============================================================================
     // Text Generation
     // ============================================================================
@@ -1094,6 +1181,75 @@ export class Pollinations {
         );
     }
 
+    /**
+     * Generate speech with word timings using the timestamped TTS endpoint
+     * (POST /v1/audio/speech/with-timestamps). Returns base64 audio plus
+     * character-level timing for the original and normalized text.
+     *
+     * @example
+     * ```ts
+     * const timed = await pollinations.audioSpeechWithTimestamps('Hello world', { voice: 'nova' });
+     * const bytes = Buffer.from(timed.audio_base64, "base64");
+     * ```
+     */
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<SpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input: text,
+            voice: options.voice,
+            model: options.model,
+            response_format: options.responseFormat,
+            seed: options.seed,
+        };
+
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const contentType = response.headers.get("content-type") || "";
+                if (!contentType.startsWith("application/json")) {
+                    throw new PollinationsError(
+                        "Timestamp endpoint did not return JSON audio",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+
+                const data =
+                    (await response.json()) as SpeechWithTimestampsResponse;
+                if (!data || typeof data.audio_base64 !== "string") {
+                    throw new PollinationsError(
+                        "Timestamp endpoint returned an invalid response",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+
+                return data;
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1142,6 +1298,28 @@ export class Pollinations {
     async models(kind?: ModelKind): Promise<ModelInfo[]> {
         const path = kind ? `/${kind}/models` : "/models";
         return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
+    }
+
+    /**
+     * Get model health status (GET /models/status): the raw Tinybird
+     * `model_route_health` pipe response with per-model rollup and route rows.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.modelStatus({ minutes: 60 });
+     * ```
+     */
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const params: Record<string, unknown> = {
+            traffic: options.traffic,
+            minutes: options.minutes,
+        };
+
+        const queryString = this.buildQueryParams(params, false);
+        const url = `${this.baseUrl}/models/status${queryString ? `?${queryString}` : ""}`;
+        return this.getJson<ModelStatusResponse>(url, options.signal);
     }
 
     // ============================================================================

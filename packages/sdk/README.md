@@ -418,6 +418,37 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import fs from 'node:fs';
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+
+// Text-to-3D (GLB; Gaussian splats come back as PLY)
+const model = await client.model3d('a low-poly dragon', {
+  resolution: 'medium',
+});
+await fs.promises.writeFile('dragon.glb', Buffer.from(model.buffer));
+
+// Image-to-3D for image-only models (any non-empty prompt works)
+const fromPhoto = await client.model3d('no_prompt_for_trellis_needed', {
+  model: 'microsoft/trellis-2',
+  image: 'https://example.com/chair.png',
+});
+await fs.promises.writeFile('chair.glb', Buffer.from(fromPhoto.buffer));
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | `'microsoft/trellis-2'` | `'microsoft/trellis-2'`, `'hyper3d/rodin-2.5'`, `'nvidia/asset-harvester'` |
+| `resolution` | string | `'low'` | Output detail for `microsoft/trellis-2`: `'low'`, `'medium'`, `'high'` |
+| `image` | string or string[] | - | Reference image URL(s); required for image-only models |
+| `seed` | number | random | Reproducible results (also busts the media cache) |
+| `safe` | boolean | `false` | Safety filter |
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -442,6 +473,25 @@ const dataUrl = speech.toDataURL();
 const audioEl = new Audio(speech.toDataURL());
 audioEl.play();
 ```
+### Speech with word timestamps
+
+```javascript
+import fs from 'node:fs';
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+const timed = await client.audioSpeechWithTimestamps('Hello, welcome!', {
+  voice: 'nova',
+});
+console.log(timed.alignment.character_start_times_seconds);
+await fs.promises.writeFile(
+  'timed.mp3',
+  Buffer.from(timed.audio_base64, 'base64'),
+);
+```
+
+Options: same `voice`/`model`/`seed` as speech, plus `responseFormat`
+(`'mp3'`, `'opus'`, `'aac'`, `'wav'`, `'pcm'` — `'flac'` is rejected by the API).
 
 ### Options
 
@@ -535,6 +585,17 @@ const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
+### Model health status
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+const status = await client.modelStatus({ traffic: 'regular', minutes: 60 });
+for (const row of status.data.filter((r) => r.is_rollup)) {
+  console.log(row.model, row.status_2xx, row.errors_5xx);
+}
+```
 
 ## Media Upload
 
@@ -612,6 +673,10 @@ import type {
 | `chatStream(messages, options?)` | Stream chat |
 | `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
+| `client.model3d(prompt, options?)` | Generate a 3D model (GLB/PLY binary) |
+| `client.model3dUrl(prompt, options?)` | Get 3D model URL |
+| `client.modelStatus(options?)` | Model health status (`/models/status`) |
+| `client.audioSpeechWithTimestamps(text, options?)` | Speech audio + word timings |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
@@ -633,7 +698,7 @@ const base64 = image.toBase64();    // Raw base64 string
 
 ### Request Timeout
 
-Default timeouts: text/chat 5min, images 10min, videos 20min. For custom timeouts:
+Default timeouts: text/chat 5min, images 10min, videos and 3D models 20min. For custom timeouts:
 
 ```javascript
 import { Pollinations } from '@pollinations/sdk';
@@ -643,6 +708,8 @@ const client = new Pollinations({
   textTimeout: 300000,   // 5 minutes for text
   imageTimeout: 600000,  // 10 minutes for images
   videoTimeout: 1200000, // 20 minutes for videos
+  videoTimeout: 1200000, // 20 minutes for videos
+  model3dTimeout: 1200000, // 20 minutes for 3D models
 });
 ```
 

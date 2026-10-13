@@ -19,6 +19,12 @@ pattern = "image.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
 
+# The host the 402 challenge's resource.url names (src/pay.ts)
+[[routes]]
+pattern = "image-origin.pollinations.ai"
+zone_name = "pollinations.ai"
+custom_domain = true
+
 # R2 bucket for image storage
 [[r2_buckets]]
 binding = "IMAGE_BUCKET"

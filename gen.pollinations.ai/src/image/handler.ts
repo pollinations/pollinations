@@ -82,7 +82,9 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
@@ -162,6 +164,16 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {

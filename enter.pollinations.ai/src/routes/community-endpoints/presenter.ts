@@ -94,6 +94,7 @@ export function toCommunityEndpointResponse(
             api: payload.api,
             inputModalities: payload.inputModalities,
             outputModalities: payload.outputModalities,
+            capabilities: payload.capabilities,
             url: row.baseUrl,
             upstreamModel: row.upstreamModel,
         });

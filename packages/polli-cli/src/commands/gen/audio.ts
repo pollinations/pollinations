@@ -82,7 +82,7 @@ export function createAudioCommand() {
         )
         .addHelpText(
             "after",
-            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice callum --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
+            `\nExamples:\n  polli gen audio "hello world" --play\n  echo "the sky today" | polli gen audio --voice nova --play\n  polli gen audio --model elevenlabs --voice callum "the sky today" --play\n  polli gen audio --model elevenmusic --duration 30 "lofi beats" --output song.mp3\n`,
         )
         .argument("[text]", "Text to speak (or pipe via stdin)")
         .option("--voice <voice>", "Voice name (default: the model's own)")
@@ -98,6 +98,13 @@ export function createAudioCommand() {
             "Also save character-level timing as JSON next to the audio",
         )
         .action(async (textArg, opts) => {
+            if (opts.timestamps && (opts.duration || opts.instrumental)) {
+                printError(
+                    "--timestamps cannot be combined with --duration or --instrumental (timestamps are only available for speech models)",
+                );
+                throw new ExitSignal(1);
+            }
+
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `speech.${opts.format}`;
             const inputText = textArg || (await readStdin()).trim();

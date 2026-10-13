@@ -475,42 +475,42 @@ test("cached modality adjustments remain visible without a matching base row", (
     expect(markup).toContain("0.24");
 });
 
-test.each([
-    "left",
-    "right",
-] as const)("search fees render above normal rates with an icon and their billing unit (%s)", (align) => {
-    const models = getCatalogModelPrices();
-    for (const [kind, unit] of [
-        ["search_query", "/K queries"],
-        ["search_request", "/K req"],
-    ]) {
-        const model = models.find((item) =>
-            item.priceAdjustments?.some(
-                (fee) => fee.kind === kind && fee.quantity === 1_000,
-            ),
-        );
-        assert(model);
-        const markup = renderToStaticMarkup(
-            createElement(ModelPricingLedger, {
-                align,
-                pricing: {
-                    prices: model.prices,
-                    adjustments: model.priceAdjustments ?? [],
-                    dropdowns: [],
-                },
-            }),
-        );
-        const search = markup.indexOf(">Search<");
-        const input = markup.indexOf(">Text in<");
-        expect(search).toBeGreaterThan(-1);
-        expect(input).toBeGreaterThan(search);
-        expect(
-            markup.slice(markup.lastIndexOf("<div", search), search),
-        ).toContain("<svg");
-        expect(markup.slice(search, input)).toContain(unit);
-        expect(markup.slice(search, input)).toContain("border-t");
-    }
-});
+test.each(["left", "right"] as const)(
+    "search fees render above normal rates with an icon and their billing unit (%s)",
+    (align) => {
+        const models = getCatalogModelPrices();
+        for (const [kind, unit] of [
+            ["search_query", "/K queries"],
+            ["search_request", "/K req"],
+        ]) {
+            const model = models.find((item) =>
+                item.priceAdjustments?.some(
+                    (fee) => fee.kind === kind && fee.quantity === 1_000,
+                ),
+            );
+            assert(model);
+            const markup = renderToStaticMarkup(
+                createElement(ModelPricingLedger, {
+                    align,
+                    pricing: {
+                        prices: model.prices,
+                        adjustments: model.priceAdjustments ?? [],
+                        dropdowns: [],
+                    },
+                }),
+            );
+            const search = markup.indexOf(">Search<");
+            const input = markup.indexOf(">Text in<");
+            expect(search).toBeGreaterThan(-1);
+            expect(input).toBeGreaterThan(search);
+            expect(
+                markup.slice(markup.lastIndexOf("<div", search), search),
+            ).toContain("<svg");
+            expect(markup.slice(search, input)).toContain(unit);
+            expect(markup.slice(search, input)).toContain("border-t");
+        }
+    },
+);
 
 test("flat fees join price options while token charges remain with normal rates", () => {
     const model = getCatalogModelPrices().find((item) =>

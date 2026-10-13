@@ -91,6 +91,22 @@ export const COMMUNITY_ENDPOINT_CAPABILITIES = [
 export type CommunityEndpointCapability =
     (typeof COMMUNITY_ENDPOINT_CAPABILITIES)[number];
 
+/**
+ * Traits an endpoint agent may declare for itself. The agent runs its own
+ * tools, so web search, code execution and Pollinations model calls are agent
+ * traits here rather than upstream provider features.
+ */
+export const ENDPOINT_AGENT_CAPABILITIES = [
+    "tool_calling",
+    "reasoning",
+    "web_search",
+    "code_execution",
+    "pollinations_models",
+] as const satisfies readonly ModelCapability[];
+
+export type EndpointAgentCapability =
+    (typeof ENDPOINT_AGENT_CAPABILITIES)[number];
+
 export const CommunityEndpointAdvertisedSchema = z
     .object({
         capabilities: z
@@ -699,6 +715,12 @@ export const EndpointAgentListingPayloadSchema = z
             .min(1)
             .optional()
             .describe("Output types produced by the agent. Defaults to text."),
+        capabilities: z
+            .array(z.enum(ENDPOINT_AGENT_CAPABILITIES))
+            .optional()
+            .describe(
+                "Traits the agent supports through its public endpoint, such as tools it runs itself. Defaults to none.",
+            ),
     })
     .strict();
 
@@ -870,6 +892,7 @@ export type EndpointAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "endpoint_agent";
         outputModalities?: ModelOutputModality[];
+        capabilities?: EndpointAgentCapability[];
     };
 
 export type CommunityEndpointRuntime =
@@ -906,6 +929,8 @@ export type CommunityModelDefinitionInput = {
     requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
+    // Self-declared endpoint-agent traits; proxies use `advertised` instead.
+    capabilities?: readonly EndpointAgentCapability[];
     paidOnly: boolean;
 } & CommunityEndpointPrices;
 
@@ -1066,10 +1091,14 @@ export function communityModelDefinition(
     const providerName = endpoint.providerName?.trim();
     const providerUrl = endpoint.providerUrl?.trim();
     const {
-        capabilities = [],
+        capabilities: advertisedCapabilities = [],
         streaming,
         ...advertised
     } = normalizeCommunityEndpointAdvertised(endpoint.advertised, modality);
+    const capabilities = new Set<ModelCapability>([
+        ...advertisedCapabilities,
+        ...(endpoint.capabilities ?? []),
+    ]);
     return {
         aliases,
         provider: "community",
@@ -1105,8 +1134,10 @@ export function communityModelDefinition(
         // catalog only renders per-1M prices when flat_rate === false or a
         // prompt token price is set.
         ...(isImage ? { flatRate: isFlatRateImage } : {}),
-        ...(capabilities.includes("tool_calling") ? { tools: true } : {}),
-        ...(capabilities.includes("reasoning") ? { reasoning: true } : {}),
+        ...(capabilities.has("tool_calling") ? { tools: true } : {}),
+        ...(capabilities.has("reasoning") ? { reasoning: true } : {}),
+        ...(capabilities.has("web_search") ? { search: true } : {}),
+        ...(capabilities.has("code_execution") ? { codeExecution: true } : {}),
         ...(streaming === false ? { supportsStreaming: false } : {}),
         ...advertised,
     };

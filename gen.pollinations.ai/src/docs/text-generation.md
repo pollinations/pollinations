@@ -20,7 +20,7 @@ curl https://gen.pollinations.ai/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "input": "Explain why the sky is blue in two sentences.",
     "store": false
   }'
@@ -45,7 +45,7 @@ Models that list `/v1/messages` in `supported_endpoints` — every text model th
 ```bash
 export ANTHROPIC_BASE_URL=https://gen.pollinations.ai
 export ANTHROPIC_AUTH_TOKEN=$POLLINATIONS_API_KEY
-export ANTHROPIC_MODEL=openai
+export ANTHROPIC_MODEL=openai/gpt-5.4-nano
 claude
 ```
 
@@ -59,7 +59,7 @@ client = anthropic.Anthropic(
     auth_token=os.environ["POLLINATIONS_API_KEY"],
 )
 message = client.messages.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     max_tokens=1024,
     messages=[{"role": "user", "content": "Hello"}],
 )
@@ -73,7 +73,7 @@ const client = new Anthropic({
     authToken: process.env.POLLINATIONS_API_KEY,
 });
 const message = await client.messages.create({
-    model: "openai",
+    model: "openai/gpt-5.4-nano",
     max_tokens: 1024,
     messages: [{ role: "user", content: "Hello" }],
 });
@@ -99,12 +99,12 @@ Dialogue models expect one `<voice>: <text>` turn per line, just like `/audio`. 
 curl https://gen.pollinations.ai/v1/responses \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"flux","input":"A lighthouse at dawn"}'
+  -d '{"model":"black-forest-labs/flux.1-schnell","input":"A lighthouse at dawn"}'
 
 curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"flux","messages":[{"role":"user","content":"A lighthouse at dawn"}]}'
+  -d '{"model":"black-forest-labs/flux.1-schnell","messages":[{"role":"user","content":"A lighthouse at dawn"}]}'
 ```
 
 Both return assistant text: a Markdown image embed for images, or a Markdown link for audio, video and 3D, followed by the plain public file URL. The URL is also in the `Link` header. With `stream: true`, events arrive after generation finishes.
@@ -121,7 +121,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "reasoning_effort": "high",
     "messages": [
       { "role": "user", "content": "Prove that there are infinitely many prime numbers." }
@@ -135,7 +135,7 @@ curl https://gen.pollinations.ai/text \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "reasoning_effort": "medium",
     "messages": [
       { "role": "user", "content": "Design a URL shortener. Outline the key tradeoffs." }
@@ -170,7 +170,7 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 **Claude** — all Claude models cache. The prefix minimum varies by model: 512 tokens on `anthropic/claude-fable-5`, `anthropic/claude-fable-5.1`, and `anthropic/claude-opus-5`, and 1,024 on `anthropic/claude-sonnet-4.6`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
 
-**Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+**Nova** — `amazon/nova-2-lite-v1` and `amazon/nova-micro-v1` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
 
 Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.
 

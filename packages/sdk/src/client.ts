@@ -1131,32 +1131,6 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
-    }
-
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
      * Get available models, or only one kind of them
      *
      * @example

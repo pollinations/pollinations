@@ -340,20 +340,6 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
- */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
  * Get available models, or only one kind of them
  */
 export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {

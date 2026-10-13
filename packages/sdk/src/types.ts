@@ -23,7 +23,7 @@ export interface RequestOptions {
 // Image Generation
 // ============================================================================
 
-/** Image model (use getImageModels() to fetch available models) */
+/** Image model (use getModels("image") to fetch available models) */
 export type ImageModel = string;
 
 /** Available video models */
@@ -127,7 +127,7 @@ export interface VideoResponse {
 // Text Generation
 // ============================================================================
 
-/** Text model (use getTextModels() to fetch available models) */
+/** Text model (use getModels("text") to fetch available models) */
 export type TextModel = string;
 
 /** Message roles for chat */

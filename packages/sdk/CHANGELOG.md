@@ -15,6 +15,8 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 
 ### Removed
+- `textModels()`, `imageModels()`, `getTextModels()` and `getImageModels()`.
+  Use `models("text")` or `getModels("text")`, and the same with `"image"`.
 - `Conversation` and `conversation()`. Nothing used them; keep the history in
   your own `messages` array and pass it to `chat()` or `chatStream()`.
 

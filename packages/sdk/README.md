@@ -527,10 +527,10 @@ See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`,
 ## List Available Models
 
 ```javascript
-import { getTextModels, getImageModels, getModels } from '@pollinations/sdk';
+import { getModels } from '@pollinations/sdk';
 
-const textModels = await getTextModels();
-const imageModels = await getImageModels();
+const textModels = await getModels('text');
+const imageModels = await getModels('image');
 const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
@@ -616,8 +616,6 @@ import type {
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
-| `getTextModels()` | List text models |
-| `getImageModels()` | List image models |
 | `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
 

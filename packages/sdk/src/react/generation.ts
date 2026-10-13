@@ -114,10 +114,8 @@ export function useGeneration<A extends unknown[], T>(
 
     const rerun = useCallback(
         () =>
-            argsRef.current
-                ? run(...argsRef.current)
-                : Promise.resolve(data ?? null),
-        [run, data],
+            argsRef.current ? run(...argsRef.current) : Promise.resolve(null),
+        [run],
     );
 
     return useMemo(

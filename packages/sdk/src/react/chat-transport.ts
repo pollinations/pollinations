@@ -281,20 +281,20 @@ export function polliChatTransport(
 }
 
 /**
- * `polliChatTransport` bound to the `<PolliProvider>` key. The transport is
- * stable for `useChat`; it reads the current key on every send, and a key
- * change or logout aborts a reply that is still streaming for the old key.
+ * `polliChatTransport` bound to the `<PolliProvider>` key. The transport
+ * object never changes, so `useChat` can keep it; every send reads the
+ * current key and options. A key change or logout aborts a reply that is
+ * still streaming for the old key.
  */
 export function usePolliChatTransport(
     options: Omit<PolliChatTransportOptions, "apiKey"> = {},
 ): ChatTransport<PolliUIMessage> {
     const { apiKey } = useAuthState();
-    const keyRef = useRef(apiKey);
+    const latest = useRef({ ...options, apiKey });
+    latest.current = { ...options, apiKey };
     const controllers = useRef(new Set<AbortController>());
-    const { model, body, baseUrl } = options;
 
     useEffect(() => {
-        keyRef.current = apiKey;
         const active = controllers.current;
         return () => {
             for (const controller of active) controller.abort();
@@ -302,15 +302,8 @@ export function usePolliChatTransport(
         };
     }, [apiKey]);
 
-    return useMemo(() => {
-        const transport = polliChatTransport({
-            apiKey: () => keyRef.current,
-            model,
-            body,
-            baseUrl,
-        });
-        return {
-            ...transport,
+    return useMemo(
+        () => ({
             async sendMessages(request) {
                 const controller = new AbortController();
                 const abort = () => controller.abort();
@@ -321,7 +314,9 @@ export function usePolliChatTransport(
                     request.abortSignal?.removeEventListener("abort", abort);
                 };
                 try {
-                    const stream = await transport.sendMessages({
+                    const stream = await polliChatTransport(
+                        latest.current,
+                    ).sendMessages({
                         ...request,
                         abortSignal: controller.signal,
                     });
@@ -333,6 +328,10 @@ export function usePolliChatTransport(
                     throw err;
                 }
             },
-        };
-    }, [model, body, baseUrl]);
+            async reconnectToStream() {
+                return null;
+            },
+        }),
+        [],
+    );
 }

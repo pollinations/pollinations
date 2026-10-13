@@ -330,32 +330,39 @@ describe("usePolliChatTransport", () => {
         });
 
         const transports: ReturnType<typeof usePolliChatTransport>[] = [];
-        function Probe() {
-            transports.push(usePolliChatTransport({ model: "openai" }));
+        const models: string[] = [];
+        function Probe({ model }: { model: string }) {
+            transports.push(usePolliChatTransport({ model }));
             return null;
         }
-        const tree = (key: string | null) => (
+        const tree = (key: string | null, model = "openai") => (
             <AuthContext.Provider value={authValue(key)}>
-                <Probe />
+                <Probe model={model} />
             </AuthContext.Provider>
         );
+        const fetchMock = vi.mocked(globalThis.fetch);
+        const lastModel = () =>
+            JSON.parse(String(fetchMock.mock.calls.at(-1)?.[1]?.body)).model;
 
         await act(async () => {
             renderer = create(tree("pk_alice"));
         });
         const transport = transports[transports.length - 1];
         await send(transport);
+        models.push(lastModel());
         expect(keys).toEqual(["Bearer pk_alice"]);
         expect(signals[0].aborted).toBe(false);
 
         await act(async () => {
-            renderer?.update(tree("pk_bob"));
+            renderer?.update(tree("pk_bob", "mistral"));
         });
         expect(signals[0].aborted).toBe(true);
         expect(transports[transports.length - 1]).toBe(transport);
 
         await send(transport);
+        models.push(lastModel());
         expect(keys).toEqual(["Bearer pk_alice", "Bearer pk_bob"]);
+        expect(models).toEqual(["openai", "mistral"]);
 
         await act(async () => {
             renderer?.update(tree(null));

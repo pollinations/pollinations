@@ -24,6 +24,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
@@ -68,7 +69,8 @@ function notFound(): Response {
     return noIndex(new Response("Not Found", { status: 404 }));
 }
 
-function robotsTxt(): Response {
+function robotsTxt(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
     return new Response(
         [
             "User-agent: *",
@@ -82,8 +84,36 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+            "",
+            `Sitemap: ${origin}/sitemap.xml`,
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
+    );
+}
+
+/** Serve a minimal XML sitemap for the public HTML pages (crawler discovery). */
+function sitemapXml(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    return new Response(
+        [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+            "  <url>",
+            `    <loc>${origin}/</loc>`,
+            "  </url>",
+            "  <url>",
+            `    <loc>${origin}/docs</loc>`,
+            "  </url>",
+            "</urlset>",
+        ].join("\n"),
+        {
+            headers: {
+                "Content-Type": "application/xml; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        },
     );
 }
 
@@ -107,8 +137,13 @@ function llmsTxt(c: Context<Env>): Response {
 - [OpenAPI schema](${origin}/openapi.json): Current endpoints and request schemas.
 - [Live model catalog](${origin}/models): Current model IDs and capabilities.
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
+- [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
 
 ## Account
 
@@ -153,11 +188,23 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
-    .get("/robots.txt", () => robotsTxt())
+    .use("*", agentDiscoveryLinks())
+    .get("/robots.txt", (c) => robotsTxt(c))
+    .get("/sitemap.xml", (c) => sitemapXml(c))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", async (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (c.req.header("accept")?.includes("text/markdown")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(await llmsTxt(c).text(), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

@@ -229,11 +229,9 @@ describe("payment logos before checkout", () => {
         expect(paymentMethods(null)).toContain("paypal");
     });
 
-    it.each([
-        undefined,
-        null,
-        "XX",
-        "T1",
-    ])("keeps the general list when the location is unknown (%s)", (country) =>
-        expect(paymentMethods(country)).toEqual(paymentMethods(null)));
+    it.each([undefined, null, "XX", "T1"])(
+        "keeps the general list when the location is unknown (%s)",
+        (country) =>
+            expect(paymentMethods(country)).toEqual(paymentMethods(null)),
+    );
 });

@@ -1,7 +1,7 @@
 import { BeakerIcon, Tooltip } from "@pollinations/ui";
 import { AuthAccessItem } from "@pollinations/ui/auth";
 
-const permissions = [
+export const accountPermissions = [
     {
         id: "profile",
         section: "account",
@@ -38,7 +38,7 @@ export function AccountPermissionsInput({
     visiblePermissions?: ReadonlySet<string>;
     section: "account" | "tools";
 }) {
-    return permissions
+    return accountPermissions
         .filter(
             (permission) =>
                 permission.section === section &&

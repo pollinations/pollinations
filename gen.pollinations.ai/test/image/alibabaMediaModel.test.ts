@@ -395,7 +395,7 @@ describe("qwen-image-2.1-turbo size clamp", () => {
     });
 
     it("handles extreme aspect ratios within the area bounds", () => {
-        resolve(10, 10000);
+        expect(resolve(10, 10000)).toEqual({ width: 32, height: 16288 });
         // Proportional floor would zero the thin side here; the pinned side
         // must still leave the area within bounds.
         expect(resolve(1, 1000000)).toEqual({ width: 16, height: 409600 });

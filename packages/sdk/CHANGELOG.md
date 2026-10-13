@@ -9,6 +9,11 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   model, next to categories. A model ID no longer widens to its category.
 
 ### Added
+- `model3d()` returns 3D files with their MIME type and a keyless URL;
+  `models("3d")` lists the available models.
+- `modelStatus()` returns typed model health rows and column metadata.
+- `audioSpeechWithTimestamps()` returns base64 audio, the original character
+  alignments and word timings grouped from normalized text.
 - `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
   `video`, `audio` or `embeddings`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,

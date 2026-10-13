@@ -11,6 +11,7 @@ export interface PollinationsConfig {
     imageTimeout?: number;
     /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
+    model3dTimeout?: number;
 }
 
 /** Common options for all request methods */
@@ -120,6 +121,20 @@ export interface VideoResponse {
     /** Content type (video/mp4) */
     contentType: string;
     /** The URL that was used to generate the video */
+    url: string;
+}
+
+export interface Model3dGenerateOptions extends RequestOptions {
+    model?: string;
+    referenceImage?: string | string[];
+    resolution?: "low" | "medium" | "high";
+    seed?: number;
+    safe?: boolean;
+}
+
+export interface Model3dResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
     url: string;
 }
 
@@ -490,6 +505,32 @@ export interface AudioGenerateOptions extends RequestOptions {
 export interface AudioSpeechOptions extends AudioGenerateOptions {
     /** Public audio URL for models that support reference audio */
     referenceAudio?: string;
+}
+
+export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
+    model?: AudioModel;
+    voice?: AudioVoice;
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    seed?: number;
+}
+
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+export interface SpeechWordTiming {
+    word: string;
+    start: number;
+    end: number;
+}
+
+export interface AudioSpeechWithTimestampsResponse {
+    audio_base64: string;
+    alignment: SpeechAlignment;
+    normalized_alignment: SpeechAlignment;
+    words: SpeechWordTiming[];
 }
 
 /** File-based voice conversion or speech isolation. */
@@ -1119,7 +1160,47 @@ export type ModelCapability =
 
 /** Model information */
 /** Model catalog to list: `/<kind>/models` on the API. */
-export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
+
+export interface ModelStatusOptions extends RequestOptions {
+    traffic?: "all" | "regular";
+    minutes?: number;
+}
+
+export interface ModelStatusRow {
+    model: string;
+    event_type: string;
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+export interface ModelStatusResponse {
+    meta: { name: string; type: string }[];
+    data: ModelStatusRow[];
+    rows: number;
+    statistics?: { elapsed: number; rows_read: number; bytes_read: number };
+}
 
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */

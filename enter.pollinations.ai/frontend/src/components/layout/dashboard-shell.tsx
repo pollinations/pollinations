@@ -513,7 +513,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" ||
+                        {(item.id === "sandboxes" ||
                             (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"

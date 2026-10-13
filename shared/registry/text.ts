@@ -954,7 +954,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.5),
@@ -985,7 +985,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-05-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's promotional pricing runs through 2026-12-31; list rates
         // double on 2027-01-01 and need another update then.
@@ -1018,7 +1018,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-09-02").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         // Google's introductory pricing ends 2026-12-31.
         cost: {
@@ -1090,7 +1090,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-04-03").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.3),
@@ -2710,7 +2710,7 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2025-11-19").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
         cost: {
             promptTextTokens: perMillion(2.0),

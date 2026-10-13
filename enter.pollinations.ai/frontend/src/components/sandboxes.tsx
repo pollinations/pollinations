@@ -53,17 +53,9 @@ type Pricing = {
 // it's paused or killed.
 const FOREVER = 2 ** 31 - 1;
 
-// How long a create, a resume or more time runs the sandbox for: polli's 10
-// minutes, any time from that on, or until it's stopped. Up to the end of
-// E2B's 24-hour run it's paid up front; past it, gen keeps the sandbox running
-// and pays an hour at a time.
-const LEASES = [
-    { label: "10 min", seconds: 600 },
-    { label: "1 hour", seconds: 3600 },
-    { label: "8 hours", seconds: 8 * 3600 },
-    { label: "24 hours", seconds: 24 * 3600 },
-    { label: "Until I stop it", seconds: FOREVER },
-];
+// How long a create, a resume or more time runs the sandbox for: at least 10
+// minutes, or until it's stopped. Up to the end of E2B's 24-hour run it's paid
+// up front; past it, gen keeps the sandbox running and pays an hour at a time.
 const UNITS = [
     { label: "minutes", seconds: 60 },
     { label: "hours", seconds: 3600 },
@@ -100,18 +92,19 @@ const forever = (until: string) =>
     Date.parse(until) - Date.now() > FOREVER * 500;
 
 function customError(seconds: number) {
-    if (!(seconds > 0)) return "Enter how long, e.g. 2 days.";
+    if (!(seconds > 0)) return "Enter how long, e.g. 2 hours.";
     if (seconds < 600) return "At least 10 minutes.";
     if (seconds > FOREVER) return "That’s longer than Until I stop it.";
     return null;
 }
 
-// What the pending action pays up front, or why it can't be known yet.
+// What the pending action costs for that many seconds, or per vCPU and GB
+// when the template's size isn't known.
 function upFront(pricing: Pricing, pending: Pending, seconds: number) {
     if (pending.action === "create") {
         const size = pricing.templates[pending.template];
         if (!size) {
-            return `${pollen(pricing.vcpuSecond * 3600)} per vCPU-hour and ${pollen(pricing.gibSecond * 3600)} per GB-hour, depending on the template’s size`;
+            return `${pollen(pricing.vcpuSecond * seconds)} per vCPU and ${pollen(pricing.gibSecond * seconds)} per GB, depending on the template’s size`;
         }
         return `${pollen(perSecond(pricing, size) * seconds)} (${sizeLabel(size)})`;
     }
@@ -156,11 +149,9 @@ function SandboxCard({
                 <Chip intent={running ? "success" : "neutral"} size="md">
                     {!running
                         ? "Paused"
-                        : !kept
-                          ? `Paid until ${new Date(sandbox.endAt).toLocaleString()}`
-                          : forever(kept)
-                            ? "Runs until you stop it"
-                            : `Runs until ${new Date(kept).toLocaleString()}`}
+                        : kept && forever(kept)
+                          ? "Runs until you stop it"
+                          : `Runs until ${new Date(kept ?? sandbox.endAt).toLocaleString()}`}
                 </Chip>
             </div>
             <CopyField
@@ -211,9 +202,9 @@ export function Sandboxes() {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [template, setTemplate] = useState("pollinations");
     const [pending, setPending] = useState<Pending | null>(null);
-    const [lease, setLease] = useState<number | "custom">(LEASES[0].seconds);
-    const [amount, setAmount] = useState("2");
-    const [unit, setUnit] = useState(86_400);
+    const [amount, setAmount] = useState("1");
+    const [unit, setUnit] = useState(3600);
+    const [untilStopped, setUntilStopped] = useState(false);
 
     const load = useCallback(async () => {
         setLoadError(null);
@@ -258,9 +249,8 @@ export function Sandboxes() {
             ? "Not a template name. Use lowercase letters, digits, - and _, e.g. claude or team/name:tag."
             : null;
 
-    const seconds =
-        lease === "custom" ? Math.round(Number(amount) * unit) : lease;
-    const durationError = lease === "custom" ? customError(seconds) : null;
+    const seconds = untilStopped ? FOREVER : Math.round(Number(amount) * unit);
+    const durationError = untilStopped ? null : customError(seconds);
     // Create and resume run from now and start a new run; Add time adds to
     // the time a running sandbox already runs for.
     const addTo =
@@ -457,14 +447,14 @@ export function Sandboxes() {
                 )}
             </SectionContent>
             <Text size="sm" tone="muted">
-                Sandbox time is paid in advance from your Pollen, past 24 hours
-                an hour at a time, and isn’t refunded when you pause or kill a
-                sandbox early. A sandbox pauses when its paid time ends; paused
-                ones keep their files and cost nothing. To ssh in, install polli
-                (<code>npm i -g @pollinations/cli</code>), run{" "}
+                Sandbox time comes out of your Pollen ahead of time, past 24
+                hours an hour at a time. Unused time isn’t refunded when you
+                pause or kill a sandbox early. A sandbox pauses when its time
+                ends; paused ones keep their files and cost nothing. To ssh in,
+                install polli (<code>npm i -g @pollinations/cli</code>), run{" "}
                 <code>polli auth login</code> and{" "}
                 <code>polli sandbox ssh-config</code> once. ssh resumes a paused
-                sandbox and pays 10 minutes at a time while connected.
+                sandbox and adds 10 minutes at a time while connected.
             </Text>
 
             <ConfirmationDialog
@@ -483,7 +473,15 @@ export function Sandboxes() {
                 intent={spends ? "commit" : "danger"}
                 confirmIcon={spends ? <PlayIcon /> : undefined}
                 confirmLabel={
-                    pending?.action === "kill" ? "Kill" : "Pay and continue"
+                    !pending
+                        ? ""
+                        : pending.action === "create"
+                          ? "Create"
+                          : pending.action === "kill"
+                            ? "Kill"
+                            : addTo
+                              ? "Add time"
+                              : "Resume"
                 }
                 confirmDisabled={!!spends && !!durationError}
                 onConfirm={confirm}
@@ -494,7 +492,7 @@ export function Sandboxes() {
                         resource={pending.sandbox.sandboxID}
                     >
                         This deletes the sandbox and its files and can’t be
-                        undone. Its paid time isn’t refunded.
+                        undone. Unused time isn’t refunded.
                     </ResourceConfirmationContent>
                 )}
                 {spends && pricing && (
@@ -506,86 +504,77 @@ export function Sandboxes() {
                                     : pending.sandbox.sandboxID
                             }
                         >
-                            {addTo ? "Add" : "Keep it running for"}
+                            {addTo ? "Add" : "Run it for"}
                         </ResourceConfirmationContent>
-                        <ButtonGroup>
-                            {LEASES.map((option) => (
-                                <TabButton
-                                    key={option.seconds}
-                                    size="sm"
-                                    active={lease === option.seconds}
-                                    onClick={() => setLease(option.seconds)}
-                                >
-                                    {option.label}
-                                </TabButton>
-                            ))}
-                            <TabButton
-                                size="sm"
-                                active={lease === "custom"}
-                                onClick={() => setLease("custom")}
-                            >
-                                Custom
-                            </TabButton>
-                        </ButtonGroup>
-                        {lease === "custom" && (
-                            <div className="flex flex-col gap-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        step="any"
-                                        inputMode="decimal"
-                                        aria-label="How long"
-                                        value={amount}
-                                        error={!!durationError}
-                                        className="w-24"
-                                        onChange={(event) =>
-                                            setAmount(event.currentTarget.value)
-                                        }
-                                    />
-                                    <ButtonGroup>
-                                        {UNITS.map((option) => (
-                                            <TabButton
-                                                key={option.seconds}
-                                                size="sm"
-                                                active={unit === option.seconds}
-                                                onClick={() =>
-                                                    setUnit(option.seconds)
-                                                }
-                                            >
-                                                {option.label}
-                                            </TabButton>
-                                        ))}
-                                    </ButtonGroup>
-                                </div>
-                                {durationError && (
-                                    <p className="text-sm text-intent-danger-text">
-                                        {durationError}
-                                    </p>
-                                )}
+                        <div className="flex flex-col gap-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="any"
+                                    inputMode="decimal"
+                                    aria-label="How long"
+                                    value={amount}
+                                    error={!!durationError}
+                                    className="w-20"
+                                    onFocus={() => setUntilStopped(false)}
+                                    onChange={(event) =>
+                                        setAmount(event.currentTarget.value)
+                                    }
+                                />
+                                <ButtonGroup>
+                                    {UNITS.map((option) => (
+                                        <TabButton
+                                            key={option.seconds}
+                                            size="sm"
+                                            active={
+                                                !untilStopped &&
+                                                unit === option.seconds
+                                            }
+                                            onClick={() => {
+                                                setUnit(option.seconds);
+                                                setUntilStopped(false);
+                                            }}
+                                        >
+                                            {option.label}
+                                        </TabButton>
+                                    ))}
+                                    <TabButton
+                                        size="sm"
+                                        active={untilStopped}
+                                        onClick={() => setUntilStopped(true)}
+                                    >
+                                        Until I stop it
+                                    </TabButton>
+                                </ButtonGroup>
                             </div>
-                        )}
+                            {durationError && (
+                                <p className="text-sm text-intent-danger-text">
+                                    {durationError}
+                                </p>
+                            )}
+                        </div>
                         {!durationError && (
-                            <Alert intent="warning">
+                            <Alert intent="info">
                                 {kept ? (
                                     <>
-                                        This keeps it running until{" "}
+                                        Runs until{" "}
                                         {timeout === FOREVER
                                             ? "you pause or kill it"
                                             : new Date(
                                                   now + timeout * 1000,
                                               ).toLocaleString()}
-                                        , spending Pollen an hour at a time,
-                                        paid in advance and not refunded. Each
-                                        hour: {upFront(pricing, pending, 3600)}.
+                                        , an hour at a time. From your Pollen
+                                        each hour:{" "}
+                                        {upFront(pricing, pending, 3600)}.
                                     </>
                                 ) : (
                                     <>
-                                        This spends Pollen now:{" "}
+                                        From your Pollen now:{" "}
                                         {upFront(pricing, pending, paidNow)}.
-                                        Paid in advance, not refunded.
                                     </>
-                                )}
+                                )}{" "}
+                                Unused time isn’t refunded.
                             </Alert>
                         )}
                     </>

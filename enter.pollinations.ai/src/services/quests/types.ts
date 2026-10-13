@@ -33,6 +33,8 @@ export type QuestGroup = {
 export type RewardProposal = {
     quest: QuestDefinition;
     userId: string;
+    /** Replaces the scope-derived key, e.g. to pay once per Discord account. */
+    idempotencyKey?: string;
 };
 
 export type QuestProgress = QuestGoal & {
@@ -59,9 +61,10 @@ export function toReward(
     const { quest, userId } = proposal;
     return {
         idempotencyKey:
-            quest.scope === "once"
+            proposal.idempotencyKey ??
+            (quest.scope === "once"
                 ? `quest:${quest.id}`
-                : rewardKey(quest.id, githubId),
+                : rewardKey(quest.id, githubId)),
         userId,
         questId: quest.id,
         title: quest.title,

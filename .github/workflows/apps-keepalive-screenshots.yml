@@ -69,9 +69,12 @@ jobs:
           python-version: '3.12'
       - name: Install local Scrapling fetcher
         run: python -m pip install 'scrapling[fetchers]==0.4.15'
+      - name: Install guarded browser runtime
+        run: python -m patchright install --with-deps chromium
       - name: Validate researcher
         env:
           RUN_LIVE_FETCH: '1'
+          RUN_BROWSER_FETCH: '1'
         run: node --test operations/model-management/*.test.mjs
       - name: Validate the authorised full-catalog allowance before paid work
         env:
@@ -99,13 +102,14 @@ jobs:
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/model-research-previous
           merge-multiple: true
-      - name: Research official catalog and market (GPT-6.1 Sol, medium effort)
+      - name: Research official catalog and market with Jev and optional Sol
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           MODELS: ${{ inputs.models }}
           MAX_POLLEN: ${{ inputs.max_pollen }}
           USE_PERPLEXITY: ${{ inputs.use_perplexity }}
           CHECK_BILLING: 'true'
+          RESEARCH_MODE: 'compact'
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: |

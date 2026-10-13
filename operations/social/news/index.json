@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T01:00:24.255383+00:00",
+  "generated_at": "2026-10-13T01:08:17.097103+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5894,6 +5894,38 @@
             "promptCachedTokens": "0.000000133333",
             "promptCacheWriteTokens": "0.000001666667",
             "completionTextTokens": "0.000006666667"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17180:x-ai/grok-4.7",
+      "model_id": "x-ai/grok-4.7",
+      "title": "Grok 4.7",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17180,
+      "url": "https://github.com/pollinations/pollinations/pull/17180",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001688",
+            "promptCachedTokens": "0.000000422",
+            "completionTextTokens": "0.000005064"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000005",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000006"
           }
         }
       }

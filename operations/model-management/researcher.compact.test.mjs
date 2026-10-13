@@ -1391,3 +1391,82 @@ test(
         assert.equal(report.models[0].recommendation, null);
     },
 );
+
+test(
+    "main extracts distant whole-page prices without exposing whole pages to Sol",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { out, env } = await fixture(t);
+        const sourceUrl = "https://fireworks.ai/models/fixture-embedding-8b";
+        const fullText = `${model.name}\n${"navigation before pricing\n".repeat(400)}\nEmbeddings\nfixture-embedding-8b\n$0.010\n/ 1M tokens`;
+        await writeFile(
+            join(out, "pages", `${hash(sourceUrl)}.json`),
+            JSON.stringify({
+                requestedUrl: sourceUrl,
+                url: sourceUrl,
+                text: fullText,
+                pageDigest: hash(fullText),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+            }),
+        );
+        const calls = network(t, [model, sol, jev], { sourceUrl });
+        const report = await main(env);
+        assert.equal(
+            report.status,
+            "complete",
+            JSON.stringify(report.models.map(({ reason }) => reason)),
+        );
+        assert.equal(calls.sol.length, 0);
+        assert.ok(report.sources[0].text.length > 3000);
+        assert.equal(report.sources[0].fullPage, true);
+        assert.equal(report.sources[0].digest, hash(fullText));
+        assert.equal(report.models[0].routes[0].pricing.input, 0.01);
+        assert.ok(
+            report.models[0].routes[0].priceEvidence.evidence.every(
+                ({ quote, start, end }) => fullText.slice(start, end) === quote,
+            ),
+        );
+        for (const payload of calls.native.filter(
+            (payload) => payload.state.evidence,
+        ))
+            assert.ok(
+                payload.state.evidence.length < fullText.length,
+                "Jev receives bounded facts, not the whole page",
+            );
+        const nextOut = join(out, "refresh");
+        await mkdir(join(nextOut, "pages"), { recursive: true });
+        await writeFile(
+            join(nextOut, "pages", `${hash(sourceUrl)}.json`),
+            JSON.stringify({
+                requestedUrl: sourceUrl,
+                url: sourceUrl,
+                text: fullText,
+                pageDigest: hash(fullText),
+                extractionVersion: 2,
+                fetchedAt: new Date().toISOString(),
+            }),
+        );
+        const before = {
+            native: calls.native.length,
+            search: calls.search.length,
+        };
+        const refreshed = await main({
+            ...env,
+            RESEARCH_OUT: nextOut,
+            PREVIOUS_RESEARCH: join(out, "research.json"),
+        });
+        assert.equal(
+            refreshed.models[0].reused,
+            true,
+            "Removing the whole-page refresh must invalidate reuse and fail this test",
+        );
+        assert.equal(refreshed.models[0].routes[0].pricing.input, 0.01);
+        assert.deepEqual(
+            { native: calls.native.length, search: calls.search.length },
+            before,
+            "An unchanged whole page must cost no paid calls",
+        );
+        assert.equal(refreshed.calls.length, 0);
+    },
+);

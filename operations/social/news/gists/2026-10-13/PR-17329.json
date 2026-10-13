@@ -1,0 +1,153 @@
+{
+  "pr_number": 17329,
+  "title": "feat: add Gemini 4 Argon",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/17329",
+  "merged_at": "2026-10-13T20:28:14Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added paid-only google/gemini-4-argon with a 1,048,576-token context window, text, image, audio and video input, text output, reasoning controls, tool calling and Google Search. Input, cached-input and output billing is per million tokens; Google Search is billed per 1,000 queries. Requests use Vertex global as the primary provider, with OpenRouter’s Google AI Studio standard tier as fallback; priority and flex tiers are excluded. Local end-to-end tests verified text, streaming with reasoning, image input, tools and Search on Vertex, plus streaming and tools on the fallback. Fallback Search returned a 429 during testing, while primary Search and plain fallback requests worked.",
+    "keywords": [
+      "Gemini 4 Argon",
+      "Google",
+      "Vertex",
+      "OpenRouter",
+      "multimodal",
+      "Google Search"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17329.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wearing tiny headphones helps a friendly CRT monitor robot inspect a lime-green (#ecf874) terminal showing small text, image, audio and video icons beside a flowering code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, with consistent rounded proportions, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T20:32:33.110566+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "db2c3d345a83b6c01063fdcd4a6dd5c16a3ccca8",
+  "announcements": [
+    {
+      "id": "pr-17329:google/gemini-4-argon",
+      "model_id": "google/gemini-4-argon",
+      "title": "Gemini 4 Argon",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "web_search"
+          ]
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image",
+            "audio",
+            "video"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": false
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 3600
+        },
+        "max_reference_videos": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000004",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.000004",
+            "promptAudioTokens": "0.000004",
+            "promptImageTokens": "0.000004",
+            "promptVideoTokens": "0.000004",
+            "completionTextTokens": "0.00002"
+          }
+        },
+        "pricing_adjustments": {
+          "before": null,
+          "after": [
+            {
+              "name": "google.gemini_3.search_query.v1",
+              "kind": "search_query",
+              "price": "14",
+              "currency": "pollen",
+              "label": "Search",
+              "quantity": 1000,
+              "unit": "search queries"
+            }
+          ]
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "seed",
+            "reasoning_effort",
+            "stop"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": true
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "db2c3d345a83b6c01063fdcd4a6dd5c16a3ccca8^1",
+    "after_ref": "db2c3d345a83b6c01063fdcd4a6dd5c16a3ccca8"
+  }
+}

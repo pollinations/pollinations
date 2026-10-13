@@ -437,50 +437,52 @@ it("omits the quest link when only paid Pollen can cover the model", async () =>
 it.each([
     { name: "plain chat", responseFormat: undefined },
     { name: "JSON", responseFormat: { type: "json_object" } },
-])("answers a blocked model with the grant link ($name)", async ({
-    responseFormat,
-}) => {
-    const caller = await createTestApiKey({
-        user: { packBalance: 10 },
-        allowedModels: ["black-forest-labs/flux.1-schnell"],
-    });
-    const ctx = createExecutionContext();
-    const response = await worker.fetch(
-        new Request("https://gen.pollinations.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${caller.key}`,
-                "Content-Type": "application/json",
-                Referer: "https://chat.example/c/1",
-            },
-            body: JSON.stringify({
-                model,
-                messages: [{ role: "user", content: "hello" }],
-                response_format: responseFormat,
-            }),
-        }),
-        env,
-        ctx,
-    );
-    const text = await response.text();
-    // The chat reply and the plain 403 carry the same link.
-    const link = new URL("https://enter.pollinations.ai/grant");
-    link.search = new URLSearchParams({
-        id: caller.id,
-        category: "text",
-        ref: "agent_grant",
-        redirect: "https://chat.example",
-    }).toString();
-    if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
-        expect(response.status, text).toBe(200);
-        expect(text).toContain(`[allow it for this key](${link})`);
-    } else {
-        // JSON callers parse the body, so they keep the plain 403.
-        expect(response.status, text).toBe(403);
-        expect(JSON.parse(text).error).toMatchObject({
-            message: expect.stringContaining(`Allow it at ${link}`),
-            fixUrl: link.toString(),
+])(
+    "answers a blocked model with the grant link ($name)",
+    async ({ responseFormat }) => {
+        const caller = await createTestApiKey({
+            user: { packBalance: 10 },
+            allowedModels: ["black-forest-labs/flux.1-schnell"],
         });
-    }
-    await waitOnExecutionContext(ctx);
-});
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                    Referer: "https://chat.example/c/1",
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: "hello" }],
+                    response_format: responseFormat,
+                }),
+            }),
+            env,
+            ctx,
+        );
+        const text = await response.text();
+        // The chat reply and the plain 403 carry the same link. The key lists a
+        // model ID, so the link asks for this one model.
+        const link = new URL("https://enter.pollinations.ai/grant");
+        link.search = new URLSearchParams({
+            id: caller.id,
+            model,
+            ref: "agent_grant",
+            redirect: "https://chat.example",
+        }).toString();
+        if (TEXT_PERMISSION_NOTICE_ENABLED && !responseFormat) {
+            expect(response.status, text).toBe(200);
+            expect(text).toContain(`[allow it for this key](${link})`);
+        } else {
+            // JSON callers parse the body, so they keep the plain 403.
+            expect(response.status, text).toBe(403);
+            expect(JSON.parse(text).error).toMatchObject({
+                message: expect.stringContaining(`Allow it at ${link}`),
+                fixUrl: link.toString(),
+            });
+        }
+        await waitOnExecutionContext(ctx);
+    },
+);

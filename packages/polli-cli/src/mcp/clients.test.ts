@@ -52,39 +52,41 @@ describe("client table", () => {
 });
 
 describe("json config clients", () => {
-    it.each([
-        undefined,
-        "~/custom-pi",
-    ])("Pi preserves unrelated config and supports its agent directory (%s)", async (agentDir) => {
-        const ctx = freshCtx();
-        ctx.env.PI_CODING_AGENT_DIR = agentDir;
-        const file = join(
-            ctx.home,
-            agentDir ? "custom-pi" : ".pi/agent",
-            "mcp.json",
-        );
-        const foreign = { url: "https://example.org/mcp" };
-        writeJsonObject(file, {
-            autoEnableCodemode: false,
-            mcpServers: { personal: foreign, ffmpeg: foreign },
-        });
-        const client = findClient("pi");
-        if (!client) throw new Error("Missing Pi adapter");
-        await client.install(ctx, SERVERS, "sk-test");
-        await client.install(ctx, SERVERS, "sk-test");
-        const config = JSON.parse(readFileSync(file, "utf8"));
-        expect(config.mcpServers.pollinations).toEqual({
-            url: SERVERS[0].url,
-            headers: { Authorization: "Bearer sk-test" },
-        });
-        expect(client.status(ctx).installed).toEqual(["pollinations"]);
-        expect(client.existingKey?.(ctx)).toBe("sk-test");
-        expect((await client.remove(ctx)).removed).toEqual(["pollinations"]);
-        expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
-            autoEnableCodemode: false,
-            mcpServers: { personal: foreign, ffmpeg: foreign },
-        });
-    });
+    it.each([undefined, "~/custom-pi"])(
+        "Pi preserves unrelated config and supports its agent directory (%s)",
+        async (agentDir) => {
+            const ctx = freshCtx();
+            ctx.env.PI_CODING_AGENT_DIR = agentDir;
+            const file = join(
+                ctx.home,
+                agentDir ? "custom-pi" : ".pi/agent",
+                "mcp.json",
+            );
+            const foreign = { url: "https://example.org/mcp" };
+            writeJsonObject(file, {
+                autoEnableCodemode: false,
+                mcpServers: { personal: foreign, ffmpeg: foreign },
+            });
+            const client = findClient("pi");
+            if (!client) throw new Error("Missing Pi adapter");
+            await client.install(ctx, SERVERS, "sk-test");
+            await client.install(ctx, SERVERS, "sk-test");
+            const config = JSON.parse(readFileSync(file, "utf8"));
+            expect(config.mcpServers.pollinations).toEqual({
+                url: SERVERS[0].url,
+                headers: { Authorization: "Bearer sk-test" },
+            });
+            expect(client.status(ctx).installed).toEqual(["pollinations"]);
+            expect(client.existingKey?.(ctx)).toBe("sk-test");
+            expect((await client.remove(ctx)).removed).toEqual([
+                "pollinations",
+            ]);
+            expect(JSON.parse(readFileSync(file, "utf8"))).toEqual({
+                autoEnableCodemode: false,
+                mcpServers: { personal: foreign, ffmpeg: foreign },
+            });
+        },
+    );
 
     it.each([
         ["0.84.4", 0, false],

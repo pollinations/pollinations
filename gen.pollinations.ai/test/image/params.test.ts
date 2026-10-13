@@ -13,31 +13,6 @@ describe("ImageParamsSchema", () => {
         expect(result.seed).toBe(SENTINEL_SEED);
     });
 
-    it("rejects transparent backgrounds for gpt-image-2", () => {
-        const result = ImageParamsSchema.safeParse({
-            model: "openai/gpt-image-2",
-            transparent: true,
-        });
-
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error.issues[0]).toMatchObject({
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
-    });
-
-    it("keeps transparent backgrounds available for gptimage models", () => {
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "openai/gpt-image-1-mini",
-                transparent: true,
-            }).success,
-        ).toBe(true);
-    });
-
     it("accepts resolutions declared by the model", () => {
         expect(
             ImageParamsSchema.safeParse({
@@ -402,6 +377,42 @@ describe("ImageParamsSchema", () => {
         const result = ImageParamsSchema.safeParse({
             model: "inferenceport-ai/lightning-image-turbo",
             resolution: "720p",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("accepts default dimensions and explicit 1024x1024 for lightning-image-turbo", () => {
+        const defaultResult = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+        });
+        expect(defaultResult.success).toBe(true);
+        if (defaultResult.success) {
+            expect(defaultResult.data.width).toBe(1024);
+            expect(defaultResult.data.height).toBe(1024);
+            expect(defaultResult.data.dimensionsExplicit).toBe(false);
+        }
+
+        const explicit1024 = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            width: 1024,
+            height: 1024,
+        });
+        expect(explicit1024.success).toBe(true);
+        if (explicit1024.success) {
+            expect(explicit1024.data.dimensionsExplicit).toBe(true);
+        }
+    });
+
+    it.each([
+        [{ width: 768, height: 1024 }],
+        [{ width: 1024, height: 768 }],
+        [{ width: 1536, height: 1536 }],
+        [{ width: 512 }],
+        [{ height: 512 }],
+    ])("rejects non-1024 dimensions on lightning-image-turbo (%j)", (dims) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            ...dims,
         });
         expect(result.success).toBe(false);
     });

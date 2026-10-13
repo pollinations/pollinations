@@ -4,9 +4,21 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
 ### Added
+- `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
+  `video`, `audio` or `embeddings`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
+
+### Removed
+- `textModels()`, `imageModels()`, `getTextModels()` and `getImageModels()`.
+  Use `models("text")` or `getModels("text")`, and the same with `"image"`.
+- `Conversation` and `conversation()`. Nothing used them; keep the history in
+  your own `messages` array and pass it to `chat()` or `chatStream()`.
 
 ### Fixed
 - `upload()` keeps an uploaded `File`'s name instead of always sending
@@ -16,6 +28,9 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   of throwing a JSON `SyntaxError`.
 - `chatStream()` rejects prematurely closed responses without a terminal
   finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
 
 ## [5.1.0-alpha.14] - 2026-10-08
 

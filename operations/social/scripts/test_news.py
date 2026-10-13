@@ -17,16 +17,15 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
-import generate_models_news
 import posts
-from common import (NEWS_REL_DIR, build_daily_summary_artifact, daily_summary_input, filter_daily_gists,
-                    models_news_staged_files, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
-from generate_realtime import analyze_pr, build_full_gist, enrich_gist, generate_gist_image
-from api_changes import api_changes, api_changes_for_pr, api_surface
-from build_news_index import api_entries, build_index, highlight_entries, model_entries
-from publish_realtime import generate_snippet
-from model_announcements import announced_retirements, model_changes, pr_comparison_refs
-from update_readme import get_top_highlights
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
+                    filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+from contributors import github_account, rank_contributors
+from discord_pr import generate_snippet
+from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
+                  enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
+from news_index import api_entries, build_index, highlight_entries, model_entries
+from readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
@@ -77,10 +76,10 @@ class GistEnrichmentTest(unittest.TestCase):
             if args[0] == sys.executable:
                 Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
                     {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=run) as commands, \
+        with patch("gist.subprocess.run", side_effect=run) as commands, \
              patch.object(Path, "is_dir", return_value=False), \
-             patch("model_announcements.pr_comparison_refs", return_value=("before", "after")), \
-             patch("model_announcements.announcements_for_pr", return_value=[]):
+             patch("gist.pr_comparison_refs", return_value=("before", "after")), \
+             patch("gist.announcements_for_pr", return_value=[]):
             enrich_gist({}, pr, ["README.md"], "test")
             self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
             commands.reset_mock()
@@ -88,7 +87,7 @@ class GistEnrichmentTest(unittest.TestCase):
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
 
-    def test_enrichment_preserves_social_payload_and_records_failure(self):
+    def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
               "body": "Existing description", "merge_commit_sha": "abc", "labels": []}
         ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
@@ -96,21 +95,20 @@ class GistEnrichmentTest(unittest.TestCase):
         gist = build_full_gist(pr, ai, [])
         original = copy.deepcopy(gist)
         def classification(args, **kwargs):
-            Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
-                {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("generate_realtime.subprocess.run", side_effect=classification):
+            if args[0] == sys.executable:  # not `npm ci`, which runs when tsx isn't installed
+                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
+                    {"area": "Models", "type": "Feature", "source": "Team"}))
+        with patch("gist.subprocess.run", side_effect=classification):
             enrich_gist(gist, pr, [], "test")
         self.assertEqual(gist["gist"], original["gist"])
         self.assertEqual(gist["image"], original["image"])
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.subprocess.run", side_effect=OSError()), \
-             patch("model_announcements.pr_comparison_refs", side_effect=ValueError()):
-            enrich_gist(gist, pr, ["shared/registry/text.ts"], "test")
-        self.assertEqual(gist["enrichment"], {"classification": "failed", "models": "failed"})
-        self.assertIsNone(gist["type"])
-        self.assertEqual(gist["gist"], original["gist"])
-        self.assertEqual(validate_gist(gist), [])
-        gist["enrichment"]["classification"] = "complete"
+        # A failed classification or model-change lookup stops the gist: nothing is saved or posted.
+        with patch("gist.subprocess.run", side_effect=OSError()), self.assertRaises(OSError):
+            enrich_gist(copy.deepcopy(original), pr, [], "test")
+        with patch("gist.subprocess.run", side_effect=classification), \
+             patch("gist.pr_comparison_refs", side_effect=ValueError()), self.assertRaises(ValueError):
+            enrich_gist(copy.deepcopy(original), pr, ["shared/registry/text.ts"], "test")
         gist.update(area="Models", type="Question", source="Team")
         self.assertIn("invalid type", validate_gist(gist))
 
@@ -126,17 +124,16 @@ class GistEnrichmentTest(unittest.TestCase):
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "1"}}],
             [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
         self.assertEqual(validate_gist(gist), [])
-        with patch("generate_realtime.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
-            context = {**gist, "merge_commit_sha": "unused-commit", "enrichment": {"models": "complete"}}
+        with patch("gist.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
+            context = {**gist, "merge_commit_sha": "unused-commit"}
             self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
             self.assertIn('"image": "2"', analysis.call_args.args[1])
             self.assertNotIn("unused-commit", analysis.call_args.args[1])
-            self.assertNotIn('"enrichment"', analysis.call_args.args[1])
         self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
         self.assertNotIn("image_prompt", gist["gist"])
         self.assertNotIn("pr_body_excerpt", gist)
-        with patch("generate_realtime.generate_image", return_value=(b"image", None)) as image, \
-             patch("generate_realtime.commit_image_to_branch", return_value="https://example.com/image.jpg"):
+        with patch("gist.generate_image", return_value=(b"image", None)) as image, \
+             patch("gist.commit_image_to_branch", return_value="https://example.com/image.jpg"):
             self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
                              "https://example.com/image.jpg")
             image.assert_called_once_with(ai["image_prompt"], "test")
@@ -145,13 +142,13 @@ class GistEnrichmentTest(unittest.TestCase):
         old["pr_body_excerpt"] = "Old excerpt"
         self.assertEqual(filter_daily_gists([gist, old]), [gist, old])
         def realtime(g):
-            with patch("publish_realtime.call_pollinations_api", return_value='{"arcs": []}') as api:
+            with patch("discord_pr.call_pollinations_api", return_value='{"arcs": []}') as api:
                 generate_snippet(g, "test")
             return api.call_args.args[1]
         for module, prompt in (
             ("daily", lambda g: daily_summary_input([g], "2026-10-07")),
             ("weekly", lambda g: weekly_digest_input([g], "2026-10-01", "2026-10-07")),
-            ("publish_realtime", realtime),
+            ("discord_pr", realtime),
         ):
             new_prompt = prompt(gist)
             self.assertEqual(prompt(old), new_prompt)
@@ -160,7 +157,7 @@ class GistEnrichmentTest(unittest.TestCase):
                 self.assertIn(fact, new_prompt)
             self.assertNotIn("Old excerpt", new_prompt)
             # Only Discord states model prices; recaps feeding X/Reddit/LinkedIn/Instagram never see them.
-            check = self.assertIn if module == "publish_realtime" else self.assertNotIn
+            check = self.assertIn if module == "discord_pr" else self.assertNotIn
             for value in ('"announcements"', '"image": "2"'):
                 check(value, new_prompt)
         broken = copy.deepcopy(gist)
@@ -459,6 +456,81 @@ def gist(number, merged_at, tier="daily"):
                      "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
 
 
+class TextCallTest(unittest.TestCase):
+    def test_a_failed_or_empty_answer_is_asked_once_and_stops_the_caller(self):
+        answer = lambda content: reply(200, {"choices": [{"message": {"content": content}, "finish_reason": "stop"}]})
+        for response, expected in ((answer("Hello"), "Hello"), (answer(""), None), (answer(None), None),
+                                   (reply(503), None)):
+            with self.subTest(response=response.status_code), \
+                 patch("common.requests.post", return_value=response) as post:
+                self.assertEqual(call_pollinations_api("system", "user", "token"), expected)
+                self.assertEqual(post.call_count, 1)
+
+
+class ContributorsTest(unittest.TestCase):
+    def test_monthly_contributors_are_every_merging_account_and_noreply_coauthors(self):
+        user = lambda user_id, login, kind="User", created="2020-01-01T00:00:00Z": {
+            "id": user_id, "login": login, "type": kind, "created_at": created,
+            "avatar_url": f"av{user_id}", "html_url": f"gh/{login}"}
+        github = {
+            "user/12345": user(12345, "FabioArieiraBaia"),        # a trailer whose id matches its login
+            "user/1": user(1, "voodoohop"),
+            "user/555": user(555, "art-otakus", "Organization"),  # an agent guessed someone else's id...
+            "users/GoodCoder": user(173, "GoodCoder"),            # ...so the login's own account gets it
+            "user/808": user(808, "TechMitten"),                  # renamed: the old login is gone
+            "user/909": user(909, "2Thm83", "Mannequin"),         # a placeholder, and no such login
+            "user/160": user(160, "mentatbot[bot]", "Bot"),       # an app's bot signing as "MentatBot"
+            "users/MentatBot": user(173, "MentatBot"),            # an unrelated user with that name
+            "users/Tolerable": user(2303, "Tolerable"),           # an app submitter named by login only
+            "users/pixArt": user(4040, "pixArt", created="2026-08-17T00:00:00Z"),  # the name taken later
+            "users/voodoohop": user(1, "voodoohop"),
+            "users/thomash": user(1145, "ThomasH"),               # a stranger: thomash is Thomas's git alias
+        }
+        prs = [
+            {"author": {"login": "voodoohop", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             # Thomas's own git alias: credits voodoohop, who already has this PR, not the stranger.
+             "mergeCommit": {"message": "fix: one\n\nCo-authored-by: Thomas <thomash@users.noreply.github.com>"}},
+            {"author": {"__typename": "Bot", "login": "pollinations-ai", "databaseId": 99, "avatarUrl": "bot",
+                        "url": "https://github.com/apps/pollinations-ai"},
+             "mergedAt": "2026-01-15T10:00:00Z",
+             "mergeCommit": {"message": (
+                 "Co-authored-by: Pix <pixArt@users.noreply.github.com>\n"
+                 "Add app\n\n"
+                 "Co-authored-by: Fabio <12345+FabioArieiraBaia@users.noreply.github.com>\n"
+                 "Co-authored-by: pollinations-ai[bot] <99+pollinations-ai[bot]@users.noreply.github.com>\n"
+                 "Co-authored-by: Claude <noreply@anthropic.com>\n"
+                 "Co-authored-by: Tolerable <Tolerable@users.noreply.github.com>\n"  # the bot's submitter
+                 "Co-authored-by: Good <555+GoodCoder@users.noreply.github.com>\n"
+                 "Co-authored-by: Tech <808+techcow2@users.noreply.github.com>\n"
+                 "Co-authored-by: Shark <909+sharktide@users.noreply.github.com>\n"
+                 "Co-authored-by: MentatBot <160+MentatBot@users.noreply.github.com>\n"
+             )}},
+            # The same account under an earlier login still counts once, by its id.
+            {"author": {"login": "VoodooHop-old", "databaseId": 1, "avatarUrl": "a", "url": "u"},
+             "mergeCommit": {"message": "Co-authored-by: voodoohop <1+voodoohop@users.noreply.github.com>"}},
+            {"author": None, "mergeCommit": None},
+        ]
+        with patch("contributors.github_account", side_effect=lambda path, _token: github.get(path)):
+            ranked = rank_contributors(prs, "test")
+        # No credit: pixArt (the account did not exist yet), the placeholder account (sharktide's
+        # 909) and the app's own bot as a co-author (bots count as PR authors only).
+        self.assertEqual([(p["id"], p["login"], p["prs"]) for p in ranked],
+                         [(1, "voodoohop", 2), (12345, "FabioArieiraBaia", 1), (173, "GoodCoder", 1),
+                          (99, "pollinations-ai[bot]", 1), (808, "TechMitten", 1), (2303, "Tolerable", 1)])
+        self.assertEqual(ranked[1]["avatar_url"], "av12345")
+        self.assertEqual(ranked[4]["url"], "gh/TechMitten")
+        self.assertEqual(ranked[3]["url"], "https://github.com/apps/pollinations-ai")
+
+        # A rate limit or outage stops the count; only a 404 means the account is gone.
+        with patch("contributors.github_api_request") as api:
+            api.return_value.status_code = 403
+            with self.assertRaises(RuntimeError):
+                github_account("user/403-test", "test")
+            api.return_value.status_code = 404
+            self.assertIsNone(github_account("user/404-test", "test"))
+
+
 class PostsTest(unittest.TestCase):
     """posts.py on fixtures: its model calls and pictures, and the files it saves."""
 
@@ -470,6 +542,8 @@ class PostsTest(unittest.TestCase):
         for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
                                                 "GITHUB_REPOSITORY": "pollinations/pollinations",
                                                 "DISCORD_MODELS_ROLE_ID": "42"}),
+                        patch("posts.month_counts", side_effect=lambda month, token, repository: {
+                            "month": month, "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]}),
                         patch("time.sleep")):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -506,14 +580,6 @@ class PostsTest(unittest.TestCase):
             posts.write(job, date, self.news, self.work, overwrite)
             posts.save(job, date, self.news, self.work, overwrite)
         return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
-
-    def assertSameRun(self, old, new, calls, files):
-        stamp = lambda saved: {path: re.sub(rb'"generated_at": "[^"]*"', b'"generated_at": ""', data)
-                               for path, data in saved.items()}
-        self.assertEqual(sorted(new[0]), sorted(old[0]))
-        self.assertEqual(sorted(new[1]), sorted(old[1]))
-        self.assertEqual(stamp(new[2]), stamp(old[2]))
-        self.assertEqual((len(new[0]), len(new[2])), (calls, files))
 
     def assertDeliverable(self, job, base, saved):
         """Each file deliver.py sends is saved with its text and its pictures' saved urls."""
@@ -588,13 +654,18 @@ class PostsTest(unittest.TestCase):
                                                            "prs": [{"number": 1, "date": day}]})
                 calls, images, saved = self.new("monthly", "2026-09", **reply)
                 base = f"{NEWS_REL_DIR}/monthly/2026-09"
-                self.assertEqual(sorted(saved), [f"{base}/images/cover.jpg", f"{base}/summary.json"])
+                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/images/cover.jpg",
+                                                 f"{base}/summary.json"])
+                self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
+                                 {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
                 self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7])
                 self.assertIn("Day 2026-09-30", calls[0][1])
                 self.assertNotIn("Day 2026-10-01", calls[0][1])
                 self.assertEqual([image[0] for image in images], [picture])
+        # A month without daily summaries writes no page but still has its counts.
+        self.assertEqual(sorted(self.new("monthly", "2026-08")[2]), [f"{NEWS_REL_DIR}/monthly/2026-08/contributors.json"])
 
-    def test_model_post_matches_today_and_a_week_without_changes_saves_only_the_snapshot(self):
+    def test_model_post_and_a_week_without_changes_saves_only_the_snapshot(self):
         previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
                     "embeddings": []}
         current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
@@ -602,33 +673,22 @@ class PostsTest(unittest.TestCase):
         self.put("models/snapshots/2026-10-07.json", previous)
         self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
         self.put("models/models.md", changelog)
-        staging = self.root / "staging"
-        staging.mkdir()
-        for date, baseline, snapshot, calls, files in (("2026-10-14", previous, "2026-10-07", 1, 4),
-                                                       ("2026-10-28", current, "2026-10-21", 0, 1)):
-            with self.subTest(date=date):
-                old_calls, _, model, _ = self.fakes()
-                committed = {}
-                def commit_text(token, owner, repo, path, content, message, committed=committed):
-                    committed[path] = content.encode()
-                    return True
-                with patch.dict(os.environ, {"TARGET_DATE": date}), \
-                     patch("generate_models_news._path_exists_on_news", return_value=False), \
-                     patch("generate_models_news.fetch_all_snapshots", return_value=copy.deepcopy(current)), \
-                     patch("generate_models_news.find_previous_snapshot_date", return_value=snapshot), \
-                     patch("generate_models_news.load_snapshot_from_news", return_value=copy.deepcopy(baseline)), \
-                     patch("generate_models_news.load_models_md", return_value=changelog), \
-                     patch("generate_models_news.models_news_staging_dir", return_value=str(staging)), \
-                     patch("generate_models_news.commit_text_to_news", commit_text), \
-                     patch("generate_models_news.call_pollinations_api", model):
-                    self.assertEqual(generate_models_news.main(), 0)
-                if calls:
-                    committed = {path: (staging / name).read_bytes() for name, path in models_news_staged_files(date)}
-                with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
-                    new = self.new("models", date)
-                self.assertSameRun((old_calls, [], committed), new, calls=calls, files=files)
-                if calls:
-                    self.assertIn('"text": "<@&42> Model updates"', new[2][f"{NEWS_REL_DIR}/models/{date}/discord.json"].decode())
+        models = f"{NEWS_REL_DIR}/models"
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, images, saved = self.new("models", "2026-10-14")
+        # One call compares with the last snapshot before the post, and four files are saved together.
+        self.assertEqual([temperature for _, _, temperature in calls], [0.4])
+        self.assertIn("2026-10-07", calls[0][1])
+        self.assertEqual(sorted(saved), [f"{models}/2026-10-14/discord.json", f"{models}/diffs/2026-10-14.json",
+                                         f"{models}/models.md", f"{models}/snapshots/2026-10-14.json"])
+        self.assertIn('"text": "<@&42> Model updates"', saved[f"{models}/2026-10-14/discord.json"].decode())
+        self.assertEqual(json.loads(saved[f"{models}/snapshots/2026-10-14.json"]), current)
+        self.assertLess(saved[f"{models}/models.md"].decode().index("## 2026-10-14"),
+                        saved[f"{models}/models.md"].decode().index("## 2026-10-07"))
+        # A week without changes makes no call and saves only the snapshot.
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+            calls, _, saved = self.new("models", "2026-10-28")
+        self.assertEqual((calls, list(saved)), ([], [f"{models}/snapshots/2026-10-28.json"]))
         # A saved model post is never replaced; a week without changes can be taken again.
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
             with self.assertRaisesRegex(SystemExit, "has a saved model post"):

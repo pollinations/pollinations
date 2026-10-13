@@ -2,6 +2,7 @@ import chalk from "chalk";
 import { Command } from "commander";
 import { gen, genText, requireKey } from "../lib/api.js";
 import { setKeyOverride } from "../lib/config.js";
+import { numberOption } from "../lib/number-option.js";
 import {
     ExitSignal,
     fail,
@@ -202,7 +203,7 @@ export const usageCommand = new Command("usage")
             '\nKey filter:\n  --key <name-or-id>   Filter by API key name or id (repeatable, resolves\n                       names via /account/keys). Placed after "usage" it filters;\n                       before "usage" it stays the global auth override.',
         ),
     )
-    .action(async (opts) => {
+    .action(async (opts, command: Command) => {
         // Fix up the auth override before requireKey(): commander routes a
         // post-subcommand `--key` into the global option (and the preAction
         // hook), so restore the intended auth key here.
@@ -325,7 +326,13 @@ export const usageCommand = new Command("usage")
                 const data = await gen<DailyUsageResponse>(path, {
                     apiKey: key,
                 });
-                const rows = filterDailyRows(data.usage, keyIds, models);
+                let rows = filterDailyRows(data.usage, keyIds, models);
+                // --daily prints every row unless --limit is passed (#16947).
+                if (command.getOptionValueSource("limit") === "cli")
+                    rows = rows.slice(
+                        0,
+                        numberOption("--limit", opts.limit, 1, 100_000, true),
+                    );
                 // JSON keeps the API records: numeric cost_usd, no rounding.
                 if (getOutputMode() !== "human") {
                     printResult(rows);

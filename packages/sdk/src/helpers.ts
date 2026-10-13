@@ -19,7 +19,6 @@ import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
-    Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
     wrapAudioResponse,
@@ -306,20 +305,6 @@ export async function* chatStream(
     options?: Omit<ChatOptions, "stream">,
 ): AsyncGenerator<import("./types.js").ChatStreamChunk> {
     yield* getClient().chatStream(messages, options);
-}
-
-/**
- * Create a new conversation with the configured client
- *
- * @example
- * ```ts
- * const convo = conversation({ model: 'openai' });
- * convo.system('You are a helpful assistant');
- * const response = await convo.say('Hello!');
- * ```
- */
-export function conversation(options?: ChatOptions): Conversation {
-    return new Conversation(options, getClient());
 }
 
 // ============================================================================

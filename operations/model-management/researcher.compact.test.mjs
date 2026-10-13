@@ -988,7 +988,7 @@ test(
 );
 
 test(
-    "official compact main retains rejected native probability mass and stops before further inference",
+    "official compact main rejects invalid evidence grades while settling valid native usage",
     { skip: !available && "Python with Scrapling unavailable" },
     async (t) => {
         const { env } = await fixture(t);
@@ -997,11 +997,11 @@ test(
             nativeAt: 2,
         });
         const report = await main(env);
-        assert.equal(report.status, "partial");
+        assert.equal(report.status, "complete");
         assert.equal(calls.sol.length, 0);
         assert.equal(calls.native.length, 7);
         const receipt = report.calls.at(-1);
-        assert.equal(receipt.status, "pending");
+        assert.equal(receipt.status, "received");
         assert.ok(receipt.reserved > 0);
         assert.ok(receipt.observedPollen > 0);
         assert.equal(receipt.nativeResponse.usage.input_tokens, 100);
@@ -1010,9 +1010,10 @@ test(
                 ({ probabilitySum }) => Math.abs(probabilitySum - 0.52) < 1e-10,
             ),
         );
-        assert.ok(receipt.validationError);
+        assert.ok(receipt.validationErrors.length);
+        assert.equal(receipt.accountedPollen, receipt.observedPollen);
         assert.ok(
-            !report.models[0].actions.some(({ action }) => action === "submit"),
+            report.models[0].actions.some(({ action }) => action === "submit"),
         );
         const route = report.models[0].routes[0];
         assert.equal(

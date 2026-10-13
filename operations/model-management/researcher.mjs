@@ -2459,7 +2459,17 @@ export async function main(env = process.env) {
         let result;
         try {
             receipt.observedPollen = jevCost(data.usage, quote);
-            result = validate(payload, data);
+            result = validate(payload, data, { rejectInvalidChoices: true });
+            const rejected = (result.grades ?? [result]).filter(
+                ({ rejected }) => rejected,
+            );
+            if (rejected.length)
+                receipt.validationErrors = rejected.map(
+                    ({ id, validationError }) => ({
+                        id,
+                        error: validationError,
+                    }),
+                );
         } catch (error) {
             // A rejected decision stays unusable; keep its reservation and diagnostic for reconciliation.
             receipt.validationError = error.message.slice(0, 300);

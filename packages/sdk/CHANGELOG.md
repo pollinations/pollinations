@@ -4,6 +4,12 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.16] - 2026-10-14
+
+### Changed
+- README Discord link points to `discord.gg/k9F7SyTgqn`; the old invite
+  link no longer works.
+
 ## [5.1.0-alpha.15] - 2026-10-13
 
 ### Changed

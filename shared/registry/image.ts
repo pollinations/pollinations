@@ -305,7 +305,7 @@ const IMAGE_BASE_SERVICES = {
         // Vertex AI model page.
         // Provider retires this route on 2027-03-15.
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 2.5 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.3), // per 1M tokens
@@ -327,7 +327,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash Image via Vertex AI
             promptTextTokens: perMillion(0.5), // per 1M tokens
@@ -349,7 +349,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
             promptTextTokens: perMillion(0.25), // per 1M tokens
@@ -393,7 +393,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         cost: {
             // Gemini 3 Pro Image via Vertex AI
             // 1K/2K image: 1120 tokens = $0.134/image ($120/M tokens)
@@ -1368,6 +1368,26 @@ const IMAGE_BASE_SERVICES = {
         title: "Qwen Image 2.1",
         description:
             "Generates and edits images from prompts and up to ten references, with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
+    },
+    "qwen/qwen-image-2.1-turbo": {
+        aliases: [],
+        provider: "alibaba",
+        publisher: "Qwen",
+        category: "image",
+        addedDate: new Date("2026-10-11").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore (International) list price (2026-10-13): $0.016 per
+        // output image, whatever the reference image count.
+        cost: {
+            completionImageTokens: 0.016, // per image
+        },
+        title: "Qwen Image 2.1 Turbo",
+        description:
+            "Low-cost generation and editing with up to 10 reference images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 10,

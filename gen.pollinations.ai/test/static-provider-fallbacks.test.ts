@@ -86,6 +86,11 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
+        "google/gemini-4-argon:openrouter:ai-studio",
+        "google/gemini-4-argon",
+        "google-ai-studio",
+    ],
+    [
         "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         "google/gemini-2.5-flash-lite",
         "google-ai-studio",
@@ -270,7 +275,7 @@ describe("static provider fallbacks", () => {
             TEXT_SERVICES[
                 "google/gemini-3.1-pro-preview:openrouter:vertex-global"
             ];
-        expect(primary.priceMultiplier).toBe(1.055);
+        expect(primary.priceMultiplier).toBe(1);
         expect(fallback.priceMultiplier).toBe(1);
         for (const definition of [primary, fallback]) {
             const billed = calculateUsageBilling({
@@ -306,10 +311,8 @@ describe("static provider fallbacks", () => {
                     ? directCost * 1.055
                     : directCost;
             expect(billed.cost.totalCost).toBeCloseTo(expectedCost, 12);
-            expect(billed.price.totalPrice).toBeCloseTo(directCost * 1.055, 8);
-            expect(billed.priceDefinition.promptTextTokens).toBe(
-                (4 / 1_000_000) * 1.055,
-            );
+            expect(billed.price.totalPrice).toBeCloseTo(directCost, 8);
+            expect(billed.priceDefinition.promptTextTokens).toBe(4 / 1_000_000);
         }
     });
 
@@ -610,6 +613,47 @@ describe("static provider fallbacks", () => {
         }
     });
 
+    it("prices Muse Wonder on Vercel at base rates and quotes the OpenRouter primary with its fee", () => {
+        const primary = TEXT_SERVICES["meta/muse-wonder-1.0"];
+        const fallback = TEXT_SERVICES["meta/muse-wonder-1.0:vercel"];
+        expect(primary).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            aliases: [],
+            fallbacks: ["meta/muse-wonder-1.0:vercel"],
+        });
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+            tools: true,
+        });
+        expect(findModelByName("meta/muse-wonder-1.0")?.config()).toMatchObject(
+            { provider: "openrouter", model: "meta/muse-wonder" },
+        );
+        expect(
+            findModelByName("meta/muse-wonder-1.0:vercel")?.config(),
+        ).toMatchObject({ model: "meta/muse-wonder-1.0" });
+        const billing = calculateUsageBilling({
+            model: "meta/muse-wonder-1.0",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        // Vercel base rates ($4 in, $20 out per 1M) set the cost; the
+        // OpenRouter quote ($4.22 in, $21.10 out) sets the price.
+        expect(billing.cost.totalCost).toBeCloseTo(0.024, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.02532, 12);
+        expect(
+            supportsTextFallbackRequest(fallback, {
+                messages: [{ role: "user", content: "hi" }],
+                tools: [{ type: "function", function: { name: "lookup" } }],
+            }),
+        ).toBe(true);
+    });
+
     it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
         const primary = TEXT_SERVICES["stepfun/step-5-preview"];
         const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];
@@ -895,6 +939,46 @@ describe("static provider fallbacks", () => {
         });
         expect(MODEL3D_SERVICES["microsoft/trellis-2:fal"].cost).toEqual({
             completionImageTokens: 0.25,
+        });
+    });
+
+    it("prices Gemini 4 Argon at Vertex list and records OpenRouter's fee on the fallback", () => {
+        const primary = TEXT_SERVICES["google/gemini-4-argon"];
+        const fallback =
+            TEXT_SERVICES["google/gemini-4-argon:openrouter:ai-studio"];
+        expect(primary).toMatchObject({
+            provider: "google",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: [],
+            fallbacks: ["google/gemini-4-argon:openrouter:ai-studio"],
+        });
+        expect(fallback.cost).toMatchObject({
+            promptTextTokens: (4 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.2 / 1_000_000) * 1.055,
+            completionTextTokens: (20 / 1_000_000) * 1.055,
+        });
+        const billing = calculateUsageBilling({
+            model: "google/gemini-4-argon",
+            usage: { promptTextTokens: 1000, completionTextTokens: 1000 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.02532, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.024, 12);
+        expect(
+            findModelByName(
+                "google/gemini-4-argon:openrouter:ai-studio",
+            )?.config(),
+        ).toMatchObject({
+            defaultOptions: {
+                provider: {
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                },
+            },
         });
     });
 

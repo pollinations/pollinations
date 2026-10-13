@@ -1050,18 +1050,18 @@ const TEXT_BASE_SERVICES = {
         publisher: "Google",
         category: "text",
         addedDate: new Date("2026-10-13").getTime(),
-        priceMultiplier: 1.055,
+        priceMultiplier: 1,
         paidOnly: true,
-        // Google's introductory pricing runs through 2026-11-30. List rates
-        // ($4 input, $0.20 cached, $20 output) apply from 2026-12-01.
+        // Vertex global list rates (2026-10-13). Vertex invoices these and
+        // returns 50% as credits through 2026-11-30; that promo is not priced in.
         cost: {
-            promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.1),
-            promptCacheWriteTokens: perMillion(2),
-            promptAudioTokens: perMillion(2),
-            promptImageTokens: perMillion(2),
-            promptVideoTokens: perMillion(2),
-            completionTextTokens: perMillion(10),
+            promptTextTokens: perMillion(4),
+            promptCachedTokens: perMillion(0.2),
+            promptCacheWriteTokens: perMillion(4),
+            promptAudioTokens: perMillion(4),
+            promptImageTokens: perMillion(4),
+            promptVideoTokens: perMillion(4),
+            completionTextTokens: perMillion(20),
         },
         billing: GEMINI_3_SEARCH_BILLING,
         title: "Gemini 4 Argon",

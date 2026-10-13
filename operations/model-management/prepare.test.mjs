@@ -878,7 +878,9 @@ test("platform modes exclude off-domain and lookalike results while broad search
             ),
         );
     }
-    const wiki = result.leads.find(({ url }) => url.includes("wikipedia.org"));
+    const wiki = result.leads.find(
+        ({ url }) => new URL(url).hostname === "en.wikipedia.org",
+    );
     assert.deepEqual(wiki.modes, ["news", "providers"]);
 });
 
@@ -1015,5 +1017,54 @@ test("all blocked discovery reads keep fallback menus bounded and record unresol
     assert.equal(
         result.sources.filter(({ status }) => status === "fetched").length,
         0,
+    );
+});
+
+test("declining a blocked-page fallback preserves attempted coverage and still extracts fetched evidence", async () => {
+    const f = fixture([]);
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        status:
+            new URL(args.url).hostname === "www.reddit.com"
+                ? "unavailable"
+                : "fetched",
+    });
+    let extracted = false;
+    f.services.extract = async (sources) => {
+        extracted = true;
+        assert.equal(sources.length, 4);
+        assert.equal(
+            sources.filter(({ status }) => status === "fetched").length,
+            2,
+        );
+        return {
+            discoveries: [],
+            grades: [],
+            gaps: ["Fixture identity unresolved"],
+        };
+    };
+    f.services.control = async ({ stage, actions }) => ({
+        action: actions.some(({ mode }) => mode === "exa")
+            ? null
+            : stage === "search"
+              ? actions[0]
+              : (actions.find(({ required }) => required) ??
+                actions.find(({ kind }) => kind === "finish")),
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.equal(result.requiredEvidencePending, false);
+    assert.equal(extracted, true);
+    assert.equal(f.reads.length, 4);
+    assert.ok(result.gaps.includes("Fixture identity unresolved"));
+    assert.ok(
+        result.gaps.some((gap) =>
+            gap.startsWith("crawl: Jev could not select"),
+        ),
+    );
+    assert.ok(
+        result.gaps.includes(
+            "reddit: fetched discovery evidence remains unresolved",
+        ),
     );
 });

@@ -856,6 +856,13 @@ export async function prepareResearch(task, services) {
                 action.status = source.status;
                 crawled++;
             }
+            requiredEvidencePending = REQUIRED_FEEDS.some(
+                (feed) => !readUrls.has(feed.url),
+            );
+            if (requiredEvidencePending)
+                gaps.push(
+                    "Required public feeds were not attempted; discovery remains incomplete",
+                );
             const blocked = sources
                 .filter(({ status }) => status === "unavailable")
                 .sort(
@@ -879,7 +886,7 @@ export async function prepareResearch(task, services) {
                         text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
                     })),
                 ]);
-                if (!selected) return evidence();
+                if (!selected) break;
                 if (selected.kind === "finish") break;
                 const failed = blocked.splice(
                     Number(selected.id.split("-").at(-1)),
@@ -904,14 +911,6 @@ export async function prepareResearch(task, services) {
                         `${source.url}: both local HTTP and Exa retrieval unavailable`,
                     );
             }
-
-            requiredEvidencePending = REQUIRED_FEEDS.some(
-                (feed) => !readUrls.has(feed.url),
-            );
-            if (requiredEvidencePending)
-                gaps.push(
-                    "Required public feeds were not attempted; discovery remains incomplete",
-                );
         }
         if (!names.length)
             for (const [, mode] of searches)

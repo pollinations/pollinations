@@ -1,0 +1,99 @@
+{
+  "pr_number": 17183,
+  "title": "fix: correct GLM Flash cached input pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17183",
+  "merged_at": "2026-10-13T12:48:04Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Corrected cached-input pricing for z-ai/glm-5.3-flash and z-ai/glm-5.3-flashx, billed in Pollen per million cached input tokens. Other input and output prices, access, capabilities, and routes are unchanged: Flash remains available through Quest and Paid access with Fireworks as primary and OpenRouter as fallback; FlashX remains Paid-only with Z.AI as its sole host. Flash’s OpenRouter fallback still costs 5.5% above its listed price. Updated effective-price snapshots and verified cache reuse and wallet charges across text, vision, streaming, and tools.",
+    "keywords": [
+      "GLM-5.3 Flash",
+      "GLM-5.3 FlashX",
+      "cached input",
+      "pricing",
+      "Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17183.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small in the scene and wearing tiny accountant glasses, she checks two labeled GLM cache jars beside a glowing terminal and pixel flowers. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream surroundings, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T12:49:53.891916+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "fc27192ee147a8293c65b739217bbadb9d34a3dd",
+  "announcements": [
+    {
+      "id": "pr-17183:z-ai/glm-5.3-flash",
+      "model_id": "z-ai/glm-5.3-flash",
+      "title": "Z.ai GLM-5.3 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.000000029",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000005"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000015",
+            "promptCachedTokens": "0.00000003",
+            "promptImageTokens": "0.00000015",
+            "completionTextTokens": "0.0000005"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    },
+    {
+      "id": "pr-17183:z-ai/glm-5.3-flashx",
+      "model_id": "z-ai/glm-5.3-flashx",
+      "title": "Z.ai GLM-5.3 FlashX",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.000000079125",
+            "completionTextTokens": "0.00000131875"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000039035",
+            "promptCachedTokens": "0.00000009495",
+            "completionTextTokens": "0.00000131875"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "fc27192ee147a8293c65b739217bbadb9d34a3dd^1",
+    "after_ref": "fc27192ee147a8293c65b739217bbadb9d34a3dd"
+  }
+}

@@ -69,7 +69,8 @@ function notFound(): Response {
     return noIndex(new Response("Not Found", { status: 404 }));
 }
 
-function robotsTxt(): Response {
+function robotsTxt(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
     return new Response(
         [
             "User-agent: *",
@@ -85,8 +86,34 @@ function robotsTxt(): Response {
             "Disallow: /api/",
             // https://contentsignals.org
             "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
+            "",
+            `Sitemap: ${origin}/sitemap.xml`,
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
+    );
+}
+
+/** Serve a minimal XML sitemap for the public HTML pages (crawler discovery). */
+function sitemapXml(c: Context<Env>): Response {
+    const origin = getPublicOrigin(c);
+    return new Response(
+        [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+            "  <url>",
+            `    <loc>${origin}/</loc>`,
+            "  </url>",
+            "  <url>",
+            `    <loc>${origin}/docs</loc>`,
+            "  </url>",
+            "</urlset>",
+        ].join("\n"),
+        {
+            headers: {
+                "Content-Type": "application/xml; charset=utf-8",
+                "Cache-Control": "public, max-age=3600",
+            },
+        },
     );
 }
 
@@ -162,7 +189,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
     .use("*", agentDiscoveryLinks())
-    .get("/robots.txt", () => robotsTxt())
+    .get("/robots.txt", (c) => robotsTxt(c))
+    .get("/sitemap.xml", (c) => sitemapXml(c))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)

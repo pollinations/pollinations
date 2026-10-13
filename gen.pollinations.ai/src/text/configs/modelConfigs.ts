@@ -309,13 +309,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.6",
     }),
-
-    // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
-    "Cohere-command-a-plus-05-2026": () =>
-        createAzureResponsesModelConfig(
-            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
-            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-        ),
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
@@ -341,6 +340,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
+    "cohere/command-a-plus": createPinnedOpenRouterConfig(
+        "cohere/command-a-plus",
+        "Cohere",
+    ),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -445,9 +448,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
         "qwen/qwen3.8-27b",
-        "akashml/fp8",
+        "reka/fp8",
         64000,
     ),
     "qwen/qwen3.8-max": () =>
@@ -643,7 +646,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
+    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
+    // which bill above the quoted rate, so they are excluded explicitly.
+    "grok-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai"],
+                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",

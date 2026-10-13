@@ -594,6 +594,39 @@ test("official assembly preserves valid models alongside malformed URLs, suffix 
                 );
             }
 });
+
+test("availability audit includes distant exact-checkpoint API examples instead of navigation boilerplate", async () => {
+    const model = { name: "qwen/qwen3-embedding-8b", category: "embedding" };
+    const text =
+        "Qwen3 Embedding 8B API - Documentation - DeepInfra\n" +
+        "navigation\n".repeat(200) +
+        '\n# Qwen3-Embedding-8B\n### OpenAI-compatible HTTP API\nDeepInfra supports the OpenAI embeddings API.\ncurl "https://api.deepinfra.com/v1/openai/embeddings"\n"model": "Qwen/Qwen3-Embedding-8B"';
+    const source = {
+        id: "api",
+        status: "fetched",
+        url: "https://deepinfra.com/Qwen/Qwen3-Embedding-8B/api",
+        text,
+    };
+    const initial = assessGroup(
+        officialCandidates([model], [source]),
+        [source],
+        new Map(),
+        [model],
+        [model],
+        false,
+    );
+    let calls = 0;
+    await auditEvidence(initial, [model], [source], async (payload) => {
+        calls++;
+        const excerpt = payload.state.items[0].excerpt;
+        assert.match(excerpt, /OpenAI-compatible HTTP API/);
+        assert.match(excerpt, /api.deepinfra.com\/v1\/openai\/embeddings/);
+        assert.match(excerpt, /"model": "Qwen\/Qwen3-Embedding-8B"/);
+        assert.ok(excerpt.length <= 1600);
+        return validateClaimAudit(payload, nativeResponse(payload));
+    });
+    assert.equal(calls, 1);
+});
 test("compact source windows preserve distant model evidence and exact table fragments", () => {
     const text =
         "navigation\n".repeat(550) +
@@ -1347,6 +1380,7 @@ test(
                 pageDigest: hash(text),
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const calls = network(t, [model, sol, jev], { extraProvider: true });
@@ -1979,6 +2013,7 @@ test(
                 pageDigest: hash(gapText),
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const optionQueries = [
@@ -2063,6 +2098,7 @@ test(
                 pageDigest: "invalid",
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const second = "https://fireworks.ai/models/fixture-embedding-8b";
@@ -2076,6 +2112,7 @@ test(
                 pageDigest: hash(partial),
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const calls = network(t, [model, sol, jev], {
@@ -2132,6 +2169,7 @@ test(
                 pageDigest: hash(fullText),
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const calls = network(t, [model, sol, jev], {
@@ -2178,6 +2216,7 @@ test(
                 pageDigest: hash(fullText),
                 extractionVersion: 2,
                 fetchedAt: new Date().toISOString(),
+                links: [],
             }),
         );
         const before = {

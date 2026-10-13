@@ -38,11 +38,11 @@ test("falls back to the Grafana home dashboard without a url parameter", () => {
 test("keeps kiosk mode and the chosen range on the embedded dashboard url", () => {
     assert.equal(
         dashboardSrc("core-api-rebuild", "30d"),
-        "/grafana/d/core-api-rebuild?kiosk&from=now-30d/d&to=now-1d/d",
+        "/grafana/d/core-api-rebuild?kiosk&hideLogo&from=now-30d/d&to=now-1d/d",
     );
     assert.equal(
         dashboardSrc("core-api-rebuild", "90d"),
-        "/grafana/d/core-api-rebuild?kiosk&from=now-90d/d&to=now-1d/d",
+        "/grafana/d/core-api-rebuild?kiosk&hideLogo&from=now-90d/d&to=now-1d/d",
     );
 });
 

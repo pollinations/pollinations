@@ -264,7 +264,7 @@ curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -F "temperature=0"
 ```
 
-`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`, depending on the model. `srt` and `vtt` are only supported by the `assemblyai/*` models; an unsupported combination returns 400 naming the formats that model accepts. Transcription models are the `GET /v1/models` entries whose `supported_endpoints` include `/v1/audio/transcriptions`. Max file size 25 MB.
+`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`, depending on the model. `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models; an unsupported combination returns 400 naming the formats that model accepts. Transcription models are the `GET /v1/models` entries whose `supported_endpoints` include `/v1/audio/transcriptions`. Max file size 25 MB.
 
 **Edit an image with a prompt** — OpenAI Images Edits-compatible.
 
@@ -309,7 +309,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 | `POST /v1/messages` | Anthropic Messages API — Claude Code and the Anthropic SDKs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
+**Available models:** openai/gpt-5.4-nano, openai/gpt-5-nano, openai/gpt-oss-20b, openai/gpt-4o-mini, openai/gpt-5.3-codex, openai/gpt-5.4, openai/gpt-5.4-mini, openai/gpt-5.5, openai/gpt-5.6-sol, openai/gpt-5.6-terra, openai/gpt-5.6-luna, openai/gpt-6-astra, openai/gpt-6-sol, openai/gpt-6.1-sol, openai/gpt-6-luna, inception/mercury-2, inception/mercury-2.5-preview, cohere/command-a-plus, qwen/qwen3-coder-30b-a3b-instruct, mistralai/mistral-small-3.2, mistralai/mistral-small-4, openai/gpt-audio-mini, openai/gpt-audio-1.5, google/gemini-3-flash-preview, google/gemini-3.7-flash, google/gemini-3.8-flash, google/gemini-3.5-flash-lite, google/gemini-2.5-flash-lite, deepseek/deepseek-v4-flash, deepseek/deepseek-v4.1-flash, deepseek/deepseek-v4-flash-vision-exp, google/gemma-4-26b-a4b-it, google/gemma-4-31b-it, deepseek/deepseek-v4-pro, x-ai/grok-4.20, x-ai/grok-4.3, x-ai/grok-4.6, x-ai/grok-4.7, google/gemini-2.5-flash-lite:search, respan/span-01-lite, typesafe/jev-1.13, jaredpalmer/kev-4b, liquid/d1, openai/gpt-6-luna-decisions, pollinations/midijourney, pollinations/midijourney-large, anthropic/claude-haiku-4.5, anthropic/claude-haiku-5.5, anthropic/claude-sonnet-4.6, anthropic/claude-sonnet-5, anthropic/claude-sonnet-5.5, anthropic/claude-opus-4.6, anthropic/claude-opus-4.7, anthropic/claude-opus-5, anthropic/claude-opus-5.5, anthropic/claude-opus-5.5:fast, anthropic/claude-fable-5, anthropic/claude-fable-5.1, perplexity/sonar, moonshotai/kimi-k2.6, moonshotai/kimi-k2.7-code, moonshotai/kimi-k3, poolside/laguna-s-2.1, tencent/hy4-preview, tencent/hy3, inclusionai/ling-3.1-flash, nex-agi/nex-n2.5-mini, nex-agi/nex-n2.5-pro, inclusionai/ling-3.0-flash-vl, meituan/longcat-2.0, thinkingmachines/inkling-small, thinkingmachines/inkling, nvidia/nemotron-3-ultra, nvidia/nemotron-3.5-lightning, xiaomi/mimo-v2.5, xiaomi/mimo-v2.5-pro, xiaomi/mimo-v2.6-flash, xiaomi/mimo-v2.6-pro, google/gemini-3.1-pro-preview, amazon/nova-micro-v1, amazon/nova-2-lite-v1, z-ai/glm-5.2, z-ai/glm-5.3, z-ai/glm-5.3-flash, z-ai/glm-5.3-flashx, meta/llama-3.3-70b-instruct, meta/llama-4-maverick, meta/llama-4-scout, minimax/minimax-m2.7, minimax/minimax-m3, meta/muse-glimmer-30b, meta/muse-spark-1.2, mistralai/mistral-large-4, mistralai/mistral-large-3, qwen/qwen3-coder-next, qwen/qwen3.7-plus, qwen/qwen3.7-max, qwen/qwen3.8-2.4t-a95b, qwen/qwen3.8-27b, qwen/qwen3.8-max, qwen/qwen3.8-max-0902, qwen/qwen3.8-flash, qwen/qwen3.7-flash, qwen/qwen3-vl-30b-a3b-instruct, qwen/qwen3-vl-235b-a22b-thinking, stepfun/step-5-preview, stepfun/step-3.7-flash, stepfun/step-3.5-flash, qwen/qwen3guard-gen-8b
 
 ### Responses API
 
@@ -326,7 +326,7 @@ curl https://gen.pollinations.ai/v1/responses \
   }'
 ```
 
-The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. For text models, missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
+The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and `item_reference` input items are rejected. To keep reasoning across turns, request `include: ["reasoning.encrypted_content"]` and send the returned reasoning items back in `input`; models without a Responses upstream ignore them. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. For text models, missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
@@ -725,7 +725,7 @@ Built-in models use their configured Responses URL. Community text models and en
 
 OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
 
-Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.
+Response storage, previous response IDs, conversations, background execution, and item references are not supported; encrypted reasoning items may be replayed in input. Prompt agents execute their configured MCP tools on the server and return caller-supplied function calls for the client to execute. Replay output items with matching function_call_output results to continue. Completed MCP pairs are history, not client tool requests. Caller tool names must not start with mcp__; tool_choice supports only auto.
 
 Successful text JSON responses and terminal streaming events contain usage; missing text-provider usage fails the response.
 
@@ -749,7 +749,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `previous_response_id` | `null` | — |
 | `conversation` | `null` | — |
 | `background` | `"false"` \| `null` | — |
-| `include` | enum (6) — `"web_search_call.action.sources"`, `"code_interpreter_call.outputs"`, `"computer_call_output.output.image_url"`, …[] \| `null` | — |
+| `include` | enum (7) — `"reasoning.encrypted_content"`, `"web_search_call.action.sources"`, `"code_interpreter_call.outputs"`, …[] \| `null` | — |
 | `context_management` | `any`[] \| `null` | — |
 | `prompt` | `null` | — |
 | `text` | `object` | — |
@@ -762,6 +762,7 @@ Media models that advertise this endpoint in `/models` also accept text prompts.
 | `tool_choice` | `any` | — |
 | `parallel_tool_calls` | `boolean` | — |
 | `metadata` | `object` \| `null` | — |
+| `client_metadata` | `object` \| `null` | — |
 | `user` | `string` | — |
 | `safety_identifier` | `string` | max length: `64` |
 | `prompt_cache_key` | `string` | — |
@@ -1263,7 +1264,7 @@ Optional controls and response formats depend on the model. Unsupported combinat
 | `model` | `string` | Transcription model ID. See `/audio/models` for current models advertising `/v1/audio/transcriptions`. · default: `"openai/whisper-large-v3"` |
 | `language` | `string` | Language of the audio in ISO-639-1 format (e.g. `en`, `fr`). Improves accuracy. |
 | `prompt` | `string` | Optional text to guide the model's style or continue a previous segment. |
-| `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts. · default: `"json"` |
+| `response_format` | enum (6) — `"json"`, `"text"`, `"srt"`, … | The format of the transcript output. Support is model-dependent: `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models, and `diarized_json` requires a diarization-capable one. Unsupported combinations return 400 naming the formats that model accepts. · default: `"json"` |
 | `temperature` | `number` | Sampling temperature between 0 and 1. Lower is more deterministic. |
 | `speakers_expected` | `integer` | Optional provider hint for the number of speakers. Only honored with `response_format=diarized_json`. · min: `1` |
 
@@ -1683,7 +1684,7 @@ Community models and agents use a canonical `community/owner/model` id and appea
 
 The old `owner/model` IDs remain generation aliases in each model's `aliases` array.
 
-API key model permissions are model categories: `text`, `image`, `video`, `audio`, `3d`, `embedding` and `realtime`. A key allows every model in its categories, including models added later. Key creation and updates also accept model IDs, and each ID allows its whole category.
+API key model permissions list model categories and model IDs. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding` or `realtime`) allows every model in it, including models added later. A model ID or alias allows only that model and is stored as its canonical ID.
 
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.
@@ -3522,7 +3523,7 @@ Create a new API key. To create an app key, use `type: "publishable"` with `redi
 | `name` * | `string` | Name for the API key · length: `1…253` |
 | `type` | `"secret"` \| `"publishable"` | Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key. · default: `"secret"` |
 | `expiresIn` | `integer` | Expiry in seconds from now |
-| `allowedModels` | `string`[] \| `null` | Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models |
+| `allowedModels` | `string`[] \| `null` | Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
@@ -3566,7 +3567,7 @@ Update an API key's name, model access, budget, account permissions, expiry, des
 
 | Field | Type | Description |
 |---|---|---|
-| `allowedModels` | `string`[] \| `null` | Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models |
+| `allowedModels` | `string`[] \| `null` | Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models |
 | `pollenBudget` | `any` | Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited |
 | `questPollenOnly` | `boolean` | Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only |
 | `accountPermissions` | `string`[] \| `null` | Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes. |
@@ -3652,7 +3653,7 @@ Returns information about the API key used in the request: validity, type (secre
 | `expiresAt` * | `any` | Expiry timestamp in ISO 8601 format, null if never expires |
 | `expiresIn` * | `any` | Seconds until expiry, null if never expires |
 | `permissions` * | `object` | API key permissions |
-| `permissions.models` * | `string`[] \| `null` | Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed |
+| `permissions.models` * | `string`[] \| `null` | Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed |
 | `permissions.account` * | `string`[] \| `null` | List of account permissions, null = no account access |
 | `pollenBudget` * | `any` | Remaining pollen budget for this key, null = unlimited (uses user balance) |
 | `questPollenOnly` * | `boolean` | Whether this key spends only Quest Pollen, never paid Pollen |

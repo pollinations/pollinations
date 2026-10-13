@@ -27,7 +27,7 @@ import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
-import { E2B_PATH, e2bRoutes } from "./routes/e2b.ts";
+import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
@@ -82,6 +82,8 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
     );
@@ -99,6 +101,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Polli CLI task recipes](${origin}/docs/polli-tasks.md): Connect OpenCode or generate an image, with a check for the first result.
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
+- [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
 - [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
@@ -108,6 +111,10 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
 
 ## Account
 
@@ -156,7 +163,17 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", async (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (c.req.header("accept")?.includes("text/markdown")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(await llmsTxt(c).text(), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)
@@ -222,4 +239,6 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
-};
+    // The only cron, every 10 minutes (wrangler.toml).
+    scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
+} satisfies ExportedHandler<CloudflareBindings>;

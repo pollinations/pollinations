@@ -23,7 +23,7 @@ export interface RequestOptions {
 // Image Generation
 // ============================================================================
 
-/** Image model (use getImageModels() to fetch available models) */
+/** Image model (use getModels("image") to fetch available models) */
 export type ImageModel = string;
 
 /** Available video models */
@@ -127,7 +127,7 @@ export interface VideoResponse {
 // Text Generation
 // ============================================================================
 
-/** Text model (use getTextModels() to fetch available models) */
+/** Text model (use getModels("text") to fetch available models) */
 export type TextModel = string;
 
 /** Message roles for chat */
@@ -789,7 +789,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Restrict to specific models */
+    /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
@@ -1020,7 +1020,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
+    /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -1118,6 +1118,9 @@ export type ModelCapability =
     | "pollinations_models";
 
 /** Model information */
+/** Model catalog to list: `/<kind>/models` on the API. */
+export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
     [key: string]: unknown;

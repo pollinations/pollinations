@@ -193,6 +193,111 @@ export function App() {
 `useAccountProfile`, `useAccountBalance`, `useAccountKey`, and `useAccountKeyUsage`
 return `{ data, isLoading, error, refresh }`.
 
+### React generation hooks
+
+`useImage`, `useText`, `useAudio`, `useVideo` and `useChatStream` wrap the
+`Pollinations` client with the signed-in user's own Pollen key from
+`<PolliProvider>`. They return `{ data, isLoading, error, run, cancel, reset }`
+— call `run()` to start (calling it again re-runs and supersedes the previous
+run), `cancel()` to abort. Cancelled runs stop loading quietly: no error, old
+data kept. Reads nothing until you call `run()`, so no Pollen is spent on mount.
+
+```tsx
+import { useImage } from '@pollinations/sdk/react';
+
+function Picture() {
+  const { data, isLoading, error, run, cancel } = useImage();
+
+  return (
+    <div>
+      <button onClick={() => run('a cat in space', { width: 512, height: 512 })}>
+        Generate
+      </button>
+      {isLoading && <button onClick={cancel}>Cancel</button>}
+      {error && <p>{error.message}</p>}
+      {data && <img src={data.url} alt="generated" />}
+    </div>
+  );
+}
+```
+
+```tsx
+import { useText } from '@pollinations/sdk/react';
+
+function Answer() {
+  const { data, run } = useText();
+  return <button onClick={() => run('why is the sky blue?')}>{data ?? 'Ask'}</button>;
+}
+```
+
+```tsx
+import { useAudio } from '@pollinations/sdk/react';
+
+function Voice() {
+  const { data, run } = useAudio();
+
+  const speak = async () => {
+    const res = await run('hello from pollinations');
+    if (!res) return;
+    const url = URL.createObjectURL(new Blob([res.buffer], { type: res.contentType }));
+    await new Audio(url).play();
+  };
+
+  return <button onClick={speak}>Speak</button>;
+}
+```
+
+```tsx
+import { useVideo } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, isLoading, run } = useVideo();
+  return (
+    <div>
+      <button onClick={() => run('a dog running in a field', { duration: 6 })}>Render</button>
+      {isLoading && <p>Rendering…</p>}
+      {data && <video src={data.url} controls />}
+    </div>
+  );
+}
+```
+
+```tsx
+import { useChatStream } from '@pollinations/sdk/react';
+
+function Chat() {
+  const { data, run } = useChatStream();
+  return (
+    <div>
+      <button onClick={() => run([{ role: 'user', content: 'write a poem' }])}>Stream</button>
+      <p>{data}</p>
+    </div>
+  );
+}
+```
+
+### React useChat (Responses transport)
+
+Point `useChat` at `/v1/responses` without a custom backend. The transport
+converts the stream to AI SDK UI message chunks client-side; the public
+Responses payloads are unchanged. `ai` is an optional peer — needed only where
+`useChat` runs.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { createResponsesChatTransport } from '@pollinations/sdk';
+
+const transport = createResponsesChatTransport({
+  apiKey: 'sk_your_key', // or () => key, so rotation just works
+  model: 'openai',
+});
+
+export function Chat() {
+  const { messages, sendMessage } = useChat({ transport });
+  // ...
+}
+```
+
 #### Connection and errors
 
 - Saved keys load without a network request. `isHydrated` means startup is done;

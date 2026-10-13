@@ -4,6 +4,14 @@ export type {
     AuthStateValue,
 } from "./contexts.js";
 export {
+    type GenerationValue,
+    useAudio,
+    useChatStream,
+    useImage,
+    useText,
+    useVideo,
+} from "./generation.js";
+export {
     type AccountResourceValue,
     type UseAccountBalanceValue,
     type UseAccountKeyUsageOptions,

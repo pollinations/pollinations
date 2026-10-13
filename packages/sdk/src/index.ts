@@ -70,6 +70,16 @@ export {
     fetchModelCatalog,
     type ModelCatalog,
 } from "./models.js";
+export {
+    createResponsesChatTransport,
+    type ResponsesChatTransportOptions,
+    responsesSseToUiMessageStream,
+    type SendMessagesInput,
+    type UiMessage,
+    type UiMessageChunk,
+    type UiMessageStream,
+    uiMessagesToResponsesInput,
+} from "./responses-chat-transport.js";
 
 // Export all types
 export type {

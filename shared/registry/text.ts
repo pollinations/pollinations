@@ -1157,9 +1157,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: false,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Fireworks Standard rates (2026-10-12).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:
@@ -1265,7 +1266,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
+            // OpenRouter base Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
             // including the account's 5.5% credit-purchase fee. Alibaba
             // halves them the rest of the day; costs are not time-based, so
             // the peak rate applies all day and never undercharges.
@@ -1894,7 +1895,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
             completionTextTokens: perMillion(10),
         },
@@ -2015,6 +2016,35 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "anthropic/claude-opus-5.5:fast": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Research preview: Anthropic's fast mode for Opus 5.5 at 2x standard
+        // rates, served by OpenRouter's anthropic/fast endpoint (2026-10-10).
+        // Costs include OpenRouter's 5.5% credit fee. Cache writes use the
+        // 5-minute rate.
+        cost: {
+            promptTextTokens: perMillion(8) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            promptCacheWriteTokens: perMillion(10) * 1.055,
+            completionTextTokens: perMillion(40) * 1.055,
+        },
+        title: "Claude Opus 5.5 Fast",
+        description:
+            "Higher output speed for interactive coding and agentic work, at premium pricing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Same image limit as Opus 5.5.
         tools: true,
         contextLength: 1000000,
         isSpecialized: false,
@@ -3682,8 +3712,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.01),
+            // OVHcloud lists this moderation endpoint as free (2026-10-12).
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
         description:

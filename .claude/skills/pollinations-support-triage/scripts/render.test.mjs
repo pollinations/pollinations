@@ -31,7 +31,7 @@ test("renders escaped content, real brand palette and a website signature in bot
             "utf8",
         ),
     );
-    assert.ok(email.html.includes(palette.bgActive.accent));
+    assert.ok(email.html.includes(palette.brandDark));
     assert.ok(email.html.includes('href="https://pollinations.ai"'));
     assert.ok(email.text.trimEnd().endsWith("https://pollinations.ai"));
     assert.ok(preview.includes("srcdoc="));

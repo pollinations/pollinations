@@ -60,10 +60,10 @@ function renderMessage(message, sender) {
     const parts = message.blocks.map(({ type, text }) => {
         const body = escapeHtml(text);
         if (type === "heading")
-            return `<h2 style="font-size:17px;margin:24px 0 10px;">${body}</h2>`;
+            return `<h2 style="font-size:14px;margin:20px 0 8px;">${body}</h2>`;
         if (type === "code")
-            return `<pre style="padding:16px;margin:14px 0;background:${palette.bgPale.accent};border-radius:8px;font:13px/1.8 Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;">${body}</pre>`;
-        return `<p style="margin:0 0 16px;">${body.replaceAll("\n", "<br>")}</p>`;
+            return `<pre style="margin:12px 0;font:13px/1.6 Menlo,Consolas,monospace;white-space:pre;overflow-x:auto;">${body}</pre>`;
+        return `<p style="margin:0 0 12px;">${body.replaceAll("\n", "<br>")}</p>`;
     });
     const docs = message.docs
         .map(
@@ -78,16 +78,11 @@ function renderMessage(message, sender) {
         sender: escapeHtml(sender),
         logo,
         ink: palette.brandDark,
-        accent: palette.bgActive.accent,
-        neutral: palette.bgPale.neutral,
         content: parts.join("\n"),
-        docs: docs
-            ? `<div style="margin:22px 0;padding:16px 20px;background:${palette.bgPale.accent};border-radius:8px;">${docs}</div>`
-            : "",
+        docs: docs ? `<p style="margin:12px 0;">${docs}</p>` : "",
     };
     const html = template.replace(/\{\{(\w+)\}\}/g, (_, key) => fields[key]);
     const text = [
-        message.title,
         ...message.blocks.map((b) => b.text),
         ...message.docs.map((d) => `${d.label}: ${d.url}`),
         `${message.closing}\n${sender}\nPollinations.ai\nhttps://pollinations.ai`,

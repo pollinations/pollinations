@@ -95,6 +95,9 @@ browser tab throughout the session.
   Respect the reader; acknowledge inconvenience when appropriate. No marketing,
   forced jokes, internal investigation dump or unsupported promises. Be warmer
   with customers than in machine-oriented internal notes.
+- Keep outgoing email conversational: greeting, short paragraphs, necessary code
+  blocks and documentation links, then a compact signature. No headline, card,
+  colored banner or boxed links. The local review screen may use richer styling.
 - Do not recreate branding or keep a second logo/palette. The renderer reads the
   existing palette and links the existing PNG logo. System fonts are the email
   fallback; no web fonts, tracking pixels or scripts in outgoing HTML.

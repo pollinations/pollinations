@@ -24,6 +24,7 @@ import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
+import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
@@ -139,6 +140,10 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
 
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
+
 ## Account
 
 - [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.
@@ -182,6 +187,7 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use("*", agentDiscoveryLinks())
     .get("/robots.txt", (c) => robotsTxt(c))
     .get("/sitemap.xml", (c) => sitemapXml(c))
     .get("/llms.txt", (c) => llmsTxt(c))

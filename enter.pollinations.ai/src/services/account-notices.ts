@@ -30,11 +30,11 @@ type Notice = {
 
 const pollen = (amount: number) => `${Math.max(0, amount).toFixed(2)} Pollen`;
 
-// The first_auto_top_up quest pays 20 Quest Pollen for a user's first paid
-// auto top-up, so only users who never had one get the offer.
+// The first_auto_top_up quest pays 20 Quest Pollen once per account for a
+// paid auto top-up, so users who already earned it don't get the offer.
 export const AUTO_TOP_UP_OFFER_COLUMN = `NOT EXISTS (
-    SELECT 1 FROM stripe_auto_top_up_attempt
-        WHERE user_id = user.id AND status = 'paid'
+    SELECT 1 FROM rewards
+        WHERE user_id = user.id AND quest_id = 'first_auto_top_up'
 ) AS autoTopUpOffer`;
 
 export function runningLowNotice(

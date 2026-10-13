@@ -117,10 +117,10 @@ test("running-low email goes out once per 30 days below the threshold", async ()
 
 test("a failed running-low email frees the slot for the next crossing", async () => {
     await addUser("bounce", { packBalance: 1 });
-    // A past paid auto top-up rules out the first-auto-top-up quest offer.
+    // Already earned the auto top-up quest, so the email doesn't offer it.
     await env.DB.prepare(
-        `INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status)
-        VALUES ('attempt_bounce', 'bounce', 5, 'paid')`,
+        `INSERT INTO rewards (id, idempotency_key, user_id, quest_id, title, pollen_amount, balance_bucket)
+        VALUES ('reward_bounce', 'quest:first_auto_top_up:bounce', 'bounce', 'first_auto_top_up', 'First auto top-up', 20, 'tier')`,
     ).run();
 
     await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");

@@ -95,14 +95,19 @@ browser tab throughout the session.
   Respect the reader; acknowledge inconvenience when appropriate. No marketing,
   forced jokes, internal investigation dump or unsupported promises. Be warmer
   with customers than in machine-oriented internal notes.
-- Keep outgoing email conversational: greeting, short paragraphs, necessary code
-  blocks and documentation links, then a compact signature. No headline, card,
-  colored banner or boxed links. The local review screen may use richer styling.
+- Keep outgoing email conversational and flat, like Gmail's white editor:
+  greeting, short paragraphs, useful formatting, documentation links and a
+  personal sign-off. Use lists, code blocks, simple tables or subtle bordered
+  callouts only when they help the reader. No newsletter headline, decorative
+  banner, shadows, large cards or colored page background. The local review
+  screen may use richer styling; it is not the outgoing email design.
 - Do not recreate branding or keep a second logo/palette. The renderer reads the
   existing palette and links the existing PNG logo. System fonts are the email
   fallback; no web fonts, tracking pixels or scripts in outgoing HTML.
-- Every email ends with the actual operator's name, Pollinations.ai logo and
-  clickable `https://pollinations.ai`; plain text ends with that URL too.
+- Every delivered email ends with the actual operator's name, Pollinations.ai
+  clickable wordmark linking to the website, without a repeated visible URL.
+  Plain text includes the URL. Verify footer
+  ownership in [local-access.md](references/local-access.md) to avoid duplicates.
 - Technical instructions require verified relevant documentation links. Prefer
   exact sections; never invent anchors. If documentation is genuinely missing,
   record `documentationGap` in the input and disclose that limitation in the
@@ -118,10 +123,19 @@ Create a private scratch JSON file following [example.json](assets/example.json)
 `technical` and `envelope` (`from`, `to`, `subject`) are required. The envelope
 is displayed only in the review screen; use those same verified values when
 drafting/sending. Each message has `language`, `title`, `blocks`
-(`paragraph`, `heading`, `code`), `docs` (`label`, HTTPS `url`), and `closing`.
+(`paragraph`, `heading`, `code`, `callout` with `text`; `list` with `items`
+and optional `ordered`; `table` with `headers` and `rows`), `docs` (`label`,
+HTTPS `url`), and `closing`. Block content is plain text, escaped by the
+renderer; do not inject arbitrary HTML or create a new template per reply.
 For non-English mail add `english`, with the same shape, complete translated
 text, identical code blocks and documentation URLs. `sender` is the operator's
 display name, not a fixed team identity. Do not commit customer content.
+`footerDelivery` is required: use `workspace` for a verified active Workspace
+footer matching this preview, or `inline` for a sender confirmed to have none.
+Resolve unknown coverage before drafting; never guess and risk duplicating it.
+In Workspace mode,
+the preview shows the exact submitted body and separately labels the footer
+Google adds on delivery. Never copy that preview-only footer into the send body.
 
 ```bash
 node .claude/skills/pollinations-support-triage/scripts/render.mjs /absolute/message.json /absolute/session/cases/case-001

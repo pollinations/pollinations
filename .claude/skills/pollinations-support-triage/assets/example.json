@@ -1,5 +1,6 @@
 {
     "sender": "Your name",
+    "footerDelivery": "workspace",
     "envelope": {
         "from": "operator@pollinations.ai",
         "to": "customer@example.com",

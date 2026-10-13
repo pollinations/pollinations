@@ -44,6 +44,30 @@ Follow `AGENTS.md` for access, secret and production-operation boundaries.
   read it back and verify From, recipient, subject, thread and exact HTML and
   plain-text content.
 
+## Footer delivery
+
+- Gmail web-composer signatures are not automatically inserted by Gmail API
+  sends. Workspace's **Gmail → Compliance → Append footer** is a separate rule.
+- Rollout configured 2026-10-13: root organization `pollinations.ai` has
+  `Pollinations signature — shared wordmark` enabled for outbound and internal
+  mail. Child organizations inherit it; the earlier Elliot pilot rule is
+  disabled to prevent duplicates. Design B is one 144 × 18 clickable wordmark,
+  with no separate visible URL. Verify current inheritance for the operator;
+  this recorded setup is not a substitute for checking the live setting.
+- Confirm the sender's applicable rule and footer content before choosing
+  `footerDelivery: "workspace"`. The renderer's preview represents the small
+  pinned clickable wordmark (design B), with no separate visible website URL.
+  If the Admin footer changes, update and review that
+  representation before relying on it. Do not infer delivery from the Sent
+  copy alone: inspect an authorized external recipient's message when testing.
+- With Workspace branding, the operator's Gmail composer signature should
+  contain personal details only. Avoid adding the same logo/website twice.
+  Use `footerDelivery: "workspace"` for covered senders, including Thomas;
+  retain their own name and verified Pollinations sender address. If coverage
+  is unknown, resolve it before drafting rather than guessing a footer mode.
+  Changes to Workspace or signature settings are separate from routine triage.
+  See [Google's footer setup and inheritance documentation](https://knowledge.workspace.google.com/admin/gmail/advanced/add-a-standard-footer-to-outgoing-emails).
+
 ## Production evidence
 
 | System | Existing access and checks |

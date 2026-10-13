@@ -4,6 +4,7 @@
 import hashlib
 import ipaddress
 import json
+import math
 import os
 import re
 import socket
@@ -223,6 +224,52 @@ def _retryable_network_error(error):
             or (type(error).__name__ == "TimeoutError" and type(error).__module__.startswith(("playwright.", "patchright."))))
 
 
+_reddit_next_request = 0
+
+
+def _reddit_feed_slot(url, deadline):
+    global _reddit_next_request
+    if urlsplit(url).hostname not in {"reddit.com", "www.reddit.com", "old.reddit.com"} or not urlsplit(url).path.endswith(".rss"):
+        return
+    directory = os.environ.get("FETCH_CACHE_DIR")
+    clock = Path(directory) / "reddit-rate-limit.json" if directory else None
+    lock = Path(directory) / "reddit-rate-limit.lock" if directory else None
+    acquired = False
+    try:
+        if clock:
+            clock.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                with lock.open("x", encoding="utf-8"):
+                    pass
+                acquired = True
+            except FileExistsError as error:
+                raise ValidationError("another Reddit feed request is being scheduled") from error
+            if clock.exists():
+                try:
+                    next_request = json.loads(clock.read_text(encoding="utf-8"))["notBefore"]
+                    if not isinstance(next_request, (float, int)) or isinstance(next_request, bool) or not math.isfinite(next_request) or next_request < 0 or next_request > time.time() + 3600:
+                        raise ValueError("invalid rate limit clock")
+                except (ValueError, KeyError, TypeError) as error:
+                    raise ValidationError("Reddit rate limit clock failed validation") from error
+            else:
+                next_request = 0
+        else:
+            next_request = _reddit_next_request
+        delay = max(0, next_request - time.time())
+        if delay + 1 >= deadline - time.monotonic():
+            raise ValidationError("Reddit public feed rate limit exceeds this fetch deadline")
+        _reddit_next_request = max(time.time(), next_request) + 61
+        if clock:
+            temporary = clock.with_suffix(f".{os.getpid()}.tmp")
+            temporary.write_text(json.dumps({"notBefore": _reddit_next_request}), encoding="utf-8")
+            temporary.replace(clock)
+    finally:
+        if acquired:
+            lock.unlink()
+    if delay:
+        time.sleep(delay)
+
+
 def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_limit=MAX_RESPONSE_BYTES, remaining=None, on_bytes=None):
     from curl_cffi import CurlOpt
     from scrapling.fetchers import FetcherSession
@@ -230,6 +277,7 @@ def _pinned_fetch(url, deadline, method="GET", headers=None, raw=False, byte_lim
     remaining = deadline - time.monotonic() if remaining is None else remaining
     if remaining <= 0:
         raise ValidationError("fetch deadline exceeded")
+    _reddit_feed_slot(url, deadline)
     host = urlsplit(url).hostname.encode("idna").decode("ascii")
     addresses = _public_addresses(host, deadline)
     resolved = ",".join(f"[{address}]" if ":" in address else address for address in addresses)

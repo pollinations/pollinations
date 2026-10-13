@@ -179,7 +179,7 @@ curl 'https://gen.pollinations.ai/audio/Hello%20from%20Pollinations?voice=nova&k
 curl 'https://gen.pollinations.ai/v1/audio/speech' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
+  -d '{"model": "openai/tts-1", "input": "Hello from Pollinations!", "voice": "nova"}' \
   -o speech.mp3
 ```
 
@@ -191,7 +191,7 @@ Available voices: `alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`, plus [30+
 curl 'https://gen.pollinations.ai/v1/audio/transcriptions' \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F file=@audio.mp3 \
-  -F model=whisper-large-v3
+  -F model=openai/whisper-large-v3
 ```
 
 ### Video Generation
@@ -205,7 +205,7 @@ Use `duration` to set video length, `aspectRatio` for orientation, and `image[0]
 ### 3D Generation
 
 ```bash
-curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
+curl 'https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=microsoft/trellis-2&resolution=low&key=YOUR_API_KEY&image=IMAGE_URL' -o model.glb
 ```
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models (put `image=` last in the URL, or URL-encode it). See available 3D models at [gen.pollinations.ai/3d/models](https://gen.pollinations.ai/3d/models).
@@ -216,7 +216,7 @@ Pass reference image URL(s) via the `image` parameter for image-to-3D models (pu
 curl 'https://gen.pollinations.ai/v1/embeddings' \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{"model": "openai-3-small", "input": "Hello world!"}'
+  -d '{"model": "openai/text-embedding-3-small", "input": "Hello world!"}'
 ```
 
 Pass a string or an array of up to 32 strings (text or multimodal content parts). See available embedding models at [gen.pollinations.ai/embeddings/models](https://gen.pollinations.ai/embeddings/models).
@@ -226,7 +226,7 @@ Pass a string or an array of up to 32 strings (text or multimodal content parts)
 Generate text, images, audio, video, and more right from your terminal:
 
 ```bash
-npx @pollinations/cli gen image "cyberpunk city at night" --model flux --output city.png
+npx @pollinations/cli gen image "cyberpunk city at night" --model black-forest-labs/flux.1-schnell --output city.png
 npx @pollinations/cli gen text "Explain quantum tunneling in one sentence"
 npx @pollinations/cli gen audio "Hello world" --voice nova --output speech.mp3
 npx @pollinations/cli gen video "a waterfall in slow motion" --duration 5 --output clip.mp4
@@ -240,7 +240,7 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=pk_YOUR_API_KEY
 ```
 
 Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
@@ -278,7 +278,7 @@ Each API key can be scoped to model categories or specific models. When creating
 
 - **Allow all models** — key works with any available model
 - **Restrict to categories** — e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later
-- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models flux zimage`; a model ID allows only that model
+- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo`; a model ID allows only that model
 
 ### Usage
 
@@ -327,7 +327,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "openai",
+  model: "openai/gpt-5.4-nano",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);
@@ -341,7 +341,7 @@ from openai import OpenAI
 client = OpenAI(base_url="https://gen.pollinations.ai/v1", api_key="YOUR_API_KEY")
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
@@ -362,7 +362,7 @@ const pollinations = createOpenAICompatible({
 });
 
 const { text } = await generateText({
-  model: pollinations.chatModel("openai"),
+  model: pollinations.chatModel("openai/gpt-5.4-nano"),
   prompt: "Hello!",
 });
 console.log(text);

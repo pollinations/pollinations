@@ -58,8 +58,8 @@ polli gen text "Explain quantum tunneling in one sentence"
 polli gen text "Summarize this" < notes.md          # stdin becomes context
 echo "context" | polli gen text "question"
 
-polli gen image "cyberpunk city at night" --model flux --output city.png
-polli gen image "enhance this" --image https://media.pollinations.ai/abc --model gptimage
+polli gen image "cyberpunk city at night" --model black-forest-labs/flux.1-schnell --output city.png
+polli gen image "enhance this" --image https://media.pollinations.ai/abc --model openai/gpt-image-1-mini
 
 polli gen audio "Hello world" --voice nova --output speech.mp3
 polli gen audio "read it to me" --play                # plays back after saving (blocks until done)
@@ -72,7 +72,7 @@ polli gen voice-change talk.mp3 --voice nova
 polli gen isolate interview.mp4                        # strip music/noise, keep speech
 polli gen transcribe speech.mp3
 
-polli gen chat --model openai                         # interactive multi-turn
+polli gen chat --model openai/gpt-5.4-nano            # interactive multi-turn
 ```
 
 `gen text` streams by default. File-output commands pick a sensible default path if `--output` is omitted.
@@ -103,8 +103,8 @@ polli keys create --name mybot --budget 100                    # secret (default
 polli keys create --name myapp --type publishable              # API publishable
 polli keys create --name myapp --type publishable \            # 3rd-party app key
   --redirect-uri https://myapp.com/callback --earnings
-polli keys create --name server --models flux zimage            # only these models
-polli keys update <id> --models text flux                       # change the model list
+polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
+polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
 polli keys revoke <id>
 ```
 
@@ -136,7 +136,7 @@ polli agents delete <id>
 ```json
 {
   "systemPrompt": "You are a concise research assistant.",
-  "baseModel": "openai",
+  "baseModel": "openai/gpt-5.4-nano",
   "mcpServers": ["pollinations"]
 }
 ```

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T00:24:04.468447+00:00",
+  "generated_at": "2026-10-13T00:53:47.318880+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5827,6 +5827,40 @@
             "promptCachedTokens": "0.0000001",
             "promptCacheWriteTokens": "0.0000025",
             "completionTextTokens": "0.00001"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-15504:cohere/command-a-plus",
+      "model_id": "cohere/command-a-plus",
+      "title": "Cohere Command A+",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 15504,
+      "url": "https://github.com/pollinations/pollinations/pull/15504",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000006",
+            "completionTextTokens": "0.0000024"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003165",
+            "promptCachedTokens": "0.00000015825",
+            "completionTextTokens": "0.0000015825"
           }
         }
       }

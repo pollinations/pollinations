@@ -1,0 +1,33 @@
+{
+  "pr_number": 17333,
+  "title": "chore: delete the ovh image origin and vm-only shared modules",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17333",
+  "merged_at": "2026-10-13T17:19:52Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "Removed the OVH VM image origin path after the image cache Worker had handled every request since 2026-10-12 23:33 UTC. The Worker generates cache misses itself; the VM proxy, legacy headers and origin configuration, old image app and GPU server code, and VM-only shared modules were removed. Configured image-origin.pollinations.ai as a Worker custom domain while retaining the same free limit and paywall. The shared folder now contains only modules imported by the two cache Workers, and backend CI runs their cache tests when shared files change. Text and image test suites passed 69 and 60 tests respectively; both production dry runs showed the expected bindings.",
+    "keywords": [
+      "image cache",
+      "Cloudflare Worker",
+      "OVH VM",
+      "image origin",
+      "legacy cleanup",
+      "CI"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17333.jpg",
+    "prompt": "In a cozy garden server room, Polli wears a tiny tool belt and gently unplugs an old VM while a single lime-green (#ecf874) CRT Worker tends a flowering image-cache plant; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites and a warm cream background."
+  },
+  "generated_at": "2026-10-13T20:05:14.346380+00:00",
+  "area": "API & reliability",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "12d7c435e58aa632af363d7a74a17863f29b4818",
+  "announcements": []
+}

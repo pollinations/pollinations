@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T16:22:05.627251+00:00",
+  "generated_at": "2026-10-13T17:36:23.573268+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6079,6 +6079,56 @@
         "paid_only": {
           "before": false,
           "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-16995:kandinskylab/kandinsky-6.0-lite",
+      "model_id": "kandinskylab/kandinsky-6.0-lite",
+      "title": "Kandinsky 6.0 Lite",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-13",
+      "pr": 16995,
+      "url": "https://github.com/pollinations/pollinations/pull/16995",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.032"
+          }
         }
       }
     },

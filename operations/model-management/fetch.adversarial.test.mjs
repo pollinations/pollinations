@@ -505,7 +505,7 @@ test("Unicode survives HTML parsing and truncation by code point", () => {
 
 test("Atom discussion feeds preserve titles, dates, body text and public comment RSS links", () => {
     const atom = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Publisher/Model-v2 released 🪴</title><published>2026-10-13T12:00:00Z</published><updated>2026-10-13T13:00:00Z</updated><link href="https://www.reddit.com/r/LocalLLaMA/comments/abc123/model_v2/"/><content type="html">&lt;p&gt;Exact model discussion.&lt;/p&gt;&lt;a href="https://publisher.example/models/v2"&gt;Official model card&lt;/a&gt;&lt;script&gt;hidden instruction&lt;/script&gt;</content></entry></feed>`;
-    const { result } = run({
+    const { result, calls } = run({
         request: {
             url: "https://www.reddit.com/r/LocalLLaMA/.rss",
             includeLinks: true,
@@ -519,6 +519,9 @@ test("Atom discussion feeds preserve titles, dates, body text and public comment
         ],
     });
     assert.equal(result.status, "fetched", result.error);
+    assert.equal(calls[0].options.stealthy_headers, "False");
+    assert.equal(calls[0].options.impersonate, "None");
+    assert.match(calls[0].options.headers, /PollinationsModelResearch/);
     assert.match(result.text, /# Publisher\/Model-v2 released 🪴/);
     assert.match(result.text, /Published: 2026-10-13T12:00:00Z/);
     assert.match(result.text, /Updated: 2026-10-13T13:00:00Z/);

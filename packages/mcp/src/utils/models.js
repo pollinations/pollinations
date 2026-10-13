@@ -36,11 +36,16 @@ export const getModel3dModels = (context) => getModels("3d", context);
 
 async function validateAgainstRegistry(modelName, fetcher, kind, context) {
     if (!modelName) return { valid: true };
+    const matches = (m) =>
+        m.name === modelName || m.aliases?.includes(modelName);
     const models = await fetcher(context);
-    const model = models.find(
-        (m) => m.name === modelName || m.aliases?.includes(modelName),
-    );
+    const model = models.find(matches);
     if (model) return { valid: true, model };
+
+    // The keyed list leaves out models the key can't pay for, such as paid-only
+    // models for Quest Pollen. If the public list has it, let Gen give the reason.
+    const publicModel = context && (await fetcher()).find(matches);
+    if (publicModel) return { valid: true, model: publicModel };
 
     const allNames = models.flatMap((m) => [m.name, ...(m.aliases || [])]);
     const lower = modelName.toLowerCase();

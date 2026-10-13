@@ -36,7 +36,7 @@ AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
 | Wednesday 14:00 | `models/` | Discord with the models role ping, then saved |
 | 1st 06:00 | also `monthly/<last month>/` | — |
 
-The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13; `prompts/tone/reddit.md` is kept for a future Reddit agent.
+The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when.
 
 ### Branch Strategy
 
@@ -324,7 +324,7 @@ operations/social/prompts/
     bee.md                  {bee_character}  Polli
     links.md                {links}          links posts may use
     characters-ref.jpg      the character sheet sent with every picture
-  tone/                     one voice per platform: twitter, linkedin, instagram, discord; reddit kept for a future Reddit agent
+  tone/                     one voice per platform: twitter, linkedin, instagram, discord
   gist.md                   each merged PR: the gist
   posts/                    one file per post: settings between --- lines, then the task
     discord-pr.md  daily-summary.md  daily-x.md

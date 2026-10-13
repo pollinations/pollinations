@@ -290,6 +290,7 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
     }),
 
     "grok-4.6-azure-sweden": () => ({
@@ -659,6 +660,11 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-5.5",
         "anthropic",
     ),
+    "claude-opus-5.5-fast-openrouter-anthropic-fast":
+        createPinnedOpenRouterConfig(
+            "anthropic/claude-opus-5.5",
+            "anthropic/fast",
+        ),
     "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-fable-5",
         "google-vertex/global",
@@ -752,10 +758,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "z-ai/glm-5.2",
         "z-ai/fp8",
     ),
-    "deepseek-v4-pro-openrouter-alibaba": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4-pro-0813",
-        "alibaba",
-    ),
+    // The base slug "alibaba" also matches alibaba/us-east-1, whose peak rate
+    // is above the quoted one, so it is excluded explicitly.
+    "deepseek-v4-pro-openrouter-alibaba": () =>
+        createOpenRouterModelConfig({
+            model: "deepseek/deepseek-v4-pro-0813",
+            defaultOptions: {
+                provider: {
+                    only: ["alibaba"],
+                    ignore: ["alibaba/us-east-1"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "deepseek-v4-pro-openrouter-streamlake": createPinnedOpenRouterConfig(
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",

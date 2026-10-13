@@ -32,6 +32,9 @@ import type {
     ImageGenerateOptions,
     ImageGenerateV1Options,
     ImageResponse,
+    Job,
+    JobSubmitted,
+    JobWaitOptions,
     KeyInfo,
     KeyUsageOptions,
     Message,
@@ -1142,6 +1145,123 @@ export class Pollinations {
     async models(kind?: ModelKind): Promise<ModelInfo[]> {
         const path = kind ? `/${kind}/models` : "/models";
         return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
+    }
+
+    // ============================================================================
+    // Async Jobs
+    // ============================================================================
+
+    // ============================================================================
+    // Async Jobs
+    // ============================================================================
+
+    /**
+     * Start an image generation without holding the connection open (HTTP 202).
+     * The job runs durably, so polling or retrying the same request never
+     * starts a second generation or a second charge.
+     *
+     * @example
+     * ```ts
+     * const job = await pollinations.imageAsync('A cute robot');
+     * await pollinations.waitForJob(job.id);
+     * const { buffer } = await pollinations.jobResult(job.id);
+     * ```
+     */
+    async imageAsync(
+        prompt: string,
+        options: ImageGenerateOptions = {},
+    ): Promise<JobSubmitted> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const url = this.buildImageUrl(prompt, options);
+        return fetchWithTimeout(
+            url,
+            {
+                headers: { ...this.getHeaders(), Prefer: "respond-async" },
+            },
+            this.imageTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return (await response.json()) as JobSubmitted;
+            },
+        );
+    }
+
+    /**
+     * Get the state of an async job: `pending`, `succeeded`, or `failed`.
+     *
+     * @example
+     * ```ts
+     * const job = await pollinations.job('3f786850e387550fdab836ed7e6dc881de23001b');
+     * ```
+     */
+    async job(id: string, options: RequestOptions = {}): Promise<Job> {
+        const url = `${this.baseUrl}/v1/jobs/${encodeURIComponent(id)}`;
+        return this.getJson<Job>(url, options.signal);
+    }
+
+    /**
+     * Download the generated file of a succeeded job.
+     *
+     * @example
+     * ```ts
+     * const { buffer, contentType } = await pollinations.jobResult(job.id);
+     * ```
+     */
+    async jobResult(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<{ buffer: ArrayBuffer; contentType: string; url: string }> {
+        const url = `${this.baseUrl}/v1/jobs/${encodeURIComponent(id)}/result`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ??
+                        "application/octet-stream",
+                    url,
+                };
+            },
+        );
+    }
+
+    /**
+     * Poll a job until it leaves `pending`, then return its final state.
+     *
+     * @example
+     * ```ts
+     * const done = await pollinations.waitForJob(job.id, { intervalMs: 3000 });
+     * if (done.status === 'failed') throw new Error(done.error?.message);
+     * ```
+     */
+    async waitForJob(id: string, options: JobWaitOptions = {}): Promise<Job> {
+        const deadline =
+            Date.now() + (options.timeoutMs ?? DEFAULT_VIDEO_TIMEOUT);
+        for (;;) {
+            const job = await this.job(id, { signal: options.signal });
+            if (job.status !== "pending") return job;
+            if (Date.now() >= deadline) {
+                throw new PollinationsError(
+                    `Job ${id} did not finish in time`,
+                    "TIMEOUT",
+                    408,
+                );
+            }
+            await sleep(options.intervalMs ?? 2_000);
+        }
     }
 
     // ============================================================================

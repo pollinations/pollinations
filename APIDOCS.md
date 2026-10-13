@@ -47,6 +47,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Audio](#audio)
   - [Realtime](#realtime)
   - [Embeddings](#embeddings)
+  - [Async jobs](#async-jobs)
   - [Models](#models)
   - [Community Models](#community-models)
   - [Community Agents](#community-agents)
@@ -1567,6 +1568,37 @@ curl -X POST "https://gen.pollinations.ai/v1/embeddings" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"input":"Hello world"}'
+```
+
+### Async jobs
+
+Start a long generation, get a job id immediately, and collect the file later instead of holding one connection open.
+
+Add `Prefer: respond-async` ([RFC 7240](https://www.rfc-editor.org/rfc/rfc7240)) to any image, video, audio, 3D, or text generation request and the gateway answers `202` with a job id, then keeps generating durably. Disconnecting, polling, or resending the same request never starts a second generation or a second charge. A generation that is already cached is still served directly as `200`.
+
+| Endpoint | Returns |
+|----------|---------|
+| `GET /v1/jobs/:id` | Job state: `pending`, `succeeded` (with `result_url`), or `failed` (with `error`) |
+| `GET /v1/jobs/:id/result` | The generated file; `409` while the job is pending or after it failed |
+
+The job id is the identity of the generation, so resending the same request returns the same id. Only the account that started a job can read its state or result; everyone else gets `404`. Job state stays readable for 24 hours; the file itself keeps the regular media cache lifetime.
+
+💻 **Example**
+
+```bash
+# 1. Start a slow generation and keep the job id
+JOB=$(curl -s -X GET "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=google/veo-3.1-fast" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Prefer: respond-async" | jq -r .id)
+
+# 2. Check its state
+curl -s "https://gen.pollinations.ai/v1/jobs/$JOB" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+# {"id":"...","object":"job","status":"pending","created_at":1789492160}
+
+# 3. Download the file once the job succeeded
+curl -s -o result.mp4 "https://gen.pollinations.ai/v1/jobs/$JOB/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### Models

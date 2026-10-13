@@ -1944,3 +1944,100 @@ describe("response body cancellation", () => {
         }
     }
 });
+
+describe("Async jobs", () => {
+    const jobId =
+        "3f786850e387550fdab836ed7e6dc881de23001b000000000000000000000000";
+
+    it("submits a generation with Prefer: respond-async", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                id: jobId,
+                status: "pending",
+                status_url: `https://example.test/v1/jobs/${jobId}`,
+            }),
+        );
+        const client = newClient();
+
+        await expect(client.imageAsync("a cat")).resolves.toEqual({
+            id: jobId,
+            status: "pending",
+            status_url: `https://example.test/v1/jobs/${jobId}`,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toContain("/image/a%20cat");
+        expect((init.headers as Record<string, string>).Prefer).toBe(
+            "respond-async",
+        );
+    });
+
+    it("reads job state and downloads the result", async () => {
+        const job = {
+            id: jobId,
+            object: "job",
+            status: "succeeded",
+            created_at: 1,
+            completed_at: 2,
+            result_url: `https://example.test/v1/jobs/${jobId}/result`,
+        };
+        fetchMock
+            .mockResolvedValueOnce(makeResponse(job))
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "image/png",
+                }),
+            );
+        const client = newClient();
+
+        await expect(client.job(jobId)).resolves.toEqual(job);
+        await expect(client.jobResult(jobId)).resolves.toMatchObject({
+            contentType: "image/png",
+            url: `https://example.test/v1/jobs/${jobId}/result`,
+        });
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            `https://example.test/v1/jobs/${jobId}`,
+        );
+    });
+
+    it("surfaces the job API error codes", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                { error: { message: "Job not found" } },
+                { ok: false, status: 404 },
+            ),
+        );
+        const client = newClient();
+
+        await expect(client.job(jobId)).rejects.toMatchObject({
+            status: 404,
+        });
+    });
+
+    it("polls until the job leaves the pending state", async () => {
+        const pending = {
+            id: jobId,
+            object: "job",
+            status: "pending",
+            created_at: 1,
+        };
+        const failed = {
+            id: jobId,
+            object: "job",
+            status: "failed",
+            created_at: 1,
+            completed_at: 3,
+            error: { status: 503, message: "provider unavailable" },
+        };
+        fetchMock
+            .mockResolvedValueOnce(makeResponse(pending))
+            .mockResolvedValueOnce(makeResponse(failed));
+        const client = newClient();
+
+        await expect(
+            client.waitForJob(jobId, { intervalMs: 0 }),
+        ).resolves.toEqual(failed);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+});

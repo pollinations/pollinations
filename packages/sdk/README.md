@@ -536,6 +536,35 @@ const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 console.log(textModels.map(m => m.name));
 ```
 
+## Async Jobs
+
+Start a long generation without holding the connection open, then collect the
+file later. A job is the same durable generation as a synchronous request:
+polling or retrying it never starts a second generation or a second charge.
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
+
+// 1. Start the generation; this returns as soon as the job is registered
+const job = await pollinations.imageAsync('A cinematic sunset over the ocean');
+
+// 2. Check its state (or poll yourself: pending -> succeeded | failed)
+const state = await pollinations.job(job.id);
+console.log(state.status);
+
+// 3. Download the file once the job succeeded
+const done = await pollinations.waitForJob(job.id, { intervalMs: 3000 });
+if (done.status === 'succeeded') {
+  const { buffer, contentType } = await pollinations.jobResult(job.id);
+  console.log(contentType, buffer.byteLength);
+}
+```
+
+Only the account that started a job can read it. Job state stays readable for
+24 hours.
+
 ## Media Upload
 
 Uploads use multipart form data, accept up to 100MB of file bytes, and return a

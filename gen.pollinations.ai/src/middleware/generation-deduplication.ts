@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -57,6 +58,23 @@ export type GenerationJobHead = Omit<GenerationJob, "request"> & {
 export type GenerationOutcome =
     | { status: "cached" }
     | { status: "failed"; error: GenerationErrorSnapshot };
+
+/** Lifecycle of a job submitted with `Prefer: respond-async`. */
+export type AsyncJobStatus = "pending" | "succeeded" | "failed";
+
+/**
+ * What the coordinator keeps about an async job after the submitter left. The
+ * generation itself is the usual durable job; this record only makes its state
+ * readable by id, so it never carries request data.
+ */
+export type AsyncJobRecord = {
+    userId: string;
+    cache: GenerationCacheIdentity;
+    status: AsyncJobStatus;
+    createdAt: number;
+    completedAt?: number;
+    error?: { httpStatus: number; message: string };
+};
 
 type DeduplicationEnv = {
     Bindings: CloudflareBindings;
@@ -134,6 +152,14 @@ async function createJob(
     return { job, ...(body !== undefined && { body }) };
 }
 
+/** RFC 7240: the caller prefers a job id over holding the connection open. */
+function prefersAsyncJob(header: string | undefined): boolean {
+    return (header ?? "")
+        .toLowerCase()
+        .split(",")
+        .some((preference) => preference.trim() === "respond-async");
+}
+
 /** Replays an error response already handled by the detached executor. */
 function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     const status =
@@ -171,6 +197,32 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+        const bodyStream = () =>
+            body &&
+            (new Response(body as Uint8Array<ArrayBuffer>).body ?? undefined);
+
+        if (prefersAsyncJob(c.req.header("prefer"))) {
+            try {
+                const status = (await stub.submit(
+                    job,
+                    bodyStream(),
+                )) as AsyncJobStatus;
+                const statusUrl = `${getPublicOrigin(c)}/v1/jobs/${name}`;
+                c.header("Location", statusUrl);
+                return c.json({ id: name, status, status_url: statusUrl }, 202);
+            } catch (error) {
+                const rpcError = error as Error;
+                c.get("log").error(
+                    "Async job submission failed: {errorMessage}",
+                    { errorMessage: rpcError?.message ?? String(error) },
+                );
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+        }
+
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {
@@ -178,9 +230,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             // control instead of serializing it into the 32 MiB-capped call.
             outcome = (await stub.startAndWait(
                 job,
-                body &&
-                    (new Response(body as Uint8Array<ArrayBuffer>).body ??
-                        undefined),
+                bodyStream(),
             )) as GenerationOutcome;
         } catch (error) {
             const rpcError = error as Error & {

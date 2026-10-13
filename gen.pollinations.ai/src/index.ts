@@ -29,6 +29,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
@@ -254,6 +255,9 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     })
     .route("/", modelStatusRoutes)
     .route("/", modelStatsRoutes)
+    // Async job state for generations started with `Prefer: respond-async`.
+    // Must be registered before the "/" proxy catch-all.
+    .route("/", jobRoutes)
     .route(
         "/",
         createMessagesRoutes((request, c) =>

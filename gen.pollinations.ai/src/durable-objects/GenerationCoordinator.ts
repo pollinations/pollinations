@@ -1,5 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type {
+    AsyncJobRecord,
+    AsyncJobStatus,
     GenerationCacheIdentity,
     GenerationJob,
     GenerationJobHead,
@@ -8,8 +10,12 @@ import type {
 import { executeGeneration } from "@/utils/execute-generation.ts";
 
 const JOB_KEY = "job";
+const ASYNC_KEY = "async";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+// Job state stays readable for a day after submission (or completion), then
+// disappears; the generated file itself lives on the media cache TTL.
+const ASYNC_RECORD_TTL_MS = 24 * 60 * 60 * 1_000;
 
 type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
@@ -116,6 +122,81 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         if (immediate) return immediate;
         if (!wait) throw new Error("Generation waiter was not registered");
         return wait;
+    }
+
+    /**
+     * Registers a job the caller will not wait for. The alarm started by
+     * `persist` executes it exactly like a disconnected synchronous request, so
+     * a submit that joins an in-flight job shares its single execution and
+     * charge.
+     */
+    async submit(
+        job: GenerationJobHead,
+        body?: ReadableStream<Uint8Array>,
+    ): Promise<AsyncJobStatus> {
+        let status: AsyncJobStatus = "pending";
+        await this.ctx.blockConcurrencyWhile(async () => {
+            const cachePresent = await cacheExists(this.env, job.cache);
+            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+            const record = await this.readRecord();
+
+            if (cachePresent) {
+                // The generation already finished (a resend of a job whose
+                // result is cached); nothing is left to run or charge.
+                await body?.cancel();
+                if (stored) await this.clear(stored.bodyChunks, true);
+                await this.putRecord({
+                    userId: job.auth.user.id,
+                    cache: job.cache,
+                    status: "succeeded",
+                    createdAt: record?.createdAt ?? Date.now(),
+                    completedAt: Date.now(),
+                });
+                status = "succeeded";
+                return;
+            }
+
+            const joined = stored !== undefined;
+            await this.putRecord({
+                userId: job.auth.user.id,
+                cache: job.cache,
+                status: "pending",
+                createdAt:
+                    joined && record?.userId === job.auth.user.id
+                        ? record.createdAt
+                        : Date.now(),
+            });
+            if (joined) {
+                // Joiners share the owner's persisted body.
+                await body?.cancel();
+            } else {
+                await this.persist(job, body);
+            }
+        });
+        return status;
+    }
+
+    /** Job state for its submitting account; other accounts see no job. */
+    async status(userId: string): Promise<AsyncJobRecord | null> {
+        const record = await this.readRecord();
+        if (!record || record.userId !== userId) return null;
+        return record;
+    }
+
+    /** Reads the job record, dropping it once it is older than the TTL. */
+    private async readRecord(): Promise<AsyncJobRecord | null> {
+        const record = await this.ctx.storage.get<AsyncJobRecord>(ASYNC_KEY);
+        if (!record) return null;
+        const anchor = record.completedAt ?? record.createdAt;
+        if (Date.now() - anchor > ASYNC_RECORD_TTL_MS) {
+            await this.ctx.storage.delete(ASYNC_KEY);
+            return null;
+        }
+        return record;
+    }
+
+    private async putRecord(record: AsyncJobRecord): Promise<void> {
+        await this.ctx.storage.put(ASYNC_KEY, record);
     }
 
     async alarm(): Promise<void> {
@@ -233,6 +314,23 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     ): Promise<void> {
         await this.ctx.blockConcurrencyWhile(async () => {
             await this.clear(bodyChunks);
+            const record = await this.readRecord();
+            if (record?.status === "pending") {
+                await this.putRecord({
+                    ...record,
+                    status:
+                        outcome.status === "failed" ? "failed" : "succeeded",
+                    completedAt: Date.now(),
+                    ...(outcome.status === "failed" && {
+                        error: {
+                            httpStatus: outcome.error.httpStatus,
+                            message: new TextDecoder()
+                                .decode(outcome.error.body)
+                                .slice(0, 500),
+                        },
+                    }),
+                });
+            }
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });

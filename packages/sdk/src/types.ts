@@ -20,6 +20,42 @@ export interface RequestOptions {
 }
 
 // ============================================================================
+// Async Jobs
+// ============================================================================
+
+/** Lifecycle of a generation started with `Prefer: respond-async` */
+export type JobStatus = "pending" | "succeeded" | "failed";
+
+/** Response to an async generation request (HTTP 202) */
+export interface JobSubmitted {
+    id: string;
+    status: JobStatus;
+    status_url: string;
+}
+
+/** Job state returned by `client.job(id)` */
+export interface Job {
+    id: string;
+    object: "job";
+    status: JobStatus;
+    /** Unix timestamp (ms) of submission */
+    created_at: number;
+    /** Unix timestamp (ms) of completion, once the job is terminal */
+    completed_at?: number;
+    /** Where the generated file lives once the job succeeded */
+    result_url?: string;
+    /** Failure detail once the job failed */
+    error?: { status: number; message: string };
+}
+
+export interface JobWaitOptions extends RequestOptions {
+    /** Polling interval in milliseconds (default 2000) */
+    intervalMs?: number;
+    /** Give up after this many milliseconds (default 20 minutes) */
+    timeoutMs?: number;
+}
+
+// ============================================================================
 // Image Generation
 // ============================================================================
 

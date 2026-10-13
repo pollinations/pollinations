@@ -80,6 +80,7 @@ const DOC_TAGS = {
     model3d: "3D",
     audio: "Audio",
     embeddings: "Embeddings",
+    jobs: "Jobs",
     models: "Models",
     quests: "Quests",
     mediaStorage: "Media Storage",
@@ -102,6 +103,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
+    "🧰 Jobs": DOC_TAGS.jobs,
     "🤖 Models": DOC_TAGS.models,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
     "📊 Public Stats": DOC_TAGS.publicStats,
@@ -167,6 +169,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.embeddings]: docsIcon(
         '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />',
+    ),
+    [DOC_TAGS.jobs]: docsIcon(
+        '<circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 13.5" />',
     ),
     [DOC_TAGS.models]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
@@ -494,6 +499,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
                     DOC_TAGS.embeddings,
+                    DOC_TAGS.jobs,
                 ],
             },
             {
@@ -593,6 +599,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.embeddings,
                 description: stripLeadingHeading(EMBEDDINGS_DOCS),
+            },
+            {
+                name: DOC_TAGS.jobs,
+                description:
+                    "Start a generation, get a job id immediately, and collect the result later.",
             },
             {
                 name: DOC_TAGS.models,

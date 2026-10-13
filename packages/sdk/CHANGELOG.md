@@ -4,7 +4,11 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.15] - 2026-10-13
+
 ### Changed
+- README and JSDoc examples use `publisher/model` IDs, such as
+  `black-forest-labs/flux.1-schnell` instead of `flux`. Short aliases still work.
 - Key `models` and `allowedModels` accept model IDs that allow only that
   model, next to categories. A model ID no longer widens to its category.
 

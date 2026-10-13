@@ -262,7 +262,7 @@ import { generateImage, imageUrl } from '@pollinations/sdk';
 
 // Generate and save
 const image = await generateImage('a robot painting', {
-  model: 'zimage',
+  model: 'tongyi-mai/z-image-turbo',
   width: 1920,
   height: 1080,
 });
@@ -282,7 +282,7 @@ Defaults are applied by the API; the SDK sends only options you provide.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'zimage'` | Model to use |
+| `model` | string | `'tongyi-mai/z-image-turbo'` | Model to use |
 | `width` | number | `1024` | Width in pixels |
 | `height` | number | `1024` | Height in pixels |
 | `seed` | number | random | Reproducible results |
@@ -300,7 +300,7 @@ import { editImage } from '@pollinations/sdk';
 
 const result = await editImage('Make the sky purple', {
   image: 'https://example.com/photo.jpg',
-  model: 'flux',
+  model: 'black-forest-labs/flux.1-schnell',
 });
 await result.saveToFile('edited.png');
 
@@ -320,7 +320,7 @@ import { imageGenerate } from '@pollinations/sdk';
 // Single image with OpenAI-style size string
 const img = await imageGenerate('A robot reading a book', {
   size: '1024x1024',
-  model: 'flux',
+  model: 'black-forest-labs/flux.1-schnell',
 });
 await img.saveToFile('robot.png');
 ```
@@ -337,7 +337,7 @@ const text = await generateText('write a poem about coding');
 
 // With options
 const story = await generateText('explain gravity', {
-  model: 'openai',
+  model: 'openai/gpt-5.4-nano',
   systemPrompt: 'You are a physics teacher',
 });
 
@@ -357,7 +357,7 @@ console.log(result.actualModel); // actual model used
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'openai'` | Model to use |
+| `model` | string | `'openai/gpt-5.4-nano'` | Model to use |
 | `systemPrompt` | string | - | System prompt |
 | `temperature` | number | `1` | Creativity (0-2) |
 | `maxTokens` | number | - | Max output tokens |
@@ -392,7 +392,7 @@ for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }]
 import { generateVideo } from '@pollinations/sdk';
 
 const video = await generateVideo('a timelapse of clouds', {
-  model: 'veo',
+  model: 'google/veo-3.1-fast',
   duration: 6,
 });
 await video.saveToFile('clouds.mp4');
@@ -403,7 +403,7 @@ await video.saveToFile('clouds.mp4');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `model` | string | `'veo'` | `'veo'`, `'seedance'`, `'wan'`, etc. |
+| `model` | string | `'google/veo-3.1-fast'` | `'google/veo-3.1-fast'`, `'bytedance/seedance-2.0'`, `'alibaba/wan-2.6'`, etc. |
 | `duration` | number | - | Duration in seconds (supported range varies by model) |
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
@@ -429,7 +429,7 @@ await speech.saveToFile('welcome.mp3');
 
 // Music generation
 const music = await generateAudio('upbeat jazz piano', {
-  model: 'elevenmusic',
+  model: 'elevenlabs/music-v2',
   duration: 30,
 });
 await music.saveToFile('jazz.mp3');
@@ -448,7 +448,7 @@ audioEl.play();
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `voice` | string | `'alloy'` | Voice to use (see voices below) |
-| `model` | string | `'elevenlabs'` | `'elevenlabs'`, `'elevenmusic'` |
+| `model` | string | `'elevenlabs/eleven-v3'` | `'elevenlabs/eleven-v3'`, `'elevenlabs/music-v2'` |
 | `duration` | number | - | Duration in seconds (for music models) |
 | `seed` | number | random | Reproducible results |
 
@@ -485,7 +485,7 @@ console.log(data[0].embedding); // [0.012, -0.034, ...]
 
 // Batch with options
 const batch = await embeddings(['first document', 'second document'], {
-  model: 'gemini-2',
+  model: 'google/gemini-embedding-2',
   dimensions: 768,
 });
 console.log(batch.data.length, batch.usage.total_tokens);

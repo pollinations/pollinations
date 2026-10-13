@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import agent, {
     applyEdits,
+    hunkRanges,
     parseRequest,
     parseReview,
     redact,
@@ -69,6 +70,16 @@ test("an ok verdict stays ok; findings force issues", () => {
         "issues",
     );
     assert.throws(() => parseReview("no json here"), /no JSON/);
+});
+
+test("large files are shown as merged excerpts around each hunk", () => {
+    const patch =
+        "@@ -10,2 +10,3 @@\n x\n+y\n@@ -60 +61 @@\n-a\n+b\n@@ -500,1 +502,1 @@";
+    assert.deepEqual(hunkRanges(patch, 520), [
+        [1, 101],
+        [462, 520],
+    ]);
+    assert.deepEqual(hunkRanges("", 1000), [[1, 80]]);
 });
 
 type Write = { path: string; body: Record<string, unknown>; auth: string };

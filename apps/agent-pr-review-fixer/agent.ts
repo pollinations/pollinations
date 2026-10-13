@@ -16,9 +16,12 @@ type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 type Body = Record<string, unknown>;
 
 export const REVIEW_MODEL = "openai/gpt-6.1-sol";
-/** Files above these limits are reviewed from their patch only. */
+/** At most this many changed files are loaded; files over MAX_LOAD_CHARS are reviewed from their patch. */
 const MAX_FULL_FILES = 12;
+const MAX_LOAD_CHARS = 400_000;
+/** Files above this size are shown as excerpts around each hunk, not in full. */
 const MAX_FILE_CHARS = 30_000;
+const CONTEXT_LINES = 40;
 const MAX_PROMPT_CHARS = 160_000;
 const GITHUB_API = "https://api.github.com";
 
@@ -157,7 +160,7 @@ export async function loadPull(
                 .join("/")}`,
         );
         const text = raw.ok ? await raw.text() : "";
-        if (!raw.ok || text.length > MAX_FILE_CHARS || text.includes("\u0000"))
+        if (!raw.ok || text.length > MAX_LOAD_CHARS || text.includes("\u0000"))
             skipped.push(file.filename);
         else contents.set(file.filename, text);
     }
@@ -169,7 +172,24 @@ const INSTRUCTIONS = `You review one GitHub pull request. Judge only the change:
 Answer with one JSON object and nothing else:
 {"verdict":"ok"|"issues","summary":"<= 3 sentences","findings":[{"file":"path","line":123,"problem":"what is wrong and why"}],"edits":[{"file":"path","find":"exact text copied from the CURRENT file","replace":"new text"}]}
 
-Rules for edits: only files shown under FULL FILE; "find" must be copied character for character (whitespace included, without the line-number prefix) and appear exactly once in that file; keep each edit small; edits must fix the findings and nothing else. If nothing is wrong, use verdict "ok" with empty findings and edits. Never invent a problem to have something to fix.`;
+Rules for edits: only files shown under FILE, using lines that are shown; "find" must be copied character for character (whitespace included, without the "N| " line-number prefix) and appear exactly once in that file; keep each edit small; edits must fix the findings and nothing else. If nothing is wrong, use verdict "ok" with empty findings and edits. Never invent a problem to have something to fix.`;
+
+/** New-side line ranges of each hunk, widened by CONTEXT_LINES and merged. */
+export function hunkRanges(patch: string, total: number): [number, number][] {
+    const ranges: [number, number][] = [];
+    for (const m of patch.matchAll(
+        /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm,
+    )) {
+        const start = Number(m[1]);
+        const length = m[2] === undefined ? 1 : Number(m[2]);
+        const from = Math.max(1, start - CONTEXT_LINES);
+        const to = Math.min(total, start + length - 1 + CONTEXT_LINES);
+        const last = ranges.at(-1);
+        if (last && from <= last[1] + 1) last[1] = Math.max(last[1], to);
+        else ranges.push([from, to]);
+    }
+    return ranges.length ? ranges : [[1, Math.min(total, 2 * CONTEXT_LINES)]];
+}
 
 export function buildPrompt(request: Request_, context: Context): string {
     const { pull, files, contents, skipped } = context;
@@ -184,14 +204,28 @@ export function buildPrompt(request: Request_, context: Context): string {
         ),
     ];
     for (const [name, text] of contents) {
-        const numbered = text
-            .split("\n")
-            .map((line, i) => `${i + 1}| ${line}`)
-            .join("\n");
-        parts.push(`FULL FILE ${name}:\n${numbered}`);
+        const lines = text.split("\n");
+        const patch = files.find((f) => f.filename === name)?.patch ?? "";
+        const ranges: [number, number][] =
+            text.length > MAX_FILE_CHARS
+                ? hunkRanges(patch, lines.length)
+                : [[1, lines.length]];
+        const shown = ranges
+            .map(([from, to]) =>
+                lines
+                    .slice(from - 1, to)
+                    .map((line, i) => `${from + i}| ${line}`)
+                    .join("\n"),
+            )
+            .join("\n...\n");
+        const label =
+            ranges.length === 1 && ranges[0][1] === lines.length
+                ? ""
+                : ` (excerpts around the change; ${lines.length} lines in total)`;
+        parts.push(`FILE ${name}${label}:\n${shown}`);
     }
     if (skipped.length)
-        parts.push(`NOT SHOWN IN FULL (patch only): ${skipped.join(", ")}`);
+        parts.push(`NOT SHOWN (patch only): ${skipped.join(", ")}`);
     return parts.join("\n\n").slice(0, MAX_PROMPT_CHARS);
 }
 
@@ -422,7 +456,16 @@ export async function review(
                 pushed = `Push failed, nothing was pushed: ${redact(String((error as Error).message))}`;
             }
         } else pushed = "Not pushed: send a fork URL and a token to push.";
-        lines.push("", "**Fix**", pushed, "", "```diff", diff, "```");
+        lines.push(
+            "",
+            "**Fix**",
+            pushed,
+            "Checks: none run. The agent runtime has no test runner, so run the repository's tests on this diff before merging.",
+            "",
+            "```diff",
+            diff,
+            "```",
+        );
     }
     if (rejected.length)
         lines.push(

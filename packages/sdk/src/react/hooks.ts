@@ -42,7 +42,8 @@ export type UseAccountKeyUsageValue = AccountResourceValue<UsageResponse>;
 
 type AccountFetcher<T> = (apiBaseUrl: string, apiKey: string) => Promise<T>;
 
-function useRequiredAuth(): AuthContextValue {
+/** Read the auth context, throwing when used outside <PolliProvider>. */
+export function useRequiredAuth(): AuthContextValue {
     const ctx = useContext(AuthContext);
     if (!ctx) {
         throw new Error(

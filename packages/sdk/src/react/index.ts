@@ -25,4 +25,30 @@ export {
     PolliProvider,
     type PolliProviderProps,
 } from "./PolliProvider.js";
+export {
+    type ChatMessage,
+    DEFAULT_GENERATION_BASE_URL,
+    type GenerationRequestOptions,
+    type GenerationValue,
+    type UseAudioOptions,
+    type UseAudioValue,
+    type UseChatOptions,
+    type UseChatValue,
+    type UseImageOptions,
+    type UseImageValue,
+    type UseTextOptions,
+    type UseTextValue,
+    type UseVideoOptions,
+    type UseVideoValue,
+    useAudio,
+    useChat,
+    useImage,
+    useText,
+    useVideo,
+} from "./generation.js";
 export type { StorageAdapter, StorageOption } from "./storage.js";
+export {
+    createPollinationsTransport,
+    PollinationsChatTransport,
+    type PollinationsChatTransportOptions,
+} from "./transport.js";

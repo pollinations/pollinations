@@ -33,12 +33,15 @@ type Sandbox = Size & {
     templateID: string;
     alias?: string;
     state: "running" | "paused";
+    // When its current run started: at the create or the last resume.
+    startedAt: string;
     // When a running sandbox's paid time ends, or when a paused one paused.
     endAt: string;
 };
 
 type Pricing = {
     maxRunning: number;
+    maxRunSeconds: number;
     vcpuSecond: number;
     gibSecond: number;
     templates: Record<string, Size>;
@@ -75,6 +78,17 @@ const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
     `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
 
+// Add time adds to a running sandbox's paid time, up to the end of its run:
+// E2B ends a run 24 hours after the create or resume, and gen charges nothing
+// past that.
+function addTimeLeases(pricing: Pricing, sandbox: Sandbox) {
+    const room =
+        Date.parse(sandbox.startedAt) +
+        pricing.maxRunSeconds * 1000 -
+        Date.parse(sandbox.endAt);
+    return LEASES.filter(({ seconds }) => seconds * 1000 <= room);
+}
+
 // What the pending action pays up front, or why it can't be known yet.
 function upFront(pricing: Pricing, pending: Pending, seconds: number) {
     if (pending.action === "create") {
@@ -84,12 +98,7 @@ function upFront(pricing: Pricing, pending: Pending, seconds: number) {
         }
         return `${pollen(perSecond(pricing, size) * seconds)} (${sizeLabel(size)})`;
     }
-    const { sandbox } = pending;
-    // A running sandbox pays only for the time past what it already paid.
-    const paidUntil =
-        sandbox.state === "running" ? Date.parse(sandbox.endAt) : Date.now();
-    const unpaid = Math.max(0, Date.now() + seconds * 1000 - paidUntil) / 1000;
-    return pollen(perSecond(pricing, sandbox) * unpaid);
+    return pollen(perSecond(pricing, pending.sandbox) * seconds);
 }
 
 function SandboxCard({
@@ -108,6 +117,7 @@ function SandboxCard({
     onKill: () => void;
 }) {
     const running = sandbox.state === "running";
+    const paidToRunEnd = running && !addTimeLeases(pricing, sandbox).length;
     return (
         <Surface className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -141,7 +151,12 @@ function SandboxCard({
                     size="sm"
                     intent="commit"
                     icon={running ? <PlusIcon /> : <PlayIcon />}
-                    disabled={busy}
+                    disabled={busy || paidToRunEnd}
+                    title={
+                        paidToRunEnd
+                            ? "Paid up to the end of its 24-hour run. Pause and resume it to start a new run."
+                            : undefined
+                    }
                     onClick={onConnect}
                 >
                     {running ? "Add time" : "Resume"}
@@ -221,6 +236,16 @@ export function Sandboxes() {
         }
     }
 
+    // Create and resume start a new run; Add time stays within the current one.
+    const addTo =
+        pending?.action === "connect" && pending.sandbox.state === "running"
+            ? pending.sandbox
+            : null;
+    const leases = pricing && addTo ? addTimeLeases(pricing, addTo) : LEASES;
+    const seconds = leases.some((option) => option.seconds === lease)
+        ? lease
+        : (leases[0]?.seconds ?? 0);
+
     function confirm() {
         if (!pending) return;
         if (pending.action === "create") {
@@ -228,17 +253,22 @@ export function Sandboxes() {
             void run("new", () =>
                 e2b("/sandboxes", "POST", {
                     templateID: pending.template,
-                    timeout: lease,
+                    timeout: seconds,
                     autoPause: true,
                 }),
             );
             return;
         }
         const id = pending.sandbox.sandboxID;
+        // Connect sets the lease from now, so Add time counts the paid time
+        // left. Unlike timeout, connect leaves a keep set from the CLI.
+        const timeout = addTo
+            ? Math.ceil((Date.parse(addTo.endAt) - Date.now()) / 1000) + seconds
+            : seconds;
         void run(id, () =>
             pending.action === "kill"
                 ? e2b(`/sandboxes/${id}`, "DELETE")
-                : e2b(`/sandboxes/${id}/connect`, "POST", { timeout: lease }),
+                : e2b(`/sandboxes/${id}/connect`, "POST", { timeout }),
         );
     }
 
@@ -410,24 +440,24 @@ export function Sandboxes() {
                                     : pending.sandbox.sandboxID
                             }
                         >
-                            Keep it running for
+                            {addTo ? "Add" : "Keep it running for"}
                         </ResourceConfirmationContent>
                         <ButtonGroup>
-                            {LEASES.map(({ label, seconds }) => (
+                            {leases.map((option) => (
                                 <TabButton
-                                    key={seconds}
+                                    key={option.seconds}
                                     size="sm"
-                                    active={lease === seconds}
-                                    onClick={() => setLease(seconds)}
+                                    active={seconds === option.seconds}
+                                    onClick={() => setLease(option.seconds)}
                                 >
-                                    {label}
+                                    {option.label}
                                 </TabButton>
                             ))}
                         </ButtonGroup>
                         <Alert intent="warning">
                             This spends Pollen now:{" "}
-                            {upFront(pricing, pending, lease)}. Paid in advance,
-                            not refunded.
+                            {upFront(pricing, pending, seconds)}. Paid in
+                            advance, not refunded.
                         </Alert>
                     </>
                 )}

@@ -659,6 +659,7 @@ test("the dashboard prices a lease as gen charges it", async () => {
     }>();
     expect(pricing).toMatchObject({
         maxRunning: 3,
+        maxRunSeconds: 86_400,
         templates: { "pollinations-large": { cpuCount: 4, memoryMB: 8192 } },
     });
     // The fake's 2 vCPU, 512 MiB sandbox for 300 s.

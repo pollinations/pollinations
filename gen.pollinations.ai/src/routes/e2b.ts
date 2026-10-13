@@ -568,6 +568,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .get("/pricing", (c) =>
             c.json({
                 maxRunning: MAX_RUNNING_PER_USER,
+                maxRunSeconds: MAX_RUN_MS / 1000,
                 vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
                 gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
                 templates: TEMPLATE_SIZES,

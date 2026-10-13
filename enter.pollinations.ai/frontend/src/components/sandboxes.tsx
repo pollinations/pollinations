@@ -95,8 +95,14 @@ type Pending =
     | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
+// Gen takes the Pollen 10 minutes at a time and refuses a step the wallet
+// can't pay with 402.
+const NO_POLLEN = "Not enough Pollen to pay for the next 10 minutes.";
+
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
     const response = await genFetch(`${E2B_PATH}${path}`, { method, body });
+    // Gen's 402 message is for API callers, with a top-up URL to follow.
+    if (response.status === 402) throw new Error(NO_POLLEN);
     if (!response.ok) throw new Error(await readError(response));
     // Pause and kill answer 204 with no body.
     const text = await response.text();
@@ -540,7 +546,7 @@ export function Sandboxes() {
             {actionError && (
                 <Alert intent="danger">
                     {actionError}
-                    {/top.up/i.test(actionError) && (
+                    {actionError === NO_POLLEN && (
                         <>
                             {" "}
                             <InlineLink href="/pollen">Go to Pollen</InlineLink>

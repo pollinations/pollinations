@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T20:39:40.243168+00:00",
+  "generated_at": "2026-10-13T21:30:51.088686+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6723,6 +6723,55 @@
         "paid_only": {
           "before": false,
           "after": true
+        }
+      }
+    },
+    {
+      "id": "pr-17055:qwen/qwen-image-2.1-turbo",
+      "model_id": "qwen/qwen-image-2.1-turbo",
+      "title": "Qwen Image 2.1 Turbo",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "image",
+      "date": "2026-10-13",
+      "pr": 17055,
+      "url": "https://github.com/pollinations/pollinations/pull/17055",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 10
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "image"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionImageTokens": "0.016"
+          }
         }
       }
     },

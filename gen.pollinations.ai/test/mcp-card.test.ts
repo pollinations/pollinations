@@ -111,6 +111,30 @@ describe("SEP-2127 MCP Server Cards", () => {
         expect(res.status).toBe(404);
     });
 
+    it("serves the default server card at the well-known discovery alias", async () => {
+        const alias = await fetchWorker("/.well-known/mcp/server-card.json");
+        expect(alias.status).toBe(200);
+        expect(alias.headers.get("Content-Type")).toContain(CARD_MEDIA_TYPE);
+        expect(alias.headers.get("Access-Control-Allow-Origin")).toBe("*");
+        const etag = alias.headers.get("ETag");
+        expect(etag).toBeTruthy();
+
+        const canonical = await fetchWorker("/mcp/pollinations/server-card");
+        expect(await alias.json()).toEqual(await canonical.json());
+        expect(alias.headers.get("Content-Type")).toBe(
+            canonical.headers.get("Content-Type"),
+        );
+        expect(alias.headers.get("Cache-Control")).toBe(
+            canonical.headers.get("Cache-Control"),
+        );
+        expect(etag).toBe(canonical.headers.get("ETag"));
+
+        const cached = await fetchWorker("/.well-known/mcp/server-card.json", {
+            headers: { "If-None-Match": etag ?? "" },
+        });
+        expect(cached.status).toBe(304);
+    });
+
     it("honors If-None-Match with 304 and sends caching/CORS headers", async () => {
         const first = await fetchWorker("/mcp/pollinations/server-card");
         const etag = first.headers.get("ETag");

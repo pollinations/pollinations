@@ -119,11 +119,49 @@ function readUsage(event: Record<string, unknown>): ResponsesUsage | null {
     return null;
 }
 
+function parseJsonValue(text: unknown): unknown {
+    if (typeof text !== "string" || !text) return text ?? null;
+    try {
+        return JSON.parse(text);
+    } catch {
+        return text;
+    }
+}
+
+type ResponsesToolItem = {
+    type: string;
+    id: string;
+    name?: string;
+    arguments?: unknown;
+    output?: unknown;
+    status?: string;
+    error?: { message?: string } | string | null;
+};
+
+function toolItem(event: Record<string, unknown>): ResponsesToolItem | null {
+    const item = event.item as ResponsesToolItem | undefined;
+    if (!item || typeof item !== "object") return null;
+    if (item.type !== "function_call" && item.type !== "mcp_call") {
+        return null;
+    }
+    if (typeof item.id !== "string") return null;
+    return item;
+}
+
+function toolError(item: ResponsesToolItem): string | null {
+    if (typeof item.error === "string") return item.error;
+    if (item.error && typeof item.error.message === "string") {
+        return item.error.message;
+    }
+    return item.status === "failed" ? "Tool failed" : null;
+}
+
 /**
  * Convert an OpenAI Responses SSE body into AI SDK UI message chunks
- * (`text-start` / `text-delta` / `text-end`, usage as `message-metadata`,
- * then `finish`). Emitted as stream objects, matching what `useChat`
- * consumes from a `ChatTransport`.
+ * (`text-start` / `text-delta` / `text-end`, server-run tools as dynamic
+ * tool parts with their results, usage as `message-metadata`, then
+ * `finish`). Emitted as stream objects, matching what `useChat` consumes
+ * from a `ChatTransport`.
  */
 export function responsesSseToUiMessageStream(
     source: ReadableStream<Uint8Array>,
@@ -140,6 +178,15 @@ export function responsesSseToUiMessageStream(
         if (!started) {
             started = true;
             controller.enqueue({ type: "text-start", id: textId });
+        }
+    };
+
+    const endText = (
+        controller: ReadableStreamDefaultController<UiMessageChunk>,
+    ) => {
+        if (started) {
+            started = false;
+            controller.enqueue({ type: "text-end", id: textId });
         }
     };
 
@@ -194,14 +241,53 @@ export function responsesSseToUiMessageStream(
                                 type: "error",
                                 errorText: message,
                             });
-                        } else if (type === "response.completed") {
+                        } else if (type === "response.output_item.added") {
+                            const item = toolItem(event);
+                            if (item) {
+                                endText(controller);
+                                const chunk: UiMessageChunk = {
+                                    type: "tool-input-available",
+                                    toolCallId: item.id,
+                                    toolName: item.name ?? "tool",
+                                    input: parseJsonValue(item.arguments),
+                                    dynamic: true,
+                                };
+                                if (item.type === "mcp_call") {
+                                    chunk.providerExecuted = true;
+                                }
+                                controller.enqueue(chunk);
+                            }
+                        } else if (type === "response.output_item.done") {
+                            const item = toolItem(event);
+                            if (item && item.type === "mcp_call") {
+                                const errorText = toolError(item);
+                                if (errorText) {
+                                    controller.enqueue({
+                                        type: "tool-output-error",
+                                        toolCallId: item.id,
+                                        errorText,
+                                        dynamic: true,
+                                        providerExecuted: true,
+                                    });
+                                } else {
+                                    controller.enqueue({
+                                        type: "tool-output-available",
+                                        toolCallId: item.id,
+                                        output: parseJsonValue(item.output),
+                                        dynamic: true,
+                                        providerExecuted: true,
+                                    });
+                                }
+                            }
+                        } else if (
+                            type === "response.completed" ||
+                            type === "response.incomplete"
+                        ) {
                             usage = readUsage(event);
                         }
                     }
                 }
-                if (started) {
-                    controller.enqueue({ type: "text-end", id: textId });
-                }
+                endText(controller);
                 if (usage) {
                     controller.enqueue({
                         type: "message-metadata",

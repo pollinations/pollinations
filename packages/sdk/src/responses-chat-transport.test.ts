@@ -104,6 +104,60 @@ describe("responsesSseToUiMessageStream", () => {
     });
 });
 
+describe("responsesSseToUiMessageStream tools", () => {
+    it("announces server tool calls as dynamic tool parts", async () => {
+        const chunks = await collect(
+            responsesSseToUiMessageStream(
+                sseSource([
+                    'data: {"type":"response.output_text.delta","delta":"Hi"}',
+                    'data: {"type":"response.output_item.added","item":{"type":"function_call","id":"call_1","name":"get_weather","arguments":"{\\"city\\":\\"Jakarta\\"}"}}',
+                    'data: {"type":"response.completed","response":{"usage":{"input_tokens":3,"output_tokens":2}}}',
+                    "",
+                ]),
+            ),
+        );
+        const types = chunks.map((c) => (c as { type: string }).type);
+        expect(types).toEqual([
+            "text-start",
+            "text-delta",
+            "text-end",
+            "tool-input-available",
+            "message-metadata",
+            "finish",
+        ]);
+        expect(chunks[3]).toMatchObject({
+            type: "tool-input-available",
+            toolCallId: "call_1",
+            toolName: "get_weather",
+            input: { city: "Jakarta" },
+            dynamic: true,
+        });
+    });
+
+    it("emits mcp results and errors", async () => {
+        const chunks = await collect(
+            responsesSseToUiMessageStream(
+                sseSource([
+                    'data: {"type":"response.output_item.done","item":{"type":"mcp_call","id":"mcp_1","name":"search","output":"{\\"ok\\":true}"}}',
+                    'data: {"type":"response.output_item.done","item":{"type":"mcp_call","id":"mcp_2","name":"search","status":"failed","error":{"message":"boom"}}}',
+                    "",
+                ]),
+            ),
+        );
+        expect(chunks[0]).toMatchObject({
+            type: "tool-output-available",
+            toolCallId: "mcp_1",
+            output: { ok: true },
+        });
+        expect(chunks[1]).toMatchObject({
+            type: "tool-output-error",
+            toolCallId: "mcp_2",
+            errorText: "boom",
+        });
+        expect(chunks[chunks.length - 1]).toMatchObject({ type: "finish" });
+    });
+});
+
 describe("createResponsesChatTransport", () => {
     it("posts input with the resolved key and converts the stream", async () => {
         const fetchMock = vi.fn(async () => ({

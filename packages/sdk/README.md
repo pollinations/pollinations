@@ -279,9 +279,10 @@ function Chat() {
 ### React useChat (Responses transport)
 
 Point `useChat` at `/v1/responses` without a custom backend. The transport
-converts the stream to AI SDK UI message chunks client-side; the public
-Responses payloads are unchanged. `ai` is an optional peer — needed only where
-`useChat` runs.
+converts the stream to AI SDK UI message chunks client-side — text plus
+server-run tool calls (`function_call`/`mcp_call`) as dynamic tool parts with
+their results; the public Responses payloads are unchanged. `ai` is an
+optional peer — needed only where `useChat` runs.
 
 ```tsx
 import { useChat } from '@ai-sdk/react';

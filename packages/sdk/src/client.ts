@@ -284,7 +284,6 @@ export class Pollinations {
     private textTimeout: number;
     private imageTimeout: number;
     private videoTimeout: number;
-    private model3dTimeout: number;
 
     constructor(config: PollinationsConfig = {}) {
         // Auto-detect API key from environment if not provided
@@ -310,8 +309,6 @@ export class Pollinations {
         this.videoTimeout =
             config.videoTimeout ??
             (config.timeout ? config.timeout : DEFAULT_VIDEO_TIMEOUT);
-        this.model3dTimeout =
-            config.model3dTimeout ?? config.timeout ?? DEFAULT_VIDEO_TIMEOUT;
     }
 
     // ============================================================================
@@ -495,7 +492,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -567,7 +564,7 @@ export class Pollinations {
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -708,7 +705,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -785,7 +782,7 @@ export class Pollinations {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
-            this.model3dTimeout,
+            this.videoTimeout,
             options.signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
@@ -1047,7 +1044,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1177,25 +1174,28 @@ export class Pollinations {
                 const alignment = data?.normalized_alignment;
                 if (
                     typeof data?.audio_base64 !== "string" ||
-                    ![data.alignment, alignment].every(
-                        (item) =>
-                            Array.isArray(item?.characters) &&
-                            Array.isArray(item.character_start_times_seconds) &&
-                            Array.isArray(item.character_end_times_seconds) &&
-                            item.characters.length ===
-                                item.character_start_times_seconds.length &&
-                            item.characters.length ===
-                                item.character_end_times_seconds.length &&
-                            item.characters.every(
+                    (alignment != null &&
+                        (!Array.isArray(alignment.characters) ||
+                            !Array.isArray(
+                                alignment.character_start_times_seconds,
+                            ) ||
+                            !Array.isArray(
+                                alignment.character_end_times_seconds,
+                            ) ||
+                            alignment.characters.length !==
+                                alignment.character_start_times_seconds
+                                    .length ||
+                            alignment.characters.length !==
+                                alignment.character_end_times_seconds.length ||
+                            !alignment.characters.every(
                                 (c) => typeof c === "string",
-                            ) &&
-                            item.character_start_times_seconds.every(
+                            ) ||
+                            !alignment.character_start_times_seconds.every(
                                 Number.isFinite,
-                            ) &&
-                            item.character_end_times_seconds.every(
+                            ) ||
+                            !alignment.character_end_times_seconds.every(
                                 Number.isFinite,
-                            ),
-                    )
+                            )))
                 ) {
                     throw new PollinationsError(
                         "Invalid timestamped speech response",
@@ -1204,6 +1204,7 @@ export class Pollinations {
                     );
                 }
                 const words: SpeechWordTiming[] = [];
+                if (!alignment) return { ...data, words };
                 let current: SpeechWordTiming | undefined;
                 for (const [i, character] of alignment.characters.entries()) {
                     if (/\s/u.test(character)) {
@@ -1301,7 +1302,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1557,7 +1558,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });

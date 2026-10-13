@@ -4,16 +4,30 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
-### Changed
-- Key `models` and `allowedModels` accept model IDs that allow only that
-  model, next to categories. A model ID no longer widens to its category.
+## [5.1.0-alpha.17] - 2026-10-14
 
 ### Added
 - `model3d()` returns 3D files with their MIME type and a keyless URL;
   `models("3d")` lists the available models.
 - `modelStatus()` returns typed model health rows and column metadata.
 - `audioSpeechWithTimestamps()` returns base64 audio, the original character
-  alignments and word timings grouped from normalized text.
+  alignments and word timings grouped from normalized text when available.
+
+## [5.1.0-alpha.16] - 2026-10-14
+
+### Changed
+- README Discord link points to `discord.gg/k9F7SyTgqn`; the old invite
+  link no longer works.
+
+## [5.1.0-alpha.15] - 2026-10-13
+
+### Changed
+- README and JSDoc examples use `publisher/model` IDs, such as
+  `black-forest-labs/flux.1-schnell` instead of `flux`. Short aliases still work.
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
+### Added
 - `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
   `video`, `audio` or `embeddings`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,

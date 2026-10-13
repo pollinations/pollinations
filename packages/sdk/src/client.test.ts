@@ -1920,7 +1920,7 @@ describe("3D, model status and timestamped speech", () => {
 
     it.each([
         [{ timeout: 50 }, 50],
-        [{ timeout: 50, model3dTimeout: 20 }, 20],
+        [{ timeout: 50, videoTimeout: 20 }, 20],
     ] as const)(
         "uses the configured 3D timeout (%j)",
         async (config, timeout) => {
@@ -1998,8 +1998,7 @@ describe("3D, model status and timestamped speech", () => {
 
     it.each([
         null,
-        { audio_base64: "QUJD" },
-        { ...speech, alignment: null },
+        { audio_base64: 123 },
         {
             ...speech,
             normalized_alignment: {
@@ -2019,6 +2018,34 @@ describe("3D, model status and timestamped speech", () => {
         await expect(
             newClient().audioSpeechWithTimestamps("hi"),
         ).rejects.toMatchObject({ code: "INVALID_RESPONSE", status: 502 });
+    });
+
+    it.each([null, undefined])(
+        "preserves audio when normalized timings are %s",
+        async (normalized_alignment) => {
+            const body = {
+                audio_base64: speech.audio_base64,
+                alignment: null,
+                normalized_alignment,
+            };
+            fetchMock.mockResolvedValue(makeResponse(body));
+            await expect(
+                newClient().audioSpeechWithTimestamps("hi"),
+            ).resolves.toEqual({ ...body, words: [] });
+        },
+    );
+
+    it("uses normalized timings even when original alignment is missing", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ ...speech, alignment: null }),
+        );
+        const result = await newClient().audioSpeechWithTimestamps("hi 🌻!");
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0, end: 0.2 },
+            { word: "🌻!", start: 0.4, end: 0.6 },
+        ]);
+        expect(result.audio_base64).toBe(speech.audio_base64);
+        expect(result.alignment).toBeNull();
     });
 
     it.each(["model3d", "audioSpeechWithTimestamps"] as const)(

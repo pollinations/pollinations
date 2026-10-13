@@ -2337,9 +2337,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // The free launch promotion ends 2026-10-13 and no provider has
-            // published its paid rate yet. Artificial Analysis records these
-            // rates on inclusionAI's own API; replace them with Novita's.
+            // Novita's paid rate since its free launch promotion ended
+            // (2026-10-13 16:00 UTC).
             promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.06),
             completionTextTokens: perMillion(0.9),

@@ -55,7 +55,7 @@ export const TEXT_FALLBACKS = {
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
             // Same Novita checkpoint through a separate gateway, which adds
-            // no fee; provisional until Novita publishes its paid rate.
+            // no fee. Vercel still listed it free on 2026-10-13.
             cost: {
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.06),

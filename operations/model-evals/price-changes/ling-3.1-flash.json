@@ -1,9 +1,9 @@
 {
-    "status": "provisional_price_applied",
+    "status": "price_applied",
     "runtime_change": true,
     "currency": "USD",
     "price_multiplier": 1,
-    "merge_policy": "Merge on the promotion end. The price is provisional (Artificial Analysis rate on inclusionAI's API); replace it with Novita's published paid rate on both routes as soon as it appears.",
+    "merge_policy": "Merge after the promotion ended. Novita published its paid rate on 2026-10-13 at 16:00 UTC; Vercel still listed the model free.",
     "model": "inclusionai/ling-3.1-flash",
     "feature_pr": "https://github.com/pollinations/pollinations/pull/16604",
     "current_price": {
@@ -15,23 +15,20 @@
         "input_per_million_tokens": 0.3,
         "cached_input_per_million_tokens": 0.06,
         "output_per_million_tokens": 0.9,
-        "source": "Artificial Analysis via https://hokai.io/hub/models/ling-3.1-flash (inclusionAI's own API, checked 2026-10-13)",
-        "provisional": true
+        "source": "Novita /openai/v1/models pricing, checked 2026-10-13 16:05 UTC"
     },
     "merge_on": "2026-10-13",
-    "merge_date_confirmed": false,
+    "merge_date_confirmed": true,
     "unknowns": [
-        "Exact October 13 promotion cutoff and timezone",
-        "Novita's published paid rate, which serves both routes"
+        "Vercel's paid rate for its Novita route (still $0 on 2026-10-13)"
     ],
     "sources": [
-        "https://developer.ant-ling.com/en/docs/models/price/",
-        "https://vercel.com/changelog/ling-3-1-flash-is-now-available-on-ai-gateway",
-        "https://hokai.io/hub/models/ling-3.1-flash",
-        "https://novita.ai/pricing"
+        "https://api.novita.ai/openai/v1/models",
+        "https://novita.ai/pricing",
+        "https://vercel.com/changelog/ling-3-1-flash-is-now-available-on-ai-gateway"
     ],
     "required_changes": [
-        "Replace the provisional rate with Novita's paid rate on the primary and the Vercel fallback",
+        "Set the Vercel fallback cost to Vercel's published rate if it differs from Novita's",
         "Keep paidOnly: true (Novita primary)"
     ]
 }

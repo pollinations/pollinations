@@ -1524,10 +1524,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-17").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        // Deliberately not paid-only, unlike the other OpenRouter routes:
-        // Quest Pollen must reach Jev, and $0.042/M in with free output
-        // bounds what a free-tier account can spend.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // TypeSafe list price (docs.typesafe.ai, checked 2026-09-17) plus
             // OpenRouter's 5.5% credit fee, as every OpenRouter route records.
@@ -1560,9 +1557,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-30").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
-        // Like Jev, Quest Pollen must reach it; $0.042/M in with free output
-        // bounds what a free-tier account can spend.
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             // OpenRouter list price plus its 5.5% credit fee, as every
             // OpenRouter route records.
@@ -2749,7 +2744,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.035),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads
@@ -2775,7 +2770,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
             promptTextTokens: perMillion(0.33),
             // Bedrock Nova prompt caching: writes are free ($0 SKU), reads

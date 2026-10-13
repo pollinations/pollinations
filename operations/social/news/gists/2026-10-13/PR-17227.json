@@ -1,0 +1,115 @@
+{
+  "pr_number": 17227,
+  "title": "fix: route DeepSeek V4.1 Flash to DeepInfra with Fireworks fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17227",
+  "merged_at": "2026-10-13T01:20:53Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "DeepSeek V4.1 Flash now routes primarily through DeepInfra FP8, with Fireworks as its fallback instead of Fireworks primary and OpenRouter → DeepInfra fallback. Access changes to Paid-only. Input and output prices decrease on a per-million-token basis; cached-input pricing is unchanged. Fireworks fallback costs more than the listed price. Reasoning remains on by default. The catalog no longer advertises parallel_tool_calls, logit_bias, or prediction, though requests using them are still accepted. Primary and forced-fallback paths were verified for text, streaming, vision, tools, prompt caching, provider charges, and wallet pricing.",
+    "keywords": [
+      "DeepSeek V4.1 Flash",
+      "DeepInfra",
+      "Fireworks",
+      "model routing",
+      "fallback",
+      "pricing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17227.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, wearing a tiny routing-engineer tool belt and pointing from a DeepSeek whale icon toward a primary DeepInfra path and a smaller Fireworks fallback path on a retro monitor, with one Polli only. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a prominent lime green (#ecf874) glow, warm cream background, dark purple (#110518) outlines, and little code-plants beside the monitor."
+  },
+  "generated_at": "2026-10-13T01:22:25.696170+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "801571e6bb593fd590b8551ba0cc00b8501810fe",
+  "announcements": [
+    {
+      "id": "pr-17227:deepseek/deepseek-v4.1-flash",
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "title": "DeepSeek V4.1 Flash",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000012"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002",
+            "promptCachedTokens": "0.000000006",
+            "completionTextTokens": "0.0000006"
+          }
+        },
+        "supported_parameters": {
+          "before": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "parallel_tool_calls",
+            "logit_bias",
+            "n",
+            "prediction"
+          ],
+          "after": [
+            "max_tokens",
+            "max_completion_tokens",
+            "stream",
+            "tools",
+            "tool_choice",
+            "response_format",
+            "temperature",
+            "top_p",
+            "stop",
+            "frequency_penalty",
+            "presence_penalty",
+            "logprobs",
+            "top_logprobs",
+            "seed",
+            "top_k",
+            "reasoning_effort",
+            "n"
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "801571e6bb593fd590b8551ba0cc00b8501810fe^1",
+    "after_ref": "801571e6bb593fd590b8551ba0cc00b8501810fe"
+  }
+}

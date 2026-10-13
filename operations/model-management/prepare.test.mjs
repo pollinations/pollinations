@@ -37,6 +37,107 @@ function fixture(results, decisions = {}) {
     };
 }
 
+test("native controller reorders required searches and chooses scoped followups without borrowing another model's coverage", async () => {
+    const names = ["maker/Alpha-v3", "maker/Beta-v4"];
+    const f = fixture(
+        names.map((name, index) => ({
+            url: `https://example.org/${index}`,
+            title: name,
+            text: name,
+        })),
+    );
+    const controls = [];
+    f.services.remainingPollen = () => 0.8;
+    f.services.control = async (input) => {
+        controls.push(input);
+        assert.equal(input.remainingPollen, 0.8);
+        const evidence = JSON.parse(input.evidence);
+        assert.deepEqual(
+            evidence.facts.map(({ name }) => name),
+            names,
+        );
+        assert.ok(input.evidence.length < 10000);
+        const next =
+            input.stage === "search"
+                ? (input.actions.find(({ scope }) => scope === "bedrock") ??
+                  input.actions[0])
+                : input.stage === "followup"
+                  ? (input.actions.find(({ id }) => id === "price-1") ??
+                    input.actions.find(({ id }) => id === "identity-0"))
+                  : input.actions.find(({ kind }) => kind === "finish");
+        return {
+            action: next,
+            selectedProbability: 0.98,
+            requestDigest: "a".repeat(64),
+        };
+    };
+    const result = await prepareResearch(
+        { models: names.map((name) => ({ name, category: "text" })) },
+        f.services,
+    );
+    assert.match(f.searches[0].query, /AWS Bedrock/);
+    assert.equal(f.searches.length, 6);
+    const followups = result.actions.filter(
+        ({ tool, scope, models }) =>
+            tool === "search" &&
+            scope === "alternatives" &&
+            models.length === 1,
+    );
+    assert.deepEqual(
+        followups.map(({ models }) => models),
+        [[names[1]], [names[0]]],
+    );
+    assert.ok(
+        ![...result.coverage.get(names[0]).get("alternatives")].some((query) =>
+            query.includes('"Beta-v4" official provider standard'),
+        ),
+    );
+    assert.ok(
+        [...result.coverage.get(names[1]).get("alternatives")].some((query) =>
+            query.includes('"Beta-v4" official provider standard'),
+        ),
+    );
+    assert.equal(
+        controls.filter(({ stage }) => stage === "followup").length,
+        2,
+    );
+    assert.equal(result.reasoningAction, null);
+});
+
+test("an insufficient native search choice stops without fabricated required coverage or Sol fallback", async () => {
+    const f = fixture([]);
+    f.services.control = async ({ actions }) => {
+        assert.ok(actions.every(({ kind }) => kind === "search"));
+        return {
+            action: null,
+            selectedProbability: 0.8,
+            requestDigest: "b".repeat(64),
+        };
+    };
+    const result = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3" }] },
+        f.services,
+    );
+    assert.equal(f.searches.length, 0);
+    assert.equal(result.coverage.get("maker/Alpha-v3").size, 0);
+    assert.equal(result.reasoningAction, null);
+    assert.ok(result.gaps.some((gap) => gap.includes("Jev could not select")));
+});
+
+test("native controller cannot change a copied bounded search query", async () => {
+    const f = fixture([]);
+    f.services.control = async ({ actions }) => ({
+        action: { ...actions[0], query: "Changed unoffered search" },
+        selectedProbability: 0.98,
+        requestDigest: "c".repeat(64),
+    });
+    await assert.rejects(
+        prepareResearch({ models: [{ name: "maker/Alpha-v3" }] }, f.services),
+        /Controller must copy/,
+    );
+    assert.equal(f.searches.length, 0);
+});
+
 test("four bounded Exa provider challenges cover every supplied checkpoint and dedupe fetches", async () => {
     const models = [{ name: "maker/Alpha-v3" }, { name: "maker/Beta-v2" }];
     const f = fixture([

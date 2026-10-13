@@ -164,11 +164,11 @@ with tempfile.TemporaryDirectory() as root:
     assert "model-one" in first["text"] and "model-two" in second["text"]
     assert first["pageDigest"] == second["pageDigest"] == hashlib.sha256(text.encode()).hexdigest()
     assert first["fetchedAt"] == second["fetchedAt"] and first["fetchedAt"].endswith("Z")
-    assert first["extractionVersion"] == 1
+    assert first["extractionVersion"] == 2
     path = next(Path(os.environ["FETCH_CACHE_DIR"]).glob("*.json"))
     assert path.name == hashlib.sha256(url.encode()).hexdigest() + ".json"
     valid = json.loads(path.read_text(encoding="utf-8"))
-    for changes in [{"text": "altered"}, {"extractionVersion": 2}, {"requestedUrl": "https://other.example/"}, {"url": "https://127.0.0.1/"}, {"fetchedAt": "invalidZ"}, {"text": "x" * (fetch.MAX_RESPONSE_BYTES + 1)}]:
+    for changes in [{"text": "altered"}, {"extractionVersion": 3}, {"requestedUrl": "https://other.example/"}, {"url": "https://127.0.0.1/"}, {"fetchedAt": "invalidZ"}, {"text": "x" * (fetch.MAX_RESPONSE_BYTES + 1)}]:
         path.write_text(json.dumps({**valid, **changes}), encoding="utf-8")
         sys.stdin = io.StringIO(json.dumps({"url": url, "focus": "model-one"}))
         failed = fetch.main()
@@ -178,6 +178,10 @@ with tempfile.TemporaryDirectory() as root:
     sys.stdin = io.StringIO(json.dumps({"url": url}))
     assert fetch.main()["error"] == "cached page failed validation"
     assert count == 1
+    path.write_text(json.dumps({**valid, "extractionVersion": 1}), encoding="utf-8")
+    upgraded = fetch._read_http(url, 100, "model-one")
+    assert count == 2 and upgraded["cached"] is False and upgraded["extractionVersion"] == 2
+    assert json.loads(path.read_text())["extractionVersion"] == 2
     path.write_text(json.dumps(valid), encoding="utf-8")
     # A cache hit still resolves the original host before reading cached content.
     fetch.socket.getaddrinfo = lambda *args, **kwargs: [(None, None, None, None, ("127.0.0.1", 443))]
@@ -192,7 +196,7 @@ with tempfile.TemporaryDirectory() as root:
     os.environ["FETCH_CACHE_DIR"] = str(Path(root) / "next-run")
     text += "changed beyond excerpt"
     refreshed = fetch._read_http(url, 100, "model-one")
-    assert count == 2 and refreshed["cached"] is False
+    assert count == 3 and refreshed["cached"] is False
     assert refreshed["text"] == first["text"]
     assert refreshed["pageDigest"] != first["pageDigest"]
     os.environ["FETCH_CACHE_DIR"] = str(Path(root) / "oversized-run")
@@ -224,3 +228,27 @@ test(
         assert.ok(result.text.length > 40);
     },
 );
+
+test("HTML tables retain cell boundaries, headers and nested headings without script content", () => {
+    const result = spawnSync(
+        python,
+        [
+            "-c",
+            `
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
+fetch = importlib.util.module_from_spec(spec); spec.loader.exec_module(fetch)
+html = '<h2><a></a><div>Text and vision models</div></h2><p>Prices per 1M tokens.</p><table><thead><tr><th>Model</th><th>Input</th><th>Output</th></tr></thead><tbody><tr><td><a>Kimi K3</a></td><td><span>$3.00</span><script>poison</script></td><td>$15.00</td></tr></tbody></table>'
+parser = fetch._TextParser(); parser.feed(html); parser.close()
+assert parser.text() == '## Text and vision models\\nPrices per 1M tokens.\\n| Model | Input | Output |\\n| --- | --- | --- |\\n| Kimi K3 | $3.00 | $15.00 |', repr(parser.text())
+parser = fetch._TextParser(); parser.feed(html.replace('<th>Input</th>', '<th colspan="2">Input</th>')); parser.close()
+assert '| --- |' not in parser.text()
+parser = fetch._TextParser(); parser.feed('<table><tr><th>Model</th><th>Input</th></tr><tr><td>Qwen | model</td><td>$1</td></tr></table>'); parser.close()
+assert 'Qwen &#124; model' in parser.text()
+`,
+            adapter,
+        ],
+        { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+});

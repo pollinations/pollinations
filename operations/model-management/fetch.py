@@ -14,6 +14,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urljoin, urlsplit, urlunsplit
 
 
+EXTRACTION_VERSION = 2
 MAX_CHARACTERS = 18_000
 MAX_REDIRECTS = 5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -39,22 +40,59 @@ class _TextParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.parts = []
         self.ignored = 0
+        self.table = None
+        self.row = None
+        self.cell = None
+        self.heading = None
 
     def handle_starttag(self, tag, attrs):
         if tag in {"script", "style", "noscript", "template"}:
             self.ignored += 1
-        elif tag in {"p", "br", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6", "tr"}:
-            self.parts.append("\n")
+        elif not self.ignored:
+            if tag == "table":
+                self.table = {"rows": [], "simple": True}
+            elif self.table is not None and tag == "tr":
+                self.row = []
+            elif self.row is not None and tag in {"th", "td"}:
+                self.cell = []
+                if any(name in {"colspan", "rowspan"} and value != "1" for name, value in attrs):
+                    self.table["simple"] = False
+            elif self.cell is None and re.fullmatch("h[1-6]", tag):
+                self.heading = (tag, [])
+            elif tag in {"p", "br", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6"}:
+                target = self.cell if self.cell is not None else self.heading[1] if self.heading else self.parts
+                target.append("\n")
 
     def handle_endtag(self, tag):
         if tag in {"script", "style", "noscript", "template"} and self.ignored:
             self.ignored -= 1
-        elif tag in {"p", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6", "tr"}:
-            self.parts.append("\n")
+        elif not self.ignored:
+            if tag in {"th", "td"} and self.cell is not None:
+                value = " ".join("".join(self.cell).split()).replace("|", "&#124;")
+                self.row.append((value, tag == "th"))
+                self.cell = None
+            elif tag == "tr" and self.row is not None:
+                if self.row:
+                    self.table["rows"].append(self.row)
+                self.row = None
+            elif tag == "table" and self.table is not None:
+                rows = self.table["rows"]
+                self.parts.append("\n")
+                for index, row in enumerate(rows):
+                    self.parts.append("| " + " | ".join(value for value, _ in row) + " |\n")
+                    # Spanned headers cannot safely bind a price to a column.
+                    if index == 0 and self.table["simple"] and all(header for _, header in row):
+                        self.parts.append("| " + " | ".join("---" for _ in row) + " |\n")
+                self.table = None
+            elif self.heading and tag == self.heading[0]:
+                self.parts.append("\n" + "#" * int(tag[1]) + " " + " ".join("".join(self.heading[1]).split()) + "\n")
+                self.heading = None
+            elif tag in {"p", "div", "li", "h1", "h2", "h3", "h4", "h5", "h6"}:
+                (self.cell if self.cell is not None else self.heading[1] if self.heading else self.parts).append("\n")
 
     def handle_data(self, data):
         if not self.ignored:
-            self.parts.append(data)
+            (self.cell if self.cell is not None else self.heading[1] if self.heading else self.parts).append(data)
 
     def text(self):
         return "\n".join(line.strip() for line in "".join(self.parts).splitlines() if line.strip())
@@ -139,7 +177,7 @@ def _read_http(url, max_characters, focus=None):
             page = json.loads(content)
             text = page["text"]
             if (page["requestedUrl"] != requested or type(page["extractionVersion"]) is not int
-                    or page["extractionVersion"] != 1 or not isinstance(text, str) or not text.strip()
+                    or page["extractionVersion"] not in (1, EXTRACTION_VERSION) or not isinstance(text, str) or not text.strip()
                     or len(text.encode("utf-8")) > MAX_RESPONSE_BYTES
                     or page["pageDigest"] != hashlib.sha256(text.encode("utf-8")).hexdigest()
                     or not isinstance(page["fetchedAt"], str) or not page["fetchedAt"].endswith("Z")):
@@ -148,7 +186,8 @@ def _read_http(url, max_characters, focus=None):
             page["url"] = _validate_url(page["url"])
         except Exception as error:
             raise ValidationError("cached page failed validation") from error
-        return _excerpt(page, max_characters, focus, True)
+        if page["extractionVersion"] == EXTRACTION_VERSION:
+            return _excerpt(page, max_characters, focus, True)
 
     from curl_cffi import CurlOpt
     from scrapling.fetchers import FetcherSession
@@ -186,7 +225,7 @@ def _read_http(url, max_characters, focus=None):
         page = {
             "requestedUrl": requested, "url": current, "text": text,
             "pageDigest": hashlib.sha256(text.encode("utf-8")).hexdigest(),
-            "extractionVersion": 1,
+            "extractionVersion": EXTRACTION_VERSION,
             "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
         if cache_path:

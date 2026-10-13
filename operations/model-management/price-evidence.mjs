@@ -1,15 +1,29 @@
 const excluded = /\b(?:cached?|batch|promo(?:tional)?|trial|priority)\b/i;
-const unitPattern = /(?:1\s*M|million|1,000,000)\s+tokens\b/i;
+const unitPattern =
+    /(?:1\s*M|million|1,000,000)\s+tokens(?:\s+(?:USD|\(USD\)))?[.\s]*$/i;
 const moneyPattern = /^(?:\$|USD\s+)(\d+(?:\.\d+)?)$/;
 const escaped = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Formatting alone may differ; checkpoint versions and suffixes stay intact.
+export function exactModelIdentity(value, upstreamModel) {
+    if (typeof value !== "string" || typeof upstreamModel !== "string")
+        return false;
+    const normalize = (name) =>
+        name
+            .replace(/^#{1,6}\s+/, "")
+            .toLowerCase()
+            .replace(/[\s-]+/g, "-");
+    return [upstreamModel, upstreamModel.split("/").at(-1)].some(
+        (name) => normalize(value) === normalize(name),
+    );
+}
 
 // Recognize only explicit table columns and model-page embedding price blocks.
 // Unknown layouts stay unknown instead of guessing from neighboring numbers.
 export function extractPrices(text, { model, upstreamModel, category, quote }) {
     if (typeof text !== "string" || !upstreamModel) return null;
     const checkpoint = upstreamModel.split("/").at(-1);
-    const names = [upstreamModel, checkpoint];
-    const exact = (value) => names.some((item) => value === item);
+    const exact = (value) => exactModelIdentity(value, upstreamModel);
     const kind = category ?? model?.category;
     const embedding = kind === "embedding" || kind === "embeddings";
     const lines = [];
@@ -29,6 +43,36 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
     const restriction =
         /\b(?:only|until|below|above|under|over|discount(?:ed)?|limited|up to)\b|[<>≤≥]\s*\d/i;
     const scopeValid = (index) => {
+        const ancestors = [];
+        let currencies = [];
+        for (let j = 0; j < index; j++) {
+            const value = lines[j].value;
+            const heading = value.match(/^(#{1,6})\s/);
+            if (!heading) {
+                if (!value.startsWith("|") && foreignCurrency(value))
+                    currencies.push({ level: ancestors.at(-1)?.level ?? 0 });
+                continue;
+            }
+            currencies = currencies.filter(
+                ({ level }) => level > 0 && level < heading[1].length,
+            );
+            while (
+                ancestors.length &&
+                ancestors.at(-1).level >= heading[1].length
+            )
+                ancestors.pop();
+            ancestors.push({ level: heading[1].length, value });
+        }
+        if (currencies.length) return false;
+        if (
+            ancestors.some(
+                ({ value }) =>
+                    foreignCurrency(value) ||
+                    (!standard.test(value) &&
+                        (excluded.test(value) || restriction.test(value))),
+            )
+        )
+            return false;
         for (let j = index - 1; j >= 0; j--) {
             const value = lines[j].value;
             if (!value) continue;
@@ -107,11 +151,17 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             continue;
         const headings = cells(header.value);
         if (!/^(?:model|model name)$/i.test(headings[0])) continue;
+        const descriptor = lines[i - 1];
+        const ordered =
+            descriptor &&
+            /^Per-model pricing for headline models\. Fast variants appear as adjacent rows\. In each Standard or Priority cell, prices are input \/ cached input \/ output \(USD per 1M tokens\), in that order\.$/.test(
+                descriptor.value,
+            );
         // Unit must belong to this table, with only standard section labels in between.
-        let unit;
-        let unitIndex;
+        let unit = ordered ? descriptor : undefined;
+        let unitIndex = ordered ? i - 1 : undefined;
         let restricted = false;
-        for (let j = i - 1; j >= 0; j--) {
+        for (let j = i - 1; !ordered && j >= 0; j--) {
             const line = lines[j];
             if (!line.value) continue;
             if (unitPattern.test(line.value)) {
@@ -126,8 +176,8 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             !unit ||
             restricted ||
             !scopeValid(unitIndex) ||
-            !scopeValid(i) ||
-            excluded.test(unit.value) ||
+            (!ordered && !scopeValid(i)) ||
+            (!ordered && excluded.test(unit.value)) ||
             restriction.test(unit.value) ||
             foreignCurrency(unit.value)
         )
@@ -141,6 +191,68 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             const values = cells(row.value);
             if (!exact(values[0]) || values.length !== headings.length)
                 continue;
+            if (
+                ordered &&
+                !embedding &&
+                headings.filter((heading) => heading === "Standard").length ===
+                    1
+            ) {
+                const k = headings.indexOf("Standard");
+                const rate = values[k].match(
+                    /^(\$\d+(?:\.\d+)?) \/ \$\d+(?:\.\d+)? \/ (\$\d+(?:\.\d+)?)$/,
+                );
+                if (!rate) continue;
+                const cellStart =
+                    row.start +
+                    row.value
+                        .split("|")
+                        .slice(0, k + 1)
+                        .join("|").length +
+                    1;
+                const start = text.indexOf(values[k], cellStart);
+                const fragments = [
+                    evidence(
+                        "unit",
+                        "USD per 1M tokens",
+                        descriptor.start +
+                            descriptor.value.indexOf("USD per 1M tokens"),
+                    ),
+                    evidence(
+                        "header",
+                        "prices are input / cached input / output (USD per 1M tokens), in that order.",
+                        descriptor.start +
+                            descriptor.value.indexOf("prices are input"),
+                    ),
+                    evidence(
+                        "header",
+                        "Standard",
+                        header.start + header.value.indexOf("Standard"),
+                    ),
+                    evidence(
+                        "model",
+                        values[0],
+                        row.start + row.value.indexOf(values[0]),
+                    ),
+                    evidence("price", rate[1], start),
+                    evidence(
+                        "price",
+                        rate[2],
+                        start + values[k].lastIndexOf(rate[2]),
+                    ),
+                ];
+                if (row.value.split(/\s+/).length <= 25)
+                    fragments.push(evidence("row", row.value, row.start));
+                const result = finish(
+                    Number(rate[1].slice(1)),
+                    Number(rate[2].slice(1)),
+                    fragments,
+                    row.start,
+                    row.start + row.value.length,
+                    ["standard"],
+                );
+                if (result) return result;
+                continue;
+            }
             const input = [],
                 output = [];
             for (let k = 1; k < headings.length; k++) {
@@ -250,7 +362,8 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             paths.every(
                 ([, value]) => value.toLowerCase() === checkpoint.toLowerCase(),
             ) &&
-            lines[i - 2]?.value === "Available Serverless" &&
+            lines[i - 2]?.value.replace(/^#{1,6}\s+/, "") ===
+                "Available Serverless" &&
             previous?.value === "Run queries immediately, pay only for usage";
         if (!direct && !serverless) continue;
         const modelLine = direct ? previous : title;

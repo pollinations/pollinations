@@ -136,18 +136,6 @@ function customError(seconds: number) {
     return null;
 }
 
-// What the pending action's sandbox costs an hour. E2B tells only the team
-// that built a template its size, so another team's template is priced once
-// it runs.
-function perHour(pricing: Pricing, pending: Pending) {
-    if (pending.action === "create") {
-        const size = pricing.templates[pending.template.trim()];
-        if (!size) return "Shown on your sandbox card once it starts.";
-        return `${pollen(perSecond(pricing, size) * 3600)} (${sizeLabel(size)})`;
-    }
-    return pollen(perSecond(pricing, pending.sandbox) * 3600);
-}
-
 function TemplatePicker({
     pricing,
     template,
@@ -790,7 +778,14 @@ export function Sandboxes() {
                                             <dt className="font-semibold text-theme-text-strong">
                                                 Hourly cost
                                             </dt>
-                                            <dd>{perHour(pricing, pending)}</dd>
+                                            <dd>
+                                                {pollen(
+                                                    perSecond(
+                                                        pricing,
+                                                        pending.sandbox,
+                                                    ) * 3600,
+                                                )}
+                                            </dd>
                                         </>
                                     )}
                                 </dl>
@@ -904,32 +899,23 @@ export function Sandboxes() {
                                         </div>
                                     </ModelFormRow>
                                 </Surface>
-                                {pending.action === "create" &&
-                                    pending.custom && (
-                                        <Surface>
-                                            <dl className="grid gap-1 text-sm sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-2">
-                                                <dt className="text-theme-text-muted">
-                                                    Hourly cost
-                                                </dt>
-                                                <dd className="font-semibold text-theme-text-strong">
-                                                    {perHour(pricing, pending)}
-                                                </dd>
-                                            </dl>
-                                        </Surface>
-                                    )}
                                 {pending.action === "create" && (
                                     <p className="flex items-start gap-1.5 px-1 text-[13px] leading-snug text-theme-text-muted">
                                         <TerminalIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                        {/* E2B tells only the team that built a
+                                            template its size, so another team's
+                                            template is priced once it runs. */}
                                         <span>
                                             Pollinations templates include the{" "}
                                             <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
                                                 polli CLI
                                             </InlineLink>
-                                            , already signed in, or use any{" "}
+                                            , already signed in. Any other{" "}
                                             <InlineLink href="https://docs.e2b.dev/use-cases/coding-agents">
                                                 public E2B template
-                                            </InlineLink>
-                                            .
+                                            </InlineLink>{" "}
+                                            works too; its hourly cost shows on
+                                            its card once it starts.
                                         </span>
                                     </p>
                                 )}

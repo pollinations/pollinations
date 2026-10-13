@@ -59,6 +59,11 @@ test("unbound or malformed billing snapshots cannot release uncertain costs", ()
 });
 
 test("main checks billing before and after paid work and stops on failure or the cap", async (t) => {
+    // Usage rows have second precision; keep the fixture inside the API's exclusive upper cursor.
+    t.mock.timers.enable({
+        apis: ["Date"],
+        now: Date.UTC(2026, 9, 14, 0, 0, 0, 250),
+    });
     const exitCode = process.exitCode;
     t.after(() => {
         process.exitCode = exitCode;

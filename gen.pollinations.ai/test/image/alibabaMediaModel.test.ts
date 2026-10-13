@@ -6,7 +6,10 @@ import {
 } from "@shared/schemas/generation-event.ts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callAlibabaImage } from "../../src/image/models/alibabaImageModel.ts";
+import {
+    callAlibabaImage,
+    resolveQwenImage21TurboSize,
+} from "../../src/image/models/alibabaImageModel.ts";
 import { callAlibabaVideo } from "../../src/image/models/alibabaVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import { callAlibabaMedia } from "../../src/image/utils/alibabaClient.ts";
@@ -340,5 +343,118 @@ describe("Alibaba media adapters", () => {
         expect(result.trackingData?.usage).toEqual({
             completionImageTokens: 1,
         });
+    });
+});
+
+describe("qwen-image-2.1-turbo size clamp", () => {
+    const MIN_AREA = 512 * 512;
+    const MAX_AREA = 2560 * 2560;
+
+    const resolve = (width: number, height: number) => {
+        const size = resolveQwenImage21TurboSize({
+            ...params,
+            width,
+            height,
+        });
+        const area = size.width * size.height;
+        expect(size.width % 16).toBe(0);
+        expect(size.height % 16).toBe(0);
+        expect(area).toBeGreaterThanOrEqual(MIN_AREA);
+        expect(area).toBeLessThanOrEqual(MAX_AREA);
+        return size;
+    };
+
+    it("passes valid aligned in-range sizes through unchanged", () => {
+        expect(resolve(1280, 720)).toEqual({ width: 1280, height: 720 });
+        expect(resolve(1024, 1024)).toEqual({ width: 1024, height: 1024 });
+        expect(resolve(512, 512)).toEqual({ width: 512, height: 512 });
+        expect(resolve(2560, 2560)).toEqual({ width: 2560, height: 2560 });
+        // Non-square passthrough.
+        expect(resolve(2048, 1024)).toEqual({ width: 2048, height: 1024 });
+    });
+
+    it("scales tiny requests up to the minimum area", () => {
+        expect(resolve(100, 100)).toEqual({ width: 512, height: 512 });
+        const size = resolve(320, 240);
+        expect(size.width * size.height).toBeGreaterThanOrEqual(MIN_AREA);
+    });
+
+    it("scales huge requests down to the maximum area", () => {
+        expect(resolve(4000, 4000)).toEqual({ width: 2560, height: 2560 });
+        const size = resolve(5000, 3000);
+        expect(size.width * size.height).toBeLessThanOrEqual(MAX_AREA);
+    });
+
+    it("re-clamps when 16px rounding crosses a limit", () => {
+        // Naive rounding gives 2560*2576 (area 6,594,560 > max).
+        const over = resolve(2552, 2568);
+        expect(`${over.width}*${over.height}`).not.toBe("2560*2576");
+        // Naive rounding gives 496*528 (area 261,888 < min).
+        const under = resolve(503, 527);
+        expect(`${under.width}*${under.height}`).not.toBe("496*528");
+    });
+
+    it("handles extreme aspect ratios within the area bounds", () => {
+        resolve(10, 10000);
+        // Proportional floor would zero the thin side here; the pinned side
+        // must still leave the area within bounds.
+        expect(resolve(1, 1000000)).toEqual({ width: 16, height: 409600 });
+    });
+
+    it("approximately preserves aspect ratio when resizing", () => {
+        const size = resolve(6000, 2000);
+        expect(size.width / size.height).toBeCloseTo(3, 1);
+    });
+
+    it.each([
+        [0, 100],
+        [100, 0],
+        [-5, 200],
+        [200, -20],
+        [Number.NaN, 100],
+        [100, Number.POSITIVE_INFINITY],
+    ])("falls back to 1024x1024 for invalid %sx%s", (width, height) => {
+        expect(
+            resolveQwenImage21TurboSize({ ...params, width, height }),
+        ).toEqual({ width: 1024, height: 1024 });
+    });
+
+    it("uses the clamped size on the 10-reference-image edit path", async () => {
+        const fetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    output: {
+                        choices: [
+                            { message: { content: [{ image: outputUrl }] } },
+                        ],
+                    },
+                    usage: { image_count: 1 },
+                }),
+            )
+            .mockResolvedValueOnce(
+                new Response("image", {
+                    headers: { "content-type": "image/png" },
+                }),
+            );
+        const images = Array.from(
+            { length: 10 },
+            () => "data:image/png;base64,AQID",
+        );
+        await callAlibabaImage(
+            "Make it blue",
+            {
+                ...params,
+                model: "qwen/qwen-image-2.1-turbo",
+                // Raw passthrough would send "100*100" (provider 400).
+                width: 100,
+                height: 100,
+                image: images,
+            },
+            "qwen-image-2.1-turbo",
+        );
+        const request = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+        expect(request.parameters.size).toBe("512*512");
+        expect(request.input.messages[0].content).toHaveLength(11);
     });
 });

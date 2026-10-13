@@ -1,0 +1,15 @@
+{
+  "number": 16911,
+  "kind": "pr",
+  "rival": null,
+  "start": "2026-10-13 01:16:28",
+  "base": "d3309b1d8849059b8e008919825c899643fd65a8",
+  "outcome": "changes-requested",
+  "next": "plan-review",
+  "reworks": 0,
+  "end": "2026-10-13 01:21:07",
+  "cost_by_role": {
+    "claude": 1.0686808,
+    "codex": 0.21181519999999998
+  }
+}

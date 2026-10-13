@@ -1,0 +1,62 @@
+$ cd /home/user/pollinations && /home/user/pollinations/node_modules/.bin/biome check /home/user/pollinations/gen.pollinations.ai/src/image/models/inferencePortImageModel.ts /home/user/pollinations/gen.pollinations.ai/test/image/inferencePortImageModel.test.ts
+gen.pollinations.ai/test/image/inferencePortImageModel.test.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    173 173 │           [1024, 768],
+    174 174 │           [1536, 1536],
+    175     │ - ····])("rejects·explicit·%ix%i·output·before·calling·upstream",·async·(width,·height)·=>·{
+    176     │ - ········const·fetchSpy·=·vi.spyOn(globalThis,·"fetch");
+        175 │ + ····])(
+        176 │ + ········"rejects·explicit·%ix%i·output·before·calling·upstream",
+        177 │ + ········async·(width,·height)·=>·{
+        178 │ + ············const·fetchSpy·=·vi.spyOn(globalThis,·"fetch");
+    177 179 │   
+    178     │ - ········await·expect(
+    179     │ - ············callInferencePortImage(
+    180     │ - ················"a·poster",
+    181     │ - ················{
+    182     │ - ····················...baseParams,
+    183     │ - ····················width,
+    184     │ - ····················height,
+    185     │ - ····················dimensionsExplicit:·true,
+    186     │ - ················},
+    187     │ - ················USER_INFO,
+    188     │ - ············),
+    189     │ - ········).rejects.toMatchObject({
+    190     │ - ············status:·400,
+    191     │ - ············message:·expect.stringContaining("only·1024x1024"),
+    192     │ - ········});
+    193     │ - ········expect(fetchSpy).not.toHaveBeenCalled();
+    194     │ - ····});
+        180 │ + ············await·expect(
+        181 │ + ················callInferencePortImage(
+        182 │ + ····················"a·poster",
+        183 │ + ····················{
+        184 │ + ························...baseParams,
+        185 │ + ························width,
+        186 │ + ························height,
+        187 │ + ························dimensionsExplicit:·true,
+        188 │ + ····················},
+        189 │ + ····················USER_INFO,
+        190 │ + ················),
+        191 │ + ············).rejects.toMatchObject({
+        192 │ + ················status:·400,
+        193 │ + ················message:·expect.stringContaining("only·1024x1024"),
+        194 │ + ············});
+        195 │ + ············expect(fetchSpy).not.toHaveBeenCalled();
+        196 │ + ········},
+        197 │ + ····);
+    195 198 │   
+    196 199 │       it("fails clearly when upstream returns no image", async () => {
+  
+
+Checked 2 files in 9ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+
+exit 1

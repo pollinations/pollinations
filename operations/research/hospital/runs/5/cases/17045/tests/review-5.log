@@ -1,0 +1,4 @@
+$ cd /home/user/pollinations && /home/user/pollinations/node_modules/.bin/biome check /home/user/pollinations/gen.pollinations.ai/src/image/params.ts /home/user/pollinations/gen.pollinations.ai/src/image/models/inferencePortImageModel.ts /home/user/pollinations/gen.pollinations.ai/test/image/params.test.ts /home/user/pollinations/gen.pollinations.ai/test/image/inferencePortImageModel.test.ts
+Checked 4 files in 12ms. No fixes applied.
+
+exit 0

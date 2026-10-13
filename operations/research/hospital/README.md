@@ -36,6 +36,10 @@ runs one stage at a time. It is a dry run: nothing is posted to GitHub.
 - `hospital.py quick-review N --model M [--rival R]`: one review pass by one
   model on a scratch branch, before admission and blind to the hospital. Run 5
   compares these cheap reviews with the full hospital.
+- Codex isn't in the current `pollinations-large` template; install
+  `@openai/codex` on the box. The box's sandbox key can't create keys, so
+  create the Claude key from the account login and seed it into
+  `~/.pollinations/claude-code.json` before running `polli harness claude-code on`.
 - GitHub is read once and cached (unauthenticated API, `git fetch pull/<n>/head`).
 
 ## Run 1 (2026-10-11)
@@ -102,9 +106,28 @@ The iteration 3 harness on two fresh PRs. See `runs/4/REPORT.md`.
 - Cost: about 6.2 Pollen. Claude 3.76, Codex 2.32, box time about 0.1.
 - The box was killed after the run. Its records are under `runs/4/`.
 
+## Run 5 (2026-10-13)
+
+A head-to-head with the iteration 4 harness. Each case first got blind quick
+reviews from DeepSeek v4.1-flash and gpt-6.1-sol, then the full hospital,
+with gpt-6.1-sol as reviewer. See `runs/5/REPORT.md`.
+
+| Case | Quick review, gpt-6.1-sol | Quick review, DeepSeek | Hospital |
+|---|---|---|---|
+| #16911 | CHANGES: refusal-only streams are never cached (0.15) | no verdict, stopped at 600 s (0.09) | changes requested at plan review: the same gap, plus a test plan that couldn't catch it (1.28) |
+| #17045 vs #17057 | #17057; #17045 fails Biome (0.18) | #17057 (0.09) | discharged with #17057, red/green proof (3.86) |
+
+- Cost: about 6.1 Pollen. Quick reviews 0.50, hospital 5.14, setup and box
+  time about 0.5.
+- A 0.15 Pollen gpt-6.1-sol review reached the hospital's verdict on both
+  cases. The hospital added test evidence and caught a flaw in its own plan.
+- With gpt-6.1-sol as reviewer, Codex cost 0.63 for the whole run, against
+  2.32 in run 4.
+
 ## Next questions
 
-- Is 3.7 to 8 Pollen per discharged small PR worth it, compared with one
-  independent review pass? One rework doubles the cost.
+- One gpt-6.1-sol review matched the hospital on both run 5 cases for a tenth
+  of the cost or less. Is the hospital's red/green evidence worth the
+  difference, or should it only run on PRs a quick review approves?
 - Is the #17082 review worth posting on the PR? The runs are dry runs, so
   nothing was posted.

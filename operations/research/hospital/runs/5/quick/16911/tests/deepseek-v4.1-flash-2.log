@@ -1,0 +1,57 @@
+$ cd /home/user/pollinations/gen.pollinations.ai && npx vitest run test/text-cache.test.ts -t 'chat streams'
+
+ RUN  v3.2.4 /home/user/pollinations/gen.pollinations.ai
+
+Using secrets defined in .dev.vars.test
+[vpw:debug] Adding `enable_nodejs_tty_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_fs_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_http_modules` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:debug] Adding `enable_nodejs_perf_hooks_module` compatibility flag during tests as this feature is needed to support the Vitest runner.
+[vpw:info] Starting single runtime for vitest.config.ts...
+ ❯ test/text-cache.test.ts (16 tests | 1 failed | 14 skipped) 41ms
+   ↓ includes arbitrary agent metadata in cache identity
+   ↓ text cache > partitions managed-agent cache keys by caller API key
+   ↓ text cache > serves cached responses before auth while misses still require auth
+   ↓ text cache > caches chat completions after JSON validation consumed the body
+   ↓ text cache > keeps cache headers authoritative on streaming misses
+   ↓ text cache > does not cache accepted responses
+   ↓ text cache > treats different POST bodies as different cache entries
+   ↓ text cache > caches simple GET text requests
+   ↓ text cache > refreshes cached text TTL on aged cache hits
+   ↓ text cache > normalizes GET query parameter order for cache keys
+   ↓ text cache > uses different cache keys for streaming and non-streaming chat bodies
+   ↓ text cache > caches seed -1 in POST bodies and GET query params
+   ↓ text cache > does not cache SSE protocol errors
+   × text cache > does not cache chat streams without output 14ms
+     → expected 'HIT' to be 'MISS' // Object.is equality
+   ✓ text cache > caches chat streams whose output is text or tool calls 10ms
+   ↓ text cache > does not add text cache headers to routes without cache middleware
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/text-cache.test.ts > text cache > does not cache chat streams without output
+AssertionError: expected 'HIT' to be 'MISS' // Object.is equality
+
+Expected: "MISS"
+Received: "HIT"
+
+ ❯ test/text-cache.test.ts:644:56
+    642|         await consumeAndWait(second);
+    643|         expect(first.response.headers.get("X-Cache")).toBe("MISS");
+    644|         expect(second.response.headers.get("X-Cache")).toBe("MISS");
+       |                                                        ^
+    645|         expect(originHits).toBe(2);
+    646|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 14 skipped (16)
+   Start at  00:24:13
+   Duration  4.74s (transform 1.42s, setup 3.92s, collect 30ms, tests 41ms, environment 0ms, prepare 97ms)
+
+[vpw:debug] Shutting down runtimes...
+[vpw:debug] Disposing remote proxy sessions...
+
+exit 1

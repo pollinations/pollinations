@@ -29,6 +29,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
@@ -240,6 +241,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .route("/v1/audio", audioRoutes)
     .route("/", stemSeparationRoutes)
     .route("/", mcpRoutes)
+    // Async media jobs must be registered before the "/" proxy catch-all.
+    .route("/v1/jobs", jobRoutes)
     // SEP-2127 Server Cards stay public: mcpRoutes' auth middleware matches
     // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
     // still runs first because the cards are mounted after it.

@@ -1944,3 +1944,130 @@ describe("response body cancellation", () => {
         }
     }
 });
+describe("Pollinations async generation jobs", () => {
+    beforeEach(() => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+    });
+
+    const jobId = "a".repeat(64);
+
+    it("returns a pending job status from the jobs endpoint", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ id: jobId, status: "pending" }, { status: 202 }),
+        );
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        await expect(client.jobStatus(jobId)).resolves.toEqual({
+            id: jobId,
+            status: "pending",
+        });
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(`https://example.test/v1/jobs/${jobId}`);
+        expect(init.headers).toMatchObject({ Authorization: "Bearer sk_test" });
+    });
+
+    it("returns a succeeded job status with a result url", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                id: jobId,
+                status: "succeeded",
+                result_url: `https://example.test/v1/jobs/${jobId}/result`,
+            }),
+        );
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        await expect(client.jobStatus(jobId)).resolves.toMatchObject({
+            id: jobId,
+            status: "succeeded",
+            result_url: `https://example.test/v1/jobs/${jobId}/result`,
+        });
+    });
+
+    it("rejects malformed job ids before dispatch", async () => {
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        await expect(client.jobStatus("nope")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        await expect(client.jobResult("nope")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("downloads the finished media for a succeeded job", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "image/png",
+            }),
+        );
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        const result = await client.jobResult(jobId);
+        expect(result.contentType).toBe("image/png");
+        expect(result.buffer.byteLength).toBe(8);
+        const [url] = fetchMock.mock.calls[0];
+        expect(url).toBe(`https://example.test/v1/jobs/${jobId}/result`);
+    });
+
+    it("submits with Prefer: respond-async and polls until succeeded", async () => {
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ id: jobId, status: "pending" }, { status: 202 }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({ id: jobId, status: "pending" }, { status: 202 }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({
+                    id: jobId,
+                    status: "succeeded",
+                    result_url: `https://example.test/v1/jobs/${jobId}/result`,
+                }),
+            );
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        const job = await client.imageGenerateAsync("a neon city", {
+            model: "flux",
+        });
+        expect(job.id).toBe(jobId);
+        const status = await job.waitForResult(5, 5_000);
+        expect(status.status).toBe("succeeded");
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        const [submitUrl, submitInit] = fetchMock.mock.calls[0];
+        expect(submitUrl).toBe("https://example.test/v1/images/generations");
+        expect(submitInit.headers).toMatchObject({
+            Authorization: "Bearer sk_test",
+            Prefer: "respond-async",
+        });
+        expect(String(submitInit.body)).toContain("a neon city");
+    });
+
+    it("times out polling when a job never finishes", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ id: jobId, status: "pending" }, { status: 202 }),
+        );
+        const client = new Pollinations({
+            apiKey: "sk_test",
+            baseUrl: "https://example.test",
+        });
+        const job = await client.imageGenerateAsync("slow");
+        await expect(job.waitForResult(5, 30)).rejects.toMatchObject({
+            code: "TIMEOUT",
+            status: 408,
+        });
+    });
+});

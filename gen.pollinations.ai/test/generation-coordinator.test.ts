@@ -648,3 +648,60 @@ describe("GenerationCoordinator", () => {
         });
     });
 });
+describe("GenerationCoordinator async jobs", () => {
+    it("tracks an async submission and restricts reads to its owner", async () => {
+        const job = testJob(`async-${crypto.randomUUID()}`);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+
+        const state = await runInDurableObject(stub, async (coordinator) => {
+            const status = await coordinator.submit(job, undefined, "owner-1");
+            return {
+                status,
+                ownerView: await coordinator.status("owner-1"),
+                strangerView: await coordinator.status("other-user"),
+            };
+        });
+
+        expect(state.status).toEqual({ state: "pending" });
+        expect(state.ownerView).toEqual({ state: "pending" });
+        expect(state.strangerView).toBeNull();
+    });
+
+    it("reports the persisted failure to the submitting account", async () => {
+        const job = testJob(`async-${crypto.randomUUID()}`);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+
+        const status = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                await coordinator.submit(job, undefined, "owner-1");
+                const submission = (await state.storage.get("submission")) as {
+                    error?: unknown;
+                };
+                submission.error = {
+                    httpStatus: 502,
+                    headers: [],
+                    body: new TextEncoder().encode("provider boom"),
+                };
+                await state.storage.put("submission", submission);
+                // The job record is removed once execution settles; simulate
+                // the settled state so status() surfaces the persisted error.
+                await state.storage.delete("job");
+                return coordinator.status("owner-1");
+            },
+        );
+
+        expect(status).toEqual({
+            state: "failed",
+            error: {
+                httpStatus: 502,
+                headers: [],
+                body: new TextEncoder().encode("provider boom"),
+            },
+        });
+    });
+});

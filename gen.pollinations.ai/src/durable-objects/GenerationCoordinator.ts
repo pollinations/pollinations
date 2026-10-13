@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type {
     GenerationCacheIdentity,
+    GenerationErrorSnapshot,
     GenerationJob,
     GenerationJobHead,
     GenerationOutcome,
@@ -10,11 +11,25 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+const SUBMISSION_KEY = "submission";
+const SUBMISSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
     started: boolean;
 };
+
+/** Written only for jobs submitted through the asynchronous API. */
+type Submission = {
+    cache: GenerationCacheIdentity;
+    owners: string[];
+    error?: GenerationErrorSnapshot;
+};
+
+export type JobStatus =
+    | { state: "pending" }
+    | { state: "succeeded"; cache: GenerationCacheIdentity }
+    | { state: "failed"; error: GenerationErrorSnapshot };
 
 /** Splits a streamed request body into storage-sized values. */
 async function readBodyChunks(
@@ -85,6 +100,56 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         job: GenerationJobHead,
         body?: ReadableStream<Uint8Array>,
     ): Promise<GenerationOutcome> {
+        const { immediate, wait } = await this.register(job, body);
+        return immediate ?? wait;
+    }
+
+    /**
+     * Starts the job for `owner` and returns without waiting for it. The
+     * result stays readable through {@link status} until the submission TTL.
+     */
+    async submit(
+        job: GenerationJobHead,
+        body: ReadableStream<Uint8Array> | undefined,
+        owner: string,
+    ): Promise<JobStatus> {
+        const { immediate } = await this.register(job, body, async () => {
+            const stored =
+                await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+            const owners = new Set(stored?.owners).add(owner);
+            await this.ctx.storage.put(SUBMISSION_KEY, {
+                cache: job.cache,
+                owners: [...owners],
+            } satisfies Submission);
+            // A cached result clears the job alarm; still expire the record.
+            if (!(await this.ctx.storage.get(JOB_KEY))) {
+                await this.ctx.storage.setAlarm(Date.now() + SUBMISSION_TTL_MS);
+            }
+        });
+        if (immediate) return { state: "succeeded", cache: job.cache };
+        return { state: "pending" };
+    }
+
+    /** Null unless `owner` submitted this job and its record is still kept. */
+    async status(owner: string): Promise<JobStatus | null> {
+        const submission =
+            await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+        if (!submission?.owners.includes(owner)) return null;
+        if (await this.ctx.storage.get(JOB_KEY)) return { state: "pending" };
+        if (submission.error)
+            return { state: "failed", error: submission.error };
+        if (!(await cacheExists(this.env, submission.cache))) return null;
+        return { state: "succeeded", cache: submission.cache };
+    }
+
+    private async register(
+        job: GenerationJobHead,
+        body?: ReadableStream<Uint8Array>,
+        record?: () => Promise<void>,
+    ): Promise<{
+        immediate?: GenerationOutcome;
+        wait: Promise<GenerationOutcome>;
+    }> {
         let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
 
@@ -98,6 +163,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                     await this.clear(stored.bodyChunks, true);
                 }
                 immediate = { status: "cached" };
+                await record?.();
                 return;
             }
 
@@ -107,15 +173,17 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             } else {
                 await this.persist(job, body);
             }
+            await record?.();
 
             wait = new Promise<GenerationOutcome>((resolve) => {
                 this.waiters.add(resolve);
             });
         });
 
-        if (immediate) return immediate;
-        if (!wait) throw new Error("Generation waiter was not registered");
-        return wait;
+        if (!immediate && !wait) {
+            throw new Error("Generation waiter was not registered");
+        }
+        return { immediate, wait: wait as Promise<GenerationOutcome> };
     }
 
     async alarm(): Promise<void> {
@@ -124,7 +192,12 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const job = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-            if (!job) return;
+            if (!job) {
+                // Submission-only expiry: the job finished and its record is
+                // only kept for async callers to poll until the TTL.
+                await this.ctx.storage.delete(SUBMISSION_KEY);
+                return;
+            }
 
             // The alarm provides an independent timeout, not retry semantics.
             // Claim before the provider call so a restarted alarm fails closed.
@@ -233,6 +306,16 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     ): Promise<void> {
         await this.ctx.blockConcurrencyWhile(async () => {
             await this.clear(bodyChunks);
+            const submission =
+                await this.ctx.storage.get<Submission>(SUBMISSION_KEY);
+            if (submission) {
+                if (outcome.status === "failed") {
+                    submission.error = outcome.error;
+                    await this.ctx.storage.put(SUBMISSION_KEY, submission);
+                }
+                // Keep the record pollable, then expire it on its own alarm.
+                await this.ctx.storage.setAlarm(Date.now() + SUBMISSION_TTL_MS);
+            }
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });

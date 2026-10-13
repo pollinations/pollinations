@@ -41,6 +41,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_GENERATION_MD from "../docs/async-generation.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -85,6 +86,7 @@ const DOC_TAGS = {
     mediaStorage: "Media Storage",
     account: "Account",
     publicStats: "Public Stats",
+    asyncJobs: "Asynchronous Jobs",
 } as const;
 
 const LEGACY_DOC_TAGS: Record<string, string> = {
@@ -217,6 +219,7 @@ const interpolate = (md: string, vars: Record<string, string>): string =>
 
 const INTRODUCTION_DOCS = INTRODUCTION_MD.trim();
 const QUICK_START_DOCS = QUICK_START_MD.trim();
+const ASYNC_GENERATION_DOCS = ASYNC_GENERATION_MD.trim();
 const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
@@ -321,6 +324,7 @@ const GEN_API_DOCS = [
     REALTIME_DOCS,
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
+    ASYNC_GENERATION_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
@@ -613,6 +617,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.publicStats,
                 description: stripLeadingHeading(PUBLIC_STATS_DOCS),
+            },
+            {
+                name: DOC_TAGS.asyncJobs,
+                description: stripLeadingHeading(ASYNC_GENERATION_DOCS),
             },
         ],
     };

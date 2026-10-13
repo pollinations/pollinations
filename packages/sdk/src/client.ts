@@ -5,6 +5,7 @@ import type {
     AccountKey,
     AccountProfile,
     AccountQuestsResponse,
+    AsyncJobHandle,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
@@ -32,6 +33,7 @@ import type {
     ImageGenerateOptions,
     ImageGenerateV1Options,
     ImageResponse,
+    JobStatusResponse,
     KeyInfo,
     KeyUsageOptions,
     Message,
@@ -661,6 +663,182 @@ export class Pollinations {
             "INVALID_RESPONSE",
             500,
         );
+    }
+
+    // ============================================================================
+    // Async Generation Jobs (Prefer: respond-async)
+    // ============================================================================
+
+    /**
+     * Fetch the status of an asynchronous generation job started with
+     * `imageGenerateAsync` / `Prefer: respond-async`.
+     *
+     * @example
+     * ```ts
+     * const status = await pollinations.jobStatus(jobId);
+     * if (status.status === "succeeded") {
+     *   const image = await pollinations.jobResult(jobId);
+     * }
+     * ```
+     */
+    async jobStatus(
+        jobId: string,
+        signal?: AbortSignal,
+    ): Promise<JobStatusResponse> {
+        if (!/^[0-9a-f]{64}$/.test(jobId)) {
+            throw new PollinationsError(
+                "Invalid job id: expected 64 hex characters",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/jobs/${jobId}`,
+            { headers: this.getHeaders() },
+            DEFAULT_TIMEOUT,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return (await response.json()) as JobStatusResponse;
+            },
+        );
+    }
+
+    /**
+     * Download the finished media of an asynchronous generation job.
+     * Throws if the job is still pending or failed.
+     */
+    async jobResult(
+        jobId: string,
+        signal?: AbortSignal,
+    ): Promise<ImageResponse> {
+        if (!/^[0-9a-f]{64}$/.test(jobId)) {
+            throw new PollinationsError(
+                "Invalid job id: expected 64 hex characters",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/jobs/${jobId}/result`,
+            { headers: this.getHeaders() },
+            DEFAULT_IMAGE_TIMEOUT,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                const buffer = await response.arrayBuffer();
+                return {
+                    buffer,
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                    url: `${this.baseUrl}/v1/jobs/${jobId}/result`,
+                };
+            },
+        );
+    }
+
+    /**
+     * Submit an image generation as an asynchronous job. The API responds
+     * immediately with a job id; call `handle.waitForResult()` to poll until
+     * the media is ready. Useful for long-running models or disconnect-prone
+     * clients.
+     *
+     * @example
+     * ```ts
+     * const job = await pollinations.imageGenerateAsync('A neon city', {
+     *   model: 'flux',
+     * });
+     * const status = await job.waitForResult();
+     * if (status.status === 'succeeded') {
+     *   const image = await pollinations.jobResult(status.id);
+     * }
+     * ```
+     */
+    async imageGenerateAsync(
+        prompt: string,
+        options: ImageGenerateV1Options = {},
+    ): Promise<AsyncJobHandle> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        let size = options.size;
+        if (!size && options.width && options.height) {
+            size = `${options.width}x${options.height}`;
+        }
+
+        const body: Record<string, unknown> = {
+            prompt,
+            model: options.model,
+        };
+        if (size) body.size = size;
+        if (options.responseFormat)
+            body.response_format = options.responseFormat;
+        if (options.reasoning !== undefined) body.reasoning = options.reasoning;
+        if (options.seed !== undefined) body.seed = options.seed;
+        if (options.quality) body.quality = options.quality;
+
+        const headers = this.getHeaders("application/json");
+        headers["Prefer"] = "respond-async";
+        const submitted = await fetchWithTimeout(
+            `${this.baseUrl}/v1/images/generations`,
+            {
+                method: "POST",
+                headers,
+                body: JSON.stringify(body),
+            },
+            DEFAULT_IMAGE_TIMEOUT,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return (await response.json()) as {
+                    id: string;
+                    status: string;
+                    result_url?: string;
+                };
+            },
+        );
+        if (!submitted.id) {
+            throw new PollinationsError(
+                "No job id in async response",
+                "NO_JOB_ID",
+                500,
+            );
+        }
+
+        const jobId = submitted.id;
+        const waitForResult = async (
+            pollIntervalMs = 1_000,
+            timeoutMs = 600_000,
+        ): Promise<JobStatusResponse> => {
+            const deadline = Date.now() + timeoutMs;
+            for (;;) {
+                const status = await this.jobStatus(jobId, options.signal);
+                if (status.status !== "pending") return status;
+                if (Date.now() >= deadline) {
+                    throw new PollinationsError(
+                        `Job ${jobId} did not finish within ${timeoutMs}ms`,
+                        "TIMEOUT",
+                        408,
+                    );
+                }
+                await new Promise((resolve) =>
+                    setTimeout(resolve, pollIntervalMs),
+                );
+            }
+        };
+        return { id: jobId, waitForResult };
     }
 
     // ============================================================================

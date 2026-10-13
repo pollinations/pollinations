@@ -84,6 +84,31 @@ export interface ImageResponse {
 }
 
 // ============================================================================
+// Async Generation Jobs
+// ============================================================================
+
+/** Status of an asynchronous generation job started with `Prefer: respond-async`. */
+export type JobStatusResponse =
+    | { id: string; status: "pending" }
+    | { id: string; status: "succeeded"; result_url: string }
+    | {
+          id: string;
+          status: "failed";
+          error: { http_status: number; message: string };
+      };
+
+/** Handle returned by `imageGenerateAsync`; poll it until the result is ready. */
+export interface AsyncJobHandle {
+    /** Job identifier used by GET /v1/jobs/:id */
+    id: string;
+    /** Poll the job until it succeeds or fails (default: 1s interval, 10min timeout). */
+    waitForResult: (
+        pollIntervalMs?: number,
+        timeoutMs?: number,
+    ) => Promise<JobStatusResponse>;
+}
+
+// ============================================================================
 // Video Generation
 // ============================================================================
 

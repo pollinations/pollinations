@@ -667,3 +667,122 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(0);
     });
 });
+describe("respond-async generation submissions", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    function asyncApp() {
+        return createApp(createAdapter(new Map()), false, "{}");
+    }
+
+    const asyncRequest = () =>
+        new Request(
+            "https://gen.pollinations.ai/generate?model=test&key=query-secret",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer pk-secret",
+                    "Content-Type": "application/json",
+                    Prefer: "respond-async",
+                },
+                body: JSON.stringify({ model: "test", prompt: "hello" }),
+            },
+        );
+
+    it("acknowledges a respond-async submission with a job id", async () => {
+        const generation = asyncApp();
+        const submit = vi.fn(
+            async (
+                _head: {
+                    auth?: unknown;
+                    cache: { storage: string; key: string };
+                },
+                _body: unknown,
+                _owner: string,
+            ) => ({ state: "pending" }),
+        );
+        const bindings = {
+            GENERATION_COORDINATOR: { getByName: () => ({ submit }) },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            asyncRequest(),
+            bindings,
+            executionContext(),
+        );
+
+        expect(response.status).toBe(202);
+        const body = (await response.json()) as {
+            id: string;
+            status: string;
+            status_url: string;
+        };
+        expect(body.status).toBe("pending");
+        expect(body.id).toMatch(/^[0-9a-f]{64}$/);
+        expect(body.status_url).toMatch(
+            /^https:\/\/gen\.pollinations\.ai\/v1\/jobs\/[0-9a-f]{64}$/,
+        );
+        expect(submit).toHaveBeenCalledTimes(1);
+        expect(generation.originHits).toBe(0);
+    });
+
+    it("forwards the persisted job to the coordinator submit method", async () => {
+        const generation = asyncApp();
+        const submit = vi.fn(
+            async (
+                _head: {
+                    auth?: unknown;
+                    cache: { storage: string; key: string };
+                },
+                _body: unknown,
+                _owner: string,
+            ) => ({ state: "pending" }),
+        );
+        const bindings = {
+            GENERATION_COORDINATOR: { getByName: () => ({ submit }) },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            asyncRequest(),
+            bindings,
+            executionContext(),
+        );
+        expect(response.status).toBe(202);
+        const [head, body, owner] = submit.mock.calls[0];
+        expect(owner).toBe("user-1");
+        expect(head.auth).toBeDefined();
+        expect(head.cache).toEqual({ storage: "text", key: "same-request" });
+        expect(
+            new TextDecoder().decode(
+                await new Response(
+                    body as ReadableStream<Uint8Array>,
+                ).arrayBuffer(),
+            ),
+        ).toBe("{}");
+    });
+
+    it("returns a failed status body when the coordinator rejects the job", async () => {
+        const generation = asyncApp();
+        const bindings = {
+            GENERATION_COORDINATOR: {
+                getByName: () => ({
+                    async submit() {
+                        throw new Error("coordination down");
+                    },
+                }),
+            },
+        } as unknown as CloudflareBindings;
+
+        const response = await generation.app.fetch(
+            asyncRequest(),
+            bindings,
+            executionContext(),
+        );
+        expect(response.status).toBe(503);
+        expect(await response.text()).toContain(
+            "Generation coordination is unavailable",
+        );
+    });
+});

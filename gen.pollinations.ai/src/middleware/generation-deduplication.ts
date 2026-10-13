@@ -1,8 +1,10 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import type { JobStatus } from "@/durable-objects/GenerationCoordinator.ts";
 import type {
     AuthVariables,
     GenerationAuthSnapshot,
@@ -171,6 +173,63 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+
+        // Asynchronous media: acknowledge immediately, collect later via
+        // GET /v1/jobs/:id. The coordinator persists the request so a
+        // disconnect does not lose it, and only the submitting account can
+        // read the job.
+        const preferAsync = c.req
+            .header("prefer")
+            ?.toLowerCase()
+            .includes("respond-async");
+        if (preferAsync) {
+            let status: JobStatus;
+            try {
+                status = (await stub.submit(
+                    job,
+                    body &&
+                        (new Response(body as Uint8Array<ArrayBuffer>).body ??
+                            undefined),
+                    c.var.auth.requireUser().id,
+                )) as JobStatus;
+            } catch (error) {
+                c.get("log").error(
+                    "Async generation submission failed: {errorMessage}",
+                    {
+                        errorMessage:
+                            (error as Error)?.message ?? String(error),
+                    },
+                );
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+            const jobId = name;
+            const origin = getPublicOrigin(c);
+            if (status.state === "succeeded") {
+                const resultUrl = new URL(`/v1/jobs/${jobId}/result`, origin);
+                return c.json(
+                    {
+                        id: jobId,
+                        status: "succeeded",
+                        result_url: resultUrl.toString(),
+                    },
+                    202,
+                );
+            }
+            const statusUrl = new URL(`/v1/jobs/${jobId}`, origin);
+            return c.json(
+                {
+                    id: jobId,
+                    status: "pending",
+                    status_url: statusUrl.toString(),
+                },
+                202,
+                { "Retry-After": "1" },
+            );
+        }
+
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {

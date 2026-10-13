@@ -30,6 +30,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AsyncJobHandle,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -182,6 +183,29 @@ export async function imageGenerate(
     options?: ImageGenerateV1Options,
 ): Promise<ImageResponseExt> {
     return wrapImageResponse(await getClient().imageGenerate(prompt, options));
+}
+
+/**
+ * Submit an image generation as an asynchronous job.
+ *
+ * The request returns immediately with a job id; poll the returned handle
+ * with `waitForResult()` instead of holding the connection open. Finished
+ * media is fetched with `getClient().jobResult(id)`.
+ *
+ * @example
+ * ```ts
+ * const job = await imageGenerateAsync('A neon city', { model: 'flux' });
+ * const status = await job.waitForResult();
+ * if (status.status === 'succeeded') {
+ *   const image = await getClient().jobResult(status.id);
+ * }
+ * ```
+ */
+export async function imageGenerateAsync(
+    prompt: string,
+    options?: ImageGenerateV1Options,
+): Promise<AsyncJobHandle> {
+    return getClient().imageGenerateAsync(prompt, options);
 }
 
 // ============================================================================

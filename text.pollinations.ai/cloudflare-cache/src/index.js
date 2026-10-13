@@ -1,6 +1,7 @@
 // No imports needed for Web Crypto API
-import { checkTurnstile } from "../../../shared/turnstile.js";
+
 import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
+import { checkTurnstile } from "../../../shared/turnstile.js";
 import { origin } from "./origin.js";
 
 // Durable Object classes must be exported by the Worker's main module

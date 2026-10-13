@@ -1,15 +1,15 @@
 import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
+import {
+    migrationErrorFields,
+    modelNotFoundMessage,
+} from "../../legacyMigration.js";
 import browserBody from "./fixtures/text.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
-import {
-    migrationErrorFields,
-    modelNotFoundMessage,
-} from "../../legacyMigration.js";
 import {
     alarmOf,
     call as callWorker,

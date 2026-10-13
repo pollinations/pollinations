@@ -1,7 +1,7 @@
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
-import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
+import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import {
     deleteCacheEntry,
     generateCacheKey,

@@ -4,8 +4,8 @@ import {
     runInDurableObject,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import worker, { generateCacheKey } from "../src/index.js";
 import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
+import worker, { generateCacheKey } from "../src/index.js";
 
 let lastIp = 0;
 /** An IP no earlier call used: the IP slots and takeSlot's memo are per IP */

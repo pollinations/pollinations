@@ -1,9 +1,13 @@
 import {
     ArrowRightIcon,
     Button,
+    ClockIcon,
     ContentHeader,
+    EmptyState,
     ScrollArea,
+    Skeleton,
     TabButton,
+    TrendUpIcon,
 } from "@pollinations/ui";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -11,6 +15,8 @@ import { useNewestApps, useWeeklyApps } from "../../data/publicStats";
 import { AppCarousel } from "../apps/AppCarousel";
 
 const TABS = ["Most used this week", "Newest"] as const;
+// The same icons as the Popular and New sorts on /apps.
+const TAB_ICONS = { [TABS[0]]: TrendUpIcon, [TABS[1]]: ClockIcon };
 
 /**
  * A compact shelf of community apps: the busiest ones over the last 7 days
@@ -33,16 +39,20 @@ export function LiveApps() {
         <section className="flex flex-col gap-5">
             <ContentHeader eyebrow={null} title="Apps from the community." />
             <div className="flex flex-wrap items-center gap-2">
-                {TABS.map((label) => (
-                    <TabButton
-                        key={label}
-                        active={tab === label}
-                        size="sm"
-                        onClick={() => setTab(label)}
-                    >
-                        {label}
-                    </TabButton>
-                ))}
+                {TABS.map((label) => {
+                    const Icon = TAB_ICONS[label];
+                    return (
+                        <TabButton
+                            key={label}
+                            active={tab === label}
+                            size="sm"
+                            icon={<Icon />}
+                            onClick={() => setTab(label)}
+                        >
+                            {label}
+                        </TabButton>
+                    );
+                })}
                 <Button
                     as={Link}
                     to="/apps"
@@ -59,20 +69,17 @@ export function LiveApps() {
                     axis="x"
                     tabIndex={0}
                     aria-label="Loading apps built on Pollinations"
-                    className="flex gap-4 pb-2.5"
+                    className="flex gap-4 pb-4"
                 >
                     {[0, 1, 2].map((i) => (
-                        <div
+                        <Skeleton
                             key={`skeleton-${i}`}
-                            aria-hidden="true"
-                            className="h-64 w-59 flex-none animate-pulse rounded-2xl bg-theme-bg-subtle"
+                            className="h-67 w-59 flex-none"
                         />
                     ))}
                 </ScrollArea>
             ) : failed ? (
-                <p className="rounded-2xl border border-theme-border border-dashed px-5 py-6 text-sm text-theme-text-muted">
-                    Apps couldn’t be loaded right now.
-                </p>
+                <EmptyState>Apps couldn’t be loaded right now.</EmptyState>
             ) : (
                 <AppCarousel key={tab} apps={apps} />
             )}

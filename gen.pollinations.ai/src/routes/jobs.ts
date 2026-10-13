@@ -20,6 +20,20 @@ async function jobOf(c: Context<Env>, id: string) {
     return view;
 }
 
+function decodeErrorMessage(body: Uint8Array): string {
+    const raw = new TextDecoder().decode(body);
+    try {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed?.error?.message === "string")
+            return parsed.error.message;
+        if (typeof parsed?.message === "string") return parsed.message;
+        if (typeof parsed?.error === "string") return parsed.error;
+    } catch {
+        // Not JSON
+    }
+    return raw;
+}
+
 export const jobRoutes = new Hono<Env>()
     .get(
         "/:id",
@@ -49,7 +63,7 @@ export const jobRoutes = new Hono<Env>()
                     status: "failed",
                     error: {
                         status: view.failure.httpStatus,
-                        message: new TextDecoder().decode(view.failure.body),
+                        message: decodeErrorMessage(view.failure.body),
                     },
                 });
             }

@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
 import {
+    audioAsync,
     chat,
     configure,
     embeddings,
@@ -11,7 +12,13 @@ import {
     generateText,
     generateVideo,
     getModels,
+    imageAsync,
+    job,
+    jobResult,
     resetClient,
+    submitMediaAsync,
+    videoAsync,
+    waitForJob,
 } from "./helpers.js";
 import type { EmbeddingInput } from "./index.js";
 import { PollinationsError } from "./types.js";
@@ -2082,5 +2089,156 @@ describe("Async jobs", () => {
         await expect(
             client.waitForJob(jobId, { signal: controller.signal }),
         ).rejects.toThrow();
+    });
+
+    it("handles 200 OK immediate cached response for imageAsync without JSON parsing error", async () => {
+        const pngBytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+        fetchMock.mockResolvedValue(
+            new Response(pngBytes, {
+                status: 200,
+                headers: {
+                    "content-type": "image/png",
+                    "x-cache": "HIT",
+                    "x-content-id": jobId,
+                },
+            }),
+        );
+        const client = newClient();
+
+        const submitted = await client.imageAsync("a cached cat");
+        expect(submitted.status).toBe("succeeded");
+        expect(submitted.id).toBe(jobId);
+        expect(submitted.buffer).toBeDefined();
+        expect(submitted.contentType).toBe("image/png");
+
+        // Can pass the submitted job object directly to waitForJob and jobResult
+        const completed = await client.waitForJob(submitted);
+        expect(completed.status).toBe("succeeded");
+
+        const result = await client.jobResult(submitted);
+        expect(result.contentType).toBe("image/png");
+        expect(new Uint8Array(result.buffer)).toEqual(pngBytes);
+    });
+
+    it("submits an audio generation with Prefer: respond-async", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                id: jobId,
+                status: "pending",
+                status_url: `https://example.test/v1/jobs/${jobId}`,
+            }),
+        );
+        const client = newClient();
+
+        await expect(client.audioAsync("piano melody")).resolves.toEqual({
+            id: jobId,
+            status: "pending",
+            status_url: `https://example.test/v1/jobs/${jobId}`,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toContain("/audio/piano%20melody");
+        expect((init.headers as Record<string, string>).Prefer).toBe(
+            "respond-async",
+        );
+    });
+
+    it("submits arbitrary media URL via submitMediaAsync", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                id: jobId,
+                status: "pending",
+                status_url: `https://example.test/v1/jobs/${jobId}`,
+            }),
+        );
+        const client = newClient();
+
+        await expect(
+            client.submitMediaAsync("https://example.test/3d/a%20cube"),
+        ).resolves.toEqual({
+            id: jobId,
+            status: "pending",
+            status_url: `https://example.test/v1/jobs/${jobId}`,
+        });
+    });
+
+    it("top-level helpers proxy correctly to default client", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        try {
+            fetchMock
+                .mockResolvedValueOnce(
+                    makeResponse({
+                        id: jobId,
+                        status: "pending",
+                        status_url: `https://example.test/v1/jobs/${jobId}`,
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    makeResponse({
+                        id: jobId,
+                        status: "pending",
+                        status_url: `https://example.test/v1/jobs/${jobId}`,
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    makeResponse({
+                        id: jobId,
+                        status: "pending",
+                        status_url: `https://example.test/v1/jobs/${jobId}`,
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    makeResponse({
+                        id: jobId,
+                        status: "succeeded",
+                        result_url: `https://example.test/v1/jobs/${jobId}/result`,
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    makeResponse({
+                        id: jobId,
+                        status: "succeeded",
+                        result_url: `https://example.test/v1/jobs/${jobId}/result`,
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    makeResponse(null, {
+                        kind: "binary",
+                        contentType: "video/mp4",
+                    }),
+                );
+
+            const videoJob = await videoAsync("a sunset");
+            expect(videoJob.id).toBe(jobId);
+
+            const imgJob = await imageAsync("a cat");
+            expect(imgJob.id).toBe(jobId);
+
+            const audioJob = await audioAsync("a tune");
+            expect(audioJob.id).toBe(jobId);
+
+            const directJob = await job(jobId);
+            expect(directJob.status).toBe("succeeded");
+
+            const state = await waitForJob(jobId, { intervalMs: 0 });
+            expect(state.status).toBe("succeeded");
+
+            const res = await jobResult(jobId);
+            expect(res.contentType).toBe("video/mp4");
+
+            fetchMock.mockResolvedValueOnce(
+                makeResponse({
+                    id: jobId,
+                    status: "pending",
+                    status_url: `https://example.test/v1/jobs/${jobId}`,
+                }),
+            );
+            const mediaJob = await submitMediaAsync(
+                "https://example.test/3d/cube",
+            );
+            expect(mediaJob.id).toBe(jobId);
+        } finally {
+            resetClient();
+        }
     });
 });

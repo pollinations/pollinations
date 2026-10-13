@@ -125,9 +125,35 @@ function getEnvVar(name: string): string | undefined {
     return undefined;
 }
 
-// Sleep helper for device-flow polling
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+// Sleep helper for device-flow polling and job waiting
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(
+                new PollinationsError(
+                    "Job polling was cancelled",
+                    "CANCELLED",
+                    499,
+                ),
+            );
+            return;
+        }
+        const timer = setTimeout(() => {
+            signal?.removeEventListener("abort", onAbort);
+            resolve();
+        }, ms);
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(
+                new PollinationsError(
+                    "Job polling was cancelled",
+                    "CANCELLED",
+                    499,
+                ),
+            );
+        };
+        signal?.addEventListener("abort", onAbort, { once: true });
+    });
 }
 
 // Fetch with timeout using AbortController
@@ -1152,16 +1178,46 @@ export class Pollinations {
     // Async Jobs
     // ============================================================================
 
+    private async parseAsyncSubmitResponse(
+        response: Response,
+        fallbackUrl: string,
+    ): Promise<JobSubmitted> {
+        const contentType = response.headers.get("content-type") || "";
+        if (
+            response.status === 202 ||
+            contentType.includes("application/json")
+        ) {
+            return (await response.json()) as JobSubmitted;
+        }
+        if (response.status === 200) {
+            const buffer = await response.arrayBuffer();
+            const id =
+                response.headers.get("x-content-id") ||
+                response.headers.get("x-generation-id") ||
+                "";
+            const resultUrl = response.url || fallbackUrl;
+            return {
+                id,
+                status: "succeeded",
+                status_url: resultUrl,
+                result_url: resultUrl,
+                buffer,
+                contentType: contentType || "application/octet-stream",
+            };
+        }
+        return (await response.json()) as JobSubmitted;
+    }
+
     /**
      * Start an image generation asynchronously without holding the connection open (HTTP 202).
      * The job runs durably, so polling or retrying the same request never
-     * starts a second generation or a second charge.
+     * starts a second generation or a second charge. If already cached, completes immediately.
      *
      * @example
      * ```ts
      * const job = await pollinations.imageAsync('A cute robot');
-     * await pollinations.waitForJob(job.id);
-     * const { buffer } = await pollinations.jobResult(job.id);
+     * await pollinations.waitForJob(job);
+     * const { buffer } = await pollinations.jobResult(job);
      * ```
      */
     async imageAsync(
@@ -1186,19 +1242,20 @@ export class Pollinations {
             options.signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return (await response.json()) as JobSubmitted;
+                return this.parseAsyncSubmitResponse(response, url);
             },
         );
     }
 
     /**
      * Start a video generation asynchronously without holding the connection open (HTTP 202).
+     * If already cached, completes immediately.
      *
      * @example
      * ```ts
      * const job = await pollinations.videoAsync('A cat playing piano');
-     * await pollinations.waitForJob(job.id);
-     * const { buffer } = await pollinations.jobResult(job.id);
+     * await pollinations.waitForJob(job);
+     * const { buffer } = await pollinations.jobResult(job);
      * ```
      */
     async videoAsync(
@@ -1223,7 +1280,90 @@ export class Pollinations {
             options.signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return (await response.json()) as JobSubmitted;
+                return this.parseAsyncSubmitResponse(response, url);
+            },
+        );
+    }
+
+    /**
+     * Start an audio generation asynchronously without holding the connection open (HTTP 202).
+     * If already cached, completes immediately.
+     *
+     * @example
+     * ```ts
+     * const job = await pollinations.audioAsync('A short piano melody');
+     * await pollinations.waitForJob(job);
+     * const { buffer } = await pollinations.jobResult(job);
+     * ```
+     */
+    async audioAsync(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<JobSubmitted> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const params: Record<string, unknown> = {
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed: options.seed,
+        };
+
+        const queryString = this.buildQueryParams(params);
+        const encodedText = encodeURIComponent(text);
+        const url = `${this.baseUrl}/audio/${encodedText}${queryString ? `?${queryString}` : ""}`;
+
+        return fetchWithTimeout(
+            url,
+            {
+                headers: { ...this.getHeaders(), Prefer: "respond-async" },
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return this.parseAsyncSubmitResponse(response, url);
+            },
+        );
+    }
+
+    /**
+     * Submit any media URL asynchronously with `Prefer: respond-async` (HTTP 202).
+     * Useful for 3D generation, custom endpoints, or raw media URLs.
+     *
+     * @example
+     * ```ts
+     * const job = await pollinations.submitMediaAsync(`${pollinations.baseUrl}/3d/a%20car`);
+     * ```
+     */
+    async submitMediaAsync(
+        url: string,
+        options: RequestOptions = {},
+    ): Promise<JobSubmitted> {
+        if (!url || typeof url !== "string") {
+            throw new PollinationsError(
+                "URL is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        return fetchWithTimeout(
+            url,
+            {
+                headers: { ...this.getHeaders(), Prefer: "respond-async" },
+            },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return this.parseAsyncSubmitResponse(response, url);
             },
         );
     }
@@ -1243,6 +1383,7 @@ export class Pollinations {
 
     /**
      * Download the generated file of a succeeded job.
+     * Accepts either a job ID string or a JobSubmitted object.
      *
      * @example
      * ```ts
@@ -1250,9 +1391,17 @@ export class Pollinations {
      * ```
      */
     async jobResult(
-        id: string,
+        jobOrId: string | JobSubmitted,
         options: RequestOptions = {},
     ): Promise<JobResultResponse> {
+        if (typeof jobOrId === "object" && jobOrId.buffer) {
+            return {
+                buffer: jobOrId.buffer,
+                contentType: jobOrId.contentType ?? "application/octet-stream",
+                url: jobOrId.result_url ?? jobOrId.status_url ?? "",
+            };
+        }
+        const id = typeof jobOrId === "object" ? jobOrId.id : jobOrId;
         const url = `${this.baseUrl}/v1/jobs/${encodeURIComponent(id)}/result`;
         return fetchWithTimeout(
             url,
@@ -1274,6 +1423,7 @@ export class Pollinations {
 
     /**
      * Poll a job until it leaves `pending`, then return its final state.
+     * Accepts either a job ID string or a JobSubmitted object.
      *
      * @example
      * ```ts
@@ -1281,7 +1431,21 @@ export class Pollinations {
      * if (done.status === 'failed') throw new Error(done.error?.message);
      * ```
      */
-    async waitForJob(id: string, options: JobWaitOptions = {}): Promise<Job> {
+    async waitForJob(
+        jobOrId: string | JobSubmitted,
+        options: JobWaitOptions = {},
+    ): Promise<Job> {
+        if (typeof jobOrId === "object") {
+            if (jobOrId.status !== "pending") {
+                return {
+                    id: jobOrId.id,
+                    status: jobOrId.status,
+                    result_url: jobOrId.result_url ?? jobOrId.status_url,
+                };
+            }
+            return this.waitForJob(jobOrId.id, options);
+        }
+        const id = jobOrId;
         const deadline =
             Date.now() + (options.timeoutMs ?? DEFAULT_VIDEO_TIMEOUT);
         for (;;) {
@@ -1294,7 +1458,7 @@ export class Pollinations {
                     408,
                 );
             }
-            await sleep(options.intervalMs ?? 2_000);
+            await sleep(options.intervalMs ?? 2_000, options.signal);
         }
     }
 

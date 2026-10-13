@@ -26,11 +26,17 @@ export interface RequestOptions {
 /** Lifecycle of a generation started with `Prefer: respond-async` */
 export type JobStatus = "pending" | "succeeded" | "failed";
 
-/** Response to an async generation request (HTTP 202) */
+/** Response to an async generation request (HTTP 202 or cached HTTP 200) */
 export interface JobSubmitted {
     id: string;
     status: JobStatus;
     status_url: string;
+    /** Where the generated file lives (available if already ready or cached) */
+    result_url?: string;
+    /** Raw binary buffer if generation was already cached and served immediately */
+    buffer?: ArrayBuffer;
+    /** Content-Type header if served immediately */
+    contentType?: string;
 }
 
 /** Job state returned by `client.job(id)` */

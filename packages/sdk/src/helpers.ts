@@ -47,11 +47,16 @@ import type {
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
+    Job,
+    JobResultResponse,
+    JobSubmitted,
+    JobWaitOptions,
     KeyInfo,
     KeyUsageOptions,
     Message,
     ModelInfo,
     ModelKind,
+    RequestOptions,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -587,4 +592,117 @@ export async function createKey(
  */
 export async function revokeKey(id: string): Promise<void> {
     return getClient().revokeKey(id);
+}
+
+// ============================================================================
+// Async Jobs
+// ============================================================================
+
+/**
+ * Start an image generation asynchronously without holding the connection open (HTTP 202).
+ *
+ * @example
+ * ```ts
+ * const job = await imageAsync('A cute robot');
+ * await waitForJob(job);
+ * const { buffer } = await jobResult(job);
+ * ```
+ */
+export async function imageAsync(
+    prompt: string,
+    options?: ImageGenerateOptions,
+): Promise<JobSubmitted> {
+    return getClient().imageAsync(prompt, options);
+}
+
+/**
+ * Start a video generation asynchronously without holding the connection open (HTTP 202).
+ *
+ * @example
+ * ```ts
+ * const job = await videoAsync('A cat playing piano');
+ * await waitForJob(job);
+ * const { buffer } = await jobResult(job);
+ * ```
+ */
+export async function videoAsync(
+    prompt: string,
+    options?: VideoGenerateOptions,
+): Promise<JobSubmitted> {
+    return getClient().videoAsync(prompt, options);
+}
+
+/**
+ * Start an audio generation asynchronously without holding the connection open (HTTP 202).
+ *
+ * @example
+ * ```ts
+ * const job = await audioAsync('A gentle acoustic melody');
+ * await waitForJob(job);
+ * const { buffer } = await jobResult(job);
+ * ```
+ */
+export async function audioAsync(
+    text: string,
+    options?: AudioGenerateOptions,
+): Promise<JobSubmitted> {
+    return getClient().audioAsync(text, options);
+}
+
+/**
+ * Submit any media URL asynchronously with `Prefer: respond-async` (HTTP 202).
+ * Useful for 3D generation, custom endpoints, or raw media URLs.
+ *
+ * @example
+ * ```ts
+ * const job = await submitMediaAsync('https://gen.pollinations.ai/3d/a%20car');
+ * ```
+ */
+export async function submitMediaAsync(
+    url: string,
+    options?: RequestOptions,
+): Promise<JobSubmitted> {
+    return getClient().submitMediaAsync(url, options);
+}
+
+/**
+ * Check the status of an async job (GET /v1/jobs/:id).
+ *
+ * @example
+ * ```ts
+ * const state = await job('3f786850e387550fdab836ed7e6dc881de23001b');
+ * ```
+ */
+export async function job(id: string, options?: RequestOptions): Promise<Job> {
+    return getClient().job(id, options);
+}
+
+/**
+ * Retrieve the result file of an async job (GET /v1/jobs/:id/result).
+ *
+ * @example
+ * ```ts
+ * const { buffer, contentType } = await jobResult(job);
+ * ```
+ */
+export async function jobResult(
+    jobOrId: string | JobSubmitted,
+    options?: RequestOptions,
+): Promise<JobResultResponse> {
+    return getClient().jobResult(jobOrId, options);
+}
+
+/**
+ * Poll an async job until it finishes.
+ *
+ * @example
+ * ```ts
+ * const completed = await waitForJob(job);
+ * ```
+ */
+export async function waitForJob(
+    jobOrId: string | JobSubmitted,
+    options?: JobWaitOptions,
+): Promise<Job> {
+    return getClient().waitForJob(jobOrId, options);
 }

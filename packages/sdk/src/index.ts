@@ -32,6 +32,7 @@ export {
 } from "./extras.js";
 // Helper functions
 export {
+    audioAsync,
     authorizeDevice,
     authorizeUrl,
     chat,
@@ -52,16 +53,22 @@ export {
     getModels,
     getProfile,
     getUsage,
+    imageAsync,
     imageGenerate,
     imageUrl,
+    job,
+    jobResult,
     listKeys,
     resetClient,
     revokeKey,
+    submitMediaAsync,
     transcribe,
     upload,
     userInfo,
     validateKey,
+    videoAsync,
     videoUrl,
+    waitForJob,
 } from "./helpers.js";
 export {
     type FetchModelCatalogOptions,

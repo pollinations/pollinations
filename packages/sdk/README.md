@@ -420,10 +420,10 @@ controls and guidance media can be combined depends on the selected model.
 
 ## Asynchronous Jobs
 
-For long generations (such as slow video or complex image models), submit the request asynchronously to get an ID right away, and collect the result once ready without holding a connection open:
+For long generations (such as slow video, complex image models, or long audio), submit the request asynchronously (`Prefer: respond-async`) to get a job ID right away, and collect the result once ready without holding a connection open. If the result is already cached, it completes immediately:
 
 ```javascript
-import { Pollinations } from '@pollinations/sdk';
+import { Pollinations, videoAsync, waitForJob, jobResult } from '@pollinations/sdk';
 
 const polli = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
 
@@ -433,15 +433,17 @@ const job = await polli.videoAsync('a sunset timelapse', {
 });
 console.log('Submitted job ID:', job.id);
 
-// 2. Poll until finished (or check polli.job(job.id) periodically)
-const completed = await polli.waitForJob(job.id);
+// 2. Poll until finished (or pass job object directly)
+const completed = await polli.waitForJob(job);
 
 if (completed.status === 'succeeded') {
   // 3. Download the result binary
-  const { buffer, contentType } = await polli.jobResult(job.id);
+  const { buffer, contentType } = await polli.jobResult(completed);
   console.log(`Downloaded ${buffer.byteLength} bytes (${contentType})`);
 }
 ```
+
+Top-level helpers are also available: `imageAsync`, `videoAsync`, `audioAsync`, `submitMediaAsync`, `job`, `waitForJob`, and `jobResult`.
 
 ## Audio (Text-to-Speech & Music)
 

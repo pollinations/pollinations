@@ -27,7 +27,11 @@ const baseParams: ImageParams = {
     audio: true,
 };
 
-function mockFal(output: Record<string, unknown>, status = 200) {
+function mockFal(
+    output: Record<string, unknown>,
+    status = 200,
+    billing?: { price: Record<string, unknown>; units: string | null },
+) {
     const requests: { url: string; body?: Record<string, unknown> }[] = [];
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
         const href = typeof url === "string" ? url : url.toString();
@@ -38,10 +42,31 @@ function mockFal(output: Record<string, unknown>, status = 200) {
                     ? (JSON.parse(init.body) as Record<string, unknown>)
                     : undefined,
         });
+        if (href.startsWith("https://api.fal.ai/v1/models/pricing?")) {
+            return Response.json({
+                prices: [
+                    {
+                        endpoint_id: new URL(href).searchParams.get(
+                            "endpoint_id",
+                        ),
+                        currency: "USD",
+                        unit: "units",
+                        ...billing?.price,
+                    },
+                ],
+            });
+        }
         if (href === STATUS_URL) {
             return Response.json({ status: "COMPLETED" });
         }
-        if (href === RESULT_URL) return Response.json(output, { status });
+        if (href === RESULT_URL) {
+            return Response.json(output, {
+                status,
+                headers: billing?.units
+                    ? { "x-fal-billable-units": billing.units }
+                    : {},
+            });
+        }
         if (href === MEDIA_URL) {
             return new Response(MEDIA_BYTES, {
                 headers: { "content-type": "video/mp4" },
@@ -309,38 +334,117 @@ describe("Fal fallback media models", () => {
 
     it.each([
         [
-            "kandinsky/kandinsky-6-lite",
             [],
             "fal-ai/kandinsky6-lite/text-to-video",
             { generate_audio: true, aspect_ratio: "1:1" },
+            0.16,
         ],
         [
-            "kandinsky/kandinsky-6-pro",
             ["https://example.com/start.png"],
-            "fal-ai/kandinsky6-pro/image-to-video",
+            "fal-ai/kandinsky6-lite/image-to-video",
             {
                 generate_audio: true,
                 image_url: "https://example.com/start.png",
             },
+            0.17,
         ],
-    ] as const)("sends %s as a 5-second Fal video", async (model, image, endpoint, input) => {
-        const requests = mockFal({
-            video: { url: MEDIA_URL, content_type: "video/mp4" },
+    ] as const)(
+        "bills Kandinsky 6.0 Lite %j from fal's units at the live price",
+        async (image, endpoint, input, unitPrice) => {
+            const requests = mockFal(
+                { video: { url: MEDIA_URL, content_type: "video/mp4" } },
+                200,
+                { price: { unit_price: unitPrice }, units: "1" },
+            );
+            const resultPromise = callFalFallbackVideo("move", {
+                ...baseParams,
+                model: "kandinskylab/kandinsky-6.0-lite",
+                duration: 10,
+                image: [...image],
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            const result = await resultPromise;
+
+            expect(requests[0].url).toBe(
+                `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpoint)}`,
+            );
+            expect(requests[1]).toEqual({
+                url: `https://queue.fal.run/${endpoint}`,
+                body: { prompt: "move", ...input, seed: 42 },
+            });
+            expect(result.durationSeconds).toBe(5);
+            expect(result.trackingData.providerBilling).toEqual({
+                units: 1,
+                unitCost: unitPrice,
+            });
+        },
+    );
+
+    it("passes audio=false through to Kandinsky 6.0 Lite", async () => {
+        const requests = mockFal({ video: { url: MEDIA_URL } }, 200, {
+            price: { unit_price: 0.16 },
+            units: "1",
+        });
+        const resultPromise = callFalFallbackVideo("quiet", {
+            ...baseParams,
+            model: "kandinskylab/kandinsky-6.0-lite",
+            audio: false,
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        await resultPromise;
+        expect(requests[1].body).toMatchObject({ generate_audio: false });
+    });
+
+    it.each([
+        ["a non-USD price", { currency: "EUR" }],
+        ["a per-second price", { unit: "seconds" }],
+        ["a zero price", { unit_price: 0 }],
+    ])(
+        "rejects Kandinsky 6.0 Lite with %s before submitting a job",
+        async (_label, override) => {
+            const requests = mockFal({ video: { url: MEDIA_URL } }, 200, {
+                price: { unit_price: 0.16, ...override },
+                units: "1",
+            });
+            await expect(
+                callFalFallbackVideo("move", {
+                    ...baseParams,
+                    model: "kandinskylab/kandinsky-6.0-lite",
+                }),
+            ).rejects.toMatchObject({ status: 502 });
+            expect(requests).toHaveLength(1);
+        },
+    );
+
+    it("fails Kandinsky 6.0 Lite when fal reports no billable units", async () => {
+        mockFal({ video: { url: MEDIA_URL } }, 200, {
+            price: { unit_price: 0.16 },
+            units: null,
         });
         const resultPromise = callFalFallbackVideo("move", {
             ...baseParams,
-            model,
-            duration: 10,
-            image: [...image],
+            model: "kandinskylab/kandinsky-6.0-lite",
+        });
+        const assertion = expect(resultPromise).rejects.toMatchObject({
+            status: 502,
+            message: "Fal response has no billable units",
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        await assertion;
+    });
+
+    it("keeps other Fal videos on registry pricing without a price lookup", async () => {
+        const requests = mockFal({ video: { url: MEDIA_URL } });
+        const resultPromise = callFalFallbackVideo("move", {
+            ...baseParams,
+            model: "alibaba/wan-2.2-fast:fal",
         });
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
-
-        expect(requests[0]).toEqual({
-            url: `https://queue.fal.run/${endpoint}`,
-            body: { prompt: "move", ...input, seed: 42 },
-        });
-        expect(result.durationSeconds).toBe(5);
+        expect(requests.some((r) => r.url.includes("/models/pricing"))).toBe(
+            false,
+        );
+        expect(result.trackingData.providerBilling).toBeUndefined();
     });
 
     it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {

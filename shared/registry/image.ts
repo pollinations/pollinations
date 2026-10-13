@@ -2227,46 +2227,41 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 10,
         defaultDuration: 5,
     },
-    "kandinsky/kandinsky-6-lite": {
+    "kandinskylab/kandinsky-6.0-lite": {
         aliases: [],
         provider: "fal",
         publisher: "Kandinsky Lab",
         category: "video",
-        addedDate: new Date("2026-10-11").getTime(),
+        addedDate: new Date("2026-10-13").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        cost: {
-            // fal.ai: $0.16 per 5-second 480p video at default 10 steps.
-            completionVideoSeconds: 0.032,
+        // fal reports billable units per video; charge them at the endpoint's
+        // live price below instead of a copied per-second rate.
+        cost: { completionVideoSeconds: 0 },
+        billing: {
+            adjustments: [
+                {
+                    id: "fal.kandinsky_6_lite.provider_units.v1",
+                    description: "Provider cost for the generated video",
+                    kind: "video",
+                    unit: "provider unit",
+                    unitCost: 1,
+                    publicPricing: {
+                        label: "Provider cost",
+                        quantity: 1,
+                        unit: "USD",
+                    },
+                    countUnits: (_output, input) =>
+                        input?.providerBilling?.units ?? 0,
+                    resolveUnitCost: (_output, _model, input) =>
+                        input?.providerBilling?.unitCost ?? 0,
+                },
+            ],
         },
         resolutions: ["480p"],
         title: "Kandinsky 6.0 Lite",
         description:
-            "Fast 5-second video from text or start image with synchronized audio at 480p",
-        inputModalities: ["text", "image"],
-        outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1,
-        minDuration: 5,
-        maxDuration: 5,
-        defaultDuration: 5,
-    },
-    "kandinsky/kandinsky-6-pro": {
-        aliases: [],
-        provider: "fal",
-        publisher: "Kandinsky Lab",
-        category: "video",
-        addedDate: new Date("2026-10-11").getTime(),
-        priceMultiplier: 1,
-        paidOnly: true,
-        cost: {
-            // fal.ai: $1.35 per 5-second 480p video at default 50 steps.
-            completionVideoSeconds: 0.27,
-        },
-        resolutions: ["480p"],
-        title: "Kandinsky 6.0 Pro",
-        description:
-            "Flagship 5-second video from text or start image with synchronized audio at 480p",
+            "Fast 5-second video from text or a start image with synchronized audio at 480p",
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],

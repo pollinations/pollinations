@@ -2311,11 +2311,38 @@ describe("tracking observability", () => {
     });
 
     it.each([
-        [5, 0.125],
-        [6.25, 0.15625],
-    ])(
-        "charges MiniMax Turbo at provider cost for %s reported units",
-        async (units, totalCost) => {
+        [
+            "minimax/minimax-h3-max-turbo",
+            "fal.minimax_h3_max_turbo.provider_units.v1",
+            5,
+            0.025,
+            0.125,
+        ],
+        [
+            "minimax/minimax-h3-max-turbo",
+            "fal.minimax_h3_max_turbo.provider_units.v1",
+            6.25,
+            0.025,
+            0.15625,
+        ],
+        // Kandinsky 6.0 Lite: one fal unit per video, text and image prices.
+        [
+            "kandinskylab/kandinsky-6.0-lite",
+            "fal.kandinsky_6_lite.provider_units.v1",
+            1,
+            0.16,
+            0.16,
+        ],
+        [
+            "kandinskylab/kandinsky-6.0-lite",
+            "fal.kandinsky_6_lite.provider_units.v1",
+            1,
+            0.17,
+            0.17,
+        ],
+    ] as const)(
+        "charges %s at provider cost (%s, %s units)",
+        async (model, adjustmentId, units, unitCost, totalCost) => {
             const tinybirdRequests: Request[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(
                 async (input, init) => {
@@ -2326,14 +2353,13 @@ describe("tracking observability", () => {
             const consumePollen = vi.fn<(amount: number) => Promise<void>>(
                 async () => {},
             );
-            const model = "minimax/minimax-h3-max-turbo";
             const upstream = new Response("video", {
                 headers: {
                     "content-type": "video/mp4",
                     ...buildTrackingHeaders(model, {
                         actualModel: model,
                         usage: { completionVideoSeconds: 5 },
-                        providerBilling: { units, unitCost: 0.025 },
+                        providerBilling: { units, unitCost },
                     }),
                 },
             });
@@ -2372,10 +2398,10 @@ describe("tracking observability", () => {
                 tokenCountCompletionVideoSeconds: 5,
                 tokenPriceCompletionVideoSeconds: 0,
                 adjustmentUnits: {
-                    "fal.minimax_h3_max_turbo.provider_units.v1": units,
+                    [adjustmentId]: units,
                 },
                 adjustmentCosts: {
-                    "fal.minimax_h3_max_turbo.provider_units.v1": totalCost,
+                    [adjustmentId]: totalCost,
                 },
                 totalCost,
                 totalPrice: totalCost,

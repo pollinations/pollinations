@@ -1,9 +1,14 @@
 import { UpstreamError } from "@shared/error.ts";
-import { FalError, runFalJob } from "../../model3d/models/falClient.ts";
+import {
+    FalError,
+    runFalJob,
+    runFalJobResponse,
+} from "../../model3d/models/falClient.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
+import { falBillableUnits, falUnitPrice } from "../utils/falBillableUnits.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     resolveGrokAspectRatio,
@@ -145,22 +150,9 @@ type FalVideoConfig = {
     ) => Record<string, unknown>;
     // fal bills a video that xAI's moderation rejects after generating it.
     billsRejectedVideos?: boolean;
+    // Bill fal's reported units at the endpoint's live price in this unit.
+    providerUnit?: string;
 };
-
-// Kandinsky 6 renders 5 seconds only; image-to-video follows the source ratio.
-function kandinskyConfig(variant: "lite" | "pro"): FalVideoConfig {
-    return {
-        textEndpoint: `fal-ai/kandinsky6-${variant}/text-to-video`,
-        imageEndpoint: `fal-ai/kandinsky6-${variant}/image-to-video`,
-        duration: () => 5,
-        input: (params, _duration, hasImage) => ({
-            generate_audio: params.audio ?? true,
-            ...(!hasImage
-                ? { aspect_ratio: aspectRatio(params, WAN_RATIOS) }
-                : {}),
-        }),
-    };
-}
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
     "x-ai/grok-imagine-video": {
@@ -221,8 +213,19 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             camera_fixed: false,
         }),
     },
-    "kandinsky/kandinsky-6-lite": kandinskyConfig("lite"),
-    "kandinsky/kandinsky-6-pro": kandinskyConfig("pro"),
+    // 5-second 480p only; image-to-video keeps the start image's ratio.
+    "kandinskylab/kandinsky-6.0-lite": {
+        textEndpoint: "fal-ai/kandinsky6-lite/text-to-video",
+        imageEndpoint: "fal-ai/kandinsky6-lite/image-to-video",
+        duration: () => 5,
+        input: (params, _duration, hasImage) => ({
+            generate_audio: params.audio ?? true,
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, WAN_RATIOS) }
+                : {}),
+        }),
+        providerUnit: "units",
+    },
 };
 
 export async function callFalFallbackVideo(
@@ -241,10 +244,16 @@ export async function callFalFallbackVideo(
         ...(image ? { promptImageTokens: params.image.length } : {}),
         completionVideoSeconds: duration,
     };
+    const endpoint = image ? config.imageEndpoint : config.textEndpoint;
     try {
-        const result = await runFalJob(
+        const apiKey = requireFalKey();
+        // Price first, so an unusable price never starts a billable job.
+        const unitCost = config.providerUnit
+            ? await falUnitPrice(endpoint, config.providerUnit, apiKey)
+            : undefined;
+        const response = await runFalJobResponse(
             {
-                endpoint: image ? config.imageEndpoint : config.textEndpoint,
+                endpoint,
                 input: withSeed(
                     {
                         prompt,
@@ -254,8 +263,13 @@ export async function callFalFallbackVideo(
                     params,
                 ),
             },
-            requireFalKey(),
+            apiKey,
         );
+        const providerBilling =
+            unitCost === undefined
+                ? undefined
+                : { units: falBillableUnits(response), unitCost };
+        const result = (await response.json()) as Record<string, unknown>;
         const { buffer, mimeType } = await download(
             result.video as FalFile | undefined,
             params.model,
@@ -264,7 +278,11 @@ export async function callFalFallbackVideo(
             buffer,
             mimeType: mimeType || "video/mp4",
             durationSeconds: duration,
-            trackingData: { actualModel: params.model, usage },
+            trackingData: {
+                actualModel: params.model,
+                usage,
+                ...(providerBilling ? { providerBilling } : {}),
+            },
         };
     } catch (error) {
         if (config.billsRejectedVideos && isRejectedAfterGeneration(error)) {

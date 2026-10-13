@@ -280,33 +280,6 @@ export function fallbackCandidates(
     return candidates;
 }
 
-/** Each input a user can send, with the registry limit that caps it. */
-const INPUT_LIMITS = [
-    ["image", "maxReferenceImages"],
-    ["reference_videos", "maxReferenceVideos"],
-] as const;
-
-/**
- * The requested model, then only the fallbacks that accept every input the
- * user sent; a route with a lower declared limit would silently drop the rest.
- */
-export function fallbacksAcceptingInputs(
-    model: PrimaryModel | undefined,
-    inputs: Partial<Record<(typeof INPUT_LIMITS)[number][0], unknown[]>>,
-) {
-    return fallbackCandidates(model)
-        .map((candidate, originalIndex) => ({ ...candidate, originalIndex }))
-        .filter(
-            ({ definition, originalIndex }) =>
-                originalIndex === 0 ||
-                INPUT_LIMITS.every(
-                    ([input, limit]) =>
-                        (inputs[input]?.length ?? 0) <=
-                        (definition?.[limit] ?? Number.POSITIVE_INFINITY),
-                ),
-        );
-}
-
 function isUsableCommunityFallback(
     from: GenerationModelEntry,
     target: GenerationModelEntry,

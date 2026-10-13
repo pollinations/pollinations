@@ -7,7 +7,7 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
     type FallbackCandidate,
-    fallbacksAcceptingInputs,
+    fallbackCandidates,
     formatFallbackTarget,
     isRetryableFallbackError,
     withModelFallback,
@@ -307,8 +307,8 @@ async function generateMediaWithFallback(
         }
         return isRetryableFallbackError(error);
     };
-    const { result, candidate } = await withModelFallback(
-        fallbacksAcceptingInputs(c.var.model, safeParams),
+    const { result, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
@@ -349,7 +349,7 @@ async function generateMediaWithFallback(
     );
     return {
         ...result,
-        servedIndex: candidate.originalIndex,
+        servedIndex: index,
     };
 }
 

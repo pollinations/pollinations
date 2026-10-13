@@ -71,7 +71,10 @@ export function parseLeads(raw) {
 
 export function mentions(text, name) {
     const slug = name.split("/").at(-1);
-    const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escaped = slug
+        .split(/[\s-]+/)
+        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("[-\\s]+");
     return new RegExp(
         `(?<![a-z0-9])${escaped}(?![a-z0-9]|[._-][a-z0-9])`,
         "i",
@@ -132,7 +135,7 @@ export function officialCandidates(models, sources, gaps = []) {
                     upstreamModel: checkpoint,
                     category: model.category,
                 });
-                const displayed =
+                const displayed = (
                     price?.evidence.find(
                         (item) =>
                             item.kind === "model" &&
@@ -143,7 +146,8 @@ export function officialCandidates(models, sources, gaps = []) {
                         .map((line) => line.trim())
                         .find((line) => exactModelIdentity(line, model.name))
                         ?.replace(/^#{1,6}\s+/, "") ??
-                    checkpoint;
+                    checkpoint
+                ).replace(/^#{1,6}\s+/, "");
                 const identity = quoteFor(source.text, displayed);
                 if (!identity) continue;
                 const providerRoot =

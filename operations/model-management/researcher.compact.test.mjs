@@ -238,10 +238,19 @@ Per-model pricing for headline models. Fast variants appear as adjacent rows. In
             new Set(["web:exa:challenge:exact checkpoint"]),
         ]),
     );
-    const proposal = officialCandidates(models, [source]);
+    const sources = [
+        {
+            ...source,
+            id: "model-api",
+            url: "https://fireworks.ai/models",
+            text: "Kimi K3 API & Playground | Fireworks\nGLM 5.3 API & Playground | Fireworks",
+        },
+        source,
+    ];
+    const proposal = officialCandidates(models, sources);
     const result = assessGroup(
         proposal,
-        [source],
+        sources,
         new Map(models.map(({ name }) => [name, scopes])),
         models,
         models,
@@ -272,8 +281,15 @@ Per-model pricing for headline models. Fast variants appear as adjacent rows. In
                 text.slice(fragment.start, fragment.end),
                 fragment.quote,
             );
-        assert.equal(route.available, null);
-        assert.equal(result.models[index].recommendation, null);
+        assert.equal(route.available, true);
+        assert.equal(route.availabilitySupported, true);
+        assert.equal(result.models[index].recommendation.provider, "fireworks");
+        assert.equal(
+            result.models[index].recommendation.status,
+            "requires-account-and-route-verification",
+        );
+        assert.equal(route.capabilitiesMatch, null);
+        assert.equal(route.runtimeVerified, false);
     }
 });
 

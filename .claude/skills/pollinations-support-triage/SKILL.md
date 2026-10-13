@@ -30,9 +30,9 @@ read its `AGENTS.md`, and resolve every path below relative to the repo root.
 5. Render and open the next email's HTML preview in the local agent browser
    before asking for approval. This is required for every email, not only when
    a preview is requested. Show a compact queue count and exactly one case:
-   sender/recipient/date/subject, impact, full relevant inbound text, prior replies summarized,
-   confirmed facts, remaining uncertainty, and proposed response. Remove only
-   duplicate quotes, tracking and boilerplate. Translate all substantive
+   sender/recipient/date/subject, impact, full relevant inbound text, summarized
+   prior replies, confirmed facts, remaining uncertainty, and proposed response.
+   Remove only duplicate quotes, tracking and boilerplate. Translate all substantive
    non-English inbound text and replies into English for review.
 6. Wait for the operator's decision. `Send` approves only the exact current
    proposal. `Next`, `skip`, `ignore` advances without external changes. After
@@ -104,9 +104,9 @@ browser tab throughout the session.
   exact sections; never invent anchors. If documentation is genuinely missing,
   record `documentationGap` in the input and disclose that limitation in the
   reply. Legal/provider links supplement evidence; they do not certify facts.
-- Use the renderer below for all support email. Always open the exact HTML, including
-  the complete English translation for non-English replies. Send only the
-  recipient-language HTML and its plain-text alternative. Do not retype or
+- Use the renderer below for all support email. Always open the exact HTML,
+  including the complete English translation for non-English replies. Send only
+  the recipient-language HTML and its plain-text alternative. Do not retype or
   restyle the approved result at send time.
 
 ## Render
@@ -121,38 +121,50 @@ text, identical code blocks and documentation URLs. `sender` is the operator's
 display name, not a fixed team identity. Do not commit customer content.
 
 ```bash
-node .claude/skills/pollinations-support-triage/scripts/render.mjs /absolute/message.json /absolute/output
+node .claude/skills/pollinations-support-triage/scripts/render.mjs /absolute/message.json /absolute/session/cases/case-001
 ```
 
 Produces `email.html`, `email.txt`, `preview.html`, and, when needed,
-`english.html`/`english.txt`. `preview.html` has recipient/English tabs for
-non-English messages; all headings, paragraphs, link labels and signature copy
+`english.html`/`english.txt` inside that case's folder. Its `preview.html` has
+recipient/English tabs for non-English messages. All headings, paragraphs,
+link labels and signature copy
 must be translated, not summarized. The renderer verifies identical code and
 documentation URLs, but the agent must check translation completeness.
 
-Serve the output directory on loopback only (`python3 -m http.server <free-port>
---bind 127.0.0.1 --directory /absolute/output`) and open its `preview.html` in the
-agent's local browser. Keep that server/tab for the review session. Each edit
-and each next email replaces the preview in that same tab; refresh it before
-asking for a decision. Check desktop/mobile layout and links. If the local
-browser cannot display it, explain the blocker and arrange a working preview;
-do not silently substitute plain text and send. The template is email-specific; its palette and logo remain
-owned by `packages/ui`. Existing rendered drafts are snapshots: rerender and
-review when changing text or design.
+Generate the queue page at `/absolute/session/preview.html` and embed each
+selected case's `cases/<case-id>/preview.html`. Serve the entire session folder
+on loopback only:
+
+```bash
+python3 -m http.server <free-port> --bind 127.0.0.1 --directory /absolute/session
+```
+
+Open the session's `/preview.html` in the agent browser and keep that server/tab.
+Switch cases within the queue page; rerender edits into the same case folder
+and refresh its embedded preview before requesting approval. Never overwrite
+the queue page with a case's renderer output. Approval refers to the selected
+case's displayed From/To/subject and recipient-language HTML; the English tab
+is review-only. Send that case's exact `email.html` and `email.txt`.
+
+Check desktop/mobile layout and links. If the local browser cannot display it,
+explain the blocker and arrange a working preview; do not silently substitute
+plain text and send. The template is email-specific; its palette and logo remain
+owned by `packages/ui`. Rerender and review when changing text or design.
 
 Draft only when requested. With the verified gog client/account, use
 `gmail drafts create` or `gmail drafts update <draft-id>` with `--from` set to
 the verified `envelope.from`, `--to`, `--subject`, `--reply-to-message-id`,
 `--body-file` and `--body-html`. Do not rely on the mailbox's default sender.
 Pass HTML through an argument array, not shell interpolation. Verify From, To,
-subject, thread and both MIME alternatives against the preview after saving. After approval,
-send that draft by ID; verify again and avoid duplicate sends after a timeout.
+subject, thread and both MIME alternatives against the preview after saving.
+After approval, send that draft by ID; verify again and avoid duplicate sends
+after a timeout.
 
 ## Boundaries
 
 - No send, refund, reward, account change, mailbox label/archive or
   draft change without authorization for that action.
-  Scheduled runs are read-only. A triage request is not permission to deploy.
+  A triage request is not permission to deploy.
 - Never write wallet balances directly. Refunds and rewards require an operator
   handoff to an available, approved workflow; ask the operator if none is
   documented in the checkout. Inspect existing ledger entries first and verify

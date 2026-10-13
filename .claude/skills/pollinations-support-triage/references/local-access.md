@@ -41,7 +41,8 @@ Follow `AGENTS.md` for access, secret and production-operation boundaries.
   existing account/identity to use; continue read-only triage. Do not create an
   alias or change account settings as part of triage.
 - Read threads without changing unread state. After creating/sending a draft,
-  read it back and verify From, recipient, subject, thread and exact HTML/plain-text content.
+  read it back and verify From, recipient, subject, thread and exact HTML and
+  plain-text content.
 
 ## Production evidence
 

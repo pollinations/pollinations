@@ -6,7 +6,7 @@ Reads gists and daily summaries from the news branch checkout and keeps:
 - `api`: API changes from the post-deploy docs PRs
 - `highlights`: the items each daily summary picked for users
 
-    python build_news_index.py --news-dir <checkout>/operations/social/news [--publish]
+    python news_index.py --news-dir <checkout>/operations/social/news [--publish]
 
 Without --publish the index is only written locally; with it, a changed index is committed
 to the news branch.

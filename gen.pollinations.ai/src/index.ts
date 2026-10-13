@@ -82,6 +82,8 @@ function robotsTxt(): Response {
             "Disallow: /mcp/",
             "Disallow: /v1/",
             "Disallow: /api/",
+            // https://contentsignals.org
+            "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         ].join("\n"),
         { headers: { "Content-Type": "text/plain" } },
     );
@@ -109,6 +111,10 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
 - [MCP setup guide](${origin}/docs/llm.txt?section=mcp): Connect an agent to the hosted tools.
+
+## Contribute
+
+- [Quest contributor agent skill](${origin}/.well-known/agent-skills/quest-contributor/SKILL.md): Find a POLLEN-QUEST issue, submit a PR, and claim the Pollen reward.
 
 ## Account
 
@@ -157,7 +163,17 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .get("/llms.txt", (c) => llmsTxt(c))
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
-    .get("/", (c) => c.html(docsLandingHtml(c)))
+    .get("/", async (c) => {
+        c.header("Vary", "Accept", { append: true });
+        if (c.req.header("accept")?.includes("text/markdown")) {
+            // Cloudflare ignores Vary on cached responses: keep it private.
+            return c.body(await llmsTxt(c).text(), 200, {
+                "Content-Type": "text/markdown; charset=utf-8",
+                "Cache-Control": "private, max-age=3600",
+            });
+        }
+        return c.html(docsLandingHtml(c));
+    })
     .get("/docs/", (c) => c.redirect(`${getPublicOrigin(c)}/docs`, 301))
     .all("/api/docs", redirectLegacyDocs)
     .all("/api/docs/", redirectLegacyDocs)

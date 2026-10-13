@@ -56,13 +56,13 @@ class ImageRequest(BaseModel):
 
 
 def clamp_dims(w, h):
-    w, h = min(w, MAX_DIM), min(h, MAX_DIM)
-    w = max(32, (w // 32) * 32)
-    h = max(32, (h // 32) * 32)
-    if w * h > MAX_PIXELS:
-        scale = (MAX_PIXELS / (w * h)) ** 0.5
-        w = max(32, int(w * scale) // 32 * 32)
-        h = max(32, int(h * scale) // 32 * 32)
+    # One scale factor for both sides, so the MAX_DIM and MAX_PIXELS caps keep
+    # the requested aspect ratio. Capping each side on its own first turned
+    # 1280x720 into 512x480 and 1024x576 into 576x416.
+    w, h = max(1, w), max(1, h)
+    scale = min(1.0, MAX_DIM / max(w, h), (MAX_PIXELS / (w * h)) ** 0.5)
+    w = max(32, int(w * scale) // 32 * 32)
+    h = max(32, int(h * scale) // 32 * 32)
     return w, h
 
 

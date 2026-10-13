@@ -8,7 +8,7 @@ import {
 } from "@shared/auth/api-key.ts";
 import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import { keyAllowsCategory } from "@shared/registry/model-permissions.ts";
+import { keyAllowsModel } from "@shared/registry/model-permissions.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -19,7 +19,7 @@ type ModelVariables = {
     model: {
         requested: string;
         resolved: string;
-        definition: Pick<ModelDefinition, "category">;
+        definition: Pick<ModelDefinition, "category" | "aliases">;
         communityEndpoint?: CommunityEndpointRuntime;
     };
 };
@@ -84,11 +84,14 @@ function installAuth(
 
         if (!apiKey) return;
 
-        const { category } = model.definition;
-        if (!keyAllowsCategory(apiKey.permissions?.models, category)) {
+        const models = apiKey.permissions?.models;
+        if (!keyAllowsModel(models, model.resolved, model.definition)) {
             const link = keyPermissionsLink(apiKey.id, c.env?.ENVIRONMENT);
+            const allowed = models?.length
+                ? `is limited to ${models.join(", ")}`
+                : "allows no models";
             throw new HTTPException(403, {
-                message: `Model '${model.requested}' is not allowed for this API key, which does not allow ${category} models. Manage key permissions at ${link}`,
+                message: `Model '${model.requested}' is not allowed for this API key, which ${allowed}. Manage key permissions at ${link}`,
             });
         }
     }

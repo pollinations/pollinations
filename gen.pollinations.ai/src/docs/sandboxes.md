@@ -7,7 +7,7 @@ Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet (alpha
 ```bash
 polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
-polli sandbox create pollinations-large  # 4 vCPU, 8 GB
+polli sandbox create pollinations-large  # 4 vCPU, 8 GB, 50 GB free disk
 ssh <id>.polli                    # scp, sftp and rsync work too
 polli sandbox list
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
@@ -21,9 +21,10 @@ polli sandbox kill <id>
 - E2B ends a run after 24 hours, so once a day gen pauses and resumes a kept sandbox. Its files, memory and processes stay; open connections drop. If a renewal is missed and the sandbox pauses, gen resumes it at the next renewal, within 5 minutes.
 - `polli sandbox pause <id>` pauses it with its files and memory, ending a keep, until `ssh` or `polli sandbox timeout` resumes it. `polli sandbox kill <id>` deletes it.
 - The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
-- The default template, `pollinations` (2 vCPU, 2 GB), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw. `pollinations-large` is the same with 4 vCPU and 8 GB, for builds and test suites that need more memory.
+- The default template, `pollinations` (2 vCPU, 2 GB, 20 GB free disk), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw. `pollinations-large` is the same with 4 vCPU, 8 GB and 50 GB free disk, for builds, test suites and media that need more.
 - Both come logged in when the key that creates it has the `keys` permission, as polli's own key does. polli inside uses a key of the sandbox's own, `polli-sandbox-<id>`, created like any other key, with polli's usual permissions except `keys`, so code in the sandbox can't create keys or change budgets. Killing the sandbox leaves the key. Your first interactive `ssh` connects each harness to Pollinations with that same key.
 - Both also run a [herdr](https://herdr.dev) server, started by `ssh`. Agents you start in `herdr` keep running after ssh disconnects, and a paused sandbox resumes them where they were. `ssh <id>.polli herdr agent list` shows them and their state; `herdr machine add <id>.polli` lets herdr on your own machine manage them.
+- Both include [rclone](https://rclone.org) to mount a bucket as a folder, for big files that should outlive the sandbox: set it up once with `rclone config` (S3, R2, Google Cloud Storage and others), then `mkdir ~/bucket && rclone mount <remote>:<bucket> ~/bucket --daemon --vfs-cache-mode full`. The mount stays through pause and resume. Buckets are slow with many small files, so keep git repos, `node_modules` and databases on the sandbox's own disk, which `kill` deletes.
 - `polli sandbox create <template>` starts another E2B template instead, such as `claude` (Claude Code), `codex`, `opencode` or `amp` (2 vCPU, 2 GB each), or [any public one](https://docs.e2b.dev/use-cases/coding-agents). Bigger templates cost more per second.
 - `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.

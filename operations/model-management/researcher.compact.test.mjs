@@ -783,7 +783,7 @@ async function fixture(t) {
         );
     }
     for (const community of ["LocalLLaMA", "StableDiffusion"]) {
-        const seed = `https://www.reddit.com/r/${community}/top/?t=week`;
+        const seed = `https://www.reddit.com/r/${community}/.rss`;
         const body = `Fixture community discussion: ${sol.name} is already an official model.`;
         await writeFile(
             join(out, "pages", `${hash(seed)}.json`),

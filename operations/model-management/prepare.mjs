@@ -37,13 +37,13 @@ const REQUIRED_FEEDS = [
     ...["LocalLLaMA", "StableDiffusion"].map((community, index) => ({
         id: `reddit-seed-${index}`,
         kind: "fetch",
-        url: `https://www.reddit.com/r/${community}/top/?t=week`,
+        url: `https://www.reddit.com/r/${community}/.rss`,
         mode: "http",
         required: true,
         maxCharacters: 12000,
         sourceId: "public-reddit-community",
         feed: true,
-        text: `Public r/${community} weekly top discussions: community demand and release leads.`,
+        text: `Public r/${community} current RSS discussions with source publication times: demand and release leads; feed position is not vote or unique-user counts.`,
     })),
 ];
 

@@ -7,6 +7,10 @@ on:
         description: 'Read aggregate current test spend only; no paid calls.'
         type: boolean
         default: false
+      audit_start:
+        description: 'UTC start timestamp for a free billing snapshot; required with audit_only.'
+        type: string
+        default: ''
       models:
         description: 'Must be empty: full official catalog and market discovery.'
         type: string
@@ -204,10 +208,11 @@ jobs:
       - name: Read aggregate validation spend only
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          AUDIT_START: ${{ inputs.audit_start }}
         run: |
           node --input-type=module <<'JS'
           import {readBilledUsage} from './operations/model-management/billing.mjs';
-          const audit=await readBilledUsage(process.env.POLLINATIONS_API_KEY,'2026-10-11T20:07:50Z');
+          const audit=await readBilledUsage(process.env.POLLINATIONS_API_KEY,process.env.AUDIT_START);
           console.log(JSON.stringify(audit));
           JS
 

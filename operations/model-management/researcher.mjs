@@ -1015,7 +1015,52 @@ export function assess(
     };
 }
 
-export function sourcePackets(sources, models = []) {
+export function sourcePackets(sources, models = [], discoveries) {
+    if (discoveries) {
+        const spans = new Map();
+        for (const { sourceIds, extraction } of discoveries) {
+            assert.ok(
+                Array.isArray(sourceIds) &&
+                    sourceIds.length > 0 &&
+                    sourceIds.every((id) => typeof id === "string" && id) &&
+                    typeof extraction?.quote === "string" &&
+                    extraction.quote.length > 0,
+                "Discovery extraction has invalid source IDs or quote",
+            );
+            const source = sources.find(
+                ({ id, status, text }) =>
+                    sourceIds.includes(id) &&
+                    status === "fetched" &&
+                    Number.isSafeInteger(extraction?.start) &&
+                    extraction.start >= 0 &&
+                    Number.isSafeInteger(extraction.end) &&
+                    extraction.end > extraction.start &&
+                    extraction.end <= text.length &&
+                    text.slice(extraction.start, extraction.end) ===
+                        extraction.quote,
+            );
+            assert.ok(
+                source,
+                "Discovery extraction has no exact saved source span",
+            );
+            const evidence = spans.get(source.id) ?? [];
+            evidence.push(extraction);
+            spans.set(source.id, evidence);
+        }
+        return sources.map((source) => ({
+            id: source.id,
+            url: source.url,
+            status: source.status,
+            reason: source.reason,
+            focus: source.focus,
+            sourceDigest: source.digest,
+            method: source.method,
+            pageDigest: source.pageDigest,
+            extractionVersion: source.extractionVersion,
+            spans: spans.get(source.id) ?? [],
+            reread: "fetch mode=saved with the same URL and focus for the full exact source",
+        }));
+    }
     const unique = new Map();
     for (const source of sources)
         if (
@@ -1079,6 +1124,8 @@ export async function research(
     usePerplexity = false,
 ) {
     const tools = structuredClone(TOOLS);
+    const discoveryExtraction =
+        !task.models && !task.model ? services.prepared?.extraction : undefined;
     tools[2].function.parameters.required = ["action"];
     if (task.models) tools[0].function.parameters.required.push("models");
     tools[0].function.parameters.properties.engine.enum = [
@@ -1146,6 +1193,7 @@ export async function research(
                               sources: sourcePackets(
                                   services.prepared.sources,
                                   task.models,
+                                  discoveryExtraction?.discoveries,
                               ),
                               leads: services.prepared.leads.map(
                                   ({ id, url, title, models, text }) => ({
@@ -1153,7 +1201,9 @@ export async function research(
                                       url,
                                       title,
                                       models,
-                                      excerpt: text.slice(0, 250),
+                                      ...(discoveryExtraction
+                                          ? {}
+                                          : { excerpt: text.slice(0, 250) }),
                                   }),
                               ),
                               reportLimits: {
@@ -1161,17 +1211,27 @@ export async function research(
                                   gapsPerModel: 3,
                                   quoteWords: 25,
                               },
-                              gaps: services.prepared.gaps,
+                              gaps: discoveryExtraction
+                                  ? [
+                                        ...new Set([
+                                            ...services.prepared.gaps,
+                                            ...(discoveryExtraction.gaps ?? []),
+                                        ]),
+                                    ]
+                                  : services.prepared.gaps,
                               extractedDiscoveries:
-                                  services.prepared.extraction?.discoveries
-                                      .map(({ name, kind, sourceIds }) => ({
+                                  services.prepared.extraction?.discoveries.map(
+                                      ({ name, kind, sourceIds }) => ({
                                           name,
                                           kind,
                                           sourceIds,
-                                      }))
-                                      .slice(0, 16) ?? [],
+                                      }),
+                                  ) ?? [],
                               instruction:
-                                  "The workflow already planned, searched and fetched these exact sources. Do not repeat that work. Synthesize a compact evidence-backed candidate and call research(action=verify) in its own tool turn; the workflow submits successful verification without another model call. Use tools only for material named gaps. Preserve exact model/price table headings and rows; embeddings have input-only pricing. Unknowns stay unknown.",
+                                  "The workflow already planned, searched and fetched these exact sources. Do not repeat that work. Synthesize a compact evidence-backed candidate and call research(action=verify) in its own tool turn; the workflow submits successful verification without another model call. Use tools only for material named gaps. Preserve exact model/price table headings and rows; embeddings have input-only pricing. Unknowns stay unknown." +
+                                  (discoveryExtraction
+                                      ? " Source spans are separate contiguous quotes at their original offsets, not a combined page. Sources without spans remain available through saved rereads. Code retains every accepted extracted discovery independently of your response. Extraction establishes research leads only; popularity, recency, pricing and API availability remain unknown. Address named gaps and identity ambiguity. officialModelInventory rows are [exact name, aliases]."
+                                      : ""),
                           },
                       }
                     : {}),
@@ -1192,10 +1252,10 @@ export async function research(
                 ...(!task.models && !task.model
                     ? {
                           officialModelInventory: inventory.map(
-                              ({ name, aliases }) => ({
-                                  name,
-                                  aliases: aliases ?? [],
-                              }),
+                              ({ name, aliases }) =>
+                                  discoveryExtraction
+                                      ? [name, aliases ?? []]
+                                      : { name, aliases: aliases ?? [] },
                           ),
                           noveltyPolicy:
                               "These are official entries only. Exact names and aliases are excluded by code; similar families or upstream IDs require explicit identity mapping before proposing an addition.",

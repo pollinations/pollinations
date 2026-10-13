@@ -7,7 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import timers from "node:timers/promises";
 import { JEV_ENDPOINT, JEV_MODEL, validateClaimAudit } from "./jev.mjs";
-import { officialCandidates } from "./prepare.mjs";
+import { DISCOVERY_MODES, officialCandidates } from "./prepare.mjs";
 import {
     assessGroup,
     auditEvidence,
@@ -18,6 +18,195 @@ import {
 } from "./researcher.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
+test("prepared discovery preserves separate exact spans and every accepted lead when Sol returns none", async () => {
+    const text =
+        "navigation\n".repeat(500) +
+        Array.from(
+            { length: 23 },
+            (_, index) => `publisher/lead-${index} is a research lead.\n`,
+        ).join("unrelated page section\n");
+    const source = {
+        id: "s1",
+        url: "https://example.org/catalog",
+        status: "fetched",
+        method: "scrapling-http",
+        text,
+        digest: hash(text),
+        pageDigest: hash(text),
+        extractionVersion: 2,
+    };
+    const discoveries = Array.from({ length: 23 }, (_, index) => {
+        const name = `publisher/lead-${index}`;
+        const quote = `${name} is a research lead.`;
+        const start = text.indexOf(quote);
+        return {
+            name,
+            kind: "model",
+            reason: "Source identifies a model research lead",
+            sourceIds: [source.id],
+            extraction: {
+                id: `entity-${index}`,
+                quote,
+                start,
+                end: start + quote.length,
+                requestDigest: hash(quote),
+            },
+        };
+    });
+    const unread = {
+        ...source,
+        id: "s2",
+        url: "https://example.org/unresolved",
+    };
+    const packets = sourcePackets([source, unread], [], discoveries);
+    assert.equal(packets.length, 2);
+    assert.equal(packets[0].spans.length, 23);
+    assert.equal(packets[1].spans.length, 0);
+    assert.match(packets[1].reread, /mode=saved/);
+    assert.equal(packets[0].sourceDigest, hash(text));
+    assert.equal(packets[0].pageDigest, hash(text));
+    assert.equal(packets[0].excerpt, undefined);
+    for (const span of packets[0].spans) {
+        assert.equal(text.slice(span.start, span.end), span.quote);
+        assert.equal(span.requestDigest, hash(span.quote));
+    }
+    assert.throws(
+        () =>
+            sourcePackets(
+                [source],
+                [],
+                [
+                    {
+                        ...discoveries[0],
+                        extraction: {
+                            ...discoveries[0].extraction,
+                            quote: "invented",
+                        },
+                    },
+                ],
+            ),
+        /exact saved source span/,
+    );
+    const inventory = [
+        { name: "publisher/official", aliases: ["official-alias"] },
+    ];
+    let captured;
+    const output = await research(
+        { task: "Resolve named identity ambiguity" },
+        {
+            prepared: {
+                sources: [source, unread],
+                scopes: new Map([
+                    [
+                        "discovery",
+                        new Set(
+                            DISCOVERY_MODES.map(
+                                (mode) =>
+                                    `${mode}:exa:challenge:research leads`,
+                            ),
+                        ),
+                    ],
+                ]),
+                plans: [{ questions: ["Resolve named identity ambiguity"] }],
+                actions: [],
+                leads: [],
+                gaps: ["Resolve ambiguous provider identity"],
+                extraction: {
+                    discoveries,
+                    gaps: ["Two literal entities remain ambiguous"],
+                },
+                reasoningAction: { task: "Resolve named identity ambiguity" },
+            },
+            infer: async (messages) => {
+                captured = JSON.parse(messages[1].content);
+                return {
+                    tool_calls: [
+                        {
+                            id: "verify",
+                            type: "function",
+                            function: {
+                                name: "research",
+                                arguments: JSON.stringify({
+                                    action: "verify",
+                                    routes: [],
+                                    discoveries: [],
+                                    gaps: ["Provider identity remains unknown"],
+                                }),
+                            },
+                        },
+                    ],
+                };
+            },
+            auditClaims: async (proposal) => proposal,
+        },
+        inventory,
+        1,
+    );
+    assert.equal(output.discoveries.length, 23, output.reason);
+    assert.deepEqual(
+        output.discoveries.map(({ name }) => name),
+        discoveries.map(({ name }) => name),
+    );
+    assert.deepEqual(captured.officialModelInventory, [
+        ["publisher/official", ["official-alias"]],
+    ]);
+    assert.equal(captured.preparation.extractedDiscoveries.length, 23);
+    assert.deepEqual(
+        captured.preparation.sources,
+        JSON.parse(JSON.stringify(packets)),
+    );
+    assert.deepEqual(captured.preparation.gaps, [
+        "Resolve ambiguous provider identity",
+        "Two literal entities remain ambiguous",
+    ]);
+    assert.throws(
+        () =>
+            sourcePackets(
+                [source],
+                [],
+                [{ ...discoveries[0], sourceIds: "s1" }],
+            ),
+        /invalid source IDs or quote/,
+    );
+    assert.throws(
+        () =>
+            sourcePackets(
+                [source],
+                [],
+                [
+                    {
+                        ...discoveries[0],
+                        extraction: {
+                            ...discoveries[0].extraction,
+                            end: text.length + 1,
+                            quote: text.slice(discoveries[0].extraction.start),
+                        },
+                    },
+                ],
+            ),
+        /exact saved source span/,
+    );
+    const distinctSources = discoveries.map((_item, index) => ({
+        ...source,
+        id: `cost-${index}`,
+        url: `https://example.org/lead-${index}`,
+    }));
+    const distinctDiscoveries = discoveries.map((item, index) => ({
+        ...item,
+        sourceIds: [`cost-${index}`],
+    }));
+    const compactBytes = Buffer.byteLength(
+        JSON.stringify(sourcePackets(distinctSources, [], distinctDiscoveries)),
+    );
+    const legacyBytes = Buffer.byteLength(
+        JSON.stringify(sourcePackets(distinctSources)),
+    );
+    assert.ok(
+        compactBytes < legacyBytes / 2,
+        `${compactBytes} vs ${legacyBytes}`,
+    );
+});
+
 test("offline official corpus replay recovers four s431 workload prices without Sol or searches", async (t) => {
     let corpus;
     try {
@@ -749,10 +938,7 @@ function network(
             assert.equal(payload.max_tokens, 1800);
             assert.deepEqual(
                 context.officialModelInventory,
-                inventory.map(({ name, aliases }) => ({
-                    name,
-                    aliases: aliases ?? [],
-                })),
+                inventory.map(({ name, aliases }) => [name, aliases ?? []]),
                 "Sol must receive the exact official inventory to reason about novelty",
             );
         }

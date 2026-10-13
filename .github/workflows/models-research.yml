@@ -92,6 +92,7 @@ jobs:
           MAX_POLLEN: ${{ inputs.max_pollen }}
           USE_PERPLEXITY: ${{ inputs.use_perplexity }}
           CHECK_BILLING: 'true'
+          RESEARCH_MODE: 'compact'
           RESEARCH_OUT: ${{ runner.temp }}/model-research
           PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: node operations/model-management/researcher.mjs

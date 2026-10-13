@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, open, readFile, rename, writeFile } from "node:fs/promises";
 import { isIP } from "node:net";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -2142,6 +2142,10 @@ export async function main(env = process.env) {
         ["compact", "interactive"].includes(mode),
         "Invalid research mode",
     );
+    assert.ok(
+        !env.GITHUB_ACTIONS || mode === "compact",
+        "GitHub research must be supervised by Jev",
+    );
     const budget = Number(env.MAX_POLLEN ?? 4);
     assert.ok(
         Number.isFinite(budget) && budget > 0 && budget <= 10,
@@ -2221,7 +2225,13 @@ export async function main(env = process.env) {
     );
     const operatingPolicy = `${policy.slice(0, policyEnd)}\n${skill.slice(researchStart, researchEnd)}\nScope: apply document research only. Direct probes, account verification, tracked model changes and their approvals belong to later agents. Explicit user provider preference takes precedence.`;
     const implementation = await Promise.all(
-        ["jev.mjs", "prepare.mjs", "price-evidence.mjs"].map(async (name) =>
+        [
+            "researcher.mjs",
+            "jev.mjs",
+            "prepare.mjs",
+            "price-evidence.mjs",
+            "fetch.py",
+        ].map(async (name) =>
             hash(await readFile(join(import.meta.dirname, name), "utf8")),
         ),
     );
@@ -2634,17 +2644,62 @@ export async function main(env = process.env) {
         }
         await save();
     };
+    const wholePage = async (url, page) => {
+        if (
+            (page.excerptStart ?? 0) === 0 &&
+            (page.totalCharacters ?? page.text.length) === page.text.length
+        )
+            return { ...page, fullPage: true };
+        const handle = await open(join(out, "pages", `${hash(url)}.json`), "r");
+        const buffer = Buffer.alloc(2 * 1024 * 1024 * 6 + 8193);
+        let saved;
+        try {
+            const { bytesRead } = await handle.read(
+                buffer,
+                0,
+                buffer.length,
+                0,
+            );
+            assert.ok(
+                bytesRead < buffer.length,
+                "Whole-page cache exceeded size bound",
+            );
+            saved = JSON.parse(buffer.subarray(0, bytesRead).toString("utf8"));
+        } finally {
+            await handle.close();
+        }
+        assert.ok(
+            saved.requestedUrl === url &&
+                saved.url === page.url &&
+                saved.extractionVersion === 2 &&
+                typeof saved.text === "string" &&
+                Buffer.byteLength(saved.text) <= 2 * 1024 * 1024 &&
+                hash(saved.text) === page.pageDigest &&
+                saved.pageDigest === page.pageDigest &&
+                saved.fetchedAt === page.fetchedAt &&
+                saved.text.slice(
+                    page.excerptStart ?? 0,
+                    (page.excerptStart ?? 0) + page.text.length,
+                ) === page.text,
+            "Whole-page cache failed provenance validation",
+        );
+        return {
+            ...page,
+            text: saved.text,
+            excerptStart: 0,
+            totalCharacters: saved.text.length,
+            fullPage: true,
+        };
+    };
     const read = async (args) => {
         assert.equal(args.mode, "http", "Preparation uses free HTTP only");
         const url = await publicUrl(args.url);
         const maxCharacters = args.maxCharacters ?? 3000;
         let source;
         try {
-            const page = await services.fetch(
+            const page = await wholePage(
                 url,
-                "http",
-                args.focus,
-                maxCharacters,
+                await services.fetch(url, "http", args.focus, maxCharacters),
             );
             assert.ok(
                 typeof page.text === "string" && page.text.length > 40,
@@ -2944,7 +2999,15 @@ export async function main(env = process.env) {
             ? await reuseModel(previous, contract, {
                   guidanceDigest: report.guidance.digest,
                   inventory,
-                  fetch: services.fetch,
+                  fetch: async (url, mode, focus, maxCharacters, fullPage) => {
+                      const page = await services.fetch(
+                          url,
+                          mode,
+                          focus,
+                          maxCharacters,
+                      );
+                      return fullPage ? wholePage(url, page) : page;
+                  },
               })
             : null;
         if (reused) {

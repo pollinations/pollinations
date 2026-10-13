@@ -142,6 +142,7 @@ export async function reuseModel(
                 "http",
                 source.focus,
                 maxCharacters,
+                ...(source.fullPage === true ? [true] : []),
             );
             assert.ok(
                 refreshed &&

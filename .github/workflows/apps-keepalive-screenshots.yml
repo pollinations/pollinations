@@ -301,7 +301,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install 'scrapling[fetchers]==0.4.15'
-      - run: python -m playwright install --with-deps chromium
+      - run: python -m patchright install --with-deps chromium
       - name: Probe public source retrieval without paid calls
         env:
           SOURCE_PROBE_OUT: ${{ runner.temp }}/source-probe

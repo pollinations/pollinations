@@ -26,13 +26,18 @@ targets = [
     "https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=20",
     "https://huggingface.co/api/models?sort=downloads&direction=-1&limit=20",
 ]
+browser_targets = [targets[0], targets[1], targets[6], "https://quotes.toscrape.com/js/"]
 results = []
-for url in targets:
+for mode, url in [("http", url) for url in targets] + [("dynamic", url) for url in browser_targets]:
     started = time.monotonic()
-    result = adapter._read_http(url, 18000, include_links=True)
+    try:
+        result = (adapter._read_browser if mode == "dynamic" else adapter._read_http)(url, 18000, include_links=True)
+    except adapter.ValidationError as error:
+        result = {"status": "unavailable", "url": url, "error": str(error)}
+    result["requestedMode"] = mode
     result["elapsedSeconds"] = round(time.monotonic() - started, 2)
     result["requestedUrl"] = url
     results.append(result)
     (out / "results.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({key: result.get(key) for key in ["requestedUrl", "url", "status", "method", "error", "elapsedSeconds"]}), flush=True)
+    print(json.dumps({key: result.get(key) for key in ["requestedMode", "requestedUrl", "url", "status", "method", "error", "elapsedSeconds"]}), flush=True)
 print(json.dumps({"successful": sum(row["status"] == "fetched" for row in results), "attempted": len(results), "paidCalls": 0}), flush=True)

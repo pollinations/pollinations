@@ -1,0 +1,32 @@
+{
+  "pr_number": 16990,
+  "title": "feat(gen): advertise the agent entry points with RFC 8288 Link headers",
+  "author": "patbing",
+  "url": "https://github.com/pollinations/pollinations/pull/16990",
+  "merged_at": "2026-10-13T05:21:53Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added RFC 8288 Link headers to successful GET and HEAD responses for exactly `/` and `/docs` on gen.pollinations.ai. Agents arriving at those HTML pages can discover `/openapi.json` (`service-desc`), `/docs/llm.txt` (`service-doc`), `/.well-known/api-catalog` (`api-catalog`), and `/.well-known/ai-catalog.json` (`describedby`) without knowing the paths in advance. The middleware preserves existing Link values and leaves machine endpoints, redirects, and the API catalog's existing self link unchanged.",
+    "keywords": [
+      "agent discovery",
+      "Link headers",
+      "OpenAPI",
+      "API catalog",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-16990.jpg",
+    "prompt": "In a cozy garden hackerspace, Polli wears tiny explorer glasses and points from a glowing HTML page to four small signposts labeled OpenAPI, guide, API catalog, and AI catalog; she is a small pixel art bee with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light blue translucent wings. Lime green (#ecf874) code-plants glow beside a retro terminal against a warm cream and pastel gradient background: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T05:23:28.227494+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "7ec00562420e04c64bf835ecc93ef8469e210ebe",
+  "announcements": []
+}

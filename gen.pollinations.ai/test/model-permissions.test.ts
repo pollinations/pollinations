@@ -264,7 +264,7 @@ test("media routes own their endpoint-specific model defaults", async () => {
     expect(videoResponse.status).toBe(403);
 });
 
-test("filters OpenRouter text models by paid balance", async ({
+test("filters non-Azure and non-Fireworks text models by paid balance", async ({
     apiKey,
     paidApiKey,
 }) => {
@@ -289,39 +289,33 @@ test("filters OpenRouter text models by paid balance", async ({
     const paidModels = (await paidResponse.json()) as {
         data: { id: string }[];
     };
-    // Only the approved low-cost models are exempt from paid balance.
-    const questPollenModels = new Set([
-        "typesafe/jev-1.13",
-        "jaredpalmer/kev-4b",
+    // Approved Quest Pollen exceptions outside Azure and Fireworks.
+    const questExceptions = [
+        "qwen/qwen3guard-gen-8b",
+        "openai/gpt-oss-20b",
         "respan/span-01-lite",
-    ]);
-    const openRouterModelNames = getVisibleTextModels().filter((model) => {
+        // Moves to paid with its post-promo price in #16256.
+        "inclusionai/ling-3.1-flash",
+    ];
+    const paidProviderModelNames = getVisibleTextModels().filter((model) => {
         const definition = getRegistryModelDefinition(model);
         return (
-            definition.provider === "openrouter" &&
-            !questPollenModels.has(model)
+            !["azure", "fireworks"].includes(definition.provider) &&
+            !questExceptions.includes(model)
         );
     });
     const freeModelNames = new Set(freeModels.data.map((model) => model.id));
     const paidModelNames = new Set(paidModels.data.map((model) => model.id));
 
-    for (const model of questPollenModels) {
-        expect(
-            freeModelNames.has(model),
-            `${model} visible to Quest Pollen`,
-        ).toBe(true);
-        expect(
-            paidModelNames.has(model),
-            `${model} visible to paid users`,
-        ).toBe(true);
+    for (const model of questExceptions) {
+        expect(freeModelNames.has(model), model).toBe(true);
     }
-
-    expect(openRouterModelNames.length).toBeGreaterThan(0);
+    expect(paidProviderModelNames.length).toBeGreaterThan(0);
     expect(
-        openRouterModelNames.every((model) => !freeModelNames.has(model)),
+        paidProviderModelNames.every((model) => !freeModelNames.has(model)),
     ).toBe(true);
     expect(
-        openRouterModelNames.every((model) => paidModelNames.has(model)),
+        paidProviderModelNames.every((model) => paidModelNames.has(model)),
     ).toBe(true);
 
     expect(generation.status).toBe(TEXT_BALANCE_NOTICE_ENABLED ? 200 : 402);
@@ -414,7 +408,7 @@ test("filters paid-only audio models by paid balance", async ({
         freeModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",
         ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
         paidModels.some(
             (model) => model.name === "assemblyai/universal-3.5-pro",

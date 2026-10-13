@@ -1,0 +1,36 @@
+{
+  "pr_number": 17059,
+  "title": "fix(image): reject transparent background requests for z-image-turbo",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17059",
+  "merged_at": "2026-10-13T04:50:53Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Requests for `zimage` (`tongyi-mai/z-image-turbo`) with `transparent=true` are rejected with HTTP 400 instead of returning an opaque JPEG with HTTP 200; its self-hosted backend does not support alpha output. Transparency support is recorded in the shared image-model registry, with validation handled centrally rather than in individual model implementations. The `polli-cli` `--transparent` help text now says the flag works only with select models.",
+    "keywords": [
+      "zimage",
+      "image generation",
+      "transparency",
+      "request validation",
+      "polli-cli"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17059.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene and wearing tiny inspector glasses, she points to an opaque picture beside a retro terminal displaying a gentle '400' while pixel flowers grow nearby. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T04:52:37.603402+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "f3ff75164d38b3aaec8ac0f0e3d377101558f541",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "f3ff75164d38b3aaec8ac0f0e3d377101558f541^1",
+    "after_ref": "f3ff75164d38b3aaec8ac0f0e3d377101558f541"
+  }
+}

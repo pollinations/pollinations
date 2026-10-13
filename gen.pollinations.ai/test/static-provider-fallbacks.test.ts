@@ -651,6 +651,21 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it("keeps Muse Wonder reasoning on and never sends a billed web search to OpenRouter", async () => {
+        const result = await findModelByName(
+            "meta/muse-wonder-1.0",
+        )?.transform?.([], {
+            reasoning_effort: "none",
+            web_search_options: { search_context_size: "high" },
+            temperature: 0.3,
+        });
+        expect(result?.options).toEqual({ temperature: 0.3 });
+        const fallback = await findModelByName(
+            "meta/muse-wonder-1.0:vercel",
+        )?.transform?.([], { reasoning_effort: "minimal" });
+        expect(fallback?.options).toEqual({ reasoning_effort: "low" });
+    });
+
     it("prices Step 5 Preview on Vercel at base rates and supports tool calls on that fallback", () => {
         const primary = TEXT_SERVICES["stepfun/step-5-preview"];
         const fallback = TEXT_SERVICES["stepfun/step-5-preview:vercel"];

@@ -52,6 +52,12 @@ const mandatoryReasoningWithoutCacheControl = pipe(
     stripFireworksCacheControl,
     mandatoryReasoning,
 );
+// OpenRouter runs and bills a web search when web_search_options is sent
+// (Muse Wonder: $2.50 per 1,000 queries), a non-token charge we can't meter.
+const mandatoryReasoningWithoutWebSearch = pipe(
+    omitParameters("web_search_options"),
+    mandatoryReasoning,
+);
 // Models that 400/500 when reasoning_effort is forwarded (no reasoning mode).
 const stripReasoning = createReasoningEffortTransform("strip");
 // Claude families differ: Haiku 4.5 uses manual budget thinking; Sonnet/Opus
@@ -1058,7 +1064,7 @@ const models: ModelDefinition[] = [
     {
         name: "meta/muse-wonder-1.0",
         config: portkeyConfig["meta/muse-wonder-1.0"],
-        transform: mandatoryReasoning,
+        transform: mandatoryReasoningWithoutWebSearch,
     },
     {
         name: "meta/muse-wonder-1.0:vercel",

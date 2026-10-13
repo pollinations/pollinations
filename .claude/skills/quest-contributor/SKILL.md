@@ -57,7 +57,7 @@ duplicate work but reserves nothing.
 - `agent.json` configs are **camelCase everywhere** (`systemPrompt`,
   `baseModel`, `mcpServers`); snake_case fails schema validation and has
   killed quest PRs.
-- Run `npm run test` and `npx biome check --write` on modified files before
+- Run `npm run test` and `npx @biomejs/biome check --write` on modified files before
   pushing; both appear in quest acceptance criteria.
 
 ## 5. Prove

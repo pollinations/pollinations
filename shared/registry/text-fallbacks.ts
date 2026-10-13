@@ -86,6 +86,12 @@ export const TEXT_FALLBACKS = {
                 promptVideoTokens: perMillion(2) * 1.055,
                 completionTextTokens: perMillion(6) * 1.055,
             },
+            // Alibaba's direct explicit-cache rate does not apply to OpenRouter.
+            costVariants: undefined,
+            selectCostVariant: undefined,
+            costVariantMetadata: undefined,
+            defaultCostVariantLabel: undefined,
+            pricingDimensions: undefined,
         },
     },
     "openai/gpt-5.3-codex": {
@@ -426,9 +432,9 @@ export const TEXT_FALLBACKS = {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
-                promptTextTokens: perMillion(0.13),
-                promptImageTokens: perMillion(0.13),
-                completionTextTokens: perMillion(0.38),
+                promptTextTokens: perMillion(0.2),
+                promptImageTokens: perMillion(0.2),
+                completionTextTokens: perMillion(0.4),
             },
         },
     },

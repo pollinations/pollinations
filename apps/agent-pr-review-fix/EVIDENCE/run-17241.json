@@ -1,0 +1,25 @@
+{
+  "pr": "17241",
+  "url": "https://github.com/pollinations/pollinations/pull/17241",
+  "head": "254a87b1543c2a6e658894fcf681383db501f5b1",
+  "model_requested": "openai/gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "usage": {
+    "prompt_tokens": 1076,
+    "completion_tokens": 404,
+    "total_tokens": 1480,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 1073,
+      "audio_tokens": 0,
+      "image_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 121,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "verdict_text": "**NO-FIX — based on the supplied diff and context only.**\n\n- **Target:** https://github.com/pollinations/pollinations/pull/17241\n- **Requested head:** `254a87b1543c2a6e658894fcf681383db501f5b1`\n- **Scope:** `packages/polli-cli/src/commands/keys.ts`, expiration validation and the described tests.\n\n**Assessment:** No verifiable defect in the supplied change. The replacement preserves rejection of non-integers and values below one while intentionally removing the 365-day ceiling. The supplied valid/invalid test cases match that behavior.\n\nAccepting `\"0x10\"`, `\"1e3\"`, or `\"0b11\"` is not evidence of a regression: the old helper also used `Number(value)`. Each converts to a positive whole number of seconds; the error wording does not explicitly require decimal-only syntax.\n\n**Checks and limits:** No repository/tool access was available, so I could not independently retrieve the full diff, inspect surrounding code or tests, check out the requested SHA, determine the base SHA or run date, check for head movement, or execute tests. This is therefore not a fully verified repository review.\n\n**Changes:** None; no commit, diff, or push.\n\n**Cost:** Model identity and usage metrics are not visible."
+}

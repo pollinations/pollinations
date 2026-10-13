@@ -45,8 +45,7 @@ export async function falUnitPrice(
         (price) => price.endpoint_id === endpointId,
     );
     if (
-        !price ||
-        price.currency !== "USD" ||
+        price?.currency !== "USD" ||
         price.unit !== unit ||
         !Number.isFinite(price.unit_price) ||
         price.unit_price <= 0

@@ -4,9 +4,6 @@ import { setHttpMetadataHeaders } from "../util.ts";
 
 type Env = {
     Bindings: Cloudflare.Env;
-    Variables: {
-        connectingIp: string;
-    };
 };
 
 export const exactCache = createMiddleware<Env>(async (c, next) => {
@@ -60,6 +57,9 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
         console.debug("[EXACT] Caching image response");
         c.executionCtx.waitUntil(cacheResponse(cacheKey, c));
     } else if (c.res.headers.get("x-error-type")) {
-        console.debug("[EXACT] Skipping cache for error image:", c.res.headers.get("x-error-type"));
+        console.debug(
+            "[EXACT] Skipping cache for error image:",
+            c.res.headers.get("x-error-type"),
+        );
     }
 });

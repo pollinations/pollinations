@@ -9,7 +9,6 @@ import { removeUndefined } from "./util.js";
 type Env = {
     Bindings: Cloudflare.Env;
     Variables: {
-        connectingIp: string;
         cacheKey: string;
     };
 };

@@ -1,0 +1,69 @@
+{
+  "pr_number": 17187,
+  "title": "fix: correct Sonnet 5.5 cached input pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17187",
+  "merged_at": "2026-10-13T00:00:07Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Corrected Claude Sonnet 5.5’s cached-input price, billed in Pollen per million cached input tokens, to match its Bedrock provider cost. Paid-only access, the other prices, capabilities, and lack of a fallback are unchanged. Updated the effective-price test snapshot.",
+    "keywords": [
+      "Claude Sonnet 5.5",
+      "cached input",
+      "pricing",
+      "Bedrock",
+      "Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17187.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli adjusts a small cached-token price tag beside a glowing lime green (#ecf874) terminal while a code-plant grows nearby; she wears tiny accountant glasses and shares the scene with the desk. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized, strictly pixel art and never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T00:01:43.070184+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "7c46c60832c249c86f3117bad55da1ff7df01384",
+  "announcements": [
+    {
+      "id": "pr-17187:anthropic/claude-sonnet-5.5",
+      "model_id": "anthropic/claude-sonnet-5.5",
+      "title": "Claude Sonnet 5.5",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000001",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "7c46c60832c249c86f3117bad55da1ff7df01384^1",
+    "after_ref": "7c46c60832c249c86f3117bad55da1ff7df01384"
+  }
+}

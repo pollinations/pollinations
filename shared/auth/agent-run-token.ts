@@ -121,7 +121,10 @@ export async function verifyAgentRunToken(
     };
 }
 
-export type Grant = { category: string } | { permission: string };
+export type Grant =
+    | { category: string }
+    | { model: string }
+    | { permission: string };
 
 /**
  * Signs that a run of this agent was refused this grant on this key. The grant
@@ -135,10 +138,13 @@ export function signGrantAgent(opts: {
     grant: Grant;
     agent: string;
 }): string {
+    const { grant } = opts;
     const entry =
-        "category" in opts.grant
-            ? `category:${opts.grant.category}`
-            : `permission:${opts.grant.permission}`;
+        "category" in grant
+            ? `category:${grant.category}`
+            : "model" in grant
+              ? `model:${grant.model}`
+              : `permission:${grant.permission}`;
     return createHmac("sha256", `pollinations-grant-agent:v1\0${opts.secret}`)
         .update([opts.apiKeyId, entry, opts.agent].join("\0"))
         .digest("base64url");

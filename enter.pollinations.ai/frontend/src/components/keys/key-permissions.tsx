@@ -1,11 +1,16 @@
-import { InfoTip } from "@pollinations/ui";
+import { AccountIcon, InfoTip, InlineLink } from "@pollinations/ui";
 import { AuthAccessItem, AuthInfoCard } from "@pollinations/ui/auth";
+import { WalletKindIcon } from "@pollinations/ui/wallet";
 import type { FC, ReactNode } from "react";
-import { useState } from "react";
-import { useModelCatalog } from "../models/use-model-catalog.ts";
+import { useRef, useState } from "react";
 import { AccountPermissionsInput } from "./account-permissions-input.tsx";
 import { KeyLimitInput } from "./key-limit-input.tsx";
 import { ModelPermissionsInput } from "./model-permissions-input.tsx";
+
+const POLLI_CLI_KEYS_URL =
+    "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli#account";
+const KEY_API_URL =
+    "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md#patch-accountkeysid--update-api-key";
 
 export interface KeyPermissions {
     allowedModels: string[] | null;
@@ -51,12 +56,12 @@ interface KeyPermissionsInputsProps {
     disabled?: boolean;
     accessContext?: "app" | "device";
     visiblePermissions?: ReadonlySet<string>;
-    /** The app's request: preselected, and restored when Generate is re-ticked. */
+    /** Default selection when enabling generation for the first time. */
     requestedModels?: string[] | null;
-    /** Required identity row on consent; key names are shown above this editor. */
-    lead?: ReactNode;
-    /** Fixed row shown after the optional account permissions on consent. */
-    accountAfter?: ReactNode;
+    /** Key editors put the name in the same card as the limits. */
+    nameField?: ReactNode;
+    /** Disclosure shown after all permission controls on consent. */
+    permissionsAfter?: ReactNode;
 }
 
 /**
@@ -68,8 +73,8 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
     accessContext,
     visiblePermissions,
     requestedModels,
-    lead,
-    accountAfter,
+    nameField,
+    permissionsAfter,
 }) => {
     const {
         permissions,
@@ -79,34 +84,28 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
         setAccountPermissions,
         setQuestPollenOnly,
     } = value;
-    const catalog = useModelCatalog();
+    const generateInput = useRef<HTMLInputElement>(null);
+    const [previousModels, setPreviousModels] = useState<string[] | null>(
+        requestedModels?.length ? requestedModels : null,
+    );
 
     const hasModels =
         permissions.allowedModels === null ||
         permissions.allowedModels.length > 0;
-    const hasAccountCard =
-        visiblePermissions === undefined ||
-        visiblePermissions.size > 0 ||
-        accountAfter != null;
-    const accountPermissionsInput = (
-        <AccountPermissionsInput
-            value={permissions.accountPermissions}
-            onChange={(next) =>
-                setAccountPermissions(next.length ? next : null)
-            }
-            disabled={disabled}
-            visiblePermissions={visiblePermissions}
-        />
-    );
+    const changeModels = (models: string[] | null) => {
+        if (hasModels) setPreviousModels(permissions.allowedModels);
+        if (models?.length === 0) generateInput.current?.focus();
+        setAllowedModels(models);
+    };
+    const accountPermissionProps = {
+        value: permissions.accountPermissions,
+        onChange: (next: string[]) =>
+            setAccountPermissions(next.length ? next : null),
+        disabled,
+        visiblePermissions,
+    };
     const limitInputs = (
         <>
-            <KeyLimitInput
-                kind="expiry"
-                accessContext={accessContext}
-                value={permissions.expiryDays}
-                onChange={setExpiryDays}
-                disabled={disabled}
-            />
             <KeyLimitInput
                 kind="budget"
                 accessContext={accessContext}
@@ -120,61 +119,100 @@ export const KeyPermissionsInputs: FC<KeyPermissionsInputsProps> = ({
                 disabled={disabled}
                 info={
                     <InfoTip
-                        text={`This ${accessContext ?? "key"} never spends paid Pollen. Requests stop when Quest Pollen runs out.`}
-                        label="Quest Pollen only information"
+                        text={`This ${accessContext ?? "key"} never spends paid pollen. Requests stop when Quest pollen runs out.`}
+                        label="Quest pollen only information"
                     />
                 }
             >
-                Quest Pollen only
+                <span className="inline-flex items-center gap-1.5">
+                    <WalletKindIcon kind="tier" />
+                    Quest pollen only
+                </span>
             </AuthAccessItem>
+            <KeyLimitInput
+                kind="expiry"
+                accessContext={accessContext}
+                value={permissions.expiryDays}
+                onChange={setExpiryDays}
+                disabled={disabled}
+            />
         </>
     );
     const modelsItem = (
         <AuthAccessItem
+            inputRef={generateInput}
             checked={hasModels}
             disabled={disabled}
-            onChange={(checked) =>
-                setAllowedModels(checked ? (requestedModels ?? null) : [])
-            }
+            onChange={(checked) => changeModels(checked ? previousModels : [])}
         >
             Generate
         </AuthAccessItem>
     );
     return (
         <div className="space-y-3">
-            <div
-                className={`grid items-start gap-3 [&_li>:first-child]:min-h-11 ${hasAccountCard ? "md:grid-cols-2" : ""}`}
-            >
-                <AuthInfoCard>
-                    <ul className="space-y-3 text-sm">
-                        {lead}
+            <AuthInfoCard title={nameField ? "Settings" : "Limits"}>
+                <div className="@container grid gap-2">
+                    {nameField && <ul className="text-sm">{nameField}</ul>}
+                    <ul className="grid w-full grid-cols-1 items-center gap-x-6 gap-y-2 text-sm @min-[35rem]:grid-cols-[18rem_minmax(0,1fr)]">
                         {limitInputs}
                     </ul>
-                </AuthInfoCard>
-                {hasAccountCard && (
-                    <AuthInfoCard>
-                        <ul className="space-y-3 text-sm">
-                            {accountPermissionsInput}
-                            {accountAfter}
-                        </ul>
-                    </AuthInfoCard>
-                )}
-            </div>
-            <AuthInfoCard>
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)]">
-                    <div className="col-start-1 row-start-1 flex items-center">
-                        <ul className="text-sm">{modelsItem}</ul>
-                        <InfoTip
-                            text={`Choose which kinds of models this ${accessContext ?? "key"} can use. New models in a chosen category are included.`}
-                            label="Generate information"
+                </div>
+            </AuthInfoCard>
+            <AuthInfoCard title="Permissions">
+                <div className="grid gap-2">
+                    <ul className="grid grid-cols-1 gap-y-2 text-sm">
+                        <AuthAccessItem icon={<AccountIcon />}>
+                            <span className="inline-flex items-center">
+                                See your username and picture
+                                <InfoTip
+                                    text={`This ${accessContext ?? "key"} can access your username, profile picture and its own budget and usage.`}
+                                    label="See your username and picture information"
+                                />
+                            </span>
+                        </AuthAccessItem>
+                        <AccountPermissionsInput
+                            {...accountPermissionProps}
+                            section="account"
+                        />
+                    </ul>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[auto_minmax(0,1fr)]">
+                        <div className="col-start-1 row-start-1 flex items-center">
+                            <ul className="text-sm">{modelsItem}</ul>
+                            <InfoTip
+                                text={`Choose which kinds of models this ${accessContext ?? "key"} can use. New models in a chosen category are included.`}
+                                label="Generate information"
+                            />
+                        </div>
+                        <ModelPermissionsInput
+                            selected={permissions.allowedModels}
+                            onChange={changeModels}
+                            disabled={disabled || !hasModels}
                         />
                     </div>
-                    <ModelPermissionsInput
-                        catalog={catalog}
-                        selected={permissions.allowedModels}
-                        onChange={setAllowedModels}
-                        disabled={disabled}
-                    />
+                    <p className="text-xs text-theme-text-muted">
+                        To limit this {accessContext ?? "key"} to specific
+                        models, use the{" "}
+                        <InlineLink href={POLLI_CLI_KEYS_URL} tone="quiet">
+                            polli CLI
+                        </InlineLink>{" "}
+                        or the{" "}
+                        <InlineLink href={KEY_API_URL} tone="quiet">
+                            API
+                        </InlineLink>
+                        .
+                    </p>
+                    {(!visiblePermissions ||
+                        visiblePermissions.has("machines")) && (
+                        <ul className="text-sm">
+                            <AccountPermissionsInput
+                                {...accountPermissionProps}
+                                section="tools"
+                            />
+                        </ul>
+                    )}
+                    {permissionsAfter != null && (
+                        <ul className="text-sm">{permissionsAfter}</ul>
+                    )}
                 </div>
             </AuthInfoCard>
         </div>

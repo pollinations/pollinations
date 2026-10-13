@@ -12,12 +12,11 @@ import { CONSENT_PERMISSIONS } from "@shared/auth/authorize-config.ts";
 import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 import { authClient } from "../auth.ts";
 import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
-import { readError } from "../components/community-endpoints/types.ts";
 import { accountPermissions } from "../components/keys/account-permissions-input.tsx";
 import { KeySubject } from "../components/keys/key-subject.tsx";
 import type { ApiKey } from "../components/keys/types.ts";
@@ -36,11 +35,13 @@ import {
     preferredReturnUrl,
     ReturnToApp,
 } from "../lib/return-to-app.tsx";
+import { updateApiKey } from "../lib/update-api-key.ts";
 
 type GrantSearch = {
     id: string;
-    /** One model category or one account permission the key was refused. */
+    /** The one model category, model ID or account permission the key was refused. */
     category?: ModelCategory;
+    model?: string;
     permission?: (typeof CONSENT_PERMISSIONS)[number];
     /** The agent whose run was refused, with gen's signature over it. */
     agent?: string;
@@ -49,7 +50,7 @@ type GrantSearch = {
 };
 
 /**
- * Approve one model category or account permission for an existing key, linked from
+ * Approve one model category, model or account permission for an existing key, linked from
  * the 403s and chat replies gen returns when a key lacks it.
  */
 export const Route = createFileRoute("/grant")({
@@ -57,6 +58,10 @@ export const Route = createFileRoute("/grant")({
     validateSearch: (search: Record<string, unknown>): GrantSearch => ({
         id: typeof search.id === "string" ? search.id : "",
         category: MODEL_CATEGORY_ORDER.find((c) => c === search.category),
+        model:
+            typeof search.model === "string" && search.model
+                ? search.model
+                : undefined,
         permission: CONSENT_PERMISSIONS.find((p) => p === search.permission),
         agent: typeof search.agent === "string" ? search.agent : undefined,
         sig: typeof search.sig === "string" ? search.sig : undefined,
@@ -65,8 +70,16 @@ export const Route = createFileRoute("/grant")({
     component: GrantPage,
 });
 
+/** The signed-in owner's key with this id, or null. */
+async function loadKey(id: string): Promise<ApiKey | null> {
+    const response = await accountClient.keys.$get();
+    if (!response.ok) return null;
+    const keys = (await response.json()).data as ApiKey[];
+    return keys.find((item) => item.id === id) ?? null;
+}
+
 function GrantPage() {
-    const { id, category, permission, agent, sig, redirect } =
+    const { id, category, model, permission, agent, sig, redirect } =
         Route.useSearch();
     const navigate = useNavigate({ from: "/grant" });
     const { data: session, isPending } = authClient.useSession();
@@ -83,10 +96,18 @@ function GrantPage() {
     const catalog = useModelCatalog();
     const grant = useMemo(
         () =>
-            category ? { category } : permission ? { permission } : undefined,
-        [category, permission],
+            category
+                ? { category }
+                : model
+                  ? { model }
+                  : permission
+                    ? { permission }
+                    : undefined,
+        [category, model, permission],
     );
-    const title = category ? "Allow model access" : "Allow account access";
+    // A category or a model ID goes into the key's model list.
+    const modelEntry = category ?? model;
+    const title = modelEntry ? "Allow model access" : "Allow account access";
 
     useEffect(() => {
         const from = preferredReturnUrl(redirect);
@@ -104,13 +125,9 @@ function GrantPage() {
         setKey(undefined);
         setOutcome("pending");
         setError(null);
-        apiClient["api-keys"]
-            .$get()
-            .then((response) => (response.ok ? response.json() : null))
-            .then((result) => {
-                if (canceled) return;
-                const keys = (result?.data ?? []) as ApiKey[];
-                setKey(keys.find((item) => item.id === id) ?? null);
+        loadKey(id)
+            .then((loaded) => {
+                if (!canceled) setKey(loaded);
             })
             .catch(() => {
                 if (!canceled) setKey(null);
@@ -127,7 +144,7 @@ function GrantPage() {
         }
         let canceled = false;
         setAskingAgent(undefined);
-        apiClient["api-keys"][":id"]["grant-agent"]
+        accountClient.keys[":id"]["grant-agent"]
             .$get({ param: { id }, query: { ...grant, agent, sig } })
             .then((response) => (response.ok ? response.json() : null))
             .then((result) => {
@@ -141,9 +158,12 @@ function GrantPage() {
         };
     }, [userId, id, grant, agent, sig]);
 
-    const agentListing = catalog.find(
-        (item) => getCatalogModelId(item) === askingAgent,
-    );
+    const displayName = (modelId: string) => {
+        const listing = catalog.find(
+            (item) => getCatalogModelId(item) === modelId,
+        );
+        return listing ? getCatalogDisplayName(listing, modelId) : modelId;
+    };
     // Who asks sits on top: the key, then the agent gen signed for, if any.
     // What they ask for sits below the description.
     const subject = key ? (
@@ -162,9 +182,7 @@ function GrantPage() {
                 <AppAttribution
                     icon={<BotIcon className="h-4 w-4" />}
                     attribution={{
-                        appName: agentListing
-                            ? getCatalogDisplayName(agentListing, askingAgent)
-                            : askingAgent,
+                        appName: displayName(askingAgent),
                         githubUsername:
                             parseCommunityModelId(askingAgent)
                                 ?.ownerGithubUsername,
@@ -197,9 +215,9 @@ function GrantPage() {
         return <AuthModalLoading title={title} />;
     }
 
-    const alreadyAllowed = category
-        ? !Array.isArray(key.permissions?.models) ||
-          key.permissions.models.includes(category)
+    const models = key.permissions?.models;
+    const alreadyAllowed = modelEntry
+        ? !Array.isArray(models) || models.includes(modelEntry)
         : Boolean(permission && key.permissions?.account?.includes(permission));
 
     if (outcome !== "pending" || alreadyAllowed) {
@@ -250,14 +268,40 @@ function GrantPage() {
                             setIsGranting(true);
                             setError(null);
                             try {
-                                const response = await apiClient["api-keys"][
-                                    ":id"
-                                ].grant.$post({
-                                    param: { id },
-                                    json: grant,
-                                });
-                                if (!response.ok)
-                                    throw new Error(await readError(response));
+                                // Re-read the key so a grant made since this
+                                // page opened is kept. Only the asked-for entry
+                                // is added; budget, expiry and the rest stay.
+                                const current = await loadKey(id);
+                                if (!current) {
+                                    throw new Error("Couldn’t load this key.");
+                                }
+                                const models = current.permissions?.models;
+                                const account =
+                                    current.permissions?.account ?? [];
+                                if (modelEntry) {
+                                    // No model list already allows every model.
+                                    if (
+                                        Array.isArray(models) &&
+                                        !models.includes(modelEntry)
+                                    ) {
+                                        await updateApiKey(id, {
+                                            allowedModels: [
+                                                ...models,
+                                                modelEntry,
+                                            ],
+                                        });
+                                    }
+                                } else if (
+                                    permission &&
+                                    !account.includes(permission)
+                                ) {
+                                    await updateApiKey(id, {
+                                        accountPermissions: [
+                                            ...account,
+                                            permission,
+                                        ],
+                                    });
+                                }
                                 setOutcome("granted");
                             } catch (cause) {
                                 setError(
@@ -281,16 +325,18 @@ function GrantPage() {
                     <Text size="sm" weight="semibold" tone="strong">
                         {category
                             ? `${CATEGORY_LABELS[category]} models`
-                            : accountPermissions.find(
-                                  ({ id }) => id === permission,
-                              )?.label}
+                            : model
+                              ? displayName(model)
+                              : accountPermissions.find(
+                                    ({ id }) => id === permission,
+                                )?.label}
                     </Text>
                 </div>
             </Surface>
-            {category && (
+            {modelEntry && (
                 <Text size="sm">
-                    These models may spend Pollen when used. The key’s existing
-                    spending limit still applies.
+                    {category ? "These models" : "This model"} may spend Pollen
+                    when used. The key’s existing spending limit still applies.
                 </Text>
             )}
         </AuthFlowScreen>

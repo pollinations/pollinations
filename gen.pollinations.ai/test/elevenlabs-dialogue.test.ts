@@ -66,42 +66,6 @@ describe("ElevenLabs Text to Dialogue", () => {
             "9",
         );
     });
-
-    it("rejects inputs above the provider's reliable character limit", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: [{ text: "x".repeat(2001), voice: "nova" }],
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it("rejects more than 10 unique voices", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: Array.from({ length: 11 }, (_, index) => ({
-                    text: `Speaker ${index}`,
-                    voice: `custom-voice-${index}`,
-                })),
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
-
-    it("rejects invalid voice IDs", async () => {
-        await expect(
-            generateElevenLabsDialogue({
-                inputs: [{ text: "Hello.", voice: "bad" }],
-                responseFormat: "mp3",
-                apiKey: "test-eleven-key",
-                log,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
 });
 
 workerTest("advertises the simple route for every speech model", async () => {
@@ -345,35 +309,6 @@ workerTest(
         ).toHaveLength(2);
         // Requests without a model use the default, Azure OpenAI tts-1.
         expect(providerCalls(AZURE_TTS_URL)).toHaveLength(1);
-    },
-);
-
-workerTest(
-    "rejects oversized dialogue before safety or provider calls",
-    async ({ paidApiKey }) => {
-        const fetchMock = vi.spyOn(globalThis, "fetch");
-        const response = await fetchGen(
-            "https://gen.pollinations.ai/v1/audio/speech",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${paidApiKey}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    model: "eleven-dialogue",
-                    input: `nova: ${"x".repeat(1001)}\ngeorge: ${"y".repeat(1000)}`,
-                    safe: false,
-                }),
-            },
-        );
-
-        expect(response.status).toBe(400);
-        expect(
-            fetchMock.mock.calls.some(([url]) =>
-                String(url).startsWith("https://api.elevenlabs.io/"),
-            ),
-        ).toBe(false);
     },
 );
 

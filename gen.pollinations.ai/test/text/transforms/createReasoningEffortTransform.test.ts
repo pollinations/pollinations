@@ -95,14 +95,20 @@ describe("reasoning_effort model wiring", () => {
         "minimax",
         "muse-glimmer",
         "inception/mercury-2.5-preview",
-    ])("disables thinking via reasoning_effort=none on %s", async (modelName) => {
-        const transform = findModelByName(modelName)?.transform;
-        if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
-            reasoning_effort: "none",
-        });
-        expect(options.reasoning_effort).toBe("none");
-    });
+    ])(
+        "disables thinking via reasoning_effort=none on %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                {
+                    reasoning_effort: "none",
+                },
+            );
+            expect(options.reasoning_effort).toBe("none");
+        },
+    );
 
     it.each([
         "glm-5.3",
@@ -123,20 +129,56 @@ describe("reasoning_effort model wiring", () => {
         expect(options.reasoning_effort).toBeUndefined();
     });
 
-    it.each([
-        "mistral-large",
-        "llama",
-        "qwen-coder",
-    ])("strips reasoning_effort on non-reasoning model %s", async (modelName) => {
-        const transform = findModelByName(modelName)?.transform;
-        if (!transform) throw new Error(`${modelName} transform missing`);
-        const { options } = await transform([{ role: "user", content: "hi" }], {
-            reasoning_effort: "high",
-        });
-        expect(options.reasoning_effort).toBeUndefined();
-    });
+    it.each(["mistral-large", "llama", "qwen-coder"])(
+        "strips reasoning_effort on non-reasoning model %s",
+        async (modelName) => {
+            const transform = findModelByName(modelName)?.transform;
+            if (!transform) throw new Error(`${modelName} transform missing`);
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                {
+                    reasoning_effort: "high",
+                },
+            );
+            expect(options.reasoning_effort).toBeUndefined();
+        },
+    );
 
     it("passes Command A+ requests through without a model-specific transform", () => {
         expect(findModelByName("command-a-plus")?.transform).toBeUndefined();
+    });
+});
+
+describe("direct Novita Ling reasoning controls", () => {
+    const transform = findModelByName("inclusionai/ling-3.1-flash")?.transform;
+    it("maps explicit off and on requests to the native thinking switch", async () => {
+        const off = await transform?.([], {
+            reasoning_effort: "none",
+            max_tokens: 128,
+        });
+        const on = await transform?.([], { reasoning_effort: "high" });
+        expect(off?.options).toMatchObject({
+            enable_thinking: false,
+            max_tokens: 128,
+            separate_reasoning: true,
+        });
+        expect(on?.options.enable_thinking).toBe(true);
+        expect(off?.options).not.toHaveProperty("reasoning_effort");
+    });
+    it("preserves explicit reasoning visibility and leaves the default thinking mode alone", async () => {
+        const result = await transform?.([], {
+            reasoning: { enabled: false, exclude: true },
+        });
+        expect(result?.options).toMatchObject({
+            enable_thinking: false,
+            separate_reasoning: true,
+            reasoning: { enabled: false, exclude: true },
+        });
+        expect(result?.options.reasoning).toEqual({
+            enabled: false,
+            exclude: true,
+        });
+        const untouched = await transform?.([], {});
+        expect(untouched?.options.enable_thinking).toBeUndefined();
     });
 });

@@ -136,17 +136,20 @@ describe("qwenImage21Model", () => {
         ["16:9", 1376, 768],
         ["9:16", 768, 1376],
         ["1:1", 1024, 1024],
-    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    ] as const)(
+        "resolves aspectRatio %s into a matching size when dimensions are not explicit",
+        async (aspectRatio, width, height) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        await callQwen21("aspect ratio", {
-            ...baseParams,
-            aspectRatio,
-        });
+            await callQwen21("aspect ratio", {
+                ...baseParams,
+                aspectRatio,
+            });
 
-        expect(requests[0].body.image_size).toEqual({ width, height });
-    });
+            expect(requests[0].body.image_size).toEqual({ width, height });
+        },
+    );
 
     it("ignores aspectRatio once dimensions are explicit", async () => {
         const requests: FalRequest[] = [];
@@ -182,18 +185,6 @@ describe("qwenImage21Model", () => {
         expect(result.trackingData?.usage).toEqual({
             completionImageTokens: 4_000_000,
         });
-    });
-
-    it("rejects more than ten reference images before calling Fal", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen21("too many references", {
-                ...baseParams,
-                image: Array.from({ length: 11 }, () => INPUT_IMAGE),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("rejects a successful Fal response without an output image", async () => {

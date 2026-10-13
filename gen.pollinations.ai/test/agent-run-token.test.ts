@@ -39,7 +39,7 @@ function communityProbe(type: CommunityEndpointRuntime["type"] = "proxy") {
             c.set("model", {
                 requested: "Itachi-1824/polli",
                 resolved: "Itachi-1824/polli",
-                definition: { category: "text" },
+                definition: { category: "text", aliases: [] },
                 communityEndpoint: {
                     id: "managed-agent-id",
                     modelId: "Itachi-1824/polli",
@@ -95,7 +95,7 @@ test("resolves to the parent key and its permissions", async () => {
         apiKeyId: parent.id,
         pollenBalance: 42,
         permissions: {
-            models: ["text"],
+            models: [RESTRICTED_TEXT_TEST_MODEL],
             account: ["usage", "machines"],
         },
         agentRun: { parentApiKeyId: parent.id },

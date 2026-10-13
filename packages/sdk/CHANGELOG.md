@@ -4,6 +4,49 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
+### Added
+- `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
+  billed at the cache-write rate. Reads stay in `input_cached_tokens`.
+
+### Removed
+- `Conversation` and `conversation()`. Nothing used them; keep the history in
+  your own `messages` array and pass it to `chat()` or `chatStream()`.
+
+### Fixed
+- `upload()` keeps an uploaded `File`'s name instead of always sending
+  `upload`, so the media service can detect its type from the extension.
+- `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
+  `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
+  of throwing a JSON `SyntaxError`.
+- `chatStream()` rejects prematurely closed responses without a terminal
+  finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
+
+## [5.1.0-alpha.14] - 2026-10-08
+
+### Changed
+- `ChatOptions.routing` is sent as `metadata`, with `text` as `metadata.model`.
+  Floret no longer accepts a top-level `routing` object.
+
+## [5.1.0-alpha.13] - 2026-10-07
+
+### Added
+- `referenceImages`, `referenceVideos`, and `referenceAudios` on video options
+  accept a URL or an array of URLs for guidance. `referenceImage` continues
+  to control first/last frames separately.
+
+## [5.1.0-alpha.12] - 2026-10-06
+
+### Removed
+- `imageGenerate()` no longer takes `n` and always returns one image. The API
+  generates one image per request and rejects `n` above 1.
+
 ## [5.1.0-alpha.11] - 2026-10-06
 
 ### Fixed

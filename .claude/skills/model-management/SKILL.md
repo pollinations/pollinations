@@ -81,9 +81,10 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 ### 1. Reconcile current state
 
 - Resolve aliases to the canonical registry entry.
-- API keys store model categories, not model IDs, so a rename never touches
-  them. A model that changes category changes which restricted keys reach it;
-  state that in the PR.
+- API keys store model categories and canonical model IDs. A rename keeps
+  working for keys that stored the old ID only while the old ID stays an
+  alias. A model that changes category changes which restricted keys reach
+  it; state that in the PR.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - If a model or provider is missing from the registry, check `git log --all -- <path>`
@@ -102,6 +103,22 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - Probe the exact deployment and request shape Pollinations will use.
 - For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
+
+For direct Novita discovery, use the supported
+[model catalog](https://docs.novita.ai/api-reference/model-apis-llm-list-models)
+and [account quotas](https://docs.novita.ai/api-reference/quota-list) with an
+existing authorized key. Quota queries require `modal=llm`; query `RPM` and
+`TPM` separately with `productType=Public Endpoint` and the exact model as
+`quotaObject`, then check the returned identity. The OpenAI-compatible base is
+`https://api.novita.ai/openai/v1`; probe the exact upstream model using
+[Chat Completions](https://docs.novita.ai/api-reference/model-apis-llm-create-chat-completion).
+Request `stream_options.include_usage` for streaming and prove terminal usage,
+cache/reasoning billing, capabilities and burst capacity through local Gen
+before routing traffic. Gateway availability does not prove direct access or
+independent capacity: OpenRouter/Vercel routes backed by Novita can share the
+same upstream pool. Keep direct provider attribution and charges distinct from
+gateway-billed traffic; use the Economics Novita connector guide for supported
+billing sources. Preserve the existing public contract and fallback mechanism.
 
 ### 3. Confirm the contract
 
@@ -201,6 +218,10 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   fallbacks need explicit costs when inheritance would add or omit the fee.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
+- Adding or removing a registry `provider` changes the public
+  [Service Providers](../../../pollinations.ai/public/legal/SUBPROCESSORS.md)
+  page. Update its model-provider line in the same PR;
+  `gen.pollinations.ai/test/service-providers.test.ts` fails until it matches.
 
 ### 5. Verify end to end
 
@@ -218,8 +239,47 @@ Before publishing:
 - Format changed files with the repository formatter.
 - Run focused tests and type checks for every touched service.
 - Review the complete diff for unrelated changes and dead code.
-- Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
+- Write the description in the format below.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
+
+#### Scheduled merges and holds
+
+- Apply the repository's `MERGE-HOLD` label and keep the PR draft whenever a model change must wait for a date, provider confirmation, or another unresolved prerequisite. Do not enable auto-merge while held.
+- Start every held model PR title with `🕒 YYYY-MM-DD | <type>: <change>` using the earliest planned merge date. If that date is unconfirmed, use `🕒 DATE TBD | <type>: <change>`. Never put the clock/date only at the end or infer a date from an older model's promotion.
+- Put the earliest merge date, provider source, exact cutoff/timezone (or explicitly unknown), hold reason, and release conditions at the top of the description. Distinguish the merge date from the production effective date; a date alone does not authorize merging or deployment.
+- Verify successor prices for the exact model and each serving route. Mark unconfirmed rates as unconfirmed; do not present an older model's rates or a free placeholder as verified future pricing.
+- Prioritize passed merge dates during triage, but recheck provider facts, dependencies, current CI and required live validation before lifting a hold. Unknown dates need clarification, not an invented deadline.
+- Remove `MERGE-HOLD` and mark ready only when all release conditions are met and the merge is authorized. Keep the clock/date prefix for scheduled changes so their timing remains visible.
+
+#### PR description
+
+Decision first, at most ~150 words, no narrative:
+
+```md
+**Decision:** ready to merge | needs your call: <question>
+
+`<model ID>` · effective on production deploy | YYYY-MM-DD HH:MM UTC
+
+| | Before | After |
+| --- | --- | --- |
+| Access | | |
+| Price (pollen/<unit>) | | |
+| Primary · cost | | |
+| Fallback · cost | | |
+| Promo | | |
+| Capabilities | | |
+
+**Verified:** <routes × capabilities> · provider charge = our cost · wallet = price
+**Flags:** <only if action is needed>
+```
+
+- Take values from code, catalog and live provider. Write `same` if unchanged, `none` if absent.
+- End each cost cell with `= price`, `below price` or `above price ⚠`.
+- Retirement, once decided: add the row below; the news pipeline parses it. Postpone with a new row, withdraw with `Cancelled`, never move a date earlier. Note a provider's route deadline as a code comment, not in the registry.
+
+| Model | Action | Change | Before | After | Effective |
+| --- | --- | --- | --- | --- | --- |
+| `<model ID>` | RETIRE | Availability | Available | Retired | YYYY-MM-DD HH:MM UTC |
 
 ## Completion gate
 

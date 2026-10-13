@@ -101,6 +101,14 @@ describe("modelBody", () => {
         });
     });
 
+    it("declares a text endpoint without SSE only for --no-streaming", () => {
+        expect(modelBody({ streaming: false }, false)).toEqual({
+            advertised: { streaming: false },
+        });
+        expect(modelBody({ streaming: true }, false)).toEqual({});
+        expect(modelBody({}, false)).toEqual({});
+    });
+
     it("sends the paid-only choice only when the flag is given", () => {
         expect(modelBody({ visibility: "public" }, false)).toEqual({
             visibility: "public",
@@ -113,30 +121,30 @@ describe("modelBody", () => {
         });
     });
 
-    it.each([
-        "responses",
-        "chat_completions",
-    ])("registers one exact %s text endpoint without a base URL", (api) => {
-        const url = "https://example.com/custom-endpoint?version=1";
-        expect(
-            modelBody(
-                {
-                    name: "text-provider",
-                    title: "Text Provider",
-                    api,
-                    url,
-                    bearerToken: "upstream-token",
-                },
-                true,
-            ),
-        ).toEqual({
-            name: "text-provider",
-            title: "Text Provider",
-            api,
-            url,
-            bearerToken: "upstream-token",
-        });
-    });
+    it.each(["responses", "chat_completions"])(
+        "registers one exact %s text endpoint without a base URL",
+        (api) => {
+            const url = "https://example.com/custom-endpoint?version=1";
+            expect(
+                modelBody(
+                    {
+                        name: "text-provider",
+                        title: "Text Provider",
+                        api,
+                        url,
+                        bearerToken: "upstream-token",
+                    },
+                    true,
+                ),
+            ).toEqual({
+                name: "text-provider",
+                title: "Text Provider",
+                api,
+                url,
+                bearerToken: "upstream-token",
+            });
+        },
+    );
 
     it("changes the selected API and URL together", () => {
         expect(

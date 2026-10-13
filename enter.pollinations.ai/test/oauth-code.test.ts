@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { afterEach, describe, expect, vi } from "vitest";
 import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
@@ -80,6 +80,7 @@ describe("OAuth authorization server metadata", () => {
         ]);
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
+        expect(meta.client_id_metadata_document_supported).toBe(true);
     });
 });
 
@@ -291,15 +292,16 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("full flow: register client, create code, exchange for token", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
         // Register the OAuth client: a pk_ App Key with a redirect allowlist
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
@@ -308,12 +310,12 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(client.key.startsWith("pk_")).toBe(true);
 
         const metaRes = await SELF.fetch(
-            `${BASE}/api/api-keys/${client.id}/metadata`,
+            `${BASE}/api/account/keys/${client.id}`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
             },
@@ -380,14 +382,15 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
@@ -414,23 +417,24 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     test("rejects extra query params on a registered redirect_uri (exact match)", async ({
         sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
 
-        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+        const createRes = await SELF.fetch(`${BASE}/api/account/keys`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ name: "alp-test", type: "publishable" }),
         });
         const client = (await createRes.json()) as { id: string; key: string };
-        await SELF.fetch(`${BASE}/api/api-keys/${client.id}/metadata`, {
-            method: "POST",
+        await SELF.fetch(`${BASE}/api/account/keys/${client.id}`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
+                Authorization: `Bearer ${accountToken}`,
             },
             body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
         });
@@ -477,6 +481,102 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
     }, 30000);
 });
 
+describe("Client ID Metadata Document clients", () => {
+    const CLIENT_ID = "https://client.example/oauth/client.json";
+
+    /** Serve the client's metadata document; other hosts keep the fixture mocks. */
+    function serveClientMetadata() {
+        const next = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) =>
+                String(input) === CLIENT_ID
+                    ? Promise.resolve(
+                          Response.json({
+                              client_id: CLIENT_ID,
+                              client_name: "Example MCP Client",
+                              redirect_uris: ["http://127.0.0.1/callback"],
+                          }),
+                      )
+                    : next(input, init),
+        );
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    async function createCode(sessionToken: string, redirectUri: string) {
+        return await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                apiKey: "sk_minted_by_consent",
+                clientId: CLIENT_ID,
+                redirectUri,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+            }),
+        });
+    }
+
+    test("full flow: listed loopback redirect on any port, then token exchange", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        serveClientMetadata();
+        const redirectUri = "http://127.0.0.1:53682/callback";
+
+        const codeRes = await createCode(sessionToken, redirectUri);
+        expect(codeRes.status).toBe(200);
+        const { code } = (await codeRes.json()) as { code: string };
+
+        const tokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "authorization_code",
+                code,
+                client_id: CLIENT_ID,
+                redirect_uri: redirectUri,
+                code_verifier: VERIFIER,
+            }),
+        );
+        expect(tokenRes.status).toBe(200);
+        const token = (await tokenRes.json()) as { access_token: string };
+        expect(token.access_token).toBe("sk_minted_by_consent");
+    }, 30000);
+
+    test("rejects a redirect_uri the document does not list", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        serveClientMetadata();
+        const codeRes = await createCode(
+            sessionToken,
+            "https://evil.example/callback",
+        );
+        expect(codeRes.status).toBe(400);
+    }, 30000);
+
+    test("app-lookup names the client and its host", async () => {
+        serveClientMetadata();
+        const res = await SELF.fetch(
+            `${BASE}/api/app-lookup?client_id=${encodeURIComponent(CLIENT_ID)}`,
+        );
+        expect(await res.json()).toEqual({
+            found: true,
+            clientHost: "client.example",
+            appName: "Example MCP Client",
+            redirectUris: ["http://127.0.0.1/callback"],
+        });
+    });
+});
+
 describe("GET /api/oauth/userinfo", () => {
     test("returns the same OIDC-shaped profile as the device alias", async ({
         sessionToken,
@@ -496,16 +596,16 @@ describe("GET /api/oauth/userinfo", () => {
     }, 30000);
 
     test("name/email require the profile permission for API keys", async ({
-        sessionToken,
         mocks,
+        accountToken,
     }) => {
         await mocks.enable("tinybird", "github");
         const mint = async (accountPermissions?: string[]) => {
-            const res = await SELF.fetch(`${BASE}/api/api-keys`, {
+            const res = await SELF.fetch(`${BASE}/api/account/keys`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     name: "userinfo-scope-test",

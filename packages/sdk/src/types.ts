@@ -103,6 +103,12 @@ export interface VideoGenerateOptions extends RequestOptions {
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Public image URL(s) for visual guidance, separate from first/last frames. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceImages?: string | string[];
+    /** Public video URL(s) for motion or style guidance. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceVideos?: string | string[];
+    /** Public audio URL(s) for audio-driven generation. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceAudios?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -278,7 +284,10 @@ export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
 export interface ChatOptions extends RequestOptions {
     /** Text model to use (server default: 'openai') */
     model?: TextModel;
-    /** Per-capability downstream model overrides for router models. */
+    /**
+     * Per-capability downstream model overrides for router models. Sent as
+     * `metadata`, with `text` as `metadata.model`.
+     */
     routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
@@ -780,7 +789,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Restrict to specific models */
+    /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
@@ -862,6 +871,7 @@ export interface UsageRecord {
     meter_source: string;
     input_text_tokens: number;
     input_cached_tokens: number;
+    input_cache_write_tokens: number;
     input_audio_tokens: number;
     input_audio_seconds: number;
     input_image_tokens: number;
@@ -1010,7 +1020,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to model categories (text, image, ...); a model ID allows its whole category */
+    /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -1219,8 +1229,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     width?: number;
     /** Image height in pixels */
     height?: number;
-    /** Number of images to generate (default: 1) */
-    n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
     /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */

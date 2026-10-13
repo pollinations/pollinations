@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 type Attribution = {
     appName?: string;
     githubUsername?: string;
+    clientHost?: string;
 };
 
 type AppAttributionProps = {
@@ -75,7 +76,7 @@ export function AppAttribution({
                         </Text>
                     </Line>
                 )}
-                {owner && (
+                {(owner || attribution?.clientHost) && (
                     <li className="flex min-h-6 items-center gap-3">
                         {/* "by" takes the icon column, so the pill starts with the other lines' text. */}
                         <Text
@@ -86,11 +87,22 @@ export function AppAttribution({
                         >
                             by
                         </Text>
-                        <AccountIdentityLink
-                            name={`@${owner}`}
-                            avatarUrl={`https://github.com/${owner}.png?size=48`}
-                            href={`https://github.com/${owner}`}
-                        />
+                        {owner ? (
+                            <AccountIdentityLink
+                                name={`@${owner}`}
+                                avatarUrl={`https://github.com/${owner}.png?size=48`}
+                                href={`https://github.com/${owner}`}
+                            />
+                        ) : (
+                            <Text
+                                size="sm"
+                                weight="semibold"
+                                tone="strong"
+                                className="break-all font-mono"
+                            >
+                                {attribution?.clientHost}
+                            </Text>
+                        )}
                     </li>
                 )}
             </ul>

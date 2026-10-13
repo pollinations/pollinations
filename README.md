@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
-| [📚 Pollinations Quest Starter](https://elite-surely-machine-enemies.trycloudflare.com) | A zero-backend web app that walks a brand-new Pollinations user through the seven setup quests on one page. You paste your API key (kept only in browser localStorage - no server, no data collection) a | [@lingt11](https://github.com/lingt11) |
-| [🎮 Postcard Worlds](https://tomdacatto.github.io/pollinations-postcard-worlds) | Type a place and an AI paints it as a postcard. A vision model finds the doors, paths and windows in the picture; click one to step into the next view, painted to match the last using the previous vie | [@tomdacatto](https://github.com/tomdacatto) |
-| [📚 Chorus](https://xiaotian1171.github.io/chorus) | Turn your notes into a song you cannot get out of your head. Paste the notes you keep failing to remember — a fact list, a formula sheet, the seven layers, the irregular verbs — pick a style, and Chor | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [📚 Tunemory](https://tomdacatto.github.io/pollinations-tunemory) | Turn a fact, formula or word list into a short catchy song that helps you remember it. Paste your notes, pick a style, and get lyrics that keep every fact and number (checked in code before they are s | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Liar's Supper](https://xiaotian1171.github.io/liars-supper) | A party deduction game for one device passed around the table. The host sets a scene, deals every player a secret role, narrates three twists while the table argues on a timer, then takes a private vo | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🎮 Whisperwick](https://kreggscode.github.io/whisperwick) | A pass-and-play social deduction party game for 3-10 players around one device, with an AI host that invents a new scenario every round, deals the secret roles, narrates the night and reads the votes | [@kreggscode](https://github.com/kreggscode) |
-| [🎮 Mole Party](https://tomdacatto.github.io/pollinations-mole-party) | Pass-and-play social-deduction party game for 4 to 10 players on one phone. An AI host deals secret roles (Insider, Impostor, Jester), writes a new scenario every game, narrates a twist each round, sp | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Ink or Engine](https://ink-or-engine-metamysteries8.endoxidev.chatgpt.site) | Free timed real-or-AI text game. Pollinations generated all 12 fakes. API source: https://github.com/MetaMysteries8/ink-or-engine/blob/main/generate.mjs | [@MetaMysteries8](https://github.com/MetaMysteries8) |
-| [🎮 Real or AI? — Spot the Synthetic](https://spot-the-ai.edgeone.dev) | Real or AI? is a timed browser game where players see two matched images or two matched passages — one real, one AI-generated — and must spot the fake before the clock runs out. 3 hearts, streak multi | [@NamanSoni78](https://github.com/NamanSoni78) |
-| [🎮 Spot the Fake](https://tomdacatto.github.io/pollinations-spot-the-fake) | A real-or-AI guessing game. Each round shows two photos or two sentences, one real (a Wikimedia Commons photo or a Wikipedia sentence) and one generated with Pollinations. Pick the fake before the tim | [@tomdacatto](https://github.com/tomdacatto) |
+| [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
+| [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
+| [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
+| [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
+| [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
+| [💼 RankNest YouTube Research & Strategy Tool](https://ranknest.tech/youtube-research) | RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas. | [@asiasi44](https://github.com/asiasi44) |
+| [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
+| [📚 Text Comparison](https://mahmoudpov373-star.github.io/Comart) | App Description: A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, wi | [@mahmoudpov373-star](https://github.com/mahmoudpov373-star) |
+| [🖼️ InkBloom](https://coloring-project1.ismailbanouigu.workers.dev) | Turn photos or text prompts into printable coloring pages. Text-to-coloring generation is powered by Pollinations. | [@ismailbanouigu](https://github.com/ismailbanouigu) |
+| [🤖 MebelSmetaBot](https://t.me/MebelSmetaBot) | Telegram bot for furniture projects: the user sends a phone photo of a kitchen or room, and the bot generates a visualization of the new furniture in that space using the Pollinations image API. It al | [@druzhininige-dotcom](https://github.com/druzhininige-dotcom) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
-- **2026-10-05** – **🎨 FLUX.3 Image arrives** Generate 1K or 2K images in fifteen aspect ratios, or edit with up to ten reference images. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-10-05** – **🎨 Seedream 5.0 Flash joins the garden** Generate and edit images with up to ten references, seed control, and 1K or 2K output. [Explore image models](https://gen.pollinations.ai/image/models).
-- **2026-10-05** – **🤖 Ling 3.1 Flash is here** Try a new text model with reasoning, tool use, and a 262K-token context at zero launch pricing, including with Quest Pollen. [See text models](https://gen.pollinations.ai/v1/models).
-- **2026-10-05** – **💡 Decisions get another model** Liquid D1 is available for paid decision requests and chat; the [SDK](https://www.npmjs.com/package/@pollinations/sdk) now has a typed `decision()` call for Jev.
-- **2026-10-05** – **🔗 Find the model you meant** Search and filter the model catalog by capabilities through the API or MCP; Open WebUI can now sort models by category tags. [API docs](https://gen.pollinations.ai/docs).
-- **2026-10-05** – **🎯 Seven quests, one page** Pollinations Quest Starter walks new users through setup without sending their API key to its server. [Try it](https://elite-surely-machine-enemies.trycloudflare.com) <!-- app -->
-- **2026-10-04** – **🌟 New Quests for video and community models** Earn Pollen for trying a video or community model; model publishers can earn it when others use their models.
-- **2026-10-04** – **🔗 Claude Code connects directly** Polli CLI can connect Claude Code to Pollinations’ `/v1/messages` endpoint, with model aliases and a separate config that leaves your Claude settings alone. [Get Polli CLI](https://www.npmjs.com/package/@pollinations/cli).
-- **2026-10-04** – **🎨 Explore a painted world** In Postcard Worlds, enter a place, then step through doors and paths in AI-painted scenes that carry the view forward. [Try it](https://tomdacatto.github.io/pollinations-postcard-worlds) <!-- app -->
-- **2026-10-04** – **🎵 Turn study notes into songs** Tunemory makes short songs from facts, formulas, or word lists and checks the lyrics for missing details. [Try it](https://tomdacatto.github.io/pollinations-tunemory) <!-- app -->
+- **2026-10-11** – **🚀 Longer, larger sandboxes** Request sandbox runs beyond 24 hours through E2B’s timeout API, or choose `pollinations-large` when a job needs 4 vCPU and 8 GB RAM.
+- **2026-10-11** – **🎨 InkBloom coloring pages** Turn photos or text prompts into printable coloring pages. [Try it](https://coloring-project1.ismailbanouigu.workers.dev).
+- **2026-10-11** – **💡 Text Comparison joins Learn** Explore Text Comparison through its Arabic right-to-left interface. [Try it](https://mahmoudpov373-star.github.io/Comart).
+- **2026-10-11** – **🎵 Compose with Midi Journey** Compose and transform MIDI through conversation in Ableton Live with this Max for Live device. [View repo](https://github.com/pollinations/MIDIjourney).
+- **2026-10-11** – **🤖 Polli keeps the conversation going** Polli can queue follow-ups, reply to requests separately or together, and answer with emoji reactions. [Join the chat](https://chat.pollinations.ai).
+- **2026-10-10** – **🎨 A new Play page** Generate images, video, and audio in one place. Keep inputs in a shareable URL, preview and download results, or copy the API URL for the request you made. [Try Play](https://pollinations.ai/play).
+- **2026-10-10** – **💡 PDFs for Claude and GPT** Send base64 PDFs in chat requests to Claude on Bedrock or GPT on Azure/OpenAI, including GPT models using the Responses API. [Read the API docs](https://gen.pollinations.ai/docs).
+- **2026-10-10** – **🤖 Catalogs for agent discovery** Agents can find the API through an RFC 9727 catalog and discover hosted MCP servers through an AI Catalog and server cards. [Explore MCP servers](https://gen.pollinations.ai/docs#tag/mcp-servers).
+- **2026-10-10** – **📱 Furniture ideas from a photo** Send MebelSmetaBot a photo of a room or kitchen to visualize new furniture in the space. [Try it](https://t.me/MebelSmetaBot).
+- **2026-10-09** – **🎵 MAI voices for speech** Generate speech with MAI-Voice-2.1 or its Flash variant, each offering 97 voices and MP3 or PCM output. [Browse models](https://enter.pollinations.ai/models).
 ---
 
 ## 🌱 Introduction
@@ -89,7 +89,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<!-- Updated daily by .github/workflows/docs-update-readme-news.yml.
+<!-- Updated daily by .github/workflows/news-sync-readme.yml.
      Regenerate locally with:
      GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
 <a href="https://star-history.com/#pollinations/pollinations&Date">
@@ -274,10 +274,11 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Model Restrictions
 
-Each API key can be scoped to specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
+Each API key can be scoped to model categories or specific models. When creating a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), you can:
 
 - **Allow all models** — key works with any available model
-- **Restrict to specific models** — select exactly which models the key can access (e.g., only `flux` and `openai`, or just `gptimage-large`)
+- **Restrict to categories** — e.g. only `image`, or `image` and `text`. A key allows every model in its categories, including models added later
+- **Restrict to specific models** — through the [API](APIDOCS.md) or `polli keys update <id> --models flux zimage`; a model ID allows only that model
 
 ### Usage
 

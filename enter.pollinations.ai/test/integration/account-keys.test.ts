@@ -1,11 +1,17 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import { describe, expect } from "vitest";
+import {
+    initialKeyEditValues,
+    keyEditUpdates,
+} from "../../frontend/src/components/keys/key-edit-values.ts";
+import type { ApiKey } from "../../frontend/src/components/keys/types.ts";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
 
 describe("Account Key Management API", () => {
     describe("POST /api/account/keys (create)", () => {
         test("should create a secret key via session auth", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -13,7 +19,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "test-child-key",
@@ -31,7 +37,7 @@ describe("Account Key Management API", () => {
         });
 
         test("should create a publishable app key with earnings off by default", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -39,7 +45,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "test-pub-key",
@@ -60,7 +66,7 @@ describe("Account Key Management API", () => {
         });
 
         test("should reject unsafe publishable app redirect URIs", async ({
-            sessionToken,
+            accountToken,
         }) => {
             for (const redirectUri of [
                 "javascript://x/%0afetch('https://example.com')//",
@@ -74,7 +80,7 @@ describe("Account Key Management API", () => {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            Cookie: `better-auth.session_token=${sessionToken}`,
+                            Authorization: `Bearer ${accountToken}`,
                         },
                         body: JSON.stringify({
                             name: "unsafe-pub-key",
@@ -88,38 +94,8 @@ describe("Account Key Management API", () => {
             }
         });
 
-        test("should create a publishable app key with earnings enabled", async ({
-            sessionToken,
-        }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/account/keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        name: "test-pub-key-earnings",
-                        type: "publishable",
-                        redirectUris: ["https://cli-earnings.example/callback"],
-                        earningsEnabled: true,
-                    }),
-                },
-            );
-
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.key.startsWith("pk_")).toBe(true);
-            expect(data.type).toBe("publishable");
-            expect(data.metadata.redirectUris).toEqual([
-                "https://cli-earnings.example/callback",
-            ]);
-            expect(data.metadata.earningsEnabled).toBe(true);
-        });
-
         test("should create key with permissions and budget", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -127,7 +103,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "restricted-child",
@@ -144,16 +120,19 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.permissions).toEqual({
-                models: ["text", "image"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "openai/gpt-5.4-nano",
+                ],
                 account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
         });
 
         test("should let a key with account:keys create a child that can create keys", async ({
-            sessionToken,
+            accountToken,
         }) => {
-            const parentKey = await createApiKeyViaApi(sessionToken, {
+            const parentKey = await createApiKeyViaApi(accountToken, {
                 name: "machine-parent",
                 accountPermissions: ["keys"],
             });
@@ -202,9 +181,9 @@ describe("Account Key Management API", () => {
         });
 
         test("should keep keys created by a Quest Pollen only key Quest Pollen only", async ({
-            sessionToken,
+            accountToken,
         }) => {
-            const parentKey = await createApiKeyViaApi(sessionToken, {
+            const parentKey = await createApiKeyViaApi(accountToken, {
                 name: "quest-parent",
                 accountPermissions: ["keys"],
                 questPollenOnly: true,
@@ -224,14 +203,28 @@ describe("Account Key Management API", () => {
             expect(createChild.status).toBe(200);
             expect((await createChild.json()).questPollenOnly).toBe(true);
 
-            // The owner can lift the restriction from the dashboard.
-            const update = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
+            // The key itself can't lift the restriction.
+            const selfLift = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${parentKey.key}`,
+                    },
+                    body: JSON.stringify({ questPollenOnly: false }),
+                },
+            );
+            expect(selfLift.status).toBe(403);
+
+            // The owner can lift the restriction from the dashboard.
+            const update = await SELF.fetch(
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({ questPollenOnly: false }),
                 },
@@ -241,21 +234,21 @@ describe("Account Key Management API", () => {
         });
 
         test("should create key via API key with account:keys permission", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // First create a key with account:keys permission via session
-            const parentKey = await createApiKeyViaApi(sessionToken, {
+            const parentKey = await createApiKeyViaApi(accountToken, {
                 name: "parent-key",
             });
 
             // Set account:keys permission via the update endpoint
             const updateResp = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${parentKey.id}/update`,
+                `http://localhost:3000/api/account/keys/${parentKey.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         accountPermissions: ["keys"],
@@ -306,7 +299,7 @@ describe("Account Key Management API", () => {
         });
 
         test("should create key via publishable API key with account:keys permission", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const createPub = await SELF.fetch(
                 "http://localhost:3000/api/account/keys",
@@ -314,7 +307,7 @@ describe("Account Key Management API", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         name: "pub-with-keys-perm",
@@ -331,12 +324,12 @@ describe("Account Key Management API", () => {
 
             // Set account:keys permission
             const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
+                `http://localhost:3000/api/account/keys/${createdPub.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         accountPermissions: ["keys"],
@@ -365,119 +358,94 @@ describe("Account Key Management API", () => {
         });
     });
 
-    describe("GET /api/account/keys (list)", () => {
-        test("should list keys via session auth", async ({
-            sessionToken,
-            apiKey,
+    describe("PATCH /api/account/keys/:id (update)", () => {
+        test("saving an older editor preserves concurrent budget, expiry and permission changes", async ({
+            accountToken,
         }) => {
-            expect(apiKey).toBeTruthy(); // ensure at least one key exists
-
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/account/keys",
-                {
-                    headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                },
-            );
-
-            expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.data).toBeInstanceOf(Array);
-            expect(data.data.length).toBeGreaterThanOrEqual(1);
-
-            // Keys should not contain the full secret
-            for (const key of data.data) {
-                expect(key).toHaveProperty("id");
-                expect(key).toHaveProperty("name");
-                expect(key).toHaveProperty("start");
-                expect(key).not.toHaveProperty("key");
-            }
-        });
-
-        test("should reject API key without account:keys permission", async ({
-            apiKey,
-        }) => {
-            const response = await SELF.fetch(
-                "http://localhost:3000/api/account/keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        name: "should-fail",
-                    }),
-                },
-            );
-
-            expect(response.status).toBe(403);
-        });
-
-        test("should create key via publishable API key with account:keys permission", async ({
-            sessionToken,
-        }) => {
-            const createPub = await SELF.fetch(
-                "http://localhost:3000/api/account/keys",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        name: "pub-with-keys-perm",
-                        type: "publishable",
-                    }),
-                },
-            );
-            expect(createPub.status).toBe(200);
-            const createdPub = (await createPub.json()) as {
-                id: string;
-                key: string;
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "before-edit",
+                pollenBudget: 10,
+            });
+            const url = `http://localhost:3000/api/account/keys/${key.id}`;
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accountToken}`,
             };
-            expect(createdPub.key.startsWith("pk_")).toBe(true);
-
-            // Set account:keys permission
-            const updateResponse = await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${createdPub.id}/update`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
-                    },
-                    body: JSON.stringify({
-                        accountPermissions: ["keys"],
-                    }),
-                },
+            const prepared = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({ expiresAt: "2030-01-07T23:54:52.123Z" }),
+            });
+            expect(prepared.status).toBe(200);
+            const initial = initialKeyEditValues(
+                (await prepared.json()) as ApiKey,
+                Date.parse("2030-01-01T00:00:00Z"),
             );
-            expect(updateResponse.status).toBe(200);
+
+            // Spending and another editor can change these while this form is open.
+            const concurrent = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify({
+                    pollenBudget: 4.9987342,
+                    expiresAt: "2030-01-03T11:22:33.456Z",
+                    accountPermissions: ["usage"],
+                    questPollenOnly: true,
+                }),
+            });
+            expect(concurrent.status).toBe(200);
+            const concurrentKey = (await concurrent.json()) as ApiKey;
+            const updates = keyEditUpdates(
+                initial,
+                { ...initial, name: "after-edit" },
+                Date.parse("2030-01-01T01:00:00Z"),
+            );
+            const saved = await SELF.fetch(url, {
+                method: "PATCH",
+                headers,
+                body: JSON.stringify(updates),
+            });
+            expect(saved.status).toBe(200);
+            expect(await saved.json()).toMatchObject({
+                name: "after-edit",
+                pollenBalance: 4.9987342,
+                expiresAt: concurrentKey.expiresAt,
+                permissions: { account: ["usage"] },
+                questPollenOnly: true,
+            });
+        });
+
+        test("accepts an ISO 8601 expiry with a UTC offset", async ({
+            accountToken,
+        }) => {
+            const key = await createApiKeyViaApi(accountToken, {
+                name: "offset-expiry",
+            });
 
             const response = await SELF.fetch(
-                "http://localhost:3000/api/account/keys",
+                `http://localhost:3000/api/account/keys/${key.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${createdPub.key}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
-                    body: JSON.stringify({ name: "child-from-publishable" }),
+                    body: JSON.stringify({
+                        expiresAt: "2030-01-01T02:00:00+02:00",
+                    }),
                 },
             );
 
             expect(response.status).toBe(200);
-            const data = await response.json();
-            expect(data.key.startsWith("sk_")).toBe(true);
-            expect(data.name).toBe("child-from-publishable");
-            expect(data.permissions?.account ?? []).not.toContain("keys");
+            expect((await response.json()).expiresAt).toBe(
+                "2030-01-01T00:00:00.000Z",
+            );
         });
     });
 
     describe("GET /api/account/keys (list)", () => {
         test("should list keys via session auth", async ({
-            sessionToken,
+            accountToken,
             apiKey,
         }) => {
             expect(apiKey).toBeTruthy(); // ensure at least one key exists
@@ -486,7 +454,7 @@ describe("Account Key Management API", () => {
                 "http://localhost:3000/api/account/keys",
                 {
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -523,10 +491,10 @@ describe("Account Key Management API", () => {
 
     describe("DELETE /api/account/keys/:id (revoke)", () => {
         test("should revoke a key via session auth", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // Create a key to revoke
-            const created = await createApiKeyViaApi(sessionToken, {
+            const created = await createApiKeyViaApi(accountToken, {
                 name: "to-be-revoked",
             });
 
@@ -535,7 +503,7 @@ describe("Account Key Management API", () => {
                 {
                     method: "DELETE",
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
@@ -557,21 +525,21 @@ describe("Account Key Management API", () => {
         });
 
         test("should prevent self-revocation via API key", async ({
-            sessionToken,
+            accountToken,
         }) => {
             // Create a key with account:keys permission
-            const created = await createApiKeyViaApi(sessionToken, {
+            const created = await createApiKeyViaApi(accountToken, {
                 name: "self-revoke-test",
             });
 
             // Grant account:keys permission
             await SELF.fetch(
-                `http://localhost:3000/api/api-keys/${created.id}/update`,
+                `http://localhost:3000/api/account/keys/${created.id}`,
                 {
-                    method: "POST",
+                    method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                     body: JSON.stringify({
                         accountPermissions: ["keys"],
@@ -594,19 +562,64 @@ describe("Account Key Management API", () => {
         });
 
         test("should return 404 for non-existent key", async ({
-            sessionToken,
+            accountToken,
         }) => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/account/keys/nonexistent-id",
                 {
                     method: "DELETE",
                     headers: {
-                        Cookie: `better-auth.session_token=${sessionToken}`,
+                        Authorization: `Bearer ${accountToken}`,
                     },
                 },
             );
 
             expect(response.status).toBe(404);
+        });
+    });
+
+    describe("GET /api/account/keys/:id/grant-agent", () => {
+        test("names the asking agent only when gen signed it", async ({
+            accountToken,
+        }) => {
+            const agent = "community/alice/research-buddy";
+            const sig = signGrantAgent({
+                secret: env.BETTER_AUTH_SECRET,
+                apiKeyId: "key-1",
+                grant: { model: "flux" },
+                agent,
+            });
+            const named = async (
+                keyId: string,
+                grant: Record<string, string>,
+                asker: string,
+            ) => {
+                const query = new URLSearchParams({
+                    ...grant,
+                    agent: asker,
+                    sig,
+                });
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/account/keys/${keyId}/grant-agent?${query}`,
+                    { headers: { Authorization: `Bearer ${accountToken}` } },
+                );
+                expect(response.status).toBe(200);
+                return (await response.json<{ agent: string | null }>()).agent;
+            };
+
+            expect(await named("key-1", { model: "flux" }, agent)).toBe(agent);
+            // A signed name cannot be relabelled or moved to another key or grant.
+            expect(
+                await named(
+                    "key-1",
+                    { model: "flux" },
+                    "community/pollinations/floret",
+                ),
+            ).toBeNull();
+            expect(await named("key-2", { model: "flux" }, agent)).toBeNull();
+            expect(
+                await named("key-1", { category: "image" }, agent),
+            ).toBeNull();
         });
     });
 });

@@ -322,7 +322,12 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
-    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
@@ -330,7 +335,7 @@ export class Pollinations {
             signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return response.json() as Promise<T>;
+                return read(response);
             },
         );
     }
@@ -345,7 +350,15 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "image",
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -535,11 +548,8 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Generate image(s) via the OpenAI-compatible POST endpoint.
-     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
-     * response formats.
-     *
-     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     * Generate an image via the OpenAI-compatible POST endpoint.
+     * Supports both `url` / `b64_json` response formats.
      *
      * @example
      * ```ts
@@ -548,15 +558,12 @@ export class Pollinations {
      *   size: '1024x1024',
      *   model: 'flux',
      * });
-     *
-     * // Multiple images
-     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
      * ```
      */
     async imageGenerate(
         prompt: string,
         options: ImageGenerateV1Options = {},
-    ): Promise<ImageResponse | ImageResponse[]> {
+    ): Promise<ImageResponse> {
         if (!prompt || typeof prompt !== "string") {
             throw new PollinationsError(
                 "Prompt is required and must be a string",
@@ -576,7 +583,6 @@ export class Pollinations {
             model: options.model,
         };
         if (size) body.size = size;
-        if (options.n !== undefined) body.n = options.n;
         if (options.responseFormat)
             body.response_format = options.responseFormat;
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
@@ -601,8 +607,8 @@ export class Pollinations {
             },
         );
 
-        const items = json.data || [];
-        if (items.length === 0) {
+        const [item] = json.data || [];
+        if (!item) {
             throw new PollinationsError(
                 "No image data in response",
                 "NO_IMAGE",
@@ -610,16 +616,7 @@ export class Pollinations {
             );
         }
 
-        const results = await Promise.all(
-            items.map((item) => this.resolveImageItem(item, options.signal)),
-        );
-
-        // Unwrap when a single image was produced (most common case)
-        if (results.length === 1) {
-            const [single] = results;
-            if (single) return single;
-        }
-        return results;
+        return this.resolveImageItem(item, options.signal);
     }
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
@@ -682,6 +679,9 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 
@@ -803,10 +803,15 @@ export class Pollinations {
         options: Omit<ChatOptions, "stream">,
         stream: boolean,
     ): Record<string, unknown> {
+        // Router agents read overrides from `metadata`, where `text` is `model`.
+        const { text, ...routing } = options.routing ?? {};
         return this.stripUndefined({
             messages,
             model: options.model,
-            routing: options.routing,
+            metadata: options.routing && {
+                ...(text !== undefined && { model: text }),
+                ...routing,
+            },
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -927,6 +932,7 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
+        let completed = false;
         let events: string[] = [];
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
@@ -945,10 +951,20 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) yield parseChatStreamData(data);
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
+                    yield chunk;
                 }
                 events = [];
-                if (done) return;
+                if (done) {
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
+                }
             }
         } catch (error) {
             if (options.signal?.aborted) {
@@ -1190,12 +1206,17 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        // Some providers read the format from the extension, so a File keeps
-        // its own name.
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
         formData.append(
             "file",
             blob,
-            (blob as Partial<File>).name || "audio.mp3",
+            (blob as Partial<File>).name || `audio.${extension}`,
         );
         if (options.model) formData.append("model", options.model);
 
@@ -1370,7 +1391,13 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
         }
@@ -1625,9 +1652,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1639,6 +1675,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<UsageResponse>(url);
     }
 
@@ -1652,8 +1690,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1665,6 +1709,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<DailyUsageResponse>(url);
     }
 

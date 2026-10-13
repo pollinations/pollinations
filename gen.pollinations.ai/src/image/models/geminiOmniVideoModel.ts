@@ -62,29 +62,15 @@ export async function callGeminiOmniAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
-    if (!Number.isInteger(duration) || duration < 3 || duration > 10) {
-        throw UpstreamError.fromProvider(400, {
-            message:
-                "Gemini Omni 1.1 Flash supports whole-second durations from 3 to 10.",
-        });
-    }
     if (safeParams.fps !== undefined && safeParams.fps !== 24) {
         throw UpstreamError.fromProvider(400, {
             message: "Gemini Omni 1.1 Flash outputs video at 24 FPS.",
         });
     }
 
-    const requestedResolution = safeParams.resolution ?? "720p";
-    if (
-        !RESOLUTIONS.includes(
-            requestedResolution as (typeof RESOLUTIONS)[number],
-        )
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Gemini Omni 1.1 Flash does not support ${requestedResolution} resolution.`,
-        });
-    }
-    const resolution = requestedResolution as (typeof RESOLUTIONS)[number];
+    // params.ts limits resolution to the registry's list.
+    const resolution = (safeParams.resolution ??
+        "720p") as (typeof RESOLUTIONS)[number];
     const aspectRatio =
         safeParams.aspectRatio === "16:9" || safeParams.aspectRatio === "9:16"
             ? safeParams.aspectRatio

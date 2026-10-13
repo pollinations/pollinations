@@ -50,7 +50,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
-| Start a Linux sandbox (alpha) | `polli sandbox create` (then `list`, `logs <id>`, `timeout <id> <seconds>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
+| Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
 | ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
@@ -68,7 +68,7 @@ Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its 
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
+Defaults: `zimage`, 1024x1024. Without `--output` the file is `image.<ext>`, with the extension inferred from the response's `Content-Type` (`zimage` and `flux` return JPEG, so `image.jpg`); an explicit `--output` is used as given. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
 
 ### Upload a local file to get a public URL
 ```bash
@@ -107,7 +107,7 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
 ### Generate music (elevenmusic)
 ```bash
@@ -188,7 +188,7 @@ polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
 polli earnings --days 7  # rolling window
-polli quests             # your quests + claim state (open/claimable/claimed/coming)
+polli quests             # your quests + claim state (open/claimable/claimed/closed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
 **History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
@@ -227,9 +227,10 @@ polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
+polli agents sync <id>
 polli agents delete <id>
 ```
-Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
@@ -239,8 +240,11 @@ polli keys list                                                    # list all ke
 polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
 polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
+polli keys create --name "server" --models flux zimage           # only these two models
+polli keys update <id> --models text flux                          # every text model plus flux
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

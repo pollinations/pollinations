@@ -161,36 +161,33 @@ describe("geminiOmniVideoModel", () => {
         [1024, 1024, "16:9"],
         [1280, 720, "16:9"],
         [720, 1280, "9:16"],
-    ] as const)("maps explicit %sx%s dimensions to %s", async (width, height, aspectRatio) => {
-        setGoogleEnv();
-        const requests: Array<Record<string, unknown>> = [];
-        mockGeminiOmniFetch(requests);
+    ] as const)(
+        "maps explicit %sx%s dimensions to %s",
+        async (width, height, aspectRatio) => {
+            setGoogleEnv();
+            const requests: Array<Record<string, unknown>> = [];
+            mockGeminiOmniFetch(requests);
 
-        await callGeminiOmniAPI("test", {
-            ...baseParams,
-            width,
-            height,
-            dimensionsExplicit: true,
-        });
+            await callGeminiOmniAPI("test", {
+                ...baseParams,
+                width,
+                height,
+                dimensionsExplicit: true,
+            });
 
-        expect(requests[0]).toMatchObject({
-            response_format: [{ aspect_ratio: aspectRatio }],
-        });
-    });
+            expect(requests[0]).toMatchObject({
+                response_format: [{ aspect_ratio: aspectRatio }],
+            });
+        },
+    );
 
-    it("rejects unsupported duration and FPS before calling Vertex", async () => {
+    it("rejects an unsupported FPS before calling Vertex", async () => {
         setGoogleEnv();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        for (const params of [
-            { duration: 2 },
-            { duration: 3.5 },
-            { fps: 30 },
-        ]) {
-            await expect(
-                callGeminiOmniAPI("test", { ...baseParams, ...params }),
-            ).rejects.toMatchObject({ status: 400 });
-        }
+        await expect(
+            callGeminiOmniAPI("test", { ...baseParams, fps: 30 }),
+        ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 

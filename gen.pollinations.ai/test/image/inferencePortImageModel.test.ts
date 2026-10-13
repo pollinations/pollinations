@@ -152,40 +152,6 @@ describe("callInferencePortImage", () => {
         });
     });
 
-    it("rejects more than two reference images before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callInferencePortImage(
-                "combine these",
-                {
-                    ...baseParams,
-                    image: [
-                        "https://example.com/a.png",
-                        "https://example.com/b.png",
-                        "https://example.com/c.png",
-                        "https://example.com/d.png",
-                        "https://example.com/e.png",
-                    ],
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it("rejects unsupported dimensions before calling upstream", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-        await expect(
-            callInferencePortImage(
-                "a lighthouse",
-                { ...baseParams, dimensionsExplicit: true, width: 512 },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
     it("rejects transparent backgrounds before calling upstream", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 
@@ -212,22 +178,20 @@ describe("callInferencePortImage", () => {
         ).rejects.toMatchObject({ status: 502 });
     });
 
-    it.each([
-        undefined,
-        0,
-        -1,
-        1.5,
-    ])("rejects invalid reported image usage %s", async (imageCount) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            Response.json({
-                data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
-                usage: { image_count: imageCount },
-            }),
-        );
-        await expect(
-            callInferencePortImage("a lighthouse", baseParams, USER_INFO),
-        ).rejects.toMatchObject({ status: 502 });
-    });
+    it.each([undefined, 0, -1, 1.5])(
+        "rejects invalid reported image usage %s",
+        async (imageCount) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({
+                    data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
+                    usage: { image_count: imageCount },
+                }),
+            );
+            await expect(
+                callInferencePortImage("a lighthouse", baseParams, USER_INFO),
+            ).rejects.toMatchObject({ status: 502 });
+        },
+    );
 
     it("bills the image count reported by the provider", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

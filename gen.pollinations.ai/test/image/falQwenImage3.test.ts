@@ -131,55 +131,27 @@ describe("qwenImage3Model", () => {
         });
     });
 
-    it.each([
-        1, 3,
-    ])("routes edits with %i reference image(s) and meters each input", async (imageCount) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    it.each([1, 3])(
+        "routes edits with %i reference image(s) and meters each input",
+        async (imageCount) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        const result = await callQwen3("edit the references", {
-            ...baseParams,
-            image: Array.from({ length: imageCount }, () => INPUT_IMAGE),
-        });
-
-        expect(requests[0].url).toBe(EDIT_URL);
-        expect(requests[0].body.image_urls).toEqual(
-            Array.from({ length: imageCount }, () => INPUT_IMAGE),
-        );
-        expect(result.trackingData?.usage).toEqual({
-            promptImageTokens: imageCount,
-            completionImageTokens: 1,
-        });
-    });
-
-    it("rejects more than three reference images before calling Fal", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen3("too many references", {
+            const result = await callQwen3("edit the references", {
                 ...baseParams,
-                image: Array.from({ length: 4 }, () => INPUT_IMAGE),
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+                image: Array.from({ length: imageCount }, () => INPUT_IMAGE),
+            });
 
-    it.each([
-        [256, 256],
-        [4096, 4096],
-    ])("rejects output dimensions outside Fal's pixel range (%ix%i)", async (width, height) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callQwen3("invalid size", {
-                ...baseParams,
-                width,
-                height,
-                dimensionsExplicit: true,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+            expect(requests[0].url).toBe(EDIT_URL);
+            expect(requests[0].body.image_urls).toEqual(
+                Array.from({ length: imageCount }, () => INPUT_IMAGE),
+            );
+            expect(result.trackingData?.usage).toEqual({
+                promptImageTokens: imageCount,
+                completionImageTokens: 1,
+            });
+        },
+    );
 
     it.each([
         ["1:1", { width: 1024, height: 1024 }],
@@ -187,17 +159,20 @@ describe("qwenImage3Model", () => {
         ["9:16", { width: 768, height: 1376 }],
         ["21:9", { width: 1568, height: 672 }],
         ["adaptive", { width: 1024, height: 1024 }],
-    ] as const)("keeps the default area for aspect ratio %s", async (aspectRatio, expected) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    ] as const)(
+        "keeps the default area for aspect ratio %s",
+        async (aspectRatio, expected) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        await callQwen3("aspect ratio", {
-            ...baseParams,
-            aspectRatio,
-        });
+            await callQwen3("aspect ratio", {
+                ...baseParams,
+                aspectRatio,
+            });
 
-        expect(requests[0].body.image_size).toEqual(expected);
-    });
+            expect(requests[0].body.image_size).toEqual(expected);
+        },
+    );
 
     it("rejects a successful Fal response without an output image", async () => {
         mockFal([], { images: [] });

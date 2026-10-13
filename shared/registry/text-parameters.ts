@@ -161,6 +161,14 @@ export const CHAT_PARAMETERS = {
         "stop",
     ],
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
+    openRouterCohere: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "top_k",
+    ],
     // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
@@ -335,6 +343,16 @@ export const CHAT_PARAMETERS = {
     ],
     museSpark: [...CHAT, "temperature", "tools"],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
+    mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
+    vercelMistralLarge4: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     // Tencent's only OpenRouter endpoint (2026-09-12): no top_p, penalties,
     // seed or logprobs in supported_parameters. Forced tool_choice isn't
     // supported (only "auto"/"none"), so "tools" is declared alone.
@@ -399,6 +417,31 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "reasoning_effort",
     ],
+    // OpenRouter Nex AGI bf16 tag for Nex-N2.5-Mini (2026-10-03); the endpoint has no tool support.
+    openRouterNexMini: [
+        "max_tokens",
+        "stream",
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
+    // OpenRouter Nex AGI fp8 tag for Nex-N2.5-Pro (2026-10-03).
+    openRouterNexPro: [
+        "max_tokens",
+        "stream",
+        ...TOOLS,
+        "structured_outputs",
+        "temperature",
+        "top_p",
+        "top_k",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+    ],
     // OpenRouter DeepInfra fp16 tag for Ling 3.0 Flash VL (2026-09-19).
     openRouterLing: [
         "max_tokens",
@@ -459,10 +502,10 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    qwen38Akash: [
+    qwen38Reka: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,
-        "repetition_penalty",
+        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],
@@ -522,6 +565,19 @@ export const CHAT_PARAMETERS = {
         ...OPENROUTER_REASONING,
         "top_k",
         "frequency_penalty",
+    ],
+    // OpenRouter's Step 5 Preview endpoint lists these parameters (2026-10-08).
+    step5: [
+        ...CHAT,
+        ...SAMPLING,
+        "tools",
+        "stop",
+        "frequency_penalty",
+        ...LOGPROBS,
+        ...OPENROUTER_REASONING,
+        "response_format",
+        "structured_outputs",
+        "reasoning_effort",
     ],
     qwenGuard: [...CHAT, ...SAMPLING, ...LOGPROBS, "seed"],
     // The System One adapter forwards the native request untouched, so token

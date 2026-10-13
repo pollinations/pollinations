@@ -1,6 +1,11 @@
 // No imports needed for Web Crypto API
 import { checkTurnstile } from "../../../shared/turnstile.js";
 import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
+import { origin } from "./origin.js";
+
+// Durable Object classes must be exported by the Worker's main module
+export { FeedHub } from "../../../shared/feed-hub.js";
+export { IpSlot } from "../../../shared/ip-slot.js";
 
 // Worker version to track which deployment is running
 const WORKER_VERSION = "2.0.0-simplified";
@@ -16,18 +21,9 @@ const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
 /**
  * Prepare metadata for caching
  */
-function prepareMetadata(
-    request,
-    url,
-    response,
-    contentSize,
-    isStreaming,
-    hasRequestBody = false,
-) {
+function prepareMetadata(request, response, contentSize, isStreaming) {
     // Create metadata object with core response properties
     const metadata = {
-        // Original URL information
-        originalUrl: url.toString(),
         cachedAt: new Date().toISOString(),
         isStreaming: isStreaming.toString(),
         responseSize: contentSize.toString(),
@@ -39,53 +35,12 @@ function prepareMetadata(
         status: response.status.toString(),
         statusText: response.statusText,
 
-        // Request body reference
-        hasRequestBody: hasRequestBody.toString(),
-
         // Store only essential response headers (not all headers as JSON)
         response_server: response.headers.get("server") || "",
         response_date: response.headers.get("date") || "",
     };
 
     return metadata;
-}
-
-/**
- * Store request body separately if it exists
- * This follows the thin proxy design principle by keeping the implementation simple
- */
-async function storeRequestBody(env, request, key) {
-    // Only process POST/PUT requests that might have a body
-    if (
-        (request.method !== "POST" && request.method !== "PUT") ||
-        !request.body
-    ) {
-        return false;
-    }
-
-    try {
-        const clonedRequest = request.clone();
-        const bodyText = await clonedRequest.text();
-
-        // Only store if there's actual content
-        if (!bodyText || bodyText.length === 0) {
-            return false;
-        }
-
-        // Use a predictable key pattern
-        const requestKey = `${key}-request`;
-
-        // Store the request body as-is
-        await env.TEXT_BUCKET.put(requestKey, bodyText);
-        log(
-            "cache",
-            `Stored request body separately (${bodyText.length} bytes) with key: ${requestKey}`,
-        );
-        return true;
-    } catch (err) {
-        log("error", `Failed to cache request body: ${err.message}`);
-        return false;
-    }
 }
 
 const ATTRIBUTION_HEADERS = {
@@ -142,26 +97,27 @@ const worker = {
                 return turnstileResponse; // Return 403 if verification failed
             }
 
-            // Let origin handle GET root requests (e.g. redirects) without caching
-            // But allow POST requests to root to be cached
+            // The GET root redirect (POST / is cached) and the listed paths'
+            // static GET and HEAD answers come fresh from origin(), never R2
+            const read = request.method === "GET" || request.method === "HEAD";
+            // Until every generation runs here, the VM's feed has most events
             if (
-                (url.pathname === "/" || url.pathname === "") &&
-                request.method === "GET"
+                read &&
+                url.pathname === "/feed" &&
+                Number(env.ADAPTER_SHARE ?? 0) < 100
             ) {
-                log(
-                    "request",
-                    "Proxying GET root request directly to origin without caching",
-                );
                 return await proxyRequest(request, env);
             }
-
-            // Check if the path should be excluded from caching (exact match only)
+            if (
+                (url.pathname === "/" && request.method === "GET") ||
+                (read && NON_CACHE_PATHS.includes(url.pathname))
+            ) {
+                return await origin(request, env, ctx);
+            }
+            // Other methods there are uncached too, but can generate
+            // (POST /openai/models), so they follow the split
             if (NON_CACHE_PATHS.includes(url.pathname)) {
-                log(
-                    "request",
-                    `Path ${url.pathname} excluded from caching, proxying directly`,
-                );
-                return await proxyRequest(request, env);
+                return await missToOrigin(request, env, ctx);
             }
 
             // Generate a cache key for the request
@@ -173,7 +129,6 @@ const worker = {
 
             if (cachedResponse) {
                 log("cache", "✅ Cache hit!");
-
 
                 // For HEAD requests, return headers only (no body)
                 if (request.method === "HEAD") {
@@ -190,16 +145,23 @@ const worker = {
 
             // Cached responses stay free. A paid cache miss reaches the origin,
             // but its settlement headers and body must not enter the public cache.
-            if (request.headers.has("payment-signature") || request.headers.has("x-payment")) {
-                return await proxyRequest(request, env);
+            if (
+                request.headers.has("payment-signature") ||
+                request.headers.has("x-payment")
+            ) {
+                return await missToOrigin(request, env, ctx);
+            }
+
+            // A HEAD response has no body. HEAD shares the GET cache key, so
+            // storing it would serve an empty body to every later GET.
+            if (request.method === "HEAD") {
+                return await missToOrigin(request, env, ctx);
             }
 
             log("cache", "Cache miss, proxying to origin...");
-            // Store the request body if present (for POST/PUT requests)
-            const hasRequestBody = await storeRequestBody(env, request, key);
 
-            // Forward the request to the origin server
-            const originResp = await proxyRequest(request, env);
+            // Generate the response in the Worker or on the VM
+            const originResp = await missToOrigin(request, env, ctx);
 
             // Don't cache error responses
             if (originResp.status >= 401) {
@@ -207,7 +169,6 @@ const worker = {
                     "cache",
                     `Not caching error response with status ${originResp.status}`,
                 );
-
 
                 return originResp;
             }
@@ -231,11 +192,9 @@ const worker = {
                     // Prepare metadata with request body reference
                     const metadata = prepareMetadata(
                         request,
-                        url,
                         originResp,
                         content.byteLength,
                         false,
-                        hasRequestBody,
                     );
 
                     // Store the response in R2 with metadata
@@ -247,7 +206,6 @@ const worker = {
                         "cache",
                         `✅ Cached response: ${key} (${content.byteLength} bytes)`,
                     );
-
 
                     // Return the original response
                     return originResp;
@@ -310,11 +268,9 @@ const worker = {
                                 // Prepare metadata with request body reference
                                 const metadata = prepareMetadata(
                                     request,
-                                    url,
                                     originResp,
                                     totalSize,
                                     true,
-                                    hasRequestBody,
                                 );
 
                                 log(
@@ -337,7 +293,6 @@ const worker = {
                                     `✅ Response cached successfully (${totalSize} bytes)`,
                                 );
 
-
                                 // Free memory
                                 chunks = null;
                             } catch (err) {
@@ -353,34 +308,8 @@ const worker = {
                 },
             });
 
-            // Handle HEAD requests (no body) vs other requests
-            if (request.method === "HEAD" || !originResp.body) {
-                // HEAD requests have no body, but we should still cache the headers
-                log("cache", "📝 Caching HEAD request response (headers only)");
-
-                // Cache the response metadata without body
-                try {
-                    const metadata = prepareMetadata(
-                        request,
-                        url,
-                        originResp,
-                        0, // No content size for HEAD
-                        false, // Not streaming
-                        hasRequestBody,
-                    );
-
-                    // Store empty body with metadata for HEAD requests
-                    ctx.waitUntil(
-                        env.TEXT_BUCKET.put(key, new ArrayBuffer(0), {
-                            customMetadata: metadata,
-                        }),
-                    );
-
-                    log("cache", "✅ HEAD response cached successfully");
-                } catch (err) {
-                    log("error", `❌ HEAD caching failed: ${err.message}`);
-                }
-
+            // A response without a body has nothing to cache.
+            if (!originResp.body) {
                 return new Response(null, {
                     status: originResp.status,
                     statusText: originResp.statusText,
@@ -405,19 +334,24 @@ const worker = {
                 }),
             });
         } catch (err) {
-            log("error", `❌ Worker error: ${err.message}`);
-            if (err.stack) log("error", `Stack: ${err.stack}`);
-
-            return new Response(`Worker error: ${err.message}`, {
-                status: 500,
-                headers: {
-                    "Content-Type": "text/plain",
-                    "X-Error": err.message,
-                },
-            });
+            return workerError(err);
         }
     },
 };
+
+/** The Worker's 500 for an exception */
+function workerError(err) {
+    log("error", `❌ Worker error: ${err.message}`);
+    if (err.stack) log("error", `Stack: ${err.stack}`);
+
+    return new Response(`Worker error: ${err.message}`, {
+        status: 500,
+        headers: {
+            "Content-Type": "text/plain",
+            "X-Error": err.message,
+        },
+    });
+}
 
 /**
  * Add migration headers to every response, cache hits and errors included,
@@ -442,6 +376,32 @@ export default {
 };
 
 /**
+ * Sends a cache miss to origin() for ADAPTER_SHARE percent of requests and to
+ * the VM otherwise, and labels the response, exceptions included, with the
+ * path it took.
+ */
+async function missToOrigin(request, env, ctx) {
+    const path =
+        Math.random() * 100 < Number(env.ADAPTER_SHARE ?? 0) ? "worker" : "vm";
+    let response;
+    try {
+        response =
+            path === "worker"
+                ? await origin(request, env, ctx)
+                : await proxyRequest(request, env);
+    } catch (err) {
+        response = workerError(err);
+    }
+    const headers = new Headers(response.headers);
+    headers.set("X-Legacy-Path", path);
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
+
+/**
  * Proxy the request to the origin server
  */
 async function proxyRequest(request, env) {
@@ -456,16 +416,13 @@ async function proxyRequest(request, env) {
         originHost = `https://${originHost}`;
     }
 
-    const originUrl = new URL(url.pathname + url.search, originHost);
+    // Append the path: resolved as a relative URL, a path starting with //
+    // would replace the origin host with any host the caller names
+    const originUrl = new URL(`${originHost}${url.pathname}${url.search}`);
     log("proxy", `Proxying to: ${originUrl.toString()}`);
 
     // Prepare forwarded headers
     const headers = prepareForwardedHeaders(request.headers, url);
-
-    const loggedHeaders = new Headers(headers);
-    loggedHeaders.delete("payment-signature");
-    loggedHeaders.delete("x-payment");
-    log("headers", "Request headers:", Object.fromEntries(loggedHeaders));
 
     // Create origin request
     const originRequest = new Request(originUrl.toString(), {
@@ -482,7 +439,7 @@ async function proxyRequest(request, env) {
 /**
  * Generate a cache key for the request
  */
-async function generateCacheKey(request) {
+export async function generateCacheKey(request) {
     // Authentication parameters to exclude from cache key
     const AUTH_PARAMS = ["token", "referrer", "referer", "nofeed", "no-cache"];
 
@@ -606,8 +563,11 @@ function prepareResponseHeaders(originalHeaders, cacheInfo = {}) {
 /**
  * Prepare forwarded headers for proxying the request
  */
-function prepareForwardedHeaders(requestHeaders, url) {
+export function prepareForwardedHeaders(requestHeaders, url) {
     const headers = new Headers(requestHeaders);
+    // No CloudFront fronts this host, and the origin's per-IP limit trusts this
+    // header first, so a client-sent value would let callers pick their own IP.
+    headers.delete("cloudfront-viewer-address");
 
     // Add standard forwarded headers (but NOT X-Forwarded-Host to avoid referrer confusion)
     headers.set("X-Forwarded-Proto", url.protocol.replace(":", ""));
@@ -627,12 +587,14 @@ function prepareForwardedHeaders(requestHeaders, url) {
 /**
  * Get a cached response from R2
  */
-async function getCachedResponse(env, key) {
+export async function getCachedResponse(env, key) {
     try {
         // Get the cached object from R2
         const cachedObject = await env.TEXT_BUCKET.get(key);
 
-        if (!cachedObject) {
+        // HEAD misses used to store empty objects; treat them as misses so
+        // the next GET replaces them with the real response.
+        if (!cachedObject || cachedObject.size === 0) {
             return null;
         }
 
@@ -641,19 +603,9 @@ async function getCachedResponse(env, key) {
             size: cachedObject.size,
             uploaded: cachedObject.uploaded,
             metadata: cachedObject.customMetadata,
-            hasRequestBody:
-                cachedObject.customMetadata?.hasRequestBody === "true",
         });
 
         const metadata = cachedObject.customMetadata || {};
-
-        // Optionally log if there's an associated request body
-        if (metadata.hasRequestBody === "true") {
-            log(
-                "cache",
-                `Associated request body available at: ${key}-request`,
-            );
-        }
 
         // Prepare headers based on metadata
         const cacheHeaders = {
@@ -705,102 +657,5 @@ async function getCachedResponse(env, key) {
         log("error", `Error getting cached response: ${err.message}`);
         if (err.stack) log("error", `Stack: ${err.stack}`);
         return null;
-    }
-}
-
-/**
- * Get a cached request body from R2
- */
-async function getCachedRequest(env, key) {
-    try {
-        const requestKey = `${key}-request`;
-        const cachedRequest = await env.TEXT_BUCKET.get(requestKey);
-
-        if (!cachedRequest) {
-            log("cache", `No cached request found for key: ${requestKey}`);
-            return null;
-        }
-
-        const requestBody = await cachedRequest.text();
-        log(
-            "cache",
-            `Retrieved cached request body: ${requestKey} (${requestBody.length} bytes)`,
-        );
-
-        return {
-            body: requestBody,
-            uploaded: cachedRequest.uploaded,
-            size: cachedRequest.size,
-        };
-    } catch (err) {
-        log("error", `Error getting cached request: ${err.message}`);
-        return null;
-    }
-}
-
-/**
- * Get both cached request and response as a pair
- */
-async function getCachedRequestResponsePair(env, key) {
-    try {
-        // Get both in parallel for efficiency
-        const [response, request] = await Promise.all([
-            getCachedResponse(env, key),
-            getCachedRequest(env, key),
-        ]);
-
-        return {
-            request,
-            response,
-            key,
-        };
-    } catch (err) {
-        log("error", `Error getting cached pair: ${err.message}`);
-        return null;
-    }
-}
-
-/**
- * List all cached request-response pairs (for debugging/analytics)
- * Note: This is a simple implementation - for production, consider pagination
- */
-async function listCachedPairs(env, limit = 100) {
-    try {
-        const list = await env.TEXT_BUCKET.list({ limit });
-
-        // Group by base key (without -request suffix)
-        const pairs = new Map();
-
-        for (const object of list.objects) {
-            const key = object.key;
-            const baseKey = key.endsWith("-request") ? key.slice(0, -8) : key;
-
-            if (!pairs.has(baseKey)) {
-                pairs.set(baseKey, { response: null, request: null });
-            }
-
-            if (key.endsWith("-request")) {
-                pairs.get(baseKey).request = {
-                    key,
-                    size: object.size,
-                    uploaded: object.uploaded,
-                };
-            } else {
-                pairs.get(baseKey).response = {
-                    key,
-                    size: object.size,
-                    uploaded: object.uploaded,
-                    metadata: object.customMetadata,
-                };
-            }
-        }
-
-        return Array.from(pairs.entries()).map(([baseKey, pair]) => ({
-            key: baseKey,
-            ...pair,
-        }));
-    } catch (err) {
-        log("error", `Error listing cached pairs: ${err.message}`);
-        return [];
     }
 }

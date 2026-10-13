@@ -5,7 +5,6 @@ import { setHttpMetadataHeaders } from "../util.ts";
 type Env = {
     Bindings: Cloudflare.Env;
     Variables: {
-        cacheKey: string;
         connectingIp: string;
     };
 };
@@ -17,12 +16,11 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     const cacheKey = generateCacheKey(new URL(c.req.url));
     console.debug("[EXACT] Cache key:", cacheKey);
 
-    // store in context for reuse in semantic cache
-    c.set("cacheKey", cacheKey);
-
     try {
         const cachedImage = await c.env.IMAGE_BUCKET.get(cacheKey);
-        if (cachedImage) {
+        // HEAD misses used to store empty objects; treat them as misses so
+        // the next GET replaces them with the real image.
+        if (cachedImage && cachedImage.size > 0) {
             console.log("[EXACT] Cache hit");
             setHttpMetadataHeaders(c, cachedImage.httpMetadata);
             c.header("Cache-Control", "public, max-age=31536000, immutable");
@@ -45,14 +43,16 @@ export const exactCache = createMiddleware<Env>(async (c, next) => {
     // Skip caching if:
     // - Response is not OK
     // - Content-type is not an image
-    // - Already a cache hit (semantic)
+    // - The response is itself a cache hit
     // - X-Error-Type header is present (error images should not be cached)
+    // - It is a HEAD request (no body to store)
     if (
         c.res?.ok &&
+        c.req.method !== "HEAD" &&
         !c.req.header("payment-signature") &&
         !c.req.header("x-payment") &&
         c.res.headers.get("content-type")?.includes("image/") &&
-        // don't store it if there is a semantic hit
+        // don't store a response that is itself a cache hit
         !(c.res.headers.get("x-cache") === "HIT") &&
         // don't cache error images (they have X-Error-Type header)
         !c.res.headers.get("x-error-type")

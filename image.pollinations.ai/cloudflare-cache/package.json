@@ -4,10 +4,9 @@
     "description": "Cloudflare R2 caching solution for Pollinations image service",
     "type": "module",
     "scripts": {
-        "test": "vitest",
+        "test": "vitest run",
         "deploy": "wrangler deploy",
-        "deploy:env": "bash ./deploy.sh",
-        "dev": "wrangler dev --port 8787 --experimental-vectorize-bind-to-prod",
+        "dev": "wrangler dev --port 8787",
         "dev:simple": "wrangler dev",
         "logs": "wrangler tail",
         "cf-typegen": "wrangler types --env-interface CloudflareBindings"
@@ -22,12 +21,17 @@
     "author": "Pollinations",
     "license": "MIT",
     "devDependencies": {
-        "@cloudflare/vitest-pool-workers": "^0.8.61",
+        "@cloudflare/vitest-pool-workers": "^0.12.21",
         "vitest": "^3.2.4",
-        "wrangler": "^4.28.1"
+        "wrangler": "^4.147.0"
     },
     "dependencies": {
+        "@cf-wasm/photon": "0.4.0",
+        "@weftlabs/sdk": "0.27.1",
+        "@x402/core": "2.27.0",
+        "@x402/evm": "2.27.0",
         "dotenv": "^17.0.1",
-        "hono": "^4.8.10"
+        "hono": "^4.8.10",
+        "zod": "4.4.3"
     }
 }

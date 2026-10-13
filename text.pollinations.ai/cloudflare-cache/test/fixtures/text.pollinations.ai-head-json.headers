@@ -1,0 +1,19 @@
+HTTP/2 200 
+date: Sun, 11 Oct 2026 20:26:26 GMT
+content-type: application/json; charset=utf-8
+content-length: 551
+cf-ray: a4909974af4b34b9-TXL
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+cache-control: private, no-store
+etag: W/"227-TkYl2nLYElLS5Z5wQONGMVkX6K0"
+link: <https://pollinations.ai>; rel="service"
+server: cloudflare
+x-pollinations-logo: https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.svg
+access-control-expose-headers: Payment-Required, Payment-Response, Link, X-Pollinations-Logo, X-Powered-By
+x-model-used: gpt-oss-20b
+x-powered-by: Pollinations.AI
+x-usage-completion-text-tokens: 63
+x-usage-prompt-text-tokens: 322
+x-usage-total-tokens: 385
+

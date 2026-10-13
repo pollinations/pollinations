@@ -113,8 +113,7 @@ If you need to modify the configuration:
 
 This project uses minimal dependencies:
 
-1. **fast-json-stable-stringify**: Ensures consistent JSON serialization for reliable cache key generation
-2. **wrangler**: Development dependency for deploying and managing Cloudflare Workers
+1. **wrangler**: Development dependency for deploying and managing Cloudflare Workers
 
 ## Key Differences from Image Cache
 

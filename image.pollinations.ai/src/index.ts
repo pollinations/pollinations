@@ -30,6 +30,7 @@ import {
     createAndReturnImageCached,
     type ImageGenerationResult,
 } from "./createAndReturnImages.js";
+import { feedImageURL } from "./feedImageUrl.ts";
 import { registerFeedListener, sendToFeedListeners } from "./feedListeners.js";
 import { makeParamsSafe } from "./makeParamsSafe.js";
 import { MODELS } from "./models.js";
@@ -303,7 +304,7 @@ const imageGen = async ({
 
         timingInfo.push({ step: "Image returned", timestamp: Date.now() });
 
-        const imageURL = `https://image.pollinations.ai${req.url}`;
+        const imageURL = feedImageURL(req.url);
 
         // Cache and feed updates
         progress.updateBar(requestId, 95, "Cache", "Updating feed...");

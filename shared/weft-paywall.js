@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 
 // Inline the packaged art so the 402 page needs no external or paid asset request.
-const illustration = readFileSync(
-    new URL("./assets/weft-paywall.webp", import.meta.url),
-).toString("base64");
+// Workers pass the bytes as base64 instead: they cannot read files.
+const packagedArt = () =>
+    readFileSync(
+        new URL("./assets/weft-paywall.webp", import.meta.url),
+    ).toString("base64");
 
 // Render the x402 response amount using the SDK's asset metadata, not the route price.
 function quotedPrice(paymentRequired, findAsset) {
@@ -32,8 +34,15 @@ function quotedPrice(paymentRequired, findAsset) {
     return `${amount / scale}.${fraction} ${currency}`;
 }
 
-/** Create the browser 402 page that points buyers to Weft agent setup. */
-export function createWeftPaywall(resourceType, findAsset) {
+/**
+ * Create the browser 402 page that points buyers to Weft agent setup.
+ * @param {string} [art] the webp art as base64; read from shared/assets when omitted
+ */
+export function createWeftPaywall(
+    resourceType,
+    findAsset,
+    art = packagedArt(),
+) {
     const item = resourceType === "image" ? "image" : "response";
     return {
         generateHtml(paymentRequired) {
@@ -90,7 +99,7 @@ export function createWeftPaywall(resourceType, findAsset) {
                 <span class="payment-label">Pay with x402</span>
             </header>
             <section class="hero" aria-labelledby="paywall-heading">
-                <img class="art" src="data:image/webp;base64,${illustration}" width="960" height="540" alt="The Pollinations bee and Weft mascot exchange a flower coin and a picture.">
+                <img class="art" src="data:image/webp;base64,${art}" width="960" height="540" alt="The Pollinations bee and Weft mascot exchange a flower coin and a picture.">
                 <h1 id="paywall-heading">${heading}</h1>
                 <p class="intro">Give your AI agent a wallet. Let it pay for the ${item} and get back to work.</p>
             </section>

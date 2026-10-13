@@ -1,0 +1,15 @@
+HTTP/2 404 
+date: Sun, 11 Oct 2026 20:27:41 GMT
+content-type: text/html; charset=utf-8
+cf-ray: a4909b5fbff93769-TXL
+cf-cache-status: DYNAMIC
+access-control-allow-origin: *
+server: cloudflare
+x-cache: MISS
+access-control-allow-headers: Content-Type, X-PAYMENT, Payment-Signature
+access-control-allow-methods: GET, POST, OPTIONS
+access-control-expose-headers: Link,X-Pollinations-Logo,X-Powered-By,Payment-Required,Payment-Response
+content-security-policy: default-src 'none'
+x-content-type-options: nosniff
+x-powered-by: Express
+

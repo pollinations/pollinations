@@ -29,10 +29,13 @@ runs one stage at a time. It is a dry run: nothing is posted to GitHub.
 - Polli sandbox on `pollinations-large` (4 vCPU / 8 GB), with a blobless clone
   at `~/pollinations` and `npm ci` done. One case branch `hospital/<n>` per case.
 - Claude roles run `claude -p` through `~/.pollinations/claude-code.json` on
-  `anthropic/claude-opus-5.5`. Review runs `codex exec` on `openai/gpt-6-astra`,
-  so the reviewer is a different model.
-- Codex 0.162 replays reasoning state that gen's `/v1/responses` rejects. The
-  trial used a local proxy that strips it. That proxy is a stopgap until #17123.
+  `anthropic/claude-opus-5.5`. Review runs `codex exec` on `openai/gpt-6.1-sol`
+  from run 5 (`openai/gpt-6-astra` before), so the reviewer is a different model.
+- Runs 1–4 used a local proxy for Codex, which replayed reasoning state that gen's
+  `/v1/responses` rejected. #17123 fixed that on production.
+- `hospital.py quick-review N --model M [--rival R]`: one review pass by one
+  model on a scratch branch, before admission and blind to the hospital. Run 5
+  compares these cheap reviews with the full hospital.
 - GitHub is read once and cached (unauthenticated API, `git fetch pull/<n>/head`).
 
 ## Run 1 (2026-10-11)

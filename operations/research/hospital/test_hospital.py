@@ -52,7 +52,7 @@ def fixture(tmp):
     return root, repo
 
 def drive(tmp, root, repo, rows, *argv, mode='normal'):
-    fake = lambda role, prompt, output: [sys.executable, str(tmp / 'fake.py'), str(HERE / 'hospital.py'), str(output), mode, role]
+    fake = lambda role, prompt, output, model=None: [sys.executable, str(tmp / 'fake.py'), str(HERE / 'hospital.py'), str(output), mode, role]
     with patch.object(h, 'ROOT', root), patch.object(h, 'REPO', repo), patch.object(h, 'POLL', 0.05), \
          patch.object(h, 'usage', return_value=rows), patch.object(h, 'role_cmd', fake), patch.object(sys, 'argv', ['hospital.py', *argv]):
         h.main()
@@ -148,4 +148,22 @@ with tempfile.TemporaryDirectory() as t:
     assert state(root)['outcome'] == 'escalated'
     assert 'PARTIAL NOTE' in (chart := (root / 'cases' / '7' / 'CHART.md').read_text()) and 'Found the cause in a.txt' in chart
 
-print('PASS: key-ID costs; verdict parsing; version-bump check; full offline run to discharge; test-evidence, case-count, trial and case budget gates; partial note on timeout')
+with tempfile.TemporaryDirectory() as t:
+    tmp = pathlib.Path(t)
+    root, repo = fixture(tmp)
+    # A quick review runs blind on a scratch branch, keeps its own record, and leaves the repo clean for the case.
+    (root / 'cache' / 'pr-8.diff').write_text('diff --git a/a.txt b/a.txt\n+c\n')
+    drive(tmp, root, repo, [], 'quick-review', '7', '--rival', '8', '--model', 'deepseek/deepseek-v4.1-flash')
+    quick = json.loads((root / 'quick' / '7' / 'deepseek-v4.1-flash.json').read_text())
+    assert quick['verdict'] == 'APPROVE' and quick['stop'] is None, quick
+    prompt = (root / 'quick' / '7' / 'deepseek-v4.1-flash.prompt').read_text()
+    assert 'pr-8.diff' in prompt and f"Do not read {root}/cases" in prompt
+    assert not subprocess.check_output(['git', '-C', str(repo), 'status', '--porcelain'], text=True)
+    # A rival PR reaches the admission note and every stage prompt; stages are told not to read quick reviews.
+    drive(tmp, root, repo, [], 'admit', '7', '--kind', 'pr', '--rival', '8')
+    assert 'Competing PR: #8' in (root / 'cases' / '7' / 'CHART.md').read_text()
+    drive(tmp, root, repo, [], 'workup', '7')
+    prompt = (root / 'cases' / '7' / 'workup-1.prompt').read_text()
+    assert 'Competing PR #8' in prompt and f"Do not read {root}/quick" in prompt
+
+print('PASS: key-ID costs; verdict parsing; version-bump check; full offline run to discharge; test-evidence, case-count, trial and case budget gates; partial note on timeout; blind quick review; rival PR comparison')

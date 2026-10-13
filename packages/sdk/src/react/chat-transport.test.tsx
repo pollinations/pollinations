@@ -238,6 +238,35 @@ describe("polliChatTransport", () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it("sends to a custom base URL and merges extra body fields", async () => {
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValue(sse([]));
+        const transport = polliChatTransport({
+            apiKey: "pk_user",
+            model: "openai",
+            baseUrl: "http://localhost:8788//",
+            body: { instructions: "Be brief." },
+        });
+        await transport.sendMessages({
+            trigger: "submit-message",
+            chatId: "chat",
+            messageId: undefined,
+            messages: [user("hi")],
+            abortSignal: undefined,
+            body: { temperature: 0.2 },
+        });
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("http://localhost:8788/v1/responses");
+        expect(JSON.parse(String(init?.body))).toMatchObject({
+            model: "openai",
+            instructions: "Be brief.",
+            temperature: 0.2,
+            stream: true,
+            store: false,
+        });
+    });
+
     it("replays the previous reply's output items as history", () => {
         const output = [
             { type: "mcp_call", id: "call_1", name: "x", arguments: "{}" },

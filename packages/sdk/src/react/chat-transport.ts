@@ -217,7 +217,9 @@ export function polliChatTransport(
     options: PolliChatTransportOptions,
 ): ChatTransport<PolliUIMessage> {
     const { model, body, baseUrl = DEFAULT_BASE_URL } = options;
-    const url = `${baseUrl.replace(/\/+$/, "")}/v1/responses`;
+    let end = baseUrl.length;
+    while (baseUrl[end - 1] === "/") end--;
+    const url = `${baseUrl.slice(0, end)}/v1/responses`;
     return {
         async sendMessages({ messages, abortSignal, headers, body: extra }) {
             const apiKey =

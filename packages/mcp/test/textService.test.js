@@ -54,3 +54,35 @@ test("generateText returns requested token log probabilities", async (t) => {
     );
     assert.deepEqual(JSON.parse(result.content.at(-1).text).logprobs, logprobs);
 });
+
+test("generateText labels MP3 audio with the audio/mpeg media type", async (t) => {
+    const original = globalThis.fetch;
+    t.after(() => {
+        globalThis.fetch = original;
+    });
+    globalThis.fetch = async (input) =>
+        String(input).endsWith("/text/models")
+            ? Response.json([{ name: "test-model" }])
+            : Response.json({
+                  choices: [{ message: { audio: { data: "SUQz" } } }],
+              });
+    const generateText = textTools.find(([name]) => name === "generateText")[3];
+    const result = await generateText(
+        {
+            model: "test-model",
+            messages: [{ role: "user", content: "Say hello" }],
+            modalities: ["audio"],
+            audio: { voice: "alloy", format: "mp3" },
+        },
+        { http: { authInfo: { token: "sk_test" } } },
+    );
+    // MP3's registered media type is audio/mpeg, as in audioService.test.js.
+    assert.deepEqual(
+        result.content.find((block) => block.type === "audio"),
+        {
+            type: "audio",
+            mimeType: "audio/mpeg",
+            data: "SUQz",
+        },
+    );
+});

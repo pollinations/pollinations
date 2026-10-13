@@ -2350,7 +2350,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
                     .slice(0, 1600);
                 const claim =
                     kind === "availability"
-                        ? `The exact model ${row.name} is currently available through ${route.provider} as managed API model ${route.upstreamModel}.`
+                        ? `The provider documentation explicitly offers exact checkpoint ${row.name} (provider model ${route.upstreamModel}) through ${route.provider} as a hosted or serverless inference API, rather than only downloadable weights or a dedicated deployment. Runtime availability and account access remain unknown.`
                         : `The excerpt explicitly supports the quoted capability statements for the exact ${route.upstreamModel} checkpoint, rather than a different model: ${claims.map(({ quote }) => quote).join("; ")}`;
                 const id = `${row.name}:${index}:${kind}`;
                 if (claim.length > 1000) {
@@ -2511,16 +2511,11 @@ export async function main(env = process.env) {
         (row) => row.name === "openai/gpt-6.1-sol",
     );
     assert.ok(inference?.pricing, "Research inference price unavailable");
-    assert.equal(
-        inference.paid_only,
-        false,
-        "Research inference must be Quest-eligible",
-    );
     const decisionModel = inventory.find((row) => row.name === JEV_MODEL);
     if (mode === "compact")
         assert.ok(
-            decisionModel?.pricing && decisionModel.paid_only === false,
-            "Quest-eligible Jev is required for compact research",
+            decisionModel?.pricing,
+            "Priced Jev is required for compact research",
         );
     const skillRoot = join(
         import.meta.dirname,

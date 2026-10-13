@@ -620,7 +620,7 @@ test("availability audit includes distant exact-checkpoint API examples instead 
         calls++;
         const excerpt = payload.state.items[0].excerpt;
         assert.match(excerpt, /OpenAI-compatible HTTP API/);
-        assert.match(excerpt, /api.deepinfra.com\/v1\/openai\/embeddings/);
+        assert.match(excerpt, /api\.deepinfra\.com\/v1\/openai\/embeddings/);
         assert.match(excerpt, /"model": "Qwen\/Qwen3-Embedding-8B"/);
         assert.ok(excerpt.length <= 1600);
         return validateClaimAudit(payload, nativeResponse(payload));
@@ -1814,6 +1814,24 @@ test(
             JSON.parse(await readFile(join(out, "research.json"), "utf8")),
             report,
         );
+    },
+);
+
+test(
+    "paid-only catalog classification does not block budgeted Jev research or trigger Sol spending",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { env } = await fixture(t);
+        const calls = network(t, [
+            model,
+            { ...sol, paid_only: true },
+            { ...jev, paid_only: true },
+        ]);
+        const report = await main(env);
+        assert.equal(report.status, "complete");
+        assert.equal(calls.sol.length, 0);
+        assert.ok(report.calls.every(({ reserved }) => reserved > 0));
+        assert.ok(report.budgetUsedPollen <= report.maxPollen);
     },
 );
 

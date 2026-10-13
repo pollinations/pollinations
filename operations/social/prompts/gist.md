@@ -69,7 +69,7 @@ Use the changed files list to determine PR type, user impact, and what to highli
 
 ### `publish_tier`
 Controls which downstream tiers pick up this PR:
-- `"daily"` — appears in daily summary (Twitter, Reddit) and weekly digest (all 5 platforms)
+- `"daily"` — appears in the daily summary (X) and the weekly digest (X, LinkedIn, Instagram, Discord)
 - `"discord_only"` — Discord notification only, skipped by daily summary
 - `"none"` — no social media at all (rare — test PRs, typo fixes)
 
@@ -113,7 +113,7 @@ A short (1-2 sentence) pixel art scene description for the PR image. Identify th
 
 The gist is a factual archive, not a social post. Record pricing increases, removals, limits and other changes plainly; never conceal them or invent a benefit. Use `publish_tier` to control social selection, without changing the facts in `summary`.
 
-Price, Pollen balance and Quest/Paid eligibility changes reach users through Discord and Enter's model news, which read `announcements`; X, Reddit, LinkedIn and Instagram skip them. Do not include internal financial motivations, speculation, or unconfirmed claims.
+Price, Pollen balance and Quest/Paid eligibility changes reach users through Discord and Enter's model news, which read `announcements`; X, LinkedIn and Instagram skip them. Do not include internal financial motivations, speculation, or unconfirmed claims.
 
 ## Hard Rules
 

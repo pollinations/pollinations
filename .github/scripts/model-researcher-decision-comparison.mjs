@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { EVIDENCE_CHECKS } from "../../operations/model-management/calibration.mjs";
 import {
@@ -36,7 +36,7 @@ const heldOut = [
     [
         "Acme serves acme/model-7 on demand without reserving a dedicated instance.",
         "Acme offers acme/model-7 through a serverless API.",
-        "supported",
+        "insufficient",
     ],
     [
         "Acme serves acme/model-7-lite. The full acme/model-7 is not offered.",
@@ -136,7 +136,7 @@ const heldOut = [
     [
         "Acme posted 99.9% uptime for September 2029, not October 2029.",
         "Acme posted 99.9% uptime for October 2029.",
-        "insufficient",
+        "contradicted",
     ],
     [
         "Acme's model-7 API is available to approved enterprise accounts only.",
@@ -442,6 +442,74 @@ const report = {
     })),
     scope: "Fixed text-grounded researcher cases, both option orders. Synthetic task comparison, not a general model benchmark or proof of web coverage.",
 };
+const prior = JSON.parse(
+    await readFile(
+        join(process.env.COMPARISON_PREVIOUS, "comparison.json"),
+        "utf8",
+    ),
+);
+const priorTasks = JSON.parse(
+    await readFile(
+        join(process.env.COMPARISON_PREVIOUS, "labelled-suite.json"),
+        "utf8",
+    ),
+);
+assert.equal(prior.status, "completed");
+assert.deepEqual(
+    priorTasks.map(({ payload }) => payload),
+    tasks.map(({ payload }) => payload),
+    "Rescoring must not change any model input",
+);
+assert.equal(prior.priorAccountedPollen, report.priorAccountedPollen);
+report.calls = structuredClone(prior.calls);
+report.reservedPollen = prior.reservedPollen;
+report.results = prior.results
+    .filter(({ order }) => order === 0)
+    .map((row) => {
+        const expected = tasks[row.task].labels[row.id];
+        const call = prior.calls.find(
+            (call) =>
+                call.task === row.task &&
+                call.order === 0 &&
+                call.kind === `inference:${row.model}` &&
+                call.status === "received",
+        );
+        assert.ok(call);
+        return {
+            ...row,
+            expected,
+            correct: row.valid && row.choice === expected,
+            brier: row.valid
+                ? Object.entries(
+                      call.nativeResponse.answers[row.id].probabilities,
+                  ).reduce(
+                      (sum, [label, p]) =>
+                          sum + (p - Number(label === expected)) ** 2,
+                      0,
+                  )
+                : null,
+        };
+    });
+report.resumedRun = "38474873168";
+report.discardedCachedOrderAnswers = prior.results.filter(
+    ({ order }) => order === 1,
+).length;
+report.labelCorrections = [
+    {
+        id: "held-out-evidence-2",
+        from: "supported",
+        to: "insufficient",
+        reason: "On-demand serving does not explicitly establish an API.",
+    },
+    {
+        id: "held-out-evidence-22",
+        from: "insufficient",
+        to: "contradicted",
+        reason: "The excerpt explicitly negates October.",
+    },
+];
+report.selectionPolicy =
+    "Pass deployed known-answer canaries, avoid falsely accepting supported evidence at 0.9, then maximize task accuracy; Brier and cost break ties.";
 const save = () =>
     writeFile(
         join(out, "comparison.json"),
@@ -457,7 +525,7 @@ await writeFile(
 );
 await save();
 try {
-    for (let order = 0; order < 2; order++) {
+    for (const order of [1]) {
         for (const model of [...models].sort((a, b) =>
             a.name.localeCompare(b.name),
         )) {
@@ -480,6 +548,8 @@ try {
                     ...structuredClone(task.payload),
                     model: model.name,
                 };
+                // A distinct non-evidence state marker prevents the gateway's sorted-JSON cache from replaying order zero.
+                payload.state.evaluationAttempt = `${suiteDigest}:${model.name}:${index}:${order}`;
                 if (order)
                     for (const q of Object.values(payload.questions))
                         q.criteria = Object.fromEntries(
@@ -537,6 +607,12 @@ try {
                         hash(Object.keys(body.answers).sort()) ===
                             hash(Object.keys(payload.questions).sort()),
                     "Model or answer mapping mismatch",
+                );
+                assert.ok(
+                    !prior.calls.some(
+                        (call) => call.nativeResponse?.id === body.id,
+                    ),
+                    "Option-order probe was replayed from cache",
                 );
                 for (const [id, expected] of Object.entries(task.labels)) {
                     const answer = body.answers[id];
@@ -632,6 +708,26 @@ try {
                 correct: rows.filter((row) => row.correct).length,
                 total: rows.length,
                 invalid: rows.filter((row) => !row.valid).length,
+                canaryErrors: rows.filter(
+                    (row) => row.category === "canary" && !row.correct,
+                ).length,
+                unsafeSupportedEvidence: evidence.filter(
+                    (row) =>
+                        row.valid &&
+                        !row.correct &&
+                        row.choice === "supported" &&
+                        row.selectedProbability >= 0.9,
+                ).length,
+                orderDisagreements: rows.filter(
+                    (row) =>
+                        row.order === 1 &&
+                        rows.find(
+                            (first) =>
+                                first.order === 0 &&
+                                first.task === row.task &&
+                                first.id === row.id,
+                        )?.choice !== row.choice,
+                ).length,
                 confidentlyWrongEvidence: evidence.filter(
                     (row) =>
                         row.valid &&
@@ -666,8 +762,8 @@ try {
         .sort(
             (a, b) =>
                 a.invalid - b.invalid ||
-                a.confidentlyWrongEvidence - b.confidentlyWrongEvidence ||
-                b.evidenceCorrect - a.evidenceCorrect ||
+                a.canaryErrors - b.canaryErrors ||
+                a.unsafeSupportedEvidence - b.unsafeSupportedEvidence ||
                 b.correct - a.correct ||
                 a.meanBrier - b.meanBrier ||
                 a.pollen - b.pollen,

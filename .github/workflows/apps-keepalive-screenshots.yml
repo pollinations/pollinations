@@ -334,11 +334,20 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
+      - name: Restore already paid comparison receipts and first-order answers
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: 11852989748
+          run-id: 38474873168
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/previous-comparison
+          merge-multiple: true
       - run: node .github/scripts/model-researcher-decision-comparison.mjs --check
       - name: Compare four decision models using identical labelled evidence
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           RESEARCH_OUT: ${{ runner.temp }}/decision-comparison
+          COMPARISON_PREVIOUS: ${{ runner.temp }}/previous-comparison
         run: node .github/scripts/model-researcher-decision-comparison.mjs
       - uses: actions/upload-artifact@v4
         if: always()

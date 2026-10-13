@@ -1,3 +1,5 @@
+import asyncio
+import json
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -91,6 +93,60 @@ class BotFollowUpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second[-1]["role"], "system")
         self.assertIn('code_search({"query": "flux"}) → {"provider":"io.net"}', second[-1]["content"])
         self.assertIsNone(store.render(42, 6))  # another requester in the thread sees nothing
+
+    async def test_queued_message_from_another_user_is_not_batched_with_prior_evidence(self):
+        from src import bot
+        from src.ai.client import PollinationsClient
+
+        client = PollinationsClient()
+        store = ToolEvidenceStore()
+        store.record(1, 100, [call("code_search")], [{"data": "restricted evidence"}])
+        entered, release = asyncio.Event(), asyncio.Event()
+        sent, snapshots = [], []
+        channel = SimpleNamespace(
+            id=1,
+            guild=SimpleNamespace(id=99),
+            permissions_for=lambda user: SimpleNamespace(view_channel=True, read_message_history=True),
+        )
+
+        async def send(body, **kwargs):
+            sent.append(body)
+
+        channel.send = send
+        users = [SimpleNamespace(id=i, name=str(i), display_name=str(i)) for i in (100, 200)]
+        messages = [
+            SimpleNamespace(
+                id=i, author=u, channel=channel, reactions=[], reply=send, jump_url="https://discord.example/message"
+            )
+            for i, u in zip((10, 20), users)
+        ]
+        session = SimpleNamespace(original_author_name="A", channel_id=1, thread_id=1)
+
+        async def api(current, **kwargs):
+            snapshots.append(json.loads(json.dumps(current)))
+            if len(snapshots) == 1:
+                entered.set()
+                await release.wait()
+                return {"content": "first answer"}
+            return {"content": "second answer"}
+
+        with (
+            patch.object(bot, "tool_evidence", store),
+            patch.object(bot, "pollinations_client", client),
+            patch.object(client, "_call_api_with_tools", side_effect=api),
+        ):
+            task = asyncio.create_task(
+                bot.process_message(channel, users[0], "first", [], session, source_message=messages[0])
+            )
+            await entered.wait()
+            await bot.process_message(channel, users[1], "second", [], session, source_message=messages[1])
+            release.set()
+            await task
+
+        self.assertIn("restricted evidence", json.dumps(snapshots[0]))
+        self.assertEqual(len(snapshots), 2)
+        self.assertNotIn("restricted evidence", json.dumps(snapshots[1]))
+        self.assertEqual(sent, ["first answer", "second answer"])
 
 
 if __name__ == "__main__":

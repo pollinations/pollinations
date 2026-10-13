@@ -1355,7 +1355,9 @@ async def _process_message(
         remaining = []
         for item in queue:
             same_user = item["user"].id == user.id
-            permissions = channel.permissions_for(item["user"]) if not same_user and allow_mixed else None
+            # A turn carrying this requester's earlier tool evidence must not absorb other users.
+            mixable = allow_mixed and not evidence
+            permissions = channel.permissions_for(item["user"]) if not same_user and mixable else None
             if item["source_message"] and (same_user or (permissions and permissions.view_channel and permissions.read_message_history)):
                 pending.append(item)
             else:

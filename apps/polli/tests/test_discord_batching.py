@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 from src.ai.client import PollinationsClient
 from src.bot import process_message
+from src.context.evidence import ToolEvidenceStore
 
 
 def call(name, action):
@@ -142,6 +143,12 @@ class DiscordBatchingTests(unittest.IsolatedAsyncioTestCase):
 
 
 class DiscordConversationIntegrationTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        # Tool evidence is per-thread process state; keep each test's turns isolated.
+        evidence = patch("src.bot.tool_evidence", ToolEvidenceStore())
+        evidence.start()
+        self.addCleanup(evidence.stop)
+
     async def test_real_queue_client_and_delivery_combine_two_users(self):
         client = PollinationsClient()
         entered, release = asyncio.Event(), asyncio.Event()

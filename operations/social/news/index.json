@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T21:30:51.088686+00:00",
+  "generated_at": "2026-10-13T22:22:06.931852+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -4108,6 +4108,56 @@
             "completionVideoSeconds": "0.08"
           },
           "after": null
+        }
+      }
+    },
+    {
+      "id": "pr-16128:heygen/heygen-video-1",
+      "model_id": "heygen/heygen-video-1",
+      "title": "HeyGen Video 1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-01",
+      "pr": 16128,
+      "url": "https://github.com/pollinations/pollinations/pull/16128",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "max_reference_images": {
+          "before": null,
+          "after": 1
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.01055"
+          }
         }
       }
     },

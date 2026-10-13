@@ -31,6 +31,7 @@ import {
     prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
+import { jobRoutes } from "./jobs.ts";
 
 // Wrapper for resolver that enables schema deduplication via $ref
 // Schemas with .meta({ $id: "Name" }) will be extracted to components/schemas
@@ -1283,4 +1284,5 @@ export const proxyRoutes = new Hono<Env>()
         deduplicateGeneration,
         apiKeyBudgetReservation,
         handleImageGeneration,
-    );
+    )
+    .route("/v1/jobs", jobRoutes);

@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type {
     GenerationCacheIdentity,
+    GenerationErrorSnapshot,
     GenerationJob,
     GenerationJobHead,
     GenerationOutcome,
@@ -10,6 +11,20 @@ import { executeGeneration } from "@/utils/execute-generation.ts";
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+const ASYNC_KEY = "async";
+const ASYNC_RECORD_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Who may read a job submitted with `Prefer: respond-async`, and its fate. */
+type AsyncRecord = {
+    cache: GenerationCacheIdentity;
+    accounts: string[];
+    failure?: GenerationErrorSnapshot;
+};
+
+export type AsyncJobView =
+    | { state: "pending" }
+    | { state: "done"; cache: GenerationCacheIdentity }
+    | { state: "failed"; failure: GenerationErrorSnapshot };
 
 type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
@@ -85,37 +100,88 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         job: GenerationJobHead,
         body?: ReadableStream<Uint8Array>,
     ): Promise<GenerationOutcome> {
-        let immediate: GenerationOutcome | undefined;
         let wait: Promise<GenerationOutcome> | undefined;
-
-        await this.ctx.blockConcurrencyWhile(async () => {
-            const cachePresent = await cacheExists(this.env, job.cache);
-            const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-
-            if (cachePresent) {
-                await body?.cancel();
-                if (stored) {
-                    await this.clear(stored.bodyChunks, true);
-                }
-                immediate = { status: "cached" };
-                return;
+        const admitted = await this.ctx.blockConcurrencyWhile(async () => {
+            const result = await this.admit(job, body);
+            if (result === "queued") {
+                wait = new Promise<GenerationOutcome>((resolve) => {
+                    this.waiters.add(resolve);
+                });
             }
-
-            if (stored) {
-                // Joiners share the owner's persisted body.
-                await body?.cancel();
-            } else {
-                await this.persist(job, body);
-            }
-
-            wait = new Promise<GenerationOutcome>((resolve) => {
-                this.waiters.add(resolve);
-            });
+            return result;
         });
 
-        if (immediate) return immediate;
+        if (admitted === "cached") return { status: "cached" };
         if (!wait) throw new Error("Generation waiter was not registered");
         return wait;
+    }
+
+    /**
+     * For `Prefer: respond-async`: queues the job, or joins the running one,
+     * and returns without waiting. Only `account` can look the job up.
+     */
+    async submit(
+        job: GenerationJobHead,
+        body: ReadableStream<Uint8Array> | undefined,
+        account: string,
+    ): Promise<void> {
+        await this.ctx.blockConcurrencyWhile(async () => {
+            const admitted = await this.admit(job, body);
+            await this.grantAccess(job.cache, account, admitted === "queued");
+        });
+    }
+
+    /** The job as `account` may see it, or null if it never submitted it. */
+    async lookup(account: string): Promise<AsyncJobView | null> {
+        const record = await this.ctx.storage.get<AsyncRecord>(ASYNC_KEY);
+        if (!record?.accounts.includes(account)) return null;
+        if (await this.ctx.storage.get(JOB_KEY)) return { state: "pending" };
+        return record.failure
+            ? { state: "failed", failure: record.failure }
+            : { state: "done", cache: record.cache };
+    }
+
+    /** Persists a new job, joins a stored one, or reports a finished result. */
+    private async admit(
+        job: GenerationJobHead,
+        body?: ReadableStream<Uint8Array>,
+    ): Promise<"cached" | "queued"> {
+        const cachePresent = await cacheExists(this.env, job.cache);
+        const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
+
+        if (cachePresent) {
+            await body?.cancel();
+            if (stored) await this.clear(stored.bodyChunks, true);
+            return "cached";
+        }
+        if (stored) {
+            // Joiners share the owner's persisted body.
+            await body?.cancel();
+        } else {
+            await this.persist(job, body);
+        }
+        return "queued";
+    }
+
+    private async grantAccess(
+        cache: GenerationCacheIdentity,
+        account: string,
+        queued: boolean,
+    ): Promise<void> {
+        const record = await this.ctx.storage.get<AsyncRecord>(ASYNC_KEY);
+        const accounts = new Set(record?.accounts).add(account);
+        // A new submission starts from a clean slate, so an old failure goes.
+        await this.ctx.storage.put<AsyncRecord>(ASYNC_KEY, {
+            cache,
+            accounts: [...accounts],
+        });
+        // A queued job already holds the alarm that runs it; finish() sets
+        // the expiry once that run settles.
+        if (!queued) await this.expireLater();
+    }
+
+    private async expireLater(): Promise<void> {
+        await this.ctx.storage.setAlarm(Date.now() + ASYNC_RECORD_TTL_MS);
     }
 
     async alarm(): Promise<void> {
@@ -124,7 +190,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
 
         await this.ctx.blockConcurrencyWhile(async () => {
             const job = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
-            if (!job) return;
+            if (!job) {
+                // Nothing to run: this is the async record's expiry.
+                await this.ctx.storage.delete(ASYNC_KEY);
+                return;
+            }
 
             // The alarm provides an independent timeout, not retry semantics.
             // Claim before the provider call so a restarted alarm fails closed.
@@ -233,6 +303,16 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     ): Promise<void> {
         await this.ctx.blockConcurrencyWhile(async () => {
             await this.clear(bodyChunks);
+            const record = await this.ctx.storage.get<AsyncRecord>(ASYNC_KEY);
+            if (record) {
+                await this.ctx.storage.put<AsyncRecord>(ASYNC_KEY, {
+                    ...record,
+                    ...(outcome.status === "failed" && {
+                        failure: outcome.error,
+                    }),
+                });
+                await this.expireLater();
+            }
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });

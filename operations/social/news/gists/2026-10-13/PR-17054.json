@@ -1,0 +1,32 @@
+{
+  "pr_number": 17054,
+  "title": "fix(cli): reject music options when --timestamps is requested",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17054",
+  "merged_at": "2026-10-13T05:08:43Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "`polli gen audio --timestamps` now rejects `--duration` and `--instrumental` before making a network request. The timestamped speech endpoint supports speech fields only, so those music options were previously accepted but silently dropped. The CLI now explains that timestamps are available for speech models only; regression tests cover both combinations.",
+    "keywords": [
+      "polli CLI",
+      "audio",
+      "timestamps",
+      "speech",
+      "validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17054.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small within the scene and wearing tiny headphones, she gently redirects a music note away from a speech-timestamp terminal beside a sprouting code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent lime green (#ecf874) glow, dark purple (#110518) outlines, and a warm cream background."
+  },
+  "generated_at": "2026-10-13T05:10:17.061433+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "5d1bb3bd4a990a078a8eb81079feaba8e7896b87",
+  "announcements": []
+}

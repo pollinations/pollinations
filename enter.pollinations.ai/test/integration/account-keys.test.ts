@@ -1,4 +1,5 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { signGrantAgent } from "@shared/auth/agent-run-token.ts";
 import { describe, expect } from "vitest";
 import {
     initialKeyEditValues,
@@ -574,6 +575,51 @@ describe("Account Key Management API", () => {
             );
 
             expect(response.status).toBe(404);
+        });
+    });
+
+    describe("GET /api/account/keys/:id/grant-agent", () => {
+        test("names the asking agent only when gen signed it", async ({
+            accountToken,
+        }) => {
+            const agent = "community/alice/research-buddy";
+            const sig = signGrantAgent({
+                secret: env.BETTER_AUTH_SECRET,
+                apiKeyId: "key-1",
+                grant: { model: "flux" },
+                agent,
+            });
+            const named = async (
+                keyId: string,
+                grant: Record<string, string>,
+                asker: string,
+            ) => {
+                const query = new URLSearchParams({
+                    ...grant,
+                    agent: asker,
+                    sig,
+                });
+                const response = await SELF.fetch(
+                    `http://localhost:3000/api/account/keys/${keyId}/grant-agent?${query}`,
+                    { headers: { Authorization: `Bearer ${accountToken}` } },
+                );
+                expect(response.status).toBe(200);
+                return (await response.json<{ agent: string | null }>()).agent;
+            };
+
+            expect(await named("key-1", { model: "flux" }, agent)).toBe(agent);
+            // A signed name cannot be relabelled or moved to another key or grant.
+            expect(
+                await named(
+                    "key-1",
+                    { model: "flux" },
+                    "community/pollinations/floret",
+                ),
+            ).toBeNull();
+            expect(await named("key-2", { model: "flux" }, agent)).toBeNull();
+            expect(
+                await named("key-1", { category: "image" }, agent),
+            ).toBeNull();
         });
     });
 });

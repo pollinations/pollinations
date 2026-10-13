@@ -2260,7 +2260,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
     if (!models)
         for (const [index, discovery] of next.discoveries.entries()) {
             delete discovery.semanticAudit;
-            const claim = `The source identifies ${discovery.name} as a ${discovery.kind}${discovery.reason === discoveryLeadReason(discovery.kind) ? " research lead." : ` and explicitly supports this reason for discovery: ${discovery.reason}`}`;
+            const claim = `The source identifies ${discovery.name} as a ${discovery.kind}${discovery.reason === discoveryLeadReason(discovery.kind) ? "." : ` and explicitly supports this reason for discovery: ${discovery.reason}`}`;
             if (claim.length > 1000) {
                 rejected.add(discovery);
                 next.gaps.push(
@@ -2286,10 +2286,10 @@ export async function auditEvidence(proposal, models, sources, decision) {
                     const position = text
                         .toLowerCase()
                         .indexOf(name.toLowerCase());
-                    return text.slice(
+                    return `Source URL: ${source.url}\n${text.slice(
                         Math.max(0, position - 400),
                         position + name.length + 1100,
-                    );
+                    )}`;
                 })
                 .filter(Boolean)
                 .join("\n---\n")

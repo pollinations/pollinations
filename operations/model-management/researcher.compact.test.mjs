@@ -653,6 +653,11 @@ test("discovery identity audits do not require sources to prove the researcher's
         [source],
         async (payload) => {
             assert.ok(!payload.state.items[0].claim.includes(reason));
+            assert.equal(
+                payload.state.items[0].claim,
+                "The source identifies publisher/new-model as a model.",
+            );
+            assert.ok(payload.state.items[0].excerpt.includes(source.url));
             assert.match(
                 payload.state.items[0].claim,
                 /publisher\/new-model.*model/,

@@ -188,7 +188,6 @@ function SandboxCard({
 export function Sandboxes() {
     const [pricing, setPricing] = useState<Pricing>();
     const [sandboxes, setSandboxes] = useState<Sandbox[]>([]);
-    const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [busyId, setBusyId] = useState<string | null>(null);
@@ -211,8 +210,6 @@ export function Sandboxes() {
                     ? error.message
                     : "Couldn’t load sandboxes.",
             );
-        } finally {
-            setLoading(false);
         }
     }, []);
 
@@ -272,6 +269,7 @@ export function Sandboxes() {
         );
     }
 
+    const loading = !pricing && !loadError;
     const running = sandboxes.filter((s) => s.state === "running").length;
     const full = !!pricing && running >= pricing.maxRunning;
     const spends = pending && pending.action !== "kill";

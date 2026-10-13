@@ -79,16 +79,16 @@ export async function evaluateUser(
     );
     return {
         proposals: [
-            { quest: joinDiscordQuest, userId: user.id },
+            joinDiscordQuest,
             ...levelQuests
                 .filter((milestone) => milestone.level <= level)
-                .map(({ quest }) => ({
-                    quest,
-                    userId: user.id,
-                    // Once per Discord account: relinking a leveled account
-                    // to another Pollinations account earns nothing more.
-                    idempotencyKey: `quest:${quest.id}:discord:${member.discordId}`,
-                })),
-        ],
+                .map(({ quest }) => quest),
+        ].map((quest) => ({
+            quest,
+            userId: user.id,
+            // Once per Discord account: relinking one Discord account to
+            // other Pollinations accounts earns nothing more.
+            idempotencyKey: `quest:${quest.id}:discord:${member.discordId}`,
+        })),
     };
 }

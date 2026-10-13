@@ -47,6 +47,8 @@
             // exclude YAML and Markdown - not natively formatted by Biome
             "!**/*.yml",
             "!**/*.md",
+            // HTML email placeholders are substituted by the skill renderer
+            "!.claude/skills/pollinations-support-triage/assets/email.html",
             // exclude vendored font OFL license texts (must be distributed verbatim)
             "!packages/ui/src/licenses/**"
         ]

@@ -1896,7 +1896,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
             completionTextTokens: perMillion(10),
         },
@@ -3713,8 +3713,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.01),
+            // OVHcloud lists this moderation endpoint as free (2026-10-12).
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
         description:

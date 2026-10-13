@@ -406,13 +406,13 @@ exports[`effective cost and price per model — snapshot 1`] = `
     "cost": {
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.000002,
     },
     "price": {
       "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
-      "promptCachedTokens": 0.0000002,
+      "promptCachedTokens": 0.0000001,
       "promptTextTokens": 0.000002,
     },
   },
@@ -1570,10 +1570,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "hexgrad/kokoro-82m": {
     "cost": {
-      "completionAudioTokens": 0.00000062,
+      "completionAudioTokens": 0.00000099,
     },
     "price": {
-      "completionAudioTokens": 0.00000062,
+      "completionAudioTokens": 0.00000099,
     },
   },
   "heygen/heygen-video-1": {
@@ -3576,12 +3576,12 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen/qwen3guard-gen-8b": {
     "cost": {
-      "completionTextTokens": 0.00000001,
-      "promptTextTokens": 0.00000001,
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
     "price": {
-      "completionTextTokens": 0.00000001,
-      "promptTextTokens": 0.00000001,
+      "completionTextTokens": 0,
+      "promptTextTokens": 0,
     },
   },
   "recraft/recraft-v4.1-flash": {

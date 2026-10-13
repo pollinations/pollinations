@@ -204,6 +204,166 @@ return `{ data, isLoading, error, refresh }`.
 - `logout()` clears the local connection without revoking the key. If deleting
   the saved key fails, `error` reports it and the key may return after a reload.
 
+#### Generation hooks
+
+Generation hooks call `gen.pollinations.ai` with the signed-in user's key and
+render nothing. Each returns `{ data, isLoading, error, run, rerun, cancel }`
+and sends nothing until you call `run`. They take the same arguments as the
+matching `Pollinations` client method.
+
+- `run(...)` starts a request and resolves to the result, or `null` if it failed
+  or was cancelled. A new `run` cancels the one in flight.
+- `rerun()` repeats the last `run`. `cancel()` stops it and keeps the last `data`.
+- A key change or logout aborts the request in flight and clears `data`, so
+  one user's result never shows up for the next. A `401` logs out.
+
+```tsx
+import { useImage } from '@pollinations/sdk/react';
+import { useMemo } from 'react';
+
+function ImageDemo() {
+  const { data, isLoading, error, run, cancel } = useImage();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('a lighthouse at dawn', { model: 'flux' })}>Draw</button>
+      {isLoading && <button onClick={cancel}>Cancel</button>}
+      {error && <p>{error.message}</p>}
+      {src && <img src={src} alt="" />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useText } from '@pollinations/sdk/react';
+
+function Haiku() {
+  const { data, isLoading, run, rerun } = useText();
+  return (
+    <>
+      <button onClick={() => run('A haiku about bees', { model: 'openai' })}>Write</button>
+      <button onClick={rerun} disabled={isLoading}>Again</button>
+      <p>{data}</p>
+    </>
+  );
+}
+```
+
+```tsx
+import { useChatCompletion } from '@pollinations/sdk/react';
+
+function Answer() {
+  const { data, run } = useChatCompletion();
+  const ask = () =>
+    run([{ role: 'system', content: 'Answer in one line.' }, { role: 'user', content: 'Why is the sky blue?' }]);
+  return <p onClick={ask}>{data?.choices[0]?.message?.content ?? 'Ask'}</p>;
+}
+```
+
+```tsx
+import { useAudio } from '@pollinations/sdk/react';
+
+function Speak() {
+  const { data, run } = useAudio();
+  const src = data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType }));
+  return (
+    <>
+      <button onClick={() => run('Hello from Pollinations', { voice: 'nova' })}>Speak</button>
+      {src && <audio src={src} autoPlay controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useVideo } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, isLoading, run, cancel } = useVideo();
+  const src = data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType }));
+  return (
+    <>
+      <button onClick={() => run('a dog running on a beach', { duration: 4 })}>Render</button>
+      {isLoading && <button onClick={cancel}>Cancel</button>}
+      {src && <video src={src} autoPlay controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTranscription } from '@pollinations/sdk/react';
+
+function Transcribe() {
+  const { data, run } = useTranscription();
+  return (
+    <>
+      <input type="file" accept="audio/*" onChange={(e) => e.target.files?.[0] && run(e.target.files[0])} />
+      <p>{data?.text}</p>
+    </>
+  );
+}
+```
+
+`useGeneration((client, signal, ...args) => …)` gives the same state for any
+other client method, such as `imageEdit` or `embeddings`.
+
+#### `useChat` with the Vercel AI SDK
+
+`usePolliChatTransport` is a [`ChatTransport`](https://ai-sdk.dev/docs/ai-sdk-ui/transport)
+for `useChat` that streams from `/v1/responses` straight from the browser with
+the user's key. Install `ai` and `@ai-sdk/react` (`ai` is an optional peer
+dependency of this package).
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePolliChatTransport, type PolliUIMessage } from '@pollinations/sdk/react';
+import { useState } from 'react';
+
+function Chat() {
+  const transport = usePolliChatTransport({ model: 'openai' });
+  const { messages, sendMessage, status, stop, error } = useChat<PolliUIMessage>({ transport });
+  const [input, setInput] = useState('');
+
+  return (
+    <>
+      {messages.map((m) => (
+        <div key={m.id}>
+          <b>{m.role}:</b>
+          {m.parts.map((part, i) =>
+            part.type === 'text' ? <span key={i}>{part.text}</span>
+            : part.type === 'dynamic-tool' ? <pre key={i}>{part.toolName}: {part.state}</pre>
+            : null,
+          )}
+          {m.metadata?.usage && <small> {m.metadata.usage.total_tokens} tokens</small>}
+        </div>
+      ))}
+      {error && <p>{error.message}</p>}
+      <form onSubmit={(e) => { e.preventDefault(); sendMessage({ text: input }); setInput(''); }}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} />
+        {status === 'streaming' ? <button type="button" onClick={stop}>Stop</button> : <button>Send</button>}
+      </form>
+    </>
+  );
+}
+```
+
+- Text streams as `text` parts. Tools the agent runs on the server (`mcp_call`)
+  arrive as `dynamic-tool` parts with their input, then their output or error.
+  Caller tools (`function_call`) arrive as tool calls.
+- `error` and `response.failed` events, HTTP errors and streams that end early
+  become `useChat` errors.
+- The finished message's `metadata` has the `usage` and the raw `output` items.
+  The next turn sends those items back, so tool history survives the stateless API.
+- The transport keeps the same identity across renders and reads the current
+  key on every send. A key change or logout aborts a reply still streaming for
+  the old key. Pass `body` for extra request fields such as `instructions`.
+- Outside React, `polliChatTransport({ apiKey, model })` builds the same transport.
+
 #### Server rendering and Next.js
 
 The first render is signed out on both server and browser. After mounting,

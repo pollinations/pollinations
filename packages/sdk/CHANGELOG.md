@@ -9,6 +9,13 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   model, next to categories. A model ID no longer widens to its category.
 
 ### Added
+- React generation hooks `useImage`, `useText`, `useChatCompletion`,
+  `useAudio`, `useVideo`, `useTranscription` and `useGeneration` that call
+  `gen.pollinations.ai` with the `<PolliProvider>` key and return
+  `{ data, isLoading, error, run, rerun, cancel }`.
+- `usePolliChatTransport` and `polliChatTransport`: a Vercel AI SDK
+  `ChatTransport` so `useChat` streams `/v1/responses` from the browser with
+  text, tool results, errors and usage. `ai` is an optional peer dependency.
 - `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
   `video`, `audio` or `embeddings`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,

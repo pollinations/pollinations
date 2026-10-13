@@ -6,6 +6,11 @@ import { mkdir, open, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import timers from "node:timers/promises";
 import { pathToFileURL } from "node:url";
+import {
+    applyCalibration,
+    calibratedAudit,
+    calibrationState,
+} from "./calibration.mjs";
 import { extractDiscoveries } from "./discovery.mjs";
 import {
     buildClaimAudit,
@@ -2326,11 +2331,12 @@ export async function auditEvidence(proposal, models, sources, decision) {
                 ];
                 if (
                     grade.relation !== "supported" ||
+                    grade.calibrationAccepted === false ||
                     grade.selectedProbability < 0.9
                 ) {
                     rejected.add(discovery);
                     next.gaps.push(
-                        `${discovery.name}: discovery evidence ${grade.relation}`,
+                        `${discovery.name}: discovery evidence ${grade.relation}${grade.calibrationAccepted === false ? "; known-answer calibration rejected this audit" : ""}`,
                     );
                 }
                 continue;
@@ -2342,17 +2348,19 @@ export async function auditEvidence(proposal, models, sources, decision) {
             });
             if (
                 grade.relation === "supported" &&
+                grade.calibrationAccepted !== false &&
                 grade.selectedProbability >= 0.9
             )
                 continue;
             const contradicted =
                 grade.relation === "contradicted" &&
+                grade.calibrationAccepted !== false &&
                 grade.selectedProbability >= 0.9;
             if (kind === "availability")
                 route.available = contradicted ? false : null;
             else route.capabilitiesMatch = contradicted ? false : null;
             row.gaps.push(
-                `${route.provider} ${kind}: semantic evidence ${grade.relation}; account/runtime verification remains required`,
+                `${route.provider} ${kind}: semantic evidence ${grade.relation}${grade.calibrationAccepted === false ? "; known-answer calibration rejected this audit" : ""}; account/runtime verification remains required`,
             );
         }
     }
@@ -2493,6 +2501,7 @@ export async function main(env = process.env) {
             "fetch.py",
             "retries.mjs",
             "discovery.mjs",
+            "calibration.mjs",
         ].map(async (name) =>
             hash(await readFile(join(import.meta.dirname, name), "utf8")),
         ),
@@ -2531,6 +2540,7 @@ export async function main(env = process.env) {
         maxPollen: budget,
         reservedPollen: 0,
         calls: [],
+        calibration: calibrationState(),
         sources: [],
         discovery: { status: "pending" },
         models: selected.map((model) => ({
@@ -2680,6 +2690,11 @@ export async function main(env = process.env) {
         return data.choices[0].message;
     };
     const decision = async (payload, validate) => {
+        let calibration;
+        if (validate === validateClaimAudit) {
+            calibration = calibratedAudit(payload, report.calibration);
+            payload = calibration.payload;
+        }
         const quote = jevQuote(decisionModel, payload);
         let receipt = reserve(report, quote.reserved, `inference:${JEV_MODEL}`);
         receipt.requestDigest = quote.requestDigest;
@@ -2724,6 +2739,13 @@ export async function main(env = process.env) {
                         id,
                         error: validationError,
                     }),
+                );
+            if (calibration)
+                result = applyCalibration(
+                    report.calibration,
+                    result,
+                    data,
+                    calibration.controls,
                 );
         } catch (error) {
             // A rejected decision stays unusable; keep its reservation and diagnostic for reconciliation.

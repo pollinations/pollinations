@@ -1155,3 +1155,65 @@ print(json.dumps({"passed": True}))
         assert.equal(result.passed, true);
     },
 );
+
+test("Reddit feed requests share a persisted minute slot and respect the fetch deadline", () => {
+    const script = `
+import importlib.util, json, os, sys, tempfile
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+now = [100.0]
+adapter.time.time = lambda: now[0]
+adapter.time.monotonic = lambda: now[0]
+delays = []
+def sleep(delay):
+    delays.append(delay)
+    now[0] += delay
+adapter.time.sleep = sleep
+with tempfile.TemporaryDirectory() as directory:
+    os.environ['FETCH_CACHE_DIR'] = directory
+    url = 'https://www.reddit.com/r/LocalLLaMA/.rss'
+    adapter._reddit_feed_slot(url, 180)
+    clock = Path(directory) / 'reddit-rate-limit.json'
+    assert json.loads(clock.read_text())['notBefore'] == 161
+    adapter._reddit_next_request = 0
+    try: adapter._reddit_feed_slot(url, 120)
+    except adapter.ValidationError as error: assert 'deadline' in str(error)
+    else: raise AssertionError('short deadline admitted rate-limited request')
+    assert not delays
+    assert json.loads(clock.read_text())['notBefore'] == 161
+    adapter._reddit_feed_slot('https://old.reddit.com/r/StableDiffusion/.rss', 180)
+    assert delays == [61]
+    assert json.loads(clock.read_text())['notBefore'] == 222
+    adapter._reddit_feed_slot('https://docs.example/api', 180)
+    assert delays == [61]
+    assert not (Path(directory) / 'reddit-rate-limit.lock').exists()
+print(json.dumps({'passed': True}))
+`;
+    assert.equal(run({}, script).passed, true);
+});
+
+test("corrupt Reddit rate clocks and concurrent reservations fail closed", () => {
+    const script = `
+import importlib.util, json, os, sys, tempfile
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("adapter", sys.argv[1])
+adapter = importlib.util.module_from_spec(spec); spec.loader.exec_module(adapter)
+with tempfile.TemporaryDirectory() as directory:
+    os.environ['FETCH_CACHE_DIR'] = directory
+    clock = Path(directory) / 'reddit-rate-limit.json'
+    for value in [True, 'tomorrow', float('nan'), adapter.time.time()+7200]:
+        clock.write_text(json.dumps({'notBefore': value}))
+        try: adapter._reddit_feed_slot('https://www.reddit.com/r/LocalLLaMA/.rss', adapter.time.monotonic()+80)
+        except adapter.ValidationError: pass
+        else: raise AssertionError('corrupt clock accepted')
+    lock = Path(directory) / 'reddit-rate-limit.lock'
+    lock.write_text('held')
+    try: adapter._reddit_feed_slot('https://www.reddit.com/r/LocalLLaMA/.rss', adapter.time.monotonic()+80)
+    except adapter.ValidationError as error: assert 'scheduled' in str(error)
+    else: raise AssertionError('concurrent reservation accepted')
+    assert lock.read_text() == 'held'
+print(json.dumps({'passed': True}))
+`;
+    assert.equal(run({}, script).passed, true);
+});

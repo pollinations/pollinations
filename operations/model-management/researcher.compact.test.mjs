@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import timers from "node:timers/promises";
+import { EVIDENCE_CHECKS } from "./calibration.mjs";
 import { JEV_ENDPOINT, JEV_MODEL, validateClaimAudit } from "./jev.mjs";
 import { DISCOVERY_MODES, officialCandidates } from "./prepare.mjs";
 import {
@@ -849,23 +850,33 @@ function nativeResponse(
         id: "fixture-native-response",
         model: JEV_MODEL,
         answers: Object.fromEntries(
-            Object.entries(payload.questions).map(([key, question]) => [
-                key,
-                {
-                    type: "choice",
-                    choice,
-                    probabilities: Object.fromEntries(
-                        Object.keys(question.criteria).map((criterion) => [
-                            criterion,
-                            criterion === choice
-                                ? 0.98
-                                : 0.02 /
-                                  (Object.keys(question.criteria).length - 1),
-                        ]),
-                    ),
-                    confidence: 0.98,
-                },
-            ]),
+            Object.entries(payload.questions).map(([key, question]) => {
+                const item = payload.state.items?.find(({ id }) => id === key);
+                const selected = key.startsWith("calibration-")
+                    ? EVIDENCE_CHECKS.find(
+                          ([excerpt, claim]) =>
+                              excerpt === item.excerpt && claim === item.claim,
+                      )[2]
+                    : choice;
+                return [
+                    key,
+                    {
+                        type: "choice",
+                        choice: selected,
+                        probabilities: Object.fromEntries(
+                            Object.keys(question.criteria).map((criterion) => [
+                                criterion,
+                                criterion === selected
+                                    ? 0.98
+                                    : 0.02 /
+                                      (Object.keys(question.criteria).length -
+                                          1),
+                            ]),
+                        ),
+                        confidence: 0.98,
+                    },
+                ];
+            }),
         ),
         usage: { input_tokens: 100, output_tokens: 0 },
     };
@@ -891,6 +902,7 @@ function network(
         nativeFailures = [],
         solFailures = [],
         extractRelation = "irrelevant",
+        wrongCalibration = false,
     } = {},
 ) {
     const calls = { search: [], native: [], sol: [] };
@@ -978,6 +990,17 @@ function network(
             );
             if (invalid === "all-answer")
                 response.answers.unknown = Object.values(response.answers)[0];
+            if (wrongCalibration && response.answers["calibration-1"])
+                response.answers["calibration-1"] = {
+                    type: "choice",
+                    choice: "supported",
+                    confidence: 0.97,
+                    probabilities: {
+                        supported: 0.98,
+                        contradicted: 0.01,
+                        insufficient: 0.01,
+                    },
+                };
             const invalidTarget =
                 nativeAt === 1
                     ? payload.state.canonicalModelIds
@@ -1207,8 +1230,14 @@ test(
         assert.ok(
             calls.native
                 .find(({ state }) => state.items && !state.providerPolicy)
-                .state.items.every(({ id }) => id.startsWith(model.name)),
+                .state.items.every(
+                    ({ id }) =>
+                        id.startsWith(model.name) ||
+                        id.startsWith("calibration-"),
+                ),
         );
+        assert.equal(report.calibration.checked, 2);
+        assert.equal(report.calibration.errors, 0);
         const row = report.models[0];
         assert.match(row.auditDigest, /^[a-f0-9]{64}$/);
         assert.deepEqual(
@@ -1737,6 +1766,33 @@ test(
             JSON.parse(await readFile(join(out, "research.json"), "utf8")),
             report,
         );
+    },
+);
+
+test(
+    "main rejects native evidence when a known-answer canary fails, preserving sourced prices and cost receipts",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { env } = await fixture(t);
+        const calls = network(t, [model, sol, jev], { wrongCalibration: true });
+        const report = await main(env),
+            row = report.models[0];
+        assert.equal(
+            calls.native.length,
+            7,
+            "Canaries share the existing audit call",
+        );
+        assert.equal(calls.sol.length, 0);
+        assert.equal(report.calibration.errors, 1);
+        assert.equal(report.calibration.threshold, 0.981);
+        assert.equal(row.routes[0].available, null);
+        assert.equal(row.routes[0].pricing.input, 0.01);
+        assert.equal(row.routes[0].semanticAudit[0].relation, "insufficient");
+        assert.equal(row.routes[0].semanticAudit[0].rawRelation, "supported");
+        assert.equal(row.routes[0].semanticAudit[0].calibrationAccepted, false);
+        assert.ok(row.gaps.some((gap) => gap.includes("calibration rejected")));
+        assert.ok(report.calls.every(({ status }) => status === "received"));
+        assert.equal(report.budgetUsedPollen, budgetUsed(report));
     },
 );
 

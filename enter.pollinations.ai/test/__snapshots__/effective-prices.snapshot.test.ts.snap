@@ -1504,14 +1504,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "google/gemma-4-31b-it:deepinfra": {
     "cost": {
-      "completionTextTokens": 0.00000038,
-      "promptImageTokens": 0.00000013,
-      "promptTextTokens": 0.00000013,
+      "completionTextTokens": 0.0000004,
+      "promptImageTokens": 0.0000002,
+      "promptTextTokens": 0.0000002,
     },
     "price": {
-      "completionTextTokens": 0.00000038,
-      "promptImageTokens": 0.00000013,
-      "promptTextTokens": 0.00000013,
+      "completionTextTokens": 0.0000004,
+      "promptImageTokens": 0.0000002,
+      "promptTextTokens": 0.0000002,
     },
   },
   "google/lyria-3-clip-preview": {

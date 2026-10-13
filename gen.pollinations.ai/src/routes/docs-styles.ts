@@ -130,13 +130,11 @@ export const API_REFERENCE_CUSTOM_CSS = `
 
 /* Make each drawer section easy to scan. Scalar renders section labels as
    tag-group rows and inserts a small spacer immediately before each one. */
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child {
-  height: 12px !important;
-  min-height: 12px !important;
-  flex-shrink: 0;
+.scalar-app [data-sidebar-id^="api/tag-group/"] {
+  margin-top: 12px;
 }
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:nth-child(2) {
-  color: var(--polli-color-text-soft) !important;
+.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child [class*="button-label"] {
+  color: var(--polli-color-text-soft);
 }
 
 /* Hide Scalar's native download UI — we surface it via the floating

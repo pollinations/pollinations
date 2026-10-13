@@ -41,122 +41,130 @@ describe("Vertex Gemini routing with OpenRouter fallback", () => {
         ],
     ] as const;
 
-    it.each(
-        routes,
-    )("routes %s directly to Vertex %s", (model, upstreamModel) => {
-        const { options } = resolveModelConfig([], { model });
+    it.each(routes)(
+        "routes %s directly to Vertex %s",
+        (model, upstreamModel) => {
+            const { options } = resolveModelConfig([], { model });
 
-        expect(options.model).toBe(upstreamModel);
-        expect(options.provider).toBeUndefined();
-        expect(options.modelConfig).toMatchObject({
-            provider: "vertex-ai",
-            "vertex-region": "global",
-            "vertex-model-id": upstreamModel,
-            "strict-openai-compliance": "false",
-        });
-    });
+            expect(options.model).toBe(upstreamModel);
+            expect(options.provider).toBeUndefined();
+            expect(options.modelConfig).toMatchObject({
+                provider: "vertex-ai",
+                "vertex-region": "global",
+                "vertex-model-id": upstreamModel,
+                "strict-openai-compliance": "false",
+            });
+        },
+    );
 
-    it.each(
-        routes,
-    )("pins the %s fallback to %s", (_model, upstreamModel, fallback, providerTag) => {
-        const { options } = resolveModelConfig([], { model: fallback });
+    it.each(routes)(
+        "pins the %s fallback to %s",
+        (_model, upstreamModel, fallback, providerTag) => {
+            const { options } = resolveModelConfig([], { model: fallback });
 
-        expect(options.model).toBe(`google/${upstreamModel}`);
-        expect(options.provider).toEqual({
-            only: [providerTag],
-            allow_fallbacks: false,
-        });
-        expect(options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
-        });
-    });
+            expect(options.model).toBe(`google/${upstreamModel}`);
+            expect(options.provider).toEqual({
+                only: [providerTag],
+                allow_fallbacks: false,
+            });
+            expect(options.modelConfig).toMatchObject({
+                provider: "openrouter",
+                directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            });
+        },
+    );
 
-    it.each(
-        routes,
-    )("publishes direct Vertex parameters for %s and OpenRouter parameters for its fallback", (_model, _upstreamModel, fallback) => {
-        const primary = fallback.split(
-            ":openrouter:",
-        )[0] as keyof typeof TEXT_SERVICES;
-        const direct = TEXT_SERVICES[primary].supportedParameters ?? [];
-        const openRouter = TEXT_SERVICES[fallback].supportedParameters ?? [];
+    it.each(routes)(
+        "publishes direct Vertex parameters for %s and OpenRouter parameters for its fallback",
+        (_model, _upstreamModel, fallback) => {
+            const primary = fallback.split(
+                ":openrouter:",
+            )[0] as keyof typeof TEXT_SERVICES;
+            const direct = TEXT_SERVICES[primary].supportedParameters ?? [];
+            const openRouter =
+                TEXT_SERVICES[fallback].supportedParameters ?? [];
 
-        expect(direct).toContain("reasoning_effort");
-        expect(direct).not.toContain("reasoning");
-        expect(direct).not.toContain("include_reasoning");
-        expect(openRouter).toContain("reasoning");
-        expect(openRouter).toContain("include_reasoning");
-    });
+            expect(direct).toContain("reasoning_effort");
+            expect(direct).not.toContain("reasoning");
+            expect(direct).not.toContain("include_reasoning");
+            expect(openRouter).toContain("reasoning");
+            expect(openRouter).toContain("include_reasoning");
+        },
+    );
 
-    it.each(
-        routes.map(([model]) => model),
-    )("does not inject code execution for %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
+    it.each(routes.map(([model]) => model))(
+        "does not inject code execution for %s",
+        async (model) => {
+            const transform = findModelByName(model)?.transform;
+            if (!transform) throw new Error(`${model} transform missing`);
 
-        const { options } = await transform([], { model });
+            const { options } = await transform([], { model });
 
-        expect(options.tools).toBeUndefined();
-    });
+            expect(options.tools).toBeUndefined();
+        },
+    );
 
-    it.each(
-        routes.map(([model]) => model),
-    )("adapts explicit Google Search for direct %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
+    it.each(routes.map(([model]) => model))(
+        "adapts explicit Google Search for direct %s",
+        async (model) => {
+            const transform = findModelByName(model)?.transform;
+            if (!transform) throw new Error(`${model} transform missing`);
 
-        const { options } = await transform([], {
-            tools: [{ type: "google_search" }],
-        });
+            const { options } = await transform([], {
+                tools: [{ type: "google_search" }],
+            });
 
-        expect(options.tools).toEqual([
-            {
-                type: "function",
-                function: { name: "google_search" },
-            },
-        ]);
-    });
-
-    it.each(
-        routes.map(([, , fallback]) => fallback),
-    )("adapts Google Search for OpenRouter fallback %s", async (fallback) => {
-        const transform = findModelByName(fallback)?.transform;
-        if (!transform) throw new Error(`${fallback} transform missing`);
-
-        const { options } = await transform([], {
-            tools: [{ type: "google_search" }],
-        });
-
-        expect(options.tools).toEqual([
-            {
-                type: "openrouter:web_search",
-                parameters: { engine: "native" },
-            },
-        ]);
-    });
-
-    it.each(
-        routes.map(([model]) => model),
-    )("preserves tools with structured output for %s", async (model) => {
-        const transform = findModelByName(model)?.transform;
-        if (!transform) throw new Error(`${model} transform missing`);
-        const tools = [
-            {
-                type: "function",
-                function: {
-                    name: "lookup",
-                    parameters: { type: "object", properties: {} },
+            expect(options.tools).toEqual([
+                {
+                    type: "function",
+                    function: { name: "google_search" },
                 },
-            },
-        ];
+            ]);
+        },
+    );
 
-        const { options } = await transform([], {
-            tools,
-            response_format: { type: "json_object" },
-        });
+    it.each(routes.map(([, , fallback]) => fallback))(
+        "adapts Google Search for OpenRouter fallback %s",
+        async (fallback) => {
+            const transform = findModelByName(fallback)?.transform;
+            if (!transform) throw new Error(`${fallback} transform missing`);
 
-        expect(options.tools).toEqual(tools);
-    });
+            const { options } = await transform([], {
+                tools: [{ type: "google_search" }],
+            });
+
+            expect(options.tools).toEqual([
+                {
+                    type: "openrouter:web_search",
+                    parameters: { engine: "native" },
+                },
+            ]);
+        },
+    );
+
+    it.each(routes.map(([model]) => model))(
+        "preserves tools with structured output for %s",
+        async (model) => {
+            const transform = findModelByName(model)?.transform;
+            if (!transform) throw new Error(`${model} transform missing`);
+            const tools = [
+                {
+                    type: "function",
+                    function: {
+                        name: "lookup",
+                        parameters: { type: "object", properties: {} },
+                    },
+                },
+            ];
+
+            const { options } = await transform([], {
+                tools,
+                response_format: { type: "json_object" },
+            });
+
+            expect(options.tools).toEqual(tools);
+        },
+    );
 });
 
 describe("OpenRouter Gemini Search routing", () => {
@@ -195,15 +203,15 @@ describe("OpenRouter Gemini Search routing", () => {
         ]);
     });
 
-    it.each([
-        { tools: [] },
-        { tool_choice: "none" },
-    ])("preserves explicit search opt-out %j", async (disabled) => {
-        const transform = findModelByName("gemini-search")?.transform;
-        if (!transform) throw new Error("search transform missing");
-        const result = await transform([], disabled);
-        expect(result.options.plugins).toEqual([]);
-    });
+    it.each([{ tools: [] }, { tool_choice: "none" }])(
+        "preserves explicit search opt-out %j",
+        async (disabled) => {
+            const transform = findModelByName("gemini-search")?.transform;
+            if (!transform) throw new Error("search transform missing");
+            const result = await transform([], disabled);
+            expect(result.options.plugins).toEqual([]);
+        },
+    );
     it.each([
         "google/gemini-2.5-flash-lite:search",
         "google/gemini-2.5-flash-lite:search:vercel",

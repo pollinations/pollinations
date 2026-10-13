@@ -43,9 +43,13 @@ from common import (
 from posts import JOB_DIRS, check_date, model_post
 
 # The first date each job is delivered here; older folders went out with the old senders.
-START = {"daily": None, "weekly": None, "models": None}
+START = {"daily": "2026-10-12", "weekly": "2026-10-18", "models": "2026-10-14"}
 # The channel today's lookup picks: the first listed of each service in Buffer.
-BUFFER_CHANNELS = {"twitter": None, "linkedin": None, "instagram": None}
+BUFFER_CHANNELS = {
+    "twitter": "695fe0e5457dae6a34edc9a5",  # pollinations_ai
+    "linkedin": "695fe487457dae6a34ede497",  # pollinations.ai
+    "instagram": "695fccbf457dae6a34ed79b4",  # pollinations_ai
+}
 BUFFER_URL = "https://api.buffer.com"
 
 # Each job's post files and where they go; Discord before Reddit, so a Reddit timeout can't delay it.

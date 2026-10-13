@@ -330,24 +330,24 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-07-10").getTime(),
         // Provider retires this route on 2028-01-11.
-        // OpenRouter's standard OpenAI endpoint discounts Azure output more
-        // deeply than input/cache. One third matches its output rate and keeps
-        // the other dimensions below that endpoint under a uniform multiplier.
+        // Preserve the existing one-third customer price multiplier.
         priceMultiplier: 1 / 3,
         paidOnly: false,
+        // Azure Global Standard rates (retail prices API and billed meters,
+        // 2026-10-12).
         cost: {
-            promptTextTokens: perMillion(5.0),
-            promptCachedTokens: perMillion(0.5),
-            promptCacheWriteTokens: perMillion(6.25),
-            completionTextTokens: perMillion(30.0),
+            promptTextTokens: perMillion(4.0),
+            promptCachedTokens: perMillion(0.4),
+            promptCacheWriteTokens: perMillion(5.0),
+            completionTextTokens: perMillion(20.0),
         },
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(10.0),
-                    promptCachedTokens: perMillion(1.0),
-                    promptCacheWriteTokens: perMillion(12.5),
-                    completionTextTokens: perMillion(45.0),
+                    promptTextTokens: perMillion(8.0),
+                    promptCachedTokens: perMillion(0.8),
+                    promptCacheWriteTokens: perMillion(10.0),
+                    completionTextTokens: perMillion(30.0),
                 },
             },
             longContextAbove(272_000),
@@ -769,25 +769,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
-        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
         ],
-        provider: "azure",
+        provider: "openrouter",
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
-        // 2026-10-13 and its retirement schedule 2026-10-16.
-        // Provider retires this route on 2026-10-09.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.8),
-            completionTextTokens: perMillion(3.2),
+            // Cohere's OpenRouter route, including the 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(1.5) * 1.055,
         },
         title: "Cohere Command A+",
         description:
@@ -1157,9 +1156,10 @@ const TEXT_BASE_SERVICES = {
         paidOnly: false,
         perUserRpm: 60,
         cost: {
-            promptTextTokens: perMillion(0.22),
-            promptCachedTokens: perMillion(0.007),
-            completionTextTokens: perMillion(0.66),
+            // Fireworks Standard rates (2026-10-12).
+            promptTextTokens: perMillion(0.3),
+            promptCachedTokens: perMillion(0.006),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:
@@ -1265,7 +1265,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
+            // OpenRouter base Alibaba peak rates (00:00–14:00 UTC, 2026-09-23),
             // including the account's 5.5% credit-purchase fee. Alibaba
             // halves them the rest of the day; costs are not time-based, so
             // the peak rate applies all day and never undercharges.
@@ -1894,7 +1894,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
             promptTextTokens: perMillion(2),
-            promptCachedTokens: perMillion(0.2),
+            promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
             completionTextTokens: perMillion(10),
         },
@@ -2015,6 +2015,35 @@ const TEXT_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "anthropic/claude-opus-5.5:fast": {
+        supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-10-10").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Research preview: Anthropic's fast mode for Opus 5.5 at 2x standard
+        // rates, served by OpenRouter's anthropic/fast endpoint (2026-10-10).
+        // Costs include OpenRouter's 5.5% credit fee. Cache writes use the
+        // 5-minute rate.
+        cost: {
+            promptTextTokens: perMillion(8) * 1.055,
+            promptCachedTokens: perMillion(0.4) * 1.055,
+            promptCacheWriteTokens: perMillion(10) * 1.055,
+            completionTextTokens: perMillion(40) * 1.055,
+        },
+        title: "Claude Opus 5.5 Fast",
+        description:
+            "Higher output speed for interactive coding and agentic work, at premium pricing",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Same image limit as Opus 5.5.
         tools: true,
         contextLength: 1000000,
         isSpecialized: false,
@@ -3303,6 +3332,29 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
@@ -3334,6 +3386,29 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
         // hits (2026-09-03).
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
@@ -3682,8 +3757,9 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         paidOnly: false,
         cost: {
-            promptTextTokens: perMillion(0.01),
-            completionTextTokens: perMillion(0.01),
+            // OVHcloud lists this moderation endpoint as free (2026-10-12).
+            promptTextTokens: perMillion(0),
+            completionTextTokens: perMillion(0),
         },
         title: "Qwen3Guard 8B",
         description:

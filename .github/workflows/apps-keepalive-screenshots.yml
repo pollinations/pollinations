@@ -3,6 +3,10 @@ name: Models / Research pre-merge E2E
 on:
   workflow_dispatch:
     inputs:
+      decisions_only:
+        description: 'Compare all general decision models on frozen researcher tasks; cap 0.05 Pollen.'
+        type: boolean
+        default: false
       scrape_only:
         description: 'Probe public sources with Scrapling only; no credentials or paid calls.'
         type: boolean
@@ -45,12 +49,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: model-research-${{ inputs.audit_only && 'billing' || 'validation' }}
+  group: model-research-${{ inputs.decisions_only && 'decisions' || inputs.audit_only && 'billing' || 'validation' }}
   cancel-in-progress: false
 
 jobs:
   researcher:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && !inputs.audit_only && !inputs.native_only && !inputs.discovery_only && !inputs.scrape_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && !inputs.audit_only && !inputs.native_only && !inputs.discovery_only && !inputs.scrape_only && !inputs.decisions_only
     runs-on: ubuntu-latest
     timeout-minutes: 360
     permissions:
@@ -213,7 +217,7 @@ jobs:
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS
   native-validation:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.discovery_only && !inputs.scrape_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.discovery_only && !inputs.scrape_only && !inputs.decisions_only
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -247,7 +251,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   discovery-validation:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.discovery_only && !inputs.audit_only && !inputs.scrape_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.discovery_only && !inputs.audit_only && !inputs.scrape_only && !inputs.decisions_only
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -274,7 +278,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   billing-audit:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.audit_only && !inputs.scrape_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.audit_only && !inputs.scrape_only && !inputs.decisions_only
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -318,3 +322,28 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+
+  decision-comparison:
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.decisions_only && !inputs.audit_only && !inputs.native_only && !inputs.discovery_only && !inputs.scrape_only
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: node .github/scripts/model-researcher-decision-comparison.mjs --check
+      - name: Compare four decision models using identical labelled evidence
+        env:
+          POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
+          RESEARCH_OUT: ${{ runner.temp }}/decision-comparison
+        run: node .github/scripts/model-researcher-decision-comparison.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: decision-comparison-${{ github.run_id }}
+          path: ${{ runner.temp }}/decision-comparison/
+          if-no-files-found: error
+          retention-days: 14

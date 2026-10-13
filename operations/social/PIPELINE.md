@@ -77,14 +77,14 @@ Registry comments are never read. A provider's deadline (`// Provider retires th
 ```
 
 `Effective` takes `YYYY-MM-DD`, an optional `HH:MM` and a timezone (`UTC`, `Z` or `±HH:MM`; none means UTC). Rows for unknown model IDs, past dates or no date (the removal PR itself) are skipped. In `index.json` the latest announcement per model wins and keeps the earlier date as `previous_date`; the removal PR settles it, and a date that passes without a removal is hidden.
-`enrichment.classification` and `enrichment.models` report `complete` or `failed`. Classification/catalog enrichment failures leave unknown values while social publication continues. Fetching the PR and its complete file list is required. Manual dispatch regenerates text and images and posts Discord again; use local edits for enrichment-only repairs or backfills.
+Classification and the model and API change lookups must succeed: a failure stops the gist (no gist, no Discord post) until a person reruns it. Older gists may carry an `enrichment` status from when such failures were skipped. Fetching the PR and its complete file list is required. Manual dispatch regenerates text and images and posts Discord again; use local edits for enrichment-only repairs or backfills.
 Existing AI categories, text, images, and publish-tier rules remain available to social consumers.
 
 - Committed directly to `news` branch (no PR needed — small auto-generated JSON)
 - One file per merged PR per day
 - Unique filenames per PR (`PR-{number}.json`) — no git push race conditions
 - **Includes pixel art image URL** — generated at PR merge time, reused by Discord posts
-- Image generation uses our own API — retries 3x with exponential backoff + different seed on 5xx errors
+- Image generation uses our own API, one attempt: a failed picture stops the gist
 
 ```json
 {
@@ -99,7 +99,6 @@ Existing AI categories, text, images, and publish-tier rules remain available to
   "source": "Team",
   "merge_commit_sha": "abc123",
   "announcements": [],
-  "enrichment": {"classification": "complete", "models": "complete"},
 
   "gist": {
     "category": "bug_fix",
@@ -271,7 +270,8 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 ## Error handling
 
-- **Gist (`gist.py`) fails loud.** If the AI analysis, validation or the image fails, the run fails: no partial gist, no Discord post. Classification and model/API change failures only leave those values unknown (`enrichment.*: failed`).
+- **No automatic retries.** Model, picture, GitHub and Discord calls are tried once; a failure (an empty model answer included) turns the run red and a person reruns it with the repair skill (`.claude/skills/news-pipeline/SKILL.md`). The one exception is the push to `news`, which fetches, rebases and pushes again up to three times because other writers land on `news` every few minutes.
+- **Gist (`gist.py`) fails loud.** If classification, the model or API change lookup, the AI analysis, validation or the image fails, the run fails: no partial gist, no Discord post.
 - **Per-PR Discord (`discord_pr.py`)** fails the run if the message, the image or the webhook fails; the post is never degraded.
 - **Scheduled posts:** a post whose reply misses a required field, or whose picture fails, stops before anything is saved. A day or week without daily-tier gists writes nothing. Each job's failure opens its own issue ("Workflow failing: News / Posts — writing" or "— delivery"), so Reddit's known failure can't hide a writing failure.
 

@@ -1799,10 +1799,10 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].input_modalities` | `string`[] | — |
 | `data[].output_modalities` | `string`[] | — |
 | `data[].supported_endpoints` | `string`[] | — |
-| `data[].agent` | `boolean` | True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free. |
+| `data[].agent` | `boolean` | True for agents. An agent adds no charge of its own; the caller pays for each model and tool call it makes. An agent is free only when those calls are free, such as a prompt agent on a free base model whose tools cost nothing. |
 | `data[].base_model` | `string` | Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `data[].pricing` | `object` | Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free. |
+| `data[].pricing` | `object` | Pollen rates per billed unit. A prompt agent shows its base model's rates; paid tool calls are billed on top. An agent without `base_model` shows only `currency`: its cost depends on the calls it makes, so do not read it as free. |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -1906,10 +1906,10 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `input_modalities` | `string`[] | — |
 | `output_modalities` | `string`[] | — |
 | `supported_endpoints` | `string`[] | — |
-| `agent` | `boolean` | True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free. |
+| `agent` | `boolean` | True for agents. An agent adds no charge of its own; the caller pays for each model and tool call it makes. An agent is free only when those calls are free, such as a prompt agent on a free base model whose tools cost nothing. |
 | `base_model` | `string` | Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `pricing` | `object` | Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free. |
+| `pricing` | `object` | Pollen rates per billed unit. A prompt agent shows its base model's rates; paid tool calls are billed on top. An agent without `base_model` shows only `currency`: its cost depends on the calls it makes, so do not read it as free. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |

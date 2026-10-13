@@ -79,7 +79,7 @@ export const ModelInfoSchema = z.object({
         .boolean()
         .optional()
         .describe(
-            "True for agents. An agent adds no charge of its own, but every model and tool call it makes is billed to the caller, so an agent is never free.",
+            "True for agents. An agent adds no charge of its own; the caller pays for each model and tool call it makes. An agent is free only when those calls are free, such as a prompt agent on a free base model whose tools cost nothing.",
         ),
     base_model: z
         .string()
@@ -92,7 +92,7 @@ export const ModelInfoSchema = z.object({
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") }))
         .describe(
-            "Pollen rates per billed unit. An agent shows its base model's rates. An agent without `base_model` shows only `currency`: its cost is usage-based, not free.",
+            "Pollen rates per billed unit. A prompt agent shows its base model's rates; paid tool calls are billed on top. An agent without `base_model` shows only `currency`: its cost depends on the calls it makes, so do not read it as free.",
         ),
     pricing_variants: z
         .array(

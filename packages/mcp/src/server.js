@@ -43,7 +43,7 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - generateText can invoke any listed text model or agent. Use listModels with agent=true to discover agents. generateImage can invoke any listed image model.
 - transcribeAudio converts spoken audio from a public HTTPS URL into text.
 - For pricing, quote the returned pricing fields and currency; do not estimate.
-- An agent (agent: true) is never free: each model and tool call it makes is billed to the caller. With base_model, its pricing is that model's rate. Without base_model, pricing lists only a currency, so say the cost is usage-based, not free. getUsage lists these charges under the models the agent called, not under the agent.
+- An agent (agent: true) adds no charge of its own: each model and tool call it makes is billed to the caller. With base_model, its pricing is that model's rate plus any paid tool calls; it is free only when the base model and its tools are free. Without base_model, pricing lists only a currency, so say the cost is usage-based; do not call it free. getUsage lists these charges under the models the agent called, not under the agent.
 - Use getModelStatus for recent health and latency, not model discovery.
 
 ## Account

@@ -281,20 +281,19 @@ export function fallbackCandidates(
 }
 
 /**
- * A media fallback that takes fewer reference images than the request sends
- * would silently drop the rest, so it is skipped. The requested model is always
- * tried and answers for its own limits.
+ * The requested model, then only the fallbacks that accept every image the
+ * user sent; a route with a lower image limit would silently drop the rest.
  */
-export function mediaFallbackCandidates(
+export function fallbacksAcceptingImages(
     model: PrimaryModel | undefined,
-    referenceImages: number,
+    imageCount: number,
 ) {
     return fallbackCandidates(model)
         .map((candidate, originalIndex) => ({ ...candidate, originalIndex }))
         .filter(
             ({ definition, originalIndex }) =>
                 originalIndex === 0 ||
-                referenceImages <=
+                imageCount <=
                     (definition?.maxReferenceImages ??
                         Number.POSITIVE_INFINITY),
         );

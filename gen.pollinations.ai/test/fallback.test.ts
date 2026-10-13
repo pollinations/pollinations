@@ -15,10 +15,10 @@ import {
     type FallbackAttempt,
     type FallbackCandidate,
     fallbackCandidates,
+    fallbacksAcceptingImages,
     formatFallbackTarget,
     isRetryableFallbackError,
     linkFallbackEntries,
-    mediaFallbackCandidates,
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
@@ -393,7 +393,7 @@ describe("fallback response model attribution", () => {
     });
 });
 
-describe("mediaFallbackCandidates", () => {
+describe("fallbacksAcceptingImages", () => {
     const publicId = "qwen/qwen-image-3";
     const model = {
         resolved: publicId,
@@ -406,9 +406,9 @@ describe("mediaFallbackCandidates", () => {
         })),
     };
 
-    it("skips a fallback that takes fewer reference images than the request sends", () => {
+    it("skips a fallback that would drop some of the user's images", () => {
         expect(
-            mediaFallbackCandidates(model, 2).map(({ id, originalIndex }) => [
+            fallbacksAcceptingImages(model, 2).map(({ id, originalIndex }) => [
                 id,
                 originalIndex,
             ]),
@@ -416,7 +416,7 @@ describe("mediaFallbackCandidates", () => {
             [publicId, 0],
             ["qwen/qwen-image-3:fal", 1],
         ]);
-        expect(mediaFallbackCandidates(model, 1).map(({ id }) => id)).toEqual([
+        expect(fallbacksAcceptingImages(model, 1).map(({ id }) => id)).toEqual([
             publicId,
             "qwen/qwen-image-3:fal",
             "qwen/qwen-image-3:replicate",

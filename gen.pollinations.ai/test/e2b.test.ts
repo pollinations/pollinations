@@ -468,17 +468,21 @@ test("a timeout over 10 minutes keeps the sandbox, paying 10 minutes at a time",
         apiKeyId: null,
     });
 
-    // The list says until when gen keeps each one.
+    // As on E2B, `endAt` says when the timeout ends, in the list and for
+    // the one sandbox.
     expect((await createSandbox(owner.key)).status).toBe(201);
     const listed = await (await call(owner.key, "/v2/sandboxes")).json<
-        { keptUntil?: string }[]
+        { endAt: string }[]
     >();
-    expect(listed.map((sandbox) => Boolean(sandbox.keptUntil))).toEqual([
-        true,
-        true,
-        false,
+    expect(listed.map((sandbox) => Date.parse(sandbox.endAt))).toEqual([
+        keep.until.getTime(),
+        (await keeps())[1].until.getTime(),
+        Date.parse(e2b.sandboxes[2].endAt),
     ]);
-    expect(Date.parse(listed[0].keptUntil ?? "")).toBe(keep.until.getTime());
+    const one = await call(owner.key, `/sandboxes/${sandbox.sandboxID}`);
+    expect(Date.parse((await one.json<{ endAt: string }>()).endAt)).toBe(
+        keep.until.getTime(),
+    );
 });
 
 test("like E2B's timeout, a later timeout or a pause ends the keep, and connect never does", async () => {

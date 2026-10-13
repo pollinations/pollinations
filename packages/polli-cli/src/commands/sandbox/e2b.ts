@@ -20,8 +20,6 @@ export type Sandbox = {
     cpuCount: number;
     memoryMB: number;
     endAt: string;
-    // Not E2B's: when gen keeps it running until.
-    keptUntil?: string;
 };
 
 export interface LogEntry {

@@ -168,6 +168,28 @@ async function ownedSandbox(c: E2bContext): Promise<SandboxDetail> {
     return sandbox;
 }
 
+// As on an E2B team with a longer limit, a kept sandbox's `endAt` says when
+// its timeout ends, not when the 10 minutes paid so far do.
+async function showKeeps(env: CloudflareBindings, sandboxes: SandboxDetail[]) {
+    const running = sandboxes.filter((sandbox) => sandbox.state === "running");
+    const keeps = running.length
+        ? await drizzle(env.DB)
+              .select()
+              .from(sandboxKeep)
+              .where(
+                  inArray(
+                      sandboxKeep.sandboxId,
+                      running.map((sandbox) => sandbox.sandboxID),
+                  ),
+              )
+        : [];
+    const until = new Map(keeps.map((keep) => [keep.sandboxId, keep.until]));
+    return sandboxes.map((sandbox) => {
+        const end = sandbox.state === "running" && until.get(sandbox.sandboxID);
+        return end ? { ...sandbox, endAt: end.toISOString() } : sandbox;
+    });
+}
+
 // E2B's concurrency limit is per team, so each user may hold only a few.
 async function requireCapacity(c: E2bContext) {
     const query = new URLSearchParams({
@@ -513,35 +535,18 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             url.searchParams.set("metadata", metadata.toString());
             const response = await forward(c, url.search);
             if (!response.ok) return response;
-            // Not E2B's: `keptUntil`, when gen keeps a sandbox running until.
             const sandboxes = await response.json<SandboxDetail[]>();
-            const keeps = sandboxes.length
-                ? await drizzle(c.env.DB)
-                      .select()
-                      .from(sandboxKeep)
-                      .where(
-                          inArray(
-                              sandboxKeep.sandboxId,
-                              sandboxes.map((sandbox) => sandbox.sandboxID),
-                          ),
-                      )
-                : [];
-            const keptUntil = new Map(
-                keeps.map((keep) => [keep.sandboxId, keep.until]),
-            );
             const headers = new Headers(response.headers);
             headers.delete("content-length");
             return new Response(
-                JSON.stringify(
-                    sandboxes.map((sandbox) => ({
-                        ...sandbox,
-                        keptUntil: keptUntil.get(sandbox.sandboxID),
-                    })),
-                ),
+                JSON.stringify(await showKeeps(c.env, sandboxes)),
                 { status: response.status, headers },
             );
         })
-        .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
+        .get("/sandboxes/:id", async (c) => {
+            const [sandbox] = await showKeeps(c.env, [await ownedSandbox(c)]);
+            return c.json(sandbox);
+        })
         .delete("/sandboxes/:id", ownerOnly)
         .get("/sandboxes/:id/metrics", ownerOnly)
         // `e2b sandbox logs` reads this deprecated v1 path.

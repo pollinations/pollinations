@@ -3,6 +3,7 @@ import {
     Button,
     ButtonGroup,
     Chip,
+    ClockIcon,
     ConfirmationDialog,
     CopyField,
     InlineLink,
@@ -35,10 +36,8 @@ type Sandbox = Size & {
     state: "running" | "paused";
     // When its current run started: at the create or the last resume.
     startedAt: string;
-    // When a running sandbox's paid time ends, or when a paused one paused.
+    // When a running sandbox's timeout ends, or when a paused one paused.
     endAt: string;
-    // Not E2B's: when gen keeps it running until, 10 minutes at a time.
-    keptUntil?: string;
 };
 
 type Pricing = {
@@ -71,6 +70,8 @@ const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 type Pending =
     | { action: "create"; template: string }
     | { action: "connect"; sandbox: Sandbox }
+    // Ends a running sandbox's "Until I stop it" after a while.
+    | { action: "limit"; sandbox: Sandbox }
     | { action: "kill"; sandbox: Sandbox };
 
 async function e2b<T>(path: string, method = "GET", body?: unknown) {
@@ -119,6 +120,7 @@ function SandboxCard({
     pricing,
     busy,
     onConnect,
+    onLimit,
     onPause,
     onKill,
 }: {
@@ -126,11 +128,12 @@ function SandboxCard({
     pricing: Pricing;
     busy: boolean;
     onConnect: () => void;
+    onLimit: () => void;
     onPause: () => void;
     onKill: () => void;
 }) {
     const running = sandbox.state === "running";
-    const kept = running ? sandbox.keptUntil : undefined;
+    const endless = running && forever(sandbox.endAt);
     return (
         <Surface className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -152,9 +155,9 @@ function SandboxCard({
                 <Chip intent={running ? "success" : "neutral"} size="md">
                     {!running
                         ? "Paused"
-                        : kept && forever(kept)
+                        : endless
                           ? "Runs until you stop it"
-                          : `Runs until ${new Date(kept ?? sandbox.endAt).toLocaleString()}`}
+                          : `Runs until ${new Date(sandbox.endAt).toLocaleString()}`}
                 </Chip>
             </div>
             <CopyField
@@ -162,17 +165,27 @@ function SandboxCard({
                 value={`ssh ${sandbox.sandboxID}.polli`}
             />
             <ButtonGroup>
-                {!(kept && forever(kept)) && (
-                    <Button
-                        size="sm"
-                        intent="commit"
-                        icon={running ? <PlusIcon /> : <PlayIcon />}
-                        disabled={busy}
-                        onClick={onConnect}
-                    >
-                        {running ? "Add time" : "Resume"}
-                    </Button>
-                )}
+                <Button
+                    size="sm"
+                    intent="commit"
+                    icon={
+                        !running ? (
+                            <PlayIcon />
+                        ) : endless ? (
+                            <ClockIcon />
+                        ) : (
+                            <PlusIcon />
+                        )
+                    }
+                    disabled={busy}
+                    onClick={endless ? onLimit : onConnect}
+                >
+                    {!running
+                        ? "Resume"
+                        : endless
+                          ? "Set time limit"
+                          : "Add time"}
+                </Button>
                 {running && (
                     <Button
                         size="sm"
@@ -254,14 +267,14 @@ export function Sandboxes() {
 
     const seconds = untilStopped ? FOREVER : Math.round(Number(amount) * unit);
     const durationError = untilStopped ? null : customError(seconds);
-    // Create and resume run from now and start a new run; Add time adds to
-    // the time a running sandbox already runs for.
+    // Create, resume and a time limit run from now; Add time adds to the time
+    // a running sandbox already runs for.
     const addTo =
         pending?.action === "connect" && pending.sandbox.state === "running"
             ? pending.sandbox
             : null;
     const now = Date.now();
-    const from = addTo ? Date.parse(addTo.keptUntil ?? addTo.endAt) : now;
+    const from = addTo ? Date.parse(addTo.endAt) : now;
     const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
 
     function confirm() {
@@ -285,11 +298,16 @@ export function Sandboxes() {
         }
         const id = pending.sandbox.sandboxID;
         // Connect sets the time from now and, unlike timeout, never shortens
-        // it, so a keep set from the CLI stays.
+        // it, so a keep set from the CLI stays. A time limit is meant to
+        // shorten it.
         void run(id, () =>
             pending.action === "kill"
                 ? e2b(`/sandboxes/${id}`, "DELETE")
-                : e2b(`/sandboxes/${id}/connect`, "POST", { timeout }),
+                : e2b(
+                      `/sandboxes/${id}/${pending.action === "limit" ? "timeout" : "connect"}`,
+                      "POST",
+                      { timeout },
+                  ),
         );
     }
 
@@ -422,6 +440,13 @@ export function Sandboxes() {
                                             sandbox,
                                         })
                                     }
+                                    onLimit={() => {
+                                        setUntilStopped(false);
+                                        setPending({
+                                            action: "limit",
+                                            sandbox,
+                                        });
+                                    }}
                                     onPause={() =>
                                         void run(sandbox.sandboxID, () =>
                                             e2b(
@@ -495,9 +520,11 @@ export function Sandboxes() {
                           ? "Create sandbox?"
                           : pending.action === "kill"
                             ? "Kill sandbox?"
-                            : pending.sandbox.state === "running"
-                              ? "Add time?"
-                              : "Resume sandbox?"
+                            : pending.action === "limit"
+                              ? "Set a time limit?"
+                              : pending.sandbox.state === "running"
+                                ? "Add time?"
+                                : "Resume sandbox?"
                 }
                 intent={spends ? "commit" : "danger"}
                 confirmIcon={spends ? <PlayIcon /> : undefined}
@@ -508,9 +535,11 @@ export function Sandboxes() {
                           ? "Create"
                           : pending.action === "kill"
                             ? "Kill"
-                            : addTo
-                              ? "Add time"
-                              : "Resume"
+                            : pending.action === "limit"
+                              ? "Set time limit"
+                              : addTo
+                                ? "Add time"
+                                : "Resume"
                 }
                 confirmDisabled={!!spends && !!durationError}
                 onConfirm={confirm}
@@ -568,13 +597,17 @@ export function Sandboxes() {
                                             {option.label}
                                         </TabButton>
                                     ))}
-                                    <TabButton
-                                        size="sm"
-                                        active={untilStopped}
-                                        onClick={() => setUntilStopped(true)}
-                                    >
-                                        Until I stop it
-                                    </TabButton>
+                                    {pending.action !== "limit" && (
+                                        <TabButton
+                                            size="sm"
+                                            active={untilStopped}
+                                            onClick={() =>
+                                                setUntilStopped(true)
+                                            }
+                                        >
+                                            Until I stop it
+                                        </TabButton>
+                                    )}
                                 </ButtonGroup>
                             </div>
                             {durationError && (

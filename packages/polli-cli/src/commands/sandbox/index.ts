@@ -33,12 +33,12 @@ function parseTimeout(value: string): number {
     return seconds || KEEP_SECONDS;
 }
 
-// Past one lease, gen keeps a sandbox running until its timeout, renewing it
-// 10 minutes at a time; otherwise it runs until its lease ends at `endAt`.
+// `endAt` is when the timeout ends, also while gen keeps the sandbox running
+// 10 minutes at a time.
 const runsUntil = (seconds: number, endAt: number) =>
     seconds === KEEP_SECONDS
         ? "runs until you pause or kill it"
-        : `runs until ${new Date(seconds > LEASE_SECONDS ? Date.now() + seconds * 1000 : endAt).toLocaleString()}, then pauses`;
+        : `runs until ${new Date(endAt).toLocaleString()}, then pauses`;
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -124,7 +124,7 @@ export const sandboxCommand = new Command("sandbox")
                             size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
                             state:
                                 sandbox.state === "running"
-                                    ? `running until ${new Date(sandbox.keptUntil ?? sandbox.endAt).toLocaleString()}`
+                                    ? `running until ${new Date(sandbox.endAt).toLocaleString()}`
                                     : sandbox.state,
                         })),
                     );

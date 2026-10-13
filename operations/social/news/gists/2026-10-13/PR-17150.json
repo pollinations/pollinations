@@ -1,0 +1,37 @@
+{
+  "pr_number": 17150,
+  "title": "feat(enter): create and manage your sandboxes in the dashboard",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/17150",
+  "merged_at": "2026-10-13T04:12:13Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added a Sandboxes page at /sandboxes, after My Models in the Enter dashboard, where signed-in users can create, list, extend, pause, resume and delete their own E2B sandboxes through gen’s existing /alpha/e2b routes. Create, Add time and Resume show 10-minute, 1-hour, 8-hour and 24-hour choices with the Pollen charge before payment; Add time charges only for the unpaid portion. Time is paid in advance and is not refunded. The page shows the three-running-sandbox limit, notes that paused sandboxes do not count or cost anything, and displays gen’s balance and limit errors. Pause ends the lease; deleting a sandbox requires confirmation and removes its files without refunding paid time. Each sandbox card has a copyable ssh <id>.polli command and setup guidance. Added GET /alpha/e2b/pricing to return maxRunning, the per-second rates callers pay and the sizes of the pollinations and pollinations-large templates; logged-in template eligibility now derives from that size map. A test checks that dashboard price calculations match gen’s charges.",
+    "keywords": [
+      "sandboxes",
+      "E2B",
+      "Enter dashboard",
+      "Pollen",
+      "pricing",
+      "polli SSH"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17150.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene and wearing a tiny tool belt, she tends three little sandbox planters beside a retro monitor showing a simple timer and Pollen cost. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes: a prominent soft lime green (#ecf874) glow warms the cream-and-lavender scene, with chunky sprites, pixel flowers, subtle CRT scanlines and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T04:14:03.317304+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "c6b11ed227230500b275224e18e8b53b84b46ee6",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "c6b11ed227230500b275224e18e8b53b84b46ee6^1",
+    "after_ref": "c6b11ed227230500b275224e18e8b53b84b46ee6"
+  }
+}

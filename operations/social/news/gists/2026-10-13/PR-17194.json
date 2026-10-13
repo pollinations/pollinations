@@ -1,0 +1,71 @@
+{
+  "pr_number": 17194,
+  "title": "fix: price Qwen3.8 27B at Chutes cost with Reka fallback",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17194",
+  "merged_at": "2026-10-13T00:58:14Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Updated Qwen3.8 27B pricing per million input, cached-input, and output tokens to match its Chutes FP8 primary route. Replaced the Akash FP8 fallback with Reka FP8; Reka output costs more than the new output price. Paid-only access and model capabilities are unchanged. Primary and forced-fallback checks covered text, streaming, image, video, tools, and cache hits.",
+    "keywords": [
+      "Qwen3.8 27B",
+      "model pricing",
+      "Chutes",
+      "Reka",
+      "provider fallback"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17194.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli wears a tiny tool belt while checking two flower-framed terminal paths labeled Chutes and Reka, with a prominent lime green (#ecf874) glow against a warm cream and pastel background. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, surrounded by code-plants and rendered in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T00:59:50.374584+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "4efe558336e39d082cec0837e858ab8dcae5addd",
+  "announcements": [
+    {
+      "id": "pr-17194:qwen/qwen3.8-27b",
+      "model_id": "qwen/qwen3.8-27b",
+      "title": "Qwen3.8 27B",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000002532",
+            "promptCachedTokens": "0.00000002532",
+            "promptImageTokens": "0.0000002532",
+            "promptVideoTokens": "0.0000002532",
+            "completionTextTokens": "0.000002321"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000041145",
+            "promptCachedTokens": "0.000000004115",
+            "promptImageTokens": "0.000000041145",
+            "promptVideoTokens": "0.000000041145",
+            "completionTextTokens": "0.00000131875"
+          }
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "4efe558336e39d082cec0837e858ab8dcae5addd^1",
+    "after_ref": "4efe558336e39d082cec0837e858ab8dcae5addd"
+  }
+}

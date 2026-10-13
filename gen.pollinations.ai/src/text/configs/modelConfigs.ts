@@ -309,6 +309,12 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("XAI_API_KEY"),
         model: "grok-4.6",
     }),
+    "grok-4.7-xai": () => ({
+        provider: "openai",
+        directEndpoint: "https://api.x.ai/v1/chat/completions",
+        authKey: textEnvironmentValue("XAI_API_KEY"),
+        model: "grok-4.7",
+    }),
 
     // -- Azure (Myceli Prod — DeepSeek, Moonshot) ----------------------------
     // Azure DeepSeek reasons only when asked, unlike the Fireworks route it
@@ -442,9 +448,9 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
         "qwen/qwen3.8-27b",
-        "akashml/fp8",
+        "reka/fp8",
         64000,
     ),
     "qwen/qwen3.8-max": () =>
@@ -601,6 +607,12 @@ export const portkeyConfig: PortkeyConfigMap = {
     ),
 
     // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4.1-Flash": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4.1-Flash",
+            // Reasons only when asked; keep the model's reasoning default.
+            defaultOptions: { reasoning_effort: "high" },
+        }),
     "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
         createDeepInfraModelConfig({
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
@@ -640,7 +652,19 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
         16384,
     ),
-    "x-ai/grok-4.7": createPinnedOpenRouterConfig("x-ai/grok-4.7", "xai"),
+    // The base slug "xai" also matches xai/zdr/us and the priority tiers,
+    // which bill above the quoted rate, so they are excluded explicitly.
+    "grok-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "x-ai/grok-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["xai"],
+                    ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
         "xai/zdr",
@@ -799,10 +823,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4p1-flash",
         }),
-    "deepseek-v41-flash-openrouter-deepinfra": createPinnedOpenRouterConfig(
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
-    ),
 
     // -- Fireworks AI (Kimi, GLM, Qwen) --------------------------------------
     "accounts/fireworks/models/kimi-k3": () =>

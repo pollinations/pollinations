@@ -168,6 +168,37 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "x-ai/grok-4.7": {
+        "x-ai/grok-4.7:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-12").getTime(),
+            // OpenRouter base xAI rates (2026-10-12), including the account's
+            // 5.5% credit-purchase fee. Images are tokenized into text tokens.
+            cost: {
+                promptTextTokens: perMillion(2) * 1.055,
+                promptCachedTokens: perMillion(0.5) * 1.055,
+                completionTextTokens: perMillion(6) * 1.055,
+            },
+            ...defineCostVariants(
+                {
+                    long_context: {
+                        promptTextTokens: perMillion(4) * 1.055,
+                        promptCachedTokens: perMillion(1) * 1.055,
+                        completionTextTokens: perMillion(12) * 1.055,
+                    },
+                },
+                longContextAtLeast(200_000),
+                {
+                    long_context: {
+                        label: "Long context (≥200K)",
+                        description:
+                            "xAI doubles text, cached, and output rates for the whole request.",
+                    },
+                },
+                "<200K context",
+            ),
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
@@ -182,15 +213,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "deepseek/deepseek-v4.1-flash": {
-        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8": {
-            supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV41Flash,
-            provider: "openrouter",
+        "deepseek/deepseek-v4.1-flash:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            addedDate: new Date("2026-10-12").getTime(),
             cost: {
-                // OpenRouter DeepInfra FP8 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.14) * 1.055,
-                promptCachedTokens: perMillion(0.0042) * 1.055,
-                completionTextTokens: perMillion(0.42) * 1.055,
+                // Fireworks Standard rates (2026-10-12).
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },
@@ -249,18 +280,18 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen/qwen3.8-27b": {
-        "qwen/qwen3.8-27b:openrouter:akashml-fp8": {
-            supportedParameters: CHAT_PARAMETERS.qwen38Akash,
+        "qwen/qwen3.8-27b:openrouter:reka-fp8": {
+            supportedParameters: CHAT_PARAMETERS.qwen38Reka,
             provider: "openrouter",
-            addedDate: new Date("2026-09-01").getTime(),
+            addedDate: new Date("2026-10-13").getTime(),
             cost: {
-                // OpenRouter AkashML FP8 rates (2026-09-21), including the
+                // OpenRouter Reka FP8 rates (2026-10-13), including the
                 // account's 5.5% credit-purchase fee. OpenRouter publishes one
                 // prompt rate and no separate image/video rates.
-                promptTextTokens: perMillion(0.25) * 1.055,
-                promptCachedTokens: perMillion(0.05) * 1.055,
-                promptImageTokens: perMillion(0.25) * 1.055,
-                promptVideoTokens: perMillion(0.25) * 1.055,
+                promptTextTokens: perMillion(0.04) * 1.055,
+                promptCachedTokens: perMillion(0.02) * 1.055,
+                promptImageTokens: perMillion(0.04) * 1.055,
+                promptVideoTokens: perMillion(0.04) * 1.055,
                 completionTextTokens: perMillion(2.2) * 1.055,
             },
         },

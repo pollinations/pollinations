@@ -15,6 +15,7 @@ import {
     MCP_USER_GITHUB_HEADER,
     MCP_USER_ID_HEADER,
     type McpServerDefinition,
+    WEFT_MCP_MAX_COST_USD,
 } from "@shared/registry/mcp.ts";
 import {
     priceToEventParams,
@@ -102,10 +103,11 @@ async function settleUsage(
             // receipt directly instead of inventing a maximum-cost preflight.
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
-            modelPaidOnly: false,
+            modelPaidOnly: server.id === "weft",
             questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
+        if (server.id === "weft") throw error;
         c.var.log.error(
             "MCP billing deduction failed after response; continuing tracking: {error}",
             {
@@ -180,7 +182,13 @@ export const mcpRoutes = new Hono<Env>()
             c.req.method === "POST"
                 ? await c.req.raw
                       .clone()
-                      .json<{ method?: unknown } | null>()
+                      .json<{
+                          method?: unknown;
+                          params?: {
+                              name?: unknown;
+                              arguments?: { maxCostUsd?: unknown };
+                          };
+                      } | null>()
                       .catch(() => null)
                 : null;
         if (Array.isArray(message)) {
@@ -199,7 +207,25 @@ export const mcpRoutes = new Hono<Env>()
             server.billing === "usage_receipt" &&
             message?.method === "tools/call"
         ) {
-            await requireAccountFunds(c, 0);
+            if (server.id === "weft") {
+                if (message.params?.name === "weft_fetch") {
+                    const cap = message.params.arguments?.maxCostUsd;
+                    if (
+                        typeof cap !== "number" ||
+                        !Number.isFinite(cap) ||
+                        cap <= 0 ||
+                        cap > WEFT_MCP_MAX_COST_USD
+                    ) {
+                        throw new HTTPException(400, {
+                            message:
+                                "weft_fetch needs maxCostUsd between 0 and 0.05",
+                        });
+                    }
+                    await requireAccountFunds(c, cap, true);
+                }
+            } else {
+                await requireAccountFunds(c, 0);
+            }
         }
         const binding = c.env[server.binding] as Fetcher;
 
@@ -209,11 +235,22 @@ export const mcpRoutes = new Hono<Env>()
         );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);
+            if (
+                server.id === "weft" &&
+                message?.method === "tools/call" &&
+                message.params?.name === "weft_fetch" &&
+                !usage
+            ) {
+                throw new HTTPException(502, {
+                    message: "Weft did not return a billing receipt",
+                });
+            }
             if (usage) {
                 try {
                     await settleUsage(c, server, usage, startedAt);
                     await c.var.frontendKeyRateLimit?.consumePollen(usage.cost);
                 } catch (error) {
+                    if (server.id === "weft") throw error;
                     c.var.log.error("MCP billing failed: {error}", {
                         error:
                             error instanceof Error

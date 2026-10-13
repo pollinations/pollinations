@@ -96,6 +96,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "weft",
+                name: "Weft",
+                description:
+                    "Find paid APIs and make capped read-only requests.",
+                url: "https://gen.pollinations.ai/mcp/weft",
+                pricing: {
+                    description:
+                        "Search is free. Fetch uses Paid Pollen; merchant price is capped at $0.05 per request, excluding network fees.",
+                    rates: [],
+                },
+            },
+            {
                 id: "composio",
                 name: "Connectors",
                 description:
@@ -293,6 +305,84 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
         tierBalance: 0.993,
         packBalance: 0,
     });
+});
+
+test("bills Weft fetch from Paid Pollen only", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0.02 },
+    });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/weft", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            ...MCP_REQUEST,
+            params: {
+                name: "weft_fetch",
+                arguments: {
+                    url: "https://api.example.com/one",
+                    maxCostUsd: 0.01,
+                },
+            },
+        }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+        result: { content: [{ text: "weft proxied" }] },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0.018,
+    });
+});
+
+test("refuses Weft fetch when only Quest Pollen can cover it", async () => {
+    const { key } = await createTestApiKey({
+        user: { tierBalance: 1, packBalance: 0 },
+    });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/weft", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            ...MCP_REQUEST,
+            params: {
+                name: "weft_fetch",
+                arguments: {
+                    url: "https://api.example.com/one",
+                    maxCostUsd: 0.01,
+                },
+            },
+        }),
+    });
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+});
+
+test("allows Weft search with an empty wallet", async () => {
+    const { key } = await createTestApiKey();
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/weft", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            ...MCP_REQUEST,
+            params: { name: "weft_search", arguments: { query: "weather" } },
+        }),
+    });
+    expect(response.status).toBe(200);
 });
 
 test("routes Composio with the authenticated user", async () => {

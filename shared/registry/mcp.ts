@@ -45,6 +45,7 @@ export type McpBindingName =
     | "ASK_JEV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
+    | "WEFT_MCP"
     | "COMPOSIO_MCP"
     | "COMPUTER_MCP";
 
@@ -64,6 +65,7 @@ const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
+export const WEFT_MCP_MAX_COST_USD = 0.05;
 const COMPUTER_MCP_PRICING = {
     description: "Preview price",
     rates: [
@@ -187,6 +189,19 @@ export const MCP_SERVERS = [
                     },
                 },
             ],
+        },
+    },
+    {
+        id: "weft",
+        name: "Weft",
+        description: "Find paid APIs and make capped read-only requests.",
+        binding: "WEFT_MCP",
+        billing: "usage_receipt",
+        provider: "weft",
+        pricing: {
+            description:
+                "Search is free. Fetch uses Paid Pollen; merchant price is capped at $0.05 per request, excluding network fees.",
+            rates: [],
         },
     },
     {

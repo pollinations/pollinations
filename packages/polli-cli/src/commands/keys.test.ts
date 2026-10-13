@@ -120,19 +120,22 @@ describe("keys list permissions output", () => {
 });
 
 describe("keys create --expires-in validation", () => {
-    it("forwards valid expiresIn seconds", async () => {
-        const { fetch } = prepare(null);
-        await keysCommand.parseAsync(
-            ["create", "--name", "test", "--expires-in", "3600"],
-            { from: "user" },
-        );
+    it.each([3600, 366 * 86400])(
+        "forwards valid expiresIn %i seconds",
+        async (seconds) => {
+            const { fetch } = prepare(null);
+            await keysCommand.parseAsync(
+                ["create", "--name", "test", "--expires-in", String(seconds)],
+                { from: "user" },
+            );
 
-        expect(fetch).toHaveBeenCalledOnce();
-        const body = JSON.parse(fetch.mock.calls[0][1]?.body as string);
-        expect(body.expiresIn).toBe(3600);
-    });
+            expect(fetch).toHaveBeenCalledOnce();
+            const body = JSON.parse(fetch.mock.calls[0][1]?.body as string);
+            expect(body.expiresIn).toBe(seconds);
+        },
+    );
 
-    it.each(["0", "-10", "abc", "1.5", String(366 * 86400)])(
+    it.each(["0", "-10", "abc", "1.5", ""])(
         "rejects invalid expiresIn %s",
         async (invalidValue) => {
             prepare(null);

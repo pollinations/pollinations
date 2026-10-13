@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { recordRewards } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -44,6 +45,7 @@ test("an event code credits Quest Pollen once per account", async ({
         eventId: "talk-berlin-2026-10",
         title: "Berlin AI meetup",
         pollenAmount: 3,
+        maxRedemptions: 30,
         expiresAt: inOneDay(),
     });
     expect(created.status).toBe(200);
@@ -96,6 +98,7 @@ test("unknown and expired codes are rejected the same way", async ({
             eventId: "old-talk",
             title: "Old talk",
             pollenAmount: 3,
+            maxRedemptions: 30,
             expiresAt: new Date(Date.now() - 1000).toISOString(),
         }),
     );
@@ -121,10 +124,45 @@ test("codes can't be redeemed with an API key", async ({ apiKey }) => {
         eventId: "talk-api-key",
         title: "Talk",
         pollenAmount: 1,
+        maxRedemptions: 30,
         expiresAt: inOneDay(),
     });
     const { code } = (await created.json()) as { code: string };
     expect((await redeem(apiKey, code)).status).toBe(403);
+});
+
+test("a code stops paying out once its redemption limit is reached", async ({
+    accountToken,
+}) => {
+    const created = await createCode({
+        eventId: "hackathon-limit",
+        title: "Hackathon",
+        pollenAmount: 10,
+        maxRedemptions: 1,
+        expiresAt: inOneDay(),
+    });
+    const { code } = (await created.json()) as { code: string };
+
+    // Someone else already used the only redemption.
+    const db = drizzle(env.DB, { schema });
+    const [someone] = await db
+        .select({ id: schema.user.id })
+        .from(schema.user)
+        .limit(1);
+    await recordRewards(db, [
+        {
+            idempotencyKey: "quest:promo:hackathon-limit:github:1",
+            userId: someone?.id ?? "",
+            amount: 10,
+            bucket: "tier",
+            questId: "promo:hackathon-limit",
+            title: "Hackathon",
+        },
+    ]);
+
+    const response = await redeem(accountToken, code);
+    expect(response.status).toBe(410);
+    expect(await response.text()).toContain("fully redeemed");
 });
 
 test("redeeming requires sign-in", async () => {
@@ -148,6 +186,7 @@ test("creating a code needs the admin token and a short expiry", async () => {
         eventId: "talk-forever",
         title: "Talk",
         pollenAmount: 3,
+        maxRedemptions: 30,
         expiresAt: new Date(
             Date.now() + 31 * 24 * 60 * 60 * 1000,
         ).toISOString(),
@@ -158,6 +197,7 @@ test("creating a code needs the admin token and a short expiry", async () => {
         eventId: "talk-past",
         title: "Talk",
         pollenAmount: 3,
+        maxRedemptions: 30,
         expiresAt: new Date(Date.now() - 1000).toISOString(),
     });
     expect(inThePast.status).toBe(400);

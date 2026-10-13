@@ -6,6 +6,7 @@ import {
 } from "@shared/billing/rewards.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { count, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -23,6 +24,7 @@ type PromoCode = {
     eventId: string;
     title: string;
     pollenAmount: number;
+    maxRedemptions: number;
     expiresAt: string;
 };
 
@@ -45,6 +47,7 @@ const createPromoCodeSchema = z.object({
         .regex(/^[a-z0-9][a-z0-9_-]{0,99}$/),
     title: z.string().trim().min(1).max(200),
     pollenAmount: z.number().positive().max(MAX_REWARD_AMOUNT),
+    maxRedemptions: z.number().int().positive(),
     expiresAt: z.iso.datetime({ offset: true }).refine((value) => {
         const ms = new Date(value).getTime() - Date.now();
         // KV needs at least 60 seconds of lifetime.
@@ -63,6 +66,7 @@ export const promoCodeAdminRoutes = new Hono<Env>().post(
             eventId: input.eventId,
             title: input.title,
             pollenAmount: input.pollenAmount,
+            maxRedemptions: input.maxRedemptions,
             expiresAt: new Date(input.expiresAt).toISOString(),
         };
         await c.env.KV.put(
@@ -118,6 +122,17 @@ export const promoCodeRedeemRoutes = new Hono<Env>()
 
         const db = drizzle(c.env.DB, { schema });
         const questId = `promo:${promo.eventId}`;
+        // ponytail: count-then-insert isn't atomic, so simultaneous redemptions
+        // at the limit can overshoot it slightly; fine for event-sized limits.
+        const [redeemed] = await db
+            .select({ count: count() })
+            .from(schema.rewards)
+            .where(eq(schema.rewards.questId, questId));
+        if ((redeemed?.count ?? 0) >= promo.maxRedemptions) {
+            throw new HTTPException(410, {
+                message: "This code has been fully redeemed",
+            });
+        }
         const { rewardIds } = await recordRewards(db, [
             {
                 idempotencyKey: rewardKey(questId, user.githubId),

@@ -33,7 +33,7 @@ Follow `AGENTS.md` for access, secret and production-operation boundaries.
   for Thomas, discover and verify his own Pollinations address rather than
   guessing its local part. Sign with the actual operator's name.
 - Verify the selected mailbox can send as that address. Pass it explicitly with
-  `--from` on draft creation and updates, and display it in `envelope.from` in
+  `--from` on draft creation and updates, and display it as From in
   the preview. Do not default to a shared support alias, a legacy `@myceli.ai`
   address, or another operator's identity. Do not set Reply-To to a legacy or
   different address unless the operator explicitly requests it.
@@ -54,18 +54,18 @@ Follow `AGENTS.md` for access, secret and production-operation boundaries.
   disabled to prevent duplicates. Design B is one 144 × 18 clickable wordmark,
   with no separate visible URL. Verify current inheritance for the operator;
   this recorded setup is not a substitute for checking the live setting.
-- Confirm the sender's applicable rule and footer content before choosing
-  `footerDelivery: "workspace"`. The renderer's preview represents the small
-  pinned clickable wordmark (design B), with no separate visible website URL.
-  If the Admin footer changes, update and review that
-  representation before relying on it. Do not infer delivery from the Sent
-  copy alone: inspect an authorized external recipient's message when testing.
-- With Workspace branding, the operator's Gmail composer signature should
-  contain personal details only. Avoid adding the same logo/website twice.
-  Use `footerDelivery: "workspace"` for covered senders, including Thomas;
-  retain their own name and verified Pollinations sender address. If coverage
-  is unknown, resolve it before drafting rather than guessing a footer mode.
-  Changes to Workspace or signature settings are separate from routine triage.
+- Confirm the sender's applicable rule before drafting. For covered senders,
+  including Thomas, omit branding from submitted HTML/plain text and show the
+  Google-added footer separately in the preview. For a sender confirmed to be
+  uncovered, add the linked wordmark inline and include the URL in plain text.
+  Resolve unknown coverage; do not guess and risk a duplicate footer.
+- The shared footer uses this [pinned repository wordmark](https://raw.githubusercontent.com/pollinations/pollinations/7851d688a1ef4c680d437b3b93f4a35c596d2a0e/packages/ui/src/brand/lockup-horizontal-black.png)
+  linked to `https://pollinations.ai`. If the Admin setting changes, match the
+  preview to it. Verify tests at an authorized external recipient; the Sent
+  copy alone does not prove what Google appended.
+- Gmail composer signatures should contain personal details only when using
+  Workspace branding. Preserve the operator's own name and verified sender.
+  Signature/Workspace changes are separate from routine triage.
   See [Google's footer setup and inheritance documentation](https://knowledge.workspace.google.com/admin/gmail/advanced/add-a-standard-footer-to-outgoing-emails).
 
 ## Production evidence

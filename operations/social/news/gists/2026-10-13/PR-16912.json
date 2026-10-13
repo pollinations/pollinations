@@ -1,0 +1,37 @@
+{
+  "pr_number": 16912,
+  "title": "fix: list Floret and Polli capabilities in the model catalog",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/16912",
+  "merged_at": "2026-10-13T01:12:19Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Endpoint-agent owners can now register and update capabilities, then read them back through Enter. Updates that omit the field preserve the stored value. The shared schema accepts tool_calling, reasoning, web_search, code_execution and pollinations_models; Gen carries those traits into /models, capability filtering and fallback compatibility. Proxy listings retain their narrower capability list so they do not claim search or code execution on behalf of an upstream provider. The PR also describes a guarded, idempotent data repair for the Floret and Polli listings, whose public catalog entries had empty capabilities; Floret’s listed traits include web_search and code_execution.",
+    "keywords": [
+      "Floret",
+      "Polli",
+      "community models",
+      "model catalog",
+      "capabilities",
+      "endpoint agents"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-16912.jpg",
+    "prompt": "In a cozy pixel-art garden library, Polli wears tiny librarian glasses and helps a retro terminal sort labeled capability cards beside two small code-plants named Floret and Polli. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, with chunky retro sprites, prominent lime green (#ecf874), soft pastel gradients, warm lighting, and retro gaming vibes in a cozy 8-bit aesthetic."
+  },
+  "generated_at": "2026-10-13T01:14:15.286415+00:00",
+  "area": "Community models",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "8ecac8bbc0739c393f07eeec775d560eb7e2dd13",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "8ecac8bbc0739c393f07eeec775d560eb7e2dd13^1",
+    "after_ref": "8ecac8bbc0739c393f07eeec775d560eb7e2dd13"
+  }
+}

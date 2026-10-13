@@ -3,7 +3,6 @@
 // Runtime types generated with workerd@1.20250803.0 2025-08-01 
 declare namespace Cloudflare {
 	interface Env {
-		ORIGIN_HOST: "image-origin.pollinations.ai";
 		DEBUG_ANALYTICS: false;
 		IMAGE_BUCKET: R2Bucket;
 	}

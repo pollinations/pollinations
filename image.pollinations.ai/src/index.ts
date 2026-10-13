@@ -17,6 +17,7 @@ import { enqueue } from "../../shared/ipQueue.js";
 import {
     MIGRATION_EXPOSED_HEADERS,
     MIGRATION_LINK,
+    gatedImageModelMessage,
     migrationHeaders,
     migrationInfo,
     signupUrl,
@@ -483,7 +484,7 @@ const checkCacheAndGenerate = async (
                 
                 // Block models that are only available on enter.pollinations.ai
                 if (modelName === "nanobanana" || modelName === "kontext" || modelName === "gptimage" || modelName === "seedream") {
-                    throw new Error(`${modelName} model is only available on gen.pollinations.ai. Get a key at ${signupUrl("image")} and see ${migrationInfo("image").docs}.`);
+                    throw new Error(gatedImageModelMessage(modelName));
                 }
                 
                 // Block authenticated users (token or referrer) - they should use enter.pollinations.ai

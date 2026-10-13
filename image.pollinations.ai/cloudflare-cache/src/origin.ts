@@ -1,5 +1,9 @@
 import type { Context } from "hono";
 import { takeSlot } from "../../../shared/ip-slot.js";
+import {
+    gatedImageModelMessage,
+    migrationInfo,
+} from "../../../shared/legacy-migration.js";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
@@ -280,6 +284,7 @@ function errorJson(
             referrer: job.referrer,
         },
         queueInfo,
+        migration: migrationInfo("image"),
     };
     return vmResponse(JSON.stringify(body), status, {
         "Content-Type": "application/json",
@@ -325,12 +330,7 @@ export async function generate(c: Context, url: URL, route: string) {
     job.timing.push(step("Request received and queued."));
     const { model } = job.safeParams;
     if (BLOCKED_MODELS.includes(model)) {
-        return errorJson(
-            job,
-            new Error(
-                `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
-            ),
-        );
+        return errorJson(job, new Error(gatedImageModelMessage(model)));
     }
 
     const { env, ctx } = job;

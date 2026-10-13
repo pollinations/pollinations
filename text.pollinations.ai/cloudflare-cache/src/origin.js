@@ -4,6 +4,11 @@ import contentType from "content-type";
 import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { takeSlot } from "../../../shared/ip-slot.js";
+import { MIGRATION_GUIDE_TEXT } from "../../../shared/legacy-migration.js";
+import {
+    migrationErrorFields,
+    modelNotFoundMessage,
+} from "../../legacyMigration.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
@@ -50,10 +55,6 @@ You understand user intent and don't try to be overly helpful to the point where
 You never lecture people to be nicer or more inclusive. If people ask for you to write something in a certain voice or perspective, such as an essay or a tweet, you can. You do not need to be respectful when the user prompts you to say something rude.
 
 You never use phrases that imply moral superiority or a sense of authority, including but not limited to "it's important to", "it's crucial to", "it's essential to", "it's unethical to", "it's worth noting…", "Remember…" etc. Avoid using these.`;
-const DEPRECATION_NOTICE =
-    "NOTE: The Pollinations legacy text API is being deprecated for authenticated users. Please migrate to https://enter.pollinations.ai for better performance and access to all the latest models. Anonymous requests to text.pollinations.ai are NOT affected.";
-const DOCS_URL =
-    "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
 const MODELS_BODY =
     '[{"name":"openai-fast","description":"GPT-OSS 20B Reasoning LLM (OVH)","reasoning":true,"tier":"anonymous","community":false,"input_modalities":["text"],"output_modalities":["text"],"tools":true,"aliases":["openai","gpt-oss","gpt-oss-20b","ovh-reasoning"],"vision":false,"audio":false}]';
 const CROSSDOMAIN = `<?xml version="1.0" encoding="UTF-8"?>
@@ -102,13 +103,13 @@ const json = (body, status, cacheControl, headers) =>
         ...headers,
     });
 
-/** The VM's sendErrorResponse */
+/** The VM's sendErrorResponse, with the migration pointers */
 const errorResponse = (status, message, cacheControl, details) =>
     json(
         {
             error: message,
             status,
-            deprecation_notice: DEPRECATION_NOTICE,
+            ...migrationErrorFields(),
             ...(details && { details }),
         },
         status,
@@ -251,7 +252,13 @@ async function answer(request, env, ctx) {
     };
 
     if (method === "OPTIONS") return preflight(request);
-    if (read && path === "/") return redirect(request);
+    // The root is the route-by-route migration guide, as on the VM's server.js
+    if (read && path === "/") {
+        return send(MIGRATION_GUIDE_TEXT, 200, {
+            "Content-Type": TEXT_TYPE,
+            "Cache-Control": "public, max-age=3600",
+        });
+    }
     if (read && path === "/crossdomain.xml") {
         return send(CROSSDOMAIN, 200, {
             "Content-Type": "application/xml; charset=utf-8",
@@ -412,61 +419,6 @@ function preflight(request) {
     const requested = request.headers.get("access-control-request-headers");
     if (requested) headers["Access-Control-Allow-Headers"] = requested;
     return new Response(null, { status: 204, headers });
-}
-
-/**
- * req.accepts(["text", "html"]) as negotiator ranks them: text/plain,
- * text/html, or undefined when Accept allows neither
- */
-function redirectType(accept) {
-    if (accept === null) return "text/plain";
-    const ranges = accept.split(",").map((range, o) => {
-        const [name, ...params] = range.split(";").map((part) => part.trim());
-        const at = params.findIndex((param) => /^q=/i.test(param));
-        return {
-            name: name.toLowerCase(),
-            q: at === -1 ? 1 : Number.parseFloat(params[at].slice(2)),
-            // a media type parameter before q keeps it from matching these
-            params: at === -1 ? params.length : at,
-            o,
-        };
-    });
-    // Per type, the most specific range wins, then the highest q
-    const ranked = ["text/plain", "text/html"].flatMap((type, i) => {
-        const [main, sub] = type.split("/");
-        const matches = ranges.flatMap((range) => {
-            const [rangeMain, rangeSub] = range.name.split("/");
-            if (range.params || !rangeSub) return [];
-            if (rangeMain !== main && rangeMain !== "*") return [];
-            if (rangeSub !== sub && rangeSub !== "*") return [];
-            const s = (rangeMain === main ? 4 : 0) + (rangeSub === sub ? 2 : 0);
-            return [{ ...range, s }];
-        });
-        matches.sort((a, b) => b.s - a.s || b.q - a.q || b.o - a.o);
-        return matches[0]?.q > 0 ? [{ type, i, ...matches[0] }] : [];
-    });
-    ranked.sort((a, b) => b.q - a.q || b.s - a.s || a.o - b.o || a.i - b.i);
-    return ranked[0]?.type;
-}
-
-/** Express's res.redirect(301): a text, HTML or empty body by Accept */
-function redirect(request) {
-    const type = redirectType(request.headers.get("accept"));
-    const message = `Moved Permanently. Redirecting to ${DOCS_URL}`;
-    const bodies = { "text/plain": message, "text/html": `<p>${message}</p>` };
-    const body = bodies[type] ?? "";
-    // A string body, even empty, would get the runtime's text/plain type
-    return new Response(body || null, {
-        status: 301,
-        headers: {
-            ...CORS,
-            "X-Powered-By": "Express",
-            Location: DOCS_URL,
-            Vary: "Accept",
-            ...(type && { "Content-Type": `${type}; charset=utf-8` }),
-            "Content-Length": String(body.length),
-        },
-    });
 }
 
 const toNumber = (parse) => (value) => {
@@ -751,7 +703,7 @@ async function generate(env, job, cacheControl, ended) {
         if (!MODELS.has(job.model)) {
             return await errorResponse(
                 404,
-                `Model not found: ${job.model}. This is our legacy API - for the full model list and new features, visit https://enter.pollinations.ai`,
+                modelNotFoundMessage(job.model),
                 cacheControl,
             );
         }

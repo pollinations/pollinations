@@ -6,7 +6,10 @@ import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?
 import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
 import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
-import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
+import {
+    migrationErrorFields,
+    modelNotFoundMessage,
+} from "../../legacyMigration.js";
 import {
     alarmOf,
     call as callWorker,
@@ -14,6 +17,13 @@ import {
     nextIp,
     storedAt,
 } from "./helpers.js";
+
+// The VM's 404 for an unknown model, with the Gen pointers of every error
+const UNKNOWN_MODEL_404 = JSON.stringify({
+    error: modelNotFoundMessage("zz-nonexistent-model"),
+    status: 404,
+    ...migrationErrorFields(),
+});
 
 // Live 402 captures from the VM (2026-10-11) and the paths they were taken on
 const CAPTURED_JSON =
@@ -293,7 +303,7 @@ test("an unknown model books the free slot and gets the VM's 404; then the IP ge
         headers: CURL,
     });
     expect(free.response.status).toBe(404);
-    expect(free.text).toBe(vm404);
+    expect(free.text).toBe(UNKNOWN_MODEL_404);
 
     const next = await call("/check%202", { ip, headers: CURL });
     expect(next.response.status).toBe(402);
@@ -501,7 +511,9 @@ test("a generation that fails after verify is not settled", async () => {
         headers: CURL,
     });
     expect(unknown.response.status).toBe(404);
-    expect(JSON.parse(unknown.text).error).toBe(JSON.parse(vm404).error);
+    expect(JSON.parse(unknown.text).error).toBe(
+        JSON.parse(UNKNOWN_MODEL_404).error,
+    );
     expect(events).not.toContain("/settle");
 });
 

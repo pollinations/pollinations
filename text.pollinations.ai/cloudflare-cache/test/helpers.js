@@ -5,6 +5,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import worker, { generateCacheKey } from "../src/index.js";
+import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
 
 let lastIp = 0;
 /** An IP no earlier call used: the IP slots and takeSlot's memo are per IP */
@@ -35,7 +36,10 @@ export async function call(
     return { response, text };
 }
 
-/** A capture's headers, without the ones the edge adds */
+/**
+ * A capture's headers, without the ones the edge adds, as the Worker sends
+ * them now: with the migration pointers every legacy response carries
+ */
 export function capturedHeaders(raw) {
     const edge = ["date", "cf-ray", "cf-cache-status", "server"];
     const lines = raw.trim().split(/\r?\n/).slice(1);
@@ -43,7 +47,28 @@ export function capturedHeaders(raw) {
         const at = line.indexOf(":");
         return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
     });
-    return new Map(pairs.filter(([name]) => !edge.includes(name)));
+    return new Map(
+        Object.entries(
+            withMigration(
+                Object.fromEntries(
+                    pairs.filter(([name]) => !edge.includes(name)),
+                ),
+            ),
+        ),
+    );
+}
+
+/**
+ * Expected headers (lower-case names) plus the migration pointers. Values
+ * that are not strings, such as expect matchers, are kept as they are.
+ */
+export function withMigration(expected) {
+    const strings = Object.entries(expected).filter(
+        ([, value]) => typeof value === "string",
+    );
+    const headers = new Headers(strings);
+    addMigrationHeaders(headers, "text");
+    return { ...expected, ...Object.fromEntries(headers) };
 }
 
 export const storedAt = async (path, method = "GET") =>

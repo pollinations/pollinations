@@ -7,16 +7,29 @@ import {
 import { Buffer } from "node:buffer";
 import { deflateSync, gzipSync } from "node:zlib";
 import { expect, test, vi } from "vitest";
+import {
+    MIGRATION_GUIDE_TEXT,
+    migrationInfo,
+} from "../../../shared/legacy-migration.js";
+import { DEPRECATION_NOTICE } from "../../legacyMigration.js";
 import worker from "../src/index.js";
+import { etag } from "../src/origin.js";
 import feedHeaders from "./fixtures/text.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
-import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
-import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
-import { alarmOf, call, capturedHeaders, nextIp, storedAt } from "./helpers.js";
+import {
+    alarmOf,
+    call,
+    capturedHeaders,
+    nextIp,
+    storedAt,
+    withMigration,
+} from "./helpers.js";
 
 // The fixed gen responses are in vitest.config.js
-const NOTICE = JSON.parse(vm404).deprecation_notice;
+// Every JSON error carries the Gen pointers next to the VM's fields
+const NOTICE = DEPRECATION_NOTICE;
+const MIGRATION = migrationInfo("text");
 const JSON_BODY = { "content-type": "application/json" };
 const SSE_UNTIL_DONE =
     'data: {"choices":[{"delta":{"content":"o"}}],"model":"gpt-oss-20b"}\n\n' +
@@ -207,6 +220,7 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
         error: "503 Service Unavailable",
         status: 503,
         deprecation_notice: NOTICE,
+        migration: MIGRATION,
         details: { error: { message: "gen answered 503" } },
     });
 
@@ -228,6 +242,7 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
         error: "boom",
         status: 503,
         deprecation_notice: NOTICE,
+        migration: MIGRATION,
     });
     const textError = await call("/gen:200-error-text");
     expect(textError.response.status).toBe(500);
@@ -239,51 +254,42 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
         error: "400 Bad Request",
         status: 500,
         deprecation_notice: NOTICE,
+        migration: MIGRATION,
     });
     expect(await storedAt("/gen:400?stream=true")).toBeNull();
 });
 
-test("the VM's other routes: redirect, models, crossdomain and feed", async () => {
+test("the VM's other routes: migration guide, models, crossdomain and feed", async () => {
+    // The root is the route-by-route migration guide, not the old
+    // redirect to APIDOCS.md, which now documents the Gen API
     const root = await call("/");
-    expect(root.response.status).toBe(301);
-    // Every header of the live redirect, X-Powered-By: Express included
-    const vm = Object.fromEntries(capturedHeaders(vmRootRedirect));
-    expect(Object.fromEntries(root.response.headers)).toEqual(vm);
+    expect(root.response.status).toBe(200);
+    expect(root.text).toBe(MIGRATION_GUIDE_TEXT);
+    expect(root.text).toContain("https://gen.pollinations.ai/docs");
+    expect(root.text).toContain("https://enter.pollinations.ai/?ref=text");
+    expect(root.response.headers.get("location")).toBeNull();
+    expect(root.response.headers.get("content-type")).toBe(
+        "text/plain; charset=utf-8",
+    );
+    expect(root.response.headers.get("cache-control")).toBe(
+        "public, max-age=3600",
+    );
+    expect(root.response.headers.get("x-pollinations-migration")).toMatch(
+        /LEGACY_MIGRATION\.md$/,
+    );
+    // Any Accept gets the same guide
+    for (const accept of ["text/html", "application/json", "*"]) {
+        const { response, text } = await call("/", { headers: { accept } });
+        expect(response.status, accept).toBe(200);
+        expect(text, accept).toBe(MIGRATION_GUIDE_TEXT);
+    }
     // HEAD / takes the cache path and its split
     const head = await call("/", { method: "HEAD" });
-    expect(Object.fromEntries(head.response.headers)).toEqual({
-        ...vm,
-        "x-legacy-path": "worker",
-    });
-    expect(root.text).toBe(
-        "Moved Permanently. Redirecting to https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+    expect(head.response.status).toBe(200);
+    expect(head.response.headers.get("x-legacy-path")).toBe("worker");
+    expect(head.response.headers.get("content-length")).toBe(
+        String(new TextEncoder().encode(MIGRATION_GUIDE_TEXT).byteLength),
     );
-    // res.redirect negotiates text/plain, text/html or an empty body
-    const html = `<p>${root.text}</p>`;
-    for (const [accept, type, body] of [
-        ["text/html", "text/html", html],
-        ["text/html,application/xhtml+xml,*/*;q=0.8", "text/html", html],
-        ["text/plain, text/html", "text/plain", root.text],
-        ["text/html;q=0.5, */*", "text/plain", root.text],
-        ["application/json, text/*;q=0.2", "text/plain", root.text],
-        ["*/plain", "text/plain", root.text],
-        ["TEXT/HTML", "text/html", html],
-        ["application/json", null, ""],
-        ["text/html;q=0, text/plain;q=0", null, ""],
-        ["text/html;level=1", null, ""],
-        ["*", null, ""],
-    ]) {
-        const { response, text } = await call("/", { headers: { accept } });
-        expect(response.status, accept).toBe(301);
-        expect(text, accept).toBe(body);
-        expect(response.headers.get("content-type"), accept).toBe(
-            type && `${type}; charset=utf-8`,
-        );
-        expect(response.headers.get("content-length"), accept).toBe(
-            String(body.length),
-        );
-        expect(response.headers.get("vary"), accept).toBe("Accept");
-    }
 
     const models = await call("/models");
     expect(models.text).toBe(vmModels);
@@ -436,12 +442,12 @@ test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
     const etag = 'W/"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"';
     // The live 304 of 2026-10-12, without the edge's headers
-    const live = {
+    const live = withMigration({
         "access-control-allow-origin": "*",
         "access-control-expose-headers": "Payment-Required,Payment-Response",
         etag,
         "x-powered-by": "Express",
-    };
+    });
     for (const noneMatch of [
         etag,
         "*",
@@ -479,19 +485,22 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     expect(gen.bodies).toHaveLength(1);
     // As the live 304 of a generation, which reached the cache code
     // without Content-Length (its ETag is that of "ok")
-    expect(Object.fromEntries(response.headers)).toEqual({
-        ...CACHE_MISS,
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
-        "cache-control": "public, max-age=31536000, immutable",
-        etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
-        "x-legacy-path": "worker",
-        "x-model-used": "gpt-oss-20b",
-        "x-powered-by": "Express",
-        "x-usage-completion-reasoning-tokens": "10",
-        "x-usage-completion-text-tokens": "36",
-        "x-usage-prompt-text-tokens": "322",
-        "x-usage-total-tokens": "368",
-    });
+    expect(Object.fromEntries(response.headers)).toEqual(
+        withMigration({
+            ...CACHE_MISS,
+            "access-control-expose-headers":
+                "Payment-Required,Payment-Response",
+            "cache-control": "public, max-age=31536000, immutable",
+            etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
+            "x-legacy-path": "worker",
+            "x-model-used": "gpt-oss-20b",
+            "x-powered-by": "Express",
+            "x-usage-completion-reasoning-tokens": "10",
+            "x-usage-completion-text-tokens": "36",
+            "x-usage-prompt-text-tokens": "322",
+            "x-usage-total-tokens": "368",
+        }),
+    );
     expect(await storedAt("/if%20none%20match")).toBeNull();
 
     const head = await call("/if%20none%20match%20head", {
@@ -551,10 +560,12 @@ test("a preflight gets the live 204: cors() headers plus the cache code's, and n
 
         expect(response.status, path).toBe(204);
         expect(text, path).toBe("");
-        expect(Object.fromEntries(response.headers), path).toEqual({
-            ...live,
-            "access-control-allow-headers": allowed,
-        });
+        expect(Object.fromEntries(response.headers), path).toEqual(
+            withMigration({
+                ...live,
+                "access-control-allow-headers": allowed,
+            }),
+        );
         expect(await storedAt(path, "OPTIONS"), path).toBeNull();
     }
 });
@@ -672,10 +683,12 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
         expect(text, label).toBe(errorPage(message));
         // Chunked, without Content-Length; below 401 the cache code adds
         // its headers and stores the page, as it did the VM's
-        expect(Object.fromEntries(response.headers), label).toEqual({
-            ...pageHeaders(cors),
-            ...(status < 401 && CACHE_MISS),
-        });
+        expect(Object.fromEntries(response.headers), label).toEqual(
+            withMigration({
+                ...pageHeaders(cors),
+                ...(status < 401 && CACHE_MISS),
+            }),
+        );
         expect(gen.bodies, label).toHaveLength(0);
     }
 });
@@ -840,6 +853,7 @@ test("non-array messages get the VM's 500, whose error log failed on messages.ma
         error: "messages.map is not a function",
         status: 500,
         deprecation_notice: NOTICE,
+        migration: MIGRATION,
     });
     for (const [path, options] of [
         [
@@ -865,9 +879,10 @@ test("non-array messages get the VM's 500, whose error log failed on messages.ma
 
         expect(response.status, path).toBe(500);
         expect(text, path).toBe(vm);
-        // The ETag of the live capture of 2026-10-12
+        // Express's weak ETag of that body (the live capture's was
+        // W/"14b-2vuwa+PS53/bu4pTjJqib/XYw+M", before the migration fields)
         expect(response.headers.get("etag"), path).toBe(
-            'W/"14b-2vuwa+PS53/bu4pTjJqib/XYw+M"',
+            await etag(new TextEncoder().encode(vm)),
         );
     }
 });
@@ -897,7 +912,7 @@ test("non-array messages with a system prompt, which crashed the VM, get Express
             errorPage("TypeError: messages.unshift is not a function"),
         );
         expect(Object.fromEntries(response.headers), path).toEqual(
-            pageHeaders(true),
+            withMigration(pageHeaders(true)),
         );
         expect(gen.bodies, path).toHaveLength(0);
         // Parameters are read before the free slot is taken
@@ -934,9 +949,9 @@ test("a head over 16 KB gets Node's empty chunked 431, but a stored answer is st
     expect(miss.text).toBe("");
     // An empty body without Content-Length, sent chunked as the VM's was
     expect(miss.response.body).not.toBeNull();
-    expect(Object.fromEntries(miss.response.headers)).toEqual({
-        "x-legacy-path": "worker",
-    });
+    expect(Object.fromEntries(miss.response.headers)).toEqual(
+        withMigration({ "x-legacy-path": "worker" }),
+    );
     expect(gen.bodies).toHaveLength(0);
     expect(await storedAt("/long%20headers%20miss")).toBeNull();
 });
@@ -978,6 +993,7 @@ test("while a free generation runs, a stream from the same IP gets the VM's 429"
         error: `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
         status: 429,
         deprecation_notice: NOTICE,
+        migration: MIGRATION,
     });
     expect((await running).text).toBe("ok");
 });

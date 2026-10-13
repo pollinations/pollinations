@@ -66,6 +66,14 @@ export function migrationInfo(service) {
 }
 
 /**
+ * Error text for an image model that only Gen serves.
+ * @param {string} model
+ */
+export function gatedImageModelMessage(model) {
+    return `${model} model is only available on gen.pollinations.ai. Get a key at ${signupUrl("image")} and see ${GEN_DOCS_URL}.`;
+}
+
+/**
  * Append a header value without dropping what is already there.
  * @param {string | null | undefined} existing
  * @param {string} value
@@ -82,8 +90,9 @@ export function appendHeaderValue(existing, value) {
  * Access-Control-Expose-Headers so browser clients can read them.
  * @param {Headers} headers
  * @param {"text" | "image"} service
+ * @param {string[]} [extraExposed] more headers to expose, e.g. error details
  */
-export function addMigrationHeaders(headers, service) {
+export function addMigrationHeaders(headers, service, extraExposed = []) {
     for (const [name, value] of Object.entries(migrationHeaders(service))) {
         headers.set(name, value);
     }
@@ -95,8 +104,13 @@ export function addMigrationHeaders(headers, service) {
             .map((name) => name.trim())
             .filter(Boolean),
     );
-    for (const name of MIGRATION_EXPOSED_HEADERS) exposed.add(name);
-    headers.set("Access-Control-Expose-Headers", Array.from(exposed).join(", "));
+    for (const name of [...MIGRATION_EXPOSED_HEADERS, ...extraExposed]) {
+        exposed.add(name);
+    }
+    headers.set(
+        "Access-Control-Expose-Headers",
+        Array.from(exposed).join(", "),
+    );
 }
 
 /**

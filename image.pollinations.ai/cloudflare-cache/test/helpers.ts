@@ -6,7 +6,7 @@ import {
 } from "cloudflare:test";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
 import { generateCacheKey } from "../src/cache-utils.ts";
-import worker from "../src/index.ts";
+import worker, { addImageMigrationHeaders } from "../src/index.ts";
 
 let lastIp = 0;
 /** An IP no earlier call used: the IP slots and takeSlot's memo are per IP */
@@ -47,7 +47,10 @@ export async function call(
     return { response, bytes, text: new TextDecoder().decode(bytes) };
 }
 
-/** A capture's headers, without the ones the edge adds */
+/**
+ * A capture's headers, without the ones the edge adds, as the Worker sends
+ * them now: with the migration pointers every legacy response carries
+ */
 export function capturedHeaders(raw: string) {
     const edge = ["date", "cf-ray", "cf-cache-status", "server"];
     const lines = raw.trim().split(/\r?\n/).slice(1);
@@ -55,7 +58,9 @@ export function capturedHeaders(raw: string) {
         const at = line.indexOf(":");
         return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
     });
-    return new Map(pairs.filter(([name]) => !edge.includes(name)));
+    const headers = new Headers(pairs.filter(([name]) => !edge.includes(name)));
+    addImageMigrationHeaders(headers);
+    return new Map(headers);
 }
 
 export const storedAt = (path: string) =>

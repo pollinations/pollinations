@@ -1,0 +1,32 @@
+{
+  "pr_number": 17057,
+  "title": "fix(image): reject non-1024 dimensions for lightning-image-turbo",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17057",
+  "merged_at": "2026-10-13T05:16:14Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Requests to inferenceport-ai/lightning-image-turbo that explicitly specify dimensions other than 1024×1024 now receive a 400 error instead of silently returning a 1024×1024 image. Validation rejects those requests before contacting the billable upstream provider. Requests without dimensions still use the 1024×1024 default, and regression tests cover the behavior.",
+    "keywords": [
+      "image generation",
+      "lightning-image-turbo",
+      "dimensions",
+      "validation",
+      "InferencePort"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17057.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli checks a 1024×1024 picture frame beside a small retro terminal, while an incorrectly sized frame rests off to the side among pixel flowers; lime green (#ecf874) glows prominently against a warm cream and pastel gradient background. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears tiny inspector glasses, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-13T05:17:50.040749+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "566aa245e9d17b60113e0a667c0789d0fc8755ab",
+  "announcements": []
+}

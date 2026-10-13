@@ -4,8 +4,8 @@
  *
  * Every legacy response (success, cache hit or error) carries the same
  * machine-readable headers so clients and tooling can find the current Gen
- * API without parsing prose. Kept dependency-free so the Node origins and the
- * Cloudflare cache Workers can share it.
+ * API without parsing prose. Kept dependency-free so both legacy cache
+ * Workers can share it.
  */
 
 export const GEN_DOCS_URL = "https://gen.pollinations.ai/docs";

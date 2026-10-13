@@ -77,6 +77,6 @@ They are listed in `Access-Control-Expose-Headers`, so browser code can read
 them. JSON error bodies also include a `migration` object with `guide`, `docs`
 and `signup`.
 
-The legacy image API still answers errors with an image (HTTP 200) so embedded
-`<img>` tags keep rendering. To tell why, read `X-Error-Type`,
-`X-Error-Status`, `X-Error-Message` and `X-Rate-Limited` on that response.
+Image errors come back as JSON (with the same `migration` object) and an
+`X-Error-Type` header. `X-Error-Type`, `X-Error-Status`, `X-Error-Message` and
+`X-Rate-Limited` are exposed through CORS, so browser code can read them.

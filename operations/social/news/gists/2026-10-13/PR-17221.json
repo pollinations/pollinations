@@ -1,0 +1,33 @@
+{
+  "pr_number": 17221,
+  "title": "fix(gen): add catalog display names and expose the ARD manifest",
+  "author": "patbing",
+  "url": "https://github.com/pollinations/pollinations/pull/17221",
+  "merged_at": "2026-10-13T05:27:19Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added the required `displayName` field, sourced from each MCP server's registry name, to entries in `/.well-known/ai-catalog.json`. Added `GET /.well-known/ard.json` as ARD's canonical entry-source path, returning the same entries in an `{entries}` JSON envelope without the catalog's `specVersion`. Both manifests now use one entry builder, so their listings stay in sync. The existing AI catalog envelope, media type and headers are unchanged; this does not claim full ARD conformance.",
+    "keywords": [
+      "MCP",
+      "agent discovery",
+      "ARD",
+      "ai-catalog",
+      "displayName",
+      "well-known"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17221.jpg",
+    "prompt": "In a cozy pixel art garden, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene, she wears tiny librarian glasses and links two matching MCP server-card shelves labeled 'CATALOG' and 'ARD' beside sprouting code-plants. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a prominent soft lime green (#ecf874) glow against a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T05:28:35.145800+00:00",
+  "area": "Agents & agent tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "c5b96589bf5176badc25aab98a9f9b06eec46afe",
+  "announcements": []
+}

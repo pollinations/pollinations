@@ -1,28 +1,31 @@
 import {
-    AccountIcon,
+    Alert,
     ArrowLeftIcon,
     Button,
-    InfoTip,
     KeyIcon,
-    SproutIcon,
     Surface,
     Text,
     useScrollLock,
     XIcon,
 } from "@pollinations/ui";
-import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    isClientMetadataUrl,
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
-import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import {
+    isLoopbackHostname,
+    redirectUriMatchesAllowlistExact,
+} from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
+import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
     KeyPermissionsInputs,
     useKeyPermissions,
@@ -39,6 +42,8 @@ type Attribution = {
     userName?: string;
     githubUsername?: string;
     appName?: string;
+    /** Host serving a Client ID Metadata Document; set instead of a pk_ owner. */
+    clientHost?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
 };
@@ -75,6 +80,8 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    // MCP clients identify with a metadata-document URL instead of a pk_.
+    const isMetadataClient = isCodeFlow && isClientMetadataUrl(app_key);
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -309,19 +316,27 @@ export function Authorize() {
         setError(null);
 
         try {
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
+            const {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                questPollenOnly,
+            } = keyPermissions.permissions;
             const grantedAccountPermissions =
                 sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const appName = attribution?.clientHost
+                ? `${attribution.appName} (${attribution.clientHost})`
+                : attribution?.appName || redirectHostname;
             const { key, id, expiresIn } = await createKeyWithPermissions({
-                name: isDeviceMode
-                    ? `Device ${user_code}`
-                    : attribution?.appName || redirectHostname,
+                name: isDeviceMode ? `Device ${user_code}` : appName,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    // A metadata client has no pk_ to bind; POST
+                    // /api/oauth/code checks its redirect instead.
                     ...(app_key &&
+                        !isMetadataClient &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -335,6 +350,7 @@ export function Authorize() {
                     allowedModels,
                     pollenBudget,
                     accountPermissions: grantedAccountPermissions,
+                    questPollenOnly,
                 },
             });
 
@@ -394,7 +410,9 @@ export function Authorize() {
                     if (!res || !res.ok) {
                         // The key was minted but can't be delivered — don't
                         // leave an active orphan in the account.
-                        authClient.apiKey.delete({ keyId: id }).catch(() => {});
+                        accountClient.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
                         const data = (await res?.json().catch(() => null)) as {
                             message?: string;
                             error?: { message?: string };
@@ -546,6 +564,15 @@ export function Authorize() {
                 </>
             }
         >
+            {isMetadataClient &&
+                parsedRedirectUrl &&
+                isLoopbackHostname(parsedRedirectUrl.hostname) && (
+                    <Alert intent="warning" className="mb-4">
+                        Access goes to a program on this computer, and any
+                        program can use this app's name. Only allow it if you
+                        just started this sign-in yourself.
+                    </Alert>
+                )}
             <form
                 id="authorize-permissions"
                 className="space-y-4"
@@ -556,26 +583,12 @@ export function Authorize() {
             >
                 <KeyPermissionsInputs
                     value={keyPermissions}
-                    accessContext={isDeviceMode ? undefined : "app"}
+                    accessContext={isDeviceMode ? "device" : "app"}
                     visiblePermissions={new Set(visibleOptionalPermissions)}
                     requestedModels={models}
-                    lead={
-                        <AuthAccessItem icon={<AccountIcon />}>
-                            <span className="inline-flex items-center">
-                                Username and picture
-                                <InfoTip
-                                    text="This app can also see this key’s budget and usage."
-                                    label="Username and picture information"
-                                />
-                            </span>
-                        </AuthAccessItem>
-                    }
-                    accountAfter={
+                    permissionsAfter={
                         attribution?.earningsEnabled ? (
-                            <AuthAccessItem icon={<SproutIcon />}>
-                                20% of the Pollen you spend in this app goes to
-                                its developer.
-                            </AuthAccessItem>
+                            <AppEarningsRow />
                         ) : undefined
                     }
                     disabled={isAuthorizing}

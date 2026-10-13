@@ -266,7 +266,13 @@ export const Models: FC = () => {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter
-            ? options.map(getModelQueryDraftSuggestionValue)
+            ? options.map((option) =>
+                  getModelQueryDraftSuggestionValue(
+                      option,
+                      visibleSearch,
+                      draftFilter.value,
+                  ),
+              )
             : options;
     }, [
         activeTabModels,

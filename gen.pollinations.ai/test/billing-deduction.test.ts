@@ -159,6 +159,23 @@ describe("billing deduction", () => {
         });
     });
 
+    it("deducts Quest Pollen only key charges from Quest Pollen, never paid balance", async () => {
+        const userId = await createUser({ tierBalance: 1, packBalance: 10 });
+
+        await handleBalanceDeduction({
+            db,
+            isBilledUsage: true,
+            totalPrice: 3,
+            userId,
+            questPollenOnly: true,
+        });
+
+        expect(await getUserBalance(db, userId)).toEqual({
+            tierBalance: -2,
+            packBalance: 10,
+        });
+    });
+
     it("keeps regular and paid-only deductions independent in sequence", async () => {
         const userId = await createUser({ tierBalance: 5, packBalance: 10 });
 

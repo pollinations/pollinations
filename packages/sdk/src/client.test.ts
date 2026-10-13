@@ -121,91 +121,91 @@ describe("Convenience helpers", () => {
         }
     });
 
-    it.each([
-        true,
-        false,
-    ])("preserves text options and response metadata in raw mode (json: %s)", async (json) => {
-        const response = {
-            id: "chatcmpl-test",
-            object: "chat.completion",
-            created: 1,
-            model: "actual-model",
-            choices: [
-                {
-                    index: 0,
-                    message: { role: "assistant", content: '{"ok":true}' },
-                    finish_reason: "stop",
+    it.each([true, false])(
+        "preserves text options and response metadata in raw mode (json: %s)",
+        async (json) => {
+            const response = {
+                id: "chatcmpl-test",
+                object: "chat.completion",
+                created: 1,
+                model: "actual-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: '{"ok":true}' },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage: {
+                    prompt_tokens: 2,
+                    completion_tokens: 3,
+                    total_tokens: 5,
                 },
-            ],
-            usage: {
-                prompt_tokens: 2,
-                completion_tokens: 3,
-                total_tokens: 5,
-            },
-        };
-        fetchMock.mockResolvedValue(makeResponse(response));
-        const options = {
-            systemPrompt: "be concise",
-            model: "openai",
-            temperature: 0.5,
-            maxTokens: 42,
-            frequencyPenalty: 0.25,
-            presencePenalty: -0.25,
-            seed: -1,
-            json,
-            private: true,
-        };
+            };
+            fetchMock.mockResolvedValue(makeResponse(response));
+            const options = {
+                systemPrompt: "be concise",
+                model: "openai",
+                temperature: 0.5,
+                maxTokens: 42,
+                frequencyPenalty: 0.25,
+                presencePenalty: -0.25,
+                seed: -1,
+                json,
+                private: true,
+            };
 
-        await expect(generateText("hello", options)).resolves.toBe(
-            '{"ok":true}',
-        );
-        await expect(
-            generateText("hello", { ...options, raw: true }),
-        ).resolves.toMatchObject({
-            ...response,
-            text: '{"ok":true}',
-            tokens: { input: 2, output: 3, total: 5 },
-            actualModel: "actual-model",
-            requestId: "chatcmpl-test",
-        });
+            await expect(generateText("hello", options)).resolves.toBe(
+                '{"ok":true}',
+            );
+            await expect(
+                generateText("hello", { ...options, raw: true }),
+            ).resolves.toMatchObject({
+                ...response,
+                text: '{"ok":true}',
+                tokens: { input: 2, output: 3, total: 5 },
+                actualModel: "actual-model",
+                requestId: "chatcmpl-test",
+            });
 
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-        const expectedBody = {
-            messages: [
-                { role: "system", content: "be concise" },
-                { role: "user", content: "hello" },
-            ],
-            model: "openai",
-            temperature: 0.5,
-            max_tokens: 42,
-            frequency_penalty: 0.25,
-            presence_penalty: -0.25,
-            seed: -1,
-            private: true,
-            stream: false,
-            ...(json ? { response_format: { type: "json_object" } } : {}),
-        };
-        expect(fetchMock.mock.calls.map(bodyOf)).toEqual([
-            expectedBody,
-            expectedBody,
-        ]);
-    });
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            const expectedBody = {
+                messages: [
+                    { role: "system", content: "be concise" },
+                    { role: "user", content: "hello" },
+                ],
+                model: "openai",
+                temperature: 0.5,
+                max_tokens: 42,
+                frequency_penalty: 0.25,
+                presence_penalty: -0.25,
+                seed: -1,
+                private: true,
+                stream: false,
+                ...(json ? { response_format: { type: "json_object" } } : {}),
+            };
+            expect(fetchMock.mock.calls.map(bodyOf)).toEqual([
+                expectedBody,
+                expectedBody,
+            ]);
+        },
+    );
 
-    it.each([
-        false,
-        true,
-    ])("rejects an empty text prompt before dispatch (raw: %s)", async (raw) => {
-        fetchMock.mockResolvedValue(
-            makeResponse({ choices: [{ message: { content: "ok" } }] }),
-        );
+    it.each([false, true])(
+        "rejects an empty text prompt before dispatch (raw: %s)",
+        async (raw) => {
+            fetchMock.mockResolvedValue(
+                makeResponse({ choices: [{ message: { content: "ok" } }] }),
+            );
 
-        await expect(generateText("", { raw })).rejects.toMatchObject({
-            code: "INVALID_INPUT",
-            status: 400,
-            message: "Prompt is required and must be a string",
-        });
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
+            await expect(generateText("", { raw })).rejects.toMatchObject({
+                code: "INVALID_INPUT",
+                status: 400,
+                message: "Prompt is required and must be a string",
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 
     it("makes one request per text helper without inventing a seed", async () => {
         const response = {
@@ -253,30 +253,36 @@ describe("Pollinations request attempts", () => {
         ["text", new Error("Caller cancelled")],
         ["chat", undefined],
         ["chat", new Error("Caller cancelled")],
-    ] as const)("%s rejects an already-aborted signal before dispatch (reason: %s)", async (method, reason) => {
-        const client = newClient();
-        const controller = new AbortController();
-        controller.abort(reason);
-        fetchMock.mockResolvedValue(
-            makeResponse({
-                choices: [{ message: { content: "unexpected response" } }],
-            }),
-        );
+    ] as const)(
+        "%s rejects an already-aborted signal before dispatch (reason: %s)",
+        async (method, reason) => {
+            const client = newClient();
+            const controller = new AbortController();
+            controller.abort(reason);
+            fetchMock.mockResolvedValue(
+                makeResponse({
+                    choices: [{ message: { content: "unexpected response" } }],
+                }),
+            );
 
-        const options = { signal: controller.signal };
-        const request =
-            method === "text"
-                ? client.text("hello", options)
-                : client.chat([{ role: "user", content: "hello" }], options);
+            const options = { signal: controller.signal };
+            const request =
+                method === "text"
+                    ? client.text("hello", options)
+                    : client.chat(
+                          [{ role: "user", content: "hello" }],
+                          options,
+                      );
 
-        await expect(request).rejects.toBeInstanceOf(PollinationsError);
-        await expect(request).rejects.toMatchObject({
-            code: "CANCELLED",
-            status: 499,
-            message: "Request was cancelled",
-        });
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
+            await expect(request).rejects.toBeInstanceOf(PollinationsError);
+            await expect(request).rejects.toMatchObject({
+                code: "CANCELLED",
+                status: 499,
+                message: "Request was cancelled",
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 
     it("cancels an in-flight request when the caller aborts", async () => {
         const controller = new AbortController();
@@ -454,6 +460,15 @@ describe("Pollinations media upload", () => {
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
     });
+
+    it("keeps an uploaded file's name", async () => {
+        fetchMock.mockResolvedValue(makeResponse({ id: "media-id" }));
+
+        await newClient().upload(new File(["video"], "holiday.mp4"));
+
+        const formData = fetchMock.mock.calls[0][1].body as FormData;
+        expect((formData.get("file") as File).name).toBe("holiday.mp4");
+    });
 });
 
 describe("audio inputs", () => {
@@ -477,35 +492,35 @@ describe("audio inputs", () => {
         });
     });
 
-    it.each([
-        "voice-changer",
-        "voice-isolator",
-    ] as const)("posts the original file to %s without a text prompt", async (operation) => {
-        fetchMock.mockResolvedValue(
-            makeResponse(null, { contentType: "audio/wav" }),
-        );
-        const file = new File(["sample audio"], "sample.wav", {
-            type: "audio/wav",
-        });
-        const result = await newClient().audioTransform(file, {
-            operation,
-            model: "catalog-model",
-            voice: "alloy",
-        });
-        const [url, init] = fetchMock.mock.calls[0];
-        expect(url).toBe(`https://example.test/v1/audio/${operation}`);
-        expect(init.method).toBe("POST");
-        expect(init.headers["Content-Type"]).toBeUndefined();
-        expect(init.body.get("model")).toBe("catalog-model");
-        expect(init.body.get("voice")).toBe(
-            operation === "voice-changer" ? "alloy" : null,
-        );
-        const uploaded = init.body.get("audio") as File;
-        expect(uploaded.name).toBe("sample.wav");
-        expect(uploaded.type).toBe("audio/wav");
-        expect(await uploaded.text()).toBe("sample audio");
-        expect(result.contentType).toBe("audio/wav");
-    });
+    it.each(["voice-changer", "voice-isolator"] as const)(
+        "posts the original file to %s without a text prompt",
+        async (operation) => {
+            fetchMock.mockResolvedValue(
+                makeResponse(null, { contentType: "audio/wav" }),
+            );
+            const file = new File(["sample audio"], "sample.wav", {
+                type: "audio/wav",
+            });
+            const result = await newClient().audioTransform(file, {
+                operation,
+                model: "catalog-model",
+                voice: "alloy",
+            });
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(url).toBe(`https://example.test/v1/audio/${operation}`);
+            expect(init.method).toBe("POST");
+            expect(init.headers["Content-Type"]).toBeUndefined();
+            expect(init.body.get("model")).toBe("catalog-model");
+            expect(init.body.get("voice")).toBe(
+                operation === "voice-changer" ? "alloy" : null,
+            );
+            const uploaded = init.body.get("audio") as File;
+            expect(uploaded.name).toBe("sample.wav");
+            expect(uploaded.type).toBe("audio/wav");
+            expect(await uploaded.text()).toBe("sample audio");
+            expect(result.contentType).toBe("audio/wav");
+        },
+    );
 });
 
 describe("Pollinations server-owned defaults", () => {
@@ -544,7 +559,8 @@ describe("Pollinations server-owned defaults", () => {
                 },
             ],
         };
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ data: [{ b64_json: "AAAA" }] }),
@@ -605,6 +621,127 @@ describe("Pollinations server-owned defaults", () => {
         const request = fetchMock.mock.calls[0][1] as RequestInit;
         expect((request.body as FormData).has("model")).toBe(false);
     });
+
+    // Azure's gpt-transcribe rejects a WAV upload named audio.mp3.
+    it("uses matching filenames for transcription uploads", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(
+            new File([new Uint8Array(8)], "clip.wav", { type: "audio/wav" }),
+        );
+        await client.transcribe(new ArrayBuffer(8));
+        await client.transcribe(
+            new Blob(["RIFF sample audio"], { type: "audio/wav" }),
+        );
+        await client.transcribe(
+            new Blob(["WebM sample audio"], { type: "audio/webm;codecs=opus" }),
+        );
+
+        const files = fetchMock.mock.calls.map(
+            ([, request]) =>
+                ((request as RequestInit).body as FormData).get("file") as File,
+        );
+        expect(files.map((file) => file.name)).toEqual([
+            "clip.wav",
+            "audio.mp3",
+            "audio.wav",
+            "audio.webm",
+        ]);
+        expect(files.map((file) => file.type)).toEqual([
+            "audio/wav",
+            "audio/mpeg",
+            "audio/wav",
+            "audio/webm;codecs=opus",
+        ]);
+        expect(await files[2].text()).toBe("RIFF sample audio");
+        expect(await files[3].text()).toBe("WebM sample audio");
+    });
+});
+
+describe("Pollinations video reference media", () => {
+    it.each([false, true])(
+        "sends guidance URLs (arrays: %s)",
+        async (arrays) => {
+            const urls = [
+                "https://media.example/ref,one?size=large&tag=a b",
+                "https://media.example/ref-two",
+            ];
+            const references = arrays ? urls : urls[0];
+            fetchMock.mockResolvedValue(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "video/mp4",
+                }),
+            );
+
+            await newClient().video("a guided scene", {
+                referenceImages: references,
+                referenceVideos: references,
+                referenceAudios: references,
+                referenceImage: "https://media.example/start.png",
+            });
+
+            const [requestUrl] = fetchMock.mock.calls[0];
+            const url = new URL(requestUrl as string);
+            const expected = arrays ? urls.join("|") : urls[0];
+            for (const name of [
+                "reference_images",
+                "reference_videos",
+                "reference_audios",
+            ]) {
+                expect(url.searchParams.get(name)).toBe(expected);
+            }
+            expect(url.searchParams.get("image")).toBe(
+                "https://media.example/start.png",
+            );
+            expect([...url.searchParams.keys()].sort()).toEqual([
+                "image",
+                "key",
+                "reference_audios",
+                "reference_images",
+                "reference_videos",
+            ]);
+        },
+    );
+
+    it.each([
+        undefined,
+        "https://media.example/start.png",
+        ["https://media.example/start.png", "https://media.example/end.png"],
+    ])(
+        "omits guidance and preserves frame images: %s",
+        async (referenceImage) => {
+            fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+            await newClient().video("a scene", { referenceImage });
+
+            const url = new URL(fetchMock.mock.calls[0][0] as string);
+            expect(url.searchParams.get("image")).toBe(
+                Array.isArray(referenceImage)
+                    ? referenceImage.join("|")
+                    : (referenceImage ?? null),
+            );
+            for (const name of [
+                "reference_images",
+                "reference_videos",
+                "reference_audios",
+            ]) {
+                expect(url.searchParams.has(name)).toBe(false);
+            }
+        },
+    );
+
+    it("serializes multiple reference images using pipe delimiter for image generation", async () => {
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
+        const references = [
+            "https://media.example/ref1.png?v=1",
+            "https://media.example/ref2.png?v=2",
+        ];
+        await newClient().image("a scene", { referenceImage: references });
+
+        const url = new URL(fetchMock.mock.calls[0][0] as string);
+        expect(url.searchParams.get("image")).toBe(references.join("|"));
+    });
 });
 
 describe("Pollinations seed handling", () => {
@@ -636,7 +773,8 @@ describe("Pollinations seed handling", () => {
 
     it("passes seed through text and chat requests consistently", async () => {
         const client = newClient();
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
+        const stream =
+            'data: {"choices":[{"delta":{"content":"x"}}]}\n\ndata: [DONE]\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ choices: [{ message: { content: "ok" } }] }),
@@ -772,16 +910,16 @@ describe("Pollinations.embeddings", () => {
         expect(bodyOf(fetchMock.mock.calls[0]).input).toEqual(input);
     });
 
-    it.each([
-        "",
-        [],
-    ])("rejects empty input %j without a request", async (input) => {
-        await expect(newClient().embeddings(input)).rejects.toMatchObject({
-            code: "INVALID_INPUT",
-            status: 400,
-        });
-        expect(fetchMock).not.toHaveBeenCalled();
-    });
+    it.each(["", []])(
+        "rejects empty input %j without a request",
+        async (input) => {
+            await expect(newClient().embeddings(input)).rejects.toMatchObject({
+                code: "INVALID_INPUT",
+                status: 400,
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
 
     it("surfaces API errors", async () => {
         fetchMock.mockResolvedValue(
@@ -829,25 +967,24 @@ describe("Pollinations chat routing", () => {
             },
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: false,
-            routing: {
-                text: "openai",
-                web_search: "perplexity-fast",
-                image_generation: "flux",
-                image_editing: "nanobanana",
-                video: "veo",
-                audio: "elevenlabs",
-            },
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: false });
+        expect(body.metadata).toEqual({
+            model: "openai",
+            web_search: "perplexity-fast",
+            image_generation: "flux",
+            image_editing: "nanobanana",
+            video: "veo",
+            audio: "elevenlabs",
         });
+        expect(body.routing).toBeUndefined();
     });
 
     it("serializes partial routing for streaming chat requests", async () => {
         const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -865,11 +1002,10 @@ describe("Pollinations chat routing", () => {
             // Consume the stream.
         }
 
-        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
-            model: "floret",
-            stream: true,
-            routing: { video: "veo" },
-        });
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toMatchObject({ model: "floret", stream: true });
+        expect(body.metadata).toEqual({ video: "veo" });
+        expect(body.routing).toBeUndefined();
     });
 
     it("omits routing when no override is provided", async () => {
@@ -882,7 +1018,7 @@ describe("Pollinations chat routing", () => {
             model: "floret",
         });
 
-        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
+        expect(bodyOf(fetchMock.mock.calls[0]).metadata).toBeUndefined();
     });
 });
 
@@ -930,88 +1066,116 @@ describe("Pollinations chat streaming", () => {
         expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
             messages,
             model: "requested-alias",
-            routing,
+            metadata: { model: "publisher/custom-model" },
             seed: 0,
             temperature: 0,
             stream: true,
         });
     });
 
-    it.each([
-        "\n",
-        "\r",
-        "\r\n",
-    ])("preserves UTF-8 and tool/usage events split at every byte (%j)", async (newline) => {
-        const events = [
-            {
-                choices: [
-                    {
-                        index: 0,
-                        delta: { content: "🌸 café" },
-                        finish_reason: null,
-                    },
-                ],
-            },
-            {
-                choices: [
-                    {
-                        index: 0,
-                        delta: {
-                            tool_calls: [
-                                {
-                                    index: 0,
-                                    id: "call_1",
-                                    type: "function",
-                                    function: {
-                                        name: "search",
-                                        arguments: "{}",
-                                    },
-                                },
-                            ],
+    it.each(["\n", "\r", "\r\n"])(
+        "preserves UTF-8 and tool/usage events split at every byte (%j)",
+        async (newline) => {
+            const events = [
+                {
+                    choices: [
+                        {
+                            index: 0,
+                            delta: { content: "🌸 café" },
+                            finish_reason: null,
                         },
-                        finish_reason: "tool_calls",
-                    },
-                ],
-            },
-            {
-                choices: [],
-                usage: {
-                    prompt_tokens: 2,
-                    completion_tokens: 3,
-                    total_tokens: 5,
+                    ],
                 },
-            },
-        ];
-        const sse = events
-            .map((event) => `data:${JSON.stringify(event)}${newline}${newline}`)
-            .join("");
-        const bytes = new TextEncoder().encode(
-            `${sse}data: [DONE]${newline}${newline}`,
+                {
+                    choices: [
+                        {
+                            index: 0,
+                            delta: {
+                                tool_calls: [
+                                    {
+                                        index: 0,
+                                        id: "call_1",
+                                        type: "function",
+                                        function: {
+                                            name: "search",
+                                            arguments: "{}",
+                                        },
+                                    },
+                                ],
+                            },
+                            finish_reason: "tool_calls",
+                        },
+                    ],
+                },
+                {
+                    choices: [],
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 3,
+                        total_tokens: 5,
+                    },
+                },
+            ];
+            const sse = events
+                .map(
+                    (event) =>
+                        `data:${JSON.stringify(event)}${newline}${newline}`,
+                )
+                .join("");
+            const bytes = new TextEncoder().encode(
+                `${sse}data: [DONE]${newline}${newline}`,
+            );
+            const body = new ReadableStream<Uint8Array>({
+                start(controller) {
+                    for (const byte of bytes)
+                        controller.enqueue(Uint8Array.of(byte));
+                    controller.close();
+                },
+            });
+            fetchMock.mockResolvedValue(new Response(body));
+
+            const chunks = [];
+            for await (const chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                chunks.push(chunk);
+            }
+
+            expect(chunks).toEqual(events);
+            expect(body.locked).toBe(false);
+        },
+    );
+
+    it("rejects a chat stream that closes before completion instead of returning partial text", async () => {
+        fetchMock.mockResolvedValue(
+            new Response(
+                'data: {"choices":[{"delta":{"content":"unfinished"},"finish_reason":null}]}\n\n',
+                { headers: { "content-type": "text/event-stream" } },
+            ),
         );
-        const body = new ReadableStream<Uint8Array>({
-            start(controller) {
-                for (const byte of bytes)
-                    controller.enqueue(Uint8Array.of(byte));
-                controller.close();
-            },
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream through EOF.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INCOMPLETE_STREAM",
+            status: 502,
         });
-        fetchMock.mockResolvedValue(new Response(body));
-
-        const chunks = [];
-        for await (const chunk of newClient().chatStream([
-            { role: "user", content: "hello" },
-        ])) {
-            chunks.push(chunk);
-        }
-
-        expect(chunks).toEqual(events);
-        expect(body.locked).toBe(false);
     });
 
     it("discards an incomplete SSE event at EOF", async () => {
+        const terminal = { choices: [{ delta: {}, finish_reason: "stop" }] };
         const event = { choices: [{ delta: { content: "last" } }] };
         fetchMock.mockResolvedValue(
-            new Response(`data: ${JSON.stringify(event)}`),
+            new Response(
+                `data: ${JSON.stringify(terminal)}\n\ndata: ${JSON.stringify(event)}`,
+            ),
         );
 
         const chunks = [];
@@ -1021,7 +1185,7 @@ describe("Pollinations chat streaming", () => {
             chunks.push(chunk);
         }
 
-        expect(chunks).toEqual([]);
+        expect(chunks).toEqual([terminal]);
     });
 
     it("does not guess event boundaries between complete JSON data lines", async () => {
@@ -1340,46 +1504,49 @@ describe("Pollinations simple text facade", () => {
         [{ code: 200 }, 502, "STREAM_ERROR"],
         [{ code: 600 }, 502, "STREAM_ERROR"],
         [{ code: 400.5 }, 502, "STREAM_ERROR"],
-    ])("preserves streamed error status and code: %j", async (error, status, code) => {
-        fetchMock.mockResolvedValue(
-            makeResponse(
-                `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
-                { kind: "stream", contentType: "text/event-stream" },
-            ),
-        );
-        const consume = async () => {
-            for await (const _chunk of newClient().textStream("hello")) {
-                /* consume */
-            }
-        };
-        await expect(consume()).rejects.toMatchObject({
-            name: "PollinationsError",
-            status,
-            code,
-        });
-    });
+    ])(
+        "preserves streamed error status and code: %j",
+        async (error, status, code) => {
+            fetchMock.mockResolvedValue(
+                makeResponse(
+                    `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
+                    { kind: "stream", contentType: "text/event-stream" },
+                ),
+            );
+            const consume = async () => {
+                for await (const _chunk of newClient().textStream("hello")) {
+                    /* consume */
+                }
+            };
+            await expect(consume()).rejects.toMatchObject({
+                name: "PollinationsError",
+                status,
+                code,
+            });
+        },
+    );
 
-    it.each([
-        undefined,
-        null,
-    ])("rejects an error finish reason even with error=%s", async (error) => {
-        fetchMock.mockResolvedValue(
-            makeResponse(
-                `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
-                { kind: "stream", contentType: "text/event-stream" },
-            ),
-        );
-        const consume = async () => {
-            for await (const _chunk of newClient().textStream("hello")) {
-                /* consume */
-            }
-        };
-        await expect(consume()).rejects.toMatchObject({
-            name: "PollinationsError",
-            status: 502,
-            code: "STREAM_ERROR",
-        });
-    });
+    it.each([undefined, null])(
+        "rejects an error finish reason even with error=%s",
+        async (error) => {
+            fetchMock.mockResolvedValue(
+                makeResponse(
+                    `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
+                    { kind: "stream", contentType: "text/event-stream" },
+                ),
+            );
+            const consume = async () => {
+                for await (const _chunk of newClient().textStream("hello")) {
+                    /* consume */
+                }
+            };
+            await expect(consume()).rejects.toMatchObject({
+                name: "PollinationsError",
+                status: 502,
+                code: "STREAM_ERROR",
+            });
+        },
+    );
 
     it("rejects malformed stream events without choices", async () => {
         fetchMock.mockResolvedValue(
@@ -1570,6 +1737,54 @@ describe("Pollinations model discovery", () => {
     });
 });
 
+describe("Pollinations.authorizeDevice", () => {
+    const deviceCode = {
+        device_code: "dev",
+        user_code: "ABCD",
+        verification_uri_complete: "https://example.test/device",
+        expires_in: 60,
+        interval: 5,
+    };
+
+    async function pollWith(...tokenResponses: Response[]) {
+        vi.useFakeTimers();
+        fetchMock.mockResolvedValueOnce(Response.json(deviceCode));
+        for (const res of tokenResponses) fetchMock.mockResolvedValueOnce(res);
+        const auth = await Pollinations.authorizeDevice();
+        const result = auth.poll();
+        result.catch(() => {});
+        await vi.advanceTimersByTimeAsync(5000 * tokenResponses.length);
+        return result;
+    }
+
+    it.each([
+        [
+            new Response("Service Unavailable", { status: 503 }),
+            503,
+            "DEVICE_FLOW_ERROR",
+        ],
+        [
+            Response.json({ error: "access_denied" }, { status: 400 }),
+            400,
+            "access_denied",
+        ],
+    ])("keeps the token endpoint status (%#)", async (res, status, code) => {
+        await expect(pollWith(res)).rejects.toMatchObject({ status, code });
+    });
+
+    it("keeps polling while pending and returns the token", async () => {
+        await expect(
+            pollWith(
+                Response.json(
+                    { error: "authorization_pending" },
+                    { status: 400 },
+                ),
+                Response.json({ access_token: "sk_device" }),
+            ),
+        ).resolves.toBe("sk_device");
+    });
+});
+
 describe("Pollinations.accountQuests", () => {
     it("fetches the quest catalog and returns it typed", async () => {
         const client = newClient();
@@ -1594,6 +1809,32 @@ describe("Pollinations.accountQuests", () => {
         await expect(client.accountQuests()).resolves.toEqual(questsResponse);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/account/quests",
+        );
+    });
+});
+
+describe("usage CSV export", () => {
+    const csv = "timestamp,model\n2026-10-08,openai\n";
+    const csvResponse = () =>
+        new Response(csv, { headers: { "content-type": "text/csv" } });
+
+    it("returns usage history CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsage({ format: "csv" });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage?format=csv",
+        );
+    });
+
+    it("returns daily usage CSV as text", async () => {
+        fetchMock.mockResolvedValueOnce(csvResponse());
+        const text: string = await newClient().accountUsageDaily({
+            format: "csv",
+        });
+        expect(text).toBe(csv);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/usage/daily?format=csv",
         );
     });
 });

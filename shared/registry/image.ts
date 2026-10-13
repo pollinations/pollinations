@@ -5,6 +5,7 @@ import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_IMAGE_MODEL = "tongyi-mai/z-image-turbo" as const;
+const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
@@ -35,6 +36,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
@@ -52,6 +54,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             completionImageTokens: 0.04, // per image
         },
@@ -120,6 +123,65 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
+    },
+    "black-forest-labs/flux-3-image": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // https://bfl.ai/pricing: 50% launch discount ends Oct 8 at 15:00 UTC.
+        // Read rates at request time so warm workers also quote the cutover.
+        // Settlement always uses OpenRouter's reported cost plus its 5.5% fee.
+        cost: {
+            get completionImageTokens() {
+                return (
+                    (Date.now() < FLUX3_LAUNCH_DISCOUNT_END ? 0.024 : 0.048) *
+                    1.055
+                );
+            },
+        },
+        ...defineCostVariants(
+            {
+                "2k": {
+                    get completionImageTokens() {
+                        return (
+                            (Date.now() < FLUX3_LAUNCH_DISCOUNT_END
+                                ? 0.05
+                                : 0.1) * 1.055
+                        );
+                    },
+                },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested image resolution is 2K.",
+                },
+            },
+            "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "FLUX.3 Image",
+        description:
+            "Flagship text-to-image and multi-reference editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "black-forest-labs/flux.2-flex": {
         aliases: ["flux-2-flex"],
@@ -194,7 +256,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-22").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        // Provider retires this route on 2027-01-09.
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -217,7 +279,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-23").getTime(),
-        retirementDate: new Date("2027-01-09").getTime(),
+        // Provider retires this route on 2027-01-09.
         paidOnly: false,
         priceMultiplier: 0.75,
         perUserRpm: 12,
@@ -241,7 +303,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         // Vertex AI model page.
-        retirementDate: new Date("2027-03-15").getTime(),
+        // Provider retires this route on 2027-03-15.
         paidOnly: true,
         priceMultiplier: 1.055,
         cost: {
@@ -302,6 +364,28 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations cap for Gemini 3.1 Flash-Lite Image route.
     },
+    "google/gemini-nano-banana-2.1": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Google",
+        category: "image",
+        addedDate: new Date("2026-10-06").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1.055,
+        cost: {
+            // Google AI Studio via OpenRouter, including the 5.5% credit fee.
+            promptTextTokens: perMillion(1.5) * 1.055, // per 1M tokens
+            promptImageTokens: perMillion(1.5) * 1.055, // per 1M tokens
+            completionTextTokens: perMillion(7.5) * 1.055, // text/reasoning output tokens
+            completionImageTokens: perMillion(30) * 1.055, // per 1M tokens
+        },
+        title: "Nano Banana 2.1",
+        description:
+            "Balanced image generation and editing with output up to 2K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 14, // Gemini Nano Banana 2.1 provider limit.
+    },
     "google/gemini-3-pro-image": {
         aliases: ["nanobanana-pro"],
         provider: "google",
@@ -344,6 +428,51 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
+    },
+    "bytedance/seedream-5.0-flash": {
+        aliases: [],
+        provider: "openrouter",
+        publisher: "ByteDance",
+        category: "image",
+        addedDate: new Date("2026-10-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // OpenRouter Seed endpoint, verified 2026-10-05: a flat $0.018 per
+            // image at both 1K and 2K, plus the 5.5% credit fee.
+            completionImageTokens: 0.018 * 1.055, // per image
+        },
+        ...defineCostVariants(
+            {
+                "2k": { completionImageTokens: 0.018 * 1.055 },
+            },
+            matchResolution("2k"),
+            {
+                "2k": {
+                    label: "2K",
+                    description:
+                        "Applies when the requested image resolution is 2K.",
+                },
+            },
+            "1K",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "1K",
+                        "2k": "2K",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["1k", "2k"],
+        title: "Seedream 5.0 Flash",
+        description:
+            "Image generation and editing at 1K or 2K with up to ten references",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
@@ -457,8 +586,9 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
-        retirementDate: new Date("2027-04-07").getTime(),
+        // Provider retires this route on 2027-04-07.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(2.0), // per 1M tokens
             promptCachedTokens: perMillion(0.2), // per 1M tokens
@@ -477,8 +607,9 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
-        retirementDate: new Date("2026-12-16").getTime(),
+        // Provider retires this route on 2026-12-16.
         priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             // Official pricing: https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-openai%E2%80%99s-gpt-image-1-5-in-microsoft-foundry/4478139
             promptTextTokens: perMillion(5), // per 1M tokens
@@ -500,7 +631,7 @@ const IMAGE_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
-        retirementDate: new Date("2027-10-21").getTime(),
+        // Provider retires this route on 2027-10-21.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -523,7 +654,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        // Provider retires this route on 2027-09-08.
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -547,7 +678,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-09-08").getTime(),
         // Azure model catalog; the retirement schedule says 2027-09-09.
-        retirementDate: new Date("2027-09-08").getTime(),
+        // Provider retires this route on 2027-09-08.
         paidOnly: true,
         priceMultiplier: 0.75,
         cost: {
@@ -571,6 +702,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.002, // per image
@@ -587,6 +719,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
@@ -1314,7 +1447,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         // xAI retires the slug and redirects it to grok-imagine-image-2.0.
-        retirementDate: new Date("2026-11-02").getTime(),
+        // Provider retires this route on 2026-11-02.
         priceMultiplier: 1,
         paidOnly: true,
         cost: {
@@ -1527,6 +1660,66 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["video", "audio"],
         videoCapabilities: ["start_frame", "audio_output"],
+        maxReferenceImages: 1, // Video keyframe slots: start only.
+        minDuration: 1,
+        maxDuration: 15,
+        defaultDuration: 5,
+    },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        aliases: [],
+        provider: "xai",
+        publisher: "xAI",
+        category: "video",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // xAI direct API rates (docs.x.ai, 2026-10-06).
+            promptImageTokens: 0.01, // per start-frame image
+            completionVideoSeconds: 0.03, // per sec at 720p
+        },
+        ...defineCostVariants(
+            {
+                "480p": {
+                    completionVideoSeconds: 0.02,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14,
+                },
+            },
+            matchResolution("480p", "1080p"),
+            {
+                "480p": {
+                    label: "480p",
+                    description:
+                        "Applies when the requested video resolution is 480p.",
+                },
+                "1080p": {
+                    label: "1080p",
+                    description:
+                        "Applies when the requested video resolution is 1080p.",
+                },
+            },
+            "720p",
+            [
+                {
+                    "key": "resolution",
+                    "label": "Resolution",
+                    "values": {
+                        "": "720p",
+                        "480p": "480p",
+                        "1080p": "1080p",
+                    },
+                },
+            ],
+        ),
+        resolutions: ["720p", "480p", "1080p"],
+        title: "Grok Imagine Video 1.5 Lite",
+        description:
+            "Faster, lower-cost video from text or a start image at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame"],
         maxReferenceImages: 1, // Video keyframe slots: start only.
         minDuration: 1,
         maxDuration: 15,
@@ -1894,6 +2087,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
             completionImageTokens: 0.005,

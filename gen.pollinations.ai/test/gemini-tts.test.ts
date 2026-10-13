@@ -57,25 +57,35 @@ describe("Gemini Developer API speech", () => {
             completionAudioTokens: 76,
         });
     });
+    it("bills only text input when Google reports the voice's audio prompt", () => {
+        // Shape returned by Google since October 2026.
+        const data = speechResponse();
+        data.usage.total_input_tokens = 206;
+        data.usage.input_tokens_by_modality = [
+            { modality: "audio", tokens: 201 },
+            { modality: "text", tokens: 5 },
+        ];
+        expect(parseGeminiSpeechResponse(data, "pcm").usage).toEqual({
+            promptTextTokens: 5,
+            completionAudioTokens: 76,
+        });
+    });
     it("rejects missing usage", () => {
         const { usage: _, ...data } = speechResponse();
         expect(() => parseGeminiSpeechResponse(data, "pcm")).toThrow(
             "invalid usage",
         );
     });
-    it.each([
-        NaN,
-        Infinity,
-        -1,
-        1.5,
-        0,
-    ])("rejects invalid audio token count %s", (tokens) => {
-        const data = speechResponse();
-        data.usage.total_output_tokens = tokens;
-        expect(() => parseGeminiSpeechResponse(data, "pcm")).toThrow(
-            "invalid usage",
-        );
-    });
+    it.each([NaN, Infinity, -1, 1.5, 0])(
+        "rejects invalid audio token count %s",
+        (tokens) => {
+            const data = speechResponse();
+            data.usage.total_output_tokens = tokens;
+            expect(() => parseGeminiSpeechResponse(data, "pcm")).toThrow(
+                "invalid usage",
+            );
+        },
+    );
     it("rejects inconsistent modality usage", () => {
         const data = speechResponse();
         data.usage.output_tokens_by_modality[0].tokens = 75;
@@ -125,22 +135,20 @@ describe("Gemini Developer API speech", () => {
             "encoding",
         );
     });
-    it.each([
-        "mp3",
-        "opus",
-        "aac",
-        "flac",
-    ])("rejects explicit %s before any provider request", async (responseFormat) => {
-        await expect(
-            generateGeminiSpeech({
-                modelName: "google/gemini-3.8-flash-tts",
-                text: "Hello",
-                voice: "Kore",
-                responseFormat,
-                log: {} as never,
-            }),
-        ).rejects.toMatchObject({ status: 400 });
-    });
+    it.each(["mp3", "opus", "aac", "flac"])(
+        "rejects explicit %s before any provider request",
+        async (responseFormat) => {
+            await expect(
+                generateGeminiSpeech({
+                    modelName: "google/gemini-3.8-flash-tts",
+                    text: "Hello",
+                    voice: "Kore",
+                    responseFormat,
+                    log: {} as never,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+        },
+    );
     it("rejects an unknown voice before any provider request", async () => {
         await expect(
             generateGeminiSpeech({

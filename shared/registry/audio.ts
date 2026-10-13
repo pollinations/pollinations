@@ -178,25 +178,210 @@ export const GEMINI_TTS_VOICES = [
     "Sulafat",
 ] as const;
 
+// Microsoft MAI-Voice-2.1 voice ids without the model suffix; the upstream
+// (OpenRouter/Azure) expects `<id>:MAI-Voice-2.1` or `<id>:MAI-Voice-2.1-Flash`.
+// Source: OpenRouter models API supported_voices (identical 97 for both
+// variants), verified 2026-10-08.
+export const MAI_VOICE_21_VOICES = [
+    "cs-CZ-Grant",
+    "cs-CZ-Harper",
+    "da-DK-Grant",
+    "da-DK-Harper",
+    "de-DE-Grant",
+    "de-DE-Harper",
+    "de-DE-Klaus",
+    "de-DE-Mia",
+    "en-AU-Isla",
+    "en-GB-Emily",
+    "en-GB-Harry",
+    "en-IN-Dhruv",
+    "en-IN-Priya",
+    "en-US-Ethan",
+    "en-US-Grant",
+    "en-US-Harper",
+    "en-US-Iris",
+    "en-US-Jasper",
+    "en-US-Olivia",
+    "en-US-Sage",
+    "es-ES-Marta",
+    "es-MX-Alejo",
+    "es-MX-Grant",
+    "es-MX-Harper",
+    "es-MX-Valeria",
+    "fi-FI-Grant",
+    "fi-FI-Harper",
+    "fr-FR-Grant",
+    "fr-FR-Harper",
+    "fr-FR-Marc",
+    "fr-FR-Soleil",
+    "hi-IN-Arjun",
+    "hi-IN-Dhruv",
+    "hi-IN-Grant",
+    "hi-IN-Harper",
+    "hi-IN-Kavya",
+    "hi-IN-Priya",
+    "hu-HU-Bence",
+    "hu-HU-Grant",
+    "hu-HU-Harper",
+    "hu-HU-Levente",
+    "hu-HU-Lilla",
+    "hu-HU-Reka",
+    "id-ID-Grant",
+    "id-ID-Harper",
+    "it-IT-Grant",
+    "it-IT-Harper",
+    "it-IT-Luca",
+    "it-IT-Rosa",
+    "ko-KR-Grant",
+    "ko-KR-Haena",
+    "ko-KR-Harper",
+    "ko-KR-Junho",
+    "nb-NO-Grant",
+    "nb-NO-Harper",
+    "nl-NL-Grant",
+    "nl-NL-Harper",
+    "nl-NL-Sander",
+    "pl-PL-Grant",
+    "pl-PL-Harper",
+    "pt-BR-Caio",
+    "pt-BR-Grant",
+    "pt-BR-Harper",
+    "pt-BR-Luana",
+    "pt-BR-Pedro",
+    "pt-BR-Rafael",
+    "pt-PT-Grant",
+    "pt-PT-Harper",
+    "pt-PT-Rui",
+    "ro-RO-Andrei",
+    "ro-RO-Elena",
+    "ro-RO-Grant",
+    "ro-RO-Harper",
+    "ro-RO-Ioana",
+    "ro-RO-Radu",
+    "ru-RU-Grant",
+    "ru-RU-Harper",
+    "ru-RU-Lev",
+    "ru-RU-Masha",
+    "sv-SE-Grant",
+    "sv-SE-Harper",
+    "th-TH-Grant",
+    "th-TH-Harper",
+    "th-TH-Krit",
+    "th-TH-Nattapong",
+    "tr-TR-Aydin",
+    "tr-TR-Elif",
+    "tr-TR-Grant",
+    "tr-TR-Harper",
+    "vi-VN-Grant",
+    "vi-VN-Harper",
+    "zh-CN-Bo",
+    "zh-CN-Grant",
+    "zh-CN-Harper",
+    "zh-CN-Lan",
+    "zh-CN-Mei",
+    "zh-CN-Wei",
+] as const;
+
+// DashScope system voices; DashScope also accepts its base voices by name.
+export const QWEN_AUDIO_TTS_VOICES = [
+    "loongeva_v3.6",
+    "loongjohn",
+    "loongmary",
+    "longanfengyue",
+    "longanyuanfei",
+    "longanlingxi",
+    "longanxiaoxin",
+    "longanhuan_v3.6",
+    "longjielidou_v3.6",
+    "longpaopao_v3.6",
+    "longhuohuo_v3.6",
+    "longchuanshu_v3.6",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
     ...XAI_TTS_VOICES,
     ...GEMINI_TTS_VOICES,
+    ...MAI_VOICE_21_VOICES,
+    ...QWEN_AUDIO_TTS_VOICES,
 ];
 
-export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
+// Requests without a model must work on Quest Pollen, so the default stays
+// on a model that is not paid-only.
+export const DEFAULT_AUDIO_MODEL = "openai/tts-1" as const;
 const AUDIO_BASE_SERVICES = {
-    "elevenlabs/eleven-v3": {
-        aliases: [
-            "tts",
-            "text-to-speech",
-            "eleven",
-            "tts-1",
-            "tts-1-hd",
-            "elevenlabs",
+    "microsoft/mai-transcribe-2": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Promotional $0.10/hour; standard $0.36/hour, expiry unpublished.
+        // https://microsoft.ai/models/mai-transcribe-2/
+        cost: { promptAudioSeconds: 0.1 / 3600 },
+        title: "MAI Transcribe 2",
+        description:
+            "Multilingual file transcription with automatic language detection and timed segments",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
+    "elevenlabs/eleven-v4": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.022 / 1000,
+        },
+        title: "ElevenLabs v4",
+        description:
+            "Expressive speech in 90+ languages with audio tags and character timestamps",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
         ],
+    },
+    "elevenlabs/eleven-v4-turbo": {
+        aliases: [],
+        provider: "elevenlabs",
+        publisher: "ElevenLabs",
+        category: "audio",
+        addedDate: new Date("2026-10-06").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        cost: {
+            // https://elevenlabs.io/pricing/api — current launch rate.
+            // Update explicitly when the provider changes its rate.
+            completionAudioTokens: 0.011 / 1000,
+        },
+        title: "ElevenLabs v4 Turbo",
+        description:
+            "Low-latency expressive speech in 90+ languages with audio tags and character timestamps",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: ELEVENLABS_VOICES as string[],
+        supportedEndpoints: [
+            "/audio/{text}",
+            "/v1/audio/speech",
+            "/v1/audio/speech/with-timestamps",
+        ],
+    },
+    "elevenlabs/eleven-v3": {
+        aliases: ["text-to-speech", "eleven", "elevenlabs"],
         provider: "elevenlabs",
         publisher: "ElevenLabs",
         category: "audio",
@@ -395,6 +580,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Studio-grade music from a text prompt or reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "elevenlabs/music-v2.5": {
         aliases: [],
@@ -415,6 +602,8 @@ const AUDIO_BASE_SERVICES = {
             "Richer, better prompt-following music from text or a reference track",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 3,
+        maxDuration: 300,
     },
     "google/lyria-3.5": {
         aliases: [],
@@ -453,6 +642,7 @@ const AUDIO_BASE_SERVICES = {
             "30-second music with vocals, lyrics, or instrumental arrangements",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        allowedDurations: [30],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
@@ -478,6 +668,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // OVHcloud USD list price: $0.163/hour.
             promptAudioSeconds: 0.163 / 3600,
@@ -489,12 +680,13 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
-        aliases: ["gpt-transcribe"],
+        // gpt-4o-transcribe is the name OpenAI clients send by default.
+        aliases: ["gpt-transcribe", "gpt-4o-transcribe"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-08-19").getTime(),
-        retirementDate: new Date("2028-02-01").getTime(),
+        // Provider retires this route on 2028-02-01.
         paidOnly: false,
         priceMultiplier: 0.75,
         cost: {
@@ -590,7 +782,8 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1": {
-        aliases: [],
+        // The bare "tts" alias points at the free default speech model.
+        aliases: ["tts-1", "tts"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -607,7 +800,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "openai/tts-1-hd": {
-        aliases: [],
+        aliases: ["tts-1-hd"],
         provider: "azure",
         publisher: "OpenAI",
         category: "audio",
@@ -673,6 +866,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
@@ -726,6 +920,7 @@ const AUDIO_BASE_SERVICES = {
         category: "audio",
         addedDate: new Date("2026-05-02").getTime(),
         priceMultiplier: 1,
+        paidOnly: false,
         cost: {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
@@ -825,6 +1020,8 @@ const AUDIO_BASE_SERVICES = {
         description: "Long-form stereo music and soundscapes in studio quality",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "stability-ai/stable-audio-3": {
         // Distinct from stable-audio-3-medium (fal): this is the larger
@@ -854,6 +1051,8 @@ const AUDIO_BASE_SERVICES = {
             "Highest-quality long-form stereo music generation; priced per generation",
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
+        minDuration: 1,
+        maxDuration: 380,
     },
     "fish-audio/s2.1-pro": {
         aliases: ["fish-audio-s2.1-pro"],
@@ -874,6 +1073,40 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
+    "microsoft/mai-voice-2.1": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
+        cost: { completionAudioTokens: 22 / 1_000_000 },
+        title: "MAI-Voice-2.1",
+        description:
+            "Expressive speech across 23 languages with consistent voices for long-form narration; mp3 or 24 kHz pcm",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...MAI_VOICE_21_VOICES],
+    },
+    "microsoft/mai-voice-2.1-flash": {
+        aliases: [],
+        provider: "azure",
+        publisher: "Microsoft",
+        category: "audio",
+        addedDate: new Date("2026-10-08").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        // Direct Azure Speech list rate; Vercel matches it.
+        cost: { completionAudioTokens: 15 / 1_000_000 },
+        title: "MAI-Voice-2.1 Flash",
+        description:
+            "Low-latency expressive speech across 23 languages for voice agents; mp3 or 24 kHz pcm",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...MAI_VOICE_21_VOICES],
+    },
     "qwen/qwen3-tts-flash": {
         aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen-tts"],
         provider: "alibaba",
@@ -892,8 +1125,10 @@ const AUDIO_BASE_SERVICES = {
         inputModalities: ["text"],
         outputModalities: ["audio"],
     },
-    "qwen/qwen3-tts-instruct-flash": {
+    "qwen/qwen-audio-3.0-tts-flash": {
+        // Replaces Qwen3-TTS Instruct Flash, which Alibaba retires on 2026-10-10 (notice 2009).
         aliases: [
+            "qwen/qwen3-tts-instruct-flash",
             "qwen3-tts-instruct",
             "qwen3-tts-instruct-flash",
             "qwen-tts-instruct",
@@ -901,20 +1136,19 @@ const AUDIO_BASE_SERVICES = {
         provider: "alibaba",
         publisher: "Qwen",
         category: "audio",
-        addedDate: new Date("2026-04-22").getTime(),
-        // Alibaba Model Studio notice 2009; its notice times are UTC+8.
-        retirementDate: new Date("2026-10-10T00:00:00+08:00").getTime(),
+        addedDate: new Date("2026-10-08").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DashScope Qwen3-TTS-Instruct-Flash: $0.115 per 10K characters
-            completionAudioTokens: 0.0115 / 1000,
+            // DashScope Singapore: $0.15 per 10K characters
+            completionAudioTokens: 0.015 / 1000,
         },
-        title: "Qwen3-TTS Instruct Flash",
+        title: "Qwen-Audio 3.0 TTS Flash",
         description:
-            "Text-to-speech you can direct with emotion and style instructions",
+            "Low-latency speech you can direct with emotion, tone and dialect instructions",
         inputModalities: ["text"],
         outputModalities: ["audio"],
+        voices: [...QWEN_AUDIO_TTS_VOICES],
     },
     "sesame/csm-1b": {
         aliases: ["csm", "sesame-csm", "sesame-csm-1b", "csm-1b"],
@@ -944,8 +1178,8 @@ const AUDIO_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // DeepInfra bills hexgrad/Kokoro-82M at $0.62 per 1M input characters.
-            completionAudioTokens: 0.62 / 1_000_000,
+            // DeepInfra bills hexgrad/Kokoro-82M at $0.99 per 1M input characters.
+            completionAudioTokens: 0.99 / 1_000_000,
         },
         title: "Kokoro 82M",
         description:

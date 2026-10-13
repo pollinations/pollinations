@@ -312,7 +312,7 @@ const result2 = await editImage('Combine these two scenes', {
 
 ## Image Generation (OpenAI-compatible)
 
-The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `n`, `response_format`) or want multiple images from a single call.
+The `imageGenerate` helper wraps `POST /v1/images/generations` — useful when you need OpenAI SDK parity (size string, `responseFormat`). It returns one image per call.
 
 ```javascript
 import { imageGenerate } from '@pollinations/sdk';
@@ -323,10 +323,6 @@ const img = await imageGenerate('A robot reading a book', {
   model: 'flux',
 });
 await img.saveToFile('robot.png');
-
-// Multiple images in one request
-const imgs = await imageGenerate('A robot reading a book', { n: 3 });
-imgs.forEach((img, i) => img.saveToFile(`robot-${i}.png`));
 ```
 
 For the simpler GET-based endpoint, see `generateImage` above.
@@ -375,7 +371,7 @@ console.log(result.actualModel); // actual model used
 ## Chat
 
 ```javascript
-import { chat, chatStream, conversation } from '@pollinations/sdk';
+import { chat, chatStream } from '@pollinations/sdk';
 
 // Single message
 const response = await chat([
@@ -388,16 +384,6 @@ console.log(response.text);
 for await (const chunk of chatStream([{ role: 'user', content: 'Write a poem' }])) {
   process.stdout.write(chunk.choices[0]?.delta?.content || '');
 }
-
-// Conversation (auto-manages history)
-const convo = conversation({ model: 'openai' });
-convo.system('You are a pirate');
-
-const r1 = await convo.say('Hello!');        // "Ahoy, matey!"
-const r2 = await convo.say('Where are we?'); // Remembers context
-
-console.log(convo.getHistory()); // Full message history
-convo.clear(); // Reset conversation
 ```
 
 ## Video Generation
@@ -422,8 +408,15 @@ await video.saveToFile('clouds.mp4');
 | `aspectRatio` | string | - | e.g. `'16:9'`, `'9:16'`, `'1:1'` |
 | `seed` | number | random | Reproducible results |
 | `audio` | boolean | `false` | Include audio (`wan` always has audio) |
-| `referenceImage` | string | - | URL for image-to-video |
+| `referenceImage` | string or string[] | - | Frame URL(s): first is the start frame, second is the optional end frame |
+| `referenceImages` | string or string[] | - | Image URL(s) for visual guidance, separate from frame controls |
+| `referenceVideos` | string or string[] | - | Video URL(s) for motion or style guidance |
+| `referenceAudios` | string or string[] | - | Audio URL(s) for audio-driven generation |
 | `safe` | boolean | `false` | Safety filter |
+
+Reference media must use public HTTP(S) URLs. See `video_capabilities` in
+[`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
+controls and guidance media can be combined depends on the selected model.
 
 ## Audio (Text-to-Speech & Music)
 
@@ -507,6 +500,29 @@ console.log(batch.data.length, batch.usage.total_tokens);
 | `encodingFormat` | string | `'float'` (default) or `'base64'` |
 | `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |
 | `inputType` | string | Cohere retrieval role: `'query'` or `'document'` |
+
+## Decisions
+
+Send typed questions to `/alpha/decisions` using your Pollinations key:
+
+```javascript
+import { decision } from '@pollinations/sdk';
+
+const response = await decision({
+  state: "User ticket: I was charged twice for subscription this month.",
+  questions: {
+    department: {
+      type: 'choice',
+      instructions: 'Which team should handle this ticket?',
+      criteria: { billing: 'Payment issues', technical: 'Product bugs' }
+    }
+  }
+});
+
+console.log(response.answers.department.choice);
+```
+
+See the [API reference](https://gen.pollinations.ai/docs) for `choice`, `score`, and `noul` question shapes. The API chooses its default decision model when `model` is omitted.
 
 ## List Available Models
 
@@ -593,7 +609,6 @@ import type {
 | `generateTextStream(prompt, options?)` | Stream text |
 | `chat(messages, options?)` | Chat completion |
 | `chatStream(messages, options?)` | Stream chat |
-| `conversation(options?)` | Create conversation |
 | `generateVideo(prompt, options?)` | Generate a video |
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |

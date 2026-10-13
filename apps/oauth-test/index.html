@@ -52,11 +52,11 @@
 
         <!-- Config -->
         <div class="config">
-            <label>Server</label>
+            <label for="auth-server">Server</label>
             <input id="auth-server" type="text" value="http://localhost:3000" />
         </div>
         <div class="config">
-            <label>Redirect URI</label>
+            <label for="redirect-uri">Redirect URI</label>
             <input id="redirect-uri" type="text" readonly />
         </div>
 
@@ -65,8 +65,8 @@
         <!-- Pre-auth: Connect button -->
         <div id="pre-auth">
             <div class="actions">
-                <button onclick="startOAuth()">Connect with Pollinations</button>
-                <button onclick="startDeviceFlow()" class="secondary">Device Flow</button>
+                <button type="button" onclick="startOAuth()">Connect with Pollinations</button>
+                <button type="button" onclick="startDeviceFlow()" class="secondary">Device Flow</button>
             </div>
         </div>
 
@@ -78,11 +78,11 @@
                 <pre id="device-user-code" style="font-size: 1.5rem; text-align: center;"></pre>
             </div>
             <p style="margin: 0.75rem 0; font-size: 0.9rem;">
-                Visit <a id="device-verify-link" href="#" target="_blank" style="color: #a78bfa;"></a> and enter the code above.
+                Visit <!-- biome-ignore lint/a11y/useValidAnchor: startDeviceFlow() sets href before this section is shown --><a id="device-verify-link" target="_blank" style="color: #a78bfa;">the verification page</a> and enter the code above.
             </p>
             <div id="device-status" class="status info">Waiting for authorization...</div>
             <div class="actions">
-                <button onclick="cancelDeviceFlow()" class="danger">Cancel</button>
+                <button type="button" onclick="cancelDeviceFlow()" class="danger">Cancel</button>
             </div>
         </div>
 
@@ -108,15 +108,15 @@
             </div>
 
             <div class="actions">
-                <button onclick="refreshTokens()" class="secondary">Refresh Tokens</button>
-                <button onclick="disconnect()" class="danger">Disconnect</button>
+                <button type="button" onclick="refreshTokens()" class="secondary">Refresh Tokens</button>
+                <button type="button" onclick="disconnect()" class="danger">Disconnect</button>
             </div>
 
             <!-- Test Generate -->
             <div id="generate-section">
                 <h2>Test API Call</h2>
                 <div class="actions">
-                    <button onclick="testGenerate()">Test Chat Completion</button>
+                    <button type="button" onclick="testGenerate()">Test Chat Completion</button>
                 </div>
                 <div id="generate-result"></div>
             </div>

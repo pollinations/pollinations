@@ -17,12 +17,6 @@ export async function callAlibabaImage(
 ): Promise<ImageGenerationResult> {
     const qwen = model === "qwen-image-3.0-pro";
     const images = params.image ?? [];
-    const maxImages = qwen ? 3 : 9;
-    if (images.length > maxImages) {
-        throw UpstreamError.fromProvider(400, {
-            message: `This model supports at most ${maxImages} reference images`,
-        });
-    }
     let size: string;
     if (qwen) {
         const { width, height } = resolveQwenImage3Size(params);

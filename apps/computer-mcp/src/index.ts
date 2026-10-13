@@ -133,7 +133,7 @@ export class Computer extends withWorkspace(
                         // Part of the loader id: stable, so the loaded shell
                         // isolate is reused. Change it when the shell code
                         // changes, or a cached isolate keeps the old code.
-                        revision: "bytes-read",
+                        revision: "bytes-substitution",
                     },
                     commands: [
                         jqModules,

@@ -215,20 +215,20 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for([
-    "pollinations",
-    "ask-jev",
-])("requires a Pollinations credential before invoking %s", async (serverId) => {
-    const response = await SELF.fetch(
-        `https://gen.pollinations.ai/mcp/${serverId}`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(MCP_REQUEST),
-        },
-    );
-    expect(response.status).toBe(401);
-});
+test.for(["pollinations", "ask-jev"])(
+    "requires a Pollinations credential before invoking %s",
+    async (serverId) => {
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({
@@ -296,7 +296,9 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
 });
 
 test("routes Composio with the authenticated user", async () => {
-    const { key, userId } = await createTestApiKey();
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/composio",
         {
@@ -354,6 +356,59 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.9998,
         packBalance: 0,
+    });
+});
+
+test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
+    const { key } = await createTestApiKey();
+    const callFfmpeg = (body: unknown) =>
+        SELF.fetch("https://gen.pollinations.ai/mcp/ffmpeg", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+    const refused = await callFfmpeg(MCP_REQUEST);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+    const initialized = await callFfmpeg({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {},
+    });
+    expect(initialized.status).toBe(200);
+});
+
+test("refuses tool calls from a Quest Pollen only key without Quest Pollen", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        questPollenOnly: true,
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "QUEST_POLLEN_ONLY" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
     });
 });
 

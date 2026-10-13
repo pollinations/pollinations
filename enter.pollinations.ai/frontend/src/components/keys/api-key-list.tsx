@@ -244,6 +244,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 }
                                 pollenBudget={apiKey.pollenBalance}
                             />
+                            {apiKey.questPollenOnly && (
+                                <span className="text-theme-text-muted">
+                                    Quest pollen only
+                                </span>
+                            )}
                             <span className="flex items-center gap-1">
                                 <span className="text-theme-text-muted">
                                     Models:
@@ -365,14 +370,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
+                            Pollinations account and spend their own pollen.
                             Connect your app with the Pollinations SDK.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Turn on earnings to receive 20% of the Pollen users
+                            Turn on earnings to receive 20% of the pollen users
                             spend in your app.
                         </span>
                     </p>

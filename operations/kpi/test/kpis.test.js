@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { dataWindow } from "../src/lib/chartScale";
 import { buildDailyComparison } from "../src/lib/dailyComparison";
 import { calcChange, formatValue } from "../src/lib/format";
 import {
@@ -15,8 +16,44 @@ import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
 
+describe("Zero-based chart axes", () => {
+    it("starts positive revenue and count series at zero", () => {
+        expect(dataWindow([123, 500]).min).toBe(0);
+        expect(dataWindow([6000, 7000]).min).toBe(0);
+        expect(dataWindow([10, 10]).min).toBe(0);
+        expect(dataWindow([0, 0]).max).toBeGreaterThan(0);
+    });
+    it("keeps negative margins and zero visible", () => {
+        expect(dataWindow([-20, -10]).min).toBeLessThan(-20);
+        expect(dataWindow([-20, -10]).max).toBe(0);
+        expect(dataWindow([-10, 20]).min).toBeLessThan(-10);
+        expect(dataWindow([-10, 20]).max).toBeGreaterThan(20);
+    });
+});
+
 describe("Official app requests", () => {
     const row = KPIS.find((item) => item.key === "officialApps");
+    it("only shows major apps individually while preserving the full total", () => {
+        expect(row.views.map(({ key }) => key)).toEqual([
+            "officialApp_all",
+            "officialApp_cli",
+            "officialApp_play",
+            "officialApp_openwebui",
+        ]);
+        const week = {
+            officialApp_all: 20,
+            officialApp_cli: 4,
+            officialApp_play: 5,
+            officialApp_openwebui: 6,
+            officialApp_playground: 3,
+            officialApp_sirius: 2,
+        };
+        expect(kpiValue(kpiView(row), week)).toBe(20);
+        expect(kpiView(row, 4).key).toBe("officialApp_all");
+        expect(KPI_VIEWS.some(({ key }) => key === "officialApp_sirius")).toBe(
+            false,
+        );
+    });
     it("defaults to all, switches keys and exposes every view to the graph", () => {
         expect(kpiView(row).key).toBe("officialApp_all");
         const week = {

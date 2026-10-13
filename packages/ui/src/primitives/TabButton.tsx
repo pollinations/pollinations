@@ -12,13 +12,17 @@ type TabButtonOwnProps = {
     /** Omit when rendering as a link (`as`) and navigation carries the change. */
     onClick?: () => void;
     children: ReactNode;
+    /** Leading icon, sized to the label like Button's. */
+    icon?: ReactNode;
     size?: "lg" | "md" | "sm" | "xs";
     variant?: "soft" | "ghost";
     /**
      * `amber` and `green` fill the selected pill with the wallet's pale paid
      * and Quest Pollen chip colours, which read at the same strength together.
+     * `brand` is site navigation: bold labels, the brand accent for the
+     * current page and a lighter preview of it on hover.
      */
-    intent?: "neutral" | "amber" | "green";
+    intent?: "neutral" | "amber" | "green" | "brand";
     /** Muted secondary text after the label, e.g. a model's creator. */
     detail?: ReactNode;
     ariaLabel?: string;
@@ -92,6 +96,13 @@ const intentClasses = {
         inactive:
             "polli:bg-transparent polli:text-tier-deep polli:hover:bg-tier-pale/60",
     },
+    // Site navigation: the current page is the one full brand pill; hover
+    // only previews it, so "where you are" never doubles up.
+    brand: {
+        active: "polli:bg-brand-accent polli:font-bold polli:text-brand-dark",
+        inactive:
+            "polli:bg-transparent polli:font-bold polli:text-theme-text-strong polli:hover:bg-brand-accent/60 polli:hover:text-brand-dark",
+    },
 } as const;
 
 export function TabButton<T extends ElementType = "button">({
@@ -99,6 +110,7 @@ export function TabButton<T extends ElementType = "button">({
     active,
     onClick,
     children,
+    icon,
     size = "md",
     variant = "soft",
     intent,
@@ -155,6 +167,14 @@ export function TabButton<T extends ElementType = "button">({
                 className,
             )}
         >
+            {icon && (
+                <span
+                    aria-hidden="true"
+                    className="polli:mr-1.5 polli:flex polli:size-4 polli:shrink-0 polli:[&>svg]:size-full"
+                >
+                    {icon}
+                </span>
+            )}
             {children}
             {detail != null && (
                 <span className="polli:ml-1 polli:font-normal polli:opacity-70">

@@ -769,25 +769,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
-        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
         ],
-        provider: "azure",
+        provider: "openrouter",
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
-        // 2026-10-13 and its retirement schedule 2026-10-16.
-        // Provider retires this route on 2026-10-09.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.8),
-            completionTextTokens: perMillion(3.2),
+            // Cohere's OpenRouter route, including the 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(1.5) * 1.055,
         },
         title: "Cohere Command A+",
         description:

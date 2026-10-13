@@ -4,6 +4,10 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
 ### Added
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
@@ -20,6 +24,9 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
   of throwing a JSON `SyntaxError`.
 - `chatStream()` rejects prematurely closed responses without a terminal
   finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
 
 ## [5.1.0-alpha.14] - 2026-10-08
 

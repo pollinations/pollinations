@@ -22,11 +22,7 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
-    [
-        "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        "qwen/qwen3.8-27b",
-        "akashml/fp8",
-    ],
+    ["qwen/qwen3.8-27b:openrouter:reka-fp8", "qwen/qwen3.8-27b", "reka/fp8"],
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
@@ -205,33 +201,32 @@ describe("static provider fallbacks", () => {
         });
     });
 
-    it.each([
-        "qwen/qwen3.7-flash",
-        "qwen/qwen3.8-flash",
-        "qwen/qwen3.8-max",
-    ])("preserves direct Responses support for %s", (model) => {
-        const request = {
-            model,
-            input: "Hello",
-            stream: false,
-            store: false as const,
-            safe: undefined,
-        };
-        expect(resolveDirectResponsesTarget(model, request)).toMatchObject({
-            endpoint:
-                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
-            model: model.slice("qwen/".length),
-        });
-        expect(
-            resolveDirectResponsesTarget(
-                `${model}:openrouter:alibaba`,
-                request,
-            ),
-        ).toMatchObject({
-            endpoint: "https://openrouter.ai/api/v1/responses",
-            model,
-        });
-    });
+    it.each(["qwen/qwen3.7-flash", "qwen/qwen3.8-flash", "qwen/qwen3.8-max"])(
+        "preserves direct Responses support for %s",
+        (model) => {
+            const request = {
+                model,
+                input: "Hello",
+                stream: false,
+                store: false as const,
+                safe: undefined,
+            };
+            expect(resolveDirectResponsesTarget(model, request)).toMatchObject({
+                endpoint:
+                    "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+                model: model.slice("qwen/".length),
+            });
+            expect(
+                resolveDirectResponsesTarget(
+                    `${model}:openrouter:alibaba`,
+                    request,
+                ),
+            ).toMatchObject({
+                endpoint: "https://openrouter.ai/api/v1/responses",
+                model,
+            });
+        },
+    );
 
     it("keeps Mistral Large on Azure and bills its direct fallback at the public quote", () => {
         const model = "mistralai/mistral-large-3";
@@ -415,21 +410,24 @@ describe("static provider fallbacks", () => {
         "openai/gpt-6-luna",
         "openai/gpt-6.1-sol",
         "openai/gpt-6-sol",
-    ] as const)("keeps the same price and Quest access when %s falls back to OpenAI", (model) => {
-        const primary = TEXT_SERVICES[model];
-        const fallback = TEXT_SERVICES[`${model}:openai`];
-        expect(primary.provider).toBe("azure");
-        expect(primary.fallbacks).toEqual([`${model}:openai`]);
-        expect(primary.paidOnly).toBe(false);
-        expect(fallback.provider).toBe("openai");
-        expect(fallback.paidOnly).toBe(false);
-        expect(fallback.cost).toEqual(primary.cost);
-        expect(fallback.costVariants).toEqual(primary.costVariants);
-        expect(fallback.priceMultiplier).toBe(1);
-        expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
-            responsesEndpoint: "https://api.openai.com/v1/responses",
-        });
-    });
+    ] as const)(
+        "keeps the same price and Quest access when %s falls back to OpenAI",
+        (model) => {
+            const primary = TEXT_SERVICES[model];
+            const fallback = TEXT_SERVICES[`${model}:openai`];
+            expect(primary.provider).toBe("azure");
+            expect(primary.fallbacks).toEqual([`${model}:openai`]);
+            expect(primary.paidOnly).toBe(false);
+            expect(fallback.provider).toBe("openai");
+            expect(fallback.paidOnly).toBe(false);
+            expect(fallback.cost).toEqual(primary.cost);
+            expect(fallback.costVariants).toEqual(primary.costVariants);
+            expect(fallback.priceMultiplier).toBe(1);
+            expect(findModelByName(`${model}:openai`)?.config()).toMatchObject({
+                responsesEndpoint: "https://api.openai.com/v1/responses",
+            });
+        },
+    );
 
     it("uses Fal first for Grok Video Pro without changing prices or access", () => {
         const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
@@ -681,6 +679,45 @@ describe("static provider fallbacks", () => {
         ).toBe(true);
     });
 
+    it.each([
+        ["deepseek/deepseek-v4.1-flash", 0.000546],
+        ["deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8", 0.000240751],
+    ] as const)(
+        "bills DeepSeek V4.1 Flash at the current quote when %s serves",
+        (route, cost) => {
+            const billing = calculateUsageBilling({
+                model: "deepseek/deepseek-v4.1-flash",
+                servedBy: TEXT_SERVICES[route],
+                quotedBy: TEXT_SERVICES["deepseek/deepseek-v4.1-flash"],
+                usage: {
+                    promptTextTokens: 1000,
+                    promptCachedTokens: 1000,
+                    completionTextTokens: 100,
+                    completionReasoningTokens: 100,
+                },
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000546, 8);
+        },
+    );
+
+    it("updates StreamLake's DeepSeek Pro cost without changing the caller's quote", () => {
+        const billing = calculateUsageBilling({
+            model: "deepseek/deepseek-v4-pro",
+            servedBy:
+                TEXT_SERVICES["deepseek/deepseek-v4-pro:openrouter:streamlake"],
+            quotedBy: TEXT_SERVICES["deepseek/deepseek-v4-pro"],
+            usage: {
+                promptTextTokens: 1000,
+                promptCachedTokens: 1000,
+                completionTextTokens: 100,
+                completionReasoningTokens: 100,
+            },
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00113729, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00201231, 8);
+    });
+
     it("keeps the Kimi K3 quote when DeepInfra serves cached and reasoning tokens", () => {
         const primary = TEXT_SERVICES["moonshotai/kimi-k3"];
         const fallback = TEXT_SERVICES["moonshotai/kimi-k3:deepinfra"];
@@ -814,19 +851,19 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.42 / 1_000_000) * 1.055,
         });
         expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
-            promptTextTokens: (0.24 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.024 / 1_000_000) * 1.055,
-            promptImageTokens: (0.24 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.24 / 1_000_000) * 1.055,
-            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+            promptTextTokens: (0.039 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.0039 / 1_000_000) * 1.055,
+            promptImageTokens: (0.039 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.039 / 1_000_000) * 1.055,
+            completionTextTokens: (1.25 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
+            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:reka-fp8"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.25 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.05 / 1_000_000) * 1.055,
-            promptImageTokens: (0.25 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.25 / 1_000_000) * 1.055,
+            promptTextTokens: (0.04 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            promptImageTokens: (0.04 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (2.2 / 1_000_000) * 1.055,
         });
         expect(
@@ -971,25 +1008,31 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])("rejects unsupported Scout capabilities on both routes: %j", (request) => {
-        const before = JSON.stringify(request);
-        expect(
-            textCapabilityError(TEXT_SERVICES["meta/llama-4-scout"], request),
-        ).toMatch(/does not support/);
-        expect(
-            supportsTextFallbackRequest(
-                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
-                request,
-            ),
-        ).toBe(false);
-        expect(JSON.stringify(request)).toBe(before);
-        expect(
-            supportsTextFallbackRequest(
-                TEXT_SERVICES["meta/llama-4-scout"],
-                request,
-            ),
-        ).toBe(false);
-    });
+    ])(
+        "rejects unsupported Scout capabilities on both routes: %j",
+        (request) => {
+            const before = JSON.stringify(request);
+            expect(
+                textCapabilityError(
+                    TEXT_SERVICES["meta/llama-4-scout"],
+                    request,
+                ),
+            ).toMatch(/does not support/);
+            expect(
+                supportsTextFallbackRequest(
+                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                    request,
+                ),
+            ).toBe(false);
+            expect(JSON.stringify(request)).toBe(before);
+            expect(
+                supportsTextFallbackRequest(
+                    TEXT_SERVICES["meta/llama-4-scout"],
+                    request,
+                ),
+            ).toBe(false);
+        },
+    );
 
     it.each([
         { tool_choice: "auto" },
@@ -1025,14 +1068,17 @@ describe("static provider fallbacks", () => {
                 },
             ],
         },
-    ])("allows defaults and large payloads through Novita (case %#)", (request) => {
-        expect(
-            supportsTextFallbackRequest(
-                TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
-                request,
-            ),
-        ).toBe(true);
-    });
+    ])(
+        "allows defaults and large payloads through Novita (case %#)",
+        (request) => {
+            expect(
+                supportsTextFallbackRequest(
+                    TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"],
+                    request,
+                ),
+            ).toBe(true);
+        },
+    );
 
     it("rejects JSON mode on Sonar before generation but keeps JSON schema", () => {
         const sonar = TEXT_SERVICES["perplexity/sonar"];

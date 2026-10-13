@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T20:33:24.756873+00:00",
+  "generated_at": "2026-10-13T20:39:40.243168+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6493,6 +6493,61 @@
           },
           "after": {
             "currency": "pollen"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17203:meta/muse-wonder-1.0",
+      "model_id": "meta/muse-wonder-1.0",
+      "title": "Muse Wonder 1.0",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17203,
+      "url": "https://github.com/pollinations/pollinations/pull/17203",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling",
+            "reasoning"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 1048576
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000422",
+            "promptCachedTokens": "0.000000211",
+            "promptImageTokens": "0.00000422",
+            "completionTextTokens": "0.0000211"
           }
         }
       }

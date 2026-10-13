@@ -195,20 +195,23 @@ describe("canonicalPollenRows", () => {
     it.each([
         ["aws", "bedrock"],
         ["vast", "vast.ai"],
-    ])("aggregates %s and historical %s usage together", (canonical, historical) => {
-        const [row] = canonicalPollenRows([
-            pollen(canonical),
-            pollen(historical, { cost_paid: 10, requests_paid: 20 }),
-        ]);
+    ])(
+        "aggregates %s and historical %s usage together",
+        (canonical, historical) => {
+            const [row] = canonicalPollenRows([
+                pollen(canonical),
+                pollen(historical, { cost_paid: 10, requests_paid: 20 }),
+            ]);
 
-        expect(row).toMatchObject({
-            vendor: canonical,
-            cost_paid: 11,
-            cost_quests: 4,
-            requests_paid: 25,
-            requests_quests: 12,
-        });
-    });
+            expect(row).toMatchObject({
+                vendor: canonical,
+                cost_paid: 11,
+                cost_quests: 4,
+                requests_paid: 25,
+                requests_quests: 12,
+            });
+        },
+    );
 
     it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
         // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its

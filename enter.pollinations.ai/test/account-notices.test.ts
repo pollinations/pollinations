@@ -102,6 +102,9 @@ test("running-low email goes out once per 30 days below the threshold", async ()
         "Your last pack of 20.00 Pollen lasted 4 days.",
     );
     expect(sent[0].html).toContain("/quests");
+    expect(sent[0].text).toContain(
+        "When auto top-up first refills your balance, you get 20 Quest Pollen.",
+    );
 
     await env.DB.prepare(
         "UPDATE user SET low_balance_notified_at = ? WHERE id = 'low'",
@@ -114,6 +117,11 @@ test("running-low email goes out once per 30 days below the threshold", async ()
 
 test("a failed running-low email frees the slot for the next crossing", async () => {
     await addUser("bounce", { packBalance: 1 });
+    // A past paid auto top-up rules out the first-auto-top-up quest offer.
+    await env.DB.prepare(
+        `INSERT INTO stripe_auto_top_up_attempt (id, user_id, amount_usd, status)
+        VALUES ('attempt_bounce', 'bounce', 5, 'paid')`,
+    ).run();
 
     await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");
     expect(await notifiedAt("bounce")).toBeNull();
@@ -122,6 +130,7 @@ test("a failed running-low email frees the slot for the next crossing", async ()
     await processAutoTopUpForUser(notifyEnv, "bounce");
     expect(sent).toHaveLength(1);
     expect(sent[0].text).not.toContain("Your last pack");
+    expect(sent[0].text).not.toContain("Quest Pollen.");
     expect(await notifiedAt("bounce")).not.toBeNull();
 });
 
@@ -140,6 +149,7 @@ test("switching auto top-up off emails once and replaces the running-low email",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up is off"]);
     expect(sent[0].text).toContain("paid balance of 2.00 Pollen");
+    expect(sent[0].text).toContain("you get 20 Quest Pollen");
 });
 
 test("the unsubscribe link stops every email", async () => {

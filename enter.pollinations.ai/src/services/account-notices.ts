@@ -30,9 +30,17 @@ type Notice = {
 
 const pollen = (amount: number) => `${Math.max(0, amount).toFixed(2)} Pollen`;
 
+// The first_auto_top_up quest pays 20 Quest Pollen for a user's first paid
+// auto top-up, so only users who never had one get the offer.
+export const AUTO_TOP_UP_OFFER_COLUMN = `NOT EXISTS (
+    SELECT 1 FROM stripe_auto_top_up_attempt
+        WHERE user_id = user.id AND status = 'paid'
+) AS autoTopUpOffer`;
+
 export function runningLowNotice(
     balance: number,
     lastPack: { pollen: number; days: number } | null,
+    autoTopUpOffer: boolean,
 ): Notice {
     return {
         id: "running_low",
@@ -45,6 +53,11 @@ export function runningLowNotice(
                   ]
                 : []),
             "Top up now, or turn on auto top-up in your wallet so it refills by itself.",
+            ...(autoTopUpOffer
+                ? [
+                      "When auto top-up first refills your balance, you get 20 Quest Pollen.",
+                  ]
+                : []),
         ],
         button: { label: "Top up", path: "/top-up" },
         footnote: {
@@ -54,13 +67,21 @@ export function runningLowNotice(
     };
 }
 
-export function autoTopUpOffNotice(balance: number): Notice {
+export function autoTopUpOffNotice(
+    balance: number,
+    autoTopUpOffer: boolean,
+): Notice {
     return {
         id: "auto_top_up_off",
         subject: "Auto top-up is off",
         paragraphs: [
             "We couldn't use your saved payment details, so auto top-up is now off.",
             `Your keys keep working until your paid balance of ${pollen(balance)} runs out. You can update your card and turn it back on in your wallet.`,
+            ...(autoTopUpOffer
+                ? [
+                      "When auto top-up first refills your balance, you get 20 Quest Pollen.",
+                  ]
+                : []),
         ],
         button: { label: "Open wallet", path: "/pollen" },
     };
@@ -181,10 +202,11 @@ export async function sendRunningLowNotice(
             WHERE id = ?
                 AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
                 AND email_unsubscribed_at IS NULL
-            RETURNING email, COALESCE(pack_balance, 0) AS balance`,
+            RETURNING email, COALESCE(pack_balance, 0) AS balance,
+                ${AUTO_TOP_UP_OFFER_COLUMN}`,
     )
         .bind(now, userId, now - NOTICE_COOLDOWN_MS)
-        .first<{ email: string; balance: number }>();
+        .first<{ email: string; balance: number; autoTopUpOffer: number }>();
     if (!user) return;
 
     // created_at holds seconds on old rows and milliseconds on new ones.
@@ -205,6 +227,7 @@ export async function sendRunningLowNotice(
             pollen: lastPack.pollen,
             days: Math.max(1, Math.round((now - lastPack.createdMs) / DAY_MS)),
         },
+        Boolean(user.autoTopUpOffer),
     );
     if (await sendNotice(env, { id: userId, email: user.email }, notice)) {
         return;

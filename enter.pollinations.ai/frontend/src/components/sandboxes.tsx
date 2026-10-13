@@ -37,6 +37,8 @@ type Sandbox = Size & {
     startedAt: string;
     // When a running sandbox's paid time ends, or when a paused one paused.
     endAt: string;
+    // Not E2B's: when gen keeps it running until, paying an hour at a time.
+    keptUntil?: string;
 };
 
 type Pricing = {
@@ -47,14 +49,29 @@ type Pricing = {
     templates: Record<string, Size>;
 };
 
-// Time paid up front by a create, a resume or more time: polli's 10 minutes,
-// or up to E2B's 24-hour run.
+// E2B's longest timeout, about 68 years: gen keeps the sandbox running until
+// it's paused or killed.
+const FOREVER = 2 ** 31 - 1;
+
+// How long a create, a resume or more time runs the sandbox for: polli's 10
+// minutes, any time from that on, or until it's stopped. Up to the end of
+// E2B's 24-hour run it's paid up front; past it, gen keeps the sandbox running
+// and pays an hour at a time.
 const LEASES = [
     { label: "10 min", seconds: 600 },
     { label: "1 hour", seconds: 3600 },
     { label: "8 hours", seconds: 8 * 3600 },
     { label: "24 hours", seconds: 24 * 3600 },
+    { label: "Until I stop it", seconds: FOREVER },
 ];
+const UNITS = [
+    { label: "minutes", seconds: 60 },
+    { label: "hours", seconds: 3600 },
+    { label: "days", seconds: 86_400 },
+];
+
+// What E2B accepts: `name`, `name:tag` or `team/name:tag`.
+const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 
 type Pending =
     | { action: "create"; template: string }
@@ -78,15 +95,15 @@ const pollen = (amount: number) => `${Number(amount.toPrecision(2))} Pollen`;
 const sizeLabel = ({ cpuCount, memoryMB }: Size) =>
     `${cpuCount} vCPU, ${memoryMB / 1024} GB`;
 
-// Add time adds to a running sandbox's paid time, up to the end of its run:
-// E2B ends a run 24 hours after the create or resume, and gen charges nothing
-// past that.
-function addTimeLeases(pricing: Pricing, sandbox: Sandbox) {
-    const room =
-        Date.parse(sandbox.startedAt) +
-        pricing.maxRunSeconds * 1000 -
-        Date.parse(sandbox.endAt);
-    return LEASES.filter(({ seconds }) => seconds * 1000 <= room);
+// Past half of E2B's longest timeout, it runs until it's stopped.
+const forever = (until: string) =>
+    Date.parse(until) - Date.now() > FOREVER * 500;
+
+function customError(seconds: number) {
+    if (!(seconds > 0)) return "Enter how long, e.g. 2 days.";
+    if (seconds < 600) return "At least 10 minutes.";
+    if (seconds > FOREVER) return "That’s longer than Until I stop it.";
+    return null;
 }
 
 // What the pending action pays up front, or why it can't be known yet.
@@ -117,7 +134,7 @@ function SandboxCard({
     onKill: () => void;
 }) {
     const running = sandbox.state === "running";
-    const paidToRunEnd = running && !addTimeLeases(pricing, sandbox).length;
+    const kept = running ? sandbox.keptUntil : undefined;
     return (
         <Surface className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -137,9 +154,13 @@ function SandboxCard({
                     </Text>
                 </div>
                 <Chip intent={running ? "success" : "neutral"} size="md">
-                    {running
-                        ? `Paid until ${new Date(sandbox.endAt).toLocaleString()}`
-                        : "Paused"}
+                    {!running
+                        ? "Paused"
+                        : !kept
+                          ? `Paid until ${new Date(sandbox.endAt).toLocaleString()}`
+                          : forever(kept)
+                            ? "Runs until you stop it"
+                            : `Runs until ${new Date(kept).toLocaleString()}`}
                 </Chip>
             </div>
             <CopyField
@@ -147,20 +168,17 @@ function SandboxCard({
                 value={`ssh ${sandbox.sandboxID}.polli`}
             />
             <ButtonGroup>
-                <Button
-                    size="sm"
-                    intent="commit"
-                    icon={running ? <PlusIcon /> : <PlayIcon />}
-                    disabled={busy || paidToRunEnd}
-                    title={
-                        paidToRunEnd
-                            ? "Paid up to the end of its 24-hour run. Pause and resume it to start a new run."
-                            : undefined
-                    }
-                    onClick={onConnect}
-                >
-                    {running ? "Add time" : "Resume"}
-                </Button>
+                {!(kept && forever(kept)) && (
+                    <Button
+                        size="sm"
+                        intent="commit"
+                        icon={running ? <PlusIcon /> : <PlayIcon />}
+                        disabled={busy}
+                        onClick={onConnect}
+                    >
+                        {running ? "Add time" : "Resume"}
+                    </Button>
+                )}
                 {running && (
                     <Button
                         size="sm"
@@ -193,7 +211,9 @@ export function Sandboxes() {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [template, setTemplate] = useState("pollinations");
     const [pending, setPending] = useState<Pending | null>(null);
-    const [lease, setLease] = useState(LEASES[0].seconds);
+    const [lease, setLease] = useState<number | "custom">(LEASES[0].seconds);
+    const [amount, setAmount] = useState("2");
+    const [unit, setUnit] = useState(86_400);
 
     const load = useCallback(async () => {
         setLoadError(null);
@@ -233,15 +253,31 @@ export function Sandboxes() {
         }
     }
 
-    // Create and resume start a new run; Add time stays within the current one.
+    const templateError =
+        template.trim() && !TEMPLATE_NAME.test(template.trim())
+            ? "Not a template name. Use lowercase letters, digits, - and _, e.g. claude or team/name:tag."
+            : null;
+
+    const seconds =
+        lease === "custom" ? Math.round(Number(amount) * unit) : lease;
+    const durationError = lease === "custom" ? customError(seconds) : null;
+    // Create and resume run from now and start a new run; Add time adds to
+    // the time a running sandbox already runs for.
     const addTo =
         pending?.action === "connect" && pending.sandbox.state === "running"
             ? pending.sandbox
             : null;
-    const leases = pricing && addTo ? addTimeLeases(pricing, addTo) : LEASES;
-    const seconds = leases.some((option) => option.seconds === lease)
-        ? lease
-        : (leases[0]?.seconds ?? 0);
+    const now = Date.now();
+    const from = addTo ? Date.parse(addTo.keptUntil ?? addTo.endAt) : now;
+    const timeout = Math.min(FOREVER, Math.ceil((from - now) / 1000) + seconds);
+    const runEnd =
+        (addTo ? Date.parse(addTo.startedAt) : now) +
+        (pricing?.maxRunSeconds ?? 0) * 1000;
+    // Past the end of the run, gen keeps it running an hour at a time.
+    const kept = now + timeout * 1000 > runEnd;
+    const paidNow =
+        timeout -
+        (addTo ? Math.max(0, Date.parse(addTo.endAt) - now) / 1000 : 0);
 
     function confirm() {
         if (!pending) return;
@@ -250,18 +286,21 @@ export function Sandboxes() {
             void run("new", () =>
                 e2b("/sandboxes", "POST", {
                     templateID: pending.template,
-                    timeout: seconds,
+                    timeout,
                     autoPause: true,
+                }).catch((error: Error) => {
+                    throw /not found/i.test(error.message)
+                        ? new Error(
+                              `There’s no public template “${pending.template}”. Check the name, or start with pollinations.`,
+                          )
+                        : error;
                 }),
             );
             return;
         }
         const id = pending.sandbox.sandboxID;
-        // Connect sets the lease from now, so Add time counts the paid time
-        // left. Unlike timeout, connect leaves a keep set from the CLI.
-        const timeout = addTo
-            ? Math.ceil((Date.parse(addTo.endAt) - Date.now()) / 1000) + seconds
-            : seconds;
+        // Connect sets the time from now and, unlike timeout, never shortens
+        // it, so a keep set from the CLI stays.
         void run(id, () =>
             pending.action === "kill"
                 ? e2b(`/sandboxes/${id}`, "DELETE")
@@ -325,6 +364,8 @@ export function Sandboxes() {
                                     value={template}
                                     list="sandbox-templates"
                                     required
+                                    error={!!templateError}
+                                    aria-describedby="sandbox-template-help"
                                     onChange={(event) =>
                                         setTemplate(event.currentTarget.value)
                                     }
@@ -341,13 +382,39 @@ export function Sandboxes() {
                                 type="submit"
                                 intent="commit"
                                 icon={<PlusIcon />}
-                                disabled={full || busyId === "new"}
+                                disabled={
+                                    full || busyId === "new" || !!templateError
+                                }
                             >
                                 {busyId === "new"
                                     ? "Creating…"
                                     : "Create sandbox"}
                             </Button>
                         </form>
+                        {templateError ? (
+                            <p
+                                id="sandbox-template-help"
+                                className="text-sm text-intent-danger-text"
+                            >
+                                {templateError}
+                            </p>
+                        ) : (
+                            <Text
+                                id="sandbox-template-help"
+                                size="sm"
+                                tone="muted"
+                            >
+                                {Object.entries(pricing.templates)
+                                    .map(
+                                        ([id, size]) =>
+                                            `${id} (${sizeLabel(size)})`,
+                                    )
+                                    .join(" and ")}{" "}
+                                come with polli logged in. Or any public E2B
+                                template, e.g. claude, codex, opencode or base;
+                                team/name:tag works too.
+                            </Text>
+                        )}
                         <Text size="sm" tone={full ? "strong" : "muted"}>
                             {running} of {pricing.maxRunning} running at once.{" "}
                             {full
@@ -390,11 +457,11 @@ export function Sandboxes() {
                 )}
             </SectionContent>
             <Text size="sm" tone="muted">
-                Sandbox time is paid in advance from your Pollen and isn’t
-                refunded when you pause or kill a sandbox early. A sandbox
-                pauses when its paid time ends; paused ones keep their files and
-                cost nothing. To ssh in, install polli (
-                <code>npm i -g @pollinations/cli</code>), run{" "}
+                Sandbox time is paid in advance from your Pollen, past 24 hours
+                an hour at a time, and isn’t refunded when you pause or kill a
+                sandbox early. A sandbox pauses when its paid time ends; paused
+                ones keep their files and cost nothing. To ssh in, install polli
+                (<code>npm i -g @pollinations/cli</code>), run{" "}
                 <code>polli auth login</code> and{" "}
                 <code>polli sandbox ssh-config</code> once. ssh resumes a paused
                 sandbox and pays 10 minutes at a time while connected.
@@ -418,6 +485,7 @@ export function Sandboxes() {
                 confirmLabel={
                     pending?.action === "kill" ? "Kill" : "Pay and continue"
                 }
+                confirmDisabled={!!spends && !!durationError}
                 onConfirm={confirm}
                 onCancel={() => setPending(null)}
             >
@@ -441,22 +509,85 @@ export function Sandboxes() {
                             {addTo ? "Add" : "Keep it running for"}
                         </ResourceConfirmationContent>
                         <ButtonGroup>
-                            {leases.map((option) => (
+                            {LEASES.map((option) => (
                                 <TabButton
                                     key={option.seconds}
                                     size="sm"
-                                    active={seconds === option.seconds}
+                                    active={lease === option.seconds}
                                     onClick={() => setLease(option.seconds)}
                                 >
                                     {option.label}
                                 </TabButton>
                             ))}
+                            <TabButton
+                                size="sm"
+                                active={lease === "custom"}
+                                onClick={() => setLease("custom")}
+                            >
+                                Custom
+                            </TabButton>
                         </ButtonGroup>
-                        <Alert intent="warning">
-                            This spends Pollen now:{" "}
-                            {upFront(pricing, pending, seconds)}. Paid in
-                            advance, not refunded.
-                        </Alert>
+                        {lease === "custom" && (
+                            <div className="flex flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        inputMode="decimal"
+                                        aria-label="How long"
+                                        value={amount}
+                                        error={!!durationError}
+                                        className="w-24"
+                                        onChange={(event) =>
+                                            setAmount(event.currentTarget.value)
+                                        }
+                                    />
+                                    <ButtonGroup>
+                                        {UNITS.map((option) => (
+                                            <TabButton
+                                                key={option.seconds}
+                                                size="sm"
+                                                active={unit === option.seconds}
+                                                onClick={() =>
+                                                    setUnit(option.seconds)
+                                                }
+                                            >
+                                                {option.label}
+                                            </TabButton>
+                                        ))}
+                                    </ButtonGroup>
+                                </div>
+                                {durationError && (
+                                    <p className="text-sm text-intent-danger-text">
+                                        {durationError}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                        {!durationError && (
+                            <Alert intent="warning">
+                                {kept ? (
+                                    <>
+                                        This keeps it running until{" "}
+                                        {timeout === FOREVER
+                                            ? "you pause or kill it"
+                                            : new Date(
+                                                  now + timeout * 1000,
+                                              ).toLocaleString()}
+                                        , spending Pollen an hour at a time,
+                                        paid in advance and not refunded. Each
+                                        hour: {upFront(pricing, pending, 3600)}.
+                                    </>
+                                ) : (
+                                    <>
+                                        This spends Pollen now:{" "}
+                                        {upFront(pricing, pending, paidNow)}.
+                                        Paid in advance, not refunded.
+                                    </>
+                                )}
+                            </Alert>
+                        )}
                     </>
                 )}
             </ConfirmationDialog>

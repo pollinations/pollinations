@@ -4,9 +4,11 @@ import {
     extractApiKey,
     loadActiveApiKeyAuthResult,
 } from "@shared/auth/api-key.ts";
+import { isUserBanned } from "@shared/auth/ban.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { roundPollenLedgerAmount } from "@shared/billing/precision.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { user } from "@shared/db/better-auth.ts";
 import { sandboxKeep } from "@shared/db/sandbox.ts";
 import { handleError } from "@shared/error.ts";
 import { sendToTinybird } from "@shared/events.ts";
@@ -17,7 +19,7 @@ import {
     priceToEventParams,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { eq, lte } from "drizzle-orm";
+import { eq, inArray, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { type Context, Hono, type MiddlewareHandler, type Next } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -68,10 +70,11 @@ const LOGGED_IN_TEMPLATES = Object.keys(TEMPLATE_SIZES);
 const POLLI_PERMISSIONS = ["profile", "usage", "machines"];
 // E2B takes a timeout as 32-bit seconds.
 const MAX_TIMEOUT_SECONDS = 2 ** 31 - 1;
-// A timeout past the 24-hour run keeps the sandbox, as on an E2B team with a
-// longer limit: gen's cron renews it until then with the key that set the
-// timeout. The cron runs every 10 minutes and renews a kept sandbox for up to
-// an hour once less than 15 minutes of its lease are left.
+// A timeout past the end of the 24-hour run keeps the sandbox, as on an E2B
+// team with a longer limit: gen's cron renews it until then with the key that
+// set the timeout, or as its owner when the dashboard set it. The cron runs
+// every 10 minutes and renews a kept sandbox for up to an hour once less than
+// 15 minutes of its lease are left.
 const KEEP_LEASE_SECONDS = 3600;
 const KEEP_RENEW_WITHIN_MS = 15 * 60_000;
 
@@ -275,12 +278,13 @@ async function extendLease(
         });
     }
     const now = startTime.getTime();
-    const running = sandbox.state === "running";
-    const paidUntil = running ? Math.max(Date.parse(sandbox.endAt), now) : now;
+    const paidUntil =
+        sandbox.state === "running"
+            ? Math.max(Date.parse(sandbox.endAt), now)
+            : now;
     // E2B silently shortens a lease past the end of the run, so pay only up
-    // to it. Resuming a paused sandbox starts a new run.
-    const runEnd = (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
-    const endAt = Math.min(now + timeout * 1000, runEnd);
+    // to it.
+    const endAt = Math.min(now + timeout * 1000, runEnd(sandbox, now));
     const bill = lease(sandbox, Math.max(0, endAt - paidUntil) / 1000);
     if (bill.price > 0) await requireFunds(c, bill.price, "sandbox lease");
     const response = await e2b(c.env, c.req.path.slice(E2B_PATH.length), {
@@ -292,23 +296,24 @@ async function extendLease(
     return new Response(response.body, response);
 }
 
-// When a keep that `timeout` asks for ends, if it runs past the 24-hour run.
-// The key that asks pays every renewal, so a key has to ask.
-function keepUntil(c: E2bContext, timeout: unknown): Date | null {
-    if (
-        typeof timeout !== "number" ||
-        timeout * 1000 <= MAX_RUN_MS ||
-        timeout > MAX_TIMEOUT_SECONDS
-    ) {
+// When E2B ends the sandbox's run: 24 hours after it started, or from now for
+// a create or a resume, which start a new run.
+function runEnd(sandbox: SandboxDetail | null, now = Date.now()) {
+    const running = sandbox?.state === "running";
+    return (running ? Date.parse(sandbox.startedAt) : now) + MAX_RUN_MS;
+}
+
+// When a keep that `timeout` asks for ends, if it runs past the end of the run.
+function keepUntil(
+    timeout: unknown,
+    sandbox: SandboxDetail | null = null,
+): Date | null {
+    if (typeof timeout !== "number" || timeout > MAX_TIMEOUT_SECONDS) {
         return null;
     }
-    if (!c.var.auth.apiKey) {
-        throw new HTTPException(400, {
-            message:
-                "A timeout over 24 hours is renewed with the API key that sets it. Set it with a key.",
-        });
-    }
-    return new Date(Date.now() + timeout * 1000);
+    const now = Date.now();
+    const until = now + timeout * 1000;
+    return until > runEnd(sandbox, now) ? new Date(until) : null;
 }
 
 // A kept sandbox's lease: an hour, or what is left of a longer one, which
@@ -330,7 +335,8 @@ async function setKeep(c: E2bContext, sandboxId: string, until: Date | null) {
             .where(eq(sandboxKeep.sandboxId, sandboxId));
         return;
     }
-    const apiKeyId = c.var.auth.apiKey?.id ?? "";
+    // Without a key (the dashboard's session), the owner pays the renewals.
+    const apiKeyId = c.var.auth.apiKey?.id ?? null;
     await db
         .insert(sandboxKeep)
         .values({ sandboxId, apiKeyId, until })
@@ -434,7 +440,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     message: "iam and volumeMounts are not supported.",
                 });
             }
-            const until = keepUntil(c, body.timeout);
+            const until = keepUntil(body.timeout);
             // An empty wallet cannot pay for any lease.
             await requireFunds(c, 0, "sandbox lease");
             await requireCapacity(c);
@@ -501,7 +507,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             }
             return c.json(created, 201);
         })
-        .get("/v2/sandboxes", (c) => {
+        .get("/v2/sandboxes", async (c) => {
             // Listing is scoped to the caller's sandboxes, whatever they filter.
             const url = new URL(c.req.url);
             const metadata = new URLSearchParams(
@@ -509,7 +515,35 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             );
             metadata.set(OWNER_KEY, c.var.auth.requireUser().id);
             url.searchParams.set("metadata", metadata.toString());
-            return forward(c, url.search);
+            const response = await forward(c, url.search);
+            if (!response.ok) return response;
+            // Not E2B's: `keptUntil`, when gen keeps a sandbox running until.
+            const sandboxes = await response.json<SandboxDetail[]>();
+            const keeps = sandboxes.length
+                ? await drizzle(c.env.DB)
+                      .select()
+                      .from(sandboxKeep)
+                      .where(
+                          inArray(
+                              sandboxKeep.sandboxId,
+                              sandboxes.map((sandbox) => sandbox.sandboxID),
+                          ),
+                      )
+                : [];
+            const keptUntil = new Map(
+                keeps.map((keep) => [keep.sandboxId, keep.until]),
+            );
+            const headers = new Headers(response.headers);
+            headers.delete("content-length");
+            return new Response(
+                JSON.stringify(
+                    sandboxes.map((sandbox) => ({
+                        ...sandbox,
+                        keptUntil: keptUntil.get(sandbox.sandboxID),
+                    })),
+                ),
+                { status: response.status, headers },
+            );
         })
         .get("/sandboxes/:id", async (c) => c.json(await ownedSandbox(c)))
         .delete("/sandboxes/:id", ownerOnly)
@@ -517,7 +551,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         // `e2b sandbox logs` reads this deprecated v1 path.
         .get("/sandboxes/:id/logs", ownerOnly)
         // A pause ends a keep, as E2B's timeout would; a timeout or connect
-        // over 24 hours starts it again.
+        // past the end of the run starts it again.
         .post("/sandboxes/:id/pause", async (c) => {
             const response = await ownerOnly(c);
             if (response.ok && !keeper) {
@@ -530,7 +564,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
         .post("/sandboxes/:id/timeout", async (c) => {
             const sandbox = await ownedSandbox(c);
             const { timeout } = await readJson<{ timeout: number }>(c);
-            const until = keepUntil(c, timeout);
+            const until = keepUntil(timeout, sandbox);
             const response = await extendLease(
                 c,
                 sandbox,
@@ -548,7 +582,7 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 const sandbox = await ownedSandbox(c);
                 if (sandbox.state === "paused") await requireCapacity(c);
                 const { timeout } = await readJson<{ timeout: number }>(c);
-                const until = keepUntil(c, timeout);
+                const until = keepUntil(timeout, sandbox);
                 const response = await extendLease(
                     c,
                     sandbox,
@@ -597,11 +631,22 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
 export const e2bRoutes = sandboxApi(false, edgeRateLimit, auth());
 
 // Read again for every renewal, so deleting the key, letting it expire,
-// removing its machines permission or banning the account ends them.
+// removing its machines permission or banning the account ends them. A keep
+// set from the dashboard has no key: its owner pays, until banned.
 async function loadPayer(
     env: CloudflareBindings,
-    apiKeyId = "",
+    apiKeyId: string | null,
+    ownerId = "",
 ): Promise<GenerationAuthSnapshot | null> {
+    if (!apiKeyId) {
+        const owner = await drizzle(env.DB)
+            .select()
+            .from(user)
+            .where(eq(user.id, ownerId))
+            .get();
+        if (!owner || isUserBanned(owner)) return null;
+        return { user: { id: owner.id, tier: owner.tier } };
+    }
     const result = await loadActiveApiKeyAuthResult({
         apiKeyId,
         rawApiKey: "",
@@ -663,8 +708,12 @@ export async function keepSandboxes(
         ) {
             return;
         }
-        const payer = await loadPayer(env, apiKeyId);
-        if (!payer) return end(sandboxID, "its key is gone");
+        const payer = await loadPayer(
+            env,
+            apiKeyId,
+            sandbox.metadata?.[OWNER_KEY],
+        );
+        if (!payer) return end(sandboxID, "its payer is gone");
         const api = new Hono<Env>()
             .use("*", requestId())
             .use("*", logger)

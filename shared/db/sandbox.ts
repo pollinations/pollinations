@@ -7,9 +7,10 @@ import { apikey } from "./better-auth.ts";
 
 export const sandboxKeep = sqliteTable("sandbox_keep", {
     sandboxId: text("sandbox_id").primaryKey(),
-    // The key that set the timeout pays every renewal.
-    apiKeyId: text("api_key_id")
-        .notNull()
-        .references(() => apikey.id, { onDelete: "cascade" }),
+    // The key that set the timeout pays every renewal; without one (set from
+    // the dashboard), the sandbox's owner does.
+    apiKeyId: text("api_key_id").references(() => apikey.id, {
+        onDelete: "cascade",
+    }),
     until: integer("until", { mode: "timestamp" }).notNull(),
 });

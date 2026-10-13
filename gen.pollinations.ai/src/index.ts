@@ -92,18 +92,9 @@ function robotsTxt(c: Context<Env>): Response {
     );
 }
 
-function escapeXml(value: string): string {
-    return value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&apos;");
-}
-
 /** Serve a minimal XML sitemap for the public HTML pages (crawler discovery). */
 function sitemapXml(c: Context<Env>): Response {
-    const origin = escapeXml(getPublicOrigin(c));
+    const origin = getPublicOrigin(c);
     return new Response(
         [
             '<?xml version="1.0" encoding="UTF-8"?>',

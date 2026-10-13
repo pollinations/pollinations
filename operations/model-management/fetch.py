@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import parse_qsl, urljoin, urlsplit, urlunsplit
+from xml.etree import ElementTree
 
 
 EXTRACTION_VERSION = 2
@@ -286,6 +287,42 @@ def _excerpt(page, max_characters, focus, cached):
     }
 
 
+def _feed_text(content, url):
+    content = content.lstrip("\ufeff")
+    if not re.match(r"\s*(?:<\?xml\b|<(?:feed|rss)\b)", content):
+        return None
+    if re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", content, re.I):
+        raise ValidationError("feed declarations are not allowed")
+    try:
+        root = ElementTree.fromstring(content)
+    except ElementTree.ParseError as error:
+        raise ValidationError("feed could not be parsed") from error
+    kind = root.tag.rsplit("}", 1)[-1]
+    if kind not in {"feed", "rss"}:
+        return None
+    entries = root.findall("{*}entry") if kind == "feed" else root.findall("./channel/item")
+    if not entries:
+        raise ValidationError("feed contains no entries")
+    parts, links = [], []
+    for entry in entries:
+        title = entry.findtext("{*}title", default="")
+        published = entry.findtext("{*}published") or entry.findtext("{*}pubDate")
+        updated = entry.findtext("{*}updated")
+        link = next((item.get("href") for item in entry.findall("{*}link") if item.get("href") and item.get("rel", "alternate") == "alternate"), None) or entry.findtext("{*}link")
+        body = entry.findtext("{*}content") or entry.findtext("{*}description") or entry.findtext("{*}summary") or ""
+        parser = _TextParser()
+        parser.feed(body)
+        parser.close()
+        parts.append("\n".join(item for item in [f"# {title}", f"Published: {published}" if published else "", f"Updated: {updated}" if updated else "", f"URL: {link}" if link else "", parser.text()] if item))
+        if link:
+            target = urlsplit(urljoin(url, link))
+            if target.hostname in {"reddit.com", "www.reddit.com", "old.reddit.com"} and "/comments/" in target.path:
+                link = urlunsplit((target.scheme, target.netloc, target.path.rstrip("/") + "/.rss", target.query, ""))
+            links.append({"href": link, "text": title})
+        links.extend(parser.links)
+    return "\n\n".join(parts), links
+
+
 def _read_http(url, max_characters, focus=None, include_links=False):
     deadline = time.monotonic() + HTTP_DEADLINE_SECONDS
     current = _validate_url(url, deadline)
@@ -346,12 +383,18 @@ def _read_http(url, max_characters, focus=None, include_links=False):
         if not 200 <= status < 300:
             return _result(current, "scrapling-http", f"upstream returned HTTP {status}")
         content = _page_html(page)
+        if "xml" in str(headers.get("content-type", headers.get("Content-Type", ""))).lower() and isinstance(getattr(page, "body", None), bytes):
+            content = page.body.decode("utf-8", errors="replace")
         if len(content.encode("utf-8")) > MAX_RESPONSE_BYTES:
             return _result(current, "scrapling-http", "upstream content exceeded the fetch limit")
-        parser = _TextParser()
-        parser.feed(content)
-        parser.close()
-        text = parser.text()
+        feed = _feed_text(content, current)
+        if feed:
+            text, links = feed
+        else:
+            parser = _TextParser()
+            parser.feed(content)
+            parser.close()
+            text, links = parser.text(), parser.links
         if not text.strip():
             return _result(current, "scrapling-http", "upstream returned no readable content")
         if _blocked_content(content, text):
@@ -362,7 +405,7 @@ def _read_http(url, max_characters, focus=None, include_links=False):
             "requestedUrl": requested, "url": current, "text": text,
             "pageDigest": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "extractionVersion": EXTRACTION_VERSION,
-            "links": _source_links(current, parser.links),
+            "links": _source_links(current, links),
             "fetchedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         }
         if cache_path:

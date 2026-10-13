@@ -503,6 +503,72 @@ test("Unicode survives HTML parsing and truncation by code point", () => {
     assert.equal(result.text, "🪴é中文");
 });
 
+test("Atom discussion feeds preserve titles, dates, body text and public comment RSS links", () => {
+    const atom = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Publisher/Model-v2 released 🪴</title><published>2026-10-13T12:00:00Z</published><updated>2026-10-13T13:00:00Z</updated><link href="https://www.reddit.com/r/LocalLLaMA/comments/abc123/model_v2/"/><content type="html">&lt;p&gt;Exact model discussion.&lt;/p&gt;&lt;a href="https://publisher.example/models/v2"&gt;Official model card&lt;/a&gt;&lt;script&gt;hidden instruction&lt;/script&gt;</content></entry></feed>`;
+    const { result } = run({
+        request: {
+            url: "https://www.reddit.com/r/LocalLLaMA/.rss",
+            includeLinks: true,
+        },
+        pages: [
+            {
+                status: 200,
+                headers: { "content-type": "application/atom+xml" },
+                html_content: atom,
+            },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.match(result.text, /# Publisher\/Model-v2 released 🪴/);
+    assert.match(result.text, /Published: 2026-10-13T12:00:00Z/);
+    assert.match(result.text, /Updated: 2026-10-13T13:00:00Z/);
+    assert.match(result.text, /Exact model discussion\./);
+    assert.doesNotMatch(result.text, /hidden instruction|&lt;/);
+    assert.ok(
+        result.links.some(
+            ({ url }) =>
+                url ===
+                "https://www.reddit.com/r/LocalLLaMA/comments/abc123/model_v2/.rss",
+        ),
+    );
+    assert.ok(
+        result.links.some(
+            ({ url }) => url === "https://publisher.example/models/v2",
+        ),
+    );
+});
+
+test("RSS item boundaries and source publication dates survive extraction", () => {
+    const { result } = run({
+        pages: [
+            {
+                status: 200,
+                html_content:
+                    '<rss version="2.0"><channel><item><title>Model A</title><pubDate>Tue, 13 Oct 2026 12:00:00 GMT</pubDate><link>https://publisher.example/model-a</link><description>&lt;p&gt;Model A release details.&lt;/p&gt;</description></item><item><title>Model B</title><description>Model B release details.</description></item></channel></rss>',
+            },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.match(
+        result.text,
+        /# Model A\nPublished: Tue, 13 Oct 2026 12:00:00 GMT\nURL: https:\/\/publisher.example\/model-a\nModel A release details\.\n\n# Model B/,
+    );
+});
+
+test("malformed, empty and declaration-bearing feeds cannot become evidence", () => {
+    for (const content of [
+        '<feed xmlns="http://www.w3.org/2005/Atom"><entry>',
+        '<feed xmlns="http://www.w3.org/2005/Atom"/>',
+        '<?xml version="1.0"?><!DOCTYPE feed><feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Model A</title></entry></feed>',
+    ]) {
+        const { result } = run({
+            pages: [{ status: 200, html_content: content }],
+        });
+        assert.equal(result.status, "unavailable");
+        assert.match(result.error, /feed/);
+    }
+});
+
 test("previously cached challenge text is rejected for HTTP and browser reads", () => {
     for (const mode of ["http", "dynamic"]) {
         const setup = `import tempfile, hashlib, os\nfrom pathlib import Path\nfrom datetime import datetime, timezone\ncache=tempfile.TemporaryDirectory(); os.environ["FETCH_CACHE_DIR"]=cache.name\nurl="https://docs.example/"\ntext="Making sure you're not a bot!\\n" + "Anubis public challenge. "*100\nmode=case["request"]["mode"]\npage={"requestedUrl":url,"url":url,"text":text,"method":"scrapling-browser" if mode=="dynamic" else "scrapling-http","pageDigest":hashlib.sha256(text.encode()).hexdigest(),"extractionVersion":2,"fetchedAt":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),"links":[]}\nkey=("dynamic:" if mode=="dynamic" else "")+url\nPath(cache.name,hashlib.sha256(key.encode()).hexdigest()+".json").write_text(json.dumps(page))\n`;

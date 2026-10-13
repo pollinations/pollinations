@@ -1148,8 +1148,8 @@ test("required free feeds all precede optional finish and insufficient selection
     assert.deepEqual(
         f.reads.slice(2).map(({ url }) => url),
         [
-            "https://www.reddit.com/r/LocalLLaMA/top/?t=week",
-            "https://www.reddit.com/r/StableDiffusion/top/?t=week",
+            "https://www.reddit.com/r/LocalLLaMA/.rss",
+            "https://www.reddit.com/r/StableDiffusion/.rss",
         ],
     );
     assert.equal(result.requiredEvidencePending, false);
@@ -1182,12 +1182,12 @@ test("blocked required community seeds fallback only after HTTP and remain insid
     f.services.read = async (args) => ({
         ...(await read(args)),
         status:
-            args.url.includes("/top/") && args.mode === "http"
+            args.url.endsWith("/.rss") && args.mode === "http"
                 ? "unavailable"
                 : "fetched",
         url:
             args.mode === "dynamic"
-                ? args.url.replace("/top/", "/canonical/")
+                ? args.url.replace("/.rss", "/canonical/.rss")
                 : args.url,
         links: [
             {

@@ -42,7 +42,7 @@ export type UseAccountKeyUsageValue = AccountResourceValue<UsageResponse>;
 
 type AccountFetcher<T> = (apiBaseUrl: string, apiKey: string) => Promise<T>;
 
-function useRequiredAuth(): AuthContextValue {
+export function useRequiredAuth(): AuthContextValue {
     const ctx = useContext(AuthContext);
     if (!ctx) {
         throw new Error(

@@ -1,0 +1,38 @@
+{
+  "pr_number": 16407,
+  "title": "feat: grant a model or account permission from errors and chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/16407",
+  "merged_at": "2026-10-13T03:27:50Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added a focused /grant page for approving one model ID, model category, or account permission on an existing key. It asks for a single model when the key lists model IDs, or the category when the key is category-only, and uses PATCH /account/keys/:id to preserve the key’s budget, expiry, and other permissions. Fixable refusals now use a shared link: model-access failures can return a chat reply linking to /grant, while JSON and audio requests keep their 403 and receive the link in error.fixUrl. Sandbox permission failures link to /grant?permission=machines instead of the key editor. Insufficient key budget or wallet funds link to this environment’s /edit-key or /top-up, including ref and redirect; reservation-race errors use those links too. TEXT_PERMISSION_NOTICE_ENABLED can disable the chat reply independently of the existing balance switch. /grant and /edit-key share a key card, and keys from connected apps show the consent screen’s app card. For refused agent runs, /grant can identify the agent and owner after Enter verifies a run-token claim bound to the key, grant, and agent; the page keeps the key card prominent and explains that approval applies to the whole key. Added agent_grant referral tracking.",
+    "keywords": [
+      "key permissions",
+      "model access",
+      "grant page",
+      "agent runs",
+      "error.fixUrl",
+      "sandbox",
+      "billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-16407.jpg",
+    "prompt": "In a cozy pixel-art garden workspace, Polli wears tiny key-shaped glasses and helps a small CRT monitor robot place a single lime-green (#ecf874) permission leaf onto a key-shaped code-plant beside a glowing grant screen. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, with consistent rounded proportions, strictly pixel art and never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T03:29:52.225364+00:00",
+  "area": "Accounts & keys",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "c58779055f3648c36a401d04b5b7cc0dcb8996b4",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "c58779055f3648c36a401d04b5b7cc0dcb8996b4^1",
+    "after_ref": "c58779055f3648c36a401d04b5b7cc0dcb8996b4"
+  }
+}

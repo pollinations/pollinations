@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T16:00:58.298955+00:00",
+  "generated_at": "2026-10-13T16:22:05.627251+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6126,6 +6126,38 @@
           "after": {
             "currency": "pollen",
             "completionAudioTokens": "0.00000099"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16256:inclusionai/ling-3.1-flash",
+      "model_id": "inclusionai/ling-3.1-flash",
+      "title": "Ling 3.1 Flash",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 16256,
+      "url": "https://github.com/pollinations/pollinations/pull/16256",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "paid_only": {
+          "before": false,
+          "after": true
+        },
+        "pricing": {
+          "before": {
+            "currency": "pollen"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.0000003",
+            "promptCachedTokens": "0.00000006",
+            "completionTextTokens": "0.0000009"
           }
         }
       }

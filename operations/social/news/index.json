@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T01:23:04.199437+00:00",
+  "generated_at": "2026-10-13T03:37:23.429304+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -5896,6 +5896,60 @@
             "promptTextTokens": "0.0000002",
             "promptCachedTokens": "0.000000006",
             "completionTextTokens": "0.0000006"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16589:elevenlabs/eleven-v4",
+      "model_id": "elevenlabs/eleven-v4",
+      "title": "ElevenLabs v4",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-10-13",
+      "pr": 16589,
+      "url": "https://github.com/pollinations/pollinations/pull/16589",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000022"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00008"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16589:elevenlabs/eleven-v4-turbo",
+      "model_id": "elevenlabs/eleven-v4-turbo",
+      "title": "ElevenLabs v4 Turbo",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "audio",
+      "date": "2026-10-13",
+      "pr": 16589,
+      "url": "https://github.com/pollinations/pollinations/pull/16589",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.000011"
+          },
+          "after": {
+            "currency": "pollen",
+            "completionAudioTokens": "0.00004"
           }
         }
       }

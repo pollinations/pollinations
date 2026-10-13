@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -148,6 +149,30 @@ function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     return new Response(body, { status, headers });
 }
 
+/** RFC 7240 `Prefer: respond-async` opt-in, tolerant of other preferences. */
+function prefersRespondAsync(c: Context): boolean {
+    return (c.req.header("prefer") ?? "")
+        .toLowerCase()
+        .split(",")
+        .some((value) => value.trim().split(";")[0] === "respond-async");
+}
+
+/** 202 response that hands the caller the id it polls and downloads with. */
+function acceptedJob(c: Context, id: string): Response {
+    const url = `${getPublicOrigin(c)}/v1/jobs/${id}`;
+    c.header("Location", url);
+    c.header("Retry-After", "5");
+    return c.json(
+        {
+            id,
+            status: "pending",
+            status_url: url,
+            result_url: `${url}/result`,
+        },
+        202,
+    );
+}
+
 /** Runs after generationAccess, so every caller is authorized before joining. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
@@ -171,17 +196,35 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+        const bodyStream =
+            body &&
+            (new Response(body as Uint8Array<ArrayBuffer>).body ?? undefined);
+        // RFC 7240: a media result is stored as a file, so a `respond-async`
+        // caller takes an id now and downloads from /v1/jobs/:id later. Text
+        // responses are streams, not files, so they stay synchronous.
+        const asyncAccepted =
+            cache.adapter.storage === "media" && prefersRespondAsync(c);
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {
-            // A Response body is a byte stream, which RPC streams with flow
-            // control instead of serializing it into the 32 MiB-capped call.
-            outcome = (await stub.startAndWait(
-                job,
-                body &&
-                    (new Response(body as Uint8Array<ArrayBuffer>).body ??
-                        undefined),
-            )) as GenerationOutcome;
+            if (asyncAccepted) {
+                const status = await stub.submit(
+                    job,
+                    bodyStream,
+                    job.auth.user.id,
+                );
+                // A cached result is returned directly (the server may ignore
+                // `Prefer`); otherwise the caller polls the returned id.
+                if (status.state !== "succeeded") return acceptedJob(c, name);
+                outcome = { status: "cached" };
+            } else {
+                // A Response body is a byte stream, which RPC streams with flow
+                // control instead of serializing it into the 32 MiB-capped call.
+                outcome = (await stub.startAndWait(
+                    job,
+                    bodyStream,
+                )) as GenerationOutcome;
+            }
         } catch (error) {
             const rpcError = error as Error & {
                 durableObjectReset?: boolean;

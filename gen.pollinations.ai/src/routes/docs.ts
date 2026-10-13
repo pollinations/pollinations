@@ -41,6 +41,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -220,6 +221,7 @@ const QUICK_START_DOCS = QUICK_START_MD.trim();
 const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
@@ -324,6 +326,7 @@ const GEN_API_DOCS = [
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
+    ASYNC_JOBS_DOCS,
     ACCOUNT_DOCS,
     SAFETY_DOCS,
     ERRORS_DOCS,

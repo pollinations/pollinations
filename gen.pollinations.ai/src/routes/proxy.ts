@@ -117,6 +117,7 @@ import {
     simpleAudioQuerySchema,
     textBodyLimit,
 } from "./generation-handlers.ts";
+import { getJob, getJobResult } from "./jobs.ts";
 import {
     attachModelHealth,
     filterCatalogEntries,
@@ -669,6 +670,48 @@ export const proxyRoutes = new Hono<Env>()
     .get("/register", handleRegisterServer)
     // Auth required for all endpoints below (API key only - no session cookies)
     .use(auth())
+    // Job status and result only need the caller's identity to enforce
+    // ownership, so they sit before the generation rate limit and balance.
+    .get(
+        "/v1/jobs/:id",
+        describeRoute({
+            tags: ["📦 Media Storage"],
+            summary: "Get Async Job",
+            description: [
+                "Returns the status of a media job started with `Prefer: respond-async`.",
+                "",
+                "`status` is `pending`, `succeeded`, or `failed`. While pending the response carries `Retry-After`; a succeeded job returns a `result_url` that serves the generated file. Only the account that submitted the job can read it; unknown and foreign ids both return 404.",
+                "",
+                "A job is one durable generation: resending the identical request or polling repeatedly never triggers another generation or charge.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Job status",
+                },
+                ...errorResponseDescriptions(401, 404),
+            },
+        }),
+        getJob,
+    )
+    .get(
+        "/v1/jobs/:id/result",
+        describeRoute({
+            tags: ["📦 Media Storage"],
+            summary: "Download Async Job Result",
+            description: [
+                "Serves the generated file for a completed `Prefer: respond-async` job.",
+                "",
+                "Returns the stored media bytes with their content type. `409` while the job is still running or failed; `404` when the id is unknown, belongs to another account, or the result has expired.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Generated file",
+                },
+                ...errorResponseDescriptions(401, 404, 409),
+            },
+        }),
+        getJobResult,
+    )
     .use(frontendKeyRateLimit)
     .use(balance)
     .get(

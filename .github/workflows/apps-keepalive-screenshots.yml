@@ -78,8 +78,8 @@ jobs:
       - name: Restore the stopped full-catalog validation evidence
         id: previous
         run: |
-          echo 'run_id=38170877192' >> "$GITHUB_OUTPUT"
-          echo 'artifact_id=11714874876' >> "$GITHUB_OUTPUT"
+          echo 'run_id=38401926804' >> "$GITHUB_OUTPUT"
+          echo 'artifact_id=11818950748' >> "$GITHUB_OUTPUT"
       - name: Restore previous evidence for free source refresh
         id: restore
         if: steps.previous.outputs.artifact_id != ''

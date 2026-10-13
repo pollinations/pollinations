@@ -25,10 +25,11 @@ import { BYOP_QUEST_IDS } from "../services/quests/groups/app-growth.ts";
 // rewards, which pay for other people using what you built.
 const EXCLUDED_QUEST_IDS = [...BYOP_QUEST_IDS, ...BYOM_QUEST_IDS];
 
-// Admins don't compete (see isAdminUser in auth.ts).
-const NOT_ADMIN = and(
+// Admins and the pollinations-ai GitHub user don't compete.
+const LEADERBOARD_USER = and(
     notInArray(schema.user.id, ADMIN_USER_IDS),
     sql`coalesce(${schema.user.role}, '') not like '%admin%'`,
+    sql`coalesce(${schema.user.githubId}, 0) != 314960022`,
 );
 
 const LEADERBOARD_CACHE_KEY = "quests:leaderboard:v1";
@@ -116,7 +117,7 @@ async function buildQuestLeaderboard(
             and(
                 notInArray(rewardsTable.questId, EXCLUDED_QUEST_IDS),
                 isNotNull(schema.user.githubUsername),
-                NOT_ADMIN,
+                LEADERBOARD_USER,
             ),
         )
         .groupBy(githubLogin);
@@ -221,7 +222,7 @@ export async function buildQuestStandings(
             and(
                 gte(rewardsTable.earnedAt, monthStart),
                 isNotNull(schema.user.githubUsername),
-                NOT_ADMIN,
+                LEADERBOARD_USER,
             ),
         )
         .groupBy(githubLogin);

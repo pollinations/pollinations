@@ -17,7 +17,7 @@ npx vitest run test/specific-file.test.ts
 ```
 
 **Fresh worktree / running `npx vitest` directly (not `npm run test`):**
-1. `npm ci` if `node_modules` is missing (also pins `npx biome` to the lockfile version)
+1. `npm ci` if `node_modules` is missing (also pins `npx @biomejs/biome` to the lockfile version)
 2. `npm run decrypt-vars`
 3. "0 tests collected" is a startup error, not a pass. Rerun without `--reporter=json`, or `npx vitest list <file>`, to see the cause.
 

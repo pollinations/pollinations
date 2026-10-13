@@ -136,17 +136,20 @@ describe("qwenImage21Model", () => {
         ["16:9", 1376, 768],
         ["9:16", 768, 1376],
         ["1:1", 1024, 1024],
-    ] as const)("resolves aspectRatio %s into a matching size when dimensions are not explicit", async (aspectRatio, width, height) => {
-        const requests: FalRequest[] = [];
-        mockFal(requests);
+    ] as const)(
+        "resolves aspectRatio %s into a matching size when dimensions are not explicit",
+        async (aspectRatio, width, height) => {
+            const requests: FalRequest[] = [];
+            mockFal(requests);
 
-        await callQwen21("aspect ratio", {
-            ...baseParams,
-            aspectRatio,
-        });
+            await callQwen21("aspect ratio", {
+                ...baseParams,
+                aspectRatio,
+            });
 
-        expect(requests[0].body.image_size).toEqual({ width, height });
-    });
+            expect(requests[0].body.image_size).toEqual({ width, height });
+        },
+    );
 
     it("ignores aspectRatio once dimensions are explicit", async () => {
         const requests: FalRequest[] = [];

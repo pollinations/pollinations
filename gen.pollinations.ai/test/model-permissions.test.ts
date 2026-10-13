@@ -17,11 +17,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { expect } from "vitest";
-import {
-    type AuthEnv,
-    authFromSnapshot,
-    keyPermissionsLink,
-} from "../src/middleware/auth.ts";
+import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
@@ -126,7 +122,7 @@ test("a category allows every model in it and nothing else", async () => {
     const denied = await app.request("/text/openai");
     expect(denied.status).toBe(403);
     expect(await denied.text()).toBe(
-        "Model 'openai' is not allowed for this API key, which is limited to image. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
+        "Model 'openai' is not allowed for this API key, which is limited to image. Allow it at https://enter.pollinations.ai/grant?id=test&category=text&ref=agent_grant",
     );
 });
 
@@ -137,17 +133,9 @@ test("a model ID allows only that model, also after a rename keeps it as an alia
     expect((await app.request("/image/flux-2?alias=flux")).status).toBe(200);
     const denied = await app.request("/image/zimage");
     expect(denied.status).toBe(403);
+    // A key limited to specific models asks for the one model, not its category.
     expect(await denied.text()).toBe(
-        "Model 'zimage' is not allowed for this API key, which is limited to text, flux. Manage key permissions at https://enter.pollinations.ai/edit-key?id=test",
-    );
-});
-
-test("keyPermissionsLink resolves production and staging editor links", () => {
-    expect(keyPermissionsLink("key-1")).toBe(
-        "https://enter.pollinations.ai/edit-key?id=key-1",
-    );
-    expect(keyPermissionsLink("key-1", "staging")).toBe(
-        "https://staging.enter.pollinations.ai/edit-key?id=key-1",
+        "Model 'zimage' is not allowed for this API key, which is limited to text, flux. Allow it at https://enter.pollinations.ai/grant?id=test&model=zimage&ref=agent_grant",
     );
 });
 
@@ -180,7 +168,7 @@ test("requireModelAccess uses staging host for staging environment", async () =>
     } as CloudflareBindings);
     expect(responseEnv.status).toBe(403);
     expect(await responseEnv.text()).toBe(
-        "Model 'forbidden-model' is not allowed for this API key, which is limited to text. Manage key permissions at https://staging.enter.pollinations.ai/edit-key?id=staging-key-id",
+        "Model 'forbidden-model' is not allowed for this API key, which is limited to text. Allow it at https://staging.enter.pollinations.ai/grant?id=staging-key-id&category=image&ref=agent_grant",
     );
 });
 
@@ -257,7 +245,7 @@ test("empty model permissions deny access and return an empty catalog", async ()
     });
 
     const generationResponse = await fetchWorker(
-        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/text/test?model=${RESTRICTED_TEXT_TEST_MODEL}&json=true`,
         { headers },
     );
     expect(generationResponse.status).toBe(403);

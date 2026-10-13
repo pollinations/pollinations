@@ -1237,8 +1237,11 @@ describe("static provider fallbacks", () => {
             servedBy: TEXT_SERVICES[`${primary}:openrouter:novita`],
             quotedBy: TEXT_SERVICES[primary],
         });
-        expect(billed.cost.totalCost).toBe(0);
-        expect(billed.price.totalPrice).toBe(0);
+        const { promptTextTokens, completionTextTokens } =
+            TEXT_SERVICES[primary].cost;
+        const quoted = 1000 * promptTextTokens + 100 * completionTextTokens;
+        expect(billed.cost.totalCost).toBeCloseTo(quoted * 1.055, 12);
+        expect(billed.price.totalPrice).toBeCloseTo(quoted, 12);
     });
 
     it("uses the same primary and single fallback for both API formats", () => {

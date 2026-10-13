@@ -1,0 +1,33 @@
+{
+  "pr_number": 17222,
+  "title": "fix(gen): expose the default MCP server card at the well-known discovery path",
+  "author": "patbing",
+  "url": "https://github.com/pollinations/pollinations/pull/17222",
+  "merged_at": "2026-10-13T05:33:20Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added GET /.well-known/mcp/server-card.json as a discovery alias for the default pollinations MCP Server Card, replacing a 404 for agent scanners that check that path. It returns the same JSON, headers and ETag as the existing SEP-2127 route at /mcp/pollinations/server-card, including support for 304 revalidation. The well-known alias follows the static discovery endpoint policy and has no edge rate limit; the existing /mcp/* route remains unchanged.",
+    "keywords": [
+      "MCP",
+      "server card",
+      "discovery",
+      "well-known",
+      "API",
+      "agent scanners"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17222.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene, she wears tiny librarian glasses and helps a chunky CRT monitor robot find one glowing server card through two little signposted paths among code-plants. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, mint and lavender, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-13T05:34:56.427993+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "fd68bbbc51c1d372d172d676188d821e6cb600c4",
+  "announcements": []
+}

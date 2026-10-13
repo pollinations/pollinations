@@ -15,7 +15,7 @@ import {
     type FallbackAttempt,
     type FallbackCandidate,
     fallbackCandidates,
-    fallbacksAcceptingImages,
+    fallbacksAcceptingInputs,
     formatFallbackTarget,
     isRetryableFallbackError,
     linkFallbackEntries,
@@ -393,7 +393,7 @@ describe("fallback response model attribution", () => {
     });
 });
 
-describe("fallbacksAcceptingImages", () => {
+describe("fallbacksAcceptingInputs", () => {
     const publicId = "qwen/qwen-image-3";
     const model = {
         resolved: publicId,
@@ -405,22 +405,50 @@ describe("fallbacksAcceptingImages", () => {
             definition: IMAGE_SERVICES[id],
         })),
     };
+    const images = (count: number) => Array(count).fill("https://a.test/i.png");
 
     it("skips a fallback that would drop some of the user's images", () => {
         expect(
-            fallbacksAcceptingImages(model, 2).map(({ id, originalIndex }) => [
-                id,
-                originalIndex,
-            ]),
+            fallbacksAcceptingInputs(model, { image: images(2) }).map(
+                ({ id, originalIndex }) => [id, originalIndex],
+            ),
         ).toEqual([
             [publicId, 0],
             ["qwen/qwen-image-3:fal", 1],
         ]);
-        expect(fallbacksAcceptingImages(model, 1).map(({ id }) => id)).toEqual([
+        expect(
+            fallbacksAcceptingInputs(model, { image: images(1) }).map(
+                ({ id }) => id,
+            ),
+        ).toEqual([
             publicId,
             "qwen/qwen-image-3:fal",
             "qwen/qwen-image-3:replicate",
         ]);
+    });
+
+    it("skips a fallback that would drop some of the user's videos", () => {
+        const primary = registryEntry("video");
+        const fallback = registryEntry("video:route");
+        const video = {
+            resolved: primary.id,
+            definition: primary.definition,
+            fallbackEntries: [
+                {
+                    ...fallback,
+                    definition: {
+                        ...fallback.definition,
+                        maxReferenceVideos: 2,
+                    },
+                },
+            ],
+        };
+        const videos = Array(5).fill("https://a.test/v.mp4");
+        expect(
+            fallbacksAcceptingInputs(video, { reference_videos: videos }).map(
+                ({ id }) => id,
+            ),
+        ).toEqual(["video"]);
     });
 });
 

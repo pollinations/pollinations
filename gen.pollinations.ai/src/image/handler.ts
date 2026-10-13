@@ -7,7 +7,7 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
     type FallbackCandidate,
-    fallbacksAcceptingImages,
+    fallbacksAcceptingInputs,
     formatFallbackTarget,
     isRetryableFallbackError,
     withModelFallback,
@@ -308,7 +308,7 @@ async function generateMediaWithFallback(
         return isRetryableFallbackError(error);
     };
     const { result, candidate } = await withModelFallback(
-        fallbacksAcceptingImages(c.var.model, safeParams.image.length),
+        fallbacksAcceptingInputs(c.var.model, safeParams),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {

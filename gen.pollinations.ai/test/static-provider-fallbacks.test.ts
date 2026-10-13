@@ -22,11 +22,7 @@ import {
 import { resolveDirectResponsesTarget } from "../src/text/responses/client.ts";
 
 const OPENROUTER_ROUTES = [
-    [
-        "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        "qwen/qwen3.8-27b",
-        "akashml/fp8",
-    ],
+    ["qwen/qwen3.8-27b:openrouter:reka-fp8", "qwen/qwen3.8-27b", "reka/fp8"],
     [
         "anthropic/claude-opus-4.7:openrouter:vertex-global",
         "anthropic/claude-opus-4.7",
@@ -68,11 +64,6 @@ const OPENROUTER_ROUTES = [
         "deepseek/deepseek-v4-pro:openrouter:streamlake",
         "deepseek/deepseek-v4-pro-0813",
         "streamlake",
-    ],
-    [
-        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
-        "deepseek/deepseek-v4.1-flash",
-        "deepinfra/fp8",
     ],
     [
         "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
@@ -684,8 +675,8 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        ["deepseek/deepseek-v4.1-flash", 0.000546],
-        ["deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8", 0.000240751],
+        ["deepseek/deepseek-v4.1-flash", 0.000326],
+        ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
     ] as const)(
         "bills DeepSeek V4.1 Flash at the current quote when %s serves",
         (route, cost) => {
@@ -701,7 +692,7 @@ describe("static provider fallbacks", () => {
                 },
             });
             expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(0.000546, 8);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000326, 8);
         },
     );
 
@@ -845,29 +836,20 @@ describe("static provider fallbacks", () => {
             promptCachedTokens: 0.015 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
-        expect(
-            TEXT_SERVICES[
-                "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8"
-            ].cost,
-        ).toMatchObject({
-            promptTextTokens: (0.14 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.0042 / 1_000_000) * 1.055,
-            completionTextTokens: (0.42 / 1_000_000) * 1.055,
-        });
         expect(TEXT_SERVICES["qwen/qwen3.8-27b"].cost).toMatchObject({
-            promptTextTokens: (0.24 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.024 / 1_000_000) * 1.055,
-            promptImageTokens: (0.24 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.24 / 1_000_000) * 1.055,
-            completionTextTokens: (2.2 / 1_000_000) * 1.055,
+            promptTextTokens: (0.039 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.0039 / 1_000_000) * 1.055,
+            promptImageTokens: (0.039 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.039 / 1_000_000) * 1.055,
+            completionTextTokens: (1.25 / 1_000_000) * 1.055,
         });
         expect(
-            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:akashml-fp8"].cost,
+            TEXT_SERVICES["qwen/qwen3.8-27b:openrouter:reka-fp8"].cost,
         ).toMatchObject({
-            promptTextTokens: (0.25 / 1_000_000) * 1.055,
-            promptCachedTokens: (0.05 / 1_000_000) * 1.055,
-            promptImageTokens: (0.25 / 1_000_000) * 1.055,
-            promptVideoTokens: (0.25 / 1_000_000) * 1.055,
+            promptTextTokens: (0.04 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            promptImageTokens: (0.04 / 1_000_000) * 1.055,
+            promptVideoTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (2.2 / 1_000_000) * 1.055,
         });
         expect(

@@ -13,7 +13,7 @@ pane=$1; msg=$2; mode=$3
 w=(); [[ $mode == --wait ]] && w=(--wait --until idle --until done --until blocked)
 
 dialog_open() {
-  herdr $m pane read "$pane" --source visible 2>/dev/null | sed 's/ *│.*//' | grep -v '^[[:space:]]*$' | tail -4 | grep -q 'Enter to select.*Esc to cancel'
+  herdr $m pane read "$pane" --source visible 2>/dev/null | sed 's/ *│.*//' | grep -v '^[[:space:]]*$' | tail -4 | grep -q -E 'Enter to (select|continue).*Esc to cancel'
 }
 
 while true; do

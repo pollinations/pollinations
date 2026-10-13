@@ -88,7 +88,7 @@ async function openDialog(pane, fresh) {
         const foot = lines.findLastIndex(
             (l, i) =>
                 i >= lines.length - 4 &&
-                /Enter to select.*Esc to cancel/.test(l),
+                /Enter to (select|continue).*Esc to cancel/.test(l),
         );
         if (foot >= 0) {
             const opt = lines.findLastIndex(

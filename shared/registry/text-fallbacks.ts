@@ -52,23 +52,14 @@ export const TEXT_FALLBACKS = {
         },
     },
     "inclusionai/ling-3.1-flash": {
-        "inclusionai/ling-3.1-flash:openrouter:novita": {
-            provider: "openrouter",
-            // Free during the launch promotion, matching the public quote.
-            cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
-            },
-        },
         "inclusionai/ling-3.1-flash:vercel:novita": {
             provider: "vercel",
-            // Same Novita checkpoint through a separate gateway. Both routes
-            // are free during the launch promotion; recheck rates at cutover.
+            // Same Novita checkpoint through a separate gateway, which adds
+            // no fee. Vercel still listed it free on 2026-10-13.
             cost: {
-                promptTextTokens: perMillion(0),
-                promptCachedTokens: perMillion(0),
-                completionTextTokens: perMillion(0),
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.06),
+                completionTextTokens: perMillion(0.9),
             },
         },
     },

@@ -87,7 +87,7 @@ console.log(response.choices[0].message.content);`,
             source: `curl https://gen.pollinations.ai/v1/responses \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"openai","input":"Hello!","store":false}'`,
+  -d '{"model":"openai/gpt-5.4-nano","input":"Hello!","store":false}'`,
         },
         {
             label: "Streaming",
@@ -95,7 +95,7 @@ console.log(response.choices[0].message.content);`,
             source: `curl -N https://gen.pollinations.ai/v1/responses \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"openai","input":"Hello!","store":false,"stream":true}'`,
+  -d '{"model":"openai/gpt-5.4-nano","input":"Hello!","store":false,"stream":true}'`,
         },
         {
             label: "Python",
@@ -107,7 +107,7 @@ client = OpenAI(
     api_key="YOUR_API_KEY",
 )
 response = client.responses.create(
-    model="openai", input="Hello!", store=False,
+    model="openai/gpt-5.4-nano", input="Hello!", store=False,
 )
 print(response.output_text)`,
         },
@@ -121,7 +121,7 @@ const client = new OpenAI({
   apiKey: "YOUR_API_KEY",
 });
 const response = await client.responses.create({
-  model: "openai", input: "Hello!", store: false,
+  model: "openai/gpt-5.4-nano", input: "Hello!", store: false,
 });
 console.log(response.output_text);`,
         },
@@ -130,7 +130,7 @@ console.log(response.output_text);`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai" \\
+            source: `curl "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai/gpt-5.4-nano" \\
   -H "Authorization: Bearer YOUR_API_KEY"`,
         },
         {
@@ -149,7 +149,7 @@ print(response.text)`,
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai",
+  "https://gen.pollinations.ai/text/Write%20a%20haiku?model=openai/gpt-5.4-nano",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 console.log(await response.text());`,
@@ -160,17 +160,17 @@ console.log(await response.text());`,
             label: "HTML",
             lang: "HTML",
             source: `<!-- No code needed — use as an image URL -->
-<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" />`,
+<img src="https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell" />`,
         },
         {
             label: "cURL",
             lang: "Shell",
             source: `# Generate an image
-curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux" \\
+curl "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o image.jpg
 
 # Generate a video
-curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duration=4" \\
+curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=google/veo-3.1-fast&duration=4" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
         },
         {
@@ -190,7 +190,7 @@ with open("image.jpg", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux",
+  "https://gen.pollinations.ai/image/a%20cat%20in%20space?model=black-forest-labs/flux.1-schnell",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -200,7 +200,7 @@ const blob = await response.blob();`,
         {
             label: "cURL",
             lang: "Shell",
-            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4" \\
+            source: `curl "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=google/veo-3.1-fast&duration=4" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o video.mp4`,
         },
         {
@@ -220,7 +220,7 @@ with open("video.mp4", "wb") as f:
             label: "JavaScript",
             lang: "JavaScript",
             source: `const response = await fetch(
-  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=veo&duration=4",
+  "https://gen.pollinations.ai/video/a%20sunset%20timelapse?model=google/veo-3.1-fast&duration=4",
   { headers: { Authorization: "Bearer YOUR_API_KEY" } },
 );
 const blob = await response.blob();`,
@@ -235,7 +235,7 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o speech.mp3
 
 # Generate music (ElevenLabs)
-curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
+curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenlabs/music-v2&duration=30" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {

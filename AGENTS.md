@@ -215,6 +215,7 @@ npx vitest run test/file.test.ts
 
 ## Workflow Orchestration
 
+- For support email, use `.claude/skills/pollinations-support-triage/SKILL.md`.
 - Plan non-trivial work and re-plan when assumptions change.
 - Delegate only large, independent work; handle small tasks and self-verification locally.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.

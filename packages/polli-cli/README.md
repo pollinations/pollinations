@@ -208,7 +208,7 @@ The default template, and `pollinations-large`, come logged in with the coding h
 - [enter.pollinations.ai](https://enter.pollinations.ai) — dashboard, keys, billing
 - [API docs](https://gen.pollinations.ai/docs)
 - [Source](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
-- [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+- [Discord](https://discord.gg/k9F7SyTgqn)
 
 ## License
 

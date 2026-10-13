@@ -8,6 +8,8 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -35,10 +37,16 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
     ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechAlignment,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -181,6 +189,42 @@ function stripKeyFromUrl(url: string): string {
     const urlObj = new URL(url);
     urlObj.searchParams.delete("key");
     return urlObj.toString();
+}
+
+// Decode base64 audio or image bytes into an ArrayBuffer
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer as ArrayBuffer;
+}
+
+// Group character timings into words: whitespace separates words, and a word
+// runs from the start of its first character to the end of its last one.
+function wordsFromAlignment(alignment: SpeechAlignment): SpeechWordTiming[] {
+    const words: SpeechWordTiming[] = [];
+    let word: SpeechWordTiming | undefined;
+    for (const [i, char] of alignment.characters.entries()) {
+        if (/\s/.test(char)) {
+            word = undefined;
+            continue;
+        }
+        const end = alignment.character_end_times_seconds[i];
+        if (word) {
+            word.word += char;
+            word.end = end;
+        } else {
+            word = {
+                word: char,
+                start: alignment.character_start_times_seconds[i],
+                end,
+            };
+            words.push(word);
+        }
+    }
+    return words;
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -645,13 +689,8 @@ export class Pollinations {
             );
         }
         if (item.b64_json) {
-            const binary = atob(item.b64_json);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
             return {
-                buffer: bytes.buffer as ArrayBuffer,
+                buffer: base64ToArrayBuffer(item.b64_json),
                 contentType: item.media_type || "image/png",
                 url: "",
             };
@@ -744,6 +783,63 @@ export class Pollinations {
                 const buffer = await response.arrayBuffer();
                 const contentType =
                     response.headers.get("content-type") || "video/mp4";
+
+                return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
+
+    // ============================================================================
+    // 3D Generation
+    // ============================================================================
+
+    /**
+     * Generate a 3D model file: GLB, or PLY for nvidia/asset-harvester.
+     * Image-to-3D models such as the default microsoft/trellis-2 need `referenceImage`.
+     * Uses the video timeout (20 minutes) because 3D jobs can run for several minutes.
+     *
+     * @example
+     * ```ts
+     * const { buffer } = await pollinations.model3d('a treasure chest', {
+     *     referenceImage: 'https://example.com/chest.png',
+     * });
+     * ```
+     */
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const params: Record<string, unknown> = {
+            model: options.model,
+            resolution: options.resolution,
+            image: options.referenceImage,
+            seed: options.seed,
+            safe: options.safe,
+        };
+        const queryString = this.buildQueryParams(params);
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${queryString ? `?${queryString}` : ""}`;
+
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "model/gltf-binary";
 
                 return { buffer, contentType, url: stripKeyFromUrl(url) };
             },
@@ -1094,6 +1190,64 @@ export class Pollinations {
         );
     }
 
+    /**
+     * Generate speech with word timings (POST /v1/audio/speech/with-timestamps).
+     * Only models that list this endpoint in `models("audio")` are supported.
+     *
+     * @example
+     * ```ts
+     * const { buffer, words } = await pollinations.audioSpeechWithTimestamps('Hello world', { voice: 'nova' });
+     * ```
+     */
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<AudioSpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input: text,
+            voice: options.voice,
+            model: options.model,
+            response_format: options.responseFormat,
+            seed: options.seed,
+        };
+
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const result = (await response.json()) as {
+                    audio_base64: string;
+                    alignment: SpeechAlignment;
+                    normalized_alignment: SpeechAlignment;
+                };
+                return {
+                    buffer: base64ToArrayBuffer(result.audio_base64),
+                    words: wordsFromAlignment(result.alignment),
+                    alignment: result.alignment,
+                    normalizedAlignment: result.normalized_alignment,
+                };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1142,6 +1296,29 @@ export class Pollinations {
     async models(kind?: ModelKind): Promise<ModelInfo[]> {
         const path = kind ? `/${kind}/models` : "/models";
         return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
+    }
+
+    /**
+     * Get live model health from GET /models/status: per-model success and error
+     * counts, fallbacks and latency over a rolling window.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.modelStatus({ traffic: 'regular', minutes: 60 });
+     * const failing = data.filter((row) => row.is_rollup && row.errors_5xx > 0);
+     * ```
+     */
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
+        );
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================

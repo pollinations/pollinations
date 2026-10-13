@@ -1731,6 +1731,7 @@ describe("Pollinations model discovery", () => {
         ["text", "https://example.test/text/models"],
         ["image", "https://example.test/image/models"],
         ["video", "https://example.test/video/models"],
+        ["3d", "https://example.test/3d/models"],
         ["audio", "https://example.test/audio/models"],
         ["embeddings", "https://example.test/embeddings/models"],
     ] as const)("models(%s) fetches %s", async (kind, expectedUrl) => {
@@ -1750,6 +1751,120 @@ describe("Pollinations model discovery", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/video/models",
         );
+    });
+});
+
+describe("Pollinations 3D generation", () => {
+    it("requests /3d with options and pipe-joined reference images, keeping the key out of the returned url", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "model/gltf-binary",
+            }),
+        );
+
+        const result = await newClient().model3d("a chest", {
+            model: "microsoft/trellis-2",
+            resolution: "high",
+            referenceImage: ["https://a.test/1.png", "https://b.test/2.png"],
+            seed: 7,
+            safe: true,
+        });
+
+        const [requestUrl] = fetchMock.mock.calls[0];
+        const url = new URL(requestUrl as string);
+        expect(url.pathname).toBe("/3d/a%20chest");
+        expect(Object.fromEntries(url.searchParams)).toEqual({
+            model: "microsoft/trellis-2",
+            resolution: "high",
+            image: "https://a.test/1.png|https://b.test/2.png",
+            seed: "7",
+            safe: "true",
+            key: "sk_test",
+        });
+        expect(result.contentType).toBe("model/gltf-binary");
+        expect(result.buffer.byteLength).toBe(8);
+        expect(result.url).not.toContain("sk_test");
+    });
+
+    it("rejects an empty prompt without fetching", async () => {
+        await expect(newClient().model3d("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});
+
+describe("Pollinations.modelStatus", () => {
+    it("fetches /models/status with the window and keeps the key out of the URL", async () => {
+        const body = { meta: [], data: [] };
+        fetchMock.mockResolvedValueOnce(makeResponse(body));
+
+        await expect(
+            newClient().modelStatus({ traffic: "regular", minutes: 30 }),
+        ).resolves.toEqual(body);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=30",
+        );
+        expect(init.headers.Authorization).toBe("Bearer sk_test");
+    });
+
+    it("sends no query string by default", async () => {
+        fetchMock.mockResolvedValueOnce(makeResponse({ meta: [], data: [] }));
+
+        await newClient().modelStatus();
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models/status",
+        );
+    });
+});
+
+describe("Pollinations.audioSpeechWithTimestamps", () => {
+    it("posts the speech options and returns decoded audio with word timings", async () => {
+        const text = "Hi  there, you!";
+        const characters = [...text];
+        const alignment = {
+            characters,
+            character_start_times_seconds: characters.map((_, i) => i / 10),
+            character_end_times_seconds: characters.map((_, i) => (i + 1) / 10),
+        };
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                audio_base64: btoa("abc"),
+                alignment,
+                normalized_alignment: alignment,
+            }),
+        );
+
+        const result = await newClient().audioSpeechWithTimestamps(text, {
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            responseFormat: "wav",
+            seed: 3,
+        });
+
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({
+            input: text,
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            response_format: "wav",
+            seed: 3,
+        });
+        expect(new TextDecoder().decode(result.buffer)).toBe("abc");
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0, end: 0.2 },
+            { word: "there,", start: 0.4, end: 1 },
+            { word: "you!", start: 1.1, end: 1.5 },
+        ]);
+        expect(result.alignment).toEqual(alignment);
+        expect(result.normalizedAlignment).toEqual(alignment);
     });
 });
 

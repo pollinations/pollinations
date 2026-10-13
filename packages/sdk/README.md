@@ -418,6 +418,35 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+
+// microsoft/trellis-2 (the default) builds the model from a reference image
+const model = await client.model3d('a treasure chest', {
+  referenceImage: 'https://example.com/chest.png',
+  resolution: 'medium',
+});
+await writeFile('chest.glb', Buffer.from(model.buffer));
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | `'microsoft/trellis-2'` | 3D model; list them with `client.models('3d')` |
+| `referenceImage` | string or string[] | - | Public image URL(s) for image-to-3D models |
+| `resolution` | string | `'low'` | `'low'`, `'medium'` or `'high'` (`microsoft/trellis-2`) |
+| `seed` | number | random | Reproducible results |
+| `safe` | boolean | `false` | Safety filter |
+
+The result is GLB (`model/gltf-binary`). `nvidia/asset-harvester` returns PLY.
+3D jobs use the video timeout (20 minutes).
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -455,6 +484,22 @@ audioEl.play();
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+## Speech with Word Timestamps
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+
+const speech = await client.audioSpeechWithTimestamps('Hello, welcome!', { voice: 'nova' });
+// speech.buffer holds the audio (MP3 by default); speech.words holds { word, start, end } in seconds
+console.log(speech.words);
+```
+
+Options: `voice`, `model` (must list `/v1/audio/speech/with-timestamps` in `client.models('audio')`),
+`responseFormat` (`'mp3'`, `'opus'`, `'aac'`, `'wav'` or `'pcm'`), and `seed`.
+`alignment` and `normalizedAlignment` keep the per-character timings.
 
 ## Vision (Image Input)
 
@@ -531,10 +576,24 @@ import { getModels } from '@pollinations/sdk';
 
 const textModels = await getModels('text');
 const imageModels = await getModels('image');
-const videoModels = await getModels('video'); // also 'audio', 'embeddings'
+const videoModels = await getModels('video'); // also 'audio', '3d', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
+
+## Model Status
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations({ apiKey: 'your_key' });
+
+const { data } = await client.modelStatus({ traffic: 'regular', minutes: 60 });
+// is_rollup 1 is the model total; is_rollup 0 is one execution route
+const failing = data.filter((row) => row.is_rollup && row.errors_5xx > 0);
+```
+
+`minutes` is a rolling window from 1 to 10080. `traffic` is `'all'` (default) or `'regular'`.
 
 ## Media Upload
 
@@ -616,7 +675,7 @@ import type {
 | `transcribe(audio, options?)` | Speech-to-text |
 | `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
-| `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `embeddings` |
+| `getModels(kind?)` | List all models, or one kind: `text`, `image`, `video`, `audio`, `3d`, `embeddings` |
 | `configure({ apiKey })` | Set global config |
 
 ## Troubleshooting

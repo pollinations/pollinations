@@ -10,7 +10,15 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ### Added
 - `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
-  `video`, `audio` or `embeddings`.
+  `video`, `audio`, `3d` or `embeddings`.
+- `model3d(prompt, options)` generates a 3D model from `/3d`. It returns the
+  file as `buffer` with its `contentType` (GLB, or PLY for
+  `nvidia/asset-harvester`) and a keyless `url`.
+- `modelStatus(options)` returns the `/models/status` health rows, typed as
+  `ModelStatusRow`.
+- `audioSpeechWithTimestamps(text, options)` returns decoded audio plus
+  `words` and the character `alignment` and `normalizedAlignment` from
+  `/v1/audio/speech/with-timestamps`.
 - `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
   billed at the cache-write rate. Reads stay in `input_cached_tokens`.
 

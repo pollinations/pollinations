@@ -213,15 +213,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "deepseek/deepseek-v4.1-flash": {
-        "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8": {
-            supportedParameters: CHAT_PARAMETERS.openRouterDeepseekV41Flash,
-            provider: "openrouter",
+        "deepseek/deepseek-v4.1-flash:fireworks": {
+            supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+            provider: "fireworks",
+            addedDate: new Date("2026-10-12").getTime(),
             cost: {
-                // OpenRouter DeepInfra FP8 rates (2026-09-21), including the
-                // account's 5.5% credit-purchase fee.
-                promptTextTokens: perMillion(0.14) * 1.055,
-                promptCachedTokens: perMillion(0.0042) * 1.055,
-                completionTextTokens: perMillion(0.42) * 1.055,
+                // Fireworks Standard rates (2026-10-12).
+                promptTextTokens: perMillion(0.3),
+                promptCachedTokens: perMillion(0.006),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },

@@ -841,19 +841,26 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes DeepSeek V4.1 Flash to DeepInfra with a Fireworks fallback", () => {
+        const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash:fireworks",
+        });
 
-        expect(result.options.model).toBe(
+        expect(primary.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(fallback.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4p1-flash",
         );
-        expect(result.options.modelConfig).toMatchObject({
+        expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek Vision to the exact DeepInfra vision checkpoint", () => {

@@ -214,5 +214,69 @@ class BotFollowUpTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(sent, ["first answer", "second answer"])
 
 
+class InlineMentionEvidenceTests(unittest.IsolatedAsyncioTestCase):
+    async def test_two_consecutive_inline_turns_keep_earlier_lookups(self):
+        from src import bot
+
+        class Typing:
+            async def __aenter__(self):
+                return None
+
+            async def __aexit__(self, *_exc):
+                return False
+
+        def make_channel(channel_id):
+            async def history(limit):
+                for item in ():
+                    yield item
+
+            return SimpleNamespace(id=channel_id, history=history, typing=Typing)
+
+        def make_message(message_id, author, channel, text):
+            return SimpleNamespace(
+                id=message_id,
+                content=text,
+                author=author,
+                channel=channel,
+                guild=None,
+                attachments=[],
+                embeds=[],
+                reactions=[],
+                jump_url="https://discord.example/message",
+                reply=AsyncMock(),
+            )
+
+        store = ToolEvidenceStore()
+        channel, other_channel = make_channel(7), make_channel(8)
+        ana = SimpleNamespace(id=5, name="ana", display_name="Ana", roles=[], bot=False)
+        bo = SimpleNamespace(id=6, name="bo", display_name="Bo", roles=[], bot=False)
+        turns = [
+            {"response": "io.net", "tool_calls": [call("code_search")], "tool_results": [{"provider": "io.net"}]},
+            {"response": "still io.net", "tool_calls": [], "tool_results": []},
+            {"response": "no idea", "tool_calls": [], "tool_results": []},
+            {"response": "no idea", "tool_calls": [], "tool_results": []},
+        ]
+        process = AsyncMock(side_effect=turns)
+        with (
+            patch.object(bot, "tool_evidence", store),
+            patch.object(bot.pollinations_client, "process_with_tools", process),
+            patch.object(bot, "deliver_reply", AsyncMock()),
+        ):
+            await bot.handle_inline_polli_mention(make_message(1, ana, channel, "polli which provider?"))
+            await bot.handle_inline_polli_mention(make_message(2, ana, channel, "polli you sure?"))
+            await bot.handle_inline_polli_mention(make_message(3, bo, channel, "polli and for me?"))
+            await bot.handle_inline_polli_mention(make_message(4, ana, other_channel, "polli here?"))
+
+        first, second, other_user, other_place = (c.kwargs["thread_history"] for c in process.await_args_list)
+        self.assertFalse(any(m["role"] in ("assistant", "tool") for m in first))
+        self.assertEqual(second[0]["role"], "system")  # the inline style prompt stays first
+        replayed = second[1:]
+        assert_tool_data_only(self, replayed)
+        self.assertEqual(replayed[0]["tool_calls"][0]["function"]["name"], "code_search")
+        self.assertIn('{"provider":"io.net"}', replayed[1]["content"])
+        self.assertNotIn("io.net", json.dumps(other_user))  # another requester in the channel sees nothing
+        self.assertNotIn("io.net", json.dumps(other_place))  # and the lookup stays in its own channel
+
+
 if __name__ == "__main__":
     unittest.main()

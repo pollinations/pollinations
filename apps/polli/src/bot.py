@@ -1156,6 +1156,9 @@ async def handle_inline_polli_mention(message: discord.Message):
 
             # Build history with system prompt
             full_history = [inline_system_prompt] + channel_history
+            # Channel history only carries Polli's prose; hand back this requester's earlier lookups here.
+            evidence_key = (message.channel.id, message.author.id)
+            full_history += tool_evidence.replay(*evidence_key)
 
             # Process with tools AND history for context
             result = await pollinations_client.process_with_tools(
@@ -1168,6 +1171,7 @@ async def handle_inline_polli_mention(message: discord.Message):
                 is_admin=user_is_admin,
                 tool_context=tool_context,
             )
+            tool_evidence.record(*evidence_key, result.get("tool_calls", []), result.get("tool_results", []))
 
             response_text = result.get("response", "")
             content_blocks = result.get("content_blocks", [])

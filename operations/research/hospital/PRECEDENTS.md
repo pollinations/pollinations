@@ -5,4 +5,5 @@ These are Thomas's decisions (BRIEF.md and later instructions), not agent-create
 - P3: Quality over throughput; approved plans before code; never weaken tests; cap rework; split >~1,000 lines; consult precedents before escalating.
 - P4 (run 2, 2026-10-11): keep the next paid run within run 1's total (10.66 Pollen) and report to Thomas before going past it; keep paid calls to a minimum. Merge triage and planning, cap cost on the server, keep raw test logs, and do a full offline run before any paid run.
 - P5 (run 3, 2026-10-12): before run 3, keep a stopped stage's notes and stop the box's key from raising its own budget. Check PR version bumps statically, before any model call.
+- P6 (run 5, 2026-10-13): for PR cases, run a quick review first. Admit to the hospital only PRs the quick review approves.
 No other Chief decisions have been made. Agents may propose future guidance in REPORT.md, not add precedent here.

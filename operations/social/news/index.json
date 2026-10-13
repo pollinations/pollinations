@@ -1,61 +1,7 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-12T23:55:53.754569+00:00",
+  "generated_at": "2026-10-13T00:02:25.432757+00:00",
   "models": [
-    {
-      "id": "pr-14736:deepseek/deepseek-v4.1-flash",
-      "model_id": "deepseek/deepseek-v4.1-flash",
-      "title": "DeepSeek V4.1 Flash",
-      "previous_title": null,
-      "action": "NEW",
-      "category": "text",
-      "date": "2026-09-12",
-      "pr": 14736,
-      "url": "https://github.com/pollinations/pollinations/pull/14736",
-      "pricing_units": {
-        "before": null,
-        "after": null
-      },
-      "changes": {
-        "capabilities": {
-          "before": null,
-          "after": [
-            "tool_calling",
-            "reasoning"
-          ]
-        },
-        "context_length": {
-          "before": null,
-          "after": 1048576
-        },
-        "input_modalities": {
-          "before": null,
-          "after": [
-            "text",
-            "image"
-          ]
-        },
-        "output_modalities": {
-          "before": null,
-          "after": [
-            "text"
-          ]
-        },
-        "per_user_rpm": {
-          "before": null,
-          "after": 60
-        },
-        "pricing": {
-          "before": null,
-          "after": {
-            "currency": "pollen",
-            "promptTextTokens": "0.00000022",
-            "promptCachedTokens": "0.000000007",
-            "completionTextTokens": "0.00000066"
-          }
-        }
-      }
-    },
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
       "model_id": "openai/gpt-image-2.5-flare",
@@ -5851,6 +5797,39 @@
           }
         }
       }
+    },
+    {
+      "id": "pr-17187:anthropic/claude-sonnet-5.5",
+      "model_id": "anthropic/claude-sonnet-5.5",
+      "title": "Claude Sonnet 5.5",
+      "previous_title": null,
+      "action": "UPDATE",
+      "category": "text",
+      "date": "2026-10-13",
+      "pr": 17187,
+      "url": "https://github.com/pollinations/pollinations/pull/17187",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000002",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000001",
+            "promptCacheWriteTokens": "0.0000025",
+            "completionTextTokens": "0.00001"
+          }
+        }
+      }
     }
   ],
   "api": [
@@ -8972,56 +8951,6 @@
         14799
       ],
       "kind": "api"
-    },
-    {
-      "date": "2026-09-12",
-      "emoji": "🤖",
-      "title": "DeepSeek V4.1 Flash",
-      "text": "Try `deepseek/deepseek-v4.1-flash` for reasoning and tool use, with a 1,048,576-token context window. [Explore text models](https://gen.pollinations.ai/v1/models).",
-      "prs": [
-        14736
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-12",
-      "emoji": "🔗",
-      "title": "Choose your model fallbacks",
-      "text": "List up to four models in a comma-separated `model` parameter, such as `?model=a,b`, to give generation requests an ordered fallback chain. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14784
-      ],
-      "kind": "api"
-    },
-    {
-      "date": "2026-09-12",
-      "emoji": "💡",
-      "title": "A computer for agents",
-      "text": "The built-in `/mcp/computer` server gives agents a private persistent filesystem and a bash tool for working across files. [Explore MCP tools](https://gen.pollinations.ai/docs#tag/mcp-servers).",
-      "prs": [
-        14741
-      ],
-      "kind": "product"
-    },
-    {
-      "date": "2026-09-12",
-      "emoji": "🎨",
-      "title": "Minimax video in 1080p",
-      "text": "Generate 1080p video with `minimax/minimax-h3-max-turbo` from text or first and last frames. [Explore the API](https://gen.pollinations.ai/docs).",
-      "prs": [
-        14747
-      ],
-      "kind": "model"
-    },
-    {
-      "date": "2026-09-12",
-      "emoji": "📱",
-      "title": "Pollination_chatbot joins the garden",
-      "text": "Chat with Pollinations text models, including OpenAI, Mistral, and Gemini options. [Try it](https://pollinations-chatbot.vercel.app).",
-      "prs": [
-        14750
-      ],
-      "kind": "app"
     }
   ]
 }

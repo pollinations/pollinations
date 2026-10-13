@@ -5,12 +5,8 @@ import { Hono } from "hono";
 import type { Env } from "../env.ts";
 import { DEVICE_CODE_GRANT } from "./oauth.ts";
 
-/**
- * Mirror of getCurrentGenOrigin in ../index.ts (duplicated to avoid a
- * route→app import cycle): force https and map enter.* → gen.* so
- * staging/dev resolve to their gen counterparts, never back to enter.
- */
-function getCurrentGenOrigin(c: Context<Env>): string {
+/** The gen origin for this enter host: enter.* maps to gen.*, over https. */
+export function getCurrentGenOrigin(c: Context<Env>): string {
     const url = new URL(getPublicOrigin(c));
     url.protocol = "https:";
     url.hostname = url.hostname.replace(/(^|\.)enter\./, "$1gen.");
@@ -39,10 +35,8 @@ export const wellKnownRoutes = new Hono<Env>()
             grant_types_supported: ["authorization_code", DEVICE_CODE_GRANT],
             code_challenge_methods_supported: ["S256"],
             token_endpoint_auth_methods_supported: ["none"],
-            // RFC 8414 imposes no same-origin requirement: point agents at
-            // the final docs destination on gen. (The legacy enter
-            // /api/docs → gen /docs redirect in index.ts stays untouched as
-            // a separate compatibility contract.)
+            client_id_metadata_document_supported: true,
+            // RFC 8414 has no same-origin rule: point agents at the docs on gen.
             service_documentation: `${genOrigin}/docs`,
         });
     })

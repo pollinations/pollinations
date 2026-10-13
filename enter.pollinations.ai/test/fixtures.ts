@@ -229,10 +229,7 @@ export const test = base.extend<Fixtures>({
     restrictedApiKey: async ({ accountToken }, use) => {
         const created = await createApiKeyViaApi(accountToken, {
             name: "restricted-test-key",
-            allowedModels: [
-                "openai/gpt-5-nano",
-                "black-forest-labs/flux.1-schnell",
-            ],
+            allowedModels: ["text", "image"],
         });
         await use(created.key);
     },

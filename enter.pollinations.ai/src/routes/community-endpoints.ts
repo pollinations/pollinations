@@ -511,6 +511,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 api: input.api,
                 inputModalities: input.inputModalities,
                 outputModalities: input.outputModalities,
+                capabilities: input.capabilities,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -902,6 +903,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         input.inputModalities ?? current.inputModalities,
                     outputModalities:
                         input.outputModalities ?? current.outputModalities,
+                    capabilities: input.capabilities ?? current.capabilities,
                 });
             } else {
                 const current = parseListingPayload("proxy", endpoint.payload);

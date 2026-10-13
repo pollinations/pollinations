@@ -13,6 +13,7 @@ import { Route as TopUpRouteImport } from './routes/top-up'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as RefundsRouteImport } from './routes/refunds'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as GrantRouteImport } from './routes/grant'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as EditKeyRouteImport } from './routes/edit-key'
 import { Route as DeviceRouteImport } from './routes/device'
@@ -21,6 +22,7 @@ import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppSignInRouteImport } from './routes/app.sign-in'
 import { Route as DashboardSignInRouteImport } from './routes/_dashboard.sign-in'
+import { Route as DashboardSandboxesRouteImport } from './routes/_dashboard.sandboxes'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
 import { Route as DashboardNewsRouteImport } from './routes/_dashboard.news'
@@ -48,6 +50,11 @@ const RefundsRoute = RefundsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GrantRoute = GrantRouteImport.update({
+  id: '/grant',
+  path: '/grant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -87,6 +94,11 @@ const AppSignInRoute = AppSignInRouteImport.update({
 const DashboardSignInRoute = DashboardSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSandboxesRoute = DashboardSandboxesRouteImport.update({
+  id: '/sandboxes',
+  path: '/sandboxes',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardQuestsRoute = DashboardQuestsRouteImport.update({
@@ -136,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -148,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sandboxes': typeof DashboardSandboxesRoute
   '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -157,6 +171,7 @@ export interface FileRoutesByTo {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -169,6 +184,7 @@ export interface FileRoutesByTo {
   '/news': typeof DashboardNewsRoute
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
+  '/sandboxes': typeof DashboardSandboxesRoute
   '/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -180,6 +196,7 @@ export interface FileRoutesById {
   '/device': typeof DeviceRoute
   '/edit-key': typeof EditKeyRoute
   '/error': typeof ErrorRoute
+  '/grant': typeof GrantRoute
   '/privacy': typeof PrivacyRoute
   '/refunds': typeof RefundsRoute
   '/terms': typeof TermsRoute
@@ -192,6 +209,7 @@ export interface FileRoutesById {
   '/_dashboard/news': typeof DashboardNewsRoute
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
+  '/_dashboard/sandboxes': typeof DashboardSandboxesRoute
   '/_dashboard/sign-in': typeof DashboardSignInRoute
   '/app/sign-in': typeof AppSignInRoute
 }
@@ -203,6 +221,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -215,6 +234,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sandboxes'
     | '/sign-in'
     | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
@@ -224,6 +244,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -236,6 +257,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/pollen'
     | '/quests'
+    | '/sandboxes'
     | '/sign-in'
     | '/app/sign-in'
   id:
@@ -246,6 +268,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/edit-key'
     | '/error'
+    | '/grant'
     | '/privacy'
     | '/refunds'
     | '/terms'
@@ -258,6 +281,7 @@ export interface FileRouteTypes {
     | '/_dashboard/news'
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
+    | '/_dashboard/sandboxes'
     | '/_dashboard/sign-in'
     | '/app/sign-in'
   fileRoutesById: FileRoutesById
@@ -269,6 +293,7 @@ export interface RootRouteChildren {
   DeviceRoute: typeof DeviceRoute
   EditKeyRoute: typeof EditKeyRoute
   ErrorRoute: typeof ErrorRoute
+  GrantRoute: typeof GrantRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundsRoute: typeof RefundsRoute
   TermsRoute: typeof TermsRoute
@@ -304,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grant': {
+      id: '/grant'
+      path: '/grant'
+      fullPath: '/grant'
+      preLoaderRoute: typeof GrantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -360,6 +392,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof DashboardSignInRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/sandboxes': {
+      id: '/_dashboard/sandboxes'
+      path: '/sandboxes'
+      fullPath: '/sandboxes'
+      preLoaderRoute: typeof DashboardSandboxesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/_dashboard/quests': {
@@ -430,6 +469,7 @@ interface DashboardRouteChildren {
   DashboardNewsRoute: typeof DashboardNewsRoute
   DashboardPollenRoute: typeof DashboardPollenRoute
   DashboardQuestsRoute: typeof DashboardQuestsRoute
+  DashboardSandboxesRoute: typeof DashboardSandboxesRoute
   DashboardSignInRoute: typeof DashboardSignInRoute
 }
 
@@ -442,6 +482,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardNewsRoute: DashboardNewsRoute,
   DashboardPollenRoute: DashboardPollenRoute,
   DashboardQuestsRoute: DashboardQuestsRoute,
+  DashboardSandboxesRoute: DashboardSandboxesRoute,
   DashboardSignInRoute: DashboardSignInRoute,
 }
 
@@ -456,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeviceRoute: DeviceRoute,
   EditKeyRoute: EditKeyRoute,
   ErrorRoute: ErrorRoute,
+  GrantRoute: GrantRoute,
   PrivacyRoute: PrivacyRoute,
   RefundsRoute: RefundsRoute,
   TermsRoute: TermsRoute,

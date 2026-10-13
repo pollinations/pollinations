@@ -1,92 +1,39 @@
-## 📢 Security Policy for pollinations.ai
+# Security policy
 
-Hi there! First off, thank you for caring about the stability and safety of pollinations.ai. We deeply appreciate folks like you who want to help keep our ecosystem healthy. Our team is committed to making pollinations.ai a safe, privacy-first space for everyone to explore AI creativity.
+## Report privately
 
----
+Send security reports to [hello@pollinations.ai](mailto:hello@pollinations.ai). Include:
 
-## 🛡️ Reporting Security Vulnerabilities
+- The affected URL, component and version, where applicable.
+- A description, reproduction steps or a minimal proof of concept.
+- The potential impact and any suggested fix.
 
-If you’ve spotted a security vulnerability anywhere in our code, APIs, or infrastructure, here’s how you can help us protect the community:
+Keep vulnerability details private while we assess the report and coordinate disclosure. Do not post exploit details or sensitive data in public issues, pull requests or discussions. Ordinary bugs and feature requests belong in [GitHub issues](https://github.com/pollinations/pollinations/issues).
 
-1. **Reach Out Privately**  
-   Please **don’t** make a public GitHub issue, comment, or post in discussions about vulnerabilities! Instead, reach out to us in one of these ways:
-   - Email us at [hello@pollinations.ai](mailto:hello@pollinations.ai)
-   - Or DM a maintainer directly on [Discord](https://discord.gg/pollinations-ai-885844321461485618).
-2. **What to Include**  
-   The more detail you can provide, the faster we can fix things. Here’s what helps us:
+## Scope
 
-   - A clear description of what you found
-   - Proof of Concept or steps to reproduce, if possible
-   - Why it matters and what an attacker could potentially do
-   - Any ideas for fixes or mitigations (always welcome!)
+This policy covers Pollinations-operated services and code in the [pollinations/pollinations repository](https://github.com/pollinations/pollinations), including the website, API, SDK, CLI, MCP server, bots and infrastructure.
 
-3. **How We Respond**  
-   We do our absolute best to reply within **72 hours** and will keep you updated as we investigate and patch the issue. Once it’s fixed, we’ll publish a public advisory and, with your consent, give you credit for the find.
+Report concrete security impact, such as:
 
-4. **Recognition**  
-   Security-minded contributors keep us strong! With your permission, we’re happy to mention you in our thanks—just let us know if you’d prefer to stay anonymous.
+- Unauthorized access, privilege escalation or code execution.
+- Exposure of private data or credentials.
+- Bypasses of authentication, billing or access controls.
+- Exploitable service availability, dependency or deployment vulnerabilities.
+- Prompt injection that exposes private data or causes unauthorized tool use or privileged actions.
 
----
+Unexpected or unsafe model output alone, moderation complaints, self-XSS without impact on others, and ordinary rate-limit responses are not security vulnerabilities under this policy. Report third-party issues to their maintainers unless the vulnerability arises from our integration.
 
-## 📋 Scope of This Policy
+## Testing boundaries
 
-This policy covers everything in the [`pollinations/pollinations`](https://github.com/pollinations/pollinations) repository, including:
+Use local environments and your own accounts and data. Obtain explicit approval from the relevant system owner before testing live systems; this policy does not authorize attacks or override our [Terms of Service](https://pollinations.ai/terms).
 
-- The main `pollinations.ai` website and React frontend
-- Backend and CDN/caching systems for image and text generation
-- Model Context Protocol (MCP), Software Development Kit (SDK), Pollinations-CLI & our community bots and server.
+Do not disrupt services, access or modify other users' data, use social engineering, or test third-party infrastructure without its owner's authorization. If you encounter private data, stop testing and report the issue without copying or sharing that data.
 
-_If you discover something in third-party code, let their maintainers know unless it’s a problem because of our integration._
+## Responses and rewards
 
----
+We prioritize reports by demonstrated impact and available capacity. We cannot guarantee a response or fix timeline. We coordinate disclosure for confirmed vulnerabilities and may publish an advisory when appropriate. Public credit requires your consent.
 
-## 🏷️ What Counts as a Vulnerability?
+Pollinations is an open-source project and offers no cash bounties. Useful reports, issues and fixes may receive Pollen API credits after maintainer review. Rewards and amounts are not guaranteed; Pollen is not a cash payout.
 
-We’d especially like to hear about:
-
-- Remote code execution, privilege escalation, or command injection in any system
-- Ways to bypass authentication or access control (like APIs or dashboards)
-- Leaks of sensitive data, including user input/history, logs, or info in error messages
-- API abuse resulting in denial of service, rate limit bypass, or billing manipulation
-- Prompt injection/model escape in AI endpoints (especially if it produces unsafe or privileged output)
-- Proven supply chain attacks from dependencies
-- Misconfigurations (debug endpoints left open, secrets in logs or code)
-- Issues with our CI/CD or deployment pipeline security
-
----
-
-## ⛔ What’s Not in Scope
-
-While we love feedback, these are _not_ considered security vulnerabilities for this project:
-
-- Self-XSS (you attacking your own browser)
-- DoS from just going past normal API rate limits (unless it’s a new exploit)
-- Bugs exclusive to other, unrelated projects
-- Social engineering targeting our team/community
-- Feature requests, moderation tweaks, or other changes to how the model thinks/responds
-
----
-
-## 📣 A Note on Conduct
-
-pollinations.ai thrives on kindness, respect, and constructive collaboration. Please always treat others well. If you suspect someone is acting in bad faith or discover an urgent exploit, contact us privately right away.
-
-For general questions, hop into a GitHub discussion—but **never** share sensitive security info in public spaces.
-
----
-
-## 🙏 Thanks
-
-We can’t say this enough: **thank you** for helping make pollinations.ai a safer hub for creative ai. Every tip, every report, every patch makes a real difference!
-
-— with gratitude,  
-the pollinations.ai maintainers & community team
-
----
-
-**For truly urgent or sensitive security issues:**  
-Always use private contact (email/Discord) as public posts may go unnoticed!
-
----
-
-_(Last updated: 2026-04-23)_
+_Last updated: 2026-10-13_

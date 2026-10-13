@@ -8,7 +8,9 @@
 # with the E2B team key:
 #   E2B_API_KEY=... npx -y @e2b/cli@2.21.2 template create pollinations \
 #     --path operations/infrastructure/e2b --cpu-count 2 --memory-mb 2048
-# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192.
+# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192
+# --min-free-disk-mb 51200: 50 GiB free, our team's cap (the default leaves 21).
+# A rebuild without the flag drops back to the default.
 # Test a change first under another name, like pollinations-test, on a box from
 # `polli sandbox create pollinations-test`; then delete it with
 # `npx -y @e2b/cli@2.21.2 template delete -y pollinations-test`.
@@ -24,6 +26,12 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && systemctl disable ssh \
     && systemctl mask ssh.socket
+
+# rclone mounts a bucket (S3, R2, GCS) as a folder, for big files that should
+# outlive the sandbox; the base image's fuse3 lets `user` mount it.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends rclone \
+    && rm -rf /var/lib/apt/lists/*
 
 # Same release and checksum as bootstrap.sh.
 RUN curl -fsSL -o /usr/local/bin/websocat https://github.com/vi/websocat/releases/download/v1.14.1/websocat.x86_64-unknown-linux-musl \

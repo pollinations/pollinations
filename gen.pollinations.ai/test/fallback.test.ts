@@ -18,6 +18,7 @@ import {
     formatFallbackTarget,
     isRetryableFallbackError,
     linkFallbackEntries,
+    mediaFallbackCandidates,
     withModelFallback,
     withModelFallbackResponse,
 } from "../src/fallback.ts";
@@ -389,6 +390,37 @@ describe("fallback response model attribution", () => {
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             formatFallbackTarget(1),
         );
+    });
+});
+
+describe("mediaFallbackCandidates", () => {
+    const publicId = "qwen/qwen-image-3";
+    const model = {
+        resolved: publicId,
+        definition: IMAGE_SERVICES[publicId],
+        fallbackEntries: (
+            ["qwen/qwen-image-3:fal", "qwen/qwen-image-3:replicate"] as const
+        ).map((id) => ({
+            ...registryEntry(id),
+            definition: IMAGE_SERVICES[id],
+        })),
+    };
+
+    it("skips a fallback that takes fewer reference images than the request sends", () => {
+        expect(
+            mediaFallbackCandidates(model, 2).map(({ id, originalIndex }) => [
+                id,
+                originalIndex,
+            ]),
+        ).toEqual([
+            [publicId, 0],
+            ["qwen/qwen-image-3:fal", 1],
+        ]);
+        expect(mediaFallbackCandidates(model, 1).map(({ id }) => id)).toEqual([
+            publicId,
+            "qwen/qwen-image-3:fal",
+            "qwen/qwen-image-3:replicate",
+        ]);
     });
 });
 

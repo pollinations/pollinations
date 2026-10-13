@@ -7,9 +7,9 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
     type FallbackCandidate,
-    fallbackCandidates,
     formatFallbackTarget,
     isRetryableFallbackError,
+    mediaFallbackCandidates,
     withModelFallback,
 } from "../fallback.ts";
 import { UserImageError } from "../userImage.ts";
@@ -307,17 +307,8 @@ async function generateMediaWithFallback(
         }
         return isRetryableFallbackError(error);
     };
-    // Skip a fallback route that would drop some of the reference images.
-    const candidates = fallbackCandidates(c.var.model)
-        .map((candidate, originalIndex) => ({ ...candidate, originalIndex }))
-        .filter(
-            ({ definition, originalIndex }) =>
-                originalIndex === 0 ||
-                (definition?.maxReferenceImages ?? Infinity) >=
-                    safeParams.image.length,
-        );
     const { result, candidate } = await withModelFallback(
-        candidates,
+        mediaFallbackCandidates(c.var.model, safeParams.image.length),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {

@@ -3,6 +3,7 @@ import { gunzipSync, inflateSync } from "node:zlib";
 import contentType from "content-type";
 import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
+import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
@@ -605,6 +606,10 @@ async function generation(
         ...params,
         format,
         route,
+        caller: callerHeaders(
+            request,
+            referrerOf(request, new URL(request.url), body),
+        ),
         publish: publisher(request, env, ctx, data, body, params, route),
     };
     const canWait = params.stream || !weftEnabled(env);
@@ -758,6 +763,7 @@ async function generate(env, job, cacheControl, ended) {
         const response = await env.GEN.fetch(GEN_URL, {
             method: "POST",
             headers: {
+                ...job.caller,
                 Authorization: `Bearer ${env.GEN_API_KEY}`,
                 "Content-Type": "application/json",
             },

@@ -62,7 +62,7 @@ const catalogChanges = {
         .map(({ name }) => name),
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
-const baseline = 4.18;
+const baseline = 4.18 + 0.00729865458;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -103,7 +103,7 @@ for (const source of [
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 10 * 60000).toISOString(),
-    maxPollen: 0.02,
+    maxPollen: 0.02 - 0.00729865458,
     reservedPollen: 0,
     calls: [],
     calibration: calibrationState(),

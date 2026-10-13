@@ -5,11 +5,17 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readBilledUsage } from "../../operations/model-management/billing.mjs";
 import {
+    applyCalibration,
+    calibratedAudit,
+    calibrationState,
+} from "../../operations/model-management/calibration.mjs";
+import {
     buildResearchControl,
     JEV_ENDPOINT,
     JEV_MODEL,
     jevCost,
     jevQuote,
+    validateClaimAudit,
     validateResearchControl,
 } from "../../operations/model-management/jev.mjs";
 import { officialCandidates } from "../../operations/model-management/prepare.mjs";
@@ -50,7 +56,7 @@ assert.deepEqual(
     inventory.map((row) => row.name).sort(),
 );
 const jev = current.find((row) => row.name === JEV_MODEL);
-const baseline = 1.98018223094;
+const baseline = 2.4271206668;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -94,6 +100,7 @@ const report = {
     maxPollen: 0.05,
     reservedPollen: 0,
     calls: [],
+    calibration: calibrationState(),
     sources,
     models: [],
     baselineAccountedPollen: baseline,
@@ -117,6 +124,11 @@ const save = () =>
     );
 await save();
 const decision = async (payload, validate) => {
+    let calibration;
+    if (validate === validateClaimAudit) {
+        calibration = calibratedAudit(payload, report.calibration);
+        payload = calibration.payload;
+    }
     const billed = await readBilledUsage(key, report.startedAt);
     report.billing = { ...billed, callCount: report.calls.length };
     const quote = jevQuote(jev, payload);
@@ -145,7 +157,14 @@ const decision = async (payload, validate) => {
     await save();
     try {
         receipt.observedPollen = jevCost(data.usage, quote);
-        const result = validate(payload, data, { rejectInvalidChoices: true });
+        let result = validate(payload, data, { rejectInvalidChoices: true });
+        if (calibration)
+            result = applyCalibration(
+                report.calibration,
+                result,
+                data,
+                calibration.controls,
+            );
         receipt.accountedPollen = receipt.observedPollen;
         receipt.status = "received";
         for (const prior of report.calls)

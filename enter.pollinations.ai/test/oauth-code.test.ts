@@ -81,6 +81,8 @@ describe("OAuth authorization server metadata", () => {
         expect(meta.code_challenge_methods_supported).toEqual(["S256"]);
         expect(meta.token_endpoint_auth_methods_supported).toEqual(["none"]);
         expect(meta.client_id_metadata_document_supported).toBe(true);
+        // localhost has no enter. subdomain, so the gen origin is BASE over https.
+        expect(meta.service_documentation).toBe("https://localhost:3000/docs");
     });
 });
 

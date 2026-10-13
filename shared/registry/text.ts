@@ -769,25 +769,24 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
-        supportedParameters: CHAT_PARAMETERS.azureOpenModels,
+        supportedParameters: CHAT_PARAMETERS.openRouterCohere,
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
         ],
-        provider: "azure",
+        provider: "openrouter",
         publisher: "Cohere",
         category: "text",
         addedDate: new Date("2026-07-30").getTime(),
-        // Our cutoff, set with the Qwen3 retirements; Azure's catalog says
-        // 2026-10-13 and its retirement schedule 2026-10-16.
-        // Provider retires this route on 2026-10-09.
-        priceMultiplier: 0.75,
-        paidOnly: false,
+        paidOnly: true,
+        priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.8),
-            completionTextTokens: perMillion(3.2),
+            // Cohere's OpenRouter route, including the 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(0.3) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(1.5) * 1.055,
         },
         title: "Cohere Command A+",
         description:
@@ -1147,20 +1146,21 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4.1-flash": {
-        supportedParameters: CHAT_PARAMETERS.fireworksReasoning,
+        supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         perUserRpm: 60,
         cost: {
-            // Fireworks Standard rates (2026-10-12).
-            promptTextTokens: perMillion(0.3),
+            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
+            // is not passed on.
+            promptTextTokens: perMillion(0.2),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(1.2),
+            completionTextTokens: perMillion(0.6),
         },
         title: "DeepSeek V4.1 Flash",
         description:
@@ -1381,28 +1381,29 @@ const TEXT_BASE_SERVICES = {
     "x-ai/grok-4.7": {
         supportedParameters: CHAT_PARAMETERS.openRouterGrok47,
         aliases: [],
-        provider: "openrouter",
+        provider: "xai",
         publisher: "xAI",
         category: "text",
         addedDate: new Date("2026-09-21").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // OpenRouter xAI route rates (2026-09-21), including the mandatory
-        // 5.5% OpenRouter credit fee. Image inputs are tokenized into
-        // promptTextTokens; no separate usage is reported. Excludes the
+        // xAI /v1/language-models/grok-4.7 rates (2026-10-12). Image tokens
+        // bill at the text input rate; reasoning bills as output. Excludes the
         // $0.005-per-call web search charge (not exposed on this model).
         cost: {
-            promptTextTokens: perMillion(1.6) * 1.055,
-            promptCachedTokens: perMillion(0.4) * 1.055,
-            completionTextTokens: perMillion(4.8) * 1.055,
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.5),
+            promptImageTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
         },
         // xAI reprices the whole request from 200K prompt tokens.
         ...defineCostVariants(
             {
                 long_context: {
-                    promptTextTokens: perMillion(3.2) * 1.055,
-                    promptCachedTokens: perMillion(0.8) * 1.055,
-                    completionTextTokens: perMillion(9.6) * 1.055,
+                    promptTextTokens: perMillion(4),
+                    promptCachedTokens: perMillion(1),
+                    promptImageTokens: perMillion(4),
+                    completionTextTokens: perMillion(12),
                 },
             },
             longContextAtLeast(200_000),
@@ -3303,14 +3304,14 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-21), including the
+            // OpenRouter Chutes FP8 route rates (2026-10-13), including the
             // account's 5.5% credit-purchase fee. OpenRouter publishes one
             // prompt rate and no separate image/video rates.
-            promptTextTokens: perMillion(0.24) * 1.055,
-            promptCachedTokens: perMillion(0.024) * 1.055,
-            promptImageTokens: perMillion(0.24) * 1.055,
-            promptVideoTokens: perMillion(0.24) * 1.055,
-            completionTextTokens: perMillion(2.2) * 1.055,
+            promptTextTokens: perMillion(0.039) * 1.055,
+            promptCachedTokens: perMillion(0.0039) * 1.055,
+            promptImageTokens: perMillion(0.039) * 1.055,
+            promptVideoTokens: perMillion(0.039) * 1.055,
+            completionTextTokens: perMillion(1.25) * 1.055,
         },
         title: "Qwen3.8 27B",
         description:
@@ -3333,6 +3334,29 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-08-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),
@@ -3364,6 +3388,29 @@ const TEXT_BASE_SERVICES = {
         priceMultiplier: 1,
         // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
         // hits (2026-09-03).
+        ...defineCostVariants(
+            { explicit_cache: { promptCachedTokens: perMillion(0.17) } },
+            ({ input }) =>
+                input?.hasExplicitCacheHit ? "explicit_cache" : undefined,
+            {
+                explicit_cache: {
+                    label: "Explicit cache",
+                    description:
+                        "Direct Alibaba explicit-cache reads cost $0.17 per million tokens.",
+                },
+            },
+            "Implicit/no cache",
+            [
+                {
+                    key: "cache",
+                    label: "Cache",
+                    values: {
+                        "": "Implicit/no cache",
+                        explicit_cache: "Explicit",
+                    },
+                },
+            ],
+        ),
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),

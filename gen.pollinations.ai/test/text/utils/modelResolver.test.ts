@@ -291,14 +291,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("pins Grok 4.7 to xAI on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes Grok 4.7 to xAI with a base-xAI OpenRouter fallback", () => {
+        const primary = resolveModelConfig(messages, {
             model: "x-ai/grok-4.7",
         });
+        const fallback = resolveModelConfig(messages, {
+            model: "x-ai/grok-4.7:openrouter",
+        });
 
-        expect(result.options.model).toBe("x-ai/grok-4.7");
-        expect(result.options.provider).toEqual({
+        expect(primary.options.model).toBe("grok-4.7");
+        expect(primary.options.provider).toBeUndefined();
+        expect(fallback.options.model).toBe("x-ai/grok-4.7");
+        expect(fallback.options.provider).toEqual({
             only: ["xai"],
+            ignore: ["xai/zdr/us", "xai/priority", "xai/zdr/priority"],
             allow_fallbacks: false,
         });
     });
@@ -835,19 +841,26 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to the exact Fireworks checkpoint", () => {
-        const result = resolveModelConfig(messages, {
+    it("routes DeepSeek V4.1 Flash to DeepInfra with a Fireworks fallback", () => {
+        const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
+        const fallback = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash:fireworks",
+        });
 
-        expect(result.options.model).toBe(
+        expect(primary.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(fallback.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4p1-flash",
         );
-        expect(result.options.modelConfig).toMatchObject({
+        expect(fallback.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
-        expect(result.options.provider).toBeUndefined();
     });
 
     it("routes DeepSeek Vision to the exact DeepInfra vision checkpoint", () => {
@@ -876,19 +889,20 @@ describe("resolveModelConfig", () => {
         });
     });
 
-    it("routes Command A+ to the exact Azure deployment without fallback", () => {
+    it("routes Command A+ to Cohere on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
             model: "command-a-plus-05-2026",
         });
 
-        expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
+        expect(result.options.model).toBe("cohere/command-a-plus");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "azure-openai",
-            "azure-resource-name": "myceli-prod-eastus",
-            "azure-deployment-id": "Cohere-command-a-plus-05-2026",
-            "azure-model-name": "Cohere-command-a-plus-05-2026",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
-        expect(result.options.provider).toBeUndefined();
+        expect(result.options.provider).toEqual({
+            only: ["Cohere"],
+            allow_fallbacks: false,
+        });
     });
 
     it.each([

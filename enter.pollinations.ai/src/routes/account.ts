@@ -4,6 +4,7 @@ import {
     hasAccountPermission,
     requireAccountPermission,
 } from "@shared/auth/account-permissions.ts";
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
 import { API_KEY_START_LENGTH, generateApiKey } from "@shared/auth/api-key.ts";
 import {
     type ApiKeyType,
@@ -48,6 +49,7 @@ import {
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
+import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -184,6 +186,17 @@ const UpdateKeySchema = CreateKeySchema.pick({
         .transform((val) => (val == null ? val : new Date(val)))
         .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
 });
+
+// A grant link from an agent run names the agent, signed by gen over the key
+// and the one category, model or account permission it asks for.
+const GrantAgentSchema = z.intersection(
+    z.union([
+        z.object({ category: z.string().min(1) }),
+        z.object({ model: z.string().min(1) }),
+        z.object({ permission: z.string().min(1) }),
+    ]),
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 function parsePermissions(
     raw: string | null | undefined,
@@ -958,6 +971,7 @@ export const accountRoutes = new Hono<Env>()
     })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",
         describeRoute({
@@ -1824,6 +1838,32 @@ export const accountRoutes = new Hono<Env>()
                 .returning();
 
             return c.json(formatKey(updated));
+        },
+    )
+    .get(
+        "/keys/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireUser();
+            const { agent, sig, ...grant } = c.req.valid("query");
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent,
+                sig,
+            });
+            return c.json({ agent: signed ? agent : null });
         },
     )
     .post(

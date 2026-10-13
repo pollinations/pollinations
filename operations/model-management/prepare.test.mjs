@@ -274,6 +274,38 @@ test("discovered niche providers become Jev-controlled official checkpoint follo
     assert.equal(f.searches.at(-1).engine, "exa");
 });
 
+test("provider index followups use only checkpoints explicitly mapped by the source", async () => {
+    const f = fixture([]);
+    f.services.remainingPollen = () => 1;
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ id }) => id === "niche-0") ??
+                  actions.find(({ id }) => id === "finish")),
+    });
+    await prepareResearch(
+        {
+            models: [
+                { name: "maker/Alpha-v3", category: "text" },
+                { name: "maker/Beta-v4", category: "text" },
+            ],
+            discoveryLeads: [
+                {
+                    name: "niche-host",
+                    kind: "provider",
+                    modelNames: ["maker/Beta-v4"],
+                    sourceIds: ["index-source"],
+                },
+            ],
+        },
+        f.services,
+    );
+    const followup = f.searches.at(-1);
+    assert.match(followup.query, /"niche-host".*"Beta-v4"/);
+    assert.ok(!followup.query.includes("Alpha-v3"));
+});
+
 function fixture(results, decisions = {}) {
     const searches = [],
         reads = [],
@@ -678,9 +710,16 @@ test("market discovery uses eight dated modes with no identity triage or Sol cal
         ],
     );
     assert.ok(
-        f.searches.every(({ query }) =>
-            query.includes(new Date().toISOString().slice(0, 7)),
-        ),
+        f.searches
+            .slice(0, 7)
+            .every(({ query }) =>
+                query.includes(new Date().toISOString().slice(0, 7)),
+            ),
+    );
+    assert.match(f.searches[7].query, /independent providers official pricing/);
+    assert.ok(
+        !f.searches[7].query.includes(new Date().toISOString().slice(0, 7)),
+        "Current-month filtering must not hide established niche providers",
     );
     assert.equal(f.triages.length, 0);
     assert.equal(f.reads.length, 8);

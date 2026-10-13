@@ -36,6 +36,7 @@ import {
 } from "./prepare.mjs";
 import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
 import { inferenceQuote } from "./pricing.mjs";
+import { PROVIDER_INDEX_URL, providerIndex } from "./provider-index.mjs";
 import {
     readJsonWithRetries,
     retryDelay,
@@ -2502,6 +2503,7 @@ export async function main(env = process.env) {
             "retries.mjs",
             "discovery.mjs",
             "calibration.mjs",
+            "provider-index.mjs",
         ].map(async (name) =>
             hash(await readFile(join(import.meta.dirname, name), "utf8")),
         ),
@@ -3281,6 +3283,32 @@ export async function main(env = process.env) {
             report.reuseGap = `Previous evidence unavailable (${error.name}); researching current inventory`;
         }
     }
+    if (!requested.length) {
+        try {
+            const source = await read({
+                url: PROVIDER_INDEX_URL,
+                mode: "http",
+                maxCharacters: 18000,
+            });
+            assert.equal(
+                source.status,
+                "fetched",
+                "Public provider index unavailable; use sourced discovery leads instead",
+            );
+            report.providerIndex = providerIndex(
+                await wholePage(PROVIDER_INDEX_URL, source),
+                inventory,
+            );
+        } catch (error) {
+            report.providerIndex = {
+                status: "unavailable",
+                reason: error.message
+                    .replaceAll(env.POLLINATIONS_API_KEY, "[redacted]")
+                    .slice(0, 300),
+            };
+        }
+        await save();
+    }
     if (requested.length) {
         report.discovery.status = "skipped";
         report.discovery.gaps = [
@@ -3353,7 +3381,13 @@ export async function main(env = process.env) {
         await run(group, {
             task: "Shared catalog/pricing research for these official models. Batch one query naming the covered models per preferred provider and alternatives (challenge). Fetch primary publisher/provider model and pricing pages for EVERY model, using focus and saved sections; do not spend all fetches on the easiest model. When batch search misses a model, target its exact checkpoint in alternatives. Preserve complete workload prices and conditions; a price for one resolution is not a universal price. Verify each exact model separately; unknowns name the attempted source and remaining gap. Use prepared evidence when supplied and verify directly. For unprepared tasks finish in six turns: plan; batch search; batch fetch; follow essential gaps; verify; submit digest.",
             models,
-            discoveryLeads: report.discovery.discoveries ?? [],
+            discoveryLeads: [
+                ...(report.providerIndex?.providers ?? []).filter(
+                    ({ modelNames }) =>
+                        models.some(({ name }) => modelNames.includes(name)),
+                ),
+                ...(report.discovery.discoveries ?? []),
+            ],
         });
         const searched = new Map(
             (group.coverage ?? []).map(({ name, searches }) => [
@@ -3580,6 +3614,13 @@ export function parentIssue(report, artifactUrl) {
         ];
         if (names.length) lines.push(`- ${label}: ${list(names)}.`);
     }
+    if (
+        report.providerIndex?.status === "fetched" &&
+        report.providerIndex.providers.length
+    )
+        lines.push(
+            `- Provider leads (unverified): ${list(report.providerIndex.providers.map(({ name }) => clean(name)))}; [catalog](${PROVIDER_INDEX_URL}).`,
+        );
     const prices = researched.flatMap((model) =>
         (model.routes ?? [])
             .filter(

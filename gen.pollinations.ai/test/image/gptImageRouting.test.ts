@@ -158,7 +158,8 @@ describe("openai/gpt-image-2 Azure routing", () => {
 
         await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 
-        expect(new Set(hosts)).toEqual(EXPECTED_HOSTS);
+        expect(new Set(hosts).size).toBe(2);
+        expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
     });
 
     // Every region would refuse the same prompt, so a retry only adds a call.

@@ -797,32 +797,46 @@ export function assess(
                 (b.pricing.input + (b.pricing.output ?? 0)),
         );
     const selected = preferred[0] ?? others[0] ?? null;
-    const discoveries = report.discoveries.filter((item) => {
-        assert.ok(
-            typeof item.name === "string" &&
-                ["model", "provider"].includes(item.kind) &&
-                typeof item.reason === "string" &&
-                Array.isArray(item.sourceIds),
-            "Invalid discovery",
-        );
-        return (
-            !(
-                item.kind === "model" &&
-                inventory.some((row) =>
-                    [row.name, ...(row.aliases ?? [])].some(
-                        (name) =>
-                            name.toLowerCase() ===
-                            item.name.trim().toLowerCase(),
+    const discoveries = report.discoveries
+        .filter((item) => {
+            assert.ok(
+                typeof item.name === "string" &&
+                    ["model", "provider"].includes(item.kind) &&
+                    typeof item.reason === "string" &&
+                    Array.isArray(item.sourceIds),
+                "Invalid discovery",
+            );
+            return (
+                !(
+                    item.kind === "model" &&
+                    inventory.some((row) =>
+                        [row.name, ...(row.aliases ?? [])].some(
+                            (name) =>
+                                name.toLowerCase() ===
+                                item.name.trim().toLowerCase(),
+                        ),
+                    )
+                ) &&
+                item.sourceIds.some((id) =>
+                    sources.some(
+                        (source) =>
+                            source.id === id &&
+                            source.status === "fetched" &&
+                            [
+                                item.name.trim(),
+                                item.name.trim().split("/").at(-1),
+                            ]
+                                .filter(Boolean)
+                                .some((name) => mentions(source.text, name)),
                     ),
                 )
-            ) &&
-            item.sourceIds.some((id) =>
-                sources.some(
-                    (source) => source.id === id && source.status === "fetched",
-                ),
-            )
-        );
-    });
+            );
+        })
+        .map((item) => {
+            const declared = { ...item };
+            delete declared.semanticAudit;
+            return declared;
+        });
     return {
         routes,
         discoveries,
@@ -1385,6 +1399,28 @@ export async function research(
                                 const outputRows = task.models
                                     ? output.models
                                     : [output];
+                                if (!task.models && !task.model)
+                                    for (const discovery of output.discoveries) {
+                                        const auditedDiscovery =
+                                            verified.discoveries.find(
+                                                (item) =>
+                                                    item.name ===
+                                                        discovery.name &&
+                                                    item.kind ===
+                                                        discovery.kind &&
+                                                    item.reason ===
+                                                        discovery.reason &&
+                                                    JSON.stringify(
+                                                        item.sourceIds,
+                                                    ) ===
+                                                        JSON.stringify(
+                                                            discovery.sourceIds,
+                                                        ),
+                                            );
+                                        if (auditedDiscovery?.semanticAudit)
+                                            discovery.semanticAudit =
+                                                auditedDiscovery.semanticAudit;
+                                    }
                                 for (const [
                                     rowIndex,
                                     row,
@@ -2218,6 +2254,48 @@ export async function main(env = process.env) {
         const rows = models ? next.models : [];
         const items = [],
             bindings = new Map();
+        const rejected = new Set();
+        if (!models)
+            for (const [index, discovery] of next.discoveries.entries()) {
+                delete discovery.semanticAudit;
+                const claim = `The source identifies ${discovery.name} as a ${discovery.kind} and explicitly supports this reason for discovery: ${discovery.reason}`;
+                if (claim.length > 1000) {
+                    rejected.add(discovery);
+                    next.gaps.push(
+                        `${discovery.name}: discovery support exceeds bounded semantic audit`,
+                    );
+                    continue;
+                }
+                const excerpt = sources
+                    .filter(
+                        (source) =>
+                            discovery.sourceIds.includes(source.id) &&
+                            source.status === "fetched",
+                    )
+                    .map((source) => {
+                        const text = norm(source.text);
+                        const name = [
+                            discovery.name.trim(),
+                            discovery.name.trim().split("/").at(-1),
+                        ]
+                            .filter(Boolean)
+                            .find((name) => mentions(text, name));
+                        if (!name) return "";
+                        const position = text
+                            .toLowerCase()
+                            .indexOf(name.toLowerCase());
+                        return text.slice(
+                            Math.max(0, position - 400),
+                            position + name.length + 1100,
+                        );
+                    })
+                    .filter(Boolean)
+                    .join("\n---\n")
+                    .slice(0, 1600);
+                const id = `discovery:${index}`;
+                items.push({ id, claim, excerpt });
+                bindings.set(id, { discovery });
+            }
         for (const row of rows) {
             for (const [index, route] of row.routes.entries()) {
                 delete route.semanticAudit;
@@ -2272,7 +2350,22 @@ export async function main(env = process.env) {
                 validateClaimAudit,
             );
             for (const grade of result.grades) {
-                const { route, row, kind } = bindings.get(grade.id);
+                const { route, row, kind, discovery } = bindings.get(grade.id);
+                if (discovery) {
+                    discovery.semanticAudit = [
+                        { ...grade, requestDigest: result.requestDigest },
+                    ];
+                    if (
+                        grade.relation !== "supported" ||
+                        grade.selectedProbability < 0.9
+                    ) {
+                        rejected.add(discovery);
+                        next.gaps.push(
+                            `${discovery.name}: discovery evidence ${grade.relation}`,
+                        );
+                    }
+                    continue;
+                }
                 route.semanticAudit ??= [];
                 route.semanticAudit.push({
                     ...grade,
@@ -2294,6 +2387,10 @@ export async function main(env = process.env) {
                 );
             }
         }
+        if (!models)
+            next.discoveries = next.discoveries.filter(
+                (item) => !rejected.has(item),
+            );
         return next;
     };
     await reconcile();

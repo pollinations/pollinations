@@ -1,5 +1,26 @@
 import assert from "node:assert/strict";
+import { buildResearchControl } from "./jev.mjs";
 import { exactModelIdentity, extractPrices } from "./price-evidence.mjs";
+export const DISCOVERY_MODES = [
+    "reddit",
+    "quora",
+    "huggingface",
+    "replit",
+    "github",
+    "hackernews",
+    "news",
+    "providers",
+];
+const HUB_FEEDS = ["trendingScore", "downloads"].map((sort, index) => ({
+    id: `hub-feed-${index}`,
+    kind: "fetch",
+    url: `https://huggingface.co/api/models?sort=${sort}&direction=-1&limit=20`,
+    mode: "http",
+    maxCharacters: 18000,
+    sourceId: "public-hub-metadata",
+    feed: true,
+    text: `Official Hugging Face ${sort} model metadata: current downloads, likes and trend signals; these are not unique-user counts or API availability.`,
+}));
 
 function safeUrl(value) {
     if (typeof value !== "string" || value.length > 2048) return null;
@@ -300,6 +321,7 @@ export async function prepareResearch(task, services) {
     ];
     let triage = { prioritizedIds: [], ambiguousIds: [], irrelevantIds: [] };
     let reasoningAction = null;
+    let extraction = null;
     const evidence = () => ({
         plans,
         scopes,
@@ -312,8 +334,10 @@ export async function prepareResearch(task, services) {
         unselectedLeadIds,
         unselectedLeads,
         reasoningAction,
+        extraction,
     });
     const checkpoints = `(${names.map((name) => JSON.stringify(name.split("/").at(-1))).join(" OR ")})`;
+    const month = new Date().toISOString().slice(0, 7);
     const searches = names.length
         ? [
               [
@@ -341,22 +365,42 @@ export async function prepareResearch(task, services) {
               [
                   "discovery",
                   "reddit",
-                  "site:reddit.com trending underrated inference models niche providers primary source",
+                  `site:reddit.com ${month} AI model community demand trending new releases adoption niche inference provider deals`,
+              ],
+              [
+                  "discovery",
+                  "quora",
+                  `site:quora.com ${month} AI model community demand underrated models inference provider pricing deals`,
               ],
               [
                   "discovery",
                   "huggingface",
-                  "site:huggingface.co new trending inference model checkpoints providers official model cards",
+                  `site:huggingface.co ${month} trending new model releases checkpoint adoption official model cards inference providers`,
               ],
               [
                   "discovery",
                   "replit",
-                  "site:replit.com new inference models niche providers developer applications",
+                  `site:replit.com ${month} AI model developer adoption applications trending inference models provider deals`,
               ],
               [
                   "discovery",
                   "github",
-                  "site:github.com new inference model checkpoints niche providers official repositories",
+                  `site:github.com ${month} AI model releases adoption stars new checkpoints niche inference providers`,
+              ],
+              [
+                  "discovery",
+                  "hackernews",
+                  `site:news.ycombinator.com ${month} AI model releases developer demand adoption inference provider pricing deals`,
+              ],
+              [
+                  "discovery",
+                  "news",
+                  `${month} AI model publisher official new releases trending adoption announcement`,
+              ],
+              [
+                  "discovery",
+                  "providers",
+                  `${month} niche inference providers new model API pricing deals discounts serverless official release`,
               ],
           ];
     assert.ok(
@@ -398,15 +442,41 @@ export async function prepareResearch(task, services) {
                 excerpt: text?.slice(0, 160),
             })),
             gaps: gaps.slice(0, 8).map((gap) => gap.slice(0, 160)),
+            extraction: extraction
+                ? {
+                      selected: extraction.discoveries
+                          .map(({ name, kind }) => ({ name, kind }))
+                          .slice(0, 12),
+                      unresolved: extraction.gaps,
+                      grades: extraction.grades.slice(0, 12),
+                  }
+                : null,
             omittedGaps: Math.max(0, gaps.length - 8),
         });
-        const decision = await services.control({
+        const state = {
             stage,
             models: names,
-            actions: menu,
+            actions: [...menu],
             evidence: snapshot,
-            remainingPollen: services.remainingPollen?.(),
-        });
+            remainingPollen: services.remainingPollen?.() ?? 0,
+        };
+        while (true) {
+            try {
+                buildResearchControl(state);
+                break;
+            } catch (error) {
+                if (
+                    !/context bound/.test(error.message) ||
+                    state.actions.length === 1
+                )
+                    throw error;
+                const last = state.actions.findLastIndex(
+                    (action) => action.kind !== "finish",
+                );
+                state.actions.splice(last, 1);
+            }
+        }
+        const decision = await services.control(state);
         actions.push({
             tool: "control",
             stage,
@@ -444,7 +514,17 @@ export async function prepareResearch(task, services) {
             status: "pending",
         };
         actions.push(action);
-        const raw = await services.search(query, "exa");
+        let raw;
+        try {
+            raw = await services.search(query, "exa");
+        } catch (error) {
+            action.status = "failed";
+            if (!names.length)
+                gaps.push(
+                    `${mode}: search failed; discovery evidence remains unresolved`,
+                );
+            throw error;
+        }
         action.status = "searched";
         const receipt = `${mode}:exa:challenge:${query}`;
         if (!scopes.has(scope)) scopes.set(scope, new Set());
@@ -454,10 +534,17 @@ export async function prepareResearch(task, services) {
                 coverage.get(name).set(scope, new Set());
             coverage.get(name).get(scope).add(receipt);
         }
-        for (const lead of parseLeads(raw)) {
+        const parsedLeads = parseLeads(raw);
+        if (!names.length)
+            omittedCandidates += Math.max(0, parsedLeads.length - 8);
+        if (!parsedLeads.length && !names.length)
+            gaps.push(`${mode}: no usable safe search lead returned`);
+        for (const lead of names.length
+            ? parsedLeads
+            : parsedLeads.slice(0, 8)) {
             let saved = candidates.get(lead.url);
             if (!saved) {
-                if (candidates.size >= 32) {
+                if (candidates.size >= (names.length ? 32 : 64)) {
                     omittedCandidates++;
                     continue;
                 }
@@ -471,6 +558,7 @@ export async function prepareResearch(task, services) {
                         ),
                     ),
                     scopes: [],
+                    modes: [],
                     queryModels: [],
                 };
                 candidates.set(lead.url, saved);
@@ -483,6 +571,7 @@ export async function prepareResearch(task, services) {
                 }
             }
             if (!saved.scopes.includes(scope)) saved.scopes.push(scope);
+            if (!saved.modes.includes(mode)) saved.modes.push(mode);
             returnedLeadIds.push(saved.id);
             for (const name of queryModels)
                 if (!saved.queryModels.includes(name))
@@ -515,21 +604,9 @@ export async function prepareResearch(task, services) {
         const selected = new Set();
         if (!names.length) {
             for (const [, mode] of searches) {
-                const platform =
-                    mode === "reddit"
-                        ? "reddit.com"
-                        : mode === "huggingface"
-                          ? "huggingface.co"
-                          : mode === "replit"
-                            ? "replit.com"
-                            : "github.com";
-                const lead = ranked.find(
-                    (item) =>
-                        new URL(item.url).hostname === platform ||
-                        new URL(item.url).hostname.endsWith(`.${platform}`),
-                );
+                const lead = ranked.find((item) => item.modes.includes(mode));
                 if (lead) selected.add(lead);
-                else gaps.push(`${mode}: no usable platform lead returned`);
+                else gaps.push(`${mode}: no usable discovery lead returned`);
             }
         }
         for (const name of names) {
@@ -547,9 +624,13 @@ export async function prepareResearch(task, services) {
                 );
         }
         // Preserve each search scope before preferred providers fill the bounded pass.
-        const scopeLeads = [...scopes.keys()].map((scope) =>
-            ranked.filter((lead) => lead.scopes.includes(scope)),
-        );
+        const scopeLeads = names.length
+            ? [...scopes.keys()].map((scope) =>
+                  ranked.filter((lead) => lead.scopes.includes(scope)),
+              )
+            : searches.map(([, mode]) =>
+                  ranked.filter((lead) => lead.modes.includes(mode)),
+              );
         for (const rows of scopeLeads) {
             if (rows.length && !rows.some((lead) => selected.has(lead)))
                 selected.add(rows[0]);
@@ -569,7 +650,7 @@ export async function prepareResearch(task, services) {
         unselectedLeads.push(...ranked.filter((lead) => !selected.has(lead)));
         if (omittedCandidates)
             gaps.push(
-                "Additional search results omitted because of the thirty-two-candidate preparation bound",
+                `Additional search results omitted because of the ${names.length ? "thirty-two" : "sixty-four"}-candidate preparation bound`,
             );
         const excerpts = leads
             .filter((lead) => lead.text.trim() || lead.title.trim())
@@ -639,12 +720,155 @@ export async function prepareResearch(task, services) {
             sources.push(source);
             action.status = source.status;
         }
+        if (!names.length && services.control) {
+            const blocked = sources
+                .filter(({ status }) => status === "unavailable")
+                .slice(0, 4);
+            while (blocked.length) {
+                const selected = await control("crawl", [
+                    ...blocked.map((source, index) => ({
+                        id: `fallback-${index}`,
+                        kind: "fetch",
+                        url: source.url,
+                        mode: "exa",
+                        maxCharacters: 4000,
+                        sourceId: source.id,
+                        text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
+                    })),
+                    { id: "finish", kind: "finish" },
+                ]);
+                if (!selected) return evidence();
+                if (selected.kind === "finish") break;
+                const failed = blocked.splice(
+                    Number(selected.id.split("-").at(-1)),
+                    1,
+                )[0];
+                const action = {
+                    tool: "fetch",
+                    url: selected.url,
+                    mode: "exa",
+                    maxCharacters: 4000,
+                    parentSourceId: failed.id,
+                    models: [],
+                    status: "pending",
+                };
+                actions.push(action);
+                const source = await services.read(action);
+                sources.push(source);
+                action.status = source.status;
+                if (source.status !== "fetched")
+                    gaps.push(
+                        `${source.url}: both local HTTP and Exa retrieval unavailable`,
+                    );
+            }
+            const readUrls = new Set(sources.map(({ url }) => url));
+            const pageReads = new Map();
+            const linkIds = new Map();
+            let crawled = 0;
+            while (crawled < 8 && sources.length < 24) {
+                const links = new Map();
+                for (const feed of HUB_FEEDS)
+                    if (!readUrls.has(feed.url)) links.set(feed.url, feed);
+                for (const source of sources) {
+                    if (
+                        source.status !== "fetched" ||
+                        (pageReads.get(source.id) ?? 0) >= 2
+                    )
+                        continue;
+                    for (const link of (source.links ?? []).slice(0, 12)) {
+                        const url = safeUrl(link.url);
+                        if (!url || readUrls.has(url) || links.has(url))
+                            continue;
+                        if (!linkIds.has(url))
+                            linkIds.set(url, `crawl-${linkIds.size + 1}`);
+                        links.set(url, {
+                            id: linkIds.get(url),
+                            kind: "fetch",
+                            url,
+                            mode: "http",
+                            maxCharacters: 3000,
+                            sourceId: source.id,
+                            text:
+                                typeof link.text === "string"
+                                    ? link.text.slice(0, 160)
+                                    : "",
+                        });
+                    }
+                }
+                const menu = [...links.values()]
+                    .sort(
+                        (a, b) =>
+                            Number(
+                                /model|provider|pricing|release|inference|checkpoint/i.test(
+                                    b.text,
+                                ),
+                            ) -
+                            Number(
+                                /model|provider|pricing|release|inference|checkpoint/i.test(
+                                    a.text,
+                                ),
+                            ),
+                    )
+                    .slice(0, 12);
+                if (!menu.length) break;
+                const selected = await control("crawl", [
+                    ...menu,
+                    { id: "finish", kind: "finish" },
+                ]);
+                if (!selected) return evidence();
+                if (selected.kind === "finish") break;
+                readUrls.add(selected.url);
+                pageReads.set(
+                    selected.sourceId,
+                    (pageReads.get(selected.sourceId) ?? 0) + 1,
+                );
+                const args = {
+                    url: selected.url,
+                    mode: "http",
+                    maxCharacters: selected.maxCharacters ?? 3000,
+                };
+                const action = {
+                    tool: "fetch",
+                    ...args,
+                    ...(selected.feed
+                        ? { feed: true }
+                        : { parentSourceId: selected.sourceId }),
+                    models: [],
+                    status: "pending",
+                };
+                actions.push(action);
+                const source = await services.read(args);
+                sources.push(source);
+                action.status = source.status;
+                crawled++;
+            }
+        }
+        if (!names.length)
+            for (const [, mode] of searches)
+                if (
+                    !leads.some(
+                        (lead) =>
+                            lead.modes.includes(mode) &&
+                            sources.some(
+                                (source) =>
+                                    source.url === lead.url &&
+                                    source.status === "fetched",
+                            ),
+                    )
+                )
+                    gaps.push(
+                        `${mode}: fetched discovery evidence remains unresolved`,
+                    );
+        if (!names.length && services.extract) {
+            extraction = await services.extract(sources);
+            gaps.push(...extraction.gaps);
+        }
         let followed = 0;
         if (services.control) {
             const attempted = new Set();
             const attemptedModels = new Set();
-            const followupActions = () =>
-                officialCandidates(task.models ?? [], sources)
+            const followupActions = () => {
+                const offered = officialCandidates(task.models ?? [], sources)
                     .models.flatMap((row, index) => {
                         const missingIdentity = !row.routes.length;
                         const missingPrice = !row.routes.some(
@@ -688,6 +912,39 @@ export async function prepareResearch(task, services) {
                         ];
                     })
                     .filter(({ id }) => !attempted.has(id));
+                for (const [index, provider] of (
+                    task.discoveryLeads ?? []
+                ).entries()) {
+                    const id = `niche-${index}`;
+                    if (
+                        !names.length ||
+                        provider.kind !== "provider" ||
+                        typeof provider.name !== "string" ||
+                        provider.name.length > 200 ||
+                        attempted.has(id) ||
+                        offered.length >= 17
+                    )
+                        continue;
+                    const covered = [...names];
+                    let query;
+                    do {
+                        query = `${JSON.stringify(provider.name)} ${covered.map((name) => JSON.stringify(name.split("/").at(-1))).join(" OR ")} official managed inference API standard pricing TPS restrictions`;
+                        if (query.length <= 700) break;
+                        covered.pop();
+                    } while (covered.length);
+                    if (covered.length)
+                        offered.push({
+                            id,
+                            kind: "search",
+                            query,
+                            engine: "exa",
+                            scope: "alternatives",
+                            mode: "web",
+                            models: covered,
+                        });
+                }
+                return offered;
+            };
             const finish = { id: "finish", kind: "finish" };
             while (followed < 2) {
                 const followups = followupActions();
@@ -787,7 +1044,7 @@ export async function prepareResearch(task, services) {
                 ? {
                       id: "reason-discovery",
                       kind: "reason",
-                      task: "Synthesize fetched cross-platform discovery leads into source-bound model/provider discoveries; identify popularity versus documented managed availability.",
+                      task: "Resolve only ambiguous cross-platform entity identity, adoption or release evidence left after Jev literal extraction. Keep supported extracted leads; do not use Sol for routine consolidation or invent names, facts or prices.",
                   }
                 : followed > 0 && semanticSources.length
                   ? {

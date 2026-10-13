@@ -267,6 +267,61 @@ test("the HTTP deadline prevents another attempt when its incremental wait canno
     assert.deepEqual(sleeps, []);
 });
 
+test("HTML links retain bounded useful public leads without credentials or local targets", () => {
+    const { result } = run({
+        pages: [
+            {
+                status: 200,
+                html_content:
+                    '<h1>Model release</h1><a href="/models/novel-4">NovelModel 4</a><a href="https://huggingface.co/startup/novel-4">Model card</a><a href="https://127.0.0.1/models">Private model</a><a href="https://user:password@private.example/models">Credential model</a><a href="https://docs.example/models?api_key=test-secret">Pricing</a><a href="https://[bad/models">Bad link</a><script><a href="https://hidden.example/models">Hidden model</a></script><p>Current provider documentation remains readable</p>',
+            },
+        ],
+    });
+    assert.equal(result.status, "fetched", result.error);
+    assert.deepEqual(result.links, [
+        { url: "https://docs.example/models/novel-4", text: "NovelModel 4" },
+        { url: "https://huggingface.co/startup/novel-4", text: "Model card" },
+    ]);
+    assert.match(result.text, /Current provider documentation/);
+    assert.doesNotMatch(
+        JSON.stringify(result.links),
+        /password|test-secret|hidden|127\.0\.0\.1/,
+    );
+});
+
+test("legacy no-link cache is refreshed for a crawl while ordinary saved reads remain reusable", () => {
+    const setup = `import tempfile, hashlib, os\nfrom datetime import datetime, timezone\ncache = tempfile.TemporaryDirectory(); os.environ["FETCH_CACHE_DIR"] = cache.name\nlegacy = "Legacy current model documentation"\nurl = "https://docs.example/"\npage = {"requestedUrl":url,"url":url,"text":legacy,"pageDigest":hashlib.sha256(legacy.encode()).hexdigest(),"extractionVersion":2,"fetchedAt":datetime.now(timezone.utc).isoformat().replace("+00:00","Z")}\nfrom pathlib import Path\nPath(cache.name,hashlib.sha256(url.encode()).hexdigest()+".json").write_text(json.dumps(page))\n`;
+    const script = harness.replace(
+        "sys.stdin = io.StringIO",
+        `${setup}sys.stdin = io.StringIO`,
+    );
+    const saved = run(
+        { request: { url: "https://docs.example/", includeLinks: false } },
+        script,
+    );
+    assert.equal(saved.calls.length, 0);
+    assert.equal(saved.result.cached, true);
+    const refreshed = run(
+        {
+            request: { url: "https://docs.example/", includeLinks: true },
+            pages: [
+                {
+                    status: 200,
+                    html_content:
+                        '<p>Refreshed model documentation</p><a href="/models/new">New model</a>',
+                },
+            ],
+        },
+        script,
+    );
+    assert.equal(refreshed.calls.length, 1);
+    assert.equal(refreshed.result.cached, false);
+    assert.equal(
+        refreshed.result.links[0].url,
+        "https://docs.example/models/new",
+    );
+});
+
 test("Retry-After beyond thirty seconds defers without retrying early", () => {
     for (const retryAfter of [
         "120",

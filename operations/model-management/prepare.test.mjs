@@ -2,6 +2,39 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseLeads, prepareResearch } from "./prepare.mjs";
 
+test("discovered niche providers become Jev-controlled official checkpoint followups", async () => {
+    const f = fixture([]);
+    f.services.remainingPollen = () => 1;
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ id }) => id === "niche-0") ??
+                  actions.find(({ id }) => id === "finish")),
+        selectedProbability: 0.98,
+        requestDigest: "f".repeat(64),
+    });
+    await prepareResearch(
+        {
+            models: [{ name: "maker/Alpha-v3", category: "text" }],
+            discoveryLeads: [
+                {
+                    name: "NicheServe",
+                    kind: "provider",
+                    sourceIds: ["provider-source"],
+                },
+            ],
+        },
+        f.services,
+    );
+    assert.equal(f.searches.length, 5);
+    assert.match(
+        f.searches.at(-1).query,
+        /"NicheServe".*"Alpha-v3".*standard pricing TPS/,
+    );
+    assert.equal(f.searches.at(-1).engine, "exa");
+});
+
 function fixture(results, decisions = {}) {
     const searches = [],
         reads = [],
@@ -375,7 +408,7 @@ test("HTTP unavailable is retained without retry; missing versions leave explici
     );
 });
 
-test("market discovery uses four platforms with no identity triage or Sol call", async () => {
+test("market discovery uses eight dated modes with no identity triage or Sol call", async () => {
     const f = fixture(
         ["reddit.com", "huggingface.co", "replit.com", "github.com"].map(
             (host) => ({
@@ -388,10 +421,261 @@ test("market discovery uses four platforms with no identity triage or Sol call",
         { officialNames: [{ name: "maker/Alpha" }] },
         f.services,
     );
-    assert.equal(f.searches.length, 4);
-    assert.equal(result.scopes.get("discovery").size, 4);
+    assert.equal(f.searches.length, 8);
+    assert.equal(result.scopes.get("discovery").size, 8);
+    assert.deepEqual(
+        result.actions
+            .filter(({ tool }) => tool === "search")
+            .map(({ mode }) => mode),
+        [
+            "reddit",
+            "quora",
+            "huggingface",
+            "replit",
+            "github",
+            "hackernews",
+            "news",
+            "providers",
+        ],
+    );
+    assert.ok(
+        f.searches.every(({ query }) =>
+            query.includes(new Date().toISOString().slice(0, 7)),
+        ),
+    );
     assert.equal(f.triages.length, 0);
     assert.equal(f.reads.length, 4);
+});
+
+test("discovery preserves eight-mode diversity within sixty-four candidates and sixteen reads", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () => {
+        const current = bucket++;
+        return JSON.stringify({
+            results: Array.from({ length: 20 }, (_, index) => ({
+                url: `https://bucket${current}.example.org/${index}`,
+                text: "Actual release lead",
+            })),
+        });
+    };
+    const result = await prepareResearch({}, f.services);
+    assert.equal(result.leads.length, 16);
+    assert.equal(result.unselectedLeads.length, 48);
+    assert.equal(f.reads.length, 16);
+    const modes = [
+        "reddit",
+        "quora",
+        "huggingface",
+        "replit",
+        "github",
+        "hackernews",
+        "news",
+        "providers",
+    ];
+    assert.deepEqual(
+        result.leads.slice(0, 8).map(({ modes }) => modes[0]),
+        modes,
+    );
+    assert.deepEqual(
+        result.leads.slice(8).map(({ modes }) => modes[0]),
+        modes,
+    );
+    assert.ok(
+        result.leads.every(
+            ({ url }) => Number(new URL(url).pathname.slice(1)) < 8,
+        ),
+    );
+});
+
+test("discovery crawl reads only copied Jev links, dedupes URLs and caps each page and all reads", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () => {
+        const current = bucket++;
+        return JSON.stringify({
+            results: Array.from({ length: 2 }, (_, index) => ({
+                url: `https://bucket${current}.example.org/${index}`,
+                text: "Actual model release",
+            })),
+        });
+    };
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        links: Array.from({ length: 12 }, (_, index) => ({
+            url:
+                index === 0
+                    ? args.url
+                    : `https://publisher.example.org/${encodeURIComponent(args.url)}/${index}`,
+            text: index <= 2 ? "Model release pricing" : "More links",
+        })),
+    });
+    let crawlChoices = 0;
+    f.services.control = async ({ stage, actions }) => {
+        if (stage === "crawl") {
+            crawlChoices++;
+            assert.ok(actions.length <= 13);
+            assert.ok(
+                actions.some(({ text }) => text === "Model release pricing"),
+            );
+        }
+        return {
+            action:
+                stage === "reasoning"
+                    ? actions.find(({ kind }) => kind === "finish")
+                    : stage === "crawl"
+                      ? (actions.find(
+                            ({ sourceId }) => sourceId === "source-1",
+                        ) ?? actions[0])
+                      : actions[0],
+        };
+    };
+    const result = await prepareResearch({}, f.services);
+    assert.equal(crawlChoices, 8);
+    assert.equal(f.reads.length, 24);
+    assert.equal(new Set(f.reads.map(({ url }) => url)).size, 24);
+    const counts = new Map();
+    for (const action of result.actions.filter(
+        ({ parentSourceId }) => parentSourceId,
+    ))
+        counts.set(
+            action.parentSourceId,
+            (counts.get(action.parentSourceId) ?? 0) + 1,
+        );
+    assert.ok([...counts.values()].every((count) => count <= 2));
+    assert.equal(counts.get("source-1"), 2);
+});
+
+test("discovery crawl finish performs no additional read and cannot mutate a link", async () => {
+    const f = fixture([
+        { url: "https://example.org/actual", text: "Actual release" },
+    ]);
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        links: [
+            {
+                url: "https://publisher.example.org/release",
+                text: "Model release",
+            },
+        ],
+    });
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : actions.find(({ kind }) => kind === "finish"),
+    });
+    await prepareResearch({}, f.services);
+    assert.equal(f.reads.length, 1);
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "crawl"
+                ? { ...actions[0], url: "https://other.example.org/invented" }
+                : actions[0],
+    });
+    await assert.rejects(
+        prepareResearch({}, f.services),
+        /Controller must copy/,
+    );
+    assert.equal(f.reads.length, 2);
+});
+
+test("Jev can choose the free official Hub metric feed without a Sol call", async () => {
+    const f = fixture([]);
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : stage === "crawl"
+                  ? (actions.find(({ id }) => id === "hub-feed-0") ??
+                    actions.find(({ kind }) => kind === "finish"))
+                  : actions.find(({ kind }) => kind === "finish"),
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.equal(f.reads.length, 1);
+    assert.equal(
+        f.reads[0].url,
+        "https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=20",
+    );
+    assert.equal(f.reads[0].maxCharacters, 18000);
+    assert.equal(result.actions.find(({ feed }) => feed).status, "fetched");
+    assert.equal(result.reasoningAction, null);
+});
+
+test("a blocked page gets an Exa fallback only when Jev selects it", async () => {
+    const f = fixture([
+        { url: "https://quora.com/release", text: "New model demand" },
+    ]);
+    f.services.read = async (args) => {
+        f.reads.push(args);
+        return {
+            id: `source-${f.reads.length}`,
+            url: args.url,
+            status: args.mode === "exa" ? "fetched" : "unavailable",
+            text: args.mode === "exa" ? "Retrieved public discussion" : "",
+            links: [],
+        };
+    };
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : stage === "crawl"
+                  ? (actions.find(({ id }) => id.startsWith("fallback-")) ??
+                    actions.find(({ kind }) => kind === "finish"))
+                  : actions.find(({ kind }) => kind === "finish"),
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.deepEqual(
+        f.reads.map(({ mode }) => mode),
+        ["http", "exa"],
+    );
+    assert.equal(result.sources[0].status, "unavailable");
+    assert.equal(result.sources[1].status, "fetched");
+    assert.ok(
+        result.actions.some(
+            (action) =>
+                action.mode === "exa" && action.parentSourceId === "source-1",
+        ),
+    );
+});
+
+test("missing and failed discovery buckets preserve explicit unknown evidence", async () => {
+    const f = fixture([]);
+    let bucket = 0;
+    f.services.search = async () =>
+        JSON.stringify({
+            results:
+                bucket++ === 0
+                    ? [
+                          {
+                              url: "https://reddit.com/actual",
+                              text: "Actual lead",
+                          },
+                      ]
+                    : [],
+        });
+    f.services.read = async ({ url }) => ({
+        id: "source-1",
+        url,
+        status: "unavailable",
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.ok(
+        result.gaps.includes("quora: no usable safe search lead returned"),
+    );
+    assert.ok(
+        result.gaps.includes(
+            "reddit: fetched discovery evidence remains unresolved",
+        ),
+    );
+    assert.ok(
+        result.gaps.includes(
+            "providers: fetched discovery evidence remains unresolved",
+        ),
+    );
 });
 
 test("shared catalog uses separate literal focuses and first gives every model a read", async () => {

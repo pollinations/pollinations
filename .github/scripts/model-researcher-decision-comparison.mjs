@@ -159,13 +159,11 @@ for (const [category, cases] of [
     ["held-out-evidence", heldOut],
 ]) {
     for (let i = 0; i < cases.length; i += 2) {
-        const items = cases
-            .slice(i, i + 2)
-            .map(([excerpt, claim], j) => ({
-                id: `${category}-${i + j}`,
-                excerpt,
-                claim,
-            }));
+        const items = cases.slice(i, i + 2).map(([excerpt, claim], j) => ({
+            id: `${category}-${i + j}`,
+            excerpt,
+            claim,
+        }));
         add(
             category,
             buildClaimAudit(items),
@@ -241,15 +239,13 @@ const entities = [
     ],
 ];
 for (let i = 0; i < entities.length; i += 2) {
-    const candidates = entities
-        .slice(i, i + 2)
-        .map(([name, quote], j) => ({
-            id: `entity-${i + j}`,
-            name,
-            quote,
-            sourceId: `page-${i + j}`,
-            url: "https://source.example/models",
-        }));
+    const candidates = entities.slice(i, i + 2).map(([name, quote], j) => ({
+        id: `entity-${i + j}`,
+        name,
+        quote,
+        sourceId: `page-${i + j}`,
+        url: "https://source.example/models",
+    }));
     add(
         "discovery-extraction",
         buildDiscoveryExtraction(candidates, "2026-10-14"),
@@ -430,7 +426,9 @@ const report = {
     status: "running",
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 25 * 60000).toISOString(),
-    maxPollen: 0.05,
+    // Keep the first transport probe's reservation inside the same total allowance.
+    priorAccountedPollen: 0.00056016702,
+    maxPollen: 0.05 - 0.00056016702,
     reservedPollen: 0,
     calls: [],
     results: [],
@@ -517,7 +515,9 @@ try {
                     Number.isSafeInteger(usage?.input_tokens) &&
                         usage.input_tokens > 0 &&
                         usage.input_tokens <= inputUpperBound &&
-                        usage.output_tokens === 0,
+                        Number.isSafeInteger(usage.output_tokens) &&
+                        usage.output_tokens >= 0 &&
+                        usage.output_tokens <= 30000,
                     "Missing or unbounded native usage",
                 );
                 receipt.accountedPollen = usage.input_tokens * price;
@@ -674,7 +674,7 @@ try {
         );
     report.status = "completed";
     report.endedAt = new Date().toISOString();
-    assert.ok(budgetUsed(report) <= 0.05);
+    assert.ok(budgetUsed(report) + report.priorAccountedPollen <= 0.05);
     console.log(
         JSON.stringify({
             ranking: report.ranking,

@@ -83,7 +83,13 @@ const SSH_SETUP =
 const TEMPLATE_NAME = /^([a-z0-9_-]+\/)?[a-z0-9_-]+(:[a-z0-9._-]+)?$/;
 
 type Pending =
-    | { action: "create"; template: string; custom?: boolean }
+    // notFound: E2B answered the create that it has no such template.
+    | {
+          action: "create";
+          template: string;
+          custom?: boolean;
+          notFound?: boolean;
+      }
     | { action: "connect"; sandbox: Sandbox }
     // Ends a running sandbox's "Until I stop it" after a while.
     | { action: "limit"; sandbox: Sandbox }
@@ -124,14 +130,13 @@ function customError(seconds: number) {
     return null;
 }
 
-// What the pending action's sandbox costs an hour, or per vCPU and GB when
-// the template's size isn't known.
+// What the pending action's sandbox costs an hour. E2B tells only the team
+// that built a template its size, so another team's template is priced once
+// it runs.
 function perHour(pricing: Pricing, pending: Pending) {
     if (pending.action === "create") {
         const size = pricing.templates[pending.template.trim()];
-        if (!size) {
-            return `${pollen(pricing.vcpuSecond * 3600)} per vCPU and ${pollen(pricing.gibSecond * 3600)} per GB, depending on the template’s size`;
-        }
+        if (!size) return "Shown on your sandbox card once it starts.";
         return `${pollen(perSecond(pricing, size) * 3600)} (${sizeLabel(size)})`;
     }
     return pollen(perSecond(pricing, pending.sandbox) * 3600);
@@ -397,7 +402,6 @@ export function Sandboxes() {
     }, [load]);
 
     async function run(id: string, action: () => Promise<unknown>) {
-        setPending(null);
         setBusyId(id);
         setActionError(null);
         try {
@@ -416,7 +420,10 @@ export function Sandboxes() {
     const templateError =
         template.trim() && !TEMPLATE_NAME.test(template.trim())
             ? "Not a template name. Use lowercase letters, digits, - and _, e.g. claude or team/name:tag."
-            : null;
+            : pending?.action === "create" && pending.notFound
+              ? `There’s no public template “${template.trim()}”. Check the name, or pick Pollinations.`
+              : null;
+    const creating = busyId === "new";
 
     const seconds = untilStopped ? FOREVER : Math.round(Number(amount) * unit);
     const durationError = untilStopped ? null : customError(seconds);
@@ -438,27 +445,36 @@ export function Sandboxes() {
         (pending.action === "kill" ||
             (!durationError &&
                 (pending.action !== "create" ||
-                    (!!template.trim() && !templateError && !full))));
+                    (!!template.trim() &&
+                        !templateError &&
+                        !full &&
+                        !creating))));
 
     function confirm() {
         if (!pending || !canConfirm) return;
         if (pending.action === "create") {
-            // The same request as `polli sandbox create`.
+            // The same request as `polli sandbox create`. The dialog stays
+            // open until it's done, so a template E2B doesn't have can be
+            // fixed in place.
             void run("new", () =>
                 e2b("/sandboxes", "POST", {
                     templateID: pending.template.trim(),
                     timeout,
                     autoPause: true,
-                }).catch((error: Error) => {
-                    throw /not found/i.test(error.message)
-                        ? new Error(
-                              `There’s no public template “${pending.template}”. Check the name, or start with pollinations.`,
-                          )
-                        : error;
-                }),
+                }).then(
+                    () => setPending(null),
+                    (error: Error) => {
+                        if (!/not found/i.test(error.message)) {
+                            setPending(null);
+                            throw error;
+                        }
+                        setPending({ ...pending, notFound: true });
+                    },
+                ),
             );
             return;
         }
+        setPending(null);
         const id = pending.sandbox.sandboxID;
         // Connect sets the time from now and, unlike timeout, never shortens
         // it, so a keep set from the CLI stays. A time limit is meant to
@@ -647,7 +663,7 @@ export function Sandboxes() {
             </ConfirmationDialog>
             <ResourceDialog
                 open={!!spends}
-                onOpenChange={(open) => !open && setPending(null)}
+                onOpenChange={(open) => !open && !creating && setPending(null)}
                 size="lg"
             >
                 <form
@@ -665,6 +681,7 @@ export function Sandboxes() {
                                     type="button"
                                     intent="neutral"
                                     icon={<XIcon />}
+                                    disabled={creating}
                                     onClick={() => setPending(null)}
                                 >
                                     Cancel
@@ -679,6 +696,7 @@ export function Sandboxes() {
                                             <PlayIcon />
                                         )
                                     }
+                                    aria-busy={creating}
                                     disabled={!canConfirm}
                                 >
                                     {!pending

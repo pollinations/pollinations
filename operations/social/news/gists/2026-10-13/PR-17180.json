@@ -1,0 +1,98 @@
+{
+  "pr_number": 17180,
+  "title": "fix: correct Grok 4.7 pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17180",
+  "merged_at": "2026-10-13T01:05:53Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Corrected Grok 4.7 pricing per million input, cached, and output tokens, and added prompt-image token pricing. The long-context rates still double at 200K prompt tokens; access remains Paid only. Routing now uses the xAI API as primary instead of OpenRouter, with OpenRouter’s xAI base route as fallback; the fallback’s provider cost exceeds the wallet price. Tests cover both routes across text, streaming, vision, tools, caching, and long-context requests with images. Both routes use xAI hosts, and a bad-key 400 response does not trigger fallback.",
+    "keywords": [
+      "Grok 4.7",
+      "pricing",
+      "xAI",
+      "OpenRouter",
+      "fallback",
+      "long context"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17180.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli checks a Grok 4.7 price ledger beside two labeled route cables, xAI and OpenRouter, while a code-plant curls around the terminal. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny accountant glasses and stays small within the scene. Strictly pixel art, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518)."
+  },
+  "generated_at": "2026-10-13T01:07:41.227381+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "ec091b3b82e93d65cdf13c15a0a28fe821371ea5",
+  "announcements": [
+    {
+      "id": "pr-17180:x-ai/grok-4.7",
+      "model_id": "x-ai/grok-4.7",
+      "title": "Grok 4.7",
+      "action": "UPDATE",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "pricing": {
+          "before": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000001688",
+            "promptCachedTokens": "0.000000422",
+            "completionTextTokens": "0.000005064"
+          },
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000002",
+            "promptCachedTokens": "0.0000005",
+            "promptImageTokens": "0.000002",
+            "completionTextTokens": "0.000006"
+          }
+        },
+        "pricing_variants": {
+          "before": [
+            {
+              "name": "long_context",
+              "label": "Long context (200K+)",
+              "description": "At least 200,000 prompt tokens; text, cached, and output rates double.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000003376",
+                "promptCachedTokens": "0.000000844",
+                "completionTextTokens": "0.000010128"
+              }
+            }
+          ],
+          "after": [
+            {
+              "name": "long_context",
+              "label": "Long context (200K+)",
+              "description": "At least 200,000 prompt tokens; text, cached, and output rates double.",
+              "pricing": {
+                "currency": "pollen",
+                "promptTextTokens": "0.000004",
+                "promptCachedTokens": "0.000001",
+                "promptImageTokens": "0.000004",
+                "completionTextTokens": "0.000012"
+              }
+            }
+          ]
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "ec091b3b82e93d65cdf13c15a0a28fe821371ea5^1",
+    "after_ref": "ec091b3b82e93d65cdf13c15a0a28fe821371ea5"
+  }
+}

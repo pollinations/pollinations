@@ -169,6 +169,9 @@ export type {
     TextGenerateOptions,
     // Text
     TextModel,
+    // 3D
+    ThreeDGenerateOptions,
+    ThreeDResponse,
     Tool,
     ToolCall,
     TranscribeOptions,
@@ -188,9 +191,6 @@ export type {
     // Video
     VideoModel,
     VideoResponse,
-    // 3D
-    ThreeDGenerateOptions,
-    ThreeDResponse,
 } from "./types.js";
 
 // Export runtime constants and the error class

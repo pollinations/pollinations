@@ -832,8 +832,7 @@ export class Pollinations {
 
                 const buffer = await response.arrayBuffer();
                 const contentType =
-                    response.headers.get("content-type") ||
-                    "model/gltf-binary";
+                    response.headers.get("content-type") || "model/gltf-binary";
 
                 return { buffer, contentType, url: stripKeyFromUrl(url) };
             },

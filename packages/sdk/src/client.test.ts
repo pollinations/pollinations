@@ -668,10 +668,11 @@ describe("Pollinations 3D generation", () => {
             }),
         );
 
-        const result = await newClient().threeD(
-            "a low-poly wooden chair",
-            { model: "microsoft/trellis-2", resolution: "low", seed: 7 },
-        );
+        const result = await newClient().threeD("a low-poly wooden chair", {
+            model: "microsoft/trellis-2",
+            resolution: "low",
+            seed: 7,
+        });
 
         const [url] = fetchMock.mock.calls[0];
         expect(url).toBe(
@@ -699,9 +700,7 @@ describe("Pollinations 3D generation", () => {
     });
 
     it("omits unset 3D options from the URL", async () => {
-        fetchMock.mockResolvedValue(
-            makeResponse(null, { kind: "binary" }),
-        );
+        fetchMock.mockResolvedValue(makeResponse(null, { kind: "binary" }));
 
         await newClient().threeD("a chair");
 

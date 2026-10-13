@@ -795,9 +795,6 @@ def normalize_platform_post(
         metadata["post_type"] = (
             "carousel" if len(extract_generated_post_image_urls(raw_post)) > 1 else "post"
         )
-    elif platform == "reddit":
-        title = (raw_post.get("title") or "").strip()
-        text = (raw_post.get("body") or raw_post.get("text") or "").strip()
     elif platform == "discord":
         text = (raw_post.get("message") or "").strip()
     else:
@@ -1336,85 +1333,3 @@ def models_md(existing_md: str, section: str) -> str:
         + section.rstrip()
         + ("\n\n" + body if body else "\n")
     )
-
-
-# ── VPS deployment ───────────────────────────────────────────────────
-
-
-def deploy_reddit_post(
-    reddit_data: Dict,
-    vps_host: str,
-    vps_user: str,
-    pkey,
-) -> bool:
-    import paramiko
-
-    title = reddit_data.get("title", "")
-    image_urls = get_post_image_urls(reddit_data)
-    image_url = image_urls[0] if image_urls else ""
-
-    if not all([title, image_url, vps_host, vps_user, pkey]):
-        print("  VPS: Missing required arguments")
-        return False
-
-    deploying = False
-    try:
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
-        print(f"  VPS: Connecting to {vps_user}@{vps_host}...")
-
-        ssh.connect(
-            hostname=vps_host,
-            username=vps_user,
-            pkey=pkey,
-            timeout=30,
-            allow_agent=False,
-            look_for_keys=False,
-        )
-
-        base_cmd = "cd /root/reddit_post_automation"
-
-        # Sanitize for unquoted heredoc (shell expansion active)
-        # Also strip newlines to prevent breaking TypeScript syntax
-        def _sanitize(s: str) -> str:
-            return (s
-                .replace('\n', ' ').replace('\r', '')
-                .replace('LINKEOF', '')
-                .replace('\\', '\\\\')
-                .replace('"', '\\"')
-                .replace('$', '\\$')
-                .replace('`', '\\`'))
-
-        sanitized_url = _sanitize(image_url)
-        sanitized_title = _sanitize(title)
-
-        update_link_cmd = f"""{base_cmd} && cat > src/link.ts << LINKEOF
-const LINK = "{sanitized_url}";
-const TITLE = "{sanitized_title}";
-export {{LINK, TITLE}};
-LINKEOF
-"""
-
-        print("  VPS: Updating link.ts...")
-        _stdin, _stdout, stderr = ssh.exec_command(update_link_cmd)
-        err = stderr.read().decode().strip()
-        if err:
-            print(f"  VPS: link.ts write warning: {err[:200]}")
-
-        deploy_cmd = f"{base_cmd} && nohup bash ./bash/deploy.sh > deploy.log 2>&1 &"
-
-        print("  VPS: Running deploy.sh...")
-        deploying = True
-        ssh.exec_command(deploy_cmd)  # fire-and-forget by design (nohup)
-        ssh.close()
-
-        print("  VPS: Deployment script triggered successfully")
-        print("  VPS: Logs will be available at /root/reddit_post_automation/deploy.log")
-        return True
-
-    except Exception as e:
-        print(f"  VPS: {type(e).__name__}: {e}")
-        if deploying:
-            raise  # deploy.sh may already run: the caller can't treat this as not sent
-        return False

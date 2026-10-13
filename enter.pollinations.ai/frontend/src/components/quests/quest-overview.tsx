@@ -43,6 +43,7 @@ import {
 } from "../layout/dashboard-loading.tsx";
 import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
 import { QuestStandings } from "./quest-standings.tsx";
+import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -738,6 +739,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }
     }
 
+    async function refreshRewards(): Promise<void> {
+        void router.invalidate({
+            filter: (match) => match.routeId === "/_dashboard",
+        });
+        const questData = await loadQuestData();
+        setState((current) => ({ ...current, ...questData }));
+        window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
+    }
+
     // A reward's questId IS the catalog id it earned (one reward == one quest),
     // so the earned-set / reward lookup key directly off questId.
     const rewardedCatalogIds = useMemo(
@@ -981,6 +991,10 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     </p>
                 </div>
             </Section>
+
+            {!state.anonymous && (
+                <RedeemCode onRedeemed={() => void refreshRewards()} />
+            )}
 
             {state.standings && (
                 <QuestStandings

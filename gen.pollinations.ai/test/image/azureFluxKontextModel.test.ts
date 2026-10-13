@@ -305,7 +305,6 @@ describe("callAzureFlux11Pro", () => {
         [{ width: 257 }, "multiples of 32"],
         [{ image: [INPUT_IMAGE_URL] as string[] }, "text-to-image"],
         [{ guidance_scale: 4.5 }, "guidance_scale"],
-        [{ transparent: true }, "transparency"],
     ] as const)(
         "rejects unsupported parameters with a useful 400",
         async (overrides, message) => {

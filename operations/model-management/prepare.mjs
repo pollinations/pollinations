@@ -16,11 +16,35 @@ const HUB_FEEDS = ["trendingScore", "downloads"].map((sort, index) => ({
     kind: "fetch",
     url: `https://huggingface.co/api/models?sort=${sort}&direction=-1&limit=20`,
     mode: "http",
+    required: true,
     maxCharacters: 18000,
     sourceId: "public-hub-metadata",
     feed: true,
     text: `Official Hugging Face ${sort} model metadata: current downloads, likes and trend signals; these are not unique-user counts or API availability.`,
 }));
+
+const DISCOVERY_HOSTS = {
+    reddit: "reddit.com",
+    quora: "quora.com",
+    huggingface: "huggingface.co",
+    replit: "replit.com",
+    github: "github.com",
+    hackernews: "news.ycombinator.com",
+};
+const REQUIRED_FEEDS = [
+    ...HUB_FEEDS,
+    ...["LocalLLaMA", "StableDiffusion"].map((community, index) => ({
+        id: `reddit-seed-${index}`,
+        kind: "fetch",
+        url: `https://www.reddit.com/r/${community}/top/?t=week`,
+        mode: "http",
+        required: true,
+        maxCharacters: 12000,
+        sourceId: "public-reddit-community",
+        feed: true,
+        text: `Public r/${community} weekly top discussions: community demand and release leads.`,
+    })),
+];
 
 function safeUrl(value) {
     if (typeof value !== "string" || value.length > 2048) return null;
@@ -64,7 +88,13 @@ export function parseLeads(raw) {
             rows.push({
                 title: block.match(/^Title\s*:\s*(.*)$/im)?.[1] ?? "",
                 url: match[1],
-                text: block.match(/^Text\s*:\s*([\s\S]*)/im)?.[1] ?? "",
+                text:
+                    block
+                        .match(
+                            /^(?:Text|Content|Highlights)\s*:\s*([\s\S]*)/im,
+                        )?.[1]
+                        ?.replace(/\n---\s*$/, "\n") ?? "",
+                publishedAt: block.match(/^Published\s*:\s*(.*)$/im)?.[1],
             });
         }
     }
@@ -76,7 +106,11 @@ export function parseLeads(raw) {
                 ? row.text
                 : typeof row.snippet === "string"
                   ? row.snippet
-                  : "";
+                  : Array.isArray(row.highlights)
+                    ? row.highlights
+                          .filter((item) => typeof item === "string")
+                          .join("\n")
+                    : "";
         return [
             {
                 url,
@@ -85,6 +119,10 @@ export function parseLeads(raw) {
                         ? row.title.slice(0, 300)
                         : "",
                 text: text.slice(0, 800),
+                ...(typeof row.publishedAt === "string" &&
+                Number.isFinite(Date.parse(row.publishedAt))
+                    ? { publishedAt: row.publishedAt }
+                    : {}),
             },
         ];
     });
@@ -322,6 +360,7 @@ export async function prepareResearch(task, services) {
     let triage = { prioritizedIds: [], ambiguousIds: [], irrelevantIds: [] };
     let reasoningAction = null;
     let extraction = null;
+    let requiredEvidencePending = !names.length;
     const evidence = () => ({
         plans,
         scopes,
@@ -335,6 +374,7 @@ export async function prepareResearch(task, services) {
         unselectedLeads,
         reasoningAction,
         extraction,
+        requiredEvidencePending,
     });
     const checkpoints = `(${names.map((name) => JSON.stringify(name.split("/").at(-1))).join(" OR ")})`;
     const month = new Date().toISOString().slice(0, 7);
@@ -534,7 +574,18 @@ export async function prepareResearch(task, services) {
                 coverage.get(name).set(scope, new Set());
             coverage.get(name).get(scope).add(receipt);
         }
-        const parsedLeads = parseLeads(raw);
+        const parsed = parseLeads(raw);
+        const root = !names.length && DISCOVERY_HOSTS[mode];
+        const parsedLeads = root
+            ? parsed.filter(({ url }) => {
+                  const host = new URL(url).hostname;
+                  return host === root || host.endsWith(`.${root}`);
+              })
+            : parsed;
+        if (parsedLeads.length < parsed.length)
+            gaps.push(
+                `${mode}: discarded ${parsed.length - parsedLeads.length} off-platform search results; platform evidence remains unresolved until fetched`,
+            );
         if (!names.length)
             omittedCandidates += Math.max(0, parsedLeads.length - 8);
         if (!parsedLeads.length && !names.length)
@@ -720,54 +771,14 @@ export async function prepareResearch(task, services) {
             sources.push(source);
             action.status = source.status;
         }
-        if (!names.length && services.control) {
-            const blocked = sources
-                .filter(({ status }) => status === "unavailable")
-                .slice(0, 4);
-            while (blocked.length) {
-                const selected = await control("crawl", [
-                    ...blocked.map((source, index) => ({
-                        id: `fallback-${index}`,
-                        kind: "fetch",
-                        url: source.url,
-                        mode: "exa",
-                        maxCharacters: 4000,
-                        sourceId: source.id,
-                        text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
-                    })),
-                    { id: "finish", kind: "finish" },
-                ]);
-                if (!selected) return evidence();
-                if (selected.kind === "finish") break;
-                const failed = blocked.splice(
-                    Number(selected.id.split("-").at(-1)),
-                    1,
-                )[0];
-                const action = {
-                    tool: "fetch",
-                    url: selected.url,
-                    mode: "exa",
-                    maxCharacters: 4000,
-                    parentSourceId: failed.id,
-                    models: [],
-                    status: "pending",
-                };
-                actions.push(action);
-                const source = await services.read(action);
-                sources.push(source);
-                action.status = source.status;
-                if (source.status !== "fetched")
-                    gaps.push(
-                        `${source.url}: both local HTTP and Exa retrieval unavailable`,
-                    );
-            }
+        if (!names.length) {
             const readUrls = new Set(sources.map(({ url }) => url));
             const pageReads = new Map();
             const linkIds = new Map();
             let crawled = 0;
             while (crawled < 8 && sources.length < 24) {
                 const links = new Map();
-                for (const feed of HUB_FEEDS)
+                for (const feed of REQUIRED_FEEDS)
                     if (!readUrls.has(feed.url)) links.set(feed.url, feed);
                 for (const source of sources) {
                     if (
@@ -811,10 +822,13 @@ export async function prepareResearch(task, services) {
                     )
                     .slice(0, 12);
                 if (!menu.length) break;
-                const selected = await control("crawl", [
-                    ...menu,
-                    { id: "finish", kind: "finish" },
-                ]);
+                const required = menu.filter((action) => action.required);
+                const selected = await control(
+                    "crawl",
+                    required.length
+                        ? required
+                        : [...menu, { id: "finish", kind: "finish" }],
+                );
                 if (!selected) return evidence();
                 if (selected.kind === "finish") break;
                 readUrls.add(selected.url);
@@ -842,19 +856,79 @@ export async function prepareResearch(task, services) {
                 action.status = source.status;
                 crawled++;
             }
+            const blocked = sources
+                .filter(({ status }) => status === "unavailable")
+                .sort(
+                    (a, b) =>
+                        Number(
+                            REQUIRED_FEEDS.some(({ url }) => url === b.url),
+                        ) -
+                        Number(REQUIRED_FEEDS.some(({ url }) => url === a.url)),
+                );
+            let fallbacks = 0;
+            while (blocked.length && fallbacks < 4) {
+                const selected = await control("crawl", [
+                    ...blocked.slice(0, 12).map((source, index) => ({
+                        id: `fallback-${index}`,
+                        kind: "fetch",
+                        url: source.url,
+                        mode: "exa",
+                        required: true,
+                        maxCharacters: 4000,
+                        sourceId: source.id,
+                        text: "Blocked HTTP source: retrieve its public text through Pollinations Exa (paid, bounded).",
+                    })),
+                ]);
+                if (!selected) return evidence();
+                if (selected.kind === "finish") break;
+                const failed = blocked.splice(
+                    Number(selected.id.split("-").at(-1)),
+                    1,
+                )[0];
+                const action = {
+                    tool: "fetch",
+                    url: selected.url,
+                    mode: "exa",
+                    maxCharacters: 4000,
+                    parentSourceId: failed.id,
+                    models: [],
+                    status: "pending",
+                };
+                actions.push(action);
+                const source = await services.read(action);
+                sources.push(source);
+                action.status = source.status;
+                fallbacks++;
+                if (source.status !== "fetched")
+                    gaps.push(
+                        `${source.url}: both local HTTP and Exa retrieval unavailable`,
+                    );
+            }
+
+            requiredEvidencePending = REQUIRED_FEEDS.some(
+                (feed) => !readUrls.has(feed.url),
+            );
+            if (requiredEvidencePending)
+                gaps.push(
+                    "Required public feeds were not attempted; discovery remains incomplete",
+                );
         }
         if (!names.length)
             for (const [, mode] of searches)
                 if (
-                    !leads.some(
-                        (lead) =>
-                            lead.modes.includes(mode) &&
-                            sources.some(
-                                (source) =>
-                                    source.url === lead.url &&
-                                    source.status === "fetched",
-                            ),
-                    )
+                    !sources.some((source) => {
+                        if (source.status !== "fetched") return false;
+                        const root = DISCOVERY_HOSTS[mode];
+                        if (root) {
+                            const host = new URL(source.url).hostname;
+                            return host === root || host.endsWith(`.${root}`);
+                        }
+                        return leads.some(
+                            (lead) =>
+                                lead.url === source.url &&
+                                lead.modes.includes(mode),
+                        );
+                    })
                 )
                     gaps.push(
                         `${mode}: fetched discovery evidence remains unresolved`,

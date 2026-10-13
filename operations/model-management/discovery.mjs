@@ -14,7 +14,7 @@ export function discoveryCandidates(sources, inventory) {
         const names = new Set(
             [
                 ...source.text.matchAll(
-                    /(?<![\w:/])([A-Za-z0-9][\w.-]{1,79}\/[A-Za-z0-9][\w.-]{1,119})(?![\w/.-])/g,
+                    /(?<![\w:/.-])([A-Za-z0-9][\w.-]{1,79}\/[A-Za-z0-9][\w.-]{1,119})(?![\w/.-])/g,
                 ),
             ].map((match) => match[1]),
         );
@@ -28,8 +28,12 @@ export function discoveryCandidates(sources, inventory) {
             names.add(match[1]);
         for (const match of source.text.matchAll(
             /^#{1,6}\s+(?:(?:Model(?: Card)?(?: for)?|Provider)\s*:?\s+)?([^\n]{2,120})$/gm,
-        ))
-            names.add(match[1].trim());
+        )) {
+            const heading = match[1]
+                .trim()
+                .split(/:\s+(?=[Aa]\b|[Ww]e\b|[Ff]ast\b|[Rr]eliable\b)/)[0];
+            if (heading.split(/\s+/).length <= 4) names.add(heading);
+        }
         for (const link of source.links ?? [])
             if (
                 typeof link.text === "string" &&
@@ -40,8 +44,14 @@ export function discoveryCandidates(sources, inventory) {
         let perSource = 0;
         for (const name of names) {
             const key = `${source.id}:${name.toLowerCase()}`;
+            const parts = name.split("/");
             if (
                 seen.has(key) ||
+                (parts.length === 2 &&
+                    (/\.(?:com|org|net|io|ai|co)$/i.test(parts[0]) ||
+                        /^(?:sec|second|minute|hour|tokens?|mtok|api|docs|features|reference)$/i.test(
+                            parts[1].replace(/\.$/, ""),
+                        ))) ||
                 /^(?:pricing|models?|embeddings?|input|output|details|documentation|read more|learn more|home|overview|introduction|api reference|terms|privacy)$/i.test(
                     name,
                 ) ||

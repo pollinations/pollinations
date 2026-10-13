@@ -1189,6 +1189,18 @@ export async function research(
                       }
                     : {}),
                 currentUtcDate: new Date().toISOString().slice(0, 10),
+                ...(!task.models && !task.model
+                    ? {
+                          officialModelInventory: inventory.map(
+                              ({ name, aliases }) => ({
+                                  name,
+                                  aliases: aliases ?? [],
+                              }),
+                          ),
+                          noveltyPolicy:
+                              "These are official entries only. Exact names and aliases are excluded by code; similar families or upstream IDs require explicit identity mapping before proposing an addition.",
+                      }
+                    : {}),
                 availableSearchEngines:
                     tools[0].function.parameters.properties.engine.enum,
                 policy: usePerplexity
@@ -1238,6 +1250,10 @@ export async function research(
             : {}),
     });
     try {
+        assert.ok(
+            !services.prepared?.requiredEvidencePending,
+            "Required discovery source coverage was not attempted; preserving partial evidence",
+        );
         if (
             services.prepared &&
             !task.models &&
@@ -1412,7 +1428,7 @@ export async function research(
                 ],
                 tools,
                 services.prepared
-                    ? { maxTokens: 5000 }
+                    ? { maxTokens: task.models ? 5000 : 1800 }
                     : task.models
                       ? {
                             maxTokens: audited
@@ -2109,6 +2125,41 @@ export function sourceText(raw) {
     return text;
 }
 
+export async function exaSource(raw) {
+    let data;
+    try {
+        data = JSON.parse(raw);
+    } catch (error) {
+        assert.ok(error instanceof SyntaxError);
+    }
+    let text, url;
+    if (data) {
+        assert.ok(
+            !data.error &&
+                Array.isArray(data.results) &&
+                data.results.length === 1 &&
+                !data.statuses?.some(({ status }) => status === "error"),
+            "Expected one successful Exa source",
+        );
+        text = sourceText(raw);
+        url = data.results[0].url;
+    } else {
+        const page = raw.match(
+            /^# [^\r\n]+\r?\nURL: ([^\r\n]+)\r?\n\r?\n([\s\S]+)$/,
+        );
+        assert.ok(
+            page &&
+                !/^# Page not found/i.test(raw) &&
+                !/\r?\n\r?\n---\r?\n\r?\n(?:# |Could not fetch )/.test(page[2]),
+            "Expected one successful Exa source",
+        );
+        url = page[1];
+        text = sourceText(page[2]);
+    }
+    assert.ok(typeof url === "string" && url.length, "Exa source URL missing");
+    return { text, url: await publicUrl(url), method: "pollinations-exa" };
+}
+
 export async function auditEvidence(proposal, models, sources, decision) {
     const next = structuredClone(proposal);
     const rows = models ? next.models : [];
@@ -2712,25 +2763,7 @@ export async function main(env = process.env) {
                         { urls: [url], maxCharacters },
                         pagePrice,
                     );
-                    let sourceUrl = url;
-                    try {
-                        const decoded = JSON.parse(raw);
-                        if (Array.isArray(decoded.results)) {
-                            assert.equal(
-                                decoded.results.length,
-                                1,
-                                "Expected one fetched source",
-                            );
-                            sourceUrl = decoded.results[0].url ?? url;
-                        }
-                    } catch (error) {
-                        if (!(error instanceof SyntaxError)) throw error;
-                    }
-                    return {
-                        text: sourceText(raw),
-                        method: "pollinations-exa",
-                        url: sourceUrl,
-                    };
+                    return await exaSource(raw);
                 } catch (error) {
                     if (mode === "exa" || error.message.includes("budget"))
                         throw error;

@@ -448,11 +448,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                 pending={isRotating}
                 onConfirm={handleRotate}
                 onClose={closeRotate}
-                onCopyError={() =>
-                    setRotateError(
-                        "Couldn’t copy the key. Select it and copy it manually before closing.",
-                    )
-                }
             />
             {editingKey && (
                 <EditApiKeyDialog

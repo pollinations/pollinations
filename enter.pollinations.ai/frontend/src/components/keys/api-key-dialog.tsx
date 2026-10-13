@@ -109,10 +109,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
         }
     }
 
-    function closeAfterCopy() {
-        setTimeout(() => setIsOpen(false), 500);
-    }
-
     useEffect(() => {
         if (!isOpen) {
             if (!simplified) {
@@ -171,12 +167,6 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                 showFields={isOpen}
                 onSubmit={handleSubmit}
                 onClose={() => setIsOpen(false)}
-                onCopied={closeAfterCopy}
-                onCopyError={() =>
-                    setError(
-                        "Couldn’t copy the key. Select it and copy it manually before closing.",
-                    )
-                }
             />
         </Dialog>
     );

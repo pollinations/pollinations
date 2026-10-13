@@ -19,6 +19,7 @@ import {
     ErrorBanner,
 } from "@pollinations/ui/auth";
 import type { FormEventHandler, ReactNode } from "react";
+import { useState } from "react";
 import { genDocsUrl } from "../../config.ts";
 import { AppEarningsRow } from "./app-earnings-row.tsx";
 import { KeyNameField } from "./key-name-field.tsx";
@@ -48,10 +49,95 @@ type KeyDialogContentProps = {
     showFields?: boolean;
     onSubmit: FormEventHandler<HTMLFormElement>;
     onClose: () => void;
-    onCopied?: () => void;
-    onCopyError?: () => void;
     footnote?: ReactNode;
 };
+
+type CreatedKeyContentProps = {
+    title: string;
+    description: string;
+    value: string;
+    app?: boolean;
+    onClose: () => void;
+};
+
+/** Shows a new key once, with Copy and close. Used after create and rotate. */
+export function CreatedKeyContent({
+    title,
+    description,
+    value,
+    app = false,
+    onClose,
+}: CreatedKeyContentProps) {
+    const [copyFailed, setCopyFailed] = useState(false);
+    const KeyTypeIcon = app ? AppIcon : KeyIcon;
+    const actions = (
+        <>
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                onClick={onClose}
+            >
+                Close
+            </Button>
+            <CopyButton
+                value={value}
+                variant="button"
+                copiedTimeoutMs={500}
+                tooltip={null}
+                onCopied={() => setTimeout(onClose, 500)}
+                onCopyError={() => setCopyFailed(true)}
+            >
+                {(copied) => (
+                    <span className="inline-flex items-center gap-2">
+                        <span
+                            aria-hidden="true"
+                            className="flex size-4 shrink-0 [&>svg]:size-full"
+                        >
+                            {copied ? <CheckIcon /> : <ClipboardIcon />}
+                        </span>
+                        {copied ? "Copied" : "Copy and close"}
+                    </span>
+                )}
+            </CopyButton>
+        </>
+    );
+
+    return (
+        <DialogBody actions={actions}>
+            <DialogHeader inBody title={title} description={description} />
+            {copyFailed && (
+                <ErrorBanner>
+                    Couldn’t copy the key. Select it and copy it manually before
+                    closing.
+                </ErrorBanner>
+            )}
+            <AuthInfoCard>
+                <FieldStack
+                    label={
+                        <span className="inline-flex items-center gap-1.5">
+                            <KeyTypeIcon
+                                aria-hidden="true"
+                                className="h-4 w-4"
+                            />
+                            {app ? "App key" : "Secret key"}
+                        </span>
+                    }
+                    helper={
+                        !app
+                            ? "Keep this key in your backend. Don’t share it or include it in public code."
+                            : undefined
+                    }
+                >
+                    <CopyField
+                        value={value}
+                        label={app ? "Copy app key" : "Copy secret key"}
+                    />
+                </FieldStack>
+            </AuthInfoCard>
+        </DialogBody>
+    );
+}
 
 /** The same key editor for Create and Edit; only saved values and actions vary. */
 export function KeyDialogContent({
@@ -74,10 +160,24 @@ export function KeyDialogContent({
     showFields = true,
     onSubmit,
     onClose,
-    onCopied,
-    onCopyError,
     footnote,
 }: KeyDialogContentProps) {
+    if (createdKey !== undefined) {
+        return (
+            <CreatedKeyContent
+                app={app}
+                title={app ? "App key created" : "Secret key created"}
+                description={
+                    app
+                        ? "Add this app key to your app. You can copy it again from the Apps section at any time."
+                        : "Copy your secret key now. You won’t be able to see it again."
+                }
+                value={createdKey}
+                onClose={onClose}
+            />
+        );
+    }
+
     const titles = {
         create: app ? "Create app key" : "Create secret key",
         edit: accessContext
@@ -88,22 +188,11 @@ export function KeyDialogContent({
                 ? "Edit publishable key"
                 : "Edit secret key",
     };
-    const title =
-        createdKey !== undefined
-            ? app
-                ? "App key created"
-                : "Secret key created"
-            : titles[mode];
-    const description =
-        createdKey !== undefined
-            ? app
-                ? "Add this app key to your app. You can copy it again from the Apps section at any time."
-                : "Copy your secret key now. You won’t be able to see it again."
-            : publishable
-              ? "Set the name, earnings and redirect URLs."
-              : accessContext
-                ? `Choose what this ${accessContext} can access and how much it can spend.`
-                : "Choose what this key can access and how much it can spend.";
+    const description = publishable
+        ? "Set the name, earnings and redirect URLs."
+        : accessContext
+          ? `Choose what this ${accessContext} can access and how much it can spend.`
+          : "Choose what this key can access and how much it can spend.";
 
     const KeyTypeIcon = app ? AppIcon : KeyIcon;
     const nameField = (
@@ -116,29 +205,17 @@ export function KeyDialogContent({
             disabled={isSubmitting}
         />
     );
-    const submitAction =
-        createdKey !== undefined ? (
-            <CopyButton
-                value={createdKey}
-                variant="button"
-                copiedTimeoutMs={500}
-                tooltip={null}
-                onCopied={onCopied}
-                onCopyError={onCopyError}
+    const actions = (
+        <>
+            <Button
+                icon={<XIcon />}
+                type="button"
+                intent="neutral"
+                onClick={onClose}
+                disabled={isSubmitting}
             >
-                {(copied) => (
-                    <span className="inline-flex items-center gap-2">
-                        <span
-                            aria-hidden="true"
-                            className="flex size-4 shrink-0 [&>svg]:size-full"
-                        >
-                            {copied ? <CheckIcon /> : <ClipboardIcon />}
-                        </span>
-                        {copied ? "Copied" : "Copy and close"}
-                    </span>
-                )}
-            </CopyButton>
-        ) : (
+                Cancel
+            </Button>
             <Button
                 icon={<KeyTypeIcon />}
                 type="submit"
@@ -153,20 +230,6 @@ export function KeyDialogContent({
                       ? titles.create
                       : "Save changes"}
             </Button>
-        );
-
-    const actions = (
-        <>
-            <Button
-                icon={<XIcon />}
-                type="button"
-                intent="neutral"
-                onClick={onClose}
-                disabled={isSubmitting}
-            >
-                {createdKey !== undefined ? "Close" : "Cancel"}
-            </Button>
-            {submitAction}
         </>
     );
 
@@ -187,24 +250,20 @@ export function KeyDialogContent({
                 )}
                 <DialogHeader
                     inBody
-                    title={title}
+                    title={titles[mode]}
                     description={
-                        createdKey !== undefined ? (
-                            description
-                        ) : (
-                            <>
-                                {description}{" "}
-                                <InlineLink
-                                    href={genDocsUrl(
-                                        publishable
-                                            ? "#tag/connect-user-wallets"
-                                            : "#tag/authentication",
-                                    )}
-                                >
-                                    Read the guide
-                                </InlineLink>
-                            </>
-                        )
+                        <>
+                            {description}{" "}
+                            <InlineLink
+                                href={genDocsUrl(
+                                    publishable
+                                        ? "#tag/connect-user-wallets"
+                                        : "#tag/authentication",
+                                )}
+                            >
+                                Read the guide
+                            </InlineLink>
+                        </>
                     }
                 >
                     {existingKey && (
@@ -222,31 +281,7 @@ export function KeyDialogContent({
                     )}
                 </DialogHeader>
                 {error && <ErrorBanner>{error}</ErrorBanner>}
-                {createdKey !== undefined ? (
-                    <AuthInfoCard>
-                        <FieldStack
-                            label={
-                                <span className="inline-flex items-center gap-1.5">
-                                    <KeyTypeIcon
-                                        aria-hidden="true"
-                                        className="h-4 w-4"
-                                    />
-                                    {app ? "App key" : "Secret key"}
-                                </span>
-                            }
-                            helper={
-                                !app
-                                    ? "Keep this key in your backend. Don’t share it or include it in public code."
-                                    : undefined
-                            }
-                        >
-                            <CopyField
-                                value={createdKey}
-                                label={app ? "Copy app key" : "Copy secret key"}
-                            />
-                        </FieldStack>
-                    </AuthInfoCard>
-                ) : showFields ? (
+                {showFields ? (
                     <div className="space-y-3">
                         {publishable && (
                             <AuthInfoCard title="Settings">

@@ -418,6 +418,31 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## Asynchronous Jobs
+
+For long generations (such as slow video or complex image models), submit the request asynchronously to get an ID right away, and collect the result once ready without holding a connection open:
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const polli = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
+
+// 1. Submit the job (returns immediately with 202 and job ID)
+const job = await polli.videoAsync('a sunset timelapse', {
+  model: 'google/veo-3.1-fast',
+});
+console.log('Submitted job ID:', job.id);
+
+// 2. Poll until finished (or check polli.job(job.id) periodically)
+const completed = await polli.waitForJob(job.id);
+
+if (completed.status === 'succeeded') {
+  // 3. Download the result binary
+  const { buffer, contentType } = await polli.jobResult(job.id);
+  console.log(`Downloaded ${buffer.byteLength} bytes (${contentType})`);
+}
+```
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript

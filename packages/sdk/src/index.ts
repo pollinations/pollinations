@@ -134,6 +134,12 @@ export type {
     ImageModel,
     ImageQuality,
     ImageResponse,
+    // Async Jobs
+    Job,
+    JobResultResponse,
+    JobStatus,
+    JobSubmitted,
+    JobWaitOptions,
     JsonSchema,
     KeyAccountPermission,
     KeyInfo,

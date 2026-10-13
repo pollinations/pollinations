@@ -647,4 +647,200 @@ describe("GenerationCoordinator", () => {
             alarm: null,
         });
     });
+
+    it("submits media requests asynchronously with Prefer: respond-async", async () => {
+        const tinybird = createMockTinybird();
+        const sender = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        const stranger = await createTestApiKey({
+            user: { packBalance: 100 },
+        });
+        const file = new Uint8Array(
+            Buffer.from(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+                "base64",
+            ),
+        );
+        let providerCalls = 0;
+        let letProviderFinish!: () => void;
+        const providerMayFinish = new Promise<void>((resolve) => {
+            letProviderFinish = resolve;
+        });
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(
+                    input instanceof Request ? input.url : String(input),
+                );
+                if (url.host === "api.replicate.com") {
+                    providerCalls++;
+                    await providerMayFinish;
+                    return Response.json(
+                        {
+                            id: "prediction-1",
+                            status: "succeeded",
+                            output: ["https://replicate.delivery/job.png"],
+                        },
+                        { status: 201 },
+                    );
+                }
+                if (url.host === "replicate.delivery") {
+                    return new Response(file, {
+                        headers: { "content-type": "image/png" },
+                    });
+                }
+                if (url.pathname === "/v0/pipes/public_model_stats.json") {
+                    return Response.json({ data: [] });
+                }
+                const handler = tinybird.handlerMap[url.host];
+                if (handler) return handler(new Request(input, init));
+                throw new Error(`Unexpected outbound request: ${url.host}`);
+            },
+        );
+        const prompt = `a lighthouse at dusk ${crypto.randomUUID()}`;
+        const generate = (key: string, prefer: string) =>
+            SELF.fetch("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                    prefer,
+                },
+                body: JSON.stringify({
+                    model: "bytedance/seedream-4.0",
+                    prompt,
+                    seed: 7,
+                    response_format: "url",
+                }),
+            });
+        const read = (key: string, path: string) =>
+            SELF.fetch(`https://gen.pollinations.ai${path}`, {
+                headers: { authorization: `Bearer ${key}` },
+            });
+        const startBalance = await getUserBalance(
+            drizzle(env.DB),
+            sender.userId,
+        );
+
+        const accepted = await generate(sender.key, "wait=10, respond-async");
+        expect(accepted.status).toBe(202);
+        expect(accepted.headers.get("preference-applied")).toBe(
+            "respond-async",
+        );
+        const job = await accepted.json<{
+            id: string;
+            status: string;
+            status_url: string;
+        }>();
+        expect(job.status).toBe("pending");
+        expect(job.status_url).toBe(
+            `https://gen.pollinations.ai/v1/jobs/${job.id}`,
+        );
+        expect(accepted.headers.get("location")).toBe(job.status_url);
+        await vi.waitFor(() => expect(providerCalls).toBe(1));
+
+        // The caller never held the connection, and asking again is free.
+        const again = await generate(sender.key, "respond-async");
+        expect(again.status).toBe(202);
+        expect((await again.json<{ id: string }>()).id).toBe(job.id);
+        const waiting = await read(sender.key, `/v1/jobs/${job.id}`);
+        expect(waiting.status).toBe(200);
+        expect(await waiting.json()).toEqual({ id: job.id, status: "pending" });
+        expect(
+            (await read(sender.key, `/v1/jobs/${job.id}/result`)).status,
+        ).toBe(409);
+        expect((await read(stranger.key, `/v1/jobs/${job.id}`)).status).toBe(
+            404,
+        );
+        expect((await read(sender.key, "/v1/jobs/123")).status).toBe(404);
+
+        letProviderFinish();
+        await vi.waitFor(
+            async () =>
+                expect(
+                    await (await read(sender.key, `/v1/jobs/${job.id}`)).json(),
+                ).toEqual({
+                    id: job.id,
+                    status: "succeeded",
+                    result_url: `https://gen.pollinations.ai/v1/jobs/${job.id}/result`,
+                }),
+            { timeout: 10_000 },
+        );
+        expect(
+            (await read(stranger.key, `/v1/jobs/${job.id}/result`)).status,
+        ).toBe(404);
+        const download = await read(sender.key, `/v1/jobs/${job.id}/result`);
+        expect(download.status).toBe(200);
+        expect(download.headers.get("content-type")).toContain("image/png");
+        expect(download.headers.get("cache-control")).toContain("private");
+        expect(new Uint8Array(await download.arrayBuffer())).toEqual(file);
+
+        // Once finished, the same request comes straight from the cache.
+        const hit = await generate(sender.key, "respond-async");
+        expect(hit.status).toBe(200);
+        expect(hit.headers.get("x-cache")).toBe("HIT");
+        await hit.arrayBuffer();
+
+        // One provider call, one billed event, one debit; nothing for the rest.
+        await vi.waitFor(() =>
+            expect(
+                tinybird.state.events.filter((event) => event.isBilledUsage),
+            ).toHaveLength(1),
+        );
+        expect(providerCalls).toBe(1);
+        const [charge] = tinybird.state.events.filter(
+            (event) => event.isBilledUsage,
+        );
+        expect(charge.totalPrice).toBeGreaterThan(0);
+        const endBalance = await getUserBalance(drizzle(env.DB), sender.userId);
+        expect(startBalance.packBalance - endBalance.packBalance).toBeCloseTo(
+            charge.totalPrice,
+            8,
+        );
+        expect(
+            (await getUserBalance(drizzle(env.DB), stranger.userId))
+                .packBalance,
+        ).toBe(100);
+    }, 30_000);
+
+    it("remembers a failed async job for a day, then forgets it", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `async-${crypto.randomUUID()}`,
+        );
+        const seen = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                const job = testJob(`async-${crypto.randomUUID()}`);
+                await coordinator.submit(job, undefined, "account-a");
+                const queued = await coordinator.lookup("account-a");
+                const notTheirs = await coordinator.lookup("account-b");
+                // A job the alarm finds already started fails closed.
+                await state.storage.put("job", {
+                    ...(await state.storage.get<object>("job")),
+                    started: true,
+                });
+                await coordinator.alarm();
+                const failed = await coordinator.lookup("account-a");
+                const expiresAt = await state.storage.getAlarm();
+                await coordinator.alarm();
+                return {
+                    queued,
+                    notTheirs,
+                    failed,
+                    expiresAt,
+                    forgotten: await coordinator.lookup("account-a"),
+                    left: [...(await state.storage.list()).keys()],
+                };
+            },
+        );
+        expect(seen.queued).toEqual({ state: "pending" });
+        expect(seen.notTheirs).toBeNull();
+        expect(seen.failed).toMatchObject({
+            state: "failed",
+            failure: { httpStatus: 503 },
+        });
+        expect(seen.expiresAt).toBeGreaterThan(Date.now() + 23 * 3600_000);
+        expect(seen.forgotten).toBeNull();
+        expect(seen.left).toEqual([]);
+    });
 });

@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -148,6 +149,16 @@ function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     return new Response(body, { status, headers });
 }
 
+/** RFC 7240: `Prefer` lists tokens such as `respond-async, wait=5`. */
+function prefersAsync(c: Context<DeduplicationEnv>): boolean {
+    return (c.req.header("prefer") ?? "")
+        .split(",")
+        .some(
+            (token) =>
+                token.split(";")[0].trim().toLowerCase() === "respond-async",
+        );
+}
+
 /** Runs after generationAccess, so every caller is authorized before joining. */
 export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
     async (c, next) => {
@@ -171,16 +182,42 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+        // A Response body is a byte stream, which RPC streams with flow
+        // control instead of serializing it into the 32 MiB-capped call.
+        const bodyStream =
+            body &&
+            (new Response(body as Uint8Array<ArrayBuffer>).body ?? undefined);
+
+        if (cache.adapter.storage === "media" && prefersAsync(c)) {
+            try {
+                await stub.submit(job, bodyStream, job.auth.user.id);
+            } catch (error) {
+                c.get("log").error("Submitting the async job failed: {error}", {
+                    error,
+                });
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+            // The coordinator's own run is the one that gets tracked and billed.
+            if (c.var.track) c.var.track.detachedExecutionTracked = true;
+            const statusUrl = `${getPublicOrigin(c)}/v1/jobs/${name}`;
+            c.header("Location", statusUrl);
+            c.header("Retry-After", "5");
+            c.header("Preference-Applied", "respond-async");
+            return c.json(
+                { id: name, status: "pending", status_url: statusUrl },
+                202,
+            );
+        }
+
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {
-            // A Response body is a byte stream, which RPC streams with flow
-            // control instead of serializing it into the 32 MiB-capped call.
             outcome = (await stub.startAndWait(
                 job,
-                body &&
-                    (new Response(body as Uint8Array<ArrayBuffer>).body ??
-                        undefined),
+                bodyStream,
             )) as GenerationOutcome;
         } catch (error) {
             const rpcError = error as Error & {

@@ -1,0 +1,32 @@
+{
+  "pr_number": 17233,
+  "title": "fix(enter): expose gen API catalog and link documentation directly",
+  "author": "patbing",
+  "url": "https://github.com/pollinations/pollinations/pull/17233",
+  "merged_at": "2026-10-13T05:50:13Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Enter adds unauthenticated GET /.well-known/api-catalog, which redirects to the gen API catalog with a permanent, method-preserving 308; production, staging, and development origins map to their corresponding gen origins. OAuth metadata now points service_documentation directly to gen /docs instead of going through enter /api/docs. The existing enter /api/docs redirect remains unchanged, and enter's llms.txt now links to the gen API catalog.",
+    "keywords": [
+      "API catalog",
+      "OAuth metadata",
+      "service documentation",
+      "agent discovery",
+      "redirects"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-13/PR-17233.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny explorer glasses and points from an Enter sign to a glowing gen API catalog on a CRT screen, with one clear path connecting them. Polli, the main character, is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; chunky retro sprites, code-plants, a prominent lime green (#ecf874) glow, soft pastel gradients, warm lighting, cozy pixel art, 8-bit aesthetic, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-10-13T05:52:15.216915+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "b4a428b7e37776c9dcc634b3c3c607e977bc92cc",
+  "announcements": []
+}

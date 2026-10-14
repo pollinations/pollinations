@@ -4,7 +4,7 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse as yamlParse } from "yaml";
-import type { Spec } from "../scripts/generate-apidocs.ts";
+import { buildCurl, type Spec } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import worker from "../src/index.ts";
 
@@ -57,6 +57,11 @@ describe("docs routes", () => {
         await waitOnExecutionContext(ctx);
         expect(response.status).toBe(200);
         const schema = (await response.json()) as Spec;
+        const text = schema.paths["/text/{prompt}"]?.get;
+        expect(text).toBeDefined();
+        expect(buildCurl(schema, "get", "/text/{prompt}", text)).not.toContain(
+            "seed=:seed",
+        );
         expect(requestExampleErrors(schema)).toEqual([]);
     });
 

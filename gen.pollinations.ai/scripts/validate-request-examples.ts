@@ -33,7 +33,12 @@ export function requestExampleErrors(spec: Spec): string[] {
     let checked = 0;
     for (const [path, item] of Object.entries(spec.paths)) {
         for (const [method, op] of Object.entries(item)) {
-            if (!["post", "put", "patch", "delete"].includes(method)) continue;
+            if (
+                !["get", "head", "post", "put", "patch", "delete"].includes(
+                    method,
+                )
+            )
+                continue;
             checked++;
             const label = `${method.toUpperCase()} ${path}`;
             try {
@@ -46,9 +51,18 @@ export function requestExampleErrors(spec: Spec): string[] {
                 const lines = curl.split(" \\\n  ");
                 const urlMatch = lines
                     .shift()
-                    ?.match(/^curl -X \w+ "([^"]+)"$/);
+                    ?.match(/^curl(?: -X \w+)? "([^"]+)"$/);
                 if (!urlMatch) throw new Error("unrecognized curl URL");
                 const url = new URL(urlMatch[1]);
+                for (const value of [
+                    ...url.pathname.split("/").map(decodeURIComponent),
+                    ...url.searchParams.values(),
+                ]) {
+                    if (/^:[A-Za-z_][\w-]*$/.test(value))
+                        errors.push(
+                            `${label}: unresolved URL placeholder ${value}`,
+                        );
+                }
                 const headers = new Headers();
                 let body: unknown;
                 let contentType: string | undefined;
@@ -209,6 +223,6 @@ export function requestExampleErrors(spec: Spec): string[] {
             }
         }
     }
-    if (!checked) errors.push("No write operations were checked");
+    if (!checked) errors.push("No request operations were checked");
     return errors;
 }

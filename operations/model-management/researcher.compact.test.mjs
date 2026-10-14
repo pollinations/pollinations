@@ -1,4 +1,48 @@
 import assert from "node:assert/strict";
+
+test("provider discovery audits include literal API evidence after long pricing tables", async () => {
+    const api =
+        "InferHub offers an OpenAI-compatible inference API for these models.";
+    const text = `InferHub pricing and models. ${"Table row. ".repeat(400)}${api}`;
+    let checked = 0;
+    await auditEvidence(
+        {
+            routes: [],
+            discoveries: [
+                {
+                    name: "InferHub",
+                    kind: "provider",
+                    reason: "Source identifies a provider research lead; popularity, release recency, pricing and API availability require verification.",
+                    sourceIds: ["s1"],
+                },
+            ],
+            gaps: [],
+        },
+        null,
+        [
+            {
+                id: "s1",
+                url: "https://inferhub.dev/pricing",
+                status: "fetched",
+                text,
+            },
+        ],
+        async (payload) => {
+            const [item] = payload.state.items;
+            assert.ok(item.excerpt.includes(api));
+            assert.ok(
+                item.excerpt.includes(
+                    "Source URL: https://inferhub.dev/pricing",
+                ),
+            );
+            assert.ok(item.excerpt.length <= 1600);
+            checked++;
+            return { grades: [], requestDigest: "test" };
+        },
+    );
+    assert.equal(checked, 1);
+});
+
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";

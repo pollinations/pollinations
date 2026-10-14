@@ -358,6 +358,7 @@ describe("gen worker routing", () => {
         expect(body.skills.map((s) => s.name)).toEqual([
             "polli",
             "pollinations-api",
+            "pollinations-mcp",
             "quest-contributor",
         ]);
         const [polli, apiSkill] = body.skills;
@@ -398,6 +399,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "pollinations-mcp/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {
             expect(llms).toContain(`/.well-known/agent-skills/${path}`);

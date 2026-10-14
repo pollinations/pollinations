@@ -112,7 +112,7 @@ test("a failed running-low email frees the slot for the next crossing", async ()
     expect(await notifiedAt("bounce")).not.toBeNull();
 });
 
-test("switching auto top-up off emails once and replaces the running-low email", async () => {
+test("auto top-up failed emails once per failure, without the 30-day limit", async () => {
     const { sent, notifyEnv } = withOutbox();
     // No Stripe customer: the trigger turns auto top-up off before any charge.
     await addUser("nocard", { packBalance: 2, autoTopUp: true });
@@ -127,6 +127,18 @@ test("switching auto top-up off emails once and replaces the running-low email",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
     expect(sent[0].text).toContain("You have 2.00 Pollen left.");
+
+    // The user turns it back on, and it fails again the same day.
+    await env.DB.prepare(
+        "UPDATE user SET auto_top_up_enabled = 1 WHERE id = 'nocard'",
+    ).run();
+    await processAutoTopUpForUser(notifyEnv, "nocard");
+    expect(sent.map((email) => email.subject)).toEqual([
+        "Auto top-up failed",
+        "Auto top-up failed",
+    ]);
+    // It leaves the running-low email's 30-day limit alone.
+    expect(await notifiedAt("nocard")).toBeNull();
 });
 
 test("the unsubscribe link stops every email", async () => {

@@ -794,20 +794,20 @@ async function cleanupRetrievedAutoTopUpInvoice(
     }
 }
 
-// Tells the user, and takes their 30-day balance-email slot so this email
-// replaces the running-low one.
+// Tells the user once per failure: only the switch from on to off emails, so
+// turning auto top-up back on and failing again sends a new email.
 async function disableAutoTopUp(
     env: CloudflareBindings,
     userId: string,
 ): Promise<void> {
     const user = await env.DB.prepare(
         `UPDATE user
-            SET auto_top_up_enabled = 0, low_balance_notified_at = ?
+            SET auto_top_up_enabled = 0
             WHERE id = ? AND auto_top_up_enabled = 1
             RETURNING email, COALESCE(pack_balance, 0) AS balance,
                 email_unsubscribed_at AS unsubscribedAt`,
     )
-        .bind(Date.now(), userId)
+        .bind(userId)
         .first<{
             email: string;
             balance: number;

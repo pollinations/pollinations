@@ -3,9 +3,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { getLogger } from "@logtape/logtape";
 
 // Account emails: facts about the user's own account, sent through the
-// Cloudflare Email Service binding. A user gets at most one balance email
-// (running low or auto top-up failed) per 30 days, and none after they
-// unsubscribe.
+// Cloudflare Email Service binding. Running low goes out at most once per 30
+// days; auto top-up failed goes out each time it switches off. None after the
+// user unsubscribes.
 
 const log = getLogger(["enter", "account-notices"]);
 

@@ -320,6 +320,22 @@ test("an <img> gets the card for each failure and refusal, at its size, with the
     }
 });
 
+test("a card stays within 2048 px a side, whatever size the URL asks for", async () => {
+    const img = { accept: "image/*" };
+    for (const [query, size] of [
+        ["width=-1000000000&height=1000000000", [1024, 2048]],
+        ["width=0&height=0", [1024, 1024]],
+        ["width=5000&height=100", [2048, 100]],
+    ] as const) {
+        const { bytes } = await call(`/prompt/gen:503?${query}`, {
+            headers: img,
+        });
+        const card = PhotonImage.new_from_byteslice(bytes);
+        expect([card.get_width(), card.get_height()], query).toEqual(size);
+        card.free();
+    }
+});
+
 test("a gen refusal the caller can fix gets gen's own answer, and is not stored", async () => {
     const { response, text } = await call("/prompt/gen:400?seed=1");
 

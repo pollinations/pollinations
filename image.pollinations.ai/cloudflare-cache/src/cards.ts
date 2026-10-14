@@ -43,7 +43,17 @@ export type CardKind = keyof typeof CARDS;
  * The card in the shape nearest width x height, fitted into that size; the
  * margin takes the card's own colour, so nothing is stretched.
  */
-export function card(kind: CardKind, width: number, height: number) {
+export function card(
+    kind: CardKind,
+    requestedWidth: number,
+    requestedHeight: number,
+) {
+    // params.ts lets sizes of 0 and below through, and a card, made without
+    // gen, would pad up to any size: keep each side within 1 to 2048
+    const side = (value: number) =>
+        Number.isInteger(value) && value > 0 ? Math.min(value, 2048) : 1024;
+    const width = side(requestedWidth);
+    const height = side(requestedHeight);
     const ratio = width / height;
     const shape = (Object.keys(RATIOS) as (keyof typeof RATIOS)[]).reduce(
         (best, next) =>

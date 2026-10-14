@@ -76,7 +76,8 @@ export function resolveQwenImage21TurboSize(params: ImageParams): {
             Math.ceil((resolvedHeight * scale) / TURBO_STEP) * TURBO_STEP;
     } else if (resolvedArea > TURBO_MAX_AREA) {
         const scale = Math.sqrt(TURBO_MAX_AREA / resolvedArea);
-        resolvedWidth = Math.floor((resolvedWidth * scale) / TURBO_STEP) * TURBO_STEP;
+        resolvedWidth =
+            Math.floor((resolvedWidth * scale) / TURBO_STEP) * TURBO_STEP;
         resolvedHeight =
             Math.floor((resolvedHeight * scale) / TURBO_STEP) * TURBO_STEP;
         // Proportional floor can zero a razor-thin side; pin it and take the

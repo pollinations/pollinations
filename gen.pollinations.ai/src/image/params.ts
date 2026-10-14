@@ -25,10 +25,15 @@ const sanitizedSeed = z.preprocess((v) => {
     return normalizeSeed(parsed);
 }, z.int().min(0).max(MAX_SEED).catch(SENTINEL_SEED));
 
+// 16px is the smallest side any image backend produces (gpt-image clamps
+// up from 16); anything smaller — or zero/negative — is garbage that used to
+// reach providers and surface as leaked pydantic/backend validation errors.
+const MIN_SIDE_LENGTH = 16;
+
 const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
-}, z.int().optional());
+}, z.int().min(MIN_SIDE_LENGTH).optional());
 
 const parseReferenceUrls = (value: unknown): string[] => {
     const values = Array.isArray(value)

@@ -1,0 +1,32 @@
+{
+  "pr_number": 17271,
+  "title": "fix(mcp): don't call paid-only models unknown for Quest Pollen keys",
+  "author": "lotxo1",
+  "url": "https://github.com/pollinations/pollinations/pull/17271",
+  "merged_at": "2026-10-14T19:27:27Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "MCP model validation now checks the public registry when a model name or alias is absent from the API key’s model list. Paid-only video, 3D, and embedding models are passed to Gen, so a Quest-Pollen-only key receives the actual paid-Pollen requirement instead of an “unknown model” error. Names absent from both registries remain unknown, with suggestions; listModels still shows only models available to the key.",
+    "keywords": [
+      "MCP",
+      "model validation",
+      "Quest Pollen",
+      "paid-only models",
+      "error messages"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17271.jpg",
+    "prompt": "In a cozy garden workbench scene, Polli wears tiny librarian glasses and points a CRT monitor robot toward a public model catalog beside a smaller key-specific list, with code-plants growing around them. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; prominent lime green (#ecf874) glow, warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-14T19:29:03.402569+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "5854124f148aed5f6f9106eccf54f21b7205f100",
+  "announcements": []
+}

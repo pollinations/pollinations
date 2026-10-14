@@ -4,6 +4,16 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.18] - 2026-10-14
+
+### Added
+- `imageAsync()`, `videoAsync()`, `audioAsync()`, and `model3dAsync()` submit
+  detached media jobs; `job()` checks status and `jobResult()` downloads the file.
+
+### Changed
+- Media requests authenticate with the Authorization header instead of
+  including the credential in a query string.
+
 ## [5.1.0-alpha.17] - 2026-10-14
 
 ### Added

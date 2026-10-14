@@ -36,6 +36,9 @@ import type {
     ImageResponse,
     KeyInfo,
     KeyUsageOptions,
+    MediaJobResult,
+    MediaJobStatus,
+    MediaJobSubmission,
     Message,
     Model3dGenerateOptions,
     Model3dResponse,
@@ -350,7 +353,7 @@ export class Pollinations {
 
     private buildQueryParams(
         params: Record<string, unknown>,
-        includeKey: boolean = true,
+        includeKey: boolean = false,
     ): string {
         const searchParams = new URLSearchParams();
 
@@ -792,6 +795,180 @@ export class Pollinations {
                         response.headers.get("content-type") ||
                         "model/gltf-binary",
                     url,
+                };
+            },
+        );
+    }
+
+    // ============================================================================
+    // Asynchronous Media Jobs
+    // ============================================================================
+
+    /** Submit a media request without waiting for the provider to finish. */
+    private async submitMedia(
+        url: string,
+        signal?: AbortSignal,
+    ): Promise<MediaJobSubmission> {
+        return fetchWithTimeout(
+            url,
+            { headers: { ...this.getHeaders(), Prefer: "respond-async" } },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (response.status === 202) {
+                    const job = (await response.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    if (
+                        typeof job.id !== "string" ||
+                        !/^[0-9a-f]{64}$/.test(job.id) ||
+                        (job.status !== "pending" &&
+                            job.status !== "succeeded") ||
+                        typeof job.status_url !== "string"
+                    ) {
+                        throw new PollinationsError(
+                            "Invalid media job response",
+                            "INVALID_RESPONSE",
+                            502,
+                        );
+                    }
+                    return job as MediaJobSubmission;
+                }
+                if (!response.ok) await this.handleErrorResponse(response);
+                // The server may ignore Prefer when the media is already cached.
+                return {
+                    status: "succeeded",
+                    result: {
+                        buffer: await response.arrayBuffer(),
+                        contentType:
+                            response.headers.get("content-type") ||
+                            "application/octet-stream",
+                    },
+                };
+            },
+        );
+    }
+
+    async imageAsync(
+        prompt: string,
+        options: ImageGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildImageUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async videoAsync(
+        prompt: string,
+        options: VideoGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildVideoUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async audioAsync(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!text)
+            throw new PollinationsError(
+                "Text is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                voice: options.voice,
+                model: options.model,
+                duration: options.duration,
+                seed: options.seed,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/audio/${encodeURIComponent(text)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    async model3dAsync(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    private jobPath(id: string): string {
+        if (!/^[0-9a-f]{64}$/.test(id)) {
+            throw new PollinationsError(
+                "Invalid media job id",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return `${this.baseUrl}/v1/jobs/${id}`;
+    }
+
+    /** Poll a submitted job until its status is succeeded or failed. */
+    async job(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobStatus> {
+        return this.getJson<MediaJobStatus>(this.jobPath(id), options.signal);
+    }
+
+    /** Download the completed result; rejects with 409 while still pending. */
+    async jobResult(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobResult> {
+        return fetchWithTimeout(
+            `${this.jobPath(id)}/result`,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
                 };
             },
         );

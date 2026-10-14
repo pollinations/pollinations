@@ -195,14 +195,14 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Model post: `operations/social/news/models/`
 
-- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
+- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
 - `diffs/YYYY-MM-DD.json`, `YYYY-MM-DD/discord.json` — the comparison and the post, saved only after Discord confirms the send; a week without changes saves nothing
 - `YYYY-MM-DD/delivery.json` — written only by `deliver.py`
 - `models.md` — every model post, newest first
 
 ### Community post: `operations/social/news/community/`
 
-`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price, modalities, capabilities, paid-only), never owner-written text.
+`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text.
 
 ### Platform Envelope
 

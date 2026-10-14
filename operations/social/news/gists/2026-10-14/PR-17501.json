@@ -1,0 +1,33 @@
+{
+  "pr_number": 17501,
+  "title": "fix(docs): repair read examples and check them in PRs",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17501",
+  "merged_at": "2026-10-14T23:00:11Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Fixed generated API request examples so optional query parameters without usable values are omitted instead of appearing as placeholders such as `seed=:seed` or `limit=:limit`. Examples keep up to two optional query parameters with values and include required parameters regardless of their position; the `/media` gallery example supplies `tag=my-gallery`. Path parameters now prefer schema examples, then route-specific fallback IDs, rather than reusing an unrelated API-key ID. Request-example checks now cover GET and HEAD as well as write methods, and reject unresolved placeholders in URL paths and query values during PR validation.",
+    "keywords": [
+      "API docs",
+      "curl examples",
+      "GET",
+      "HEAD",
+      "query parameters",
+      "validation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17501.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and checks a clean curl request on a glowing retro monitor beside a sprouting code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small within the scene, with chunky retro sprites, a prominent soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, and cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-14T23:01:21.506941+00:00",
+  "area": "Docs & support",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "cf7f5a55cfb582163b6a89370da1611e79d84754",
+  "announcements": []
+}

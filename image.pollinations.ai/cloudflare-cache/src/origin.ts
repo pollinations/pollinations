@@ -1,7 +1,12 @@
 import type { Context } from "hono";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
-import { explainFreeLimit, failure } from "../../../shared/messages.js";
+import {
+    explainFreeLimit,
+    failure,
+    REFUSED,
+    refusal,
+} from "../../../shared/messages.js";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
@@ -262,11 +267,7 @@ const relative = (timing: Step[]) =>
     }));
 
 /** The VM's error JSON; timingInfo holds the steps this request reached */
-function errorJson(
-    job: Job,
-    error: Error & { status?: number },
-    queueInfo = null,
-) {
+function errorJson(job: Job, error: Error & { status?: number }) {
     const status = error.status || 500;
     const errorType =
         status === 429 ? "Too Many Requests" : "Internal Server Error";
@@ -281,7 +282,7 @@ function errorJson(
             ...job.safeParams,
             referrer: job.referrer,
         },
-        queueInfo,
+        queueInfo: null,
     };
     return vmResponse(JSON.stringify(body), status, {
         "Content-Type": "application/json",
@@ -327,12 +328,11 @@ export async function generate(c: Context, url: URL, route: string) {
     job.timing.push(step("Request received and queued."));
     const { model } = job.safeParams;
     if (BLOCKED_MODELS.includes(model)) {
-        return errorJson(
-            job,
-            new Error(
-                `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
-            ),
+        const { status, body, headers } = refusal(
+            403,
+            REFUSED.enterOnly(model),
         );
+        return vmResponse(body, status, headers);
     }
 
     const { env, ctx } = job;
@@ -355,27 +355,12 @@ export async function generate(c: Context, url: URL, route: string) {
         // The VM's in-memory queue could not fail: answer as a free request
         // that books and releases nothing
         logFailure(route, { error: "ip_slot", type: error.name });
-        return background(generateImage(job, false, () => {}));
+        return background(generateImage(job, () => {}));
     }
 
     if (slot.action === "full") {
-        const error = Object.assign(
-            new Error(
-                `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-            ),
-            { status: 429 },
-        );
-        const queueInfo = {
-            ip,
-            currentSize: 0,
-            pending: 1,
-            total: 1,
-            maxAllowed: 1,
-            username: null,
-            userId: null,
-            tier: "anonymous",
-        };
-        return errorJson(job, error, queueInfo);
+        const { status, body, headers } = refusal(429, REFUSED.imageBusy);
+        return vmResponse(body, status, headers);
     }
     if (slot.action === "pay") {
         // requireImagePayment ran checkCacheAndGenerate again for a paid or
@@ -384,7 +369,6 @@ export async function generate(c: Context, url: URL, route: string) {
             background(
                 generateImage(
                     { ...job, timing: [step("Request received and queued.")] },
-                    true,
                     () => {},
                 ),
             );
@@ -425,7 +409,7 @@ export async function generate(c: Context, url: URL, route: string) {
                     setTimeout(resolve, slot.waitMs),
                 );
             }
-            return generateImage(job, false, ended);
+            return generateImage(job, ended);
         })(),
     );
 }
@@ -462,12 +446,12 @@ async function callGenSana(
         },
     });
     if (!response.ok) {
-        const errorBody = (await response.text()).slice(0, 500);
+        const genBody = await response.text();
         throw Object.assign(
             new Error(
-                `Gen Sana request failed with ${response.status}: ${errorBody}`,
+                `Gen Sana request failed with ${response.status}: ${genBody.slice(0, 500)}`,
             ),
-            { genStatus: response.status },
+            { genStatus: response.status, genBody },
         );
     }
     const image = new Uint8Array(await response.arrayBuffer());
@@ -480,10 +464,9 @@ async function callGenSana(
 /**
  * The queue job (imageGen and createAndReturnImageCached): gen, the branded
  * JPEG, the feed event, then the response. Never throws; calls ended() once
- * the job is done. A paid or HEAD job (`paid`) answered errors as
- * requireImagePayment's Express app did.
+ * the job is done.
  */
-async function generateImage(job: Job, paid: boolean, ended: () => void) {
+async function generateImage(job: Job, ended: () => void) {
     const { env, safeParams, timing } = job;
     try {
         timing.push(step("Start generating job"));
@@ -523,18 +506,14 @@ async function generateImage(job: Job, paid: boolean, ended: () => void) {
                 ? { error: "gen", status: error.genStatus }
                 : { error: "exception", type: error.name },
         );
-        // Failures the caller can't fix are answered as gen answers its own;
-        // the others keep the VM's answers
-        const failed = failure(error.genStatus);
-        if (failed)
-            return vmResponse(failed.body, failed.status, failed.headers);
-        if (!paid) return errorJson(job, error);
-        // requireImagePayment's handler, written with res.writeHead
-        const body = { error: error.message || "Image generation failed" };
-        return vmResponse(JSON.stringify(body), error.status || 500, {
-            "Content-Type": "application/json",
-            "X-Powered-By": "Express",
-        });
+        // Answered as gen answers its own failures, or with gen's own
+        // refusal of a request the caller can fix
+        const { status, body, headers } = failure(error.genStatus) ?? {
+            status: error.genStatus,
+            body: error.genBody,
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+        };
+        return vmResponse(body, status, headers);
     } finally {
         ended();
     }

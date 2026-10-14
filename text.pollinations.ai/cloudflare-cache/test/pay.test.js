@@ -3,7 +3,6 @@ import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
-import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
 import {
     alarmOf,
     call as callWorker,
@@ -324,7 +323,7 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     expect(await storedAt(CAPTURED_HEAD)).toBeNull();
 });
 
-test("an unknown model books the free slot and gets the VM's 404; then the IP gets the notice", async () => {
+test("an unknown model books the free slot and gets a 404; then the IP gets the notice", async () => {
     const ip = nextIp();
 
     const free = await call("/check?model=zz-nonexistent-model", {
@@ -332,7 +331,7 @@ test("an unknown model books the free slot and gets the VM's 404; then the IP ge
         headers: CURL,
     });
     expect(free.response.status).toBe(404);
-    expect(free.text).toBe(vm404);
+    expect(JSON.parse(free.text).error.code).toBe("NOT_FOUND");
 
     const next = await call("/check%202", { ip, headers: CURL });
     expect(next.text).toMatch(NOTICE);
@@ -380,7 +379,7 @@ test("without every WEFT_* value the paywall is off: rate-limited requests queue
         testEnv: off,
     });
     expect(held.response.status).toBe(429);
-    expect(JSON.parse(held.text).error).toMatch(/^Queue full for IP: /);
+    expect(JSON.parse(held.text).error.code).toBe("RATE_LIMITED");
 
     // The last free generation started 29.8 s ago and has ended
     const ip = nextIp();
@@ -536,7 +535,7 @@ test("a generation that fails after verify is not settled", async () => {
         headers: CURL,
     });
     expect(unknown.response.status).toBe(404);
-    expect(JSON.parse(unknown.text).error).toBe(JSON.parse(vm404).error);
+    expect(JSON.parse(unknown.text).error.code).toBe("NOT_FOUND");
     expect(events).not.toContain("/settle");
 });
 

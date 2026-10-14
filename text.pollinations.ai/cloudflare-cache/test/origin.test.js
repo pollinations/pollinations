@@ -12,11 +12,9 @@ import feedHeaders from "./fixtures/text.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
-import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
 import { alarmOf, call, capturedHeaders, nextIp, storedAt } from "./helpers.js";
 
 // The fixed gen responses are in vitest.config.js
-const NOTICE = JSON.parse(vm404).deprecation_notice;
 const JSON_BODY = { "content-type": "application/json" };
 const SSE_UNTIL_DONE =
     'data: {"choices":[{"delta":{"content":"o"}}],"model":"gpt-oss-20b"}\n\n' +
@@ -254,7 +252,7 @@ function expectGenError(text, status, code, message) {
     });
 }
 
-test("a busy or rate-limited gen gets gen's 503 with a retry time; errors the caller can fix keep the VM's JSON", async () => {
+test("a busy or rate-limited gen gets gen's 503 with a retry time; a request the caller can fix gets gen's own refusal", async () => {
     for (const path of ["/gen:503", "/gen:429", "/gen:503?stream=true"]) {
         const failed = await call(path);
         expect(failed.response.status, path).toBe(503);
@@ -263,11 +261,12 @@ test("a busy or rate-limited gen gets gen's 503 with a retry time; errors the ca
         expect(await storedAt(path), path).toBeNull();
     }
 
-    // node-fetch's statusText: the reason phrase of any status gen passes on
+    // gen's refusal of a request the caller can fix, as gen sent it
     const unprocessable = await call("/gen:422");
-    expect(JSON.parse(unprocessable.text).error).toBe(
-        "422 Unprocessable Entity",
-    );
+    expect(unprocessable.response.status).toBe(422);
+    expect(JSON.parse(unprocessable.text)).toEqual({
+        error: { message: "gen answered 422" },
+    });
 
     // The VM's cache stored a gen 400 like any status below 401
     const rejected = await call("/gen:400");
@@ -283,11 +282,9 @@ test("a busy or rate-limited gen gets gen's 503 with a retry time; errors the ca
     expectGenError(textError.text, 500, "INTERNAL_ERROR", OUR_FAULT);
 
     const stream = await call("/gen:400?stream=true");
-    expect(stream.response.status).toBe(500);
+    expect(stream.response.status).toBe(400);
     expect(JSON.parse(stream.text)).toEqual({
-        error: "400 Bad Request",
-        status: 500,
-        deprecation_notice: NOTICE,
+        error: { message: "gen answered 400" },
     });
     expect(await storedAt("/gen:400?stream=true")).toBeNull();
 });
@@ -627,14 +624,17 @@ const CACHE_MISS = {
     "x-cache-key": expect.stringMatching(/^[0-9a-f]{64}$/),
 };
 
-test("an invalid messages array gets the route's JSON 400", async () => {
+const BAD_MESSAGES =
+    "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
+
+test("an invalid messages array gets gen's 400", async () => {
     const { response, text } = await call("/", {
         method: "POST",
         headers: JSON_BODY,
         body: JSON.stringify({ messages: "hi" }),
     });
     expect(response.status).toBe(400);
-    expect(text).toBe('{"error":"Invalid messages array"}');
+    expectGenError(text, 400, "BAD_REQUEST", BAD_MESSAGES);
 });
 
 test("bad bodies, malformed % and unknown routes get Express's HTML error page with the error line", async () => {
@@ -869,7 +869,7 @@ test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media typ
             expect(gen.bodies[0].messages.at(-1).content, label).toBe(expected);
         } else if (expected === 400) {
             expect(response.status, label).toBe(400);
-            expect(text, label).toBe('{"error":"Invalid messages array"}');
+            expect(JSON.parse(text).error.message, label).toBe(BAD_MESSAGES);
         } else {
             expect(response.status, label).toBe(expected[0]);
             expect(text, label).toBe(errorPage(expected[1]));
@@ -878,12 +878,7 @@ test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media typ
     }
 });
 
-test("non-array messages get the VM's 500, whose error log failed on messages.map", async () => {
-    const vm = JSON.stringify({
-        error: "messages.map is not a function",
-        status: 500,
-        deprecation_notice: NOTICE,
-    });
+test("non-array messages get gen's 400, on every route", async () => {
     for (const [path, options] of [
         [
             "/v1/chat/completions",
@@ -906,12 +901,8 @@ test("non-array messages get the VM's 500, whose error log failed on messages.ma
     ]) {
         const { response, text } = await call(path, options);
 
-        expect(response.status, path).toBe(500);
-        expect(text, path).toBe(vm);
-        // The ETag of the live capture of 2026-10-12
-        expect(response.headers.get("etag"), path).toBe(
-            'W/"14b-2vuwa+PS53/bu4pTjJqib/XYw+M"',
-        );
+        expect(response.status, path).toBe(400);
+        expectGenError(text, 400, "BAD_REQUEST", BAD_MESSAGES);
     }
 });
 
@@ -1007,7 +998,7 @@ test("the 431 starts where it did for the production measurement of GET /models"
     expect(at.response.status).toBe(431);
 });
 
-test("while a free generation runs, a stream from the same IP gets the VM's 429", async () => {
+test("while a free generation runs, a stream from the same IP gets a 429", async () => {
     const ip = nextIp();
     const running = call("/gen:slow", { ip });
     await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 30_000);
@@ -1015,11 +1006,12 @@ test("while a free generation runs, a stream from the same IP gets the VM's 429"
     const stream = await call("/meanwhile?stream=true", { ip });
 
     expect(stream.response.status).toBe(429);
-    expect(JSON.parse(stream.text)).toEqual({
-        error: `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-        status: 429,
-        deprecation_notice: NOTICE,
-    });
+    expectGenError(
+        stream.text,
+        429,
+        "RATE_LIMITED",
+        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+    );
     expect((await running).text).toBe("ok");
 });
 

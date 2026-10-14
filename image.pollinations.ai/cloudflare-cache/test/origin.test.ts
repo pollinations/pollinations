@@ -11,8 +11,6 @@ import worker from "../src/index.ts";
 import { ImageParamsSchema } from "../src/params.ts";
 import feedHeaders from "./fixtures/image.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/image.pollinations.ai-prime.headers?raw";
-import blockedBody from "./fixtures/vm-blocked-model-500.body?raw";
-import blockedHeaders from "./fixtures/vm-blocked-model-500.headers?raw";
 // The Exif APP1 segments of VM images, marker included
 import vmExifControl from "./fixtures/vm-exif-control.bin";
 import vmExifLive from "./fixtures/vm-exif-live.bin";
@@ -230,34 +228,24 @@ test("gen gets the caller's IP and referrer: the query, then the headers", async
     expect(odd.headers.get("authorization")).toBe("Bearer test-gen-key");
 });
 
-test("a blocked model gets the VM's 500 JSON before the free limit, with no gen call", async () => {
+test("a model that only runs on enter gets gen's 403 before the free limit, with no gen call", async () => {
     const gen = recordingGen();
     const ip = nextIp();
-    const { response, text } = await call(
-        "/prompt/migration-probe-blocked?model=kontext",
-        { ip, testEnv: gen.testEnv },
-    );
+    for (const model of ["kontext", "seedream", "nanobanana"]) {
+        const { response, text } = await call(
+            `/prompt/migration-probe-blocked?model=${model}`,
+            { ip, testEnv: gen.testEnv },
+        );
 
-    expect(response.status).toBe(500);
-    const vm = JSON.parse(blockedBody);
-    const body = JSON.parse(text);
-    expect(body.requestId).toMatch(/^[0-9a-z]+$/);
-    expect(JSON.stringify({ ...body, requestId: vm.requestId })).toBe(
-        blockedBody.trim(),
-    );
-    const headers = Object.fromEntries(response.headers);
-    expect(headers).toEqual(
-        Object.fromEntries(capturedHeaders(blockedHeaders)),
-    );
-    expect(gen.requests).toHaveLength(0);
-    expect(await alarmOf(ip)).toBeNull();
-
-    for (const model of ["seedream", "nanobanana"]) {
-        const blocked = await call(`/prompt/x?model=${model}`);
-        expect(JSON.parse(blocked.text).message).toBe(
-            `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
+        expect(response.status, model).toBe(403);
+        const body = JSON.parse(text);
+        expect(body.error.code, model).toBe("FORBIDDEN");
+        expect(body.error.message, model).toBe(
+            `${model} isn't part of the Classic API. Use it with a pollen key at https://enter.pollinations.ai/?ref=classic`,
         );
     }
+    expect(gen.requests).toHaveLength(0);
+    expect(await alarmOf(ip)).toBeNull();
 });
 
 test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", async () => {
@@ -311,23 +299,11 @@ test("gen's failures get gen's error body and are not stored: 503 when gen is bu
     }
 });
 
-test("a gen refusal the caller can fix keeps the VM's 500 JSON", async () => {
+test("a gen refusal the caller can fix gets gen's own answer, and is not stored", async () => {
     const { response, text } = await call("/prompt/gen:400?seed=1");
 
-    expect(response.status).toBe(500);
-    expect(response.headers.get("x-error-type")).toBe("Internal Server Error");
-    const body = JSON.parse(text);
-    expect(body.message).toBe(
-        'Gen Sana request failed with 400: {"error":"gen answered 400"}',
-    );
-    expect(body.requestParameters).toMatchObject({
-        prompt: "gen:400",
-        seed: 1,
-    });
-    // The steps the VM had reached when gen's answer failed
-    expect(body.timingInfo.map(({ step }) => step)).toEqual(
-        TIMING_STEPS.slice(0, 5),
-    );
+    expect(response.status).toBe(400);
+    expect(JSON.parse(text)).toEqual({ error: "gen answered 400" });
     expect(await storedAt("/prompt/gen:400?seed=1")).toBeNull();
 });
 
@@ -507,30 +483,18 @@ test("the IP is released when the generation succeeds, fails or throws", async (
     expect(await released(threw)).toBe(true);
 });
 
-test("without every WEFT_* value the paywall is off: a running generation gives the VM's 429, spacing waits", async () => {
+test("without every WEFT_* value the paywall is off: a running generation gives a 429, spacing waits", async () => {
     const off = { ...env, WEFT_SELLER_API_KEY: undefined };
     const ip = await limitedIp();
 
     const held = await call("/prompt/weft%20off", { ip, testEnv: off });
 
     expect(held.response.status).toBe(429);
-    expect(held.response.headers.get("x-error-type")).toBe("Too Many Requests");
-    expect(JSON.parse(held.text)).toMatchObject({
-        error: "Too Many Requests",
-        message: `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-        debug: null,
-        timingInfo: [{ step: "Request received and queued.", timestamp: 0 }],
-        queueInfo: {
-            ip,
-            currentSize: 0,
-            pending: 1,
-            total: 1,
-            maxAllowed: 1,
-            username: null,
-            userId: null,
-            tier: "anonymous",
-        },
-    });
+    const body = JSON.parse(held.text);
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(body.error.message).toBe(
+        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+    );
 
     // The last free generation started 44.8 s ago and has ended
     const spaced = nextIp();

@@ -157,3 +157,28 @@ export function failure(genStatus) {
         ),
     };
 }
+
+const CODES = {
+    400: "BAD_REQUEST",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    429: "RATE_LIMITED",
+};
+
+/** A request the caller can fix, refused in gen's error body */
+export const refusal = (status, message) => ({
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: genError(status, CODES[status] ?? "BAD_REQUEST", message),
+});
+
+export const REFUSED = {
+    replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at ${ENTER}`,
+    imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at ${ENTER}`,
+    badMessages:
+        "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md",
+    unknownModel: (model) =>
+        `Model "${model}" isn't on the Classic API. Free models: https://text.pollinations.ai/models. Every model we offer is on ${ENTER}`,
+    enterOnly: (model) =>
+        `${model} isn't part of the Classic API. Use it with a pollen key at ${ENTER}`,
+};

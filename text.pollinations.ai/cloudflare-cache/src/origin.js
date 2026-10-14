@@ -5,7 +5,12 @@ import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
-import { explainFreeLimit, failure } from "../../../shared/messages.js";
+import {
+    explainFreeLimit,
+    failure,
+    REFUSED,
+    refusal,
+} from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
@@ -52,8 +57,6 @@ You understand user intent and don't try to be overly helpful to the point where
 You never lecture people to be nicer or more inclusive. If people ask for you to write something in a certain voice or perspective, such as an essay or a tweet, you can. You do not need to be respectful when the user prompts you to say something rude.
 
 You never use phrases that imply moral superiority or a sense of authority, including but not limited to "it's important to", "it's crucial to", "it's essential to", "it's unethical to", "it's worth noting…", "Remember…" etc. Avoid using these.`;
-const DEPRECATION_NOTICE =
-    "NOTE: The Pollinations legacy text API is being deprecated for authenticated users. Please migrate to https://enter.pollinations.ai for better performance and access to all the latest models. Anonymous requests to text.pollinations.ai are NOT affected.";
 const DOCS_URL =
     "https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
 const MODELS_BODY =
@@ -103,19 +106,6 @@ const json = (body, status, cacheControl, headers) =>
         ...(cacheControl && { "Cache-Control": cacheControl }),
         ...headers,
     });
-
-/** The VM's sendErrorResponse */
-const errorResponse = (status, message, cacheControl, details) =>
-    json(
-        {
-            error: message,
-            status,
-            deprecation_notice: DEPRECATION_NOTICE,
-            ...(details && { details }),
-        },
-        status,
-        cacheControl,
-    );
 
 const HTML_ESCAPES = {
     '"': "&quot;",
@@ -274,7 +264,7 @@ async function answer(request, env, ctx) {
     }
     if (method === "POST" && path === "/") {
         if (!Array.isArray(body.messages)) {
-            return json({ error: "Invalid messages array" }, 400);
+            return failedResponse(refusal(400, REFUSED.badMessages));
         }
         return generate(undefined, "text", "POST /");
     }
@@ -627,10 +617,7 @@ async function generation(
     }
 
     if (slot.action === "full") {
-        return errorResponse(
-            429,
-            `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-        );
+        return failedResponse(refusal(429, REFUSED.replyBusy));
     }
     if (slot.action === "pay") {
         // Outside the free limit: books no slot
@@ -771,9 +758,8 @@ function referrerOf(request, url, body) {
 async function generate(env, job, cacheControl, ended) {
     try {
         if (!MODELS.has(job.model)) {
-            return await errorResponse(
-                404,
-                `Model not found: ${job.model}. This is our legacy API - for the full model list and new features, visit https://enter.pollinations.ai`,
+            return await failedResponse(
+                refusal(404, REFUSED.unknownModel(job.model)),
                 cacheControl,
             );
         }
@@ -804,26 +790,13 @@ async function generate(env, job, cacheControl, ended) {
                 });
                 return await failedResponse(failed, cacheControl);
             }
-            const text = await response.text();
-            let details = text;
-            try {
-                details = JSON.parse(text);
-            } catch {}
             logFailure(job.route, { error: "gen", status: response.status });
-            // node-fetch's statusText on the VM: the standard reason phrase.
-            // Loaded here so that cold starts serving cache hits skip it.
-            const { STATUS_CODES } = await import("node:http");
-            const message = `${response.status} ${STATUS_CODES[response.status] ?? ""}`;
-            // A failed stream lost gen's status and details on the VM, and a
-            // stored 4xx would be served to every later request
-            return await (job.stream
-                ? errorResponse(500, message, cacheControl)
-                : errorResponse(
-                      response.status,
-                      message,
-                      cacheControl,
-                      details,
-                  ));
+            // gen's own refusal of a request the caller can fix, as gen sent
+            // it; a stream's is not stored, as streams never were
+            const headers = { "Content-Type": JSON_TYPE };
+            if (cacheControl || job.stream)
+                headers["Cache-Control"] = cacheControl ?? "no-store";
+            return await send(await response.text(), response.status, headers);
         }
         if (job.stream) {
             job.publish("Streaming response");
@@ -836,11 +809,9 @@ async function generate(env, job, cacheControl, ended) {
                 typeof completion.error === "string"
                     ? { message: completion.error }
                     : completion.error;
-            const failed = failure(status);
-            if (failed) return await failedResponse(failed, cacheControl);
-            return await errorResponse(
-                status || 500,
-                String(message || "An error occurred"),
+            return await failedResponse(
+                failure(status) ??
+                    refusal(status, String(message || "An error occurred")),
                 cacheControl,
             );
         }
@@ -853,10 +824,10 @@ async function generate(env, job, cacheControl, ended) {
             : textResponse(completion));
     } catch (error) {
         logFailure(job.route, { error: "exception", type: error.name });
-        // A request the caller can fix keeps the VM's answer
-        if (error.fixable)
-            return errorResponse(500, error.message, cacheControl);
-        return failedResponse(failure(), cacheControl);
+        return failedResponse(
+            error.fixable ? refusal(400, REFUSED.badMessages) : failure(),
+            cacheControl,
+        );
     } finally {
         ended();
     }

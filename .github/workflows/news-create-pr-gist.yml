@@ -3,6 +3,8 @@ name: News / Create PR gist
 on:
   pull_request_target:
     types: [closed]
+    # main only: PRs into master (the legacy APIs) are not news. Don't add
+    # master back here or dispatch this workflow for a master PR.
     branches:
       - main
   workflow_dispatch:

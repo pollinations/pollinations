@@ -142,12 +142,17 @@ export type {
     MessageContent,
     MessageContentPart,
     MessageRole,
+    Model3DGenerateOptions,
+    Model3DResponse,
     // Models
     ModelCategory,
     ModelInfo,
     ModelInputModality,
     ModelKind,
     ModelOutputModality,
+    ModelStatusOptions,
+    ModelStatusResponse,
+    ModelStatusRow,
     NoulAnswer,
     NoulQuestion,
     // Config
@@ -158,6 +163,10 @@ export type {
     ResponseFormat,
     ScoreAnswer,
     ScoreQuestion,
+    SpeechAlignment,
+    SpeechWithTimestampsOptions,
+    SpeechWithTimestampsResponse,
+    SpeechWord,
     TextContentPart,
     TextGenerateOptions,
     // Text

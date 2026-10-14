@@ -35,10 +35,17 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3DGenerateOptions,
+    Model3DResponse,
     ModelInfo,
     ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechAlignment,
+    SpeechWithTimestampsOptions,
+    SpeechWithTimestampsResponse,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -61,6 +68,56 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
+
+/** Group the normalized character alignment into spoken words in any language. */
+function wordTimings(alignment: SpeechAlignment) {
+    const {
+        characters,
+        character_start_times_seconds: starts,
+        character_end_times_seconds: ends,
+    } = alignment;
+    if (
+        characters.length !== starts.length ||
+        characters.length !== ends.length
+    ) {
+        throw new PollinationsError(
+            "Invalid speech alignment",
+            "MALFORMED_RESPONSE",
+            502,
+        );
+    }
+    const offsets: number[] = [];
+    let offset = 0;
+    for (const char of characters) {
+        offsets.push(offset);
+        offset += char.length;
+    }
+    const words: { word: string; start: number; end: number }[] = [];
+    let cursor = 0;
+    for (const { segment, index, isWordLike } of new Intl.Segmenter(undefined, {
+        granularity: "word",
+    }).segment(characters.join(""))) {
+        if (!isWordLike) continue;
+        while (
+            cursor < characters.length &&
+            offsets[cursor] + characters[cursor].length <= index
+        )
+            cursor++;
+        const first = cursor;
+        while (
+            cursor < characters.length &&
+            offsets[cursor] < index + segment.length
+        )
+            cursor++;
+        if (cursor > first)
+            words.push({
+                word: segment,
+                start: starts[first],
+                end: ends[cursor - 1],
+            });
+    }
+    return words;
+}
 
 /** One item of an OpenAI-style image response */
 type ImageItem = { url?: string; b64_json?: string; media_type?: string };
@@ -750,6 +807,47 @@ export class Pollinations {
         );
     }
 
+    /** Generate a 3D file; image-only models need a public referenceImage URL. */
+    async model3d(
+        prompt: string,
+        options: Model3DGenerateOptions = {},
+    ): Promise<Model3DResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                resolution: options.resolution,
+                image: options.referenceImage,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url,
+                };
+            },
+        );
+    }
+
     // ============================================================================
     // Text Generation
     // ============================================================================
@@ -1094,6 +1192,62 @@ export class Pollinations {
         );
     }
 
+    /** Generate audio with character alignments and derived word timings. */
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: SpeechWithTimestampsOptions = {},
+    ): Promise<SpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        const body = this.stripUndefined({
+            input: text,
+            model: options.model,
+            voice: options.voice,
+            response_format: options.responseFormat,
+            seed: options.seed,
+            safe: options.safe,
+        });
+        const contentTypes = {
+            mp3: "audio/mpeg",
+            opus: "audio/ogg",
+            aac: "audio/aac",
+            wav: "audio/wav",
+            pcm: "audio/pcm",
+        };
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const result = (await response.json()) as {
+                    audio_base64: string;
+                    alignment: SpeechAlignment;
+                    normalized_alignment: SpeechAlignment;
+                };
+                return {
+                    buffer: Uint8Array.from(atob(result.audio_base64), (c) =>
+                        c.charCodeAt(0),
+                    ).buffer,
+                    contentType: contentTypes[options.responseFormat ?? "mp3"],
+                    alignment: result.alignment,
+                    normalizedAlignment: result.normalized_alignment,
+                    words: wordTimings(result.normalized_alignment),
+                };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1142,6 +1296,22 @@ export class Pollinations {
     async models(kind?: ModelKind): Promise<ModelInfo[]> {
         const path = kind ? `/${kind}/models` : "/models";
         return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
+    }
+
+    /** Live health of every model and execution route. */
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = new URLSearchParams();
+        if (options.traffic !== undefined)
+            query.set("traffic", options.traffic);
+        if (options.minutes !== undefined)
+            query.set("minutes", String(options.minutes));
+        const suffix = query.size ? `?${query}` : "";
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${suffix}`,
+            options.signal,
+        );
     }
 
     // ============================================================================

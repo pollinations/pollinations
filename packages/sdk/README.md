@@ -418,6 +418,23 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const pollinations = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
+const model = await pollinations.model3d('a low-poly treasure chest', {
+  model: 'hyper3d/rodin-2.5',
+});
+await writeFile('chest.glb', Buffer.from(model.buffer));
+console.log(model.contentType, model.url); // no API key in the URL
+```
+
+Image-to-3D models also accept `referenceImage` (a public URL or array of URLs)
+and `resolution` where supported. Browse live choices with `models('3d')`.
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -455,6 +472,22 @@ audioEl.play();
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+### Speech with word timestamps
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const pollinations = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
+const speech = await pollinations.audioSpeechWithTimestamps('Hello from Pollinations!', {
+  model: 'elevenlabs/eleven-flash-v2.5',
+  voice: 'alloy',
+});
+await writeFile('hello.mp3', Buffer.from(speech.buffer));
+console.log(speech.words); // [{ word: 'Hello', start: 0.02, end: 0.38 }, ...]
+// speech.alignment and speech.normalizedAlignment contain character timings.
+```
 
 ## Vision (Image Input)
 
@@ -531,10 +564,24 @@ import { getModels } from '@pollinations/sdk';
 
 const textModels = await getModels('text');
 const imageModels = await getModels('image');
-const videoModels = await getModels('video'); // also 'audio', 'embeddings'
+const videoModels = await getModels('video'); // also 'audio', '3d', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
+
+### Model health
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: process.env.POLLINATIONS_API_KEY });
+const { data, meta } = await pollinations.modelStatus({ traffic: 'regular', minutes: 60 });
+console.log(data.filter(row => row.is_rollup).map(row => [row.model, row.status_2xx]));
+console.log(meta.map(column => column.name));
+```
+
+The public `/models/status` response includes one rollup plus rows for routes
+that ran; missing routes are not necessarily down.
 
 ## Media Upload
 

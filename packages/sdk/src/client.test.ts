@@ -1944,3 +1944,142 @@ describe("response body cancellation", () => {
         }
     }
 });
+
+describe("3D generation, model health and timestamped speech", () => {
+    it("generates a 3D file with public image URLs and never puts the API key in its URL", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(null, {
+                contentType: "application/x-ply",
+                kind: "binary",
+            }),
+        );
+        const result = await newClient().model3d("a small robot", {
+            model: "nvidia/asset-harvester",
+            referenceImage: [
+                "https://example.test/a.png",
+                "https://example.test/b.png",
+            ],
+            seed: 42,
+            safe: true,
+        });
+        const [url, request] = fetchMock.mock.calls[0] as [string, RequestInit];
+        const parsed = new URL(url);
+        expect(parsed.pathname).toBe("/3d/a%20small%20robot");
+        expect(parsed.searchParams.get("model")).toBe("nvidia/asset-harvester");
+        expect(parsed.searchParams.get("image")).toBe(
+            "https://example.test/a.png|https://example.test/b.png",
+        );
+        expect(parsed.searchParams.get("seed")).toBe("42");
+        expect(parsed.searchParams.get("safe")).toBe("true");
+        expect(parsed.searchParams.has("key")).toBe(false);
+        expect((request.headers as Record<string, string>).Authorization).toBe(
+            "Bearer sk_test",
+        );
+        expect(result).toEqual({
+            buffer: new ArrayBuffer(8),
+            contentType: "application/x-ply",
+            url,
+        });
+    });
+
+    it("rejects an empty 3D prompt without calling the API", async () => {
+        await expect(newClient().model3d("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("reads the typed model status response with traffic and window filters", async () => {
+        const status = {
+            meta: [{ name: "model", type: "String" }],
+            data: [{ model: "example", is_rollup: 1, status_2xx: 12 }],
+            rows: 1,
+            statistics: { elapsed: 0.04, rows_read: 10, bytes_read: 100 },
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(status));
+        await expect(
+            newClient().modelStatus({ traffic: "regular", minutes: 30 }),
+        ).resolves.toEqual(status);
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=30",
+        );
+        expect((init.headers as Record<string, string>).Authorization).toBe(
+            "Bearer sk_test",
+        );
+    });
+
+    it("returns audio and word times from the normalized alignment, including CJK words", async () => {
+        const original = {
+            characters: ["H", "i", " ", "世", "界", "!"],
+            character_start_times_seconds: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+            character_end_times_seconds: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+        };
+        const normalized = {
+            characters: [" ", ...original.characters],
+            character_start_times_seconds: [
+                0,
+                ...original.character_start_times_seconds.map((n) => n + 0.05),
+            ],
+            character_end_times_seconds: [
+                0.05,
+                ...original.character_end_times_seconds.map((n) => n + 0.05),
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                audio_base64: "aGk=",
+                alignment: original,
+                normalized_alignment: normalized,
+            }),
+        );
+        const result = await newClient().audioSpeechWithTimestamps("Hi 世界!", {
+            model: "elevenlabs/eleven-flash-v2.5",
+            voice: "alloy",
+            responseFormat: "wav",
+            seed: 7,
+        });
+        expect(new TextDecoder().decode(result.buffer)).toBe("hi");
+        expect(result.contentType).toBe("audio/wav");
+        expect(result.alignment).toEqual(original);
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0.05, end: 0.25 },
+            { word: "世界", start: 0.35, end: 0.55 },
+        ]);
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(JSON.parse(init.body as string)).toEqual({
+            input: "Hi 世界!",
+            model: "elevenlabs/eleven-flash-v2.5",
+            voice: "alloy",
+            response_format: "wav",
+            seed: 7,
+        });
+    });
+
+    it("rejects malformed speech alignment instead of reporting false word times", async () => {
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                audio_base64: "aGk=",
+                alignment: {
+                    characters: ["a"],
+                    character_start_times_seconds: [0],
+                    character_end_times_seconds: [1],
+                },
+                normalized_alignment: {
+                    characters: ["a"],
+                    character_start_times_seconds: [],
+                    character_end_times_seconds: [1],
+                },
+            }),
+        );
+        await expect(
+            newClient().audioSpeechWithTimestamps("a"),
+        ).rejects.toMatchObject({
+            code: "MALFORMED_RESPONSE",
+            status: 502,
+        });
+    });
+});

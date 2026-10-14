@@ -4,6 +4,14 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.17] - 2026-10-14
+
+### Added
+- `model3d()` for binary GLB/PLY generation, `models("3d")` for catalog discovery,
+  and `modelStatus()` for typed live model health.
+- `audioSpeechWithTimestamps()` returns speech audio with raw character
+  alignments and derived language-aware word timings.
+
 ## [5.1.0-alpha.16] - 2026-10-14
 
 ### Changed

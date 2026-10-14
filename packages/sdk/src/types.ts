@@ -123,6 +123,22 @@ export interface VideoResponse {
     url: string;
 }
 
+/** Options for GET /3d/{prompt}. Image-only models require referenceImage. */
+export interface Model3DGenerateOptions extends RequestOptions {
+    model?: string;
+    resolution?: "low" | "medium" | "high";
+    referenceImage?: string | string[];
+    seed?: number;
+    safe?: boolean;
+}
+
+/** Generated GLB or PLY file; inspect contentType before saving. */
+export interface Model3DResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
+    url: string;
+}
+
 // ============================================================================
 // Text Generation
 // ============================================================================
@@ -498,6 +514,38 @@ export interface AudioTransformOptions extends RequestOptions {
     model?: AudioModel;
     /** Target voice for voice-changer. */
     voice?: AudioVoice;
+}
+
+/** Options for POST /v1/audio/speech/with-timestamps. */
+export interface SpeechWithTimestampsOptions extends RequestOptions {
+    model?: AudioModel;
+    voice?: AudioVoice;
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    seed?: number;
+    safe?: boolean;
+}
+
+/** Character-level timings in seconds, as returned by the speech API. */
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+/** One spoken word with its start and end times, in seconds. */
+export interface SpeechWord {
+    word: string;
+    start: number;
+    end: number;
+}
+
+/** Audio and alignments from timestamped speech, plus derived word timings. */
+export interface SpeechWithTimestampsResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
+    alignment: SpeechAlignment;
+    normalizedAlignment: SpeechAlignment;
+    words: SpeechWord[];
 }
 
 /** Response from dedicated audio endpoints (binary audio data) */
@@ -1119,7 +1167,50 @@ export type ModelCapability =
 
 /** Model information */
 /** Model catalog to list: `/<kind>/models` on the API. */
-export type ModelKind = "text" | "image" | "video" | "audio" | "embeddings";
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
+
+/** A health row for one model, with a rollup and zero or more execution routes. */
+export interface ModelStatusRow {
+    model: string;
+    event_type: string;
+    model_used: string;
+    provider: string;
+    is_rollup: 0 | 1;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    last_request_at: string;
+    tokens_per_second: number | null;
+    [key: string]: unknown;
+}
+
+/** Raw /models/status response, including Tinybird column metadata. */
+export interface ModelStatusResponse {
+    meta: Array<{ name: string; type: string }>;
+    data: ModelStatusRow[];
+    rows: number;
+    statistics: { elapsed: number; rows_read: number; bytes_read: number };
+}
+
+export interface ModelStatusOptions extends RequestOptions {
+    traffic?: "all" | "regular";
+    minutes?: number;
+}
 
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */

@@ -1040,7 +1040,6 @@ const generateImage = async (
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
-        case "qwen/qwen-image-3:replicate":
         case "prunaai/p-image-edit:replicate":
         case "krea/krea-2-medium:replicate":
             return await callReplicateFallbackImage(prompt, safeParams);

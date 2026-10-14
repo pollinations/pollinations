@@ -127,20 +127,6 @@ export const IMAGE_FALLBACKS = {
     },
     "qwen/qwen-image-3": {
         "qwen/qwen-image-3:fal": { provider: "fal" },
-        "qwen/qwen-image-3:replicate": {
-            provider: "replicate",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: {
-                promptImageTokens: 0,
-                completionImageTokens: 0.03,
-            },
-            costVariants: {
-                "2k": {
-                    promptImageTokens: 0,
-                    completionImageTokens: 0.03,
-                },
-            },
-        },
     },
     "prunaai/p-image-edit": {
         "prunaai/p-image-edit:replicate": {

@@ -80,6 +80,8 @@ CATALOG_JOBS = ("models", "community")
 # Every public community model, including the ones the reliability filter hides,
 # so a model leaving or rejoining the default list is no news.
 COMMUNITY_CATALOG = {"community": "true", "reliability": "all"}
+# Text an owner writes freely; it never reaches the writer of a public post.
+OWNER_TEXT = ("description", "brand_url")
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
@@ -227,6 +229,17 @@ def official(snapshot: dict | None) -> dict | None:
     }
 
 
+def without_owner_text(snapshot: dict | None) -> dict | None:
+    """The snapshot without owner-written text: the community post states catalog facts."""
+    return snapshot and {
+        category: [
+            {key: value for key, value in model.items() if key not in OWNER_TEXT}
+            for model in models
+        ]
+        for category, models in snapshot.items()
+    }
+
+
 def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
     """The summary call's user message (None when there is nothing to write) and what save needs."""
     if job in CATALOG_JOBS:
@@ -243,7 +256,9 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
         if job == "models":
             diff = diff_models(official(previous), official(current))
         else:
-            diff = diff_models(previous, current)
+            diff = diff_models(
+                without_owner_text(previous), without_owner_text(current)
+            )
         user = (
             None
             if diff.is_empty()

@@ -20,8 +20,10 @@ SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sen
                      Instagram, Discord); the 1st also last month (summary + cover).
                      Then Buffer schedules X, LinkedIn and Instagram at today's slots.
   18:00 Sunday       Discord for the week
-  14:00 Wednesday    model post: /models compared with last Wednesday's snapshot,
-                     sent to Discord, then saved
+  14:00 Wednesday    model post: official models in /models compared with last
+                     Wednesday's snapshot, sent to Discord, then saved
+  14:00 daily        community post: every public community model, the reliability-
+                     filtered ones included, compared with yesterday, sent, then saved
 
 AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
   news_index.py → index.json (Enter /news, README)     readme.py → README Latest News PR at 07:00
@@ -34,6 +36,7 @@ AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
 | Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
 | Wednesday 14:00 | `models/` | Discord with the models role ping, then saved |
+| Daily 14:00 | `community/` | Discord in the same channel without a ping, then saved |
 | 1st 06:00 | also `monthly/<last month>/` | — |
 
 The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when.
@@ -196,6 +199,10 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `YYYY-MM-DD/delivery.json` — written only by `deliver.py`
 - `models.md` — every model post, newest first
 
+### Community post: `operations/social/news/community/`
+
+The same files as the model post without `models.md`, from `/models?community=true&reliability=all` every day. A day without changes saves only the snapshot. The first day only saves the baseline.
+
 ### Platform Envelope
 
 Daily and weekly platform JSON now share one persisted shape:
@@ -221,7 +228,7 @@ Daily and weekly platform JSON now share one persisted shape:
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `news-create-pr-gist.yml` | `pull_request_target` closed + merged, into `main` or `master` | `gist.py`, then `discord_pr.py` |
-| `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
+| `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday, 14:00 daily | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-build-index.yml` | after the two above, and 06:30 daily | `news_index.py` → `index.json` |
 | `news-sync-readme.yml` | 07:00 daily | `readme.py` → README Latest News PR to `main` |
 
@@ -229,10 +236,10 @@ Daily and weekly platform JSON now share one persisted shape:
 
 | Input | Values |
 |---|---|
-| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `daily`, `weekly`, `monthly`, `models` |
+| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `daily`, `weekly`, `monthly`, `models`, `community` |
 | `date` | the day, the Sunday, the month (`YYYY-MM`) or the Wednesday |
 | `run` | `preview` (default): writes and saves into a throwaway checkout, shows the diff and keeps the texts and pictures with the run; sends nothing. `all`, `write + save`, `deliver` |
-| `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model post is never replaced |
+| `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model or community post is never replaced |
 
 A preview is the before/after check for any change to a prompt or a script: run it for a date already on `news` and compare.
 
@@ -244,7 +251,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `discord_pr.py` | Per PR: the gist → `prompts/posts/discord-pr.md` → Discord webhook |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
-| `deliver.py` | `schedule` (Buffer), `send` (Discord; the model post from its work folder), `mark` (a person settles a stuck send) |
+| `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
 | `news_index.py` | `index.json`: model announcements, API changes and daily highlights for Enter `/news` and the README |
 | `readme.py` | README Latest News from `index.json` |
 | `model_catalog.ts` | The model list at a commit, for the gist's model changes |
@@ -260,8 +267,8 @@ A preview is the before/after check for any change to a prompt or a script: run 
 3. **Save once.** Each post is one commit to `news`; a saved date is skipped unless `overwrite` is set.
 4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed`.
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
-6. **The model baseline moves only after a confirmed send:** the snapshot is saved after Discord has the post; a week without changes saves only the snapshot.
-7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14); older folders went out with the previous senders.
+6. **The model and community baselines move only after a confirmed send:** the snapshot is saved after Discord has the post; a week or day without changes saves only the snapshot.
+7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-15); older folders went out with the previous senders.
 
 ## Error handling
 
@@ -310,7 +317,7 @@ Every picture uses `nanobanana-2-lite` with the character reference `prompts/bra
 | Daily summary + X | 2 | 1 |
 | **Total** | **7** | **6** |
 
-Sunday adds 5 calls and 6 pictures, the 1st 2 calls and 1 picture, Wednesday 1 call.
+Sunday adds 5 calls and 6 pictures, the 1st 2 calls and 1 picture, Wednesday 1 call, and each day with community changes 1 call.
 
 ---
 

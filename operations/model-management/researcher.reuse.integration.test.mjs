@@ -88,7 +88,7 @@ test("main reuses valid rows from a partial artifact through free HTTP and resea
             context.models?.some(({ name }) => name === model.name),
         ),
     );
-    const oldAt = new Date(Date.now() - 86400000).toISOString();
+    const oldAt = new Date(Date.now() - 12 * 3600000).toISOString();
     const text =
         "example-v1 available now; text and tools. Input $2.00, output $4.00 per 1M tokens.";
     const page = `${text}\nAn unrelated whole-page footer remains unchanged.`;
@@ -275,4 +275,29 @@ test("main reuses valid rows from a partial artifact through free HTTP and resea
         1,
         "Contract mismatch must avoid HTTP refresh",
     );
+    current = structuredClone(model);
+    row.researchedAt = new Date(Date.now() - 25 * 3600000).toISOString();
+    row.refreshedAt = new Date().toISOString();
+    await writeFile(
+        previous,
+        JSON.stringify({
+            ...first,
+            status: "partial",
+            models: [row],
+            sources: [source],
+        }),
+    );
+    paidContexts.length = 0;
+    const fourth = await main({
+        ...envFor("fourth"),
+        PREVIOUS_RESEARCH: previous,
+    });
+    assert.equal(fourth.models[0].reused, undefined);
+    assert.ok(
+        paidContexts.some((context) =>
+            context.models?.some(({ name }) => name === model.name),
+        ),
+        "Expired provider search must enter actual grouped research even with fresh refresh metadata",
+    );
+    assert.equal(refreshes.length, 1);
 });

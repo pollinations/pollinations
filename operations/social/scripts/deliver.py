@@ -2,7 +2,7 @@
 """Deliver the saved news posts: Buffer posts scheduled at today's slots, Discord sends.
 
     python deliver.py schedule JOB DATE                 # Buffer: X, LinkedIn, Instagram
-    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models
+    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models and community
     python deliver.py mark     JOB DATE POST done|failed
 
 Each post folder on the news branch gets a delivery.json with one entry per post.
@@ -37,10 +37,15 @@ from common import (
     get_post_image_urls,
     safe_truncate,
 )
-from posts import JOB_DIRS, check_date, model_post
+from posts import CATALOG_JOBS, JOB_DIRS, check_date, model_post
 
 # The first date each job is delivered here; older folders went out with the old senders.
-START = {"daily": "2026-10-12", "weekly": "2026-10-18", "models": "2026-10-14"}
+START = {
+    "daily": "2026-10-12",
+    "weekly": "2026-10-18",
+    "models": "2026-10-14",
+    "community": "2026-10-15",
+}
 # The channel today's lookup picks: the first listed of each service in Buffer.
 BUFFER_CHANNELS = {
     "twitter": "695fe0e5457dae6a34edc9a5",  # pollinations_ai
@@ -59,6 +64,7 @@ POSTS = {
         "discord.json": "discord",
     },
     "models": {"discord.json": "discord"},
+    "community": {"discord.json": "discord"},
 }
 # Buffer slots, as today: the next of these weekdays (1 = Monday) at this UTC hour,
 # at least 10 minutes away.
@@ -373,22 +379,23 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
         print(f"Nothing to {command} for {job} {date}")
         return
 
-    if job == "models":
+    if job in CATALOG_JOBS:
         if work is None:
-            sys.exit("send models needs --work, the folder posts.py wrote")
+            sys.exit(f"send {job} needs --work, the folder posts.py wrote")
         raw = json.loads((work / "raw.json").read_text(encoding="utf-8"))
         if (raw["job"], raw["date"]) != (job, date):
             sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
         payload = model_post(raw)
         if not payload:
-            print(f"No model changes for {date}: nothing to send")
+            print(f"No {job} changes for {date}: nothing to send")
             return
         text = payload["text"].strip()
         digest = hashlib.sha256(text.encode()).hexdigest()
         webhook = get_env("DISCORD_MODELS_WEBHOOK_URL")
+        # Only the model post mentions its role; community text never pings anyone.
         message = {
             "content": safe_truncate(text, DISCORD_CHUNK_SIZE),
-            "allowed_mentions": {"parse": ["roles"]},
+            "allowed_mentions": {"parse": ["roles"] if job == "models" else []},
         }
 
         def prepare():
@@ -401,7 +408,7 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             entry.get("state"),
             entry.get("text_sha256"),
         ) != ("done", digest):
-            sys.exit(f"models {date} isn't recorded as sent with this WORK's text")
+            sys.exit(f"{job} {date} isn't recorded as sent with this WORK's text")
         outcomes = {"discord.json": outcome}
     else:
         # A date counts as empty only when none of its files exist; a saved post is
@@ -468,7 +475,7 @@ def main() -> None:
         command.add_argument("job", choices=POSTS)
         command.add_argument("date")
         command.add_argument(
-            "--work", type=Path, help="the folder posts.py wrote (models)"
+            "--work", type=Path, help="the folder posts.py wrote (models, community)"
         )
     command = commands.add_parser("mark")
     command.add_argument("job", choices=POSTS)

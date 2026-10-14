@@ -678,7 +678,8 @@ class PostsTest(unittest.TestCase):
     def test_model_post_and_a_week_without_changes_saves_only_the_snapshot(self):
         previous = {"text": [{"name": "kept", "paid_only": False}], "image": [], "video": [], "audio": [],
                     "embeddings": []}
-        current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"}]}
+        current = {**previous, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"},
+                                        {"name": "community/a/model", "community": True}]}
         changelog = "# Pollinations Model Changelog\n\n## 2026-10-07\n\n- Older section\n"
         self.put("models/snapshots/2026-10-07.json", previous)
         self.put("models/snapshots/2026-10-21.json", current)  # later than the post: not its baseline
@@ -689,6 +690,7 @@ class PostsTest(unittest.TestCase):
         # One call compares with the last snapshot before the post, and four files are saved together.
         self.assertEqual([temperature for _, _, temperature in calls], [0.4])
         self.assertIn("2026-10-07", calls[0][1])
+        self.assertNotIn("community/a/model", calls[0][1])  # the community post covers it
         self.assertEqual(sorted(saved), [f"{models}/2026-10-14/discord.json", f"{models}/diffs/2026-10-14.json",
                                          f"{models}/models.md", f"{models}/snapshots/2026-10-14.json"])
         self.assertIn('"text": "<@&42> Model updates"', saved[f"{models}/2026-10-14/discord.json"].decode())
@@ -706,6 +708,24 @@ class PostsTest(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "has a saved model post"):
                 self.new("models", "2026-10-14", overwrite=True)
             self.assertEqual(self.new("models", "2026-10-28", overwrite=True)[0], [])
+
+    def test_community_post_compares_every_public_community_model_daily(self):
+        community = f"{NEWS_REL_DIR}/community"
+        empty = {"text": [], "image": [], "video": [], "audio": [], "embeddings": []}
+        first = {**empty, "text": [{"name": "community/a/kept", "community": True}]}
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(first)) as fetch:
+            calls, _, saved = self.new("community", "2026-10-15")
+        # The first day keeps the catalog, filtered models included, as the baseline.
+        fetch.assert_called_once_with({"community": "true", "reliability": "all"})
+        self.assertEqual((calls, list(saved)), ([], [f"{community}/snapshots/2026-10-15.json"]))
+        second = {**empty, "text": [*first["text"], {"name": "community/b/new", "community": True}]}
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(second)):
+            calls, _, saved = self.new("community", "2026-10-16")
+        self.assertIn("community/b/new", calls[0][1])
+        self.assertEqual(sorted(saved), [f"{community}/2026-10-16/discord.json", f"{community}/diffs/2026-10-16.json",
+                                         f"{community}/snapshots/2026-10-16.json"])
+        post = json.loads(saved[f"{community}/2026-10-16/discord.json"])
+        self.assertEqual((post["scope"], post["text"]), ("community_daily", "Model updates"))  # no role mention
 
     def test_model_baseline_is_never_silently_rebuilt(self):
         self.put("models/models.md", "# Pollinations Model Changelog\n")
@@ -753,7 +773,8 @@ class DeliverTest(unittest.TestCase):
                "DISCORD_MODELS_WEBHOOK_URL": "https://discord.test/models"}
         for patcher in (
             patch.dict(os.environ, env),
-            patch.dict(deliver.START, {"daily": "2026-10-01", "weekly": "2026-10-01", "models": "2026-10-01"}),
+            patch.dict(deliver.START, {"daily": "2026-10-01", "weekly": "2026-10-01", "models": "2026-10-01",
+                                       "community": "2026-10-01"}),
             patch.dict(deliver.BUFFER_CHANNELS, {"twitter": "x", "linkedin": "li", "instagram": "ig"}),
             patch("deliver.github", self.github),
             patch("deliver.requests.post", self.post),
@@ -966,6 +987,19 @@ class DeliverTest(unittest.TestCase):
         deliver.run("send", "models", "2026-10-21", work)
         self.assertEqual(len(self.calls), 1)
         self.assertEqual(self.record("models", "2026-10-21"), {})
+
+    def test_community_post_is_sent_like_the_model_post_without_mentions(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        work = Path(directory.name)
+        raw = {"job": "community", "date": "2026-10-16", "previous_date": "2026-10-15", "generated_at": "now",
+               "outputs": {"community-post": {"discord_text": "Community models <@&1>"}}}
+        (work / "raw.json").write_text(json.dumps(raw))
+        for _ in range(2):
+            deliver.run("send", "community", "2026-10-16", work)
+        (_, payload, _), = self.sent("https://discord.test/models?wait=true")
+        self.assertEqual(payload["allowed_mentions"], {"parse": []})
+        self.assertEqual(self.record("community", "2026-10-16"), {"discord.json": "done"})
 
 
 if __name__ == "__main__":

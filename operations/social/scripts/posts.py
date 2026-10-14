@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Write and save the scheduled news posts: daily, weekly, monthly and the model post.
+"""Write and save the scheduled news posts: daily, weekly, monthly, the model post
+and the community post.
 
     python posts.py write JOB DATE --news NEWS --work WORK [--overwrite]
     python posts.py save  JOB DATE --news NEWS --work WORK [--overwrite]
 
-JOB is daily, weekly, monthly or models. DATE is the day, the Sunday, the month
-(YYYY-MM) or the Wednesday. NEWS is a checkout of the news branch. write makes
+JOB is daily, weekly, monthly, models or community. DATE is the day, the Sunday,
+the month (YYYY-MM) or the Wednesday. NEWS is a checkout of the news branch. write makes
 the job's model calls and pictures into WORK; save turns WORK into today's files
 under NEWS. Neither commits, and save never touches delivery.json.
 
@@ -71,12 +72,20 @@ JOB_DIRS = {
     "weekly": WEEKLY_REL_DIR,
     "monthly": MONTHLY_REL_DIR,
     "models": MODELS_NEWS_DIR,
+    "community": f"{NEWS_REL_DIR}/community",
 }
+# Posts written from a comparison of /models snapshots: official models weekly,
+# community models daily.
+CATALOG_JOBS = ("models", "community")
+# Every public community model, including the ones the reliability filter hides,
+# so a model leaving or rejoining the default list is no news.
+COMMUNITY_CATALOG = {"community": "true", "reliability": "all"}
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
     "monthly": "a month (YYYY-MM)",
     "models": "a day (YYYY-MM-DD)",
+    "community": "a day (YYYY-MM-DD)",
 }
 
 
@@ -130,12 +139,13 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
     check_date(job, date)
     if not (news / NEWS_REL_DIR).is_dir():
         sys.exit(f"{news} is not a checkout of the news branch")
-    saved = f"snapshots/{date}.json" if job == "models" else f"{date}/summary.json"
+    saved = f"snapshots/{date}.json" if job in CATALOG_JOBS else f"{date}/summary.json"
     if (news / JOB_DIRS[job] / saved).exists() and not overwrite:
         sys.exit(f"{job} {date} is already saved; pass --overwrite to replace it")
-    # A saved model post is never replaced, even with --overwrite.
-    if job == "models" and (news / MODELS_NEWS_DIR / date / "discord.json").exists():
-        sys.exit(f"models {date} has a saved model post; it is never replaced")
+    # A saved model or community post is never replaced, even with --overwrite.
+    if job in CATALOG_JOBS and (news / JOB_DIRS[job] / date / "discord.json").exists():
+        post = "model" if job == "models" else job
+        sys.exit(f"{job} {date} has a saved {post} post; it is never replaced")
 
 
 def ask(post: dict, system: str, user: str, token: str) -> dict:
@@ -193,36 +203,47 @@ def pictures(post: dict, output: dict) -> list[tuple[str, str]]:
     ]
 
 
-def previous_snapshot_date(news: Path, before: str) -> str | None:
-    """The latest snapshot before `before`. When models/ exists without any snapshot,
-    the baseline was lost: stop rather than silently start a new one."""
-    models = news / MODELS_NEWS_DIR
+def previous_snapshot_date(job: str, news: Path, before: str) -> str | None:
+    """The job's latest snapshot before `before`. When its folder exists without any
+    snapshot, the baseline was lost: stop rather than silently start a new one."""
+    folder = news / JOB_DIRS[job]
     dates = sorted(
-        path.stem for path in (models / "snapshots").glob("*.json") if path.is_file()
+        path.stem for path in (folder / "snapshots").glob("*.json") if path.is_file()
     )
-    if models.is_dir() and not dates and not os.environ.get("ALLOW_BASELINE_REBUILD"):
+    if folder.is_dir() and not dates and not os.environ.get("ALLOW_BASELINE_REBUILD"):
         sys.exit(
-            f"{MODELS_NEWS_DIR}/ has no snapshots: refusing to rebuild the baseline. "
+            f"{JOB_DIRS[job]}/ has no snapshots: refusing to rebuild the baseline. "
             "Set ALLOW_BASELINE_REBUILD=1 if this is intentional."
         )
     earlier = [date for date in dates if date < before]
     return earlier[-1] if earlier else None
 
 
+def official(snapshot: dict | None) -> dict | None:
+    """The snapshot without community models, which the community post covers."""
+    return snapshot and {
+        category: [model for model in models if not model.get("community")]
+        for category, models in snapshot.items()
+    }
+
+
 def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
     """The summary call's user message (None when there is nothing to write) and what save needs."""
-    if job == "models":
-        current = fetch_all_snapshots()
-        previous_date = previous_snapshot_date(news, date)
+    if job in CATALOG_JOBS:
+        current = fetch_all_snapshots(COMMUNITY_CATALOG if job == "community" else None)
+        previous_date = previous_snapshot_date(job, news, date)
         print(f"  Previous snapshot: {previous_date or '(none)'}")
         previous = previous_date and _migrate_old_snapshot(
             json.loads(
                 (
-                    news / MODELS_NEWS_DIR / "snapshots" / f"{previous_date}.json"
+                    news / JOB_DIRS[job] / "snapshots" / f"{previous_date}.json"
                 ).read_text(encoding="utf-8")
             )
         )
-        diff = diff_models(previous, current)
+        if job == "models":
+            diff = diff_models(official(previous), official(current))
+        else:
+            diff = diff_models(previous, current)
         user = (
             None
             if diff.is_empty()
@@ -351,32 +372,38 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
 
 
 def model_post(raw: dict) -> dict | None:
-    """The model post's discord.json, or None in a week without changes."""
-    report = raw["outputs"].get("model-post")
+    """The model or community post's discord.json, or None when nothing changed."""
+    job = raw["job"]
+    report = raw["outputs"].get(job_posts(job)[0]["name"])
     if not report:
         return None
-    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID")
+    # Only the weekly model post mentions the model-news role.
+    role_id = os.environ.get("DISCORD_MODELS_ROLE_ID") if job == "models" else None
     return discord_payload(
         report["discord_text"],
         raw["date"],
         raw["previous_date"],
         role_id,
         raw["generated_at"],
+        "models_weekly" if job == "models" else "community_daily",
     )
 
 
 def model_files(raw: dict, news: Path) -> dict[str, bytes]:
-    """The /models snapshot and, when something changed, the post, the comparison and models.md."""
-    date = raw["date"]
-    files = {f"{MODELS_NEWS_DIR}/snapshots/{date}.json": json_file(raw["snapshot"])}
-    report = raw["outputs"].get("model-post")
-    if report:
+    """The /models snapshot and, when something changed, the post, the comparison
+    and, for the model post, models.md."""
+    job, date = raw["job"], raw["date"]
+    folder = JOB_DIRS[job]
+    files = {f"{folder}/snapshots/{date}.json": json_file(raw["snapshot"])}
+    payload = model_post(raw)
+    if payload:
+        files[f"{folder}/{date}/discord.json"] = json_file(payload)
+        files[f"{folder}/diffs/{date}.json"] = json_file(raw["diff"])
+    if payload and job == "models":
         changelog = news / MODELS_NEWS_DIR / "models.md"
         existing = changelog.read_text(encoding="utf-8") if changelog.exists() else ""
-        files[f"{MODELS_NEWS_DIR}/{date}/discord.json"] = json_file(model_post(raw))
-        files[f"{MODELS_NEWS_DIR}/diffs/{date}.json"] = json_file(raw["diff"])
         files[f"{MODELS_NEWS_DIR}/models.md"] = models_md(
-            existing, report["models_md_section"]
+            existing, raw["outputs"]["model-post"]["models_md_section"]
         ).encode()
     return files
 
@@ -387,7 +414,7 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
     raw = json.loads((work / "raw.json").read_text(encoding="utf-8"))
     if (raw["job"], raw["date"]) != (job, date):
         sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
-    files = model_files(raw, news) if job == "models" else post_files(raw, work)
+    files = model_files(raw, news) if job in CATALOG_JOBS else post_files(raw, work)
     if job == "monthly":  # every month has its counts, even one with nothing to write
         files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
     for path, content in files.items():

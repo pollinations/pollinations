@@ -537,11 +537,6 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-haiku-5.5:vercel",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
-        transform: omitClaudeSampling,
-    },
-    {
         name: "anthropic/claude-haiku-5.5:aws",
         config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
@@ -598,11 +593,6 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-opus-5.5:aws",
         config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
-    },
-    {
-        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
-        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
-        transform: pipe(mandatoryReasoning, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-5.5:fast",

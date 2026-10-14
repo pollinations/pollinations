@@ -677,10 +677,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ),
-    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
-        "anthropic/claude-opus-5.5",
-        "anthropic",
-    ),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
             "anthropic/claude-opus-5.5",
@@ -908,12 +904,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "anthropic/claude-haiku-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-5-5",
-            defaultOptions: { max_tokens: 128000 },
-        }),
-    "anthropic/claude-haiku-5.5:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "anthropic/claude-haiku-5.5",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>

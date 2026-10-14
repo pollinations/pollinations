@@ -49,11 +49,6 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "anthropic/claude-opus-5.5:openrouter:anthropic",
-        "anthropic/claude-opus-5.5",
-        "anthropic",
-    ],
-    [
         "meta/muse-glimmer-30b:openrouter:together",
         "meta/muse-glimmer-30b",
         "together",
@@ -191,25 +186,17 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        [
-            "anthropic/claude-haiku-5.5",
-            "claude-haiku-5-5",
-            ["anthropic/claude-haiku-5.5:vercel"],
-        ],
-        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", []],
-        [
-            "anthropic/claude-opus-5.5",
-            "claude-opus-5-5",
-            ["anthropic/claude-opus-5.5:openrouter:anthropic"],
-        ],
-        ["anthropic/claude-fable-5.1", "claude-fable-5-1", []],
+        ["anthropic/claude-haiku-5.5", "claude-haiku-5-5"],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5"],
+        ["anthropic/claude-opus-5.5", "claude-opus-5-5"],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1"],
     ] as const)(
         "tries direct Anthropic before AWS for %s",
-        (model, upstream, remaining) => {
+        (model, upstream) => {
             const primary: ModelDefinition = TEXT_SERVICES[model];
             const fallback: ModelDefinition = TEXT_SERVICES[`${model}:aws`];
             expect(primary.provider).toBe("anthropic");
-            expect(primary.fallbacks).toEqual([`${model}:aws`, ...remaining]);
+            expect(primary.fallbacks).toEqual([`${model}:aws`]);
             expect(fallback).toMatchObject({
                 provider: "aws",
                 hidden: true,
@@ -646,20 +633,17 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("prices Claude Haiku 5.5 on Vercel exactly as on Anthropic, including the long-context tier", () => {
+    it("prices Claude Haiku 5.5 on AWS exactly as on Anthropic, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
-        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
+        const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:aws"];
         expect(primary).toMatchObject({
             provider: "anthropic",
             paidOnly: true,
             aliases: [],
-            fallbacks: [
-                "anthropic/claude-haiku-5.5:aws",
-                "anthropic/claude-haiku-5.5:vercel",
-            ],
+            fallbacks: ["anthropic/claude-haiku-5.5:aws"],
         });
         expect(fallback).toMatchObject({
-            provider: "vercel",
+            provider: "aws",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,

@@ -549,29 +549,11 @@ export const TEXT_FALLBACKS = {
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
         },
-        // Same model through Vercel's AI Gateway at Anthropic's list price,
-        // so it inherits the primary's rates and long-context tier.
-        "anthropic/claude-haiku-5.5:vercel": {
-            provider: "vercel",
-            addedDate: new Date("2026-10-07").getTime(),
-        },
     },
     "anthropic/claude-opus-5.5": {
         "anthropic/claude-opus-5.5:aws": {
             provider: "aws",
             addedDate: new Date("2026-10-15").getTime(),
-        },
-        "anthropic/claude-opus-5.5:openrouter:anthropic": {
-            supportedParameters: CHAT_PARAMETERS.openRouterOpus,
-            provider: "openrouter",
-            addedDate: new Date("2026-09-22").getTime(),
-            // Retained after AWS; its cost includes OpenRouter's credit fee.
-            cost: {
-                promptTextTokens: perMillion(4) * 1.055,
-                promptCachedTokens: perMillion(0.2) * 1.055,
-                promptCacheWriteTokens: perMillion(5) * 1.055,
-                completionTextTokens: perMillion(20) * 1.055,
-            },
         },
     },
     "anthropic/claude-sonnet-5.5": {

@@ -18,6 +18,7 @@ import {
     toDataUri,
 } from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
+import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
 const logError = debug("pollinations:openrouter-image:error");
@@ -50,6 +51,7 @@ const FLUX3_ASPECT_RATIOS = [
     "9:21",
 ] as const;
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
+const QWEN_IMAGE_3_PRO_MODEL = "qwen/qwen-image-3-pro";
 const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
 const SEEDREAM_FLASH_ASPECT_RATIOS = [
     "1:1",
@@ -519,6 +521,63 @@ export async function callOpenRouterSeedreamFlashAPI(
             actualModel: "bytedance/seedream-5.0-flash",
             providerBilling: { units: providerCost, unitCost: 1.055 },
             usage: { completionImageTokens: 1 },
+        },
+    };
+}
+
+/**
+ * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
+ * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
+ * references. OpenRouter prices the size it is sent, so the primary's size
+ * resolver keeps both routes on the same price tier.
+ */
+export async function callOpenRouterQwenImage3API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const { width, height } = resolveQwenImage3Size(safeParams);
+    const references = await Promise.all(safeParams.image.map(toDataUri));
+    const requestBody: Record<string, unknown> = {
+        model: QWEN_IMAGE_3_PRO_MODEL,
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        size: `${width}x${height}`,
+        provider: { only: ["alibaba"], allow_fallbacks: false },
+    };
+    if (references.length > 0) {
+        requestBody.input_references = references.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        }));
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Qwen Image 3 request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: "qwen/qwen-image-3:openrouter",
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage: {
+                ...(references.length > 0
+                    ? { promptImageTokens: references.length }
+                    : {}),
+                completionImageTokens: 1,
+            },
         },
     };
 }

@@ -79,43 +79,50 @@ test("every raw docs input selects Gen tests and production deployment", async (
     }
 });
 
-test("deleting an imported guide still runs Gen checks", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "docs-workflow-"));
-    try {
-        const git = (...args) =>
-            run(
-                "git",
-                [
-                    "-c",
-                    "user.name=Test",
-                    "-c",
-                    "user.email=test@example.com",
-                    "-c",
-                    "commit.gpgsign=false",
-                    ...args,
-                ],
-                { cwd: directory },
-            );
-        git("init", "--quiet");
-        const guide = "BRING_YOUR_OWN_POLLEN.md";
-        await writeFile(join(directory, guide), "Guide\n");
-        git("add", guide);
-        git("commit", "--quiet", "-m", "Add guide");
-        git("rm", "--quiet", guide);
-        git("commit", "--quiet", "-m", "Remove guide");
-        const output = join(directory, "output");
-        run("bash", ["-e"], {
-            cwd: directory,
-            input: selection,
-            env: { ...process.env, GITHUB_OUTPUT: output },
-        });
-        const result = await readFile(output, "utf8");
-        assert.match(result, /any_changed=true/);
-        assert.ok(result.includes(`files<<EOF\n${guide}\nEOF\n`));
-    } finally {
-        await rm(directory, { recursive: true, force: true });
-    }
-});
+for (const change of ["deleting", "renaming"]) {
+    test(`${change} an imported guide still runs Gen checks`, async () => {
+        const directory = await mkdtemp(join(tmpdir(), "docs-workflow-"));
+        try {
+            const git = (...args) =>
+                run(
+                    "git",
+                    [
+                        "-c",
+                        "user.name=Test",
+                        "-c",
+                        "user.email=test@example.com",
+                        "-c",
+                        "commit.gpgsign=false",
+                        ...args,
+                    ],
+                    { cwd: directory },
+                );
+            git("init", "--quiet");
+            git("config", "diff.renames", "true");
+            const guide = "BRING_YOUR_OWN_POLLEN.md";
+            await writeFile(join(directory, guide), "Guide\n");
+            git("add", guide);
+            git("commit", "--quiet", "-m", "Add guide");
+            if (change === "renaming") {
+                git("mv", guide, "WALLET_GUIDE.md");
+            } else {
+                git("rm", "--quiet", guide);
+            }
+            git("commit", "--quiet", "-m", `${change} guide`);
+            const output = join(directory, "output");
+            run("bash", ["-e"], {
+                cwd: directory,
+                input: selection,
+                env: { ...process.env, GITHUB_OUTPUT: output },
+            });
+            const result = await readFile(output, "utf8");
+            assert.match(result, /any_changed=true/);
+            assert.ok(result.includes(`files<<EOF\n${guide}\nEOF\n`));
+        } finally {
+            await rm(directory, { recursive: true, force: true });
+        }
+    });
+}
 
 test("the regeneration gate checks successful schema deployments across pages", () => {
     assert.match(gate, /--paginate --slurp \|/);

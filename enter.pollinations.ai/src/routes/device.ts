@@ -21,6 +21,7 @@ type AuthedContext = Context<{
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
+
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";
@@ -81,13 +82,15 @@ function generateUserCode(length: number): string {
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
+export async function parseFormOrJsonBody<TEnv extends Env>(
+    c: Context<TEnv>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const body = contentType.includes("form")
         ? await c.req.parseBody().catch(() => ({}))
         : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    // A JSON body can be null, an array, or a primitive (e.g. `null`, `"x"`, `42`) — none of those have string fields, and Object.entries(null) throws. Treat them as an empty body so callers get a 400 invalid_request instead of a 500.
+    if (!body || typeof body !== "object" || Array.isArray(body)) { return {}; }
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -215,7 +218,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -239,8 +242,8 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
-        return await exchangeDeviceCode(c, body);
+        const body = await parseFormOrJsonBody(c);
+        return await exchangeDeviceCode(c, body as DeviceTokenRequest);
     })
     .get(
         "/userinfo",
@@ -263,7 +266,8 @@ export async function exchangeDeviceCode(
     c: Context<Env>,
     body: DeviceTokenRequest,
 ) {
-    if (!body.device_code) {
+    // Non-string device_code (object, number, ...) must never reach the DB query: Drizzle throws and the error envelope leaks the SQL.
+    if (typeof body.device_code !== "string" || !body.device_code) {
         return c.json(
             {
                 error: "invalid_request",

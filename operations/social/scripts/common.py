@@ -1187,10 +1187,11 @@ def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
 # Fields ignored when comparing models.
 # description: prose edits with no capability change.
 # added_date: static timestamp, never changes for existing models.
+# health: live request stats that change every minute, not model news.
 # name / id: identity key fields used for lookup — excluded from value comparison
 #   so that snapshots migrating from 'id' to 'name' don't flood the diff.
 _DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
-    {"description", "added_date", "name", "id"}
+    {"description", "added_date", "health", "name", "id"}
 )
 
 

@@ -178,7 +178,7 @@ it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
         payg_credits_charged: 0.0001,
         payg_ledger_entry: { balance_after: 38.9 },
     };
-    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: streamUsage })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
+    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { ...streamUsage, payg_credits_charged: 0.0001 } })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
     const { response, text, calls } = await streamThroughHandler(
         "inferenceport-ai/lightning-text-v2.1",
         "api.inferenceport.ai",

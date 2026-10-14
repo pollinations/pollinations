@@ -59,8 +59,8 @@ const footnote = (Icon, ...children) =>
         h("span", null, ...children),
     );
 
-// One way past the limit: a title with its label, what it takes, and its
-// button at the foot
+// One way past the limit: a title with its label if any, what it takes, and
+// its button at the foot
 const path = (title, label, body, button) =>
     h(
         Surface,
@@ -75,7 +75,7 @@ const path = (title, label, body, button) =>
                         "polli:flex polli:items-center polli:justify-between polli:gap-2",
                 },
                 h(Heading, { as: "h2", size: "card" }, title),
-                h(Chip, { intent: "info", size: "sm" }, label),
+                label && h(Chip, { intent: "info", size: "sm" }, label),
             ),
             ...body,
         ),
@@ -142,7 +142,7 @@ const page = h(
             { className: "paths" },
             path(
                 "Sign in to enter",
-                "pollen",
+                null,
                 [
                     h(
                         Text,

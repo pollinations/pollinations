@@ -58,8 +58,6 @@ describe("getGenerationModelRegistry", () => {
             "respan/span-01-lite",
             "openai/whisper-large-v3",
             "lykon/dreamshaper-8-lcm",
-            // Moves to paid with its post-promo price in #16256.
-            "inclusionai/ling-3.1-flash",
         ]);
         const questModels = [];
         for (const id of getModels()) {

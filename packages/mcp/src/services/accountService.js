@@ -40,6 +40,7 @@ async function getBalance(_params, context) {
         createTextContent(
             {
                 pollen: data.balance,
+                accountBalance: data.accountBalance,
                 note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,
@@ -194,7 +195,7 @@ export const accountTools = [
                 .array(z.string())
                 .optional()
                 .describe(
-                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime); a model id allows its whole category",
+                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime) or model IDs; a model ID allows only that model",
                 ),
             budget: z
                 .number()

@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { remapUpstreamStatus } from "@shared/error.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -134,6 +135,10 @@ function createGenerationMocks() {
     const azureSpeechState: {
         requests: Array<{ url: string; body: Record<string, unknown> }>;
     } = { requests: [] };
+    const ovhWhisperState: { requests: FormData[] } = { requests: [] };
+    const geminiSpeechState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -265,6 +270,75 @@ function createGenerationMocks() {
                 azureSpeechState.requests = [];
             },
         },
+        geminiSpeech: {
+            state: geminiSpeechState,
+            handlerMap: {
+                "generativelanguage.googleapis.com": async (
+                    request: Request,
+                ) => {
+                    geminiSpeechState.requests.push(await request.json());
+                    return Response.json({
+                        status: "completed",
+                        usage: {
+                            total_input_tokens: 5,
+                            total_output_tokens: 76,
+                            input_tokens_by_modality: [
+                                { modality: "text", tokens: 5 },
+                            ],
+                            output_tokens_by_modality: [
+                                { modality: "audio", tokens: 76 },
+                            ],
+                            total_cached_tokens: 0,
+                            total_thought_tokens: 0,
+                            total_tool_use_tokens: 0,
+                        },
+                        steps: [
+                            {
+                                content: [
+                                    {
+                                        type: "audio",
+                                        mime_type: "audio/wav",
+                                        data: btoa("RIFF\0\0\0\0WAVE"),
+                                    },
+                                ],
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                geminiSpeechState.requests = [];
+            },
+        },
+        ovhWhisper: {
+            state: ovhWhisperState,
+            handlerMap: {
+                "oai.endpoints.kepler.ai.cloud.ovh.net": async (
+                    request: Request,
+                ) => {
+                    ovhWhisperState.requests.push(await request.formData());
+                    // Trimmed from a live OVH verbose_json answer.
+                    return Response.json({
+                        text: " The water cycle starts with evaporation.",
+                        language: "en",
+                        duration: 3.2,
+                        usage: { type: "duration", seconds: 4 },
+                        words: [],
+                        segments: [
+                            {
+                                id: 1,
+                                start: 0,
+                                end: 3.2,
+                                text: " The water cycle starts with evaporation.",
+                            },
+                        ],
+                    });
+                },
+            },
+            reset: () => {
+                ovhWhisperState.requests = [];
+            },
+        },
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
@@ -360,6 +434,16 @@ function createGenerationMocks() {
                             { error: { code: "RateLimitReached" } },
                             { status: gptImageState.azureStatus },
                         ),
+                "westus3.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
+                "polandcentral.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
                 "api.openai.com": async (request) => {
                     gptImageState.openAIRequests.push(
                         request.headers
@@ -1195,6 +1279,73 @@ test("speech without a model, or with the tts alias, uses free OpenAI TTS", asyn
         expect(request.url).toContain("/deployments/tts/audio/speech");
         expect(request.body).toMatchObject({ model: "tts-1" });
     }
+});
+
+test("multipart Gemini speech without a format defaults to wav", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "geminiSpeech");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        GEMINI_API_KEY: "gemini-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { packBalance: 100 } });
+    const form = new FormData();
+    form.append("model", "google/gemini-3.8-flash-tts");
+    form.append("input", `multipart gemini ${crypto.randomUUID()}`);
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/speech",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    // The form path used to assume mp3, which Gemini cannot produce: 400.
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(response.headers.get("content-type")).toContain("audio/wav");
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.geminiSpeech.state.requests).toHaveLength(1);
+});
+
+test("whisper srt cues are the segments OVH is asked for", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "ovhWhisper");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        OVHCLOUD_API_KEY: "ovh-test-key",
+    });
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    const form = new FormData();
+    // Unique bytes so the transcription cache cannot answer instead.
+    form.append("file", new File([crypto.randomUUID()], "clip.wav"));
+    form.append("model", "whisper-1");
+    form.append("response_format", "srt");
+
+    const { response, wait } = await fetchWorker(
+        "/v1/audio/transcriptions",
+        {
+            method: "POST",
+            headers: { authorization: `Bearer ${key}` },
+            body: form,
+        },
+        bindings,
+    );
+
+    expect(response.status, await response.clone().text()).toBe(200);
+    expect(await response.text()).toBe(
+        "1\n00:00:00,000 --> 00:00:03,200\nThe water cycle starts with evaporation.\n",
+    );
+    await wait();
+    // OVH answers segments: [] unless segment timings are requested (#13552).
+    expect(
+        mocks.ovhWhisper.state.requests[0].getAll("timestamp_granularities[]"),
+    ).toEqual(["word", "segment"]);
 });
 
 test("chat completions use local text generation with VCR-backed Portkey", async ({
@@ -3152,46 +3303,46 @@ test("OpenAI image generation returns token usage", async ({
     await wait();
 });
 
-test("gpt-image-2 rejects transparent backgrounds with 400", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
+test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
+    "%s rejects transparent backgrounds with 400",
+    async (model, { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird");
 
-    const { response, wait } = await fetchWorker("/v1/images/generations", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-image-2",
-            prompt: "transparent",
-            transparent: true,
-        }),
-    });
+        const { response, wait } = await fetchWorker("/v1/images/generations", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                prompt: "transparent",
+                transparent: true,
+            }),
+        });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        success: false,
-        error: {
-            code: "BAD_REQUEST",
-            message:
-                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
-        },
-    });
-    await wait();
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message: `Invalid parameters: Transparent backgrounds are not supported by ${model}.`,
+            },
+        });
+        await wait();
 
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.image",
-        modelRequested: "openai/gpt-image-2",
-        responseStatus: 400,
-    });
-});
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.image",
+            modelRequested: model,
+            responseStatus: 400,
+        });
+    },
+);
 
 // 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
-test.for([429, 404])(
+// 403: Azure blocked the resource. 500 and 524: Azure failed or timed out.
+test.for([429, 404, 403, 500, 524])(
     "gpt-image-2 falls back to OpenAI direct on an Azure %i",
     async (azureStatus, { mocks }) => {
         await mocks.enable("tinybird", "gptImage");
@@ -3226,7 +3377,7 @@ test.for([429, 404])(
         expect(mocks.tinybird.state.events[0]).toMatchObject({
             modelUsed: "openai/gpt-image-2",
             modelProviderUsed: "azure",
-            responseStatus: 502,
+            responseStatus: remapUpstreamStatus(azureStatus),
             isFinal: false,
         });
         expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -3293,35 +3444,6 @@ test("gpt-image-2 does not retry a dead reference image link on OpenAI", async (
     await wait();
     expect(mocks.gptImage.state.imageHostRequests).toBe(1);
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-});
-
-test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "gptImage");
-    mocks.gptImage.state.azureStatus = 524;
-    const { key } = await createTestApiKey({
-        allowedModels: ["openai/gpt-image-2"],
-        user: { tierBalance: 100 },
-    });
-
-    const { response, wait } = await fetchWorker(
-        "/image/timeout%20probe?model=gpt-image-2&quality=low&seed=9348",
-        { headers: { authorization: `Bearer ${key}` } },
-    );
-
-    expect(response.status).toBe(502);
-    await response.arrayBuffer();
-    await wait();
-    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2",
-        modelProviderUsed: "azure",
-        responseStatus: 502,
-        isFinal: true,
-        isBilledUsage: false,
-    });
 });
 
 test("the sana alias routes to the dreamshaper pool and records its flat price", async ({

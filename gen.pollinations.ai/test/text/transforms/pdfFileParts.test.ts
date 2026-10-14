@@ -34,44 +34,51 @@ describe("pdfFileParts", () => {
     it.each([
         { file_data: DATA_URL },
         { file_data: PDF, mime_type: "application/pdf" },
-    ])("sends Bedrock raw PDF bytes Portkey maps to a document (%o)", (file) => {
-        const provider = createBedrockNativeConfig().provider;
-        expect(filePart(provider, file)).toEqual({
-            type: "file",
-            file: {
-                file_data: PDF,
-                mime_type: "application/pdf",
-                file_name: "document-1",
-            },
-            cache_control: { type: "ephemeral" },
-        });
-    });
+    ])(
+        "sends Bedrock raw PDF bytes Portkey maps to a document (%o)",
+        (file) => {
+            const provider = createBedrockNativeConfig().provider;
+            expect(filePart(provider, file)).toEqual({
+                type: "file",
+                file: {
+                    file_data: PDF,
+                    mime_type: "application/pdf",
+                    file_name: "document-1",
+                },
+                cache_control: { type: "ephemeral" },
+            });
+        },
+    );
 
-    it.each([
-        "azure-openai",
-        "openai",
-    ])("gives %s a PDF data URL and the required filename", (provider) => {
-        expect(
-            filePart(provider, {
-                file_data: PDF,
-                mime_type: "application/pdf",
-            }),
-        ).toEqual({
-            type: "file",
-            file: { file_data: DATA_URL, filename: "document.pdf" },
-            cache_control: { type: "ephemeral" },
-        });
-        expect(
-            filePart(provider, { file_data: DATA_URL, file_name: "a.pdf" }),
-        ).toMatchObject({ file: { file_data: DATA_URL, filename: "a.pdf" } });
-        expect(
-            filePart(provider, {
-                file_data: DATA_URL,
-                filename: "b.pdf",
-                file_name: "a.pdf",
-            }),
-        ).toMatchObject({ file: { file_data: DATA_URL, filename: "b.pdf" } });
-    });
+    it.each(["azure-openai", "openai"])(
+        "gives %s a PDF data URL and the required filename",
+        (provider) => {
+            expect(
+                filePart(provider, {
+                    file_data: PDF,
+                    mime_type: "application/pdf",
+                }),
+            ).toEqual({
+                type: "file",
+                file: { file_data: DATA_URL, filename: "document.pdf" },
+                cache_control: { type: "ephemeral" },
+            });
+            expect(
+                filePart(provider, { file_data: DATA_URL, file_name: "a.pdf" }),
+            ).toMatchObject({
+                file: { file_data: DATA_URL, filename: "a.pdf" },
+            });
+            expect(
+                filePart(provider, {
+                    file_data: DATA_URL,
+                    filename: "b.pdf",
+                    file_name: "a.pdf",
+                }),
+            ).toMatchObject({
+                file: { file_data: DATA_URL, filename: "b.pdf" },
+            });
+        },
+    );
 
     it("leaves other providers, files and non-PDF data alone", () => {
         const messages = pdfMessages({ file_data: DATA_URL });

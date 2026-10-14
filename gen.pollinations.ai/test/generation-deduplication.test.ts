@@ -558,82 +558,88 @@ describe("generation request deduplication", () => {
         expect(generation.originHits).toBe(0);
     });
 
-    it.each([
-        "rpc",
-        "completed-cache",
-        "initial-cache",
-        "rpc-and-cache",
-    ])("preserves the underlying %s failure in Tinybird without restarting generation", async (failure) => {
-        const rpcError = Object.assign(new Error("RPC connection reset"), {
-            durableObjectReset: true,
-            overloaded: false,
-            retryable: true,
-        });
-        const cacheError = new Error("R2 read failed");
-        const adapter = createAdapter(new Map());
-        const get = vi.spyOn(adapter, "get").mockImplementation(async () => {
-            if (
-                failure === "initial-cache" ||
-                (get.mock.calls.length === 2 && failure !== "rpc")
-            ) {
-                throw cacheError;
-            }
-            return null;
-        });
-        const startAndWait = vi.fn(async () => {
-            if (failure.startsWith("rpc")) throw rpcError;
-            return { status: "cached" };
-        });
-        const requests: Request[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                requests.push(new Request(input, init));
-                return new Response("ok");
-            },
-        );
-        const generation = createApp(adapter);
-        generation.app.onError(handleError);
-        const ctx = createExecutionContext();
-        const response = await generation.app.fetch(
-            new Request("https://gen.pollinations.ai/generate"),
-            {
-                ENVIRONMENT: "test",
-                TINYBIRD_INGEST_URL:
-                    "https://tinybird.test/v0/events?name=generation_event_v2",
-                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
-                GENERATION_COORDINATOR: { getByName: () => ({ startAndWait }) },
-            } as unknown as CloudflareBindings,
-            ctx,
-        );
-        await waitOnExecutionContext(ctx);
-        expect(response.status).toBe(503);
-        const body = await response.text();
-        expect(body).toContain(
-            failure.startsWith("rpc")
-                ? "Generation coordination is unavailable"
-                : "Generation cache is temporarily unavailable",
-        );
-        expect(body).not.toContain("RPC connection reset");
-        expect(body).not.toContain("R2 read failed");
-        expect(requests).toHaveLength(1);
-        expect(new URL(requests[0].url).searchParams.get("name")).toBe(
-            "error_event",
-        );
-        const event = (await requests[0].json()) as { stack: string };
-        expect(event.stack).toContain(
-            failure.startsWith("rpc") ? rpcError.message : cacheError.message,
-        );
-        if (failure.startsWith("rpc")) {
-            expect(event.stack).toContain(
-                "durableObjectReset=true overloaded=false retryable=true",
+    it.each(["rpc", "completed-cache", "initial-cache", "rpc-and-cache"])(
+        "preserves the underlying %s failure in Tinybird without restarting generation",
+        async (failure) => {
+            const rpcError = Object.assign(new Error("RPC connection reset"), {
+                durableObjectReset: true,
+                overloaded: false,
+                retryable: true,
+            });
+            const cacheError = new Error("R2 read failed");
+            const adapter = createAdapter(new Map());
+            const get = vi
+                .spyOn(adapter, "get")
+                .mockImplementation(async () => {
+                    if (
+                        failure === "initial-cache" ||
+                        (get.mock.calls.length === 2 && failure !== "rpc")
+                    ) {
+                        throw cacheError;
+                    }
+                    return null;
+                });
+            const startAndWait = vi.fn(async () => {
+                if (failure.startsWith("rpc")) throw rpcError;
+                return { status: "cached" };
+            });
+            const requests: Request[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    requests.push(new Request(input, init));
+                    return new Response("ok");
+                },
             );
-        }
-        expect(startAndWait).toHaveBeenCalledTimes(
-            failure === "initial-cache" ? 0 : 1,
-        );
-        expect(get).toHaveBeenCalledTimes(failure === "initial-cache" ? 1 : 2);
-        expect(generation.originHits).toBe(0);
-    });
+            const generation = createApp(adapter);
+            generation.app.onError(handleError);
+            const ctx = createExecutionContext();
+            const response = await generation.app.fetch(
+                new Request("https://gen.pollinations.ai/generate"),
+                {
+                    ENVIRONMENT: "test",
+                    TINYBIRD_INGEST_URL:
+                        "https://tinybird.test/v0/events?name=generation_event_v2",
+                    TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+                    GENERATION_COORDINATOR: {
+                        getByName: () => ({ startAndWait }),
+                    },
+                } as unknown as CloudflareBindings,
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(503);
+            const body = await response.text();
+            expect(body).toContain(
+                failure.startsWith("rpc")
+                    ? "Generation coordination is unavailable"
+                    : "Generation cache is temporarily unavailable",
+            );
+            expect(body).not.toContain("RPC connection reset");
+            expect(body).not.toContain("R2 read failed");
+            expect(requests).toHaveLength(1);
+            expect(new URL(requests[0].url).searchParams.get("name")).toBe(
+                "error_event",
+            );
+            const event = (await requests[0].json()) as { stack: string };
+            expect(event.stack).toContain(
+                failure.startsWith("rpc")
+                    ? rpcError.message
+                    : cacheError.message,
+            );
+            if (failure.startsWith("rpc")) {
+                expect(event.stack).toContain(
+                    "durableObjectReset=true overloaded=false retryable=true",
+                );
+            }
+            expect(startAndWait).toHaveBeenCalledTimes(
+                failure === "initial-cache" ? 0 : 1,
+            );
+            expect(get).toHaveBeenCalledTimes(
+                failure === "initial-cache" ? 1 : 2,
+            );
+            expect(generation.originHits).toBe(0);
+        },
+    );
 
     it("reads a saved result once after an RPC failure without restarting generation", async () => {
         const cache = new Map<string, string>();

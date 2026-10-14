@@ -25,94 +25,95 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
-    it.each([
-        429, 503,
-    ])("rescues Scout upstream %i at the primary price", async (status) => {
-        syncTextEnvironment({
-            ...env,
-            AI_GATEWAY_API_KEY: "test-vercel-key",
-        });
-        const primary = "meta/llama-4-scout" as const;
-        const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
-        const routes: string[] = [];
-        vi.spyOn(globalThis, "fetch").mockImplementation(
-            async (input, init) => {
-                const body = JSON.parse(String(init?.body));
-                if (
-                    String(input) ===
-                    "https://openrouter.ai/api/v1/chat/completions"
-                ) {
-                    expect(body.model).toBe("meta-llama/llama-4-scout");
-                    expect(body.provider.allow_fallbacks).toBe(false);
-                    const route = body.provider.only[0];
-                    routes.push(route);
-                    expect(route).toBe("novita/bf16");
-                } else {
-                    expect(String(input)).toBe(
-                        "https://ai-gateway.vercel.sh/v1/chat/completions",
-                    );
-                    expect(body.model).toBe("meta/llama-4-scout");
-                    expect(body.providerOptions).toEqual({
-                        gateway: { only: ["deepinfra"] },
-                    });
-                    expect(
-                        new Headers(init?.headers).get("Authorization"),
-                    ).toBe("Bearer test-vercel-key");
-                    routes.push("vercel-deepinfra");
-                    return Response.json(
-                        { error: { message: "Capacity exhausted" } },
-                        { status },
-                    );
-                }
-                expect(body.max_tokens).toBe(128);
-                return Response.json({
-                    model: "meta-llama/llama-4-scout",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "Red." },
-                            finish_reason: "stop",
+    it.each([429, 503])(
+        "rescues Scout upstream %i at the primary price",
+        async (status) => {
+            syncTextEnvironment({
+                ...env,
+                AI_GATEWAY_API_KEY: "test-vercel-key",
+            });
+            const primary = "meta/llama-4-scout" as const;
+            const fallback = "meta/llama-4-scout:openrouter:novita-bf16";
+            const routes: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (input, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    if (
+                        String(input) ===
+                        "https://openrouter.ai/api/v1/chat/completions"
+                    ) {
+                        expect(body.model).toBe("meta-llama/llama-4-scout");
+                        expect(body.provider.allow_fallbacks).toBe(false);
+                        const route = body.provider.only[0];
+                        routes.push(route);
+                        expect(route).toBe("novita/bf16");
+                    } else {
+                        expect(String(input)).toBe(
+                            "https://ai-gateway.vercel.sh/v1/chat/completions",
+                        );
+                        expect(body.model).toBe("meta/llama-4-scout");
+                        expect(body.providerOptions).toEqual({
+                            gateway: { only: ["deepinfra"] },
+                        });
+                        expect(
+                            new Headers(init?.headers).get("Authorization"),
+                        ).toBe("Bearer test-vercel-key");
+                        routes.push("vercel-deepinfra");
+                        return Response.json(
+                            { error: { message: "Capacity exhausted" } },
+                            { status },
+                        );
+                    }
+                    expect(body.max_tokens).toBe(128);
+                    return Response.json({
+                        model: "meta-llama/llama-4-scout",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "Red." },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        // Images are included in provider prompt_tokens.
+                        usage: {
+                            prompt_tokens: 167,
+                            completion_tokens: 3,
+                            total_tokens: 170,
                         },
-                    ],
-                    // Images are included in provider prompt_tokens.
-                    usage: {
-                        prompt_tokens: 167,
-                        completion_tokens: 3,
-                        total_tokens: 170,
-                    },
-                });
-            },
-        );
-        const { result, candidate, index } = await withModelFallback(
-            [primary, ...TEXT_SERVICES[primary].fallbacks].map((id) => ({
-                id,
-                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
-            })),
-            ({ id }) =>
-                generateTextPortkey(
-                    [{ role: "user", content: "Name the color." }],
-                    { model: id, max_tokens: 128 },
+                    });
+                },
+            );
+            const { result, candidate, index } = await withModelFallback(
+                [primary, ...TEXT_SERVICES[primary].fallbacks].map((id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                })),
+                ({ id }) =>
+                    generateTextPortkey(
+                        [{ role: "user", content: "Name the color." }],
+                        { model: id, max_tokens: 128 },
+                    ),
+            );
+            expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
+            expect(candidate.id).toBe(fallback);
+            expect(index).toBe(1);
+            expect(result.choices?.[0]?.message?.content).toBe("Red.");
+            const billing = calculateUsageBilling({
+                model: primary,
+                usage: openaiUsageToUsage(
+                    result.usage as Parameters<typeof openaiUsageToUsage>[0],
                 ),
-        );
-        expect(routes).toEqual(["vercel-deepinfra", "novita/bf16"]);
-        expect(candidate.id).toBe(fallback);
-        expect(index).toBe(1);
-        expect(result.choices?.[0]?.message?.content).toBe("Red.");
-        const billing = calculateUsageBilling({
-            model: primary,
-            usage: openaiUsageToUsage(
-                result.usage as Parameters<typeof openaiUsageToUsage>[0],
-            ),
-            servedBy: TEXT_SERVICES[fallback],
-            quotedBy: TEXT_SERVICES[primary],
-        });
-        expect(billing.cost.totalCost).toBeCloseTo(
-            ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
-            12,
-        );
-        // Customer charges use the ledger's eight-decimal precision.
-        expect(billing.price.totalPrice).toBe(0.0000176);
-    });
+                servedBy: TEXT_SERVICES[fallback],
+                quotedBy: TEXT_SERVICES[primary],
+            });
+            expect(billing.cost.totalCost).toBeCloseTo(
+                ((167 * 0.18 + 3 * 0.59) / 1_000_000) * 1.055,
+                12,
+            );
+            // Customer charges use the ledger's eight-decimal precision.
+            expect(billing.price.totalPrice).toBe(0.0000176);
+        },
+    );
 
     it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
         const hosts: string[] = [];
@@ -503,54 +504,55 @@ describe("generateTextPortkey", () => {
         );
     });
 
-    it.each([
-        undefined,
-        false,
-        true,
-    ])("sets the request deadline and preserves explicit parallel_tool_calls (%s)", async (parallel_tool_calls) => {
-        const fetcher = vi.fn(
-            async (_input: RequestInfo | URL, init?: RequestInit) => {
-                const headers = new Headers(init?.headers);
-                expect(headers.get("x-portkey-request-timeout")).toBe("290000");
-                expect(headers.get("x-portkey-strict-open-ai-compliance")).toBe(
-                    "false",
-                );
-                const body = JSON.parse(String(init?.body));
-                expect(body.parallel_tool_calls).toBe(parallel_tool_calls);
-                if (parallel_tool_calls === undefined) {
-                    expect(body).not.toHaveProperty("parallel_tool_calls");
-                }
+    it.each([undefined, false, true])(
+        "sets the request deadline and preserves explicit parallel_tool_calls (%s)",
+        async (parallel_tool_calls) => {
+            const fetcher = vi.fn(
+                async (_input: RequestInfo | URL, init?: RequestInit) => {
+                    const headers = new Headers(init?.headers);
+                    expect(headers.get("x-portkey-request-timeout")).toBe(
+                        "290000",
+                    );
+                    expect(
+                        headers.get("x-portkey-strict-open-ai-compliance"),
+                    ).toBe("false");
+                    const body = JSON.parse(String(init?.body));
+                    expect(body.parallel_tool_calls).toBe(parallel_tool_calls);
+                    if (parallel_tool_calls === undefined) {
+                        expect(body).not.toHaveProperty("parallel_tool_calls");
+                    }
 
-                return Response.json({
-                    model: "provider-model",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                });
-            },
-        );
-
-        const completion = await generateTextPortkey(
-            [{ role: "user", content: "hello" }],
-            {
-                model: "provider-model",
-                modelConfig: {
-                    provider: "openai",
-                    model: "provider-model",
+                    return Response.json({
+                        model: "provider-model",
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                    });
                 },
-                parallel_tool_calls,
-                portkeyGatewayUrl: "https://portkey.test",
-            },
-            fetcher,
-        );
+            );
 
-        expect(fetcher).toHaveBeenCalledOnce();
-        expect(completion.choices?.[0]?.message?.content).toBe("ok");
-    });
+            const completion = await generateTextPortkey(
+                [{ role: "user", content: "hello" }],
+                {
+                    model: "provider-model",
+                    modelConfig: {
+                        provider: "openai",
+                        model: "provider-model",
+                    },
+                    parallel_tool_calls,
+                    portkeyGatewayUrl: "https://portkey.test",
+                },
+                fetcher,
+            );
+
+            expect(fetcher).toHaveBeenCalledOnce();
+            expect(completion.choices?.[0]?.message?.content).toBe("ok");
+        },
+    );
 
     it("preserves numeric options through the provider pipeline", async () => {
         const fetcher = vi.fn(
@@ -627,67 +629,67 @@ describe("generateTextPortkey", () => {
         expect(responsesFetcher).not.toHaveBeenCalled();
     });
 
-    it.each([
-        "openai/gpt-5.6-luna",
-        "gpt-5.6-luna",
-    ])("strips sampling before routing %s through Responses", async (model) => {
-        const portkeyFetcher = vi.fn();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (input, init) => {
-                expect(String(input)).toBe(
-                    "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
-                );
-                const body = JSON.parse(String(init?.body));
-                expect(body).toMatchObject({
-                    model: "gpt-5.6-luna",
-                    max_output_tokens: 128,
-                });
-                for (const key of [
-                    "temperature",
-                    "top_p",
-                    "seed",
-                    "repetition_penalty",
-                    "max_tokens",
-                    "max_completion_tokens",
-                ]) {
-                    expect(body).not.toHaveProperty(key);
-                }
-                return Response.json({
-                    id: "resp_1",
-                    object: "response",
-                    model: "gpt-5.6-luna",
-                    status: "completed",
-                    output: [
-                        {
-                            type: "message",
-                            content: [{ type: "output_text", text: "ok" }],
+    it.each(["openai/gpt-5.6-luna", "gpt-5.6-luna"])(
+        "strips sampling before routing %s through Responses",
+        async (model) => {
+            const portkeyFetcher = vi.fn();
+            const fetchSpy = vi
+                .spyOn(globalThis, "fetch")
+                .mockImplementationOnce(async (input, init) => {
+                    expect(String(input)).toBe(
+                        "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+                    );
+                    const body = JSON.parse(String(init?.body));
+                    expect(body).toMatchObject({
+                        model: "gpt-5.6-luna",
+                        max_output_tokens: 128,
+                    });
+                    for (const key of [
+                        "temperature",
+                        "top_p",
+                        "seed",
+                        "repetition_penalty",
+                        "max_tokens",
+                        "max_completion_tokens",
+                    ]) {
+                        expect(body).not.toHaveProperty(key);
+                    }
+                    return Response.json({
+                        id: "resp_1",
+                        object: "response",
+                        model: "gpt-5.6-luna",
+                        status: "completed",
+                        output: [
+                            {
+                                type: "message",
+                                content: [{ type: "output_text", text: "ok" }],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 1,
+                            output_tokens: 1,
+                            total_tokens: 2,
                         },
-                    ],
-                    usage: {
-                        input_tokens: 1,
-                        output_tokens: 1,
-                        total_tokens: 2,
-                    },
+                    });
                 });
-            });
 
-        const completion = await generateTextPortkey(
-            [{ role: "user", content: "hello" }],
-            {
-                model,
-                temperature: 0.7,
-                top_p: 0.9,
-                seed: 42,
-                repetition_penalty: 1.1,
-                max_tokens: 128,
-                modelConfig: azureModelConfig,
-            },
-            portkeyFetcher,
-        );
+            const completion = await generateTextPortkey(
+                [{ role: "user", content: "hello" }],
+                {
+                    model,
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    seed: 42,
+                    repetition_penalty: 1.1,
+                    max_tokens: 128,
+                    modelConfig: azureModelConfig,
+                },
+                portkeyFetcher,
+            );
 
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        expect(portkeyFetcher).not.toHaveBeenCalled();
-        expect(completion.choices?.[0]?.message?.content).toBe("ok");
-    });
+            expect(fetchSpy).toHaveBeenCalledOnce();
+            expect(portkeyFetcher).not.toHaveBeenCalled();
+            expect(completion.choices?.[0]?.message?.content).toBe("ok");
+        },
+    );
 });

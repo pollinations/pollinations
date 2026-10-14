@@ -428,6 +428,76 @@ describe("docs routes", () => {
         expect(html).toContain("#tag/connect-user-wallets");
     });
 
+    it("serves the guide as Markdown when an agent prefers it", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "text/markdown" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(response.headers.get("Vary")).toBe("Accept");
+        expect(response.headers.get("Cache-Control")).toBe(
+            "private, max-age=3600",
+        );
+        const markdown = await response.text();
+        expect(markdown).toContain("Base URL:");
+        expect(markdown).toContain("POST /v1/embeddings");
+        expect(markdown).not.toContain("<html");
+    });
+
+    it("keeps the HTML reference for clients that do not ask for Markdown", async () => {
+        const ctx = createExecutionContext();
+        // curl and generic clients send */*.
+        const generic = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "*/*" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(generic.headers.get("Content-Type")).toContain("text/html");
+
+        // Section endpoints are plain text and are not negotiated.
+        const section = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=cli",
+                {
+                    headers: { Accept: "text/markdown" },
+                },
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(section.headers.get("Content-Type")).toContain("text/plain");
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("keeps the HTML reference for browser-style Accept headers", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(response.headers.get("Vary")).toBe("Accept");
+    });
+
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(

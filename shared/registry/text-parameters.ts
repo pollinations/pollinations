@@ -161,6 +161,14 @@ export const CHAT_PARAMETERS = {
         "stop",
     ],
     azureOpenModels: [...CHAT, ...SAMPLING, ...PENALTIES, "seed", "stop"],
+    openRouterCohere: [
+        ...SAMPLED_CHAT,
+        ...PENALTIES,
+        ...OPENROUTER_REASONING,
+        "reasoning_effort",
+        "seed",
+        "top_k",
+    ],
     // Azure DeepSeek and Kimi deployments reject unknown fields such as `thinking`.
     azureOpenReasoning: [...SAMPLED_CHAT, "reasoning_effort"],
     // Bedrock Qwen3 Coder rejects stop and has no seed/logprobs controls.
@@ -321,22 +329,28 @@ export const CHAT_PARAMETERS = {
         "structured_outputs",
         "top_p",
     ],
-    openRouterDeepseekV41Flash: [
-        ...CHAT,
+    museSpark: [...CHAT, "temperature", "tools"],
+    // OpenRouter endpoint parameters (2026-10-12); Meta is its only endpoint.
+    openRouterMuseWonder: [
+        ...TOOL_CHAT,
         ...SAMPLING,
-        ...TOOLS,
-        ...PENALTIES,
-        ...LOGPROBS,
         ...OPENROUTER_REASONING,
-        "logit_bias",
-        "min_p",
+        "reasoning_effort",
         "repetition_penalty",
-        "seed",
-        "stop",
         "structured_outputs",
         "top_k",
     ],
-    museSpark: [...CHAT, "temperature", "tools"],
+    // Vercel catalog parameters (2026-10-12): no top_p, top_k, or
+    // repetition_penalty.
+    vercelMuseWonder: [
+        ...TOOL_CHAT,
+        "temperature",
+        "stop",
+        "structured_outputs",
+        "reasoning",
+        "include_reasoning",
+        "reasoning_effort",
+    ],
     mistralLarge: [...SAMPLED_CHAT, ...PENALTIES, "seed"],
     mistralLarge4: [...SAMPLED_CHAT, ...PENALTIES, "seed", "reasoning_effort"],
     vercelMistralLarge4: [
@@ -497,10 +511,10 @@ export const CHAT_PARAMETERS = {
         "seed",
         "reasoning_effort",
     ],
-    qwen38Akash: [
+    qwen38Reka: [
         ...EXTENDED_CHAT,
         ...OPENROUTER_REASONING,
-        "repetition_penalty",
+        "structured_outputs",
         "reasoning_effort",
     ],
     qwen38Max: [...EXTENDED_CHAT, ...OPENROUTER_REASONING, "reasoning_effort"],

@@ -1,0 +1,32 @@
+{
+  "pr_number": 17463,
+  "title": "fix(news): ignore live health stats in the weekly model post",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17463",
+  "merged_at": "2026-10-14T14:16:31Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The weekly model news comparison now ignores live health stats alongside description and added_date, so changes to status, success rate, or request count alone do not count as model changes. In a preview of the same week, the comparison sent to the writer fell from 623 kB to 305 kB and the changed-model count fell from 257 to 105; the Discord post still had six sections. A test confirms that a week with only health changes saves a snapshot without creating a post.",
+    "keywords": [
+      "model news",
+      "weekly post",
+      "health stats",
+      "snapshot comparison",
+      "Discord"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17463.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small-to-medium in the scene and wearing tiny reading glasses, she sorts changing health-stat slips into a compost basket while a steady model-news page rests beside a lime green (#ecf874) code-plant. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-14T14:17:49.937577+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "c5ace0be890b585b64421d68206cfc4b19977cd5",
+  "announcements": []
+}

@@ -30,7 +30,11 @@ type Notice = {
     button: Link;
 };
 
-const pollen = (amount: number) => `${Math.max(0, amount).toFixed(2)} Pollen`;
+// Rounds down, so a balance just under the threshold never reads as the
+// threshold itself (9.999 shows 9.99, not 10.00). The epsilon absorbs float
+// error such as 3.42 * 100 = 341.99999999999994.
+const pollen = (amount: number) =>
+    `${(Math.floor(Math.max(0, amount) * 100 + 1e-9) / 100).toFixed(2)} Pollen`;
 
 export function runningLowNotice(balance: number): Notice {
     return {

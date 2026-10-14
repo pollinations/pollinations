@@ -74,7 +74,7 @@ const unsubscribedAt = async (userId: string) =>
 test("running-low email goes out once per 30 days below 20% of the last pack", async () => {
     const { sent, notifyEnv } = withOutbox();
     // Last pack of 20 Pollen, so the threshold is 4.
-    await addUser("low", { packBalance: 3, lowBalanceThreshold: 4 });
+    await addUser("low", { packBalance: 3.999, lowBalanceThreshold: 4 });
     await addUser("healthy", { packBalance: 6, lowBalanceThreshold: 4 });
     // Never bought a pack, so there is no threshold.
     await addUser("nopack", { packBalance: 3 });
@@ -88,7 +88,7 @@ test("running-low email goes out once per 30 days below 20% of the last pack", a
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
     expect(sent[0].text).toContain(
-        "You have 3.00 Pollen left, less than 20% of your last pack.",
+        "You have 3.99 Pollen left, less than 20% of your last pack.",
     );
 
     await env.DB.prepare(

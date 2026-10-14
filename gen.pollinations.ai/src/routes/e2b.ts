@@ -44,7 +44,7 @@ const E2B_API = "https://api.e2b.app";
 export const E2B_PATH = "/alpha/e2b";
 // One E2B team runs every user's sandboxes; this metadata key names the owner.
 const OWNER_KEY = "pollinations_user";
-const MAX_RUNNING_PER_USER = 3;
+const MAX_RUNNING_PER_USER = 8;
 // E2B ends a sandbox's run 24 hours after it starts or resumes.
 const MAX_RUN_MS = 24 * 60 * 60_000;
 // E2B list prices per second, in pollen (1 pollen ≈ $1).

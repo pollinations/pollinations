@@ -1,14 +1,14 @@
 /**
- * Hook to fetch real-time model statistics
- * Uses the backend /api/model-stats endpoint which caches Tinybird data server-side (6h TTL)
+ * Hook to fetch model usage statistics from gen.pollinations.ai/models/stats:
+ * an hourly Tinybird snapshot, cached server-side for an hour.
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { config } from "../../config.ts";
 
 export type ModelStats = Record<
     string,
-    { avgCost: number; requestCount: number }
+    { avgCost: number; requestCount: number; userCount?: number }
 >;
 
 type TinybirdResponse = {
@@ -17,6 +17,7 @@ type TinybirdResponse = {
         avg_cost_usd: number;
         request_count?: number;
         priced_success_count?: number;
+        user_count?: number;
     }>;
 };
 
@@ -34,7 +35,9 @@ export function useModelStats(): {
 
         async function fetchStats() {
             try {
-                const response = await apiClient["model-stats"].$get();
+                const response = await fetch(
+                    `${config.genBaseUrl}/models/stats`,
+                );
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
@@ -49,6 +52,7 @@ export function useModelStats(): {
                         avgCost: row.avg_cost_usd,
                         requestCount:
                             row.request_count ?? row.priced_success_count ?? 0,
+                        userCount: row.user_count,
                     };
                 }
 

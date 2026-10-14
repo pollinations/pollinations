@@ -1,15 +1,28 @@
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
+import {
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+    REALTIME_SERVICES,
+    type RealtimeModelName,
+} from "@shared/registry/realtime.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { z } from "zod";
+
+const REALTIME_MODEL_IDS = Object.entries(REALTIME_SERVICES).flatMap(
+    ([name, definition]) => [name, ...(definition.aliases ?? [])],
+);
 
 export const RealtimeRequestQueryParamsSchema = z
     .object({
         model: z
-            .literal(DEFAULT_REALTIME_MODEL)
+            .enum(REALTIME_MODEL_IDS as [string, ...string[]])
+            .transform(
+                (model): RealtimeModelName =>
+                    resolveModelName(model) as RealtimeModelName,
+            )
             .optional()
             .default(DEFAULT_REALTIME_MODEL)
             .meta({
-                description:
-                    "Realtime model to use. Currently only gpt-realtime-2 is supported.",
+                description: `Realtime model to use. Supported models: ${REALTIME_MODEL_NAMES.join(", ")}.`,
             }),
         key: z.string().optional().meta({
             description:
@@ -17,10 +30,6 @@ export const RealtimeRequestQueryParamsSchema = z
         }),
     })
     .strict();
-
-export type RealtimeRequestQueryParams = z.infer<
-    typeof RealtimeRequestQueryParamsSchema
->;
 
 // Shape of `response.usage` in the Realtime `response.done` event. Only the
 // fields used for billing are declared; everything else is ignored.
@@ -60,5 +69,3 @@ export const RealtimeUsageSchema = z
     })
     .partial()
     .passthrough();
-
-export type RealtimeUsage = z.infer<typeof RealtimeUsageSchema>;

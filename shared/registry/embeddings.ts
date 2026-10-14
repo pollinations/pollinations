@@ -1,27 +1,18 @@
+import { EMBEDDING_FALLBACKS } from "./embeddings-fallbacks";
+import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
-// Embedding model IDs as returned by providers
-type EmbeddingModelDefinitions = {
-    "gemini-2": ModelDefinition<"gemini-embedding-2-preview">;
-    "openai-3-small": ModelDefinition<"text-embedding-3-small">;
-    "openai-3-large": ModelDefinition<"text-embedding-3-large">;
-    "cohere-embed-v4": ModelDefinition<"embed-v-4-0">;
-    "qwen3-embedding-8b": ModelDefinition<"accounts/fireworks/models/qwen3-embedding-8b">;
-};
+export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;
 
-export type EmbeddingServiceId = keyof EmbeddingModelDefinitions;
-export type EmbeddingModelId =
-    EmbeddingModelDefinitions[EmbeddingServiceId]["modelId"];
+export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId =
+    "openai/text-embedding-3-small";
 
-export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
-
-export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
-    "gemini-2": {
-        aliases: ["embedding"],
-        modelId: "gemini-embedding-2-preview",
+const EMBEDDING_BASE_SERVICES = {
+    "google/gemini-embedding-2": {
+        aliases: ["embedding", "gemini-2"],
         provider: "google",
-        brand: "Google",
+        publisher: "Google",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
@@ -34,83 +25,96 @@ export const EMBEDDING_SERVICES: EmbeddingModelDefinitions = {
         },
         title: "Gemini Embedding 2",
         description:
-            "Gemini Embedding 2 - Multimodal Embeddings for Text, Images, Audio, and Video. 3072 dimensions, 8192 token limit.",
+            "Turns text, images, audio and video into vectors for semantic search. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-small": {
-        aliases: ["embedding-small"],
-        modelId: "text-embedding-3-small",
-        provider: "openai",
-        brand: "OpenAI",
+    "openai/text-embedding-3-small": {
+        aliases: ["embedding-small", "openai-3-small"],
+        provider: "azure",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1,
+        // Provider retires this route on 2028-02-09.
+        priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.02),
         },
         title: "Text Embedding 3 Small",
         description:
-            "Text Embedding 3 Small - Low-Cost Text Embeddings. 1536 dimensions, 8192 token limit.",
+            "Low-cost text vectors for search and similarity. 1536 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "openai-3-large": {
-        aliases: ["embedding-large"],
-        modelId: "text-embedding-3-large",
-        provider: "openai",
-        brand: "OpenAI",
+    "openai/text-embedding-3-large": {
+        aliases: ["embedding-large", "openai-3-large"],
+        provider: "azure",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        priceMultiplier: 1,
+        // Provider retires this route on 2028-02-09.
+        priceMultiplier: 0.75,
+        paidOnly: false,
         cost: {
             promptTextTokens: perMillion(0.13),
         },
         title: "Text Embedding 3 Large",
         description:
-            "Text Embedding 3 Large - High-Quality Text Embeddings. 3072 dimensions, 8192 token limit.",
+            "High-quality text vectors for demanding search. 3072 dimensions, 8192 token limit.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
         contextLength: 8192,
     },
-    "cohere-embed-v4": {
-        aliases: ["embed-v-4-0", "cohere-embed-v-4-0"],
-        modelId: "embed-v-4-0",
+    "cohere/embed-v4.0": {
+        aliases: [
+            "embed-v-4-0",
+            "cohere-embed-v-4-0",
+            "cohere-embed-v4",
+            "embed-v4.0",
+        ],
         provider: "azure",
-        brand: "Cohere",
+        publisher: "Cohere",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
-        // Azure Cohere retail rates (Global). Image-token billing also available
-        // upstream ($0.47/1M Global text-img); we only expose text input for now.
+        paidOnly: false,
+        // Azure Cohere retail rates (Global).
         cost: {
             promptTextTokens: perMillion(0.12),
+            promptImageTokens: perMillion(0.47),
         },
         title: "Cohere Embed v4",
         description:
-            "Cohere Embed v4 - Multilingual text embeddings. 1536 dimensions, 128K context.",
-        inputModalities: ["text"],
+            "Multilingual text and image vectors. 1536 dimensions, 128K context.",
+        inputModalities: ["text", "image"],
         outputModalities: ["embedding"],
         contextLength: 128000,
     },
-    "qwen3-embedding-8b": {
-        aliases: ["qwen3-embedding"],
-        modelId: "accounts/fireworks/models/qwen3-embedding-8b",
-        provider: "fireworks",
-        brand: "Qwen",
+    "qwen/qwen3-embedding-8b": {
+        aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
+        provider: "deepinfra",
+        publisher: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.01),
         },
         title: "Qwen3 Embedding 8B",
         description:
-            "Qwen3 Embedding 8B - Multilingual text embeddings. 4096 dimensions.",
+            "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
-        contextLength: 32768,
+        // Verified on the live DeepInfra route; its catalog still lists 32K.
+        contextLength: 40960,
     },
-};
+} as const satisfies Record<string, ModelDefinition>;
+
+export const EMBEDDING_SERVICES = mergeFallbacks(
+    EMBEDDING_BASE_SERVICES,
+    EMBEDDING_FALLBACKS,
+);

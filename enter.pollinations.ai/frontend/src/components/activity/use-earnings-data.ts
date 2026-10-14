@@ -1,7 +1,11 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
-import type { DataPoint, ModelBreakdown, UsagePeriodSelection } from "./types";
+import { accountClient } from "../../api.ts";
+import { formatActivityChartDate } from "./activity-helpers";
+import { type ActivityPeriod, isInActivityBucket } from "./activity-period";
+import type { DataPoint, Metric } from "./types";
+
+export type EarningsSource = "byop_markup" | "community_model";
 
 export type DeveloperEarningsRow = {
     date: string;
@@ -9,200 +13,220 @@ export type DeveloperEarningsRow = {
     entity_name: string;
     source: EarningsSource;
     requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
     pollen_earned: number;
     paid_earned: number;
     tier_earned: number;
+    cost_usd: number;
     reward_rate: number;
-    unique_users: number;
 };
-
-export type DeveloperEarningsTotal = {
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
-};
-
-export type EarningsSource = "byop_markup" | "community_model";
 
 export type EarningsFilterState = {
-    period: UsagePeriodSelection;
-    selectedEntityIds: string[];
+    period: ActivityPeriod;
+    metric: Metric;
+    selectedAppKeyIds: string[];
+    selectedModelIds: string[];
 };
 
-type TopEarningEntity = {
+type EarningEntity = {
     id: string;
-    label: string;
     source: EarningsSource;
+    label: string;
     requests: number;
     pollen: number;
     paidPollen: number;
     tierPollen: number;
-    uniqueUsers: number;
+    paidRequests: number;
+    tierRequests: number;
 };
 
-type EarningSourceSummary = {
-    source: EarningsSource;
-    label: string;
-    requests: number;
-    pollen: number;
-    paidPollen: number;
-    tierPollen: number;
-    uniqueUsers: number;
-    rewardRate: number;
-};
+function filterRowsBySelection(
+    rows: DeveloperEarningsRow[],
+    appKeyIds: string[],
+    modelIds: string[],
+): DeveloperEarningsRow[] {
+    if (appKeyIds.length === 0 && modelIds.length === 0) return rows;
+    const appKeyIdSet = new Set(appKeyIds);
+    const modelIdSet = new Set(modelIds);
+    return rows.filter(
+        (row) =>
+            (row.source === "byop_markup" && appKeyIdSet.has(row.entity_id)) ||
+            (row.source === "community_model" && modelIdSet.has(row.entity_id)),
+    );
+}
 
 type EarningsDataResult = {
     loading: boolean;
+    refreshing: boolean;
     error: string | null;
     fetchEarnings: () => void;
+    usedApps: { id: string; label: string }[];
+    usedModels: { id: string; label: string }[];
     chartData: DataPoint[];
+    hasData: boolean;
+    hasPeriodData: boolean;
+    exportRows: DeveloperEarningsRow[];
     stats: {
+        totalRequests: number;
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
-        appMarkupPollen: number;
-        modelRewardPollen: number;
-        sourceSummaries: EarningSourceSummary[];
-        entityCount: number;
-        appCount: number;
-        modelCount: number;
-        topEntity: TopEarningEntity | null;
+        paidRequests: number;
+        tierRequests: number;
+        entityBreakdowns: EarningEntity[];
     };
 };
 
-export function formatEarningsSourceLabel(source: EarningsSource): string {
-    if (source === "byop_markup") return "App markup";
-    if (source === "community_model") return "Model reward";
-    return source;
-}
-
-const emptyTotal: DeveloperEarningsTotal = {
-    pollen_earned: 0,
-    paid_earned: 0,
-    tier_earned: 0,
-};
+const EMPTY_EARNINGS: DeveloperEarningsRow[] = [];
 
 export function useEarningsData(
     filters: EarningsFilterState,
 ): EarningsDataResult {
-    const [dailyEarnings, setDailyEarnings] = useState<DeveloperEarningsRow[]>(
-        [],
-    );
-    const [perEntity, setPerEntity] = useState<DeveloperEarningsRow[]>([]);
-    const [bySource, setBySource] = useState<DeveloperEarningsRow[]>([]);
-    const [totalSummary, setTotalSummary] =
-        useState<DeveloperEarningsTotal>(emptyTotal);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const inFlightRef = useRef<AbortController | null>(null);
-
-    const selectedEntityIdsKey = filters.selectedEntityIds.join(",");
     const { granularity, period } = filters.period;
+    const requestKey = `${granularity}:${period}`;
+    const [result, setResult] = useState<{
+        key: string;
+        rows: DeveloperEarningsRow[];
+    } | null>(null);
+    const [status, setStatus] = useState({
+        key: requestKey,
+        pending: true,
+        error: null as string | null,
+    });
+    const request = useRef<AbortController | null>(null);
+    const hasLoaded = result?.key === requestKey;
+    const dailyEarnings = hasLoaded ? result.rows : EMPTY_EARNINGS;
+    const pending = status.key !== requestKey || status.pending;
+    const loading = pending && !hasLoaded;
+    const refreshing = pending && hasLoaded;
+    const error = status.key === requestKey ? status.error : null;
 
     const fetchEarnings = useCallback(() => {
-        inFlightRef.current?.abort();
+        request.current?.abort();
         const controller = new AbortController();
-        inFlightRef.current = controller;
-
-        setLoading(true);
-        setError(null);
-        setDailyEarnings([]);
-        setPerEntity([]);
-        setBySource([]);
-        setTotalSummary(emptyTotal);
-
-        const query: {
-            granularity: string;
-            period: string;
-            entity_ids?: string;
-        } = {
-            granularity,
-            period,
-        };
-        if (selectedEntityIdsKey) {
-            query.entity_ids = selectedEntityIdsKey;
-        }
-
-        apiClient.account.earnings
-            .$get({ query }, { init: { signal: controller.signal } })
+        request.current = controller;
+        setStatus({ key: requestKey, pending: true, error: null });
+        return accountClient.earnings
+            .$get(
+                { query: { granularity, period } },
+                { init: { signal: controller.signal } },
+            )
             .then((r) => {
                 if (!r.ok)
-                    throw new Error(
-                        `Failed to fetch earnings data: ${r.status}`,
-                    );
-                return r.json() as Promise<{
-                    daily: DeveloperEarningsRow[];
-                    perEntity: DeveloperEarningsRow[];
-                    bySource: DeveloperEarningsRow[];
-                    total: DeveloperEarningsTotal;
-                }>;
+                    throw new Error(`Failed to load earnings: ${r.status}`);
+                return r.json() as Promise<{ daily: DeveloperEarningsRow[] }>;
             })
             .then((data) => {
                 if (controller.signal.aborted) return;
-                setDailyEarnings(data.daily);
-                setPerEntity(data.perEntity);
-                setBySource(data.bySource);
-                setTotalSummary(data.total);
+                setResult({ key: requestKey, rows: data.daily });
+                setStatus({ key: requestKey, pending: false, error: null });
             })
             .catch((err) => {
-                if (controller.signal.aborted) return;
-                console.error("Earnings fetch error:", err);
-                setError(err.message || "Failed to load earnings data");
-                setDailyEarnings([]);
-                setPerEntity([]);
-                setBySource([]);
-                setTotalSummary(emptyTotal);
-            })
-            .finally(() => {
-                if (controller.signal.aborted) return;
-                setLoading(false);
+                if (!controller.signal.aborted)
+                    setStatus({
+                        key: requestKey,
+                        pending: false,
+                        error: err.message || "Couldn’t load earnings.",
+                    });
             });
-    }, [granularity, period, selectedEntityIdsKey]);
+    }, [granularity, period, requestKey]);
 
     useEffect(() => {
         fetchEarnings();
-        return () => {
-            inFlightRef.current?.abort();
-        };
+        return () => request.current?.abort();
     }, [fetchEarnings]);
+
+    const usedApps = useMemo(() => {
+        const appLabels = new Map<string, string>();
+        for (const row of dailyEarnings) {
+            if (row.source !== "byop_markup" || !row.entity_id) continue;
+            if (appLabels.has(row.entity_id)) continue;
+            appLabels.set(row.entity_id, row.entity_name);
+        }
+
+        return Array.from(appLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [dailyEarnings]);
+
+    const usedModels = useMemo(() => {
+        const modelLabels = new Map<string, string>();
+        for (const row of dailyEarnings) {
+            if (row.source !== "community_model" || !row.entity_id) continue;
+            if (modelLabels.has(row.entity_id)) continue;
+            modelLabels.set(row.entity_id, row.entity_name);
+        }
+
+        return Array.from(modelLabels.entries())
+            .map(([id, label]) => ({ id, label }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [dailyEarnings]);
+
+    const filteredDailyEarnings = useMemo(
+        () =>
+            filterRowsBySelection(
+                dailyEarnings,
+                filters.selectedAppKeyIds,
+                filters.selectedModelIds,
+            ),
+        [dailyEarnings, filters.selectedAppKeyIds, filters.selectedModelIds],
+    );
+    const selectedEarnings = useMemo(
+        () =>
+            filteredDailyEarnings.filter((row) =>
+                isInActivityBucket(row.date, filters.period),
+            ),
+        [filteredDailyEarnings, filters.period],
+    );
+    const filteredPerEntity = useMemo(() => {
+        const totals = new Map<string, DeveloperEarningsRow>();
+        for (const row of selectedEarnings) {
+            const key = `${row.source}:${row.entity_id}`;
+            const total = totals.get(key);
+            if (!total) {
+                totals.set(key, { ...row });
+                continue;
+            }
+            total.requests += row.requests;
+            total.pollen_earned += row.pollen_earned;
+            total.paid_earned += row.paid_earned;
+            total.tier_earned += row.tier_earned;
+            total.paid_requests += row.paid_requests;
+            total.tier_requests += row.tier_requests;
+        }
+        return Array.from(totals.values());
+    }, [selectedEarnings]);
 
     const chartData = useMemo<DataPoint[]>(() => {
         type DayBucket = {
             requests: number;
             pollen: number;
-            paid: number;
-            tier: number;
-            byEntity: Map<
-                string,
-                { label: string; requests: number; pollen: number }
-            >;
+            paidRequests: number;
+            tierRequests: number;
+            paidPollen: number;
+            tierPollen: number;
         };
         const buckets = new Map<string, DayBucket>();
 
-        for (const r of dailyEarnings) {
-            const dateKey = r.date;
-            const cur = buckets.get(dateKey) || {
+        for (const row of filteredDailyEarnings) {
+            const current = buckets.get(row.date) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
-                byEntity: new Map(),
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
             };
-            cur.requests += r.requests;
-            cur.pollen += r.pollen_earned;
-            cur.paid += r.paid_earned;
-            cur.tier += r.tier_earned;
+            current.requests += row.requests;
+            current.pollen += row.pollen_earned;
+            current.paidRequests += row.paid_requests;
+            current.tierRequests += row.tier_requests;
+            current.paidPollen += row.paid_earned;
+            current.tierPollen += row.tier_earned;
 
-            const entityKey = `${r.source}:${r.entity_id}`;
-            const entityData = cur.byEntity.get(entityKey) || {
-                label: `${formatEarningsSourceLabel(r.source)}: ${r.entity_name}`,
-                requests: 0,
-                pollen: 0,
-            };
-            entityData.requests += r.requests;
-            entityData.pollen += r.pollen_earned;
-            cur.byEntity.set(entityKey, entityData);
-            buckets.set(dateKey, cur);
+            buckets.set(row.date, current);
         }
 
         const isHourly = filters.period.granularity === "day";
@@ -213,124 +237,90 @@ export function useEarningsData(
                 bucketKey,
                 filters.period.granularity,
             );
-            const d = buckets.get(bucketKey) || {
+            const bucket = buckets.get(bucketKey) || {
                 requests: 0,
                 pollen: 0,
-                paid: 0,
-                tier: 0,
-                byEntity: new Map<
-                    string,
-                    { label: string; requests: number; pollen: number }
-                >(),
+                paidRequests: 0,
+                tierRequests: 0,
+                paidPollen: 0,
+                tierPollen: 0,
             };
-            const entityBreakdown: ModelBreakdown[] = Array.from(
-                d.byEntity.entries(),
-            )
-                .map(([entityKey, entityStats]) => ({
-                    model: entityKey,
-                    label: entityStats.label,
-                    requests: entityStats.requests,
-                    pollen: entityStats.pollen,
-                }))
-                .sort((a, b) => b.pollen - a.pollen);
+            const isRequestsMetric = filters.metric === "requests";
 
             return {
-                label: isHourly
-                    ? date.toLocaleTimeString("en-US", {
-                          timeZone: "UTC",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      })
-                    : date.toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                          month: "short",
-                          day: "numeric",
-                      }),
-                fullDate: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(isHourly && {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    }),
-                }),
-                value: d.pollen,
-                tierValue: d.tier,
-                paidValue: d.paid,
+                ...formatActivityChartDate(date, isHourly),
+                value: isRequestsMetric ? bucket.requests : bucket.pollen,
+                tierValue: isRequestsMetric
+                    ? bucket.tierRequests
+                    : bucket.tierPollen,
+                paidValue: isRequestsMetric
+                    ? bucket.paidRequests
+                    : bucket.paidPollen,
                 timestamp: date,
-                modelBreakdown: entityBreakdown,
             };
         });
-    }, [dailyEarnings, filters.period]);
+    }, [filteredDailyEarnings, filters.metric, filters.period]);
 
     const stats = useMemo(() => {
-        const totalPollen = totalSummary.pollen_earned;
-        const totalPaid = totalSummary.paid_earned;
-        const totalTier = totalSummary.tier_earned;
-        const appMarkupPollen =
-            bySource.find((r) => r.source === "byop_markup")?.pollen_earned ??
-            0;
-        const modelRewardPollen =
-            bySource.find((r) => r.source === "community_model")
-                ?.pollen_earned ?? 0;
-        const sourceSummaries = bySource.map((row) => ({
-            source: row.source,
-            label: formatEarningsSourceLabel(row.source),
-            requests: row.requests,
-            pollen: row.pollen_earned,
-            paidPollen: row.paid_earned,
-            tierPollen: row.tier_earned,
-            uniqueUsers: row.unique_users,
-            rewardRate: row.reward_rate,
-        }));
-        const entityCount = perEntity.length;
-        const appCount = perEntity.filter(
-            (r) => r.source === "byop_markup",
-        ).length;
-        const modelCount = perEntity.filter(
-            (r) => r.source === "community_model",
-        ).length;
+        const totalRequests = filteredPerEntity.reduce(
+            (sum, row) => sum + row.requests,
+            0,
+        );
+        const totalPollen = filteredPerEntity.reduce(
+            (sum, row) => sum + row.pollen_earned,
+            0,
+        );
+        const totalPaid = filteredPerEntity.reduce(
+            (sum, row) => sum + row.paid_earned,
+            0,
+        );
+        const totalTier = filteredPerEntity.reduce(
+            (sum, row) => sum + row.tier_earned,
+            0,
+        );
 
-        const topEntityRow = [...perEntity].sort(
-            (a, b) => b.pollen_earned - a.pollen_earned,
-        )[0];
-        const topEntity: TopEarningEntity | null = topEntityRow
-            ? {
-                  id: topEntityRow.entity_id,
-                  label: topEntityRow.entity_name,
-                  source: topEntityRow.source,
-                  requests: topEntityRow.requests,
-                  pollen: topEntityRow.pollen_earned,
-                  paidPollen: topEntityRow.paid_earned,
-                  tierPollen: topEntityRow.tier_earned,
-                  uniqueUsers: topEntityRow.unique_users,
-              }
-            : null;
+        const entityBreakdowns: EarningEntity[] = filteredPerEntity
+            .map((row) => ({
+                id: `${row.source}:${row.entity_id}`,
+                source: row.source,
+                label: row.entity_name,
+                requests: row.requests,
+                pollen: row.pollen_earned,
+                paidPollen: row.paid_earned,
+                tierPollen: row.tier_earned,
+                paidRequests: row.paid_requests,
+                tierRequests: row.tier_requests,
+            }))
+            .sort((a, b) => b[filters.metric] - a[filters.metric]);
 
         return {
+            totalRequests,
             totalPollen,
             totalPaid,
             totalTier,
-            appMarkupPollen,
-            modelRewardPollen,
-            sourceSummaries,
-            entityCount,
-            appCount,
-            modelCount,
-            topEntity,
+            paidRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.paid_requests,
+                0,
+            ),
+            tierRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.tier_requests,
+                0,
+            ),
+            entityBreakdowns,
         };
-    }, [perEntity, bySource, totalSummary]);
+    }, [filteredPerEntity, filters.metric]);
 
     return {
         loading,
+        refreshing,
         error,
         fetchEarnings,
+        usedApps,
+        usedModels,
         chartData,
         stats,
+        exportRows: dailyEarnings,
+        hasData: filteredDailyEarnings.length > 0,
+        hasPeriodData: dailyEarnings.length > 0,
     };
 }

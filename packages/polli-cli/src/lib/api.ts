@@ -1,5 +1,6 @@
+import { POLLI_CLIENT } from "./client.js";
 import { BASE_URL, resolveApiKey } from "./config.js";
-import { printError } from "./output.js";
+import { fail, printError } from "./output.js";
 
 export class ApiError extends Error {
     constructor(
@@ -15,10 +16,9 @@ export const requireKey = (): string => {
     const key = resolveApiKey();
     if (!key) {
         printError("Not logged in. Run: polli auth login");
-        printError(
+        fail(
             "Or pipe a key: printf '%s' '<your-key>' | polli auth login --with-token",
         );
-        process.exit(1);
     }
     return key;
 };
@@ -29,16 +29,17 @@ interface RequestOptions {
     apiKey?: string;
 }
 
-const request = async <T>(
+const send = async (
     baseUrl: string,
     path: string,
     options: RequestOptions = {},
-): Promise<T> => {
+): Promise<Response> => {
     const { method = "GET", body, apiKey } = options;
     const key = resolveApiKey(apiKey);
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        "X-Polli-Client": POLLI_CLIENT,
     };
     if (key) headers.Authorization = `Bearer ${key}`;
 
@@ -56,8 +57,22 @@ const request = async <T>(
         );
     }
 
+    return res;
+};
+
+const request = async <T>(
+    baseUrl: string,
+    path: string,
+    options: RequestOptions = {},
+): Promise<T> => {
+    const res = await send(baseUrl, path, options);
     return res.json() as Promise<T>;
 };
 
 export const gen = <T>(path: string, options?: RequestOptions) =>
     request<T>(BASE_URL, path, options);
+
+/** Same as `gen`, but returns the raw response body for non-JSON formats
+ * (e.g. `format=csv` exports). */
+export const genText = async (path: string, options?: RequestOptions) =>
+    (await send(BASE_URL, path, options)).text();

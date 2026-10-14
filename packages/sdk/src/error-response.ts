@@ -1,12 +1,5 @@
 import { PollinationsError } from "./types.js";
 
-// Default Retry-After delay for rate-limit errors when the header is missing
-// or malformed (seconds)
-const DEFAULT_RETRY_AFTER = 60;
-// Cap honored Retry-After so a malicious or misconfigured upstream
-// cannot force the client into an indefinite sleep.
-const MAX_RETRY_AFTER_SECONDS = 300;
-
 // Parse Retry-After header (can be seconds or HTTP date)
 function parseRetryAfter(response: Response): number | undefined {
     const retryAfter = response.headers.get("Retry-After");
@@ -18,7 +11,7 @@ function parseRetryAfter(response: Response): number | undefined {
     // retry delay.
     const seconds = Number(retryAfter);
     if (Number.isFinite(seconds) && seconds >= 0) {
-        return Math.min(seconds, MAX_RETRY_AFTER_SECONDS);
+        return seconds;
     }
 
     // Try parsing as HTTP date
@@ -59,7 +52,9 @@ export async function pollinationsErrorFromResponse(
     const message =
         typeof nested.message === "string"
             ? nested.message
-            : `Request failed with status ${response.status}`;
+            : typeof record.error === "string"
+              ? record.error
+              : `Request failed with status ${response.status}`;
     const code =
         typeof nested.code === "string"
             ? nested.code
@@ -70,12 +65,13 @@ export async function pollinationsErrorFromResponse(
         nested.details && typeof nested.details === "object"
             ? (nested.details as Record<string, unknown>)
             : undefined;
+    // Prefer the request ID from the error body; fall back to the response's
+    // X-Request-Id header so users can always include it in support reports.
     const requestId =
-        typeof nested.requestId === "string" ? nested.requestId : undefined;
-    const retryAfter =
-        response.status === 429
-            ? (parseRetryAfter(response) ?? DEFAULT_RETRY_AFTER)
-            : parseRetryAfter(response);
+        typeof nested.requestId === "string"
+            ? nested.requestId
+            : (response.headers.get("X-Request-Id") ?? undefined);
+    const retryAfter = parseRetryAfter(response);
 
     return new PollinationsError(
         message,

@@ -1,20 +1,21 @@
 export {
+    AuthAccessItem,
+    AuthFlowLayout,
     AuthInfoCard,
     type AuthInfoCardProps,
     AuthModal,
+    AuthModalFootnote,
     AuthModalHeader,
     type AuthModalHeaderProps,
     AuthModalLoading,
     type AuthModalProps,
     ErrorBanner,
 } from "./AuthModal.tsx";
+export { DashboardAccountMenu } from "./DashboardAccountMenu.tsx";
+export { DashboardSignIn } from "./DashboardSignIn.tsx";
+export { GitHubSignInButton } from "./GitHubSignInButton.tsx";
+export { GoogleSignInButton } from "./GoogleSignInButton.tsx";
 export {
-    SocialSignInButtons,
-    type SocialSignInButtonsProps,
-} from "./SocialSignInButtons.tsx";
-export {
-    isSocialProvider,
-    SOCIAL_PROVIDER_LABELS,
-    type SocialProvider,
-    type SocialProviderConfig,
-} from "./social-providers.ts";
+    PollinationsSignInButton,
+    type PollinationsSignInButtonProps,
+} from "./PollinationsSignInButton.tsx";

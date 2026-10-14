@@ -1,76 +1,62 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
+    MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import {
+    attachFallbackTarget,
+    type FallbackCandidate,
+    fallbackCandidates,
+    withModelFallback,
+} from "../fallback.ts";
+import { fixWavHeader } from "../routes/audio.js";
+import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { createPromptAgentResponsesClient } from "./agents/client.ts";
+import { createCodeAgentResponsesClient } from "./agents/code-client.ts";
+import { publicChatChoices, publicChatStream } from "./chat/public.ts";
+import { completionToChatStream } from "./chat/stream.ts";
+import {
+    requireChatCompletionUsage,
+    requireChatStreamUsage,
+} from "./chat/usage.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import { syncTextEnvironment } from "./environment.js";
+import { throwTextError } from "./errors.js";
+import {
+    supportsTextFallbackRequest,
+    textCapabilityError,
+} from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
-import { type ExpressLikeRequest, getRequestData } from "./requestUtils.js";
-import type { ChatCompletion, RequestData, ServiceError } from "./types.js";
+import {
+    getChatRequestData,
+    getSimpleTextRequestData,
+} from "./requestUtils.js";
+import type {
+    ChatCompletion,
+    RequestData,
+    ServiceError,
+    TransformOptions,
+} from "./types.js";
 
 type TextContext = Context<Env>;
-
-const TEXT_ENV_KEYS = [
-    "AWS_ACCESS_KEY_ID",
-    "AWS_REGION",
-    "AWS_SECRET_ACCESS_KEY",
-    "AZURE_MYCELI_PROD_API_KEY",
-    "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    "DASHSCOPE_API_KEY",
-    "FIREWORKS_API_KEY",
-    "GOOGLE_CLIENT_EMAIL",
-    "GOOGLE_PRIVATE_KEY",
-    "GOOGLE_PRIVATE_KEY_ID",
-    "GOOGLE_PROJECT_ID",
-    "INCEPTION_API_KEY",
-    "OPENROUTER_API_KEY",
-    "OVHCLOUD_API_KEY",
-    "PERPLEXITY_API_KEY",
-    "PORTKEY_GATEWAY_URL",
-] as const satisfies readonly (keyof CloudflareBindings)[];
-
-function syncTextEnvironment(env: CloudflareBindings): void {
-    // Text provider config still reads process.env. In Workers all bindings are
-    // stable per deployment, so copying known string bindings before generation
-    // is deterministic across concurrent requests in the same isolate.
-    for (const key of TEXT_ENV_KEYS) {
-        const value = env[key];
-        if (typeof value === "string") {
-            process.env[key] = value;
-        }
-    }
-}
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
-function createExpressLikeRequest(
-    c: TextContext,
-    body: Record<string, unknown>,
-    path: string,
-    params: Record<string, string> = {},
-): ExpressLikeRequest {
-    return {
-        query: Object.fromEntries(new URL(c.req.url).searchParams),
-        body,
-        path,
-        params,
-        method: c.req.method,
-        headers: Object.fromEntries(c.req.raw.headers.entries()),
-        url: c.req.url,
-    };
-}
-
 function prepareRequestParameters(
     requestParams: RequestData,
-    modelDefinition: ModelDefinition<string>,
+    modelDefinition: ModelDefinition,
 ): RequestData {
     const isAudioModel =
         modelDefinition.outputModalities?.includes("audio") ?? false;
@@ -91,6 +77,90 @@ function prepareRequestParameters(
     };
 }
 
+/**
+ * How to reach one candidate's provider.
+ *
+ * Built per attempt rather than once up front, so a delegating fallback mints
+ * its own run token and no attempt ever carries another endpoint's credential.
+ */
+async function gatewayContext(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<TransformOptions> {
+    const { communityEndpoint, definition } = candidate;
+    // A fallback must resolve transforms from the model that will actually run.
+    const candidateRequest = candidate.entry
+        ? { ...requestData, model: candidate.id }
+        : requestData;
+    // Paired by fallbackCandidates: a community endpoint always arrives with the
+    // definition that prices it. Anything else is a static model, whose provider
+    // config the gateway resolves from the model id.
+    if (!communityEndpoint || !definition) {
+        return withGatewayContext(c, candidateRequest);
+    }
+    const context = await communityEndpointGatewayContext({
+        endpoint: communityEndpoint,
+        modelDefinition: definition,
+        requestData: candidateRequest,
+        secret: c.env.BETTER_AUTH_SECRET,
+        portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
+        userApiKey: c.var.auth?.apiKey?.rawKey || "",
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
+    if (
+        communityEndpoint.type !== "prompt_agent" &&
+        communityEndpoint.type !== "code_agent"
+    )
+        return context;
+
+    const apiKey = context.modelConfig?.authKey;
+    if (typeof apiKey !== "string" || !apiKey) {
+        throw new Error("Managed agent request has no agent run token");
+    }
+    const client =
+        communityEndpoint.type === "prompt_agent"
+            ? await createPromptAgentResponsesClient(
+                  c,
+                  communityEndpoint,
+                  apiKey,
+              )
+            : createCodeAgentResponsesClient(c, communityEndpoint, apiKey);
+    return {
+        ...context,
+        responsesFetcher: client.fetcher,
+        modelConfig: {
+            ...context.modelConfig,
+            responsesEndpoint: client.target.endpoint,
+        },
+    };
+}
+
+/** One Chat provider call for one candidate, shared by Chat and adapted Responses. */
+export async function generateChatAttempt(
+    c: TextContext,
+    requestData: RequestData,
+    candidate: FallbackCandidate,
+): Promise<ChatCompletion> {
+    const portkey = c.env.PORTKEY;
+    // An upstream without SSE is asked for JSON, then its answer is replayed
+    // as a stream.
+    const buffered =
+        requestData.stream === true &&
+        candidate.definition?.supportsStreaming === false;
+    const attemptData = buffered
+        ? { ...requestData, stream: false }
+        : requestData;
+    const result = await generateTextPortkey(
+        attemptData.messages,
+        await gatewayContext(c, attemptData, candidate),
+        portkey ? (input, init) => portkey.fetch(input, init) : undefined,
+    );
+    if (!attemptData.stream) requireChatCompletionUsage(result);
+    return buffered ? completionToChatStream(result) : result;
+}
+
 function withGatewayContext(c: TextContext, requestData: RequestData) {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
 
@@ -101,18 +171,33 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
     };
 }
 
-function usageHeaders(completion: ChatCompletion): Headers {
+/**
+ * `servedModelId` is our id for the model that ran, and it wins over the name
+ * the provider reports for itself. A community endpoint answers with its
+ * upstream's name — "gemini-2.0-flash" for what we and its owner both call
+ * "alice/pro" — which names something nobody can act on, and after a fallback
+ * names the wrong party's model.
+ */
+function usageHeaders(
+    completion: ChatCompletion,
+    servedModelId?: string,
+): Headers {
     const headers = new Headers();
-    if (completion?.usage && completion?.model) {
-        const usage = openaiUsageToUsage(
-            completion.usage as unknown as Parameters<
-                typeof openaiUsageToUsage
-            >[0],
-        );
+    const modelUsed = servedModelId || completion?.model;
+    if (modelUsed) {
+        const usage = completion?.usage;
+        const normalizedUsage = usage
+            ? openaiUsageToUsage(
+                  usage as unknown as Parameters<typeof openaiUsageToUsage>[0],
+              )
+            : undefined;
         for (const [key, value] of Object.entries(
-            buildUsageHeaders(completion.model, usage),
+            buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
         }
     }
     if (completion?.fallbackTarget) {
@@ -121,8 +206,50 @@ function usageHeaders(completion: ChatCompletion): Headers {
     return headers;
 }
 
-function sendOpenAIResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function publicCompletionUsage(
+    usage: ChatCompletion["usage"],
+): ChatCompletion["usage"] {
+    if (!usage || (!("cost" in usage) && !("search_context_size" in usage))) {
+        return usage;
+    }
+
+    const {
+        cost: _cost,
+        search_context_size: _searchContextSize,
+        ...publicUsage
+    } = usage;
+    return publicUsage;
+}
+
+function publicChatCompletion(
+    completion: ChatCompletion,
+    isVercel: boolean,
+): ChatCompletion {
+    const usage = publicCompletionUsage(completion.usage);
+    if (!isVercel && usage === completion.usage) return completion;
+    const publicCompletion = {
+        ...completion,
+        usage,
+        choices: isVercel
+            ? publicChatChoices(completion.choices)
+            : completion.choices,
+    };
+    if (completion.fallbackTarget !== undefined) {
+        Object.defineProperty(publicCompletion, "fallbackTarget", {
+            value: completion.fallbackTarget,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
+    }
+    return publicCompletion;
+}
+
+function sendOpenAIResponse(
+    completion: ChatCompletion,
+    servedModelId?: string,
+): Response {
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -130,19 +257,24 @@ function sendOpenAIResponse(completion: ChatCompletion): Response {
             ...completion,
             id: completion.id || generatePollinationsId(),
             object: completion.object || "chat.completion",
-            created: completion.created || Date.now(),
+            created: completion.created || Math.floor(Date.now() / 1000),
         }),
         { headers },
     );
 }
 
-function sendTextContentResponse(completion: ChatCompletion): Response {
-    const headers = usageHeaders(completion);
+function sendTextContentResponse(
+    completion: ChatCompletion,
+    servedModelId: string | undefined,
+    upstreamRequestUrl: URL | undefined,
+): Response {
+    const headers = usageHeaders(completion, servedModelId);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
         throw new UpstreamError(502, {
             message: "Unrecognized response format from text model",
+            requestUrl: upstreamRequestUrl,
             responseBody: JSON.stringify(completion),
         });
     }
@@ -156,8 +288,20 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
 
     const audio = message.audio as Record<string, unknown> | undefined;
     if (typeof audio?.data === "string") {
-        headers.set("Content-Type", "audio/mpeg");
-        return new Response(base64ToArrayBuffer(audio.data), { headers });
+        const buffer = base64ToArrayBuffer(audio.data);
+        const isWav =
+            buffer.byteLength >= 12 &&
+            new Uint8Array(buffer, 0, 4).reduce(
+                (s, b) => s + String.fromCharCode(b),
+                "",
+            ) === "RIFF";
+        if (isWav) {
+            fixWavHeader(buffer);
+            headers.set("Content-Type", "audio/wav");
+        } else {
+            headers.set("Content-Type", "audio/mpeg");
+        }
+        return new Response(buffer, { headers });
     }
 
     if (message.content !== undefined && message.content !== null) {
@@ -182,36 +326,33 @@ function sendTextContentResponse(completion: ChatCompletion): Response {
     return new Response("", { headers });
 }
 
-function sendTextStreamResponse(completion: ChatCompletion): Response {
+function sendTextStreamResponse(
+    completion: ChatCompletion,
+    servedModelId?: string,
+): Response {
     const headers = new Headers({
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
     });
-    // sendTextStreamResponse bypasses usageHeaders(), so set the fallback
-    // header here too — tracking reads it off the worker response for streams.
+    // sendTextStreamResponse bypasses usageHeaders(), so set what tracking
+    // reads off the worker response for streams here instead. Without the
+    // model header a streamed generation is attributed to whatever name the
+    // provider puts in its chunks, which after a rescue is the wrong owner's.
+    if (servedModelId) {
+        headers.set(MODEL_USED_HEADER, servedModelId);
+    }
     if (completion.fallbackTarget) {
         headers.set(FALLBACK_TARGET_HEADER, completion.fallbackTarget);
     }
 
-    if (completion.responseStream instanceof ReadableStream) {
-        return new Response(completion.responseStream, { headers });
+    if (!completion.responseStream) {
+        throw new UpstreamError(502, {
+            message: "Text model returned an empty stream",
+            requestUrl: completion.upstreamRequestUrl,
+        });
     }
-
-    // Defensive: upstream produced a null stream body.
-    const encoder = new TextEncoder();
-    const fallbackStream = new ReadableStream<Uint8Array>({
-        start(controller) {
-            controller.enqueue(
-                encoder.encode(
-                    `data: ${JSON.stringify({ choices: [{ delta: { content: "Streaming response could not be processed." }, finish_reason: "stop", index: 0 }] })}\n\n`,
-                ),
-            );
-            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            controller.close();
-        },
-    });
-    return new Response(fallbackStream, { headers });
+    return new Response(completion.responseStream, { headers });
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -223,32 +364,6 @@ function base64ToArrayBuffer(value: string): ArrayBuffer {
     return bytes.buffer;
 }
 
-function serializeDetails(details: unknown): string | undefined {
-    if (details === undefined || details === null) return undefined;
-    return typeof details === "string" ? details : JSON.stringify(details);
-}
-
-function throwTextError(error: ServiceError, c: TextContext): never {
-    const status =
-        typeof error.status === "number"
-            ? error.status
-            : typeof error.code === "number"
-              ? error.code
-              : 500;
-    const upstreamStatus =
-        typeof error.upstreamStatus === "number"
-            ? error.upstreamStatus
-            : status;
-
-    throw new UpstreamError(status as ContentfulStatusCode, {
-        message: error.message || "Text generation failed",
-        requestUrl: new URL(c.req.url),
-        upstreamStatus,
-        responseBody: serializeDetails(error.details || error.response?.data),
-        cause: error,
-    });
-}
-
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -257,63 +372,92 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        const communityEndpoint = c.var.model?.communityEndpoint;
-        const gatewayContext = communityEndpoint
-            ? await communityEndpointGatewayContext(
-                  communityEndpoint,
-                  c.var.model.definition,
-                  requestData,
-                  c.env.BETTER_AUTH_SECRET,
-                  c.env.PORTKEY_GATEWAY_URL,
-                  c.var.auth?.apiKey?.rawKey || "",
-              )
-            : withGatewayContext(c, requestData);
-        const completion = await generateTextPortkey(
-            requestData.messages,
-            gatewayContext,
+        const capabilityError = textCapabilityError(
+            c.var.model?.definition,
+            requestData,
+            c.var.model?.communityEndpoint,
         );
+        if (capabilityError)
+            throw new UpstreamError(400, { message: capabilityError });
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        requestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
+            (attempt) => generateChatAttempt(c, requestData, attempt),
+            c.var.track?.attempts,
+            (attempt) => enforceModelRateLimit(c, attempt),
+        );
+        c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
         completion.id = completion.id || generatePollinationsId();
+        // Keep the internal "config.targets[N]" marker stable for response
+        // headers and cached tracking data. Non-enumerable so JSON.stringify /
+        // R2 cache snapshots never leak the field.
+        attachFallbackTarget(completion, candidate.originalIndex);
 
-        if (completion.error) {
-            const errorObj =
-                typeof completion.error === "string"
-                    ? { message: completion.error }
-                    : completion.error;
-            const error = new Error(
-                errorObj.message || "Text generation failed",
-            ) as ServiceError;
-            if (typeof errorObj.status === "number") {
-                error.status = remapUpstreamStatus(errorObj.status);
-                error.upstreamStatus = errorObj.status;
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
+        const isVercel = candidate.definition?.provider === "vercel";
+        if (requestData.stream) {
+            if (!completion.responseStream) {
+                return sendTextStreamResponse(completion, servedModelId);
             }
-            error.details = errorObj.details;
-            throw error;
+            // Client and billing must see the same validation errors.
+            const [clientBody, trackingBody] = requireChatStreamUsage(
+                completion.responseStream,
+            ).tee();
+            completion.responseStream = isVercel
+                ? publicChatStream(clientBody)
+                : clientBody;
+            const response = sendTextStreamResponse(completion, servedModelId);
+            c.var.track?.overrideResponseTracking(
+                new Response(trackingBody, { headers: response.headers }),
+            );
+            return response;
         }
-
-        if (requestData.stream) return sendTextStreamResponse(completion);
-        if (contentResponse) return sendTextContentResponse(completion);
-        return sendOpenAIResponse(completion);
+        // Provider-reported cost is read post-response in track (clamp-and-alert
+        // in the registry) — malformed/absent cost never fails the request.
+        const trackingResponse = sendOpenAIResponse(completion, servedModelId);
+        const publicCompletion = publicChatCompletion(completion, isVercel);
+        if (contentResponse) {
+            c.var.track?.overrideResponseTracking(trackingResponse.clone());
+            return sendTextContentResponse(
+                publicCompletion,
+                servedModelId,
+                c.var.upstreamRequestUrl,
+            );
+        }
+        c.var.track?.overrideResponseTracking(trackingResponse.clone());
+        return sendOpenAIResponse(publicCompletion, servedModelId);
     } catch (thrown: unknown) {
-        throwTextError(thrown as ServiceError, c);
+        throwTextError(thrown as ServiceError);
     }
 }
 
 export async function handleChatCompletionLocal(
     c: TextContext,
-    body: Record<string, unknown>,
+    body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, "/openai");
-    const requestData = getRequestData(req);
-    return generateTextResponse(c, requestData, false);
+    return generateTextResponse(c, getChatRequestData(body), false);
 }
 
 export async function handleTextContentLocal(
     c: TextContext,
-    body: Record<string, unknown>,
+    body: CreateChatCompletionRequest,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, c.req.path);
     const requestData = prepareRequestParameters(
-        getRequestData(req),
+        getChatRequestData(body),
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);
@@ -323,17 +467,10 @@ export async function handleSimpleTextLocal(
     c: TextContext,
     prompt: string,
     model: string,
-    body: Record<string, unknown> = {},
+    query: GenerateTextRequestQueryParams,
 ): Promise<Response> {
-    const req = createExpressLikeRequest(c, body, c.req.path, {
-        ...c.req.param(),
-        0: prompt,
-    });
     const requestData = prepareRequestParameters(
-        {
-            ...getRequestData(req),
-            model,
-        },
+        getSimpleTextRequestData(prompt, model, query),
         c.var.model.definition,
     );
     return generateTextResponse(c, requestData, true);

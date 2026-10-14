@@ -1,32 +1,25 @@
-import type { PeriodSelection } from "@pollinations/ui";
+import type { ActivityPeriod } from "./activity-period";
 
 export type DailyUsageRecord = {
     date: string;
+    api_key_id: string;
+    api_key: string | null;
     model: string | null;
     meter_source: string | null;
     requests: number;
     cost_usd: number;
 };
 
-export type { PeriodGranularity } from "@pollinations/ui";
-
-export type UsagePeriodSelection = PeriodSelection;
-
 export type Metric = "requests" | "pollen";
 
 export type FilterState = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
     metric: Metric;
     selectedKeyIds: string[];
     selectedModels: string[];
 };
 
-export type ModelBreakdown = {
-    model: string;
-    label: string;
-    requests: number;
-    pollen: number;
-};
+export type UsageGroupBy = "model" | "key";
 
 export type DataPoint = {
     label: string;
@@ -35,5 +28,4 @@ export type DataPoint = {
     paidValue: number;
     timestamp: Date;
     fullDate: string;
-    modelBreakdown?: ModelBreakdown[];
 };

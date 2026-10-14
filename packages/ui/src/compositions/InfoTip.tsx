@@ -5,23 +5,32 @@ type InfoTipProps = {
     text?: ReactNode;
     content?: ReactNode;
     label?: string;
+    /** Also opens on tap, for help that matters on phones. */
+    tapEnabled?: boolean;
 };
 
 /**
  * Small "i" badge that opens a tooltip on hover, click, or focus.
  *
- * Both the badge and the popup follow the page theme: badge reads
- * `bg-theme-bg-active`; popup uses the universal recipe via `<Tooltip>`
- * (`bg-theme-bg-pale` + `border-theme-border` + normal inherited-safe
- * typography, viewport-clamped). Cursor on the badge is `cursor-help`.
+ * Quiet neutral badge and shared, viewport-clamped tooltip popup.
+ * The help cursor indicates that more information is available.
  */
 export const InfoTip: FC<InfoTipProps> = ({
     text,
     content,
     label = "More info",
+    tapEnabled,
 }) => (
-    <Tooltip content={content ?? text} ariaLabel={label} className="polli:ml-1">
-        <span className="polli:inline-flex polli:h-3.5 polli:w-3.5 polli:items-center polli:justify-center polli:rounded-full polli:border polli:border-theme-border polli:bg-theme-bg-active polli:font-bold polli:text-micro polli:text-theme-text-strong polli:transition-colors">
+    // displayContents drops the inline wrapper so the badge centres on its row
+    // instead of sitting on the text baseline.
+    <Tooltip
+        content={content ?? text}
+        ariaLabel={label}
+        className="polli:ml-1"
+        displayContents
+        tapEnabled={tapEnabled}
+    >
+        <span className="polli:inline-flex polli:h-4 polli:w-4 polli:items-center polli:justify-center polli:rounded-full polli:bg-surface-menu polli:font-bold polli:text-[10px] polli:leading-none polli:text-theme-text-muted polli:transition-colors polli:hover:text-theme-text-strong">
             i
         </span>
     </Tooltip>

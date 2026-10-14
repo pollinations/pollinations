@@ -1,0 +1,14 @@
+# Versions verified together on Vast RTX 5090 with PyTorch 2.9.1 cu128.
+accelerate==1.14.0
+aiohttp==3.14.1
+diffusers==0.39.0
+fastapi==0.139.2
+huggingface-hub==1.24.0
+numpy==2.4.4
+pillow==12.2.0
+pydantic==2.13.4
+requests==2.34.2
+safetensors==0.8.0
+spandrel==0.4.2
+transformers==5.14.1
+uvicorn==0.51.0

@@ -15,10 +15,21 @@ const CREDENTIAL_QUERY_PARAMS = new Set([
     "authorization",
     "bearer_token",
     "bearertoken",
+    "headers",
     "key",
     "token",
 ]);
 const REDACTED = "[redacted]";
+
+export function redactCredentialQueryParams(url: URL): string {
+    const redacted = new URL(url);
+    for (const param of redacted.searchParams.keys()) {
+        if (CREDENTIAL_QUERY_PARAMS.has(param.toLowerCase())) {
+            redacted.searchParams.set(param, REDACTED);
+        }
+    }
+    return redacted.toString();
+}
 
 export async function collectRequestInputs(c: Context): Promise<RequestInputs> {
     const inputs: RequestInputs = {

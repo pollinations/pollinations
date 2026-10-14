@@ -96,9 +96,37 @@ describe("createClaudeThinkingTransform — adaptive mode (Sonnet 4.6 and Opus 4
     });
 });
 
+describe("createClaudeThinkingTransform — adaptive mode with upstream default on", () => {
+    const adaptiveDefaultOff = createClaudeThinkingTransform("adaptive", true);
+
+    it("explicitly disables thinking by default", async () => {
+        const { options } = await adaptiveDefaultOff([], {});
+        expect(options.thinking).toEqual({ type: "disabled" });
+        expect(options.output_config).toBeUndefined();
+    });
+
+    it("explicitly disables thinking for reasoning_effort=none", async () => {
+        const { options } = await adaptiveDefaultOff([], {
+            reasoning_effort: "none",
+        });
+        expect(options.thinking).toEqual({ type: "disabled" });
+        expect(options.reasoning_effort).toBeUndefined();
+    });
+
+    it("enables adaptive thinking when requested", async () => {
+        const { options } = await adaptiveDefaultOff([], {
+            reasoning_effort: "high",
+        });
+        expect(options.thinking).toEqual({ type: "adaptive" });
+        expect(options.output_config).toEqual({ effort: "high" });
+    });
+});
+
 describe("Claude thinking model wiring", () => {
     it("wires budget thinking on claude-fast", async () => {
-        const transform = findModelByName("claude-fast")?.transform;
+        const transform = findModelByName(
+            "anthropic/claude-haiku-4.5",
+        )?.transform;
         if (!transform) throw new Error("claude-fast transform missing");
         const { options } = await transform([{ role: "user", content: "hi" }], {
             reasoning_effort: "high",
@@ -110,10 +138,12 @@ describe("Claude thinking model wiring", () => {
     });
 
     it.each([
-        "claude",
-        "claude-opus-4.6",
-        "claude-large",
-        "claude-opus-4.7",
+        "anthropic/claude-sonnet-4.6",
+        "anthropic/claude-opus-4.6",
+        "anthropic/claude-opus-5",
+        "anthropic/claude-opus-4.7",
+        "anthropic/claude-fable-5",
+        "anthropic/claude-fable-5.1",
     ])("wires adaptive thinking on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);
@@ -122,5 +152,29 @@ describe("Claude thinking model wiring", () => {
         });
         expect(options.thinking).toEqual({ type: "adaptive" });
         expect(options.output_config).toEqual({ effort: "high" });
+    });
+
+    it("keeps claude-large reasoning opt-in", async () => {
+        const transform = findModelByName("anthropic/claude-opus-5")?.transform;
+        if (!transform) throw new Error("claude-large transform missing");
+        const { options } = await transform(
+            [{ role: "user", content: "hi" }],
+            {},
+        );
+        expect(options.thinking).toEqual({ type: "disabled" });
+    });
+
+    it("does not send unsupported disabled thinking to Bedrock Opus 5.5", async () => {
+        const transform = findModelByName(
+            "anthropic/claude-opus-5.5",
+        )?.transform;
+        if (!transform) throw new Error("Opus 5.5 transform missing");
+        for (const reasoning_effort of [undefined, "none"] as const) {
+            const { options } = await transform(
+                [{ role: "user", content: "hi" }],
+                { reasoning_effort },
+            );
+            expect(options.thinking).toBeUndefined();
+        }
     });
 });

@@ -1,7 +1,7 @@
 export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     36901823, // ElliotEtag
     5099901, // voodoohop
-    235942848, // thomashmyceli
+    101795137, // lizzieliza
     248917639, // fouchyelliot-rgb
     241978997, // pollen-router
     189873015, // sharktide
@@ -12,6 +12,64 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     93234024, // skullcrushercmd
     201248601, // CloudCompile
     206557620, // smplstuff
+    201380514, // MarcosFRG
+    88273873, // ytpk
+    45744798, // Minor-fun
+    178960782, // morriszdweck
+    219871313, // mikl-shortcuts
+    45357531, // cemalgnlts
+    123343834, // LynxUnbanned
+    244879637, // Catniti
+    216855486, // Bakhshi7889
+    64634725, // vendouple
+    182555207, // YoannDev90
+    195966113, // JustScriptzz
+    113566110, // riofndev
+    188266626, // solarnode-developement
+    183505255, // timemachine-studio
+    228371309, // gggff123
+    184364250, // Takax62
+    162339795, // meow18838
+    130518306, // Lorodn4x
+    198414737, // AkshayCoder48
+    205307392, // chirag-gamer
+    240205932, // pollinations-router
+    314960022, // pollinations-ai
+    57826942, // guus6457
+    36392751, // chigwell
+    228795921, //novastardev
+    30191185, // rekty
+    85689068, // pegalink
+    147928812, // iotserver24
+    24752658, // zero2launch
+    63298614, // xiaotian1171
+    84572851, // immature-yt
+    177411725, // Davizigjojo
+    251958874, // scriptsnsenses-sys
+    313017538, // lolyeon2011-oss
+    160404236, // ZapGaming
+    232026792, // aikhusus2025-ctrl
+    286385677, // Creatneworld
+    156744205, // tsgabrielle
+    243879765, // fadyabohamza-netizen
+    77214872, // aadirajuthup
+    11493034, // Jonakss
+    334253163, // suniyintellekt998114-star
+    128448668, // Saauf
+    319410519, // afanasevmylife
+    133474899, // Marcus-Mok-GH
+    117812547, // kreggscode
+    202215077, // Guest453
+    181748869, // Apollohzl
+    293850242, // muhamedsohaib
+    311195727, // massafizidane21-ux
+    321230251, // vathsothary72-source
+    222464478, // achraf2011achraf
+    336811879, // helicopterbrr
+    118121166, // murderszn
+    228286415, // samueltargino0567-ux
+    140301069, // Derlifed
+    248852494, // floxygit
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

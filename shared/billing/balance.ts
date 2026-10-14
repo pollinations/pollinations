@@ -1,11 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import { user as userTable } from "../db/better-auth.ts";
-import {
-    type BalanceBucket,
-    selectDeductionBucket,
-    type UserBalance,
-} from "./bucket-selection.ts";
+import type { BalanceBucket, UserBalance } from "./bucket-selection.ts";
 
 export type { UserBalance } from "./bucket-selection.ts";
 
@@ -69,16 +65,14 @@ export function payerBucketToMeter(bucket: BalanceBucket): {
 export function createBalanceCheckResult(
     balances: UserBalance,
     isPaidOnly = false,
-    amount?: number,
 ): BalanceCheckResult {
-    let source: BalanceBucket;
-    if (typeof amount === "number" && amount > 0) {
-        source = selectDeductionBucket(balances, amount, isPaidOnly);
-    } else if (isPaidOnly) {
-        source = "pack";
-    } else {
-        source = balances.tierBalance > 0 ? "tier" : "pack";
-    }
+    // Which bucket the charge is expected to land in, for the reported meter.
+    // The authoritative choice is the SQL ladder in atomicDeductUserBalance.
+    const source: BalanceBucket = isPaidOnly
+        ? "pack"
+        : balances.tierBalance > 0
+          ? "tier"
+          : "pack";
     return {
         ...payerBucketToMeter(source),
         balances: {

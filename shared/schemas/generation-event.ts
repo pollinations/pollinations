@@ -1,4 +1,5 @@
 import type { ApiKeyType } from "../auth/api-key-creation.ts";
+import type { CommunityEndpointRuntime } from "../community-endpoints.ts";
 import type { PriceDefinition, Usage } from "../registry/registry.ts";
 import type { ContentFilterResult } from "./openai.ts";
 
@@ -9,25 +10,37 @@ export type EventType =
     | "generate.embedding"
     | "generate.realtime";
 
+export type TinybirdEventType = EventType | "mcp.call" | "sandbox.lease";
+
 // Plain TypeScript type for Tinybird events (no D1 table - events sent directly to Tinybird)
 export type TinybirdEvent = {
     id: string;
 
     // Request
     requestId: string;
+    // Set on generations made with a run token: the requestId of the call that
+    // minted it. Groups one agent call's model steps and tool calls; the parent
+    // row is free, so a run costs the sum over its children.
+    parentRequestId?: string;
     requestPath?: string;
     startTime: Date;
     endTime?: Date;
     responseTime?: number;
+    /** Duration of this upstream attempt, excluding earlier attempts. */
+    attemptResponseTime?: number;
     responseStatus?: number;
     environment?: string;
-    eventType: EventType;
+    eventType: TinybirdEventType;
+
+    // Cache identity is emitted only for requests that reached cache-backed
+    // generation handling. The key is SHA-256 hashed before ingestion.
+    cacheHit?: boolean;
+    cacheType?: string;
+    cacheKey?: string;
 
     // User
     userId?: string;
     userTier?: string;
-    userGithubId?: string;
-    userGithubUsername?: string;
 
     // API Key
     apiKeyId?: string;
@@ -37,11 +50,21 @@ export type TinybirdEvent = {
     apiKeyCreatedForApp?: string;
     apiKeyCreatedForUserId?: string;
     apiKeyClientId?: string;
+    apiKeyCreatedById?: string;
+    apiKeyOriginAppId?: string;
+    polliClientVersion?: string;
 
     // Meter
     selectedMeterId?: string;
     selectedMeterSlug?: string;
     balances?: Record<string, number>;
+
+    // Billing adjustments (search/tool fees). Keyed by versioned rule id
+    // (e.g. "google.gemini_3.search_query.v1"). Left undefined when the request
+    // had no adjustments so ClickHouse's DEFAULT map() fills them; a literal {}
+    // would serialize on every event since removeUnset only strips null/undefined.
+    adjustmentCosts?: Record<string, number>; // rule id → USD cost
+    adjustmentUnits?: Record<string, number>; // rule id → units charged (fractional-capable)
 
     // Network
     ipSubnet?: string;
@@ -52,12 +75,32 @@ export type TinybirdEvent = {
     referrerDomain?: string;
 
     // Model
+    /** Caller input, which may be an alias. */
     modelRequested?: string | null;
+    /** Canonical public model requested, before fallback. */
     resolvedModelRequested?: string;
+    /** Resolved request's listing type at execution time, not today's catalog. */
+    communityEndpointType?: CommunityEndpointRuntime["type"];
+    /** Exact registry ID attempted: the primary or a fallback, on success or failure. */
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Named conditional pricing sheet selected for this billed request. */
+    costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */
     fallbackUsed?: boolean;
+    /**
+     * True on the row that says how the request ENDED; false on a row recording
+     * one upstream call that was moved on from.
+     *
+     * About grain, not about fallback. This table used to be exactly one row per
+     * request and every consumer relies on that, so counting requests means
+     * counting these. A request that failed over emits one row per call it made,
+     * and only the last of them is the outcome. Rows where this is false carry
+     * the per-call detail: which model was tried, and how it failed.
+     *
+     * Defaults to true, matching every row written before fallback existed.
+     */
+    isFinal?: boolean;
     isBilledUsage: boolean;
 
     // Pricing
@@ -65,11 +108,14 @@ export type TinybirdEvent = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
+    tokenPricePromptVideoSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -88,6 +134,7 @@ export type TinybirdEvent = {
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
     tokenCountPromptAudioSeconds: number;
+    tokenCountPromptVideoSeconds: number;
     tokenCountCompletionAudioSeconds: number;
 
     // Totals
@@ -114,10 +161,6 @@ export type TinybirdEvent = {
     moderationCompletionProtectedMaterialCodeDetected?: boolean;
     moderationCompletionProtectedMaterialTextDetected?: boolean;
 
-    // Cache
-    cacheHit?: boolean;
-    cacheKey?: string;
-
     // Error
     errorResponseCode?: string;
     errorSource?: string;
@@ -129,11 +172,14 @@ export type GenerationEventPriceParams = {
     tokenPricePromptCached: number;
     tokenPricePromptCacheWrite: number;
     tokenPricePromptAudio: number;
+    tokenPricePromptAudioSeconds: number;
+    tokenPricePromptVideoSeconds: number;
     tokenPricePromptImage: number;
     tokenPricePromptVideo: number;
     tokenPriceCompletionText: number;
     tokenPriceCompletionReasoning: number;
     tokenPriceCompletionAudio: number;
+    tokenPriceCompletionAudioSeconds: number;
     tokenPriceCompletionImage: number;
     tokenPriceCompletionVideoSeconds: number;
     tokenPriceCompletionVideoTokens: number;
@@ -153,6 +199,7 @@ export type GenerationEventUsageParams = {
     tokenCountCompletionVideoSeconds: number;
     tokenCountCompletionVideoTokens: number;
     tokenCountPromptAudioSeconds: number;
+    tokenCountPromptVideoSeconds: number;
     tokenCountCompletionAudioSeconds: number;
 };
 
@@ -170,6 +217,10 @@ export function priceToEventParams(
             priceDefinition?.promptCacheWriteTokens || 0,
         tokenPricePromptAudio: 
             priceDefinition?.promptAudioTokens || 0,
+        tokenPricePromptAudioSeconds:
+            priceDefinition?.promptAudioSeconds || 0,
+        tokenPricePromptVideoSeconds:
+            priceDefinition?.promptVideoSeconds || 0,
         tokenPricePromptImage:
             priceDefinition?.promptImageTokens || 0,
         tokenPricePromptVideo:
@@ -182,6 +233,8 @@ export function priceToEventParams(
             0,
         tokenPriceCompletionAudio:
             priceDefinition?.completionAudioTokens || 0,
+        tokenPriceCompletionAudioSeconds:
+            priceDefinition?.completionAudioSeconds || 0,
         tokenPriceCompletionImage:
             priceDefinition?.completionImageTokens || 0,
         tokenPriceCompletionVideoSeconds:
@@ -197,6 +250,7 @@ export function usageToEventParams(usage?: Usage): GenerationEventUsageParams {
         tokenCountPromptCached: usage?.promptCachedTokens || 0,
         tokenCountPromptCacheWrite: usage?.promptCacheWriteTokens || 0,
         tokenCountPromptAudio: usage?.promptAudioTokens || 0,
+        tokenCountPromptVideoSeconds: usage?.promptVideoSeconds || 0,
         tokenCountPromptImage: usage?.promptImageTokens || 0,
         tokenCountPromptVideo: usage?.promptVideoTokens || 0,
         tokenCountCompletionText: usage?.completionTextTokens || 0,

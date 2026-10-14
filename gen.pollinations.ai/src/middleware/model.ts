@@ -1,14 +1,23 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
+import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
     "generate.text": "text",
@@ -25,14 +34,37 @@ export type ModelVariables = {
         /** The resolved canonical model name */
         resolved: string;
         /** Static registry definition, or a dynamic definition resolved from D1. */
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
+        /** Entry that serves the request when this model's upstream fails. */
+        fallbackEntries?: GenerationModelEntry[];
     };
     formData?: FormData;
 };
 
+/** Required checks for every provider this request may reach. */
+export function getRequiredSafetyFeatures(
+    model: ModelVariables["model"] | undefined,
+): SafetyFeature[] {
+    const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
+    for (const fallback of model?.fallbackEntries ?? []) {
+        for (const feature of fallback.definition.requiredSafetyFeatures ??
+            []) {
+            features.add(feature);
+        }
+    }
+    return [...features].sort();
+}
+
 type ResolveModelOptions = {
     defaultModel?: string;
+    supportedEndpoint?: string;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -53,10 +85,34 @@ export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
     env: CloudflareBindings,
+    callerUserId?: string,
+    supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // Provider routes are registry entries so fallback linking and billing can
+    // use them, but callers must select the public model they belong to.
+    if (entry.definition.fallbackOnly === true) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // A private community endpoint is owner-only: to everyone else it doesn't
+    // exist. Reuse the same "invalid model" response as an unknown name so
+    // private models aren't discoverable by probing.
+    const community = entry.communityEndpoint;
+    if (
+        community &&
+        community.visibility !== "public" &&
+        community.ownerUserId !== callerUserId
+    ) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -68,6 +124,19 @@ export async function resolveModelDefinition(
             message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
         });
     }
+    if (entry.definition.supportedEndpoints && !supportedEndpoint) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" is available only on: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
+    if (
+        supportedEndpoint &&
+        !entry.supportedEndpoints.includes(supportedEndpoint)
+    ) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" cannot be used on ${supportedEndpoint}. Supported endpoints: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
 
     return {
         requested: model,
@@ -76,12 +145,21 @@ export async function resolveModelDefinition(
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
         }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
+        ...(entry.fallbackEntries && {
+            fallbackEntries: entry.fallbackEntries,
+        }),
     };
 }
 
 /**
  * Middleware that extracts, defaults, and resolves the model from the request.
- * Must run before auth and track middlewares.
+ * Must run after auth and before track so private endpoints can be owner-gated.
  */
 export function resolveModel(
     eventType: EventType,
@@ -89,7 +167,7 @@ export function resolveModel(
 ) {
     return createMiddleware<{
         Bindings: CloudflareBindings;
-        Variables: ModelVariables;
+        Variables: ModelVariables & Partial<AuthVariables>;
     }>(async (c, next) => {
         // Extract model from request
         let rawModel: string | null = null;
@@ -136,7 +214,19 @@ export function resolveModel(
                       ? DEFAULT_REALTIME_MODEL
                       : DEFAULT_IMAGE_MODEL);
         const model = rawModel || defaultModel;
-        c.set("model", await resolveModelDefinition(model, eventType, c.env));
+        // auth() runs before resolveModel on the authenticated generation
+        // routes, so the caller identity is available to gate private
+        // endpoints. If it isn't (unauthenticated path), callerUserId is
+        // undefined and a private endpoint fails closed — never exposed.
+        const resolved = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
+        );
+        c.set("model", resolved);
+        c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });
 }

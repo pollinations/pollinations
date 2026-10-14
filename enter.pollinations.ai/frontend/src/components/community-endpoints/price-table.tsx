@@ -1,7 +1,6 @@
 import {
     Chip,
     Input,
-    Surface,
     Table,
     TableBody,
     TableCell,
@@ -9,7 +8,16 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import {
+    COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    type CommunityEndpointImagePricing,
+    type CommunityEndpointModality,
+    communityEndpointPriceFieldsForModality,
+    MAX_COMMUNITY_PRICE_PER_IMAGE,
+    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
+    MAX_COMMUNITY_PRICE_PER_SECOND,
+    MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
+} from "@shared/community-endpoints.ts";
 import { PRICE_ICON } from "../models/model-icons.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
@@ -21,7 +29,9 @@ import {
     observedUsageValue,
 } from "./types.ts";
 
-export type PriceField = (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number];
+export type PriceField = ReturnType<
+    typeof communityEndpointPriceFieldsForModality
+>[number];
 export type PriceFieldKey = PriceField["key"];
 type PriceColumn = "input" | "output";
 type PriceFormRow = {
@@ -34,28 +44,30 @@ type PriceFormRow = {
 
 type PriceCellState = {
     observed: boolean;
-    missing: boolean;
-    nonPositive: boolean;
     invalid: boolean;
 };
 
 export function PriceGroups({
     form,
+    modality,
+    imagePricing,
     testState,
     visiblePriceKeys,
     onChange,
 }: {
     form: EndpointFormState;
+    modality: CommunityEndpointModality;
+    imagePricing: CommunityEndpointImagePricing;
     testState: ActionState;
     visiblePriceKeys: Set<PriceFieldKey>;
     onChange: (key: keyof EndpointFormState, value: string) => void;
 }) {
-    const rows = priceFormRows(visiblePriceKeys);
+    const rows = priceFormRows(visiblePriceKeys, modality, imagePricing);
 
     if (rows.length === 0) return null;
 
     return (
-        <Surface className="overflow-hidden p-0">
+        <div className="overflow-hidden">
             <div className="overflow-x-auto">
                 <Table className="min-w-[32rem]">
                     <TableHead>
@@ -67,13 +79,13 @@ export function PriceGroups({
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Input / 1M
+                                Input price
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className="normal-case tracking-normal"
                             >
-                                Output / 1M
+                                Output price
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -90,7 +102,7 @@ export function PriceGroups({
                     </TableBody>
                 </Table>
             </div>
-        </Surface>
+        </div>
     );
 }
 
@@ -111,17 +123,7 @@ function PriceRow({
     const outputState = row.outputField
         ? priceCellState(row.outputField, form, testState)
         : null;
-    const hasError =
-        Boolean(
-            inputState?.invalid ||
-                inputState?.missing ||
-                inputState?.nonPositive,
-        ) ||
-        Boolean(
-            outputState?.invalid ||
-                outputState?.missing ||
-                outputState?.nonPositive,
-        );
+    const hasError = Boolean(inputState?.invalid || outputState?.invalid);
     const returned = Boolean(inputState?.observed || outputState?.observed);
 
     return (
@@ -180,36 +182,56 @@ function PriceInputCell({
     }
 
     const inputId = `community-${field.key}`;
-    const hasError = state.invalid || state.missing || state.nonPositive;
+    const hasError = state.invalid;
+    const unitLabel =
+        field.priceUnit === "image"
+            ? "/image"
+            : field.priceUnit === "second" || field.priceUnit === "video_second"
+              ? "/sec"
+              : "/1M";
+    const maximum =
+        field.priceUnit === "image"
+            ? MAX_COMMUNITY_PRICE_PER_IMAGE
+            : field.priceUnit === "video_second"
+              ? MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND
+              : field.priceUnit === "second"
+                ? MAX_COMMUNITY_PRICE_PER_SECOND
+                : MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS;
 
     return (
         <TableCell align="right" className="w-40 align-top">
             <div className="inline-flex flex-col items-end">
-                <Input
-                    id={inputId}
-                    name={inputId}
-                    type="number"
-                    step="any"
-                    min="0"
-                    inputMode="decimal"
-                    hideNumberSteppers
-                    value={value}
-                    placeholder="0"
-                    autoComplete="off"
-                    aria-label={`${field.label} price per 1M tokens`}
-                    error={hasError}
-                    className="h-9 w-32 max-w-full font-mono tabular-nums text-right"
-                    onChange={(event) =>
-                        onChange(field.key, event.target.value)
-                    }
-                />
+                <div className="flex items-center gap-1.5">
+                    <Input
+                        id={inputId}
+                        name={inputId}
+                        type="number"
+                        step="any"
+                        min="0"
+                        max={String(maximum)}
+                        inputMode="decimal"
+                        hideNumberSteppers
+                        value={value}
+                        placeholder="0"
+                        autoComplete="off"
+                        aria-label={`${field.label} price ${unitLabel}`}
+                        error={hasError}
+                        className="h-9 w-28 max-w-full font-mono tabular-nums text-right"
+                        onChange={(event) =>
+                            onChange(field.key, event.target.value)
+                        }
+                    />
+                    <span className="w-10 text-left text-xs text-theme-text-muted">
+                        {unitLabel}
+                    </span>
+                </div>
                 {hasError && (
                     <p className="mt-1 text-right text-xs text-intent-danger-text">
-                        {state.invalid
-                            ? "Use a dot decimal like 0.1"
-                            : state.nonPositive
-                              ? "Must be greater than 0"
-                              : "Required for returned usage"}
+                        {field.priceUnit === "image" ||
+                        field.priceUnit === "second" ||
+                        field.priceUnit === "video_second"
+                            ? `Enter 0–${maximum} ${unitLabel}.`
+                            : `Enter 0 or up to ${maximum} ${unitLabel}.`}
                     </p>
                 )}
             </div>
@@ -225,24 +247,22 @@ function priceCellState(
     const observed =
         observedUsageValue(testState.usage, testState.billableUsage, field) !==
         null;
-    const value = form[field.key];
-    const trimmedValue = value.trim();
-    const invalid = !isValidPriceInput(value);
     return {
         observed,
-        missing: observed && trimmedValue === "",
-        nonPositive:
-            observed &&
-            trimmedValue !== "" &&
-            !invalid &&
-            Number(trimmedValue) <= 0,
-        invalid,
+        invalid: !isValidPriceInput(form[field.key], field.priceUnit),
     };
 }
 
-function priceFormRows(visiblePriceKeys: Set<PriceFieldKey>): PriceFormRow[] {
+function priceFormRows(
+    visiblePriceKeys: Set<PriceFieldKey>,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): PriceFormRow[] {
     const rows = new Map<string, PriceFormRow>();
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    )) {
         if (!visiblePriceKeys.has(field.key)) continue;
         const column = priceColumn(field);
         if (!column) continue;
@@ -280,6 +300,7 @@ function priceKind(field: PriceField): PriceKind {
         return field.usageType.startsWith("prompt") ? "audioIn" : "audioOut";
     }
     if (field.usageType.includes("Image")) return "image";
+    if (field.usageType.includes("Video")) return "video";
     return "text";
 }
 
@@ -290,27 +311,79 @@ function shortPriceLabel(label: string): string {
 export function savedEndpointPriceKeys(
     endpoint: CommunityEndpoint | undefined,
 ): Set<PriceFieldKey> {
+    const pending = endpoint?.pending;
     return new Set(
-        endpoint
-            ? COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-                  (field) => endpoint[field.key] > 0,
-              ).map((field) => field.key)
+        endpoint?.type === "proxy"
+            ? communityEndpointPriceFieldsForModality(
+                  endpoint.modality,
+                  pending?.imagePricing ?? endpoint.imagePricing,
+              )
+                  .filter(
+                      (field) =>
+                          (pending?.[field.key] ?? endpoint[field.key]) > 0,
+                  )
+                  .map((field) => field.key)
             : [],
     );
 }
 
-export function returnedPriceFields(testState: ActionState): PriceField[] {
+// Show the base text prices as soon as a model is made public. They remain
+// optional: blank or zero publishes the model for free.
+export const BASE_TEXT_PRICE_KEYS: PriceFieldKey[] = [
+    "promptTextPrice",
+    "completionTextPrice",
+];
+
+const BASE_EMBEDDING_PRICE_KEYS: PriceFieldKey[] = ["promptTextPrice"];
+
+// Transcription models bill per audio second, so their single price field is
+// revealed alongside the text fields once the model is public.
+export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
+    "promptAudioPrice",
+];
+
+export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
+
+// Speech (TTS) models bill the input text per character against the
+// completion-audio price.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
+
+export function basePriceKeysForModality(
+    modality: CommunityEndpointModality,
+): PriceFieldKey[] {
+    return modality === "image"
+        ? ["completionImagePrice"]
+        : modality === "video"
+          ? BASE_VIDEO_PRICE_KEYS
+          : modality === "transcription"
+            ? BASE_TRANSCRIPTION_PRICE_KEYS
+            : modality === "speech"
+              ? BASE_SPEECH_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
+}
+
+export function returnedPriceFields(
+    testState: ActionState,
+    modality: CommunityEndpointModality,
+    imagePricing: CommunityEndpointImagePricing,
+): PriceField[] {
     if (testState.status !== "success") return [];
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.filter((field) =>
-        hasObservedPriceField(testState.usage, field),
-    );
+    return communityEndpointPriceFieldsForModality(
+        modality,
+        imagePricing,
+    ).filter((field) => hasObservedPriceField(testState.usage, field));
 }
 
 export function visiblePriceFieldKeys(
     savedPriceKeys: Set<PriceFieldKey>,
     returnedFields: PriceField[],
+    // Fields that should be visible before any endpoint test has run.
+    alwaysVisible: PriceFieldKey[] = [],
 ): Set<PriceFieldKey> {
     return new Set([
+        ...alwaysVisible,
         ...savedPriceKeys,
         ...returnedFields.map((field) => field.key),
     ]);
@@ -321,29 +394,36 @@ export function formWithVisiblePrices(
     visiblePriceKeys: Set<PriceFieldKey>,
 ): EndpointFormState {
     const next = { ...form };
+    const allowed = new Set(
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => field.key),
+    );
     for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
-        if (!visiblePriceKeys.has(field.key)) {
+        if (!visiblePriceKeys.has(field.key) || !allowed.has(field.key)) {
             next[field.key] = "";
         }
     }
     return next;
 }
 
-export function hasPositivePriceInput(
-    form: EndpointFormState,
-    field: PriceField,
-): boolean {
-    const value = form[field.key].trim();
-    return value !== "" && isValidPriceInput(value) && Number(value) > 0;
-}
-
 export function hasValidVisibleFormPrices(
     form: EndpointFormState,
     visiblePriceKeys: Set<PriceFieldKey>,
 ): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every(
-        (field) =>
-            !visiblePriceKeys.has(field.key) ||
-            isValidPriceInput(form[field.key]),
+    const fields = new Map(
+        communityEndpointPriceFieldsForModality(
+            form.modality,
+            form.imagePricing,
+        ).map((field) => [field.key, field]),
     );
+    return COMMUNITY_ENDPOINT_PRICE_FIELDS.every((field) => {
+        if (!visiblePriceKeys.has(field.key)) return true;
+        const modalityField = fields.get(field.key);
+        return Boolean(
+            modalityField &&
+                isValidPriceInput(form[field.key], modalityField.priceUnit),
+        );
+    });
 }

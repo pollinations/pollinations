@@ -19,8 +19,40 @@ type AuthorizeDefaultsInput = {
     permissions?: string[] | null;
 };
 
+/**
+ * An https client_id is a Client ID Metadata Document URL (MCP clients such
+ * as Claude Code or Codex). Every other client_id is a registered pk_ app.
+ */
+export function isClientMetadataUrl(clientId: string | undefined): boolean {
+    return !!clientId?.startsWith("https://");
+}
+
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
+
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
+/**
+ * The expiry field is in days and accepts fractions, but key creation takes
+ * whole seconds (`z.number().int().positive()`), so a fraction landing
+ * mid-second failed validation. Rounding is the whole fix.
+ *
+ * An empty field is the only thing that means "no expiry". Anything invalid
+ * stays invalid and the server rejects it, which the dialogs surface.
+ */
+export function expiryDaysToExpiresIn(
+    expiryDays: number | null | undefined,
+): number | undefined {
+    if (expiryDays == null) return undefined;
+    return Math.round(expiryDays * SECONDS_PER_DAY);
+}
+
+/**
+ * An S256 PKCE code_challenge is exactly 43 base64url chars (unpadded
+ * SHA-256, RFC 7636 §4.2). Single source of truth for the consent page's
+ * front-door check and the server's CreateCodeSchema.
+ */
+export const PKCE_S256_CHALLENGE_REGEX = /^[A-Za-z0-9_-]{43}$/;
 
 /**
  * Account permissions the user can grant at the consent screen. Every scope is
@@ -33,8 +65,14 @@ export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
  *   balance and usage are free regardless)
  * - `keys`: account admin; create, list, and revoke API keys, plus My Models
  *   access where enabled.
+ * - `machines`: create and run hosted sandboxes.
  */
-export const CONSENT_PERMISSIONS = ["profile", "usage", "keys"] as const;
+export const CONSENT_PERMISSIONS = [
+    "profile",
+    "usage",
+    "keys",
+    "machines",
+] as const;
 
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,

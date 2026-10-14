@@ -12,7 +12,7 @@
 }
 
 /* Dark twin: deep gold/bronze chip, light gold/bronze text — keeps the
-   paid/tier identity while staying legible (the :root values are tuned for
+   paid/Quest identity while staying legible (the :root values are tuned for
    light surfaces only). */
 .dark {
     --polli-color-paid-pale: oklch(0.33 0.055 92);
@@ -21,15 +21,6 @@
     --polli-color-tier-pale: oklch(0.31 0.045 152);
     --polli-color-tier-soft: oklch(0.75 0.13 152);
     --polli-color-tier-deep: oklch(0.87 0.10 152);
-}
-
-@theme inline {
-    --color-paid-pale: var(--polli-color-paid-pale);
-    --color-paid-soft: var(--polli-color-paid-soft);
-    --color-paid-deep: var(--polli-color-paid-deep);
-    --color-tier-pale: var(--polli-color-tier-pale);
-    --color-tier-soft: var(--polli-color-tier-soft);
-    --color-tier-deep: var(--polli-color-tier-deep);
 }
 
 .polli-wallet-chip-paid {
@@ -45,13 +36,11 @@
 .polli-wallet-panel-paid {
     background-color: var(--polli-color-paid-pale);
     color: var(--polli-color-paid-deep);
-    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-panel-tier {
     background-color: var(--polli-color-tier-pale);
     color: var(--polli-color-tier-deep);
-    box-shadow: var(--polli-shadow-well);
 }
 
 .polli-wallet-text-paid {

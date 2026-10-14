@@ -1,4 +1,10 @@
-import { createContext, useContext, useReducer } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useReducer,
+} from "react";
 import Toast from "./Toast";
 
 const ToastContext = createContext();
@@ -31,12 +37,25 @@ const toastReducer = (state, action) => {
 export const ToastProvider = ({ children }) => {
     const [state, dispatch] = useReducer(toastReducer, { toasts: [] });
 
-    const showToast = (message, type = "info", duration = 5000) => {
+    const showToast = useCallback((message, type = "info", duration = 5000) => {
         dispatch({
             type: "ADD_TOAST",
             toast: { message, type, duration },
         });
-    };
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return undefined;
+        }
+
+        window.showToast = showToast;
+        return () => {
+            if (window.showToast === showToast) {
+                delete window.showToast;
+            }
+        };
+    }, [showToast]);
 
     const removeToast = (id) => {
         dispatch({ type: "REMOVE_TOAST", id });

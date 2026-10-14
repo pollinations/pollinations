@@ -1,23 +1,24 @@
 # Privacy Policy
 
-**Updated: 2026-06-24**
+**Last updated: 2026-10-14**
 
 ## 1) Scope & Roles
 
-This policy covers (a) the paid dashboard/API and (b) the pollinations.ai community website. For Discord/GitHub use, their policies also apply.
+This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, (c) the Polli Discord bot and its HTTP API, and (d) the Free API Classic at text.pollinations.ai and image.pollinations.ai, which needs no account. For Discord/GitHub/Google use, their policies also apply.
 
-**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we are processor under the DPA.
+**Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
 
 ## 2) Data We Process
 
-* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs.
+* **Accounts & auth (commercial):** email, name/handle, org, password hash or SSO IDs (the GitHub or Google account you sign in with).
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
 * **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
+* **Free API Classic usage (no account):** timestamps, endpoints, request status, IP address and country, and the referring site or app name a request carries. We use the IP address to apply the free limit and prevent abuse. Usage records keep a keyed hash and the network prefix of the IP address instead of the full address; the hash counts distinct callers.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
-* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
+* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes; Free API Classic analytics use only the keyed IP hash described above.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 
@@ -29,7 +30,7 @@ This policy covers (a) the paid dashboard/API and (b) the pollinations.ai commun
 * **Security, abuse prevention, fraud prevention, and spending-control enforcement** (legitimate interests).
 * **Billing/tax/compliance** (legal obligations).
 * **Analytics & product research** using aggregated/pseudonymised metrics and the analytics processing described in §2 (legitimate interests).
-* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly. If we introduce direct email in the future, transactional messages will be limited to verification, billing, security, and service notices, and any marketing email will only be sent where permitted (consent) and will include an unsubscribe link and `List-Unsubscribe` header.
+* **Service communications** (contract; legitimate interests). Service-related notifications are delivered in-product. Purchase invoices for paid Pollen are sent by email through our payment provider (Stripe). We do not currently send email directly.
 
 ## 4) Authorized Apps
 
@@ -37,70 +38,125 @@ When you authorize a third-party app, we show you the app identity we have, the 
 
 The app may process prompts, outputs, and other data you provide to that app under its own terms and privacy policy. Only authorize apps you trust. You can revoke app access or adjust app spending caps in the dashboard.
 
-## 5) Model Training & Content Use
+## 5) Community Models & Managed Agents
 
-We do not use your prompts/outputs to train or fine-tune models without your permission. Any training requires explicit opt-in.
+Externally hosted community models run on independent providers' infrastructure, not Pollinations. When you use one, your request is sent to that provider and any configured community fallback providers. A request may include prompts, messages, instructions, files or media, tool definitions and results, and generation settings. We do not send your Pollinations API key.
 
-## 6) Cookies & SDKs
+Community providers are responsible for how they store, share, secure, train on, or otherwise use your request. Their terms and privacy policies apply; Pollinations does not control or verify those practices. Check the provider information before sending credentials, confidential information, or sensitive personal data.
 
-We currently use only essential cookies and similar storage needed for login, session, security, and service operation. We do not use third-party analytics or marketing cookies/SDKs at this time. If we add non-essential cookies or SDKs, we will request consent first and provide a way to change preferences.
+Managed agents run on Pollinations infrastructure. Publishing one does not give its creator access to caller requests, but its selected models and tools may process them. If a selected model is externally hosted, the rules above apply. Public agent instructions may be inferred or extracted, so creators should not include credentials or confidential data.
 
-## 7) Sharing & Recipients
+## 6) Model Training & Content Use
 
-* **Service providers (sub-processors):** we use the **categories** described at /terms#15-dpa-and-sub-processors. **Full named list available on request; we give at least 14 days' prior notice of material changes.**
+Pollinations does not use your prompts or outputs to train or fine-tune models without explicit opt-in. Community providers may follow different practices under their own policies.
 
-**Depending on your model/provider selection, prompts and outputs may be sent transiently to our model/inference compute sub-processors (see categories at /terms#15-dpa-and-sub-processors).**
+## 7) Cookies & SDKs
 
+We use essential cookies and similar storage needed for login, session, security, and service operation.
+
+On the pollinations.ai website and the paid dashboard we also keep a first-party usage measurement. It sets no cookie and gives your browser no identifier. We record the page viewed, the country your connection comes from as determined by our network provider (the IP address itself is not stored), the referring website's hostname, any campaign tags in the link you arrived from, and the identifier of the app that sent you to us. The referring hostname and campaign tags are kept in your tab's session storage so they survive a sign-in redirect, and are discarded when the tab closes. Links from the website to the dashboard carry the referring hostname and campaign tags, so a sign-up is credited to where you came from. While you are signed in to the dashboard, views on either are linked to your account. We use this to see which pages and sources lead to sign-ups and purchases, and where people abandon a flow (legitimate interests, §3). It is processed on our own systems and by our analytics sub-processor, contains no name, email, IP address, or page content, and is not shared with advertisers.
+
+We do not use third-party analytics or marketing cookies/SDKs.
+
+## 8) Sharing & Recipients
+
+* **Service providers (sub-processors):** see [Service Providers](/subprocessors).
+
+**Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
+
+* **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.
 * **Authorized apps:** when you approve an app connection, we share the approved API key/token and authorization details with that app.
 * **Affiliates:** internal operations under this policy.
 * **Authorities:** when required by law or to protect rights/safety.
 
 We do not sell personal data.
 
-## 8) International Transfers
+## 9) International Transfers
 
-Where data leaves the EEA, we use approved safeguards (e.g., EU Standard Contractual Clauses) and appropriate supplementary measures.
+Processing locations depend on the service, route, and any fallback. Transfers outside the EEA require applicable GDPR safeguards, such as an adequacy decision or the appropriate EU Standard Contractual Clauses and supplementary measures. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
-## 9) Retention
+Community providers may process data in other countries. Before sending personal data, check that the provider meets any residency or transfer requirements that apply to you.
 
-* **Account, billing, wallet, and tax records:** account term + 7 years (accounting/tax/legal proof).
+## 10) Retention
+
+* **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
+* **Reward-protection records:** an immutable linked GitHub or Google user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
+* **Billing, wallet, and tax records:** account term + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
+* **Website and dashboard usage measurement (§7):** 24 months.
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.
-* **Uploaded media files (media.pollinations.ai):** typically up to 30 days from upload; re-uploading the same file resets the timer.
+* **Community providers:** each provider sets its own retention policy. Review it before sending sensitive content.
+* **Uploaded media files (media.pollinations.ai):** a 30-day lifecycle applies from upload or the latest refresh. Retrieving the file body refreshes the lifecycle only when the file is at least 15 days old, so actively accessed uploads can remain longer.
 * **App authorization records:** while active. Related usage, billing, security, and dispute records may be retained under the retention periods above.
 * **Support conversations:** we don't run a proprietary ticket system. Support happens on third-party channels (GitHub Issues, Discord) and email. GitHub Issues are public and retained by GitHub; Discord and email retention follows those platforms' own policies. Don't share sensitive data in public channels.
-* **Backups:** encrypted, rolling 30-90 days.
+* **Backups:** encrypted, rolling 30-90 days. Data deleted from active systems may remain in restricted backup copies until those copies expire through the normal backup rotation.
 
-**Deletion rule:** deletion date = last activity + retention period. On account deletion, personal data is deleted within 30 days except where legal retention applies.
+**Account deletion:** account access is revoked immediately. Personal data is deleted or de-identified from active systems within 30 days except for the reward-protection, billing, usage, fraud-prevention, and legal records described above. Residual backup copies expire through the backup schedule described above. If you later create a new account with the same GitHub or Google identity, rewards already issued to that identity cannot be claimed again.
 
-## 10) Your Rights (GDPR)
+## 11) Your Rights (GDPR)
 
 Access, correction, deletion, restriction, portability, objection to legitimate-interest processing, and withdrawal of consent where applicable.
 
-You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hi@myceli.ai.
+You can complain to your local authority or the Estonian Data Protection Inspectorate (AKI). **Contact:** hello@pollinations.ai.
 
-## 11) Security
+## 12) Security
 
-We apply industry-standard administrative, technical, and physical safeguards, including encryption in transit, encryption at rest where applicable, access controls, and incident response.
+We protect personal data with appropriate technical and organisational measures.
 
-## 12) Children
+## 13) Children
 
 Services are for users 16+. If under-16 data was provided, contact us for removal.
 
-## 13) Automated Decision-Making
+## 14) Automated Decision-Making
 
 No decisions producing legal or similarly significant effects. Rate-limiting, abuse prevention, key-budget checks, app authorization checks, balance checks, and fraud controls may be automated.
 
-## 14) Changes
+## 15) Changes
 
 We may update this policy; we'll post the new date and, for material changes, give reasonable in-app or email notice.
 
+## 16) Polli Discord Bot
+
+**Effective date: 2026-09-04**
+
+Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of this Privacy Policy.
+
+### Information Polli Processes
+
+Depending on the feature used, Polli may process:
+
+- Discord user, server, channel, thread, message, and role identifiers, including usernames, display names, permissions, and role membership.
+- Messages directed to Polli, recent conversation context, and Discord content retrieved when a user requests a search.
+- Attachments, images, videos, links, embeds, and related metadata.
+- Public GitHub profiles, repositories, issues, pull requests, comments, projects, and records of requested GitHub actions.
+- GitHub issue subscriptions, including Discord user, channel, and server IDs; issue numbers; notification state; and timestamps. These records remain until the user unsubscribes.
+- API prompts, conversation history, model parameters, authorization results, and technical request metadata.
+- Limited operational data such as timestamps, request status, errors, latency, tool activity, and rate-limit events.
+
+Do not send Polli passwords, tokens, API keys, or unnecessary sensitive information.
+
+### Use and Access Controls
+
+We use this information to respond, maintain relevant context, perform requested searches and authorized GitHub actions, process attachments, enforce permissions, prevent abuse, and troubleshoot the service.
+
+Discord search availability and results depend on the identity and permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers have no Discord member identity, so Discord search through that interface may be unavailable.
+
+### Providers and Retention
+
+Requests may be processed by Discord, GitHub, Pollinations.ai, model providers routed through Pollinations.ai, infrastructure providers needed to operate Polli, and web-content services such as Jina AI and FxTwitter when a user asks Polli to read a URL. Their terms and privacy policies may also apply.
+
+Polli holds active conversation context temporarily in memory. Issue-subscription records remain until the user unsubscribes. Limited logs and caches follow the retention periods described elsewhere in this Policy. Discord messages, GitHub content, and attachments remain subject to those platforms' retention, deletion, and visibility controls.
+
+### Rights and Contact
+
+The rights and safeguards described elsewhere in this Policy apply to Polli. Some requests must be handled by Discord, GitHub, or a server administrator because they control the original content. For privacy or data requests, contact **hello@pollinations.ai**.
+
 ---
 
-**Data Controller:**  
-Myceli.AI OÜ  
-Registry code: 17186693  
-VAT number: EE102877908  
-Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hi@myceli.ai
+**Data Controller:**\
+Myceli.AI OÜ\
+Registry code: 17186693\
+VAT number: EE102877908\
+Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia\
+Email: hello@pollinations.ai

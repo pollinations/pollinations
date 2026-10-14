@@ -25,6 +25,7 @@ type Spec = {
     info: { title: string; description: string; version: string };
     openapi: string;
     servers: { url: string }[];
+    tags?: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { schemas: Record<string, Schema> };
 };
@@ -366,6 +367,16 @@ function isResponseExampleWorthwhile(ex: unknown): boolean {
     return true;
 }
 
+function operationBaseUrl(spec: Spec, path: string, op: Operation): string {
+    const pathItem = asObj(spec.paths[path]);
+    const server = [op.servers, pathItem.servers, spec.servers]
+        .flatMap(asArr)
+        .map(asObj)
+        .map((item) => asStr(item.url))
+        .find(Boolean);
+    return (server || BASE_URL).replace(/\/$/, "");
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Curl example
 // ────────────────────────────────────────────────────────────────────────────
@@ -380,12 +391,15 @@ function buildCurl(
     const params = visibleParams(path, asArr(op.parameters) as Schema[]);
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
-    let url = `${BASE_URL}${path}`;
+    let url = `${operationBaseUrl(spec, path, op)}${path}`;
     // Substitute path placeholders with real, URL-encoded sample values so
     // curl examples are copy-pasteable. Falls back to `:name` only when the
     // spec provides no example for the parameter.
     url = url.replace(/{(\w+)}/g, (_match, name: string) => {
-        const override = PATH_PARAM_OVERRIDES[name];
+        const override =
+            name === "id" && MEDIA_ID_PATHS.has(path)
+                ? MEDIA_ID_EXAMPLE
+                : PATH_PARAM_OVERRIDES[name];
         if (override !== undefined) return encodeURIComponent(override);
         const param = pathParams.find((p) => asStr(asObj(p).name) === name);
         if (param) {
@@ -397,7 +411,7 @@ function buildCurl(
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
-        ? { model: "veo" }
+        ? { model: "google/veo-3.1-fast" }
         : {};
     if (queryParams.length) {
         const queryStr = queryParams
@@ -441,7 +455,11 @@ function buildCurl(
 
     const curatedMultipart = CURATED_MULTIPART[operationId];
 
-    if (jsonBody.schema) {
+    if (curatedMultipart) {
+        for (const [name, value] of curatedMultipart) {
+            segments.push(`-F "${name}=${value}"`);
+        }
+    } else if (jsonBody.schema) {
         const ex =
             CURATED_BODIES[operationId] ??
             pickExample(spec, asObj(jsonBody.schema), { compact: true });
@@ -449,10 +467,8 @@ function buildCurl(
             segments.push(`-H "Content-Type: application/json"`);
             segments.push(`-d '${JSON.stringify(ex)}'`);
         }
-    } else if (multipartBody.schema || curatedMultipart) {
-        const fields =
-            curatedMultipart ??
-            buildMultipartFields(spec, asObj(multipartBody.schema));
+    } else if (multipartBody.schema) {
+        const fields = buildMultipartFields(spec, asObj(multipartBody.schema));
         for (const [name, value] of fields) {
             segments.push(`-F "${name}=${value}"`);
         }
@@ -468,7 +484,7 @@ function buildCurl(
 function isPublicMediaRead(method: string, path: string): boolean {
     const lower = method.toLowerCase();
     if (lower !== "get" && lower !== "head") return false;
-    return path === "/{hash}" || path === "/{hash}/metadata";
+    return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
 /**
@@ -612,19 +628,23 @@ function renderEndpoint(
     out.push("```");
     out.push("");
 
-    // Response example (if we can synthesize one)
+    // Response example: prefer the media-type example injected by
+    // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
     const firstOk = successCodes[0];
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);
-        if (jsonResp.schema) {
-            const ex = pickExample(spec, asObj(jsonResp.schema));
-            if (isResponseExampleWorthwhile(ex)) {
-                out.push("```json");
-                out.push(JSON.stringify(ex, null, 2));
-                out.push("```");
-                out.push("");
-            }
+        const ex =
+            jsonResp.example !== undefined
+                ? jsonResp.example
+                : jsonResp.schema
+                  ? pickExample(spec, asObj(jsonResp.schema))
+                  : undefined;
+        if (isResponseExampleWorthwhile(ex)) {
+            out.push("```json");
+            out.push(JSON.stringify(ex, null, 2));
+            out.push("```");
+            out.push("");
         }
     }
 
@@ -703,16 +723,18 @@ function renderHeader(spec: Spec): string {
     // `alt` carries the semantic title so screen readers and feeds still get it.
     out.push("<picture>");
     out.push(
-        '  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-text-white.svg">',
+        '  <source media="(prefers-color-scheme: dark)" srcset="packages/ui/src/brand/lockup-horizontal-white.svg">',
     );
     out.push(
-        '  <img alt="Pollinations" src="assets/logo-text-black.svg" width="420">',
+        '  <img alt="Pollinations" src="packages/ui/src/brand/lockup-horizontal-black.svg" width="420">',
     );
     out.push("</picture>");
     out.push("");
     out.push(loadIntroductionTagline());
     out.push("");
     out.push("# API docs");
+    out.push("");
+    out.push(`Also available at [${BASE_URL}/docs](${BASE_URL}/docs)`);
     out.push("");
     out.push(
         `**Version:** \`${spec.info.version}\` · **OpenAPI:** \`${spec.openapi}\` · **Base URL:** \`${BASE_URL}\``,
@@ -735,10 +757,10 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
-- \`sk_*\` — secret key for backend use (full account access)
-- \`pk_*\` — publishable key, safe to ship in browsers and mobile apps
+- \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
+- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; do not use raw publishable keys for new browser generation integrations.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 
@@ -749,7 +771,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
 }
 
 function renderTableOfContents(
@@ -816,6 +838,13 @@ function renderEndpoints(
     for (const [tag, ops] of byTag) {
         out.push(`### ${tag}`);
         out.push("");
+        const description = spec.tags?.find(
+            (item) => item.name === tag,
+        )?.description;
+        if (description) {
+            out.push(description.trim());
+            out.push("");
+        }
         for (const { method, path, op } of ops) {
             out.push(renderEndpoint(spec, method, path, op));
             out.push("---");
@@ -868,9 +897,14 @@ All endpoints return errors in this envelope:
 | Status | Code | Description |
 |---|---|---|
 | \`400\` | \`BAD_REQUEST\` | Invalid input. \`details\` includes \`formErrors\` and \`fieldErrors\` for validation failures. |
+| \`400\` | \`invalid_image_url\` | A supplied image URL is malformed, not HTTP(S), points at a private or credentialed host, or redirects. Provide a direct public image URL. |
+| \`400\` | \`failed_to_download_image\` | A supplied image URL could not be downloaded — host unreachable, DNS failure, a non-2xx response from the image host, or a body that ended mid-read. The host's status is reported in \`details.upstreamStatus\`. |
+| \`400\` | \`image_too_large\` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
+| \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
+| \`400\` | \`content_blocked\` | The input safety check blocked the request before generation — enabled via \`safe\` / the \`Pollinations-Safe\` header, or required by the model (\`required_safety\`). \`message\` names the triggered categories, e.g. \`Request blocked by safety filter: sexual\`. Change the input rather than retrying it. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
-| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or tier for this model. |
+| \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
 | \`404\` | \`NOT_FOUND\` | Resource not found. |
 | \`405\` | \`METHOD_NOT_ALLOWED\` | HTTP method not supported on this route. |
 | \`409\` | \`CONFLICT\` | Request conflicts with current resource state (e.g. duplicate key name). |
@@ -912,23 +946,83 @@ function simplifyModelEnums(spec: Spec): void {
  */
 const CURATED_BODIES: Record<string, Json> = {
     postV1ChatCompletions: {
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         messages: [{ role: "user", content: "Hello!" }],
+    },
+    postV1Responses: {
+        model: "openai/gpt-5.4-nano",
+        input: "Hello!",
     },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
-        model: "flux",
+        model: "black-forest-labs/flux.1-schnell",
         size: "1024x1024",
     },
     postText: {
         messages: [{ role: "user", content: "Hello!" }],
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
     },
     postAccountKeys: {
         name: "my-app-backend",
         type: "secret",
-        allowedModels: ["openai", "flux"],
+        allowedModels: [
+            "openai/gpt-5.4-nano",
+            "black-forest-labs/flux.1-schnell",
+        ],
         pollenBudget: 100,
+    },
+    patchAccountKeysById: { name: "my-renamed-key" },
+    postV1AudioSpeech: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postV1AudioSpeechWithTimestamps: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postAccountMyModels: {
+        name: "my-community-model",
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsProvider: {
+        name: "My Provider",
+        url: "https://api.example.com",
+    },
+    postAccountMyModelsModels: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsTest: {
+        baseUrl: "https://api.example.com/v1",
+        bearerToken: "sk-upstream-token",
+        model: "llama-3.3-70b",
+    },
+    postAccountMyModelsByIdUpdate: {
+        description: "Updated model description",
+    },
+    postAccountMyModelsEndpointAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        baseUrl: "https://agent.example.com/v1",
+    },
+    postAccountAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        systemPrompt: "You are a helpful assistant.",
+        baseModel: "openai/gpt-5.4-nano",
+        mcpServers: ["pollinations"],
+    },
+    patchAccountAgentsById: {
+        systemPrompt: "You are a concise assistant.",
+        baseModel: "openai/gpt-5.4-nano",
+        mcpServers: ["pollinations"],
+    },
+    postAccountIntegrations: {
+        toolkit: "github",
+    },
+    post3dByPrompt: {
+        model: "hyper3d/rodin-2.5",
     },
 };
 
@@ -937,8 +1031,10 @@ const CURATED_BODIES: Record<string, Json> = {
  * useful `example`. Used to make every curl example copy-pasteable rather
  * than falling back to `:name`-style placeholders. Keyed by parameter name.
  */
+const MEDIA_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
+const MEDIA_ID_PATHS = new Set(["/{id}", "/{id}/metadata", "/media/{id}"]);
+
 const PATH_PARAM_OVERRIDES: Record<string, string> = {
-    hash: "a1b2c3d4e5f60718",
     id: "key_abc123",
 };
 
@@ -968,12 +1064,12 @@ function visibleParams(path: string, params: Schema[]): Schema[] {
 const CURATED_MULTIPART: Record<string, Array<[string, string]>> = {
     postV1AudioTranscriptions: [
         ["file", "@./audio.mp3"],
-        ["model", "whisper-large-v3"],
+        ["model", "openai/whisper-large-v3"],
     ],
     postV1ImagesEdits: [
         ["image", "@./input.png"],
         ["prompt", "make the sky a vivid sunset"],
-        ["model", "kontext"],
+        ["model", "black-forest-labs/flux.1-kontext-pro"],
     ],
     postUpload: [["file", "@./image.png"]],
 };
@@ -1003,9 +1099,26 @@ const TAG_ORDER = [
     "Realtime",
     "Embeddings",
     "Models",
+    "Community Models",
+    "Community Agents",
     "Media Storage",
     "Account",
 ];
+
+const REQUIRED_PATHS = [
+    "/account/profile",
+    "/account/my-models",
+    "/account/agents",
+];
+
+function requireMergedPaths(spec: Spec): void {
+    const missing = REQUIRED_PATHS.filter((path) => !spec.paths[path]);
+    if (missing.length > 0) {
+        throw new Error(
+            `OpenAPI schema is incomplete; missing required paths: ${missing.join(", ")}`,
+        );
+    }
+}
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */
 function groupByTag(
@@ -1057,6 +1170,7 @@ function groupByTag(
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
     const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
+    requireMergedPaths(spec);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);

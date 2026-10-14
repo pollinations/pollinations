@@ -1,8 +1,8 @@
-import {
-    type BalanceCheckResult,
-    getUserBalance,
-    type UserBalance,
+import type {
+    BalanceCheckResult,
+    UserBalance,
 } from "@shared/billing/balance.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
@@ -11,10 +11,17 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 
 export type { UserBalance };
 
+export type ApiKeyBudgetReservation = {
+    apiKeyId: string;
+    amount: number;
+};
+
 export type BalanceVariables = {
     balance: {
         getBalance: (userId: string) => Promise<UserBalance>;
         balanceCheckResult?: BalanceCheckResult;
+        apiKeyBudgetEstimate?: number;
+        apiKeyReservation?: ApiKeyBudgetReservation;
     };
 };
 
@@ -35,7 +42,11 @@ export const balance = createMiddleware<BalanceEnv>(async (c, next) => {
         if (cached) return cached;
 
         try {
-            const userBalance = await getUserBalance(db, userId);
+            const userBalance = await getFundedUserBalance(
+                db,
+                c.env.DB,
+                userId,
+            );
             balanceCache.set(userId, userBalance);
             return userBalance;
         } catch (error) {

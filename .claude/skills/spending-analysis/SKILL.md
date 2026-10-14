@@ -1,149 +1,109 @@
 ---
 name: spending-analysis
-description: Analyze Pollinations revenue, pack purchases, and balance-bucket spending patterns. Query Polar for payment history and Tinybird for usage data.
+description: Analyze Pollinations Stripe revenue, pack purchases, and balance-bucket spending patterns with Tinybird production data.
 ---
 
 # Requirements
 
-Before using this skill, ensure you have:
-- **curl**: For API requests
-- **jq**: `brew install jq` (for parsing JSON)
-- **sops**: `brew install sops` (for decrypting secrets)
+- Run from the `pollinations` repository root.
+- Install `jq` and `sops`.
+- Query with `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` (below written
+  as `tb-prod.sh`). It uses the production read token from SOPS; the staging workspace has
+  no real revenue.
+- Enable `set -o pipefail` before piping query output so a failed query fails the whole pipeline.
 
-Must run from the `pollinations` repo root with access to `enter.pollinations.ai/`.
+Revenue queries must filter successful Stripe checkout events so asynchronous payment
+methods are counted exactly once.
 
----
-
-# Data Sources
-
-## Polar API
-- **Orders**: Payment history for Pollen pack purchases
-- **Products**: Pollen pack products
-- **Customers**: User payment info linked by `external_id`
-
-## Tinybird
-- **generation_event**: Usage data with `user_id`, `total_price`, and `selected_meter_slug`
-- Use `selected_meter_slug` to split spend by active balance bucket:
-  - `v1:meter:tier` / `local:tier`
-  - `v1:meter:pack` / `local:pack`
-
-> **Workspace**: Two workspaces exist now — `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). All queries below use a **prod** read token by design — staging contains no real revenue. The `environment = 'production'` filters below are redundant against prod-token queries (prod WS only has prod rows after the 2026-05-18 cleanup) but kept as defence-in-depth in case the token is later widened.
-
----
-
-# Quick Commands
-
-## Get Polar Access Token
+# Weekly pack revenue
 
 ```bash
-# From sops-encrypted secrets
-export POLAR_ACCESS_TOKEN=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.POLAR_ACCESS_TOKEN')
-
-# Or from .testingtokens (if available)
-export POLAR_ACCESS_TOKEN=$(grep POLAR_ACCESS_TOKEN enter.pollinations.ai/.testingtokens | cut -d= -f2)
+tb-prod.sh "SELECT toStartOfWeek(timestamp) AS week, round(sum(amount_cents) / 100, 2) AS revenue_usd, count() AS purchases FROM stripe_event WHERE payment_status = 'paid' AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded') AND timestamp >= now() - INTERVAL 90 DAY GROUP BY week ORDER BY week DESC FORMAT JSON" | jq '.data'
 ```
 
-## Get Tinybird Token
+# Recent pack purchases
 
 ```bash
-export TINYBIRD_TOKEN=$(sops -d apps/operation/kpi/secrets/env.json | jq -r '.TINYBIRD_TOKEN')
+tb-prod.sh "SELECT timestamp, user_id, session_id, amount_cents / 100 AS amount, currency, payment_method FROM stripe_event WHERE payment_status = 'paid' AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded') ORDER BY timestamp DESC LIMIT 100 FORMAT JSON" | jq '.data'
 ```
 
----
-
-# Polar API Queries
-
-## List Products
+# Revenue by customer
 
 ```bash
-curl -sL "https://api.polar.sh/v1/products" \
-  -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" | jq '[.items[] | {name, id, recurring: .is_recurring}]'
+tb-prod.sh "SELECT user_id, round(sum(amount_cents) / 100, 2) AS revenue_usd, count() AS purchases FROM stripe_event WHERE payment_status = 'paid' AND event_type IN ('checkout.session.completed', 'checkout.session.async_payment_succeeded') AND timestamp >= now() - INTERVAL 30 DAY GROUP BY user_id ORDER BY revenue_usd DESC LIMIT 50 FORMAT JSON" | jq '.data'
 ```
 
-## Get Pack Purchases (Last 100)
+# Weekly spend by balance bucket
 
 ```bash
-# 5 pollen pack product ID
-PRODUCT_ID="bcdde7f7-129e-4ec1-abc3-d4e0c852fa68"
-
-curl -sL "https://api.polar.sh/v1/orders?limit=100&product_id=$PRODUCT_ID" \
-  -H "Authorization: Bearer $POLAR_ACCESS_TOKEN" | \
-  jq '[.items[] | {date: .created_at[0:10], amount: (.total_amount / 100), customer: .customer.email}]'
+tb-prod.sh "SELECT toStartOfWeek(start_time) AS week, splitByChar(':', selected_meter_slug)[-1] AS meter_source, sum(total_price) AS total_spend, count() AS requests FROM generation_event_v2 WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
 ```
 
-## All Pack Product IDs
+# Where the money came from vs what was spent
 
-| Pack | Product ID |
-|------|------------|
-| 5 pollen + 5 FREE | `bcdde7f7-129e-4ec1-abc3-d4e0c852fa68` |
-| 10 pollen + 10 FREE | `cebeb680-4ac3-4f73-9ce7-6bc06a5f21e1` |
-| 20 pollen + 20 FREE | `8164c20f-8429-437e-b1a2-616ae89f114e` |
-| 50 pollen + 50 FREE | `2cb5ca34-d505-450d-a1d4-94e3bb0c1f68` |
-| 10 pollen (pack) | `ca4cc8bc-694d-4710-8451-1dcb4979fbc7` |
-| 20 pollen (pack) | `679a9fd3-be30-4552-8b2e-f825103c42b7` |
-| 50 pollen (pack) | `bf48ded2-19ca-4d28-bca9-a91fff2dd0a0` |
+`generation_event_v2` spend (`pack_spend`, `selected_meter_slug`) says which bucket was
+*consumed*, not how it was funded. `pack_balance` is credited by Stripe purchases and
+auto-top-ups, but also by BYOP markup and community-model rewards (paid into the payer's
+bucket, `shared/billing/track-helpers.ts`) and some quest rewards. So pack spend ≠ cash.
+And Stripe checkout rows alone miss auto-top-ups, which never create a `checkout.session.*`
+event. To separate cash from earned funding, reconcile each source on its own and don't
+add figures with different monetary bases:
 
-## Weekly Revenue from All Packs
+- Stripe checkout `pollen_credited` (`stripe_event`, `payment_status = 'paid'`)
+- Auto-top-up `amount_usd` (principal credited — see below)
+- Historical Polar credits (Nov 2025–Jan 2026)
+- Claimed community/BYOP rewards, by bucket
+
+No cash purchase ≠ non-payment or abuse; pack spend ≠ proof of cash.
+
+# Auto-top-up: principal vs gross payment
+
+Auto-top-up `amount_usd` in D1 is the Pollen principal credited; Stripe fees and taxes sit
+on top. Gross cash is in Tinybird `stripe_event` as `payment_intent.succeeded` rows with an
+empty `user_id` (auto top-ups are not attributed there); per user, fetch the invoice by
+`stripe_invoice_id` and use `amount_paid`. Keep principal, gross payment, tax, refunds and
+net revenue as separate numbers.
+
+# Historical pricing changes
+
+Define a past price change from the code deployed at the time, not the PR title or
+announcement — an "X% cheaper" announcement can coexist with a same-day multiplier change
+that cancels it. Confirm billed unit prices in `generation_event_v2`:
 
 ```bash
-.claude/skills/spending-analysis/scripts/weekly-pack-revenue.sh
+tb-prod.sh "SELECT toDate(start_time) AS day, round(avg(total_price), 6) AS avg_unit_price, count() AS requests FROM generation_event_v2 WHERE model_used = '<model>' AND start_time BETWEEN '<before>' AND '<after>' GROUP BY day ORDER BY day FORMAT JSON" | jq '.data'
 ```
 
----
+Provider cost, `priceMultiplier` markup and pack-credit promotions move independently;
+check all three. Keep cash paid separate from Pollen credited — a Pollen discount doesn't
+change cash buying power. Note who was exposed before the payment event you're explaining
+and any simultaneous changes.
 
-# Tinybird Queries
+# Conversion cohort analysis
 
-## Weekly Spend by Balance Bucket
+For "these users pay more" or "X caused conversion" claims, define the comparison first:
 
-```bash
-curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
-  -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT toStartOfWeek(start_time) as week, splitByChar(':', selected_meter_slug)[-1] as meter_source, sum(total_price) as total_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 60 DAY AND environment = 'production' GROUP BY week, meter_source ORDER BY week DESC FORMAT JSON" | jq '.data'
-```
-
-## Top Paying Users by Pack Spend
-
-```bash
-curl -sL "https://api.europe-west2.gcp.tinybird.co/v0/sql" \
-  -H "Authorization: Bearer $TINYBIRD_TOKEN" \
-  --data-urlencode "q=SELECT user_id, user_github_username, sum(total_price) as pack_spend, count() as requests FROM generation_event WHERE start_time >= now() - INTERVAL 30 DAY AND environment = 'production' AND selected_meter_slug = 'v1:meter:pack' GROUP BY user_id, user_github_username ORDER BY pack_spend DESC LIMIT 50 FORMAT JSON" | jq '.data'
-```
-
----
-
-# Analysis Scripts
-
-## Weekly Pack Revenue
-
-```bash
-.claude/skills/spending-analysis/scripts/weekly-pack-revenue.sh
-```
-
-Shows weekly breakdown of actual pack purchases.
-
----
-
-# Key Findings (Jan 2026 Analysis)
-
-## Revenue Trend (9 Weeks)
-
-| Week | Orders | Revenue |
-|------|--------|---------|
-| Jan 13-19 | 51 | $573 |
-| Jan 6-12 | 83 | $928 |
-| Dec 30-Jan 5 | 59 | $928 |
-| Dec 23-29 | 21 | $432 |
-| Dec 16-22 | 22 | $276 |
-| Dec 9-15 | 16 | $141 |
-| Dec 2-8 | 17 | $293 |
-| Nov 25-Dec 1 | 10 | $293 |
-| Nov 18-24 | 1 | $10 |
-
----
+- **Pick the cohort without looking at the outcome.** Don't select on payment or on
+  rewards that require a payment. Contribution rewards (PR/quest merges) are fine;
+  payment-triggered rewards are not.
+- **Freeze a cutoff date** for both membership and the payment check.
+- **Match observation windows.** A last-7-days cohort has had 0–7 days to convert;
+  compare it only with another cohort measured the same way, or use a fixed per-user
+  window ("first 7 days after signup").
+- **Check ordering.** For a reward-linked cohort, count who paid *before* the reward vs
+  *after*. If most paid first, the reward didn't drive conversion.
+- **Count each user once.**
+- **Report group sizes and caveats** with the percentage.
 
 # Notes
 
-- **Pack purchases** in Polar are actual paid revenue.
-- **Usage spend** in Tinybird is generation consumption and may be paid from either active balance bucket.
-- Cross-reference by `external_id` (Polar) = `user_id` (Tinybird).
-- Polar API returns 307 redirects: use `curl -sL` to follow.
+- `stripe_event` is the source of truth for pack-purchase revenue analytics.
+- `generation_event_v2` records Pollen consumption, not cash revenue.
+- Both datasets use `user_id`, so revenue and usage can be joined directly.
+- The dashboard's `daily_stripe_revenue` pipe applies the same paid-event filter.
+- For pre-migration revenue history, note that Polar was the pre-Stripe merchant
+  of record (Nov 2025–Jan 2026) and is retired. Do not combine historical Polar
+  and Stripe totals without checking the cutoff for overlap.
+- Request-count shares (e.g. BYOP share) are dominated by free traffic and drift fast.
+  Always state the date window, and prefer revenue share (% of `total_price`) for
+  strategic claims.

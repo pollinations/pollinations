@@ -1,3 +1,5 @@
+import { UpstreamError } from "@shared/error.ts";
+
 type TransformOptions = {
     format?: "image/jpeg" | "image/png" | "image/webp";
     quality?: number;
@@ -8,14 +10,13 @@ type TransformOptions = {
     maxHeight?: number;
 };
 
+// Synthetic URL used only to attribute Images binding failures in error telemetry.
+const CLOUDFLARE_IMAGES_UPSTREAM_URL = "https://images.cloudflare.com/binding";
+
 let imagesBinding: ImagesBinding | null = null;
 
 export function setImagesBinding(binding: ImagesBinding | undefined): void {
     imagesBinding = binding || null;
-}
-
-export function getImagesBinding(): ImagesBinding | null {
-    return imagesBinding;
 }
 
 export async function transformImage(
@@ -54,22 +55,37 @@ export async function transformImage(
         },
     });
 
-    let pipeline = imagesBinding.input(stream);
-    if (width || height || maxWidth || maxHeight) {
-        pipeline = pipeline.transform({
-            width: width || maxWidth,
-            height: height || maxHeight,
-            fit,
+    let stage = "input";
+    try {
+        let pipeline = imagesBinding.input(stream);
+        if (width || height || maxWidth || maxHeight) {
+            pipeline = pipeline.transform({
+                width: width || maxWidth,
+                height: height || maxHeight,
+                fit,
+            });
+        }
+
+        stage = "output";
+        const response = (
+            await pipeline.output({
+                format,
+                quality,
+            })
+        ).response();
+        stage = "body read";
+        return Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw UpstreamError.fromProvider(502, {
+            message: `Cloudflare Images ${stage} failed: ${message}`,
+            responseBody: JSON.stringify({
+                service: "cloudflare-images",
+                stage,
+            }),
+            requestUrl: new URL(CLOUDFLARE_IMAGES_UPSTREAM_URL),
         });
     }
-
-    const response = (
-        await pipeline.output({
-            format,
-            quality,
-        })
-    ).response();
-    return Buffer.from(await response.arrayBuffer());
 }
 
 export async function convertToJpeg(
@@ -82,11 +98,14 @@ export async function convertToJpeg(
     });
 }
 
-export async function resizeForGptImage(inputBuffer: Buffer): Promise<Buffer> {
+export async function resizeForGptImage(
+    inputBuffer: Buffer,
+    maxDimension = 1536,
+): Promise<Buffer> {
     return transformImage(inputBuffer, {
         format: "image/jpeg",
         quality: 90,
-        maxWidth: 1536,
-        maxHeight: 1536,
+        maxWidth: maxDimension,
+        maxHeight: maxDimension,
     });
 }

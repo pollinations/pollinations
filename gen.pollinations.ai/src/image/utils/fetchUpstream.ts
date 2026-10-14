@@ -1,17 +1,21 @@
-import { HttpError } from "../httpError.ts";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 
 type FetchUpstreamOptions = RequestInit & {
     /**
-     * Prefix for the error message thrown on non-ok responses.
+     * Prefix for transport failure messages (HTTP errors keep the provider message).
      * Defaults to "Upstream request failed".
      */
     errorLabel?: string;
 };
 
+type UpstreamFetcher = (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+) => Promise<Response>;
+
 /**
- * fetch() wrapper that throws HttpError(status, ..., upstreamUrl) on non-ok
- * responses. Use for upstream backend calls where the URL should appear in
- * error reports (handler.ts threads it through to UpstreamError.requestUrl).
+ * Adds transport diagnostics and shares HTTP error handling with the other
+ * generation clients. Provider response bodies are preserved in full.
  *
  * Returns the Response on success. Caller is responsible for `await response.json()`
  * or similar — keeping body parsing in the caller preserves typing.
@@ -19,19 +23,23 @@ type FetchUpstreamOptions = RequestInit & {
 export async function fetchUpstream(
     url: string,
     options: FetchUpstreamOptions = {},
+    fetcher: UpstreamFetcher = fetch,
 ): Promise<Response> {
     const { errorLabel = "Upstream request failed", ...init } = options;
-    const response = await fetch(url, init);
-
-    if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        throw new HttpError(
-            body ? `${errorLabel}: ${body}` : errorLabel,
-            response.status,
-            undefined,
-            url,
-        );
+    let response: Response;
+    try {
+        response = await fetcher(url, init);
+    } catch (error) {
+        // fetch() rejections (e.g. "Network connection lost") carry no
+        // upstream context; rethrow with the URL so error tracking records
+        // the host instead of a bare TypeError.
+        const message = error instanceof Error ? error.message : String(error);
+        throw UpstreamError.fromProvider(502, {
+            message: `${errorLabel}: ${message}`,
+            requestUrl: URL.parse(url) ?? undefined,
+            cause: error,
+        });
     }
 
-    return response;
+    return ensureUpstreamOk(response, url);
 }

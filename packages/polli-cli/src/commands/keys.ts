@@ -1,9 +1,10 @@
 import chalk from "chalk";
 import { Command } from "commander";
 import { gen, requireKey } from "../lib/api.js";
+import { numberOption } from "../lib/number-option.js";
 import {
+    fail,
     getOutputMode,
-    printError,
     printInfo,
     printResult,
     printSuccess,
@@ -19,7 +20,6 @@ interface KeyInfo {
     expiresAt: string | null;
     lastRequest: string | null;
     permissions: {
-        tier?: string[];
         models?: string[];
         account?: string[];
     } | null;
@@ -47,8 +47,24 @@ interface SingleKeyInfo {
     expiresAt: string | null;
     permissions: { models?: string[]; account?: string[] } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled: boolean;
 }
+
+const MODELS_HELP =
+    "Models the key can use: categories (text, image, video, audio, 3d, embedding, realtime) or model IDs from `polli models`. A category includes models added later; a model ID allows only that model";
+
+const formatPerms = (p: KeyInfo["permissions"]) => {
+    if (!p) return "-";
+    const parts: string[] = [];
+    for (const [key, v] of Object.entries(p)) {
+        if (!v?.length) continue;
+        parts.push(
+            v.length <= 2 ? `${key}:${v.join("|")}` : `${key}:${v.length}`,
+        );
+    }
+    return parts.join(" ") || "-";
+};
 
 const list = new Command("list")
     .description("List all API keys for your account")
@@ -73,20 +89,6 @@ const list = new Command("list")
                 printResult(res.data);
                 return;
             }
-
-            const formatPerms = (p: KeyInfo["permissions"]) => {
-                if (!p) return "-";
-                const parts: string[] = [];
-                for (const [key, v] of Object.entries(p)) {
-                    if (!v?.length) continue;
-                    parts.push(
-                        v.length <= 2
-                            ? `${key}:${v.join("|")}`
-                            : `${key}:${v.length}`,
-                    );
-                }
-                return parts.join(" ") || "-";
-            };
 
             const check = process.platform === "win32" ? "yes" : "✓";
             const cross = process.platform === "win32" ? "no" : "✗";
@@ -118,10 +120,7 @@ const list = new Command("list")
                 : ["name", "prefix", "balance", "expires", "permissions"];
             printTable(rows, cols);
         } catch (err) {
-            printError(
-                `Failed to list keys: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to list keys", err);
         }
     });
 
@@ -143,6 +142,7 @@ const info = new Command("info")
                 name: keyInfo.name ?? "-",
                 expires: keyInfo.expiresAt ?? "never",
                 budget: keyInfo.pollenBudget ?? "unlimited",
+                quest_pollen_only: keyInfo.questPollenOnly ?? false,
                 rate_limited: keyInfo.rateLimitEnabled,
                 model_restrictions:
                     keyInfo.permissions?.models?.join(", ") ??
@@ -151,10 +151,7 @@ const info = new Command("info")
                     keyInfo.permissions?.account?.join(", ") ?? "none",
             });
         } catch (err) {
-            printError(
-                `Failed to fetch key info: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to fetch key info", err);
         }
     });
 
@@ -169,8 +166,12 @@ const create = new Command("create")
         "secret",
     )
     .option("--expires-in <seconds>", "Expiry in seconds (max 365 days)")
-    .option("--models <models...>", "Restrict to specific model IDs")
+    .option("--models <models...>", MODELS_HELP)
     .option("--budget <pollen>", "Pollen budget cap")
+    .option(
+        "--quest-pollen-only",
+        "Never spend paid Pollen; requests stop when Quest Pollen runs out",
+    )
     .option(
         "--redirect-uri <uri...>",
         "Allowed BYOP redirect URI(s) for publishable app keys",
@@ -178,7 +179,7 @@ const create = new Command("create")
     .option("--earnings", "Enable developer earnings for publishable app keys")
     .option(
         "--permissions <perms...>",
-        'Account permissions (e.g. profile usage). "keys" is auto-stripped.',
+        'Account permissions (e.g. profile usage). "keys" lets the new key create keys.',
     )
     .addHelpText(
         "after",
@@ -198,25 +199,30 @@ Examples:
                 type: opts.type,
             };
             if (opts.redirectUri && opts.type !== "publishable") {
-                printError("--redirect-uri requires --type publishable");
-                process.exit(1);
+                fail("--redirect-uri requires --type publishable");
             }
             if (opts.earnings === true && opts.type !== "publishable") {
-                printError("--earnings requires --type publishable");
-                process.exit(1);
+                fail("--earnings requires --type publishable");
             }
-            if (opts.expiresIn !== undefined)
-                body.expiresIn = Number(opts.expiresIn);
+            if (opts.expiresIn !== undefined) {
+                body.expiresIn = numberOption(
+                    "--expires-in",
+                    opts.expiresIn,
+                    1,
+                    365 * 86400,
+                    true,
+                );
+            }
             if (opts.models) body.allowedModels = opts.models;
             if (opts.budget !== undefined) {
                 const budget = Number(opts.budget);
                 if (!Number.isFinite(budget) || budget < 0) {
-                    printError("--budget must be a non-negative number");
-                    process.exit(1);
+                    fail("--budget must be a non-negative number");
                 }
                 body.pollenBudget = budget;
             }
             if (opts.permissions) body.accountPermissions = opts.permissions;
+            if (opts.questPollenOnly === true) body.questPollenOnly = true;
             if (opts.redirectUri) body.redirectUris = opts.redirectUri;
             if (opts.earnings === true) body.earningsEnabled = true;
 
@@ -239,16 +245,52 @@ Examples:
                 type: created.type,
                 prefix: created.prefix,
                 expires: created.expiresAt ?? "never",
-                permissions: created.permissions,
+                permissions:
+                    getOutputMode() === "human" && created.permissions
+                        ? formatPerms(created.permissions)
+                        : created.permissions,
                 budget: created.pollenBudget ?? "unlimited",
                 redirectUris: created.metadata?.redirectUris,
                 earnings: created.metadata?.earningsEnabled,
             });
         } catch (err) {
-            printError(
-                `Failed to create key: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to create key", err);
+        }
+    });
+
+const update = new Command("update")
+    .description("Change which models an API key can use")
+    .argument("<id>", "Key ID to update (see `polli keys list`)")
+    .requiredOption("--models <models...>", MODELS_HELP)
+    .addHelpText(
+        "after",
+        `
+Examples:
+  polli keys update <id> --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo
+  polli keys update <id> --models text black-forest-labs/flux.1-schnell
+`,
+    )
+    .action(async (id, opts) => {
+        const key = requireKey();
+
+        try {
+            const updated = await gen<KeyInfo>(`/account/keys/${id}`, {
+                apiKey: key,
+                method: "PATCH",
+                body: { allowedModels: opts.models },
+            });
+
+            printSuccess(`Key ${id} updated.`);
+            printResult({
+                id: updated.id,
+                name: updated.name,
+                permissions:
+                    getOutputMode() === "human" && updated.permissions
+                        ? formatPerms(updated.permissions)
+                        : updated.permissions,
+            });
+        } catch (err) {
+            fail("Failed to update key", err);
         }
     });
 
@@ -266,16 +308,14 @@ const revoke = new Command("revoke")
 
             printSuccess(`Key ${id} revoked.`);
         } catch (err) {
-            printError(
-                `Failed to revoke key: ${err instanceof Error ? err.message : "unknown"}`,
-            );
-            process.exit(1);
+            fail("Failed to revoke key", err);
         }
     });
 
 export const keysCommand = new Command("keys")
-    .description("Manage API keys (create, list, revoke)")
+    .description("Manage API keys (create, list, update, revoke)")
     .addCommand(list)
     .addCommand(info)
     .addCommand(create)
+    .addCommand(update)
     .addCommand(revoke);

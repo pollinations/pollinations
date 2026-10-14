@@ -10,16 +10,19 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-type ScrollAxis = "y" | "x";
+type ScrollAxis = "y" | "x" | "both";
 
 const axisClasses: Record<ScrollAxis, string> = {
     y: "polli:overflow-y-auto polli:overflow-x-hidden",
     x: "polli:overflow-x-auto polli:overflow-y-hidden",
+    both: "polli:overflow-auto",
 };
 
 type ScrollAreaOwnProps = {
     /** Scroll direction. Default `y`. */
     axis?: ScrollAxis;
+    /** Use the system scrollbar instead of the custom auto-hiding track. */
+    scrollbar?: "subtle" | "native";
     className?: string;
 };
 
@@ -33,12 +36,12 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
     else if (ref) (ref as MutableRefObject<T | null>).current = value;
 }
 
-/**
- * Themed auto-hide scroll container. Thumb color follows the nearest
- * `[data-theme="..."]` ancestor.
- */
+/** Scroll container with an optional themed, auto-hiding scrollbar. */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
-    ({ axis = "y", className, children, ...rest }, externalRef) => {
+    (
+        { axis = "y", scrollbar = "subtle", className, children, ...rest },
+        externalRef,
+    ) => {
         const innerRef = useRef<HTMLDivElement | null>(null);
 
         const setRef = useCallback(
@@ -50,6 +53,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
         );
 
         useEffect(() => {
+            if (scrollbar === "native") return;
             const element = innerRef.current;
             if (!element) return;
 
@@ -108,14 +112,15 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
                 element.removeEventListener("focusin", handleInteraction);
                 element.removeEventListener("focusout", scheduleHide);
             };
-        }, []);
+        }, [scrollbar]);
 
         return (
             <div
                 {...rest}
                 ref={setRef}
                 className={cn(
-                    "polli-scrollbar-subtle polli:min-w-0 polli:max-w-full",
+                    scrollbar === "subtle" && "polli-scrollbar-subtle",
+                    "polli:min-w-0 polli:max-w-full",
                     axisClasses[axis],
                     className,
                 )}

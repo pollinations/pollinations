@@ -2,27 +2,21 @@
 # Find users/models with 500 errors (actual backend issues)
 # Usage: ./find-500-errors.sh [hours]
 # Example: ./find-500-errors.sh 24
+set -euo pipefail
 
 HOURS="${1:-24}"
 
-SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
+source "$(dirname "$0")/tinybird-query.sh"
+validate_positive_integer "$HOURS" 720 hours
 
-# Get Tinybird admin token
-TINYBIRD_TOKEN=$(jq -r '.token' "$ENTER_DIR/observability/.tinyb" 2>/dev/null)
-if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
-    echo "Error: Could not read Tinybird token from $ENTER_DIR/observability/.tinyb" >&2
-    exit 1
-fi
-
-QUERY="SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event 
-WHERE response_status >= 500 
-  AND start_time > now() - interval $HOURS hour 
-GROUP BY user_github_username, model_requested, error_message 
-ORDER BY error_count DESC 
-LIMIT 50"
+QUERY="SELECT user_id, argMax(user_github_username, start_time) AS github_username, model_requested, response_status, error_source, error_response_code, argMax(error_message, start_time) AS sample_error, count() AS error_count
+FROM generation_event_v2
+WHERE is_final
+  AND response_status >= 500
+  AND start_time > now() - interval $HOURS hour
+GROUP BY user_id, model_requested, response_status, error_source, error_response_code
+ORDER BY error_count DESC
+LIMIT 50 FORMAT JSON"
 
 echo "=== 500+ Errors (Last ${HOURS}h) ==="
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_TOKEN" \
-    --data-urlencode "q=$QUERY"
+run_tinybird_query "$QUERY"

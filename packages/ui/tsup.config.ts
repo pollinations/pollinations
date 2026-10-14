@@ -9,6 +9,7 @@ export default defineConfig([
             "app-user-menu/sdk": "src/modules/app-user-menu/sdk.ts",
             "gen/index": "src/modules/gen/index.ts",
             "wallet/index": "src/modules/wallet/index.ts",
+            markdown: "src/markdown.ts",
         },
         format: ["esm", "cjs"],
         dts: true,
@@ -16,22 +17,28 @@ export default defineConfig([
         sourcemap: true,
         // Scoped clean: remove tsup's own JS/dts outputs (incl. stale ones from
         // renamed modules) but PRESERVE the static files copied by the later build
-        // steps (fonts, assets, licenses, css). A blanket `clean: true` wipes all of
+        // steps (fonts, brand, licenses, css). A blanket `clean: true` wipes all of
         // dist/ first, leaving a window where the fonts + logo don't exist — consumers
         // that serve them from this symlinked dist (e.g. the website in dev) then 404
         // and cache the miss. Preserving them removes that window entirely.
         clean: [
             "**/*",
             "!fonts/**",
-            "!assets/**",
+            "!brand/**",
             "!licenses/**",
             "!styles.css",
             "!app.css",
+            "!theme.css",
             "!index.browser.min.js",
             "!index.browser.min.js.map",
         ],
         minify: false,
-        external: ["@pollinations/sdk", "@pollinations/sdk/react", "react"],
+        external: [
+            "@pollinations/sdk",
+            "@pollinations/sdk/react",
+            "react",
+            "react-dom",
+        ],
         loader: {
             ".svg": "dataurl",
         },

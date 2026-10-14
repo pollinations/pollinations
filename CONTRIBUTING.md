@@ -12,9 +12,15 @@ Before you start, please refer to the main `README.md` file of the `pollinations
 
 Look for issues that interest you and feel free to tackle them!
 
+Issues labeled `POLLEN-QUEST` are open to multiple solutions; you do not need to claim the issue or wait for assignment before starting. Link your PR with `Fixes #N`. Maintainers compare completed approaches, and the author of the selected merged PR can claim the stated reward.
+
+If a quest asks for an app, submit it with the [app submission form](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml) and enter the quest number in its Quest field. Approving the app completes the quest, and you can claim the reward.
+
 ### 2. Understand the Issue and Build an MVP
 
 Once you've selected an issue, take the time to thoroughly understand its requirements. For code contributions, focus on building a **Minimum Viable Product (MVP)** that addresses the core problem or implements the key feature described in the issue.
+
+If you use a coding agent for a quest, ask it to read the [Ponytail skill](.agents/skills/ponytail/SKILL.md). It encourages reusing existing code and keeping the solution small while preserving required tests and safety checks.
 
 ### 3. Documentation Contributions
 
@@ -27,7 +33,7 @@ We are in profound need of members who can help enhance our documentation. If yo
 
 ### 4. Build Apps with pollinations.ai
 
-Want to build something cool? Check out our **[apps folder](./apps/README.md)**!
+Want to build something cool? Browse the [community apps](https://pollinations.ai/apps) or [submit your own](https://github.com/pollinations/pollinations/issues/new?template=app-submission.yml).
 
 **How it works:**
 
@@ -43,7 +49,7 @@ Create apps using pollinations.ai APIs and get them featured. Each app lives in 
 - Fun projects (games, quizzes)
 - Developer tools (API playgrounds, dashboards)
 
-See the [apps README](./apps/README.md) for detailed guidelines and templates.
+Use the repository's app submission issue form when your app is ready for review.
 
 ### 5. Code Contributions
 
@@ -54,7 +60,7 @@ If you're interested in coding, we enthusiastically welcome contributions in the
 - **Code Optimization:** Refactoring and improving the efficiency, readability, and maintainability of the codebase.
 - **New Functionalities:** Developing innovative features that expand the project's scope.
 
-### A Short Hands on For a Quick Contribution Flow:-
+### A Short Hands-on for a Quick Contribution Flow
 
 1. Submit at least one meaningful pull request that gets merged into the repository.
 2. Ensure the pull request follows the project's contribution guidelines.

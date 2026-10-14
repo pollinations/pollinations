@@ -1,0 +1,63 @@
+{
+  "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+  "version": "v1.1.0",
+  "entity": {
+    "type": "organisation",
+    "role": "owner",
+    "name": "Myceli AI OÜ",
+    "email": "thomash@pollinations.ai",
+    "description": "Myceli AI OÜ is the Estonian company behind Pollinations.ai, an open-source API platform where indie developers build and monetize AI apps without operating their own backend. The company stewards the public Pollinations repositories and supports the project's developer community.",
+    "webpageUrl": {
+      "url": "https://github.com/pollinations"
+    }
+  },
+  "projects": [
+    {
+      "guid": "pollinations",
+      "name": "Pollinations.ai",
+      "description": "Pollinations.ai is an open-source API platform for image, text, audio, video, and embedding workloads. It serves more than 110,000 registered developers and around 1.5 million API requests per day. Funding will support infrastructure and engineering required to keep the open platform reliable while its community builds games, creative tools, assistants, and developer applications.",
+      "webpageUrl": {
+        "url": "https://github.com/pollinations/pollinations"
+      },
+      "repositoryUrl": {
+        "url": "https://github.com/pollinations/pollinations"
+      },
+      "licenses": [
+        "spdx:MIT"
+      ],
+      "tags": [
+        "generative-ai",
+        "api",
+        "developer-tools",
+        "image-generation",
+        "text-generation",
+        "audio-generation",
+        "video-generation",
+        "open-source"
+      ]
+    }
+  ],
+  "funding": {
+    "channels": [
+      {
+        "guid": "myceli-bank",
+        "type": "bank",
+        "description": "Myceli AI OÜ can receive grant funding by bank transfer. Payment and tax details will be supplied privately to an approved funder."
+      }
+    ],
+    "plans": [
+      {
+        "guid": "open-infrastructure",
+        "status": "active",
+        "name": "Open infrastructure sustainability",
+        "description": "Support GPU inference, hosting, observability, security, documentation, and maintainer engineering for the open Pollinations platform and its developer community.",
+        "amount": 100000,
+        "currency": "USD",
+        "frequency": "yearly",
+        "channels": [
+          "myceli-bank"
+        ]
+      }
+    ]
+  }
+}

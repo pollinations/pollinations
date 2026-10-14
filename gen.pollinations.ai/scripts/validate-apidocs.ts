@@ -2,11 +2,11 @@
 /**
  * Static validator for APIDOCS.md. Catches regressions before they land:
  *   - every internal anchor link resolves to a rendered heading
- *   - every curl example for a write method (POST/PUT/PATCH) carries a body
- *     (`-d`, `-F`, or `--data-binary`) — write endpoints without a body never
- *     work, even if the example "looks" valid
+ *   - curl examples for write methods (POST/PUT/PATCH) carry a body
+ *     (`-d`, `-F`, or `--data-binary`), except known bodyless operations
  *   - no `model=<image-model>` appears inside a `/video/` curl example
  *   - public read examples (media retrieval) do not include `Authorization`
+ *   - media-storage examples use the media.pollinations.ai origin
  *
  * Exits non-zero on any failure so it can gate CI.
  */
@@ -20,21 +20,33 @@ const APIDOCS_PATH = join(__dirname, "..", "..", "APIDOCS.md");
 
 // Image models — must NOT appear as `model=<x>` inside a `/video/` example.
 const IMAGE_MODELS = new Set([
-    "flux",
-    "zimage",
-    "gptimage",
-    "gptimage-large",
-    "gpt-image-2",
-    "kontext",
-    "seedream5",
-    "seedream",
-    "nanobanana",
-    "nanobanana-pro",
-    "klein",
+    "black-forest-labs/flux.1-schnell",
+    "tongyi-mai/z-image-turbo",
+    "openai/gpt-image-1-mini",
+    "openai/gpt-image-1.5",
+    "openai/gpt-image-2",
+    "black-forest-labs/flux.1-kontext-pro",
+    "bytedance/seedream-5.0-lite",
+    "bytedance/seedream-4.0",
+    "google/gemini-2.5-flash-image",
+    "google/gemini-3-pro-image",
+    "black-forest-labs/flux.2-klein-4b",
 ]);
 
 // Public read endpoints whose curl examples must not show Authorization.
-const PUBLIC_READ_PATHS = ["/:hash", "/:hash/metadata"];
+const MEDIA_ID = "550e8400-e29b-41d4-a716-446655440000";
+const PUBLIC_READ_PATHS = new Set([
+    `/${MEDIA_ID}`,
+    `/${MEDIA_ID}/metadata`,
+    "/media",
+]);
+const MEDIA_PATHS = new Set([
+    "/upload",
+    `/${MEDIA_ID}`,
+    `/${MEDIA_ID}/metadata`,
+    "/media",
+    `/media/${MEDIA_ID}`,
+]);
 
 function slug(s: string): string {
     return s
@@ -113,12 +125,19 @@ function validate(md: string): Failure[] {
         const url = urlMatch ? urlMatch[1] : "";
         const methodMatch = firstLine.match(/-X\s+(\w+)/);
         const method = methodMatch ? methodMatch[1].toUpperCase() : "GET";
+        const parsedUrl = URL.parse(url);
 
         // Find the nearest preceding heading to give a useful failure path.
         const heading = findEnclosingHeading(lines, block.startLine);
 
-        // 2. Write methods must include a body indicator.
-        if (["POST", "PUT", "PATCH"].includes(method)) {
+        // Sync redeploys the stored repository and accepts no request body.
+        const isBodylessSync =
+            method === "POST" &&
+            parsedUrl?.origin === "https://gen.pollinations.ai" &&
+            /^\/account\/agents\/[^/]+\/sync$/.test(parsedUrl.pathname);
+
+        // 2. Other write methods must include a body indicator.
+        if (["POST", "PUT", "PATCH"].includes(method) && !isBodylessSync) {
             const hasBody = /(-d\s|--data-binary|-F\s|-F"|--form)/.test(
                 block.body,
             );
@@ -138,13 +157,14 @@ function validate(md: string): Failure[] {
                 failures.push({
                     rule: "image-model-in-video",
                     line: block.startLine,
-                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan, nova-reel)`,
+                    message: `/video/ example uses image model "${modelMatch[1]}" — pick a video model (veo, seedance, wan)`,
                 });
             }
         }
 
         // 4. Public reads must not include Authorization.
-        const isPublicReadPath = PUBLIC_READ_PATHS.some((p) => url.endsWith(p));
+        const isPublicReadPath =
+            parsedUrl !== null && PUBLIC_READ_PATHS.has(parsedUrl.pathname);
         if (
             isPublicReadPath &&
             (method === "GET" || method === "HEAD") &&
@@ -154,6 +174,19 @@ function validate(md: string): Failure[] {
                 rule: "auth-on-public-read",
                 line: block.startLine,
                 message: `public read endpoint "${heading}" includes Authorization header in curl example`,
+            });
+        }
+
+        // 5. Media storage is hosted separately from the gen gateway.
+        if (
+            parsedUrl &&
+            MEDIA_PATHS.has(parsedUrl.pathname) &&
+            parsedUrl.origin !== "https://media.pollinations.ai"
+        ) {
+            failures.push({
+                rule: "wrong-media-origin",
+                line: block.startLine,
+                message: `media endpoint "${heading}" uses ${parsedUrl.origin} instead of https://media.pollinations.ai`,
             });
         }
     }

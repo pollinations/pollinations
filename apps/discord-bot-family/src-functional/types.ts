@@ -1,5 +1,3 @@
-import type { Client } from "discord.js";
-
 /**
  * Bot configuration type
  */
@@ -11,19 +9,6 @@ export type BotConfig = {
     conversationChannelIds?: string[];
     globalChannelIds?: string[];
 };
-
-/**
- * Bot type - represents a Discord bot with its configuration
- */
-export type Bot = {
-    client: Client;
-    config: BotConfig;
-};
-
-/**
- * Registry of active bots
- */
-export type BotRegistry = Map<string, Bot>;
 
 /**
  * API Message format for the Pollinations API

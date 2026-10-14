@@ -10,11 +10,11 @@ import {
     Partials,
 } from "discord.js";
 
-const CHANNEL_ID = process.env.OPPOSITE_PROMPT_CHANNEL_ID;
 const TOKEN = process.env.BOT_TOKEN_OPPOSITE_PROMPT;
 const API_KEY = process.env.TEXT_POLLINATIONS_TOKEN;
 const TEXT_API = "https://gen.pollinations.ai/v1/chat/completions";
 const IMAGE_API = "https://gen.pollinations.ai/image";
+const MEDIA_API = "https://media.pollinations.ai/upload";
 const AUTH = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
 const OPPOSITE_PROMPT = `You are a safe image prompt generator. Your #1 rule: NEVER output anything involving nudity, bare skin, undressed people, children, violence, gore, or anything sexual. This rule overrides ALL other instructions.
@@ -85,6 +85,30 @@ async function fetchImage(prompt: string): Promise<Buffer> {
     return Buffer.from(res.data);
 }
 
+async function publishImage(image: Buffer): Promise<void> {
+    if (!API_KEY) return;
+    try {
+        const form = new FormData();
+        form.append(
+            "file",
+            new Blob([new Uint8Array(image)], { type: "image/png" }),
+            "opposite-prompt.png",
+        );
+        form.append("tags", "opposite-prompt-bot");
+        const response = await fetch(MEDIA_API, {
+            method: "POST",
+            headers: AUTH,
+            body: form,
+            signal: AbortSignal.timeout(30_000),
+        });
+        if (!response.ok) {
+            logError(`Media publish failed: ${response.status}`);
+        }
+    } catch (error) {
+        logError(`Media publish failed: ${String(error)}`);
+    }
+}
+
 const processing = new Set<string>();
 
 async function handleMessage(msg: Message, client: Client): Promise<void> {
@@ -93,8 +117,8 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     processing.add(msg.id);
     setTimeout(() => processing.delete(msg.id), 300_000);
 
-    const isMentioned = client.user && msg.mentions.users?.has(client.user.id);
-    if (msg.channelId !== CHANNEL_ID && !isMentioned) return;
+    // Without the Message Content intent, Discord only sends the text of messages that mention the bot
+    if (!client.user || !msg.mentions.users.has(client.user.id)) return;
 
     const prompt = msg.content.replace(/<@!?\d+>/g, "").trim();
     if (!prompt || prompt.startsWith("!")) return;
@@ -122,6 +146,7 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
             });
 
             await msg.reply({ files: [attachment] });
+            await publishImage(imageBuffer);
             log(`Reply sent successfully for "${prompt}" → "${opposite}"`);
             return;
         } catch (err: any) {
@@ -142,19 +167,13 @@ async function handleMessage(msg: Message, client: Client): Promise<void> {
     }
 }
 
-if (!TOKEN || !CHANNEL_ID) {
-    console.error(
-        "Missing BOT_TOKEN_OPPOSITE_PROMPT or OPPOSITE_PROMPT_CHANNEL_ID",
-    );
+if (!TOKEN) {
+    console.error("Missing BOT_TOKEN_OPPOSITE_PROMPT");
     process.exit(1);
 }
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
     partials: [Partials.Channel, Partials.Message],
 });
 
@@ -181,7 +200,7 @@ client.on("warn", (msg) => log("Discord warning:", msg));
 
 client.once(Events.ClientReady, (c) => {
     log(
-        `Bot online as ${c.user.tag} — listening in ${CHANNEL_ID} (PID ${process.pid})`,
+        `Bot online as ${c.user.tag} — answering mentions (PID ${process.pid})`,
     );
 });
 

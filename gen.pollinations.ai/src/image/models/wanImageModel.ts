@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Wan 2.7 Image generation via Replicate.
  *
@@ -13,14 +14,13 @@
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestByRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
@@ -46,10 +46,6 @@ const WAN_SIZES_4K = [
     { ratio: 3 / 4, size: "3072*4096" },
 ] as const;
 
-// Reference-image cap — matches the prior DashScope path and registry
-// maxReferenceImages: 9.
-const WAN_MAX_IMAGES = 9;
-
 // ImageParams.aspectRatio → width/height pair, so an explicit aspect ratio wins
 // over (possibly defaulted) width/height when picking the closest size.
 const ASPECT_RATIO_WH: Record<string, [number, number]> = {
@@ -62,9 +58,9 @@ const ASPECT_RATIO_WH: Record<string, [number, number]> = {
     "9:21": [9, 21],
 };
 
-function resolveSize(
+export function resolveWanImageSize(
     safeParams: ImageParams,
-    sizes: readonly { ratio: number; size: string }[],
+    sizes: readonly { ratio: number; size: string }[] = WAN_SIZES_2K,
 ): string {
     const requested = safeParams.aspectRatio;
     const [w, h] =
@@ -87,18 +83,15 @@ export async function callWanImageAPI(
     const hasImage = images.length > 0;
     const model = isPro ? WAN_IMAGE_PRO_MODEL : WAN_IMAGE_MODEL;
     const modelLabel = isPro ? "Wan 2.7 Image Pro" : "Wan 2.7 Image";
-    const trackingLabel = isPro ? "wan-image-pro" : "wan-image";
 
     // 4K is available only for pro text-to-image; pro editing and the standard
     // model cap at 2K (matches the prior DashScope pixel limits).
-    const size = resolveSize(
+    const size = resolveWanImageSize(
         safeParams,
         isPro && !hasImage ? WAN_SIZES_4K : WAN_SIZES_2K,
     );
 
-    const imageInput = hasImage
-        ? await Promise.all(images.slice(0, WAN_MAX_IMAGES).map(toDataUri))
-        : [];
+    const imageInput = hasImage ? await Promise.all(images.map(toDataUri)) : [];
 
     const input: Record<string, unknown> = {
         prompt,
@@ -131,23 +124,30 @@ export async function callWanImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${modelLabel} generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
-        }
-        throw err;
+        throw toReplicateUpstreamError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${modelLabel} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${modelLabel} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {
         errorLabel: `Failed to download ${modelLabel} output image`,
     });
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    let imageBuffer: Buffer;
+    try {
+        imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    } catch (err) {
+        // Body-read failures (connection drop mid-download of a 4K output)
+        // otherwise surface as bare TypeErrors with no upstream context.
+        const message = err instanceof Error ? err.message : String(err);
+        throw UpstreamError.fromProvider(502, {
+            message: `Failed to download ${modelLabel} output image: ${message}`,
+            requestUrl: new URL(outputUrls[0]),
+        });
+    }
     logOps(
         `${modelLabel} image downloaded:`,
         (imageBuffer.length / 1024).toFixed(1),
@@ -156,10 +156,8 @@ export async function callWanImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
-            actualModel: trackingLabel,
+            actualModel: safeParams.model,
             // Flat per-image pricing on Replicate; report 1 image token.
             usage: {
                 completionImageTokens: 1,

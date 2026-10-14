@@ -1,6 +1,6 @@
 #!/bin/bash
 # Format only files changed on the current branch compared to main
-# Uses the same settings as the biome-check.yml workflow
+# Uses the same settings as the ci-pull-request-checks.yml workflow
 
 set -e
 
@@ -22,7 +22,7 @@ echo "$FILES"
 echo ""
 
 echo "🔧 Running Biome format on changed files..."
-echo "$FILES" | xargs npx biome check --write
+echo "$FILES" | xargs npx @biomejs/biome check --write
 
 echo ""
 echo "✅ Done! Files formatted."

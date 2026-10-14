@@ -32,6 +32,24 @@ export function redirectUriMatchesAllowlist(
     return allowlist.some((entry) => matchesEntry(incoming, entry));
 }
 
+/**
+ * Strict variant for the OAuth authorization-code flow (RFC 6749 §3.1.2.3):
+ * the authorization code rides the redirect query string, so the fragment-era
+ * leniency of accepting extra query params must not apply. The query must
+ * equal the registered entry's exactly (normally: both absent). Loopback
+ * ports stay port-agnostic (RFC 8252 §7.3) and one trailing slash is still
+ * ignored. The legacy fragment flow keeps the lenient matcher above.
+ */
+export function redirectUriMatchesAllowlistExact(
+    uri: string,
+    allowlist: readonly string[] | null | undefined,
+): boolean {
+    if (!allowlist?.length) return false;
+    const incoming = safeParse(uri);
+    if (!incoming) return false;
+    return allowlist.some((entry) => matchesEntry(incoming, entry, true));
+}
+
 export function isAllowedRedirectUrl(url: URL): boolean {
     if (url.protocol === "https:") return true;
     return url.protocol === "http:" && isLoopbackHostname(url.hostname);
@@ -65,7 +83,11 @@ function normalizePathname(pathname: string): string {
         : pathname;
 }
 
-function matchesEntry(incoming: URL, entryUrl: string): boolean {
+function matchesEntry(
+    incoming: URL,
+    entryUrl: string,
+    exactQuery = false,
+): boolean {
     const entry = safeParse(entryUrl);
     if (!entry) return false;
     if (incoming.hash || entry.hash) return false;
@@ -82,7 +104,11 @@ function matchesEntry(incoming: URL, entryUrl: string): boolean {
     ) {
         return false;
     }
-    if (entry.search && incoming.search !== entry.search) return false;
+    if (exactQuery) {
+        if (incoming.search !== entry.search) return false;
+    } else if (entry.search && incoming.search !== entry.search) {
+        return false;
+    }
     if (isLoopbackHostname(entry.hostname)) return true;
     return incoming.port === entry.port;
 }

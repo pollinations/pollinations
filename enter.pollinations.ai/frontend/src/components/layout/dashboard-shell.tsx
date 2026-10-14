@@ -1,61 +1,78 @@
 import {
+    AccountIcon,
+    AccountMenu,
     BookIcon,
+    BrandMark,
+    BugIcon,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
-    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
+    LoadingStatus,
     McpIcon,
     MenuIcon,
     NavItem,
     ScrollArea,
+    SignOutIcon,
     TerminalIcon,
     useScrollLock,
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import logoWordmarkUrl from "@pollinations/ui/assets/logo-wordmark.svg";
+import { Link, useRouterState } from "@tanstack/react-router";
 import type {
     ComponentType,
     CSSProperties,
+    Dispatch,
     FC,
     PropsWithChildren,
     ReactNode,
     RefObject,
+    SetStateAction,
 } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
-import { DASHBOARD_NAV_ITEMS, type DashboardPage } from "./dashboard-theme.ts";
+import {
+    QUEST_STATUS_UPDATED_EVENT,
+    questNavLabel,
+} from "../quests/quest-nav-status.ts";
+import {
+    DASHBOARD_NAV_ITEMS,
+    type DashboardPage,
+    type DashboardPath,
+} from "./dashboard-theme.ts";
+
+/** Counts what the page still waits for; the shell shows one status while > 0. */
+export const PendingCount = createContext<Dispatch<SetStateAction<number>>>(
+    () => {},
+);
 
 export type { DashboardPage } from "./dashboard-theme.ts";
 
 type DashboardNavItem = {
     id: DashboardPage;
+    to: DashboardPath;
     label: string;
     icon: ComponentType<{ className?: string }>;
 };
 
-const brandWordmarkMask: CSSProperties = {
-    WebkitMask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-    mask: `url(${logoWordmarkUrl}) center / contain no-repeat`,
-};
-
 type DashboardShellProps = PropsWithChildren<{
-    activePage: DashboardPage;
     navItems?: readonly DashboardNavItem[];
-    displayName?: string;
-    avatarUrl?: string;
-    onPageChange: (page: DashboardPage) => void;
+    accountName?: string;
+    githubAvatarUrl?: string;
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    signInBanner?: ReactNode;
+    showFooterLinks?: boolean;
+    showQuestStatus?: boolean;
 }>;
 
 type BrandLink = {
@@ -99,14 +116,14 @@ const brandLinks: readonly BrandLink[] = [
         label: "Pollinations on GitHub",
         icon: <GitHubIcon className="h-full w-full" />,
         text: "github",
-        count: "4.4k",
+        count: "5k",
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
-        count: "18k",
+        count: "19k",
     },
 ];
 
@@ -118,37 +135,70 @@ const footerLinks: readonly FooterLink[] = [
 
 const accountMenuLinks: readonly AccountMenuLink[] = [
     {
-        href: "https://discord.com/channels/885844321461485618/1432378056126894343",
-        label: "#pollen-beta",
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Get Help",
         icon: <DiscordIcon className="h-full w-full" />,
-        ariaLabel: "#pollen-beta Discord channel",
+        ariaLabel: "Get help in the Discord community chat",
     },
     {
         href: "https://github.com/pollinations/pollinations/issues",
-        label: "Report an issue",
-        icon: <GitHubIcon className="h-full w-full" />,
-        ariaLabel: "Report an issue on GitHub",
+        label: "Report a Bug",
+        icon: <BugIcon className="h-full w-full" />,
+        ariaLabel: "Report a bug on GitHub",
     },
 ];
 
 export const DashboardShell: FC<DashboardShellProps> = ({
-    activePage,
     navItems = DASHBOARD_NAV_ITEMS,
-    displayName,
-    avatarUrl,
-    onPageChange,
+    accountName,
+    githubAvatarUrl,
     onSignOut,
     accountArea,
     walletArea,
+    signInBanner,
+    showFooterLinks = true,
+    showQuestStatus = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
     const drawerRef = useRef<HTMLDivElement>(null);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
+    const location = useRouterState({ select: (state) => state.location });
+    const activeNavItem = DASHBOARD_NAV_ITEMS.find(
+        (item) => item.to === location.pathname,
+    );
+    const activePage = activeNavItem?.id;
+    const activePageLabel =
+        location.pathname === "/account"
+            ? "Account"
+            : (activeNavItem?.label ?? "Dashboard");
+    const questStatus = useQuestNavStatus(showQuestStatus);
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
+
+    useEffect(() => {
+        const canonicalUrl = new URL(
+            location.pathname,
+            window.location.origin,
+        ).toString();
+        const title = `${activePageLabel} | pollinations.ai`;
+        document.title = title;
+        document
+            .querySelector('link[rel="canonical"]')
+            ?.setAttribute("href", canonicalUrl);
+        document
+            .querySelector('meta[property="og:url"]')
+            ?.setAttribute("content", canonicalUrl);
+        document
+            .querySelector('meta[property="og:title"]')
+            ?.setAttribute("content", title);
+        document
+            .querySelector('meta[name="twitter:title"]')
+            ?.setAttribute("content", title);
+    }, [activePageLabel, location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -177,7 +227,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         const scrollElement = mainScrollRef.current;
         if (!scrollElement) return;
 
-        if (activePage === "pollen" && window.location.hash === "#buy-pollen") {
+        if (activePage === "pollen" && location.hash === "buy-pollen") {
             const target = scrollElement.querySelector("#buy-pollen");
             if (target instanceof HTMLElement) {
                 const scrollRect = scrollElement.getBoundingClientRect();
@@ -194,12 +244,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         }
 
         scrollElement.scrollTo({ top: 0, behavior: "auto" });
-    }, [activePage]);
-
-    function handleItemChange(page: DashboardPage): void {
-        onPageChange(page);
-        closeDrawer();
-    }
+    }, [activePage, location.hash]);
 
     const supportLinks: readonly SupportLink[] = [
         {
@@ -210,8 +255,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -224,8 +269,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "MCP Server",
-            href: `${genDocsUrl()}#tag/mcp-server`,
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -234,11 +279,12 @@ export const DashboardShell: FC<DashboardShellProps> = ({
 
     const effectiveAccountArea =
         accountArea ??
-        (displayName && onSignOut ? (
+        (accountName && onSignOut ? (
             <AccountMenuButton
-                displayName={displayName}
-                avatarUrl={avatarUrl ?? ""}
+                username={accountName}
+                avatarUrl={githubAvatarUrl ?? ""}
                 onSignOut={onSignOut}
+                onNavigate={closeDrawer}
                 links={accountMenuLinks}
                 className="w-full justify-start"
             />
@@ -266,77 +312,142 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
-            onPageChange={handleItemChange}
+            questStatus={questStatus}
+            showFooterLinks={showFooterLinks}
+            onNavigate={closeDrawer}
         />
     );
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden md:block">{rail}</div>
-            <div
-                ref={drawerRef}
-                className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] md:hidden",
-                    isDrawerOpen
-                        ? "pointer-events-auto visible delay-0"
-                        : "pointer-events-none invisible delay-[420ms]",
-                )}
-                aria-hidden={!isDrawerOpen}
-                inert={!isDrawerOpen}
-            >
-                <button
-                    type="button"
-                    className={cn(
-                        "absolute inset-0 bg-black/40 transition-opacity ease-out",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "opacity-100" : "opacity-0",
-                    )}
-                    onClick={closeDrawer}
-                    aria-label="Close navigation"
-                />
+        <PendingCount.Provider value={setPendingCount}>
+            <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
+                <div className="hidden lg:block">{rail}</div>
                 <div
+                    ref={drawerRef}
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
-                        "duration-[420ms]",
-                        isDrawerOpen ? "translate-x-0" : "-translate-x-full",
+                        "fixed inset-0 z-40 transition-[visibility] lg:hidden",
+                        isDrawerOpen
+                            ? "pointer-events-auto visible delay-0"
+                            : "pointer-events-none invisible delay-[420ms]",
                     )}
+                    aria-hidden={!isDrawerOpen}
+                    inert={!isDrawerOpen}
                 >
-                    <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
-                        <div className="flex items-center justify-between gap-2">
-                            <BrandMark size="drawer" />
-                            <button
-                                type="button"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
-                                onClick={closeDrawer}
-                                aria-label="Close navigation"
-                            >
-                                <XIcon className="h-5 w-5" />
-                            </button>
+                    <button
+                        type="button"
+                        className={cn(
+                            "absolute inset-0 bg-black/40 transition-opacity ease-out",
+                            "duration-[420ms]",
+                            isDrawerOpen ? "opacity-100" : "opacity-0",
+                        )}
+                        onClick={closeDrawer}
+                        aria-label="Close navigation"
+                    />
+                    <div
+                        className={cn(
+                            "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden bg-app-bg transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                            "duration-[420ms]",
+                            isDrawerOpen
+                                ? "translate-x-0"
+                                : "-translate-x-full",
+                        )}
+                    >
+                        <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 px-4 py-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <DashboardBrand size="drawer" />
+                                <button
+                                    type="button"
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
+                                    onClick={closeDrawer}
+                                    aria-label="Close navigation"
+                                >
+                                    <XIcon className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <BrandLinks links={brandLinks} />
                         </div>
-                        <BrandLinks links={brandLinks} />
-                    </div>
-                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        {rail}
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                            {rail}
+                        </div>
                     </div>
                 </div>
+                <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+                    <MobileMenuButton
+                        buttonRef={menuButtonRef}
+                        onOpen={() => setIsDrawerOpen(true)}
+                    />
+                    {/* One status for everything the page waits for, floating at
+                    the bottom centre of the content column. */}
+                    {pendingCount > 0 && (
+                        <div className="fixed bottom-6 left-1/2 z-30 flex h-10 -translate-x-1/2 items-center rounded-full bg-surface-menu/80 px-4 backdrop-blur-md lg:left-[calc(50%+7.5rem)] lg:h-8 lg:px-3">
+                            <LoadingStatus>Loading…</LoadingStatus>
+                        </div>
+                    )}
+                    <ScrollArea
+                        ref={mainScrollRef}
+                        className={cn(
+                            "min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10",
+                            signInBanner ? "pt-3" : "pt-16",
+                        )}
+                    >
+                        <main className="mx-auto flex max-w-[800px] flex-col gap-3">
+                            {signInBanner}
+                            {children}
+                        </main>
+                    </ScrollArea>
+                </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-                <MobileMenuButton
-                    buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
-                />
-                <ScrollArea
-                    ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
-                >
-                    <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        {children}
-                    </main>
-                </ScrollArea>
-            </div>
-        </div>
+        </PendingCount.Provider>
     );
 };
+
+function useQuestNavStatus(enabled: boolean): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!enabled) {
+            setLabel(null);
+            return;
+        }
+
+        let cancelled = false;
+        let requestId = 0;
+        const refresh = async () => {
+            const currentRequest = ++requestId;
+            try {
+                const [catalogResponse, rewardsResponse] = await Promise.all([
+                    apiClient.quests.catalog.$get(),
+                    accountClient.quests.rewards.$get(),
+                ]);
+                if (!catalogResponse.ok || !rewardsResponse.ok) {
+                    throw new Error("Quest status unavailable");
+                }
+                const [catalog, rewards] = await Promise.all([
+                    catalogResponse.json(),
+                    rewardsResponse.json(),
+                ]);
+                if (!cancelled && currentRequest === requestId) {
+                    setLabel(questNavLabel(catalog.quests, rewards.rewards));
+                }
+            } catch {
+                if (!cancelled && currentRequest === requestId) setLabel(null);
+            }
+        };
+        const handleUpdate = () => void refresh();
+
+        void refresh();
+        window.addEventListener(QUEST_STATUS_UPDATED_EVENT, handleUpdate);
+        return () => {
+            cancelled = true;
+            window.removeEventListener(
+                QUEST_STATUS_UPDATED_EVENT,
+                handleUpdate,
+            );
+        };
+    }, [enabled]);
+
+    return label;
+}
 
 function useDashboardShellBodyClass(): void {
     useEffect(() => {
@@ -350,13 +461,15 @@ function useDashboardShellBodyClass(): void {
 }
 
 type DashboardRailProps = {
-    activePage: DashboardPage;
+    activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
     supportAction: SupportAction;
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
-    onPageChange: (page: DashboardPage) => void;
+    questStatus: string | null;
+    showFooterLinks: boolean;
+    onNavigate: () => void;
 };
 
 const DashboardRail: FC<DashboardRailProps> = ({
@@ -366,15 +479,17 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
-    onPageChange,
+    questStatus,
+    showFooterLinks,
+    onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
-            <BrandMark size="desktop" />
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
+            <DashboardBrand size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
         <ScrollArea
@@ -386,24 +501,26 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-1 pr-2">
+            <nav className="flex flex-col gap-1">
                 {navItems.map((item) => (
                     <NavItem
+                        as={Link}
                         key={item.id}
-                        type="button"
+                        to={item.to}
                         data-theme="accent"
                         icon={item.icon}
                         active={activePage === item.id}
-                        onClick={() => onPageChange(item.id)}
+                        onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "quests" && (
+                        {(item.id === "sandboxes" ||
+                            (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? questStatus : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -414,7 +531,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
+            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
 );
@@ -426,7 +543,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        className="fixed left-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >
@@ -434,7 +551,7 @@ const MobileMenuButton: FC<{
     </button>
 );
 
-const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
+const DashboardBrand: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
     <a
         href="https://pollinations.ai"
         target="_blank"
@@ -443,13 +560,9 @@ const BrandMark: FC<{ size: "desktop" | "drawer" }> = ({ size }) => (
         aria-label="Pollinations"
     >
         <span className="sr-only">Pollinations</span>
-        <span
-            aria-hidden="true"
-            className={cn(
-                "block shrink-0 bg-current",
-                size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]",
-            )}
-            style={brandWordmarkMask}
+        <BrandMark
+            variant="lockup"
+            className={size === "desktop" ? "h-6 w-[195px]" : "h-5 w-[162px]"}
         />
     </a>
 );
@@ -534,80 +647,48 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
 
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
-    note?: ReactNode;
-}> = ({ links, note }) => (
-    <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
-            {links.map((link) => (
-                <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-theme-text-strong"
-                >
-                    {link.label}
-                </a>
-            ))}
-        </div>
-        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
-            <span>{note}</span>
-            {/* accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="accent">
-                <ColorModeToggle />
-            </span>
-        </div>
-    </>
+}> = ({ links }) => (
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+        {links.length > 0 && (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
+                {links.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-theme-text-strong"
+                    >
+                        {link.label}
+                    </a>
+                ))}
+            </div>
+        )}
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="ml-auto shrink-0">
+            <ColorModeToggle />
+        </span>
+    </div>
 );
 
 type AccountMenuButtonProps = {
-    displayName: string;
+    username: string;
     avatarUrl: string;
     onSignOut?: () => void;
+    onNavigate?: () => void;
     links?: readonly AccountMenuLink[];
     className?: string;
 };
 
 const AccountMenuButton: FC<AccountMenuButtonProps> = ({
-    displayName,
+    username,
     avatarUrl,
     onSignOut,
+    onNavigate,
     links = [],
     className,
 }) => (
-    <Dropdown
-        align="end"
-        className="w-[var(--reference-width)] min-w-0 p-1"
-        trigger={(open) => (
-            <button
-                type="button"
-                data-theme="accent"
-                className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
-                    className,
-                )}
-            >
-                {avatarUrl ? (
-                    <img
-                        src={avatarUrl}
-                        alt={`${displayName} avatar`}
-                        className="h-8 w-8 shrink-0 rounded-full object-cover"
-                    />
-                ) : (
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-opaque text-sm font-bold text-theme-text-strong">
-                        {displayName.slice(0, 1).toUpperCase()}
-                    </span>
-                )}
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {displayName}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
-                />
-            </button>
-        )}
-    >
+    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
         {(close) => (
             <>
                 {links.map((link) => (
@@ -616,19 +697,37 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 {links.length > 0 && (
                     <div className="my-1 border-t border-divider" />
                 )}
+                <Link
+                    to="/account"
+                    onClick={() => {
+                        close();
+                        onNavigate?.();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                >
+                    <AccountIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Account</span>
+                </Link>
                 <button
                     type="button"
                     onClick={() => {
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
-                    Sign Out
+                    <SignOutIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Sign Out</span>
                 </button>
             </>
         )}
-    </Dropdown>
+    </AccountMenu>
 );
 
 const AccountMenuLinkRow: FC<AccountMenuLink> = ({

@@ -1,32 +1,25 @@
 import { SELF } from "cloudflare:test";
 import { describe, expect } from "vitest";
-import { test } from "./fixtures.ts";
+import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
-        auth,
-        sessionToken,
+        accountToken,
         mocks,
     }) => {
         await mocks.enable("tinybird");
 
-        const created = await auth.apiKey.create({
+        const created = await createApiKeyViaApi(accountToken, {
             name: "my-key",
-            fetchOptions: {
-                headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
-                },
-            },
         });
-        if (!created.data) throw new Error("Failed to create key");
-        const myKeyId = created.data.id;
+        const myKeyId = created.id;
 
         mocks.tinybird.state.usageResponse = [
             {
                 cursor_event_id: "event-1",
                 timestamp: "2026-04-14 12:10:00",
                 type: "generate.text",
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 api_key_id: myKeyId,
                 api_key: "my-key",
                 api_key_type: "secret",
@@ -49,7 +42,7 @@ describe("GET /api/account/key/usage", () => {
 
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
-            { headers: { Authorization: `Bearer ${created.data.key}` } },
+            { headers: { Authorization: `Bearer ${created.key}` } },
         );
         expect(res.status).toBe(200);
         const data = (await res.json()) as {
@@ -59,18 +52,18 @@ describe("GET /api/account/key/usage", () => {
         expect(data.count).toBe(1);
 
         const calls = mocks.tinybird.state.pipeCalls.filter((call) =>
-            call.url.includes("user_usage.json"),
+            call.url.includes("activity_usage_transactions.json"),
         );
         expect(calls).toHaveLength(1);
-        expect(calls[0].query.api_key_id).toBe(myKeyId);
+        expect(calls[0].query.api_key_ids).toBe(myKeyId);
     });
 
-    test("returns 401 without an API key", async ({ sessionToken }) => {
+    test("returns 401 without an API key", async ({ accountToken }) => {
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );

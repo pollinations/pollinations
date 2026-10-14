@@ -5,10 +5,10 @@ import type {
     GeminiEmbedResponse,
     GeminiModality,
     GeminiPart,
-    GeminiTaskType,
 } from "./types.ts";
 
-const VERTEX_REGION = "us-central1";
+const VERTEX_LOCATION = "us";
+const VERTEX_HOST = `aiplatform.${VERTEX_LOCATION}.rep.googleapis.com`;
 
 const MODALITY_TO_USAGE_KEY: Record<GeminiModality, keyof Usage> = {
     TEXT: "promptTextTokens",
@@ -48,7 +48,6 @@ export function extractModalityUsage(result: GeminiEmbedResponse): Usage {
 export async function callGeminiEmbed(
     modelId: string,
     parts: GeminiPart[],
-    taskType?: GeminiTaskType,
     outputDimensionality?: number,
 ): Promise<GeminiEmbedResponse> {
     const projectId = process.env.GOOGLE_PROJECT_ID;
@@ -58,7 +57,7 @@ export async function callGeminiEmbed(
         throw new Error("Google Cloud authentication failed");
     }
 
-    const url = `https://${VERTEX_REGION}-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/${VERTEX_REGION}/publishers/google/models/${modelId}:embedContent`;
+    const url = `https://${VERTEX_HOST}/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${modelId}:embedContent`;
     const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -68,7 +67,6 @@ export async function callGeminiEmbed(
         body: JSON.stringify({
             content: { parts },
             embedContentConfig: {
-                ...(taskType && { taskType }),
                 ...(outputDimensionality && { outputDimensionality }),
             },
         }),

@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 import type {
     CreateChatCompletionRequest,
     MessageContentPart,
@@ -19,6 +20,7 @@ import {
     resolveBedrockGuardrailEnv,
 } from "@/utils/bedrock-guardrail.ts";
 import { classifyTriggers } from "@/utils/safety-features.ts";
+import { getRequiredSafetyFeatures } from "./model.ts";
 
 type SafetyContext = Context<Env>;
 type ChatBody = CreateChatCompletionRequest & Record<string, unknown>;
@@ -31,22 +33,48 @@ export type SafetyVariables = {
     safetyHeaders?: Record<string, string>;
 };
 
-export async function applySafety(
+type SafetyInput = string | string[] | ChatBody;
+
+type PreparedSafetyInput = {
+    texts: string[];
+    safe?: SafeValue;
+    rebuild: (safeTexts: string[]) => SafetyInput;
+};
+
+export function applySafetyToInput(
     c: SafetyContext,
-    text: string,
-    bodySafe?: SafeValue,
-): Promise<string> {
-    const [safeText] = await applySafetyToTexts(c, [text], bodySafe);
-    return safeText;
+    input: string,
+    safe?: SafeValue,
+): Promise<string>;
+export function applySafetyToInput(
+    c: SafetyContext,
+    input: string[],
+    safe?: SafeValue,
+): Promise<string[]>;
+export function applySafetyToInput(
+    c: SafetyContext,
+    input: ChatBody,
+): Promise<ChatBody>;
+export async function applySafetyToInput(
+    c: SafetyContext,
+    input: SafetyInput,
+    safe?: SafeValue,
+): Promise<SafetyInput> {
+    const prepared = prepareSafetyInput(input, safe);
+    const safeTexts = await checkSafetyTexts(c, prepared.texts, prepared.safe);
+    return prepared.rebuild(safeTexts);
 }
 
-export async function applySafetyToTexts(
+async function checkSafetyTexts(
     c: SafetyContext,
     texts: string[],
     bodySafe?: SafeValue,
 ): Promise<string[]> {
     const safeValue = resolveSafeValue(c, bodySafe);
     const features = getRequestFeatures(safeValue);
+    for (const feature of getRequiredSafetyFeatures(c.var.model)) {
+        features.add(feature);
+    }
     if (features.size === 0) return texts;
 
     const guardrailInputs = selectGuardrailInputs(texts);
@@ -59,7 +87,7 @@ export async function applySafetyToTexts(
         const guardrailEnv = resolveBedrockGuardrailEnv(c.env);
         if (!guardrailEnv) {
             setSafetyHeader(c, "X-Safety-Status", "misconfigured");
-            throw safetyError(503, "service_unavailable", {
+            throw new HTTPException(503, {
                 message: "Safety service not configured",
             });
         }
@@ -74,7 +102,7 @@ export async function applySafetyToTexts(
             error: String(error),
         });
         setSafetyHeader(c, "X-Safety-Status", "unavailable");
-        throw safetyError(503, "service_unavailable", {
+        throw new HTTPException(503, {
             message: "Safety service temporarily unavailable",
         });
     }
@@ -86,12 +114,9 @@ export async function applySafetyToTexts(
         features,
     );
     if (blockedFeatures.size > 0) {
-        throw safetyError(400, "content_blocked", {
-            message: "Request blocked by safety filter",
-            safety: {
-                applied: [...features],
-                triggered: [...blockedFeatures],
-            },
+        throw new UpstreamError(400, {
+            message: `Request blocked by safety filter: ${[...blockedFeatures].join(", ")}`,
+            errorCode: "content_blocked",
         });
     }
 
@@ -183,18 +208,34 @@ function setSafetyHeader(c: SafetyContext, name: string, value: string): void {
     c.set(SAFETY_HEADERS_KEY, current);
 }
 
-export async function applySafetyToChatRequest(
-    c: SafetyContext,
-    body: ChatBody,
-): Promise<ChatBody> {
-    const safeValue = body.safe as SafeValue;
-    const targets = collectChatTextTargets(body);
-    const safeTexts = await applySafetyToTexts(
-        c,
-        targets.map((target) => target.text),
-        safeValue,
-    );
+function prepareSafetyInput(
+    input: SafetyInput,
+    safe?: SafeValue,
+): PreparedSafetyInput {
+    if (typeof input === "string") {
+        return {
+            texts: [input],
+            safe,
+            rebuild: ([safeText]) => safeText,
+        };
+    }
+    if (Array.isArray(input)) {
+        return { texts: input, safe, rebuild: (safeTexts) => safeTexts };
+    }
 
+    const targets = collectChatTextTargets(input);
+    return {
+        texts: targets.map((target) => target.text),
+        safe: input.safe as SafeValue,
+        rebuild: (safeTexts) => rebuildChatInput(input, targets, safeTexts),
+    };
+}
+
+function rebuildChatInput(
+    body: ChatBody,
+    targets: ChatTextTarget[],
+    safeTexts: string[],
+): ChatBody {
     let nextMessages = body.messages;
     let nextSystem = body.system;
     let changed = false;
@@ -286,29 +327,10 @@ function getRequestFeatures(safeValue: SafeValue) {
     const normalized = normalizeSafeValue(safeValue);
     const invalid = invalidSafeTokens(normalized);
     if (invalid.length > 0) {
-        throw safetyError(400, "invalid_safe", {
-            message: `Unknown safe feature: ${invalid.join(", ")}`,
-            safety: {
-                valid: [...VALID_SAFE_TOKENS].join(","),
-            },
+        throw new HTTPException(400, {
+            message: `Unknown safe feature: ${invalid.join(", ")}. Valid: ${[...VALID_SAFE_TOKENS].join(", ")}`,
         });
     }
 
     return parseSafeFeatures(normalized);
-}
-
-function safetyError(
-    status: 400 | 503,
-    code: string,
-    extra: { message: string; safety?: object },
-): HTTPException {
-    const body = JSON.stringify({
-        error: { type: "safety_error", code, ...extra },
-    });
-    return new HTTPException(status, {
-        res: new Response(body, {
-            status,
-            headers: { "Content-Type": "application/json" },
-        }),
-    });
 }

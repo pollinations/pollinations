@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
@@ -64,6 +62,11 @@ export function refreshR2ObjectTtl(
                 httpMetadata: object.httpMetadata,
                 customMetadata: object.customMetadata,
                 storageClass: object.storageClass,
+                // Rewrite only while the object is still these exact bytes:
+                // a concurrent delete (or replacement) must win, or the
+                // refresh would silently resurrect an object that can no
+                // longer be deleted through any API.
+                onlyIf: { etagMatches: object.etag },
             }),
         ])
             .then(() => undefined)

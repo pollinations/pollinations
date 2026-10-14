@@ -1,10 +1,11 @@
 import { getLogger } from "@logtape/logtape";
+import { githubApiHeaders } from "../../github-api.ts";
 import { type QuestDefinition, rewardableQuests } from "../definitions.ts";
 import type {
     QuestCard,
+    QuestEvaluation,
     QuestEvaluationContext,
     QuestUser,
-    RewardProposal,
 } from "../types.ts";
 import { questToCard } from "../types.ts";
 
@@ -15,13 +16,10 @@ import { questToCard } from "../types.ts";
 
 const log = getLogger(["enter", "quest", "github-profile"]);
 
-const GITHUB_ACCOUNT_AGE_DAYS = 365;
 const PUBLIC_REPO_STAR_THRESHOLD = 20;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type GitHubProfileResponse = {
     login?: string;
-    created_at?: string;
 };
 
 type GitHubRepoResponse = {
@@ -30,24 +28,13 @@ type GitHubRepoResponse = {
     stargazers_count?: number;
 };
 
-function githubApiHeaders(env: CloudflareBindings): Record<string, string> {
-    const headers: Record<string, string> = {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "pollinations-enter",
-    };
-    if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-        headers.Authorization = `Basic ${btoa(`${env.GITHUB_CLIENT_ID}:${env.GITHUB_CLIENT_SECRET}`)}`;
-    }
-    return headers;
-}
-
 async function fetchGitHubProfile(
     env: CloudflareBindings,
     githubId: number,
-): Promise<{ login: string | null; createdAt: Date | null } | null> {
+): Promise<{ login: string | null } | null> {
     log.info("GITHUB_PROFILE_FETCH_START: githubId={githubId}", { githubId });
     const response = await fetch(`https://api.github.com/user/${githubId}`, {
-        headers: githubApiHeaders(env),
+        headers: await githubApiHeaders(env),
     });
     const rateLimitRemaining = response.headers.get("x-ratelimit-remaining");
     const rateLimitReset = response.headers.get("x-ratelimit-reset");
@@ -65,23 +52,16 @@ async function fetchGitHubProfile(
     }
 
     const profile = (await response.json()) as GitHubProfileResponse;
-    let createdAt: Date | null = null;
-    if (profile.created_at) {
-        const parsed = new Date(profile.created_at);
-        createdAt = Number.isNaN(parsed.getTime()) ? null : parsed;
-    }
     log.info(
-        "GITHUB_PROFILE_FETCH_OK: githubId={githubId} login={login} createdAtRaw={createdAtRaw} createdAt={createdAt} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
+        "GITHUB_PROFILE_FETCH_OK: githubId={githubId} login={login} rateLimitRemaining={rateLimitRemaining} rateLimitReset={rateLimitReset}",
         {
             githubId,
             login: profile.login ?? null,
-            createdAtRaw: profile.created_at ?? null,
-            createdAt: createdAt?.toISOString() ?? null,
             rateLimitRemaining,
             rateLimitReset,
         },
     );
-    return { login: profile.login ?? null, createdAt };
+    return { login: profile.login ?? null };
 }
 
 async function fetchPublicRepoStars(
@@ -101,7 +81,7 @@ async function fetchPublicRepoStars(
         });
         const response = await fetch(
             `https://api.github.com/users/${encodeURIComponent(login)}/repos?type=owner&per_page=100&page=${page}`,
-            { headers: githubApiHeaders(env) },
+            { headers: await githubApiHeaders(env) },
         );
         const rateLimitRemaining = response.headers.get(
             "x-ratelimit-remaining",
@@ -154,21 +134,17 @@ async function fetchPublicRepoStars(
     }
 }
 
-function accountAgeDays(createdAt: Date | null, now: Date): number {
-    if (!createdAt) return -1;
-    return Math.floor((now.getTime() - createdAt.getTime()) / MS_PER_DAY);
-}
-
 const establishedGitHubAccountQuest: QuestDefinition = {
     id: "github_established",
-    title: "Established GitHub account",
-    description: "Sign in with a GitHub account that is at least one year old.",
+    title: "Senior dev",
+    description:
+        "Sign in with a GitHub account that is at least three years old.",
     category: "contribute",
     scope: "perUser",
-    rewardAmount: 2,
+    rewardAmount: 1,
     balanceBucket: "tier",
-    // Built but not launched — hidden from the UI, not grantable.
-    state: "coming_soon",
+    // Retained only so existing rewards remain visible and claimable.
+    state: "completed",
 };
 
 const publicRepoStarsQuest: QuestDefinition = {
@@ -186,25 +162,27 @@ const publicRepoStarsQuest: QuestDefinition = {
 
 const QUESTS = [establishedGitHubAccountQuest, publicRepoStarsQuest];
 
+const EVALUATED_QUESTS = [publicRepoStarsQuest];
+
 export async function listQuestCards(
     _ctx: QuestEvaluationContext,
 ): Promise<QuestCard[]> {
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const rewardableQuestIds = new Set(
-        rewardableQuests(QUESTS).map((quest) => quest.id),
+        rewardableQuests(EVALUATED_QUESTS).map((quest) => quest.id),
     );
     if (rewardableQuestIds.size === 0) {
         log.info(
             "GITHUB_PROFILE_SKIPPED: userId={userId} reason=no_rewardable_quests",
             { userId: user.id },
         );
-        return [];
+        return { proposals: [] };
     }
 
     if (user.githubId === null) {
@@ -214,42 +192,17 @@ export async function findRewardProposalsForUser(
                 userId: user.id,
             },
         );
-        return [];
+        return { proposals: [] };
     }
 
-    const now = new Date();
-    const proposals: RewardProposal[] = [];
+    const proposals: QuestEvaluation["proposals"] = [];
     const profile = await fetchGitHubProfile(ctx.env, user.githubId);
     if (!profile) {
         log.info(
             "GITHUB_PROFILE_NO_ACTIVITY: userId={userId} githubId={githubId}",
             { userId: user.id, githubId: user.githubId },
         );
-        return proposals;
-    }
-
-    if (rewardableQuestIds.has(establishedGitHubAccountQuest.id)) {
-        const ageDays = accountAgeDays(profile.createdAt, now);
-        const qualifies =
-            profile.createdAt !== null && ageDays >= GITHUB_ACCOUNT_AGE_DAYS;
-        log.info(
-            "GITHUB_PROFILE_QUEST_DECISION: userId={userId} githubId={githubId} createdAt={createdAt} ageDays={ageDays} thresholdDays={thresholdDays} qualifies={qualifies}",
-            {
-                userId: user.id,
-                githubId: user.githubId,
-                createdAt: profile.createdAt?.toISOString() ?? null,
-                ageDays,
-                thresholdDays: GITHUB_ACCOUNT_AGE_DAYS,
-                qualifies,
-            },
-        );
-
-        if (qualifies) {
-            proposals.push({
-                quest: establishedGitHubAccountQuest,
-                userId: user.id,
-            });
-        }
+        return { proposals };
     }
 
     if (rewardableQuestIds.has(publicRepoStarsQuest.id)) {
@@ -279,5 +232,5 @@ export async function findRewardProposalsForUser(
         }
     }
 
-    return proposals;
+    return { proposals };
 }

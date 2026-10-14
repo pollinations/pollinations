@@ -1,8 +1,20 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
+import {
     type ApiKeyType,
     createApiKeyForUser,
+    validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
+import { getAvailableBalance } from "@shared/billing/balance.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
+import { claimReward } from "@shared/billing/rewards.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -11,7 +23,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { getTierCadence, tierNames } from "@shared/tier-config.ts";
+import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -21,36 +33,28 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
-import { listQuestCards } from "../services/quests/index.ts";
+import {
+    ACCOUNT_SETUP_QUEST_GROUP,
+    listQuestCards,
+} from "../services/quests/index.ts";
 import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
-import {
-    hasAccountReadPermission,
-    hasDirectAccountPermission,
-} from "./account-permissions.ts";
+import { captureFromRequest } from "../utils/product-analytics.ts";
+import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
-import { parseMetadata } from "./metadata-utils.ts";
+import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 
-// Calculate next tier refill time (null for tiers with no refill).
-// Matches the `0 * * * *` cron in wrangler.toml — top of the next UTC hour.
-function getNextRefillAt(tier?: string | null): string | null {
-    const cadence = tier ? getTierCadence(tier) : "none";
-    if (cadence === "none") return null;
-    const next = new Date();
-    next.setUTCMinutes(0, 0, 0);
-    next.setUTCHours(next.getUTCHours() + 1);
-    return next.toISOString();
-}
-
-// Cache TTL in seconds
-const CACHE_TTL = 60 * 60; // 1 hour
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
 const MAX_USAGE_DAYS = 90;
-const USAGE_CHUNK_DAYS = 30;
+/** Matches activity_earnings_events ENGINE_TTL (12 months). */
+const MAX_EARNINGS_DAYS = 365;
+const DEFAULT_EARNINGS_DAYS = 90;
 const MAX_USAGE_EXPORT_ROWS = 50_000;
 
 const SECONDS_PER_DAY = 86400;
@@ -62,7 +66,7 @@ type UsageDebugBindings = CloudflareBindings & {
     USAGE_DEBUG_USER_ID?: string;
 };
 
-export function resolveUsageTargetUserId(
+function resolveUsageTargetUserId(
     env: CloudflareBindings,
     currentUserId: string,
     apiKey?: {
@@ -95,33 +99,6 @@ export function resolveUsageTargetUserId(
     };
 }
 
-/**
- * Require that the caller has `account:keys` permission.
- * Session-authenticated users (no apiKey) are always allowed.
- */
-function requireKeysPermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return; // session auth — always allowed
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
-}
-
 // Schema for creating an API key via the API
 const CreateKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -132,29 +109,35 @@ const CreateKeySchema = z.object({
         .describe(
             "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
         ),
-    expiresIn: z
-        .number()
-        .int()
-        .positive()
-        .max(365 * SECONDS_PER_DAY)
+    expiresIn: apiKeyExpiresInSchema
         .optional()
-        .describe("Expiry in seconds from now (max 365 days)"),
+        .describe("Expiry in seconds from now"),
     allowedModels: z
         .array(z.string())
         .nullable()
         .optional()
-        .describe("Model IDs this key can access. null = all models"),
+        .describe(
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
+        ),
     pollenBudget: z
         .number()
         .nullable()
         .optional()
-        .describe("Pollen budget cap. null = unlimited"),
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
+    questPollenOnly: z
+        .boolean()
+        .optional()
+        .describe(
+            "Spend only Quest Pollen, never paid Pollen. Requests stop when Quest Pollen runs out. Keys created by a Quest Pollen only key are always Quest Pollen only",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
         .optional()
         .describe(
-            'Account permissions (e.g. ["usage"]). "keys" is auto-stripped.',
+            'Account permissions (e.g. ["usage"]). Include "keys" to let the new key create keys too, and "machines" to let it run hosted sandboxes.',
         ),
     redirectUris: z
         .array(z.string())
@@ -168,11 +151,85 @@ const CreateKeySchema = z.object({
         .describe(
             "Enable developer earnings for publishable app keys. Defaults to false; send true to opt in.",
         ),
+    description: z.string().optional().describe("Note shown with the key"),
+    consent: z
+        .object({
+            requestedClientId: z.string().optional(),
+            redirectUri: z.string().optional(),
+            redirectOrigin: z.string().optional(),
+            deviceUserCode: z.string().optional(),
+        })
+        .optional()
+        .describe(
+            "Set by the consent screen when a user authorizes an app: binds the key to the app's publishable key and verifies the redirect URI or device code against it.",
+        ),
 });
+
+// Same fields as creation; omitted fields stay unchanged and null clears.
+const UpdateKeySchema = CreateKeySchema.pick({
+    allowedModels: true,
+    pollenBudget: true,
+    questPollenOnly: true,
+    accountPermissions: true,
+    redirectUris: true,
+    earningsEnabled: true,
+    description: true,
+}).extend({
+    name: CreateKeySchema.shape.name.optional(),
+    expiresAt: z
+        .string()
+        .datetime({ offset: true })
+        .nullable()
+        .optional()
+        .transform((val) => (val == null ? val : new Date(val)))
+        .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
+});
+
+// A grant link from an agent run names the agent, signed by gen over the key
+// and the one category, model or account permission it asks for.
+const GrantAgentSchema = z.intersection(
+    z.union([
+        z.object({ category: z.string().min(1) }),
+        z.object({ model: z.string().min(1) }),
+        z.object({ permission: z.string().min(1) }),
+    ]),
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
+
+function parsePermissions(
+    raw: string | null | undefined,
+): Record<string, string[]> | null {
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+// The JSON shape of a key in the list and update responses; never the hash.
+function formatKey(key: typeof apikeyTable.$inferSelect) {
+    return {
+        id: key.id,
+        name: key.name,
+        start: key.start,
+        prefix: key.prefix,
+        createdAt: key.createdAt,
+        expiresAt: key.expiresAt,
+        lastRequest: key.lastRequest,
+        permissions: parsePermissions(key.permissions),
+        metadata: parseMetadata(key.metadata),
+        pollenBalance: key.pollenBalance,
+        questPollenOnly: key.questPollenOnly,
+        enabled: key.enabled,
+        byopClientKeyId: key.byopClientKeyId,
+    };
+}
 
 // CSV escape helper
 const escapeCSV = (val: string | number | boolean | null) => {
     if (val === null || val === undefined) return "";
+    if (typeof val === "number") return String(val);
     const raw = String(val);
     const str = /^[\t\r\n]|^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
     if (str.includes(",") || str.includes('"') || str.includes("\n")) {
@@ -181,15 +238,17 @@ const escapeCSV = (val: string | number | boolean | null) => {
     return str;
 };
 
-function formatTinybirdDateTime(date: Date): string {
-    return date.toISOString().slice(0, 19).replace("T", " ");
-}
-
-function startOfNextUtcDay(now = new Date()): Date {
-    const next = new Date(now);
-    next.setUTCHours(0, 0, 0, 0);
-    next.setUTCDate(next.getUTCDate() + 1);
-    return next;
+function toCsv<T>(columns: readonly (keyof T & string)[], rows: T[]): string {
+    return [
+        columns.join(","),
+        ...rows.map((row) =>
+            columns
+                .map((col) =>
+                    escapeCSV(row[col] as string | number | boolean | null),
+                )
+                .join(","),
+        ),
+    ].join("\n");
 }
 
 function addUtcDays(date: Date, days: number): Date {
@@ -201,6 +260,7 @@ function addUtcDays(date: Date, days: number): Date {
 type UsageWindow = {
     since: string;
     until: string;
+    filenamePart: string;
 };
 
 type UsageWindowDates = {
@@ -213,25 +273,8 @@ type UsagePeriod = {
     period?: string;
 };
 
-function formatUsageWindow(window: UsageWindowDates): UsageWindow {
-    return {
-        since: formatTinybirdDateTime(window.sinceDate),
-        until: formatTinybirdDateTime(window.untilDate),
-    };
-}
-
-function buildUsageWindow(days: number): UsageWindowDates {
-    const untilDate = startOfNextUtcDay();
-    const sinceDate = addUtcDays(untilDate, -days);
-    return { sinceDate, untilDate };
-}
-
 function startOfUtcDay(year: number, monthIndex: number, day: number): Date {
     return new Date(Date.UTC(year, monthIndex, day, 0, 0, 0, 0));
-}
-
-function usageMinDate(): Date {
-    return new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
 }
 
 function parseUtcDayPeriod(period: string): UsageWindowDates | null {
@@ -317,64 +360,50 @@ function buildUsageWindowFromPeriod({
     return null;
 }
 
-function resolveUsageWindow(
-    days: number,
-    period: UsagePeriod,
-): UsageWindowDates {
+const toTinybirdDateTime = (date: Date) =>
+    date.toISOString().slice(0, 19).replace("T", " ");
+
+function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
-    const usageWindow = buildUsageWindowFromPeriod(period);
-    if (hasPeriodParam && !usageWindow) {
+    const periodWindow = buildUsageWindowFromPeriod(period);
+    if (hasPeriodParam && !periodWindow) {
         throw new HTTPException(400, {
             message:
                 "Invalid usage period. Use granularity=day&period=YYYY-MM-DD, granularity=week&period=YYYY-WNN, or granularity=month&period=YYYY-MM.",
         });
     }
-    if (usageWindow) {
-        const now = new Date();
-        const today = startOfUtcDay(
-            now.getUTCFullYear(),
-            now.getUTCMonth(),
-            now.getUTCDate(),
-        );
+
+    const now = new Date();
+    const today = startOfUtcDay(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+    );
+    if (periodWindow) {
+        const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
         if (
-            usageWindow.untilDate <= usageMinDate() ||
-            usageWindow.sinceDate > today
+            periodWindow.untilDate <= minDate ||
+            periodWindow.sinceDate > today
         ) {
             throw new HTTPException(400, {
                 message: `Usage period must overlap ${USAGE_MIN_DATE} through today.`,
             });
         }
     }
-    return usageWindow || buildUsageWindow(days);
-}
 
-function usageWindowFilenamePart(days: number, period: UsagePeriod): string {
-    return period.granularity && period.period
-        ? `${period.granularity}-${period.period}`
-        : `${days}d`;
-}
+    const { sinceDate, untilDate } = periodWindow ?? {
+        sinceDate: addUtcDays(today, 1 - days),
+        untilDate: addUtcDays(today, 1),
+    };
 
-function buildUsageWindows(
-    days: number,
-    period: UsagePeriod = {},
-    chunkDays = USAGE_CHUNK_DAYS,
-    newestFirst = false,
-): UsageWindow[] {
-    const overallWindow = resolveUsageWindow(days, period);
-    const windows: UsageWindow[] = [];
-    let cursor = overallWindow.sinceDate;
-    const end = overallWindow.untilDate;
-
-    while (cursor < end) {
-        const next = addUtcDays(cursor, chunkDays);
-        const boundedNext = next < end ? next : end;
-        windows.push(
-            formatUsageWindow({ sinceDate: cursor, untilDate: boundedNext }),
-        );
-        cursor = boundedNext;
-    }
-
-    return newestFirst ? windows.reverse() : windows;
+    return {
+        since: toTinybirdDateTime(sinceDate),
+        until: toTinybirdDateTime(untilDate),
+        filenamePart:
+            period.granularity && period.period
+                ? `${period.granularity}-${period.period}`
+                : `${days}d`,
+    };
 }
 
 function parseCommaSeparatedQueryList(value?: string): string[] {
@@ -399,11 +428,23 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
         .default(100),
-    before: z.string().optional(), // ISO timestamp cursor for pagination
+    // Pagination cursor: the last row's `timestamp` as returned (UTC
+    // "YYYY-MM-DD HH:MM:SS") or as ISO 8601. Tinybird's DateTime() rejects
+    // ISO, so convert it; the column has second precision, so dropping
+    // milliseconds loses nothing.
+    before: z
+        .union([
+            z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
+            z.iso
+                .datetime({ offset: true })
+                .transform((value) => toTinybirdDateTime(new Date(value))),
+        ])
+        .optional(),
     before_event_id: z.string().optional(), // Stable tie-breaker for same-second timestamps
     days: z.coerce
         .number()
@@ -433,58 +474,58 @@ const usageDailyQuerySchema = z.object({
     api_key_ids: commaSeparatedQueryList,
 });
 
-const earningsQuerySchema = usageDailyQuerySchema.extend({
-    entity_ids: commaSeparatedQueryList,
-});
+const earningsQuerySchema = usageDailyQuerySchema
+    .omit({ api_key_ids: true })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_EARNINGS_DAYS),
+    });
 
-type DailyUsageRecord = {
-    date: string;
-    model: string | null;
-    meter_source: string | null;
-    requests: number;
-    cost_usd: number;
-};
-
-type UsageRecord = {
-    timestamp: string;
-    type: string;
-    model: string | null;
-    api_key_id: string | null;
-    api_key: string | null;
-    api_key_type: string | null;
-    meter_source: string | null;
-    input_text_tokens: number;
-    input_cached_tokens: number;
-    input_audio_tokens: number;
-    input_audio_seconds: number;
-    input_image_tokens: number;
-    output_text_tokens: number;
-    output_reasoning_tokens: number;
-    output_audio_tokens: number;
-    output_audio_seconds: number;
-    output_image_tokens: number;
-    output_video_seconds: number;
-    cost_usd: number;
-    response_time_ms: number | null;
-};
-
-type UsageRecordWithCursor = UsageRecord & {
-    cursor_event_id: string;
-};
+const earningsTransactionsQuerySchema = usageQuerySchema
+    .pick({
+        limit: true,
+        granularity: true,
+        period: true,
+    })
+    .extend({
+        days: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_EARNINGS_DAYS)
+            .optional()
+            .default(DEFAULT_USAGE_DAYS),
+    });
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
-    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    date: z
+        .string()
+        .describe(
+            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+        ),
+    api_key_id: z.string().describe("API key id used for these requests"),
+    api_key: z
+        .string()
+        .nullable()
+        .describe("API key name used for these requests"),
     model: z.string().nullable().describe("Model used"),
     meter_source: z
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     requests: z.number().describe("Number of requests"),
     cost_usd: z.number().describe("Total cost in USD"),
 });
+
+type DailyUsageRecord = z.infer<typeof dailyUsageRecordSchema>;
 
 const dailyUsageResponseSchema = z.object({
     usage: z
@@ -493,54 +534,52 @@ const dailyUsageResponseSchema = z.object({
     count: z.number().describe("Number of records returned"),
 });
 
-function sortDailyUsageRecords(usage: DailyUsageRecord[]): DailyUsageRecord[] {
-    return usage.toSorted((left, right) => {
-        if (left.date !== right.date) {
-            return right.date.localeCompare(left.date);
-        }
-        if (right.requests !== left.requests) {
-            return right.requests - left.requests;
-        }
-        if ((left.model || "") !== (right.model || "")) {
-            return (left.model || "").localeCompare(right.model || "");
-        }
-        return (left.meter_source || "").localeCompare(
-            right.meter_source || "",
-        );
-    });
-}
+const USAGE_CSV_COLUMNS = [
+    "timestamp",
+    "type",
+    "model",
+    "api_key",
+    "api_key_type",
+    "meter_source",
+    "input_text_tokens",
+    "input_cached_tokens",
+    "input_cache_write_tokens",
+    "input_audio_tokens",
+    "input_audio_seconds",
+    "input_image_tokens",
+    "output_text_tokens",
+    "output_reasoning_tokens",
+    "output_audio_tokens",
+    "output_audio_seconds",
+    "output_image_tokens",
+    "output_video_seconds",
+    "cost_usd",
+    "response_time_ms",
+] as const;
 
-const USAGE_CSV_HEADER =
-    "timestamp,type,model,api_key,api_key_type,meter_source,input_text_tokens,input_cached_tokens,input_audio_tokens,input_audio_seconds,input_image_tokens,output_text_tokens,output_reasoning_tokens,output_audio_tokens,output_audio_seconds,output_image_tokens,output_video_seconds,cost_usd,response_time_ms";
+const DAILY_USAGE_CSV_COLUMNS = [
+    "date",
+    "api_key_id",
+    "api_key",
+    "model",
+    "meter_source",
+    "requests",
+    "cost_usd",
+] as const;
 
-function usageRecordToCsvRow(row: UsageRecord): string {
-    return `${escapeCSV(row.timestamp)},${escapeCSV(row.type)},${escapeCSV(row.model)},${escapeCSV(row.api_key)},${escapeCSV(row.api_key_type)},${escapeCSV(row.meter_source)},${row.input_text_tokens},${row.input_cached_tokens},${row.input_audio_tokens},${row.input_audio_seconds},${row.input_image_tokens},${row.output_text_tokens},${row.output_reasoning_tokens},${row.output_audio_tokens},${row.output_audio_seconds},${row.output_image_tokens},${row.output_video_seconds},${row.cost_usd},${escapeCSV(row.response_time_ms)}`;
-}
-
-function dailyUsageRecordToCsvRow(row: DailyUsageRecord): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.model)},${escapeCSV(row.meter_source)},${row.requests},${row.cost_usd}`;
-}
-
-type DeveloperEarningsRow = {
-    date: string;
-    entity_id: string;
-    entity_name: string;
-    source: "byop_markup" | "community_model";
-    requests: number;
-    baseline_price: number;
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
-    cost_usd: number;
-    reward_rate: number;
-    unique_users: number;
-};
-
-type DeveloperEarningsTotal = {
-    pollen_earned: number;
-    paid_earned: number;
-    tier_earned: number;
-};
+const EARNINGS_CSV_COLUMNS = [
+    "date",
+    "source",
+    "entity_id",
+    "entity_name",
+    "requests",
+    "baseline_price",
+    "pollen_earned",
+    "paid_earned",
+    "tier_earned",
+    "cost_usd",
+    "reward_rate",
+] as const;
 
 const developerEarningsRowSchema = z.object({
     date: z
@@ -550,14 +589,18 @@ const developerEarningsRowSchema = z.object({
         ),
     entity_id: z
         .string()
-        .describe(
-            "Earning entity id (BYOP app key or community model); empty string on source rollup rows",
-        ),
+        .describe("Earning entity id (BYOP app key or community model)"),
     entity_name: z.string().describe("Earning entity display name"),
     source: z
         .enum(["byop_markup", "community_model"])
         .describe("Reward source, such as byop_markup or community_model"),
     requests: z.number().describe("Number of billed requests"),
+    paid_requests: z
+        .number()
+        .describe("Billed requests paid from paid balance"),
+    tier_requests: z
+        .number()
+        .describe("Billed requests paid from tier balance"),
     baseline_price: z
         .number()
         .describe("Model cost before markup (sum over the bucket)"),
@@ -569,31 +612,16 @@ const developerEarningsRowSchema = z.object({
         .describe("Developer credit earned from paid-balance spend"),
     tier_earned: z
         .number()
-        .describe("Developer credit earned from tier-balance spend"),
+        .describe("Developer credit earned from Quest Pollen spend"),
     cost_usd: z
         .number()
         .describe(
             "Reward basis total for the bucket; BYOP rows use payer charge, community model rows use model price",
         ),
     reward_rate: z.number().describe("Average reward or markup rate applied"),
-    unique_users: z
-        .number()
-        .describe(
-            "Distinct end-users who paid. Always 0 on daily/hourly bucket rows by design — meaningful only on rollup rows (where date='').",
-        ),
 });
 
-const developerEarningsTotalSchema = z.object({
-    pollen_earned: z
-        .number()
-        .describe("Total developer credit earned across earning sources"),
-    paid_earned: z
-        .number()
-        .describe("Total developer credit earned from paid-balance spend"),
-    tier_earned: z
-        .number()
-        .describe("Total developer credit earned from tier-balance spend"),
-});
+type DeveloperEarningsRow = z.infer<typeof developerEarningsRowSchema>;
 
 const developerEarningsResponseSchema = z.object({
     daily: z
@@ -602,86 +630,81 @@ const developerEarningsResponseSchema = z.object({
     perEntity: z
         .array(developerEarningsRowSchema)
         .describe("Per-earning-entity rollups for the period"),
-    bySource: z
-        .array(developerEarningsRowSchema)
-        .describe(
-            "Per-source rollups for the period. Source-specific request, user, basis, and rate metrics are meaningful here.",
-        ),
-    total: developerEarningsTotalSchema.describe(
-        "Additive money totals across all earning sources. Non-additive metrics such as requests, users, basis, and rates are intentionally source-specific.",
-    ),
 });
 
-function dailyEarningsRowToCsvRow(row: DeveloperEarningsRow): string {
-    return `${escapeCSV(row.date)},${escapeCSV(row.source)},${escapeCSV(row.entity_id)},${escapeCSV(row.entity_name)},${row.requests},${row.baseline_price},${row.pollen_earned},${row.paid_earned},${row.tier_earned},${row.cost_usd},${row.reward_rate}`;
-}
+const developerEarningsTransactionSchema = z.object({
+    timestamp: z
+        .string()
+        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+    cursor_event_id: z.string().describe("Stable event id"),
+    entity_name: z.string().describe("Earning entity display name"),
+    model: z.string().nullable().describe("Model used for generation"),
+    meter_source: z
+        .string()
+        .nullable()
+        .describe(
+            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+        ),
+    pollen_earned: z.number().describe("Developer credit earned"),
+});
 
-function totalDeveloperEarnings(
-    rows: DeveloperEarningsRow[],
-): DeveloperEarningsTotal {
-    return rows.reduce(
-        (total, row) => ({
-            pollen_earned: total.pollen_earned + row.pollen_earned,
-            paid_earned: total.paid_earned + row.paid_earned,
-            tier_earned: total.tier_earned + row.tier_earned,
-        }),
-        { pollen_earned: 0, paid_earned: 0, tier_earned: 0 },
-    );
-}
+type DeveloperEarningsTransaction = z.infer<
+    typeof developerEarningsTransactionSchema
+>;
 
-async function fetchDetailedUsagePage(
-    origin: string,
-    token: string,
-    params: {
-        userId: string;
-        apiKeyId?: string;
-        apiKeyIds?: string[];
-        models?: string[];
-        limit: number;
-        since: string;
-        until: string;
-        before?: string;
-        beforeEventId?: string;
-    },
-): Promise<UsageRecordWithCursor[]> {
-    return fetchTinybirdRows<UsageRecordWithCursor>(
-        origin,
-        "/v0/pipes/user_usage.json",
-        token,
-        {
-            user_id: params.userId,
-            api_key_id: params.apiKeyId,
-            api_key_ids:
-                params.apiKeyIds && params.apiKeyIds.length > 0
-                    ? params.apiKeyIds.join(",")
-                    : undefined,
-            models:
-                params.models && params.models.length > 0
-                    ? params.models.join(",")
-                    : undefined,
-            limit: params.limit.toString(),
-            since: params.since,
-            until: params.until,
-            before: params.before,
-            before_event_id: params.beforeEventId,
-        },
-    );
-}
+const developerEarningsTransactionsResponseSchema = z.object({
+    transactions: z
+        .array(developerEarningsTransactionSchema)
+        .describe("Earning transaction records"),
+    count: z.number().describe("Number of records returned"),
+});
 
-function stripUsageCursor(row: UsageRecordWithCursor): UsageRecord {
-    const { cursor_event_id: _, ...usage } = row;
-    return usage;
+// Per-entity rollups derived from the daily buckets; reward_rate is the
+// request-weighted average.
+function rollupEarningsByEntity(
+    daily: DeveloperEarningsRow[],
+): DeveloperEarningsRow[] {
+    const byEntity = new Map<
+        string,
+        DeveloperEarningsRow & { weightedRate: number }
+    >();
+    for (const row of daily) {
+        const key = `${row.source}:${row.entity_id}`;
+        const entry = byEntity.get(key);
+        if (!entry) {
+            byEntity.set(key, {
+                ...row,
+                date: "",
+                weightedRate: row.reward_rate * row.requests,
+            });
+            continue;
+        }
+        entry.requests += row.requests;
+        entry.paid_requests += row.paid_requests;
+        entry.tier_requests += row.tier_requests;
+        entry.baseline_price += row.baseline_price;
+        entry.pollen_earned += row.pollen_earned;
+        entry.paid_earned += row.paid_earned;
+        entry.tier_earned += row.tier_earned;
+        entry.cost_usd += row.cost_usd;
+        entry.weightedRate += row.reward_rate * row.requests;
+    }
+    return Array.from(byEntity.values())
+        .map(({ weightedRate, ...row }) => ({
+            ...row,
+            reward_rate: row.requests > 0 ? weightedRate / row.requests : 0,
+        }))
+        .sort((left, right) => right.pollen_earned - left.pollen_earned);
 }
 
 // Shared tail for the detailed-usage endpoints (/usage, /key/usage):
-// fetch a page from the user_usage pipe, return the cursor for JSON pagination,
-// but keep CSV output on its established public columns.
+// fetch a page from the activity usage transactions pipe, return the cursor for
+// JSON pagination, but keep CSV output on its established public columns.
 async function respondDetailedUsage(
     c: Pick<Context<Env>, "env" | "json">,
     log: Logger,
     params: {
         userId: string;
-        apiKeyId?: string;
         apiKeyIds?: string[];
         models?: string[];
         filenamePrefix: string;
@@ -698,25 +721,30 @@ async function respondDetailedUsage(
     const tinybirdToken = requireTinybirdReadToken(c.env);
 
     try {
-        const usage = await fetchDetailedUsagePage(
+        const usage = await fetchTinybirdRows<UsageRecordWithCursor>(
             tinybirdOrigin,
+            "/v0/pipes/activity_usage_transactions.json",
             tinybirdToken,
             {
-                userId: params.userId,
-                apiKeyId: params.apiKeyId,
-                apiKeyIds: params.apiKeyIds,
-                models: params.models,
-                limit: params.limit,
+                user_id: params.userId,
+                api_key_ids:
+                    params.apiKeyIds && params.apiKeyIds.length > 0
+                        ? params.apiKeyIds.join(",")
+                        : undefined,
+                models:
+                    params.models && params.models.length > 0
+                        ? params.models.join(",")
+                        : undefined,
+                limit: params.limit.toString(),
                 since: params.since,
                 until: params.until,
                 before: params.before,
-                beforeEventId: params.beforeEventId,
+                before_event_id: params.beforeEventId,
             },
         );
 
         if (params.format === "csv") {
-            const rows = usage.map(stripUsageCursor).map(usageRecordToCsvRow);
-            const csv = [USAGE_CSV_HEADER, ...rows].join("\n");
+            const csv = toCsv(USAGE_CSV_COLUMNS, usage);
             return new Response(csv, {
                 headers: {
                     "Content-Type": "text/csv",
@@ -739,41 +767,50 @@ const profileResponseSchema = z.object({
         .string()
         .nullable()
         .describe("Profile picture URL (e.g. GitHub avatar)"),
-    tier: z
-        .enum(["anonymous", ...tierNames])
-        .describe("User's current tier level"),
-    nextResetAt: z.iso
-        .datetime()
-        .nullable()
-        .describe(
-            "Next pollen refill timestamp (ISO 8601). `null` for tiers with no refill.",
-        ),
     communityEndpointsAllowed: z
         .boolean()
         .describe(
             "Whether the account is allowed to manage community endpoints.",
         ),
+    discordAvailable: z
+        .boolean()
+        .describe("Whether Discord account connections are available."),
     name: z
         .string()
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+            "User's display name (only returned when the key has `account:profile`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+            "User's email address (only returned when the key has `account:profile`)",
         ),
+});
+
+const accountBalanceSchema = z.object({
+    total: z
+        .number()
+        .describe(
+            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+        ),
+    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    paid: z.number().describe("Paid Pollen remaining, never below 0"),
 });
 
 const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of tier balance + paid balance)",
+            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+        ),
+    accountBalance: accountBalanceSchema
+        .optional()
+        .describe(
+            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
         ),
 });
 
@@ -804,10 +841,37 @@ const accountQuestsResponseSchema = z.object({
     quests: z.array(accountQuestSchema),
 });
 
-function formatRewardTimestamp(value: Date | number | string): string {
-    return value instanceof Date
-        ? value.toISOString()
-        : new Date(value).toISOString();
+const accountQuestRewardsResponseSchema = z.object({
+    rewards: z.array(
+        accountQuestRewardSchema.extend({ url: z.string().nullable() }),
+    ),
+});
+
+const QUEST_CHECK_THROTTLE_SECONDS = 60;
+
+function formatReward(
+    reward: Pick<
+        typeof rewardsTable.$inferSelect,
+        | "id"
+        | "questId"
+        | "title"
+        | "pollenAmount"
+        | "balanceBucket"
+        | "earnedAt"
+        | "claimedAt"
+    >,
+) {
+    return {
+        id: reward.id,
+        questId: reward.questId,
+        title: reward.title,
+        pollenAmount: reward.pollenAmount,
+        balanceBucket: reward.balanceBucket,
+        earnedAt: new Date(reward.earnedAt).toISOString(),
+        claimedAt: reward.claimedAt
+            ? new Date(reward.claimedAt).toISOString()
+            : null,
+    };
 }
 
 const usageRecordSchema = z.object({
@@ -834,15 +898,26 @@ const usageRecordSchema = z.object({
         .string()
         .nullable()
         .describe(
-            "Billing source: 'tier' = tier balance, 'pack' = paid balance",
+            "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()
         .describe("Duration of input audio in seconds (for transcription/STT)"),
-    input_image_tokens: z.number().describe("Number of input image tokens"),
+    input_image_tokens: z
+        .number()
+        .describe(
+            "Input image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_text_tokens: z.number().describe("Number of output text tokens"),
     output_reasoning_tokens: z
         .number()
@@ -857,7 +932,9 @@ const usageRecordSchema = z.object({
         ),
     output_image_tokens: z
         .number()
-        .describe("Number of output image tokens (1 per image)"),
+        .describe(
+            "Output image usage quantity (provider-specific tokens, images, or megapixels)",
+        ),
     output_video_seconds: z
         .number()
         .describe("Duration of output video in seconds"),
@@ -868,25 +945,38 @@ const usageRecordSchema = z.object({
         .describe("Response time in milliseconds"),
 });
 
+type UsageRecordWithCursor = z.infer<typeof usageRecordSchema>;
+
 const usageResponseSchema = z.object({
     usage: z.array(usageRecordSchema).describe("Array of usage records"),
     count: z.number().describe("Number of records returned"),
 });
 
 /**
- * Account routes - profile, balance and usage endpoints.
- * Supports both session cookies and API keys with permission checks.
+ * Account routes - profile, balance and usage endpoints, served publicly as
+ * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
+ * checks; the dashboard uses a session token minted from its cookie.
  */
 export const accountRoutes = new Hono<Env>()
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
+    // Account responses are per-user and must never be cached by browsers or
+    // intermediary proxies. Applied once here so nested routes (agents,
+    // my-models, keys, ...) inherit it without repeating it per handler.
+    .use("*", async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
+    .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Profile",
             description:
-                "Returns your account profile. GitHub username, profile image, current tier, next pollen refill timestamp, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
+                "Returns your account profile. GitHub username, profile image, and community model access are always returned. Name and email are returned only when the API key has `account:profile`.",
             responses: {
                 200: {
                     description: "User profile",
@@ -903,8 +993,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
-            const includeProfilePII =
-                !apiKey || hasAccountReadPermission(apiKey, "profile");
+            const includeProfilePII = hasAccountPermission(apiKey, "profile");
 
             const db = drizzle(c.env.DB);
             const users = await db
@@ -912,7 +1001,6 @@ export const accountRoutes = new Hono<Env>()
                     githubId: userTable.githubId,
                     githubUsername: userTable.githubUsername,
                     image: userTable.image,
-                    tier: userTable.tier,
                     name: userTable.name,
                     email: userTable.email,
                 })
@@ -928,10 +1016,9 @@ export const accountRoutes = new Hono<Env>()
             return c.json({
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
-                tier: profile.tier,
-                nextResetAt: getNextRefillAt(profile.tier),
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
+                discordAvailable: Boolean(discordConfigFromEnv(c.env)),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -965,21 +1052,13 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB, { schema });
             const [cards, rewardRows] = await Promise.all([
                 listQuestCards({ db, env: c.env }),
                 db
-                    .select({
-                        id: rewardsTable.id,
-                        questId: rewardsTable.questId,
-                        title: rewardsTable.title,
-                        pollenAmount: rewardsTable.pollenAmount,
-                        balanceBucket: rewardsTable.balanceBucket,
-                        earnedAt: rewardsTable.earnedAt,
-                        claimedAt: rewardsTable.claimedAt,
-                    })
+                    .select()
                     .from(rewardsTable)
                     .where(eq(rewardsTable.userId, user.id))
                     .orderBy(desc(rewardsTable.earnedAt)),
@@ -1007,19 +1086,7 @@ export const accountRoutes = new Hono<Env>()
                 return {
                     ...card,
                     status,
-                    reward: reward
-                        ? {
-                              id: reward.id,
-                              questId: reward.questId,
-                              title: reward.title,
-                              pollenAmount: reward.pollenAmount,
-                              balanceBucket: reward.balanceBucket,
-                              earnedAt: formatRewardTimestamp(reward.earnedAt),
-                              claimedAt: reward.claimedAt
-                                  ? formatRewardTimestamp(reward.claimedAt)
-                                  : null,
-                          }
-                        : null,
+                    reward: reward ? formatReward(reward) : null,
                 };
             });
 
@@ -1027,12 +1094,109 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/quests/rewards",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Quest Rewards",
+            description:
+                "Returns every reward the account has earned, newest first, including claim state. API keys require the read-only `account:usage` permission.",
+            responses: {
+                200: {
+                    description: "Quest rewards",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountQuestRewardsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view quest rewards",
+            });
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "usage");
+
+            const rows = await drizzle(c.env.DB)
+                .select()
+                .from(rewardsTable)
+                .where(eq(rewardsTable.userId, user.id))
+                .orderBy(desc(rewardsTable.earnedAt));
+            return c.json({
+                rewards: rows.map((row) => ({
+                    ...formatReward(row),
+                    url: row.url,
+                })),
+            });
+        },
+    )
+    .post("/quests/check", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to check quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Quest checks require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const throttleKey = `quest-check:throttle:${user.id}`;
+        if (await c.env.KV.get(throttleKey)) {
+            return c.json(
+                {
+                    error: "rate_limited",
+                    message:
+                        "Quest checks are limited to once per minute. Try again shortly.",
+                },
+                429,
+                { "Retry-After": String(QUEST_CHECK_THROTTLE_SECONDS) },
+            );
+        }
+        await c.env.KV.put(throttleKey, "1", {
+            expirationTtl: QUEST_CHECK_THROTTLE_SECONDS,
+        });
+
+        return c.json(await checkQuestsForUser(c.env, user.id));
+    })
+    .post("/quests/rewards/:rewardId/claim", async (c) => {
+        await c.var.auth.requireAuthorization({
+            message: "Authentication required to claim quest rewards",
+        });
+        if (c.var.auth.apiKey) {
+            throw new HTTPException(403, {
+                message: "Reward claims require a dashboard session",
+            });
+        }
+
+        const user = c.var.auth.requireUser();
+        const result = await claimReward(drizzle(c.env.DB, { schema }), {
+            rewardId: c.req.param("rewardId"),
+            userId: user.id,
+        });
+        if (!result.reward) {
+            throw new HTTPException(404, { message: "Reward not found" });
+        }
+
+        return c.json({
+            claimed: result.claimed,
+            newBalance: result.newBalance,
+            reward: formatReward(result.reward),
+        });
+    })
+    .get(
         "/balance",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires the read-only `account:usage` permission.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -1053,34 +1217,44 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const keyBudget = apiKey?.pollenBalance ?? null;
+            const canViewAccount = hasAccountPermission(apiKey, "usage");
 
-            // Keys with a budget always see their own budget — no scope needed.
-            if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
-            }
-
-            // Beyond that, reading account balance requires usage or admin.
-            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
+            // Unbudgeted keys cannot see any balance without account:usage.
+            if (keyBudget == null && !canViewAccount) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
                 });
             }
 
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            let accountBalance:
+                | { total: number; tier: number; paid: number }
+                | undefined;
+            if (canViewAccount) {
+                // Same helper the billing path uses, so a bucket that has gone
+                // negative is clamped here exactly as it is when spending is
+                // authorized — a raw tier + pack sum would under-report the
+                // Pollen the account can actually spend.
+                const balances = await getFundedUserBalance(
+                    drizzle(c.env.DB),
+                    c.env.DB,
+                    user.id,
+                );
+                accountBalance = {
+                    total: getAvailableBalance(balances),
+                    tier: Math.max(0, balances.tierBalance),
+                    paid: Math.max(0, balances.packBalance),
+                };
+            }
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
+            // Budgeted keys keep seeing their remaining budget in `balance`.
+            const balance =
+                keyBudget != null ? keyBudget : (accountBalance?.total ?? 0);
 
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json(
+                accountBalance ? { balance, accountBalance } : { balance },
+            );
         },
     )
     .get(
@@ -1117,7 +1291,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1132,13 +1306,7 @@ export const accountRoutes = new Hono<Env>()
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
@@ -1160,7 +1328,7 @@ export const accountRoutes = new Hono<Env>()
             return respondDetailedUsage(c, log, {
                 userId: usageUserId,
                 filenamePrefix: "pollinations-usage-latest",
-                filenamePeriod,
+                filenamePeriod: usageWindow.filenamePart,
                 format,
                 limit,
                 apiKeyIds,
@@ -1178,10 +1346,11 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Daily Usage",
             description:
-                "Returns daily aggregated usage for the requested time window, grouped by date and model. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Results are cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns aggregated usage for the requested time window, grouped by date, API key, model, and billing source. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Useful for dashboards and spending analysis. Supports JSON and CSV export. Requires `account:usage` permission when using API keys.",
             responses: {
                 200: {
-                    description: "Daily usage records aggregated by date/model",
+                    description:
+                        "Usage records aggregated by date/API key/model/source",
                     content: {
                         "application/json": {
                             schema: resolver(dailyUsageResponseSchema),
@@ -1206,7 +1375,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1220,69 +1389,27 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            const cacheKeyPrefix = usageUserOverridden
-                ? `usage:daily:debug:${usageUserId}`
-                : `usage:daily:${usageUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${apiKeyIds.length > 0 ? `keys:${apiKeyIds.join(",")}` : "all"}`;
-            const windows = buildUsageWindows(days, { granularity, period });
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let usage: DailyUsageRecord[] | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<DailyUsageRecord[]>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        usage = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!usage) {
-                    const chunkResults = await Promise.all(
-                        windows.map((window) =>
-                            fetchTinybirdRows<DailyUsageRecord>(
-                                tinybirdOrigin,
-                                "/v0/pipes/user_usage_daily_filtered.json",
-                                tinybirdToken,
-                                {
-                                    user_id: usageUserId,
-                                    since: window.since,
-                                    until: window.until,
-                                    grain,
-                                    api_key_ids:
-                                        apiKeyIds.length > 0
-                                            ? apiKeyIds.join(",")
-                                            : undefined,
-                                },
-                            ),
-                        ),
-                    );
-                    usage = sortDailyUsageRecords(chunkResults.flat());
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(usage), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const usage = await fetchTinybirdRows<DailyUsageRecord>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_usage_chart.json",
+                    tinybirdToken,
+                    {
+                        user_id: usageUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                        api_key_ids:
+                            apiKeyIds.length > 0
+                                ? apiKeyIds.join(",")
+                                : undefined,
+                    },
+                );
 
                 log.debug(
-                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count} cached={cached}",
+                    "Fetched daily usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} days={days} apiKeyIds={apiKeyIds} count={count}",
                     {
                         requesterUserId: user.id,
                         targetUserId: usageUserId,
@@ -1290,19 +1417,16 @@ export const accountRoutes = new Hono<Env>()
                         days,
                         apiKeyIds,
                         count: usage.length,
-                        cached,
                     },
                 );
 
                 if (format === "csv") {
-                    const header = "date,model,meter_source,requests,cost_usd";
-                    const rows = usage.map(dailyUsageRecordToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(DAILY_USAGE_CSV_COLUMNS, usage);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-usage-daily-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
@@ -1318,16 +1442,89 @@ export const accountRoutes = new Hono<Env>()
         },
     )
     .get(
+        "/earnings/transactions",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Earnings Transactions",
+            description:
+                "Returns recent per-request earnings transactions, newest first. Requires `account:usage` permission when using API keys.",
+            responses: {
+                200: {
+                    description: "Earnings transaction records",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                developerEarningsTransactionsResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: {
+                    description:
+                        "Permission denied - API key missing `account:usage` permission",
+                },
+            },
+        }),
+        validator("query", earningsTransactionsQuerySchema),
+        async (c) => {
+            const log = c.get("log").getChild("earnings-transactions");
+
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view earnings",
+            });
+
+            const user = c.var.auth.requireUser();
+            const apiKey = c.var.auth.apiKey;
+
+            requireAccountPermission(apiKey, "usage");
+
+            const { limit, days, granularity, period } = c.req.valid("query");
+            const { userId: devUserId } = resolveUsageTargetUserId(
+                c.env,
+                user.id,
+                apiKey,
+            );
+            const window = resolveUsageWindow(days, { granularity, period });
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const tinybirdToken = requireTinybirdReadToken(c.env);
+
+            try {
+                const transactions =
+                    await fetchTinybirdRows<DeveloperEarningsTransaction>(
+                        tinybirdOrigin,
+                        "/v0/pipes/activity_earnings_transactions.json",
+                        tinybirdToken,
+                        {
+                            dev_user_id: devUserId,
+                            limit: limit.toString(),
+                            since: window.since,
+                            until: window.until,
+                        },
+                    );
+
+                return c.json({ transactions, count: transactions.length });
+            } catch (error) {
+                log.error("Error fetching earnings transactions: {error}", {
+                    error,
+                });
+                return c.json(
+                    { error: "Failed to fetch earnings transactions" },
+                    500,
+                );
+            }
+        },
+    )
+    .get(
         "/earnings",
         describeRoute({
             tags: ["👤 Account"],
             summary: "Get Developer Earnings",
             description:
-                "Returns developer earnings in one response: per-(date, entity) buckets, per-entity rollups, per-source rollups, and additive money totals across BYOP apps and community models. Source-specific rows include `requests`, `baseline_price`, reward basis `cost_usd`, `reward_rate`, and `unique_users`; the top-level total only includes additive earned-pollen fields. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. Cached for 1 hour. API keys require the read-only `account:usage` permission.",
+                "Returns developer earnings in one response: per-(date, entity) buckets and per-entity rollups across BYOP apps and community models. Rows include `requests`, `baseline_price`, reward basis `cost_usd`, and `reward_rate`. Use `days` for rolling windows or `granularity` and `period` for exact day/week/month periods. API keys require the read-only `account:usage` permission.",
             responses: {
                 200: {
-                    description:
-                        "Source-specific earnings buckets and additive totals",
+                    description: "Earnings buckets and additive totals",
                     content: {
                         "application/json": {
                             schema: resolver(developerEarningsResponseSchema),
@@ -1352,131 +1549,54 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
-            const {
-                format,
-                days,
-                granularity,
-                period,
-                api_key_ids: apiKeyIds,
-                entity_ids: entityIds,
-            } = c.req.valid("query");
+            const { format, days, granularity, period } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
-            const selectedEntityIds =
-                entityIds.length > 0 ? entityIds : apiKeyIds;
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const kv = c.env.KV;
-            // v5: no blended global row; total contains additive money fields only.
-            const cacheKeyPrefix = devUserOverridden
-                ? `earnings:v5:debug:${devUserId}`
-                : `earnings:v5:${devUserId}`;
-            const periodCacheKey =
-                granularity && period ? `${granularity}:${period}` : `${days}d`;
-            const cacheKey = `${cacheKeyPrefix}:${periodCacheKey}:grain:${grain}:${selectedEntityIds.length > 0 ? `entities:${selectedEntityIds.join(",")}` : "all"}`;
-            const filenamePeriod = usageWindowFilenamePart(days, {
-                granularity,
-                period,
-            });
-            const window = formatUsageWindow(
-                resolveUsageWindow(days, { granularity, period }),
-            );
-
-            type EarningsPayload = {
-                daily: DeveloperEarningsRow[];
-                perEntity: DeveloperEarningsRow[];
-                bySource: DeveloperEarningsRow[];
-                total: DeveloperEarningsTotal;
-            };
+            const window = resolveUsageWindow(days, { granularity, period });
 
             try {
-                let payload: EarningsPayload | null = null;
-                let cached = false;
-
-                try {
-                    const cachedData = await kv.get<EarningsPayload>(
-                        cacheKey,
-                        "json",
-                    );
-                    if (cachedData) {
-                        payload = cachedData;
-                        cached = true;
-                    }
-                } catch (err) {
-                    log.trace("KV get error: {err}", { err });
-                }
-
-                if (!payload) {
-                    const rows = await fetchTinybirdRows<DeveloperEarningsRow>(
-                        tinybirdOrigin,
-                        "/v0/pipes/developer_earnings.json",
-                        tinybirdToken,
-                        {
-                            dev_user_id: devUserId,
-                            since: window.since,
-                            until: window.until,
-                            grain,
-                            entity_ids:
-                                selectedEntityIds.length > 0
-                                    ? selectedEntityIds.join(",")
-                                    : undefined,
-                        },
-                    );
-                    const daily = rows.filter((r) => r.date !== "");
-                    const rollups = rows.filter((r) => r.date === "");
-                    const perEntity = [...rollups]
-                        .filter((r) => r.entity_id !== "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    const bySource = [...rollups]
-                        .filter((r) => r.entity_id === "")
-                        .sort((a, b) => b.pollen_earned - a.pollen_earned);
-                    payload = {
-                        daily,
-                        perEntity,
-                        bySource,
-                        total: totalDeveloperEarnings(bySource),
-                    };
-
-                    try {
-                        await kv.put(cacheKey, JSON.stringify(payload), {
-                            expirationTtl: CACHE_TTL,
-                        });
-                    } catch (err) {
-                        log.trace("KV put error: {err}", { err });
-                    }
-                }
+                const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
+                    tinybirdOrigin,
+                    "/v0/pipes/activity_earnings_chart.json",
+                    tinybirdToken,
+                    {
+                        dev_user_id: devUserId,
+                        since: window.since,
+                        until: window.until,
+                        grain,
+                    },
+                );
+                const perEntity = rollupEarningsByEntity(daily);
 
                 log.debug(
-                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount} cached={cached}",
+                    "Fetched earnings: requesterUserId={requesterUserId} devUserId={devUserId} override={override} days={days} dailyCount={dailyCount} entityCount={entityCount}",
                     {
                         requesterUserId: user.id,
                         devUserId,
                         override: devUserOverridden,
                         days,
-                        dailyCount: payload.daily.length,
-                        entityCount: payload.perEntity.length,
-                        cached,
+                        dailyCount: daily.length,
+                        entityCount: perEntity.length,
                     },
                 );
 
                 if (format === "csv") {
-                    const header =
-                        "date,source,entity_id,entity_name,requests,baseline_price,pollen_earned,paid_earned,tier_earned,cost_usd,reward_rate";
-                    const rows = payload.daily.map(dailyEarningsRowToCsvRow);
-                    const csv = [header, ...rows].join("\n");
+                    const csv = toCsv(EARNINGS_CSV_COLUMNS, daily);
 
                     return new Response(csv, {
                         headers: {
                             "Content-Type": "text/csv",
-                            "Content-Disposition": `attachment; filename="pollinations-earnings-${filenamePeriod}-${new Date().toISOString().split("T")[0]}.csv"`,
+                            "Content-Disposition": `attachment; filename="pollinations-earnings-${window.filenamePart}-${new Date().toISOString().split("T")[0]}.csv"`,
                         },
                     });
                 }
 
-                return c.json(payload);
+                return c.json({ daily, perEntity });
             } catch (error) {
                 log.error("Error fetching earnings: {error}", { error });
                 return c.json({ error: "Failed to fetch earnings data" }, 500);
@@ -1499,51 +1619,14 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
-            const db = drizzle(c.env.DB);
-            const keys = await db
-                .select({
-                    id: apikeyTable.id,
-                    name: apikeyTable.name,
-                    start: apikeyTable.start,
-                    prefix: apikeyTable.prefix,
-                    createdAt: apikeyTable.createdAt,
-                    expiresAt: apikeyTable.expiresAt,
-                    lastRequest: apikeyTable.lastRequest,
-                    permissions: apikeyTable.permissions,
-                    metadata: apikeyTable.metadata,
-                    pollenBalance: apikeyTable.pollenBalance,
-                    enabled: apikeyTable.enabled,
-                })
+            const keys = await drizzle(c.env.DB)
+                .select()
                 .from(apikeyTable)
-                .where(eq(apikeyTable.userId, user.id))
+                .where(eq(apikeyTable.referenceId, user.id))
                 .all();
-
-            c.header("Cache-Control", "private, no-store, max-age=0");
-            return c.json({
-                data: keys.map((key) => ({
-                    id: key.id,
-                    name: key.name,
-                    start: key.start,
-                    prefix: key.prefix,
-                    createdAt: key.createdAt,
-                    expiresAt: key.expiresAt,
-                    lastRequest: key.lastRequest,
-                    permissions: key.permissions
-                        ? (() => {
-                              try {
-                                  return JSON.parse(key.permissions);
-                              } catch {
-                                  return null;
-                              }
-                          })()
-                        : null,
-                    metadata: parseMetadata(key.metadata),
-                    pollenBalance: key.pollenBalance,
-                    enabled: key.enabled,
-                })),
-            });
+            return c.json({ data: keys.map(formatKey) });
         },
     )
     .post(
@@ -1552,7 +1635,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Create API Key",
             description:
-                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. The `keys` account permission is automatically stripped from child keys to prevent escalation.',
+                'Create a new API key. To create an app key, use `type: "publishable"` with `redirectUris`. Publishable app keys default developer earnings off; send `earningsEnabled: true` to opt in. Requires `account:keys` permission when using API keys. The full key value is returned only once in the response. Child keys get the `keys` account permission only when `accountPermissions` requests it.',
             responses: {
                 200: { description: "Created API key with full secret" },
                 401: { description: "Unauthorized" },
@@ -1563,7 +1646,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const {
                 name,
@@ -1571,20 +1654,27 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                questPollenOnly,
                 accountPermissions,
                 redirectUris,
                 earningsEnabled,
+                description,
+                consent,
             } = c.req.valid("json");
 
-            const metadata =
-                type === "publishable"
-                    ? {
-                          ...(redirectUris?.length ? { redirectUris } : {}),
-                          ...(earningsEnabled !== undefined
-                              ? { earningsEnabled }
-                              : {}),
-                      }
-                    : undefined;
+            // createApiKeyForUser keeps redirectUris and earningsEnabled only
+            // on publishable keys.
+            const metadata = {
+                description,
+                earningsEnabled,
+                redirectUris,
+                ...consent,
+            };
+            const createdVia = consent
+                ? "redirect-auth"
+                : c.var.auth.apiKey
+                  ? "api"
+                  : "dashboard";
 
             const created = await createApiKeyForUser({
                 authClient: c.var.auth.client,
@@ -1595,12 +1685,203 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 allowedModels,
                 pollenBudget,
+                // A child key can't spend what its creator can't.
+                questPollenOnly:
+                    questPollenOnly ||
+                    (c.var.auth.apiKey?.questPollenOnly ?? false),
                 accountPermissions,
                 metadata,
-                allowAccountKeysPermission: false,
-                defaultCreatedVia: "api",
+                defaultCreatedVia: createdVia,
+                createdByApiKeyId: c.var.auth.apiKey?.id,
+                originAppKeyId:
+                    c.var.auth.apiKey?.byopClientKeyId ??
+                    (c.var.auth.apiKey?.metadata?.keyType === "publishable"
+                        ? c.var.auth.apiKey.id
+                        : (c.var.auth.apiKey?.metadata?.originAppKeyId as
+                              | string
+                              | undefined)),
             });
+
+            // Awarding the first-key quest is a few D1 queries; awaiting it
+            // means the balance and quests the caller reads next include it.
+            await checkQuestsForUser(c.env, user.id, [
+                ACCOUNT_SETUP_QUEST_GROUP,
+            ]).catch((error) =>
+                c.get("log").warn("API key quest check failed: {error}", {
+                    error,
+                }),
+            );
             return c.json(created);
+        },
+    )
+    .patch(
+        "/keys/:id",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Update API Key",
+            description:
+                "Update an API key's name, model access, budget, account permissions, expiry, description, or app settings. Omitted fields are unchanged. Requires `account:keys` permission when using API keys.",
+            responses: {
+                200: { description: "Updated API key" },
+                400: { description: "Invalid update" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Key not found" },
+            },
+        }),
+        validator("json", UpdateKeySchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+
+            const { id } = c.req.param();
+            const {
+                name,
+                allowedModels,
+                pollenBudget,
+                questPollenOnly,
+                accountPermissions,
+                expiresAt,
+                description,
+                redirectUris,
+                earningsEnabled,
+            } = c.req.valid("json");
+
+            const db = drizzle(c.env.DB);
+            const key = await db
+                .select()
+                .from(apikeyTable)
+                .where(
+                    and(
+                        eq(apikeyTable.id, id),
+                        eq(apikeyTable.referenceId, user.id),
+                    ),
+                )
+                .get();
+            if (!key) {
+                throw new HTTPException(404, { message: "API key not found" });
+            }
+            if (earningsEnabled !== undefined && key.prefix !== "pk") {
+                throw new HTTPException(400, {
+                    message:
+                        "BYOP earnings can only be enabled on publishable app keys",
+                });
+            }
+            for (const uri of redirectUris ?? []) {
+                validateRedirectUriFormat(uri);
+            }
+            // As on creation: a key can't grant spending it doesn't have.
+            if (
+                questPollenOnly === false &&
+                c.var.auth.apiKey?.questPollenOnly
+            ) {
+                throw new HTTPException(403, {
+                    message:
+                        "A Quest Pollen only key can't lift that limit from a key",
+                });
+            }
+
+            // Only the columns a request names are written, so concurrent
+            // edits of different fields can't undo each other. null clears a
+            // restriction; omitted leaves it unchanged.
+            const permissions = parsePermissions(key.permissions) ?? {};
+            if (allowedModels !== undefined) {
+                if (allowedModels) {
+                    permissions.models = await toModelPermissions(
+                        c.env.DB,
+                        allowedModels,
+                    );
+                } else delete permissions.models;
+            }
+            if (accountPermissions !== undefined) {
+                const account =
+                    accountPermissions &&
+                    sanitizeAuthorizeAccountPermissions(accountPermissions);
+                if (account) permissions.account = account;
+                else delete permissions.account;
+            }
+            const metadataPatch = Object.fromEntries(
+                Object.entries({
+                    description,
+                    redirectUris,
+                    earningsEnabled,
+                }).filter(([, value]) => value !== undefined),
+            );
+
+            const [updated] = await db
+                .update(apikeyTable)
+                .set({
+                    ...(name !== undefined && { name }),
+                    ...(pollenBudget !== undefined && {
+                        pollenBalance: pollenBudget,
+                    }),
+                    ...(questPollenOnly !== undefined && { questPollenOnly }),
+                    ...(expiresAt !== undefined && { expiresAt }),
+                    ...((allowedModels !== undefined ||
+                        accountPermissions !== undefined) && {
+                        permissions: Object.keys(permissions).length
+                            ? JSON.stringify(permissions)
+                            : null,
+                    }),
+                    ...(Object.keys(metadataPatch).length > 0 && {
+                        metadata: JSON.stringify({
+                            ...parseMetadata(key.metadata),
+                            ...metadataPatch,
+                        }),
+                    }),
+                    updatedAt: new Date(),
+                })
+                .where(eq(apikeyTable.id, id))
+                .returning();
+
+            return c.json(formatKey(updated));
+        },
+    )
+    .get(
+        "/keys/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireUser();
+            const { agent, sig, ...grant } = c.req.valid("query");
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent,
+                sig,
+            });
+            return c.json({ agent: signed ? agent : null });
+        },
+    )
+    .post(
+        "/polli/harness-on",
+        validator(
+            "json",
+            z.object({
+                harness: z
+                    .string()
+                    .regex(/^[a-z0-9-]{1,32}$/)
+                    .meta({ example: "opencode" }),
+            }),
+        ),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            captureFromRequest(c, "polli_harness_on", user.id, {
+                harness: c.req.valid("json").harness,
+            });
+            return c.json({ ok: true });
         },
     )
     .delete(
@@ -1622,7 +1903,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const callerKey = c.var.auth.apiKey;
-            requireKeysPermission(callerKey);
+            requireAccountPermission(callerKey, "keys");
 
             const { id } = c.req.param();
 
@@ -1641,7 +1922,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(
                     and(
                         eq(apikeyTable.id, id),
-                        eq(apikeyTable.userId, user.id),
+                        eq(apikeyTable.referenceId, user.id),
                     ),
                 )
                 .get();
@@ -1669,6 +1950,11 @@ export const accountRoutes = new Hono<Env>()
                         "application/json": {
                             schema: resolver(
                                 z.object({
+                                    id: z
+                                        .string()
+                                        .describe(
+                                            "Opaque ID for editing this key in the owner’s account",
+                                        ),
                                     valid: z
                                         .boolean()
                                         .describe(
@@ -1701,7 +1987,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "List of allowed model IDs, null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())
@@ -1717,10 +2003,45 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Remaining pollen budget for this key, null = unlimited (uses user balance)",
                                         ),
+                                    questPollenOnly: z
+                                        .boolean()
+                                        .describe(
+                                            "Whether this key spends only Quest Pollen, never paid Pollen",
+                                        ),
                                     rateLimitEnabled: z
                                         .boolean()
                                         .describe(
                                             "Whether rate limiting is enabled for this key",
+                                        ),
+                                    userId: z
+                                        .string()
+                                        .nullable()
+                                        .describe(
+                                            "Stable id of the user that owns this key — server-attested.",
+                                        ),
+                                    byopApp: z
+                                        .object({
+                                            clientKeyId: z
+                                                .string()
+                                                .describe(
+                                                    "Publishable app key (client id) that minted this key via the BYOP authorize flow.",
+                                                ),
+                                            name: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "Display name of the BYOP app.",
+                                                ),
+                                            appUser: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "User id of the app account that owns the BYOP app key.",
+                                                ),
+                                        })
+                                        .nullable()
+                                        .describe(
+                                            "BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys.",
                                         ),
                                 }),
                             ),
@@ -1783,13 +2104,21 @@ export const accountRoutes = new Hono<Env>()
                 }
             }
 
-            // Format permissions for response
             const permissions = {
-                models: apiKey.permissions?.models || null,
-                account: apiKey.permissions?.account || null,
+                models: apiKey.permissions?.models ?? null,
+                account: apiKey.permissions?.account ?? null,
             };
 
+            const byopApp = apiKey.byopClientKeyId
+                ? {
+                      clientKeyId: apiKey.byopClientKeyId,
+                      name: apiKey.byopClientName ?? null,
+                      appUser: apiKey.byopClientUserId ?? null,
+                  }
+                : null;
+
             return c.json({
+                id: apiKey.id,
                 valid: true, // If we got here, the key is valid
                 type: keyType,
                 name: apiKey.name || null,
@@ -1797,8 +2126,14 @@ export const accountRoutes = new Hono<Env>()
                 expiresIn,
                 permissions,
                 pollenBudget: apiKey.pollenBalance ?? null,
+                questPollenOnly: apiKey.questPollenOnly ?? false,
                 // Generation rate limiting applies to publishable keys only.
                 rateLimitEnabled: keyType === "publishable",
+                // Server-attested identity. Downstream services (media catalog)
+                // stamp ownership from these values — never from request
+                // params — so user and BYOP app ids cannot be spoofed.
+                userId: c.var.auth.user?.id ?? null,
+                byopApp,
             });
         },
     )
@@ -1846,13 +2181,7 @@ export const accountRoutes = new Hono<Env>()
                 period,
                 models,
             } = c.req.valid("query");
-            const usageWindow = formatUsageWindow(
-                resolveUsageWindow(days, {
-                    granularity,
-                    period,
-                }),
-            );
-            const filenamePeriod = usageWindowFilenamePart(days, {
+            const usageWindow = resolveUsageWindow(days, {
                 granularity,
                 period,
             });
@@ -1864,9 +2193,9 @@ export const accountRoutes = new Hono<Env>()
 
             return respondDetailedUsage(c, log, {
                 userId: user.id,
-                apiKeyId: apiKey.id,
+                apiKeyIds: [apiKey.id],
                 filenamePrefix: "pollinations-key-usage",
-                filenamePeriod,
+                filenamePeriod: usageWindow.filenamePart,
                 format,
                 limit,
                 models,

@@ -1,5 +1,3 @@
-import type React from "react";
-
 // Game Configuration
 export const GAME_CONFIG = {
     FLOORS: 5,
@@ -36,20 +34,6 @@ export const ACTION_INDICATORS = {
     },
 } as const;
 
-// Consolidate message-related constants
-export const MESSAGE_CONFIG = {
-    STYLES: MESSAGE_STYLES,
-    PREFIXES: MESSAGE_PREFIXES,
-    ACTION_INDICATORS,
-} as const;
-
-// API Configuration
-export const API_CONFIG = {
-    MAX_RETRIES: 3,
-    RETRY_DELAY: 1000,
-    ENDPOINT: "https://gen.pollinations.ai/v1/chat/completions",
-} as const;
-
 // Game Types
 export type Persona = "user" | "marvin" | "elevator" | "guide";
 export type Action = "none" | "join" | "up" | "down" | "show_instructions";
@@ -71,13 +55,6 @@ export type GameState = {
     showInstruction: boolean;
     isLoading: boolean;
 };
-
-export type GameAction =
-    | { type: "CHEAT_CODE" }
-    | { type: "ADD_MESSAGE"; message: Message }
-    | { type: "SWITCH_PERSONA"; persona: Persona }
-    | { type: "START_AUTONOMOUS" }
-    | { type: "END_GAME" };
 
 // API Types
 export type PollingsMessage = {
@@ -106,12 +83,3 @@ export type ElevatorAsciiProps = {
     isMarvinMode?: boolean;
     hasMarvinJoined?: boolean;
 };
-
-// Utility Types
-export type LMMessage = {
-    role: "user" | "assistant" | "system";
-    content: string;
-    name?: "elevator" | "marvin" | "guide";
-};
-
-export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;

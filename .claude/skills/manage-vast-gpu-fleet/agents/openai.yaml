@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Vast GPU Fleet"
+  short_description: "Scout, canary, and replace Vast GPUs safely"
+  default_prompt: "Use $manage-vast-gpu-fleet to inspect the current fleet and prepare a safe replacement candidate."

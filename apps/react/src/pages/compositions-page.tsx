@@ -12,19 +12,18 @@ import {
     InfoTip,
     LinkCard,
     LockIcon,
-    Markdown,
     MediaPlaceholder,
     MultiSelect,
     NavItem,
     PeriodPicker,
     type PeriodSelection,
-    Prose,
     Section,
     StatCard,
     Text,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
+import { Markdown, Prose } from "@pollinations/ui/markdown";
 import { useState } from "react";
 import { CONTROL_SIZES, PageIntro, PrimitiveExample } from "./reference-layout";
 
@@ -61,7 +60,7 @@ export function CompositionsPage() {
                 <div className="grid gap-3">
                     <PrimitiveExample
                         name="ExternalLinkButton"
-                        description="Button-styled link for leaving the current app surface."
+                        description="Reserved for important flow actions such as checkout or authorization. Use InlineLink for navigation, documentation, and other destinations."
                     >
                         <div className="flex flex-wrap gap-2">
                             {CONTROL_SIZES.map((size) => (
@@ -70,7 +69,7 @@ export function CompositionsPage() {
                                     href="https://pollinations.ai"
                                     size={size}
                                 >
-                                    {size}
+                                    Continue to checkout
                                 </ExternalLinkButton>
                             ))}
                         </div>

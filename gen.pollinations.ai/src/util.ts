@@ -20,8 +20,9 @@ export function safeRound(amount: number, precision: number = 6): number {
     return Math.round(amount * factor) / factor;
 }
 
-export function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
+export function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes =
+        buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
     let binary = "";
     const chunkSize = 0x8000;
 
@@ -49,4 +50,18 @@ export function parseBooleanLike(value: unknown): boolean | null {
     if (TRUE_TOKENS.includes(normalized)) return true;
     if (FALSE_TOKENS.includes(normalized)) return false;
     return null;
+}
+
+/**
+ * `seed=-1` used to mean "pick a random seed", which produced a different image
+ * on every call. Generation is now single-flighted and cached by request URL,
+ * so a sentinel that randomizes downstream would key one URL to an arbitrary
+ * result. Map it to a fixed seed instead: callers get a reproducible result and
+ * providers only ever see a real seed or none. Callers wanting variation pass
+ * their own varying seed.
+ */
+export const SENTINEL_SEED = 42;
+
+export function normalizeSeed<T extends number | undefined>(seed: T): T {
+    return (seed === -1 ? SENTINEL_SEED : seed) as T;
 }

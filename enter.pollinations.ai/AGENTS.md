@@ -49,7 +49,7 @@
 **For testing, use Secret Keys** for better rate limits and pollen spending.
 
 ```bash
-# Get your API key from: https://enter.pollinations.ai
+# Get your API key from: https://enter.pollinations.ai/keys
 export TOKEN="your_secret_key_here"  # sk_...
 
 # Set base URL
@@ -117,7 +117,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
+curl "$BASE_URL/generate/image/test7?model=gptimage&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file
@@ -484,7 +484,7 @@ echo "✅ Done!"
 ### 403 Forbidden
 
 - **Insufficient pollen balance** - paid models require pollen
-  - Check your pollen balance at https://enter.pollinations.ai
+  - Check your pollen balance at https://enter.pollinations.ai/pollen
   - Add pollen to your account to use paid models
 - **Text models may have tier requirements** - check the error message
 - Note: Image models have NO tier requirements, only pollen balance
@@ -543,7 +543,7 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - ⚠️ **Only test models that appear in the discovery endpoint**
 - **Image models**: NO tier requirements, only pollen balance matters for paid models
 - **Text models**: May have tier requirements, check model details
-- Default image model: `flux` (free, 1024x1024)
+- Default image model: `flux` (0.002 Pollen per image, 1024x1024)
 - Default text model: `openai` (GPT-4o)
 - **Seedream**: Requires minimum 960x960 pixels (921600 total pixels)
 
@@ -571,29 +571,33 @@ curl "$BASE_URL/generate/v1/chat/completions" \
 - **Test single requests first** before running batch tests
 - **Check response headers** for cache status: `x-cache: HIT` or `MISS`
 - **Use small images** (256x256) for quick tests
-- **Monitor your balance** at https://enter.pollinations.ai after tests
+- **Monitor your balance** at https://enter.pollinations.ai/pollen after tests
 
 ---
 
 ## 🔐 BYOP Authorization Flow
 
-Third-party apps redirect users to get an API key. With `app_key`, the consent screen shows app name + developer GitHub.
+Third-party apps redirect users to authorize a scoped user key. New web integrations should use OAuth authorization-code + PKCE; the old `#api_key=` fragment flow remains supported for legacy clients. With `client_id`/`app_key`, the consent screen shows app name + developer GitHub.
 
 ### Base URL
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=YOUR_APP_URL&app_key=pk_yourkey
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CALLBACK&client_id=pk_yourkey&state=STATE&code_challenge=CHALLENGE&code_challenge_method=S256
 ```
 
 ### Parameters
 
 | Param | Description | Example |
 |-------|-------------|---------|
-| `app_key` | Publishable key (shows app name + author) | `pk_abc123` |
-| `models` | Comma-separated allowed models | `flux,openai,gptimage` |
+| `client_id` | Publishable key (shows app name + author); `app_key` is legacy alias | `pk_abc123` |
+| `redirect_uri` | Registered callback URL; `redirect_url` is legacy alias | `https://myapp.com/callback` |
+| `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
+| `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
+| `code_challenge_method` | Must be `S256` for code flow | `S256` |
+| `models` | Comma-separated model categories and model IDs; a model ID allows only that model | `text,image` |
 | `budget` | Pollen budget limit | `10` |
-| `expiry` | Expiry in days (default: 30) | `7` |
-| `permissions` | Account permissions | `profile,usage` |
+| `expiry` | Expiry in days (default: 7) | `7` |
+| `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |
 
 ### Account Permissions
 
@@ -607,12 +611,17 @@ Register a `pk_` key at enter.pollinations.ai with at least one **Redirect URI**
 ### Example
 
 ```
-https://enter.pollinations.ai/authorize?redirect_url=https://myapp.com/callback&app_key=pk_abc123&permissions=profile,usage&expiry=7
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_abc123&scope=profile%20usage&expiry=7&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
-After authorization, the user is redirected back with an `sk_` key in the URL fragment:
+After authorization, the user is redirected back with a short-lived code:
 ```
-https://myapp.com/callback#api_key=sk_xxxxx
+https://myapp.com/callback?code=oauth_code&state=random
+```
+
+Exchange it at `POST /api/oauth/token` with form-encoded `grant_type=authorization_code`, `code`, `client_id`, `redirect_uri`, and `code_verifier`. Response:
+```
+{ "access_token": "sk_xxxxx", "token_type": "bearer" }
 ```
 
 ### App Lookup Endpoint
@@ -626,20 +635,14 @@ URL-based identity lookup was removed — identity is derived from `client_id` o
 
 ## 🎫 Wallet & Balance Lookups
 
-> Claude skill available: `.claude/skills/tier-management/SKILL.md`
-
-Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as a runtime product level or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. The old account-level upgrade/downgrade paths (Spore→Seed, app→Flower, admin tier-update) are removed.
+Pollen is earned by completing **Quests**. The `tier`, `tier_balance`, and `pack_balance` columns remain in D1 as the active wallet data model — do not treat the `tier` column as runtime product state or mutate it to "upgrade" a user. The `tier_balance` bucket is shown to users as the **Quest Pollen** balance; `pack_balance` is the **Paid** balance. Old account-level upgrade/downgrade paths are removed.
 
 ### Lookups (read-only)
 
 ```bash
-# Look up a user's balance
-.claude/skills/tier-management/scripts/check-user-balance.sh USERNAME_OR_EMAIL
-
-# Or query D1 directly
 cd enter.pollinations.ai
 npx wrangler d1 execute DB --remote --env production \
-  --command "SELECT github_username, email, tier, tier_balance FROM user WHERE LOWER(github_username) LIKE '%USERNAME%';"
+  --command "SELECT id, github_username, email, tier_balance, pack_balance FROM user WHERE id = 'USER_ID';"
 ```
 
 ---
@@ -686,7 +689,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
   2. `filterAliases()` removes model aliases from enums (only primary IDs shown)
   3. Injects `x-codeSamples` (curl, Python, JS examples) from the `CODE_SAMPLES` object
 - **`generateLLMDoc()`** in `docs.ts` — hand-written compact text doc served at `/docs/llm.txt`, separate from OpenAPI
-- **Hidden endpoints** — routes with `hide: true` in `describeRoute()` are excluded from production docs (e.g. `/customer/balance`, `/api-keys`)
+- **Hidden endpoints** — routes with `hide` in `describeRoute()` are excluded from production docs (e.g. `/app-lookup`, `/account/quests/check`)
 
 ### Three Output Surfaces
 
@@ -696,7 +699,7 @@ OpenAPI 3.x JSON served at /docs/open-api/generate-schema
 
 ### Regenerating APIDOCS.md
 
-- **Automatic**: CI workflow `.github/workflows/docs-regenerate-apidocs.yml` runs after a successful production deploy (`Deploy gen.pollinations.ai` workflow on the `production` branch). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
+- **Automatic**: CI workflow `.github/workflows/docs-regenerate-api-reference.yml` runs after a successful production deploy (`Deploy / Cloudflare production` workflow on the `production` branch, gated on its `deploy-gen` job succeeding). If APIDOCS.md drifts, it opens or updates a single `docs/apidocs-sync` PR against `main`.
 - **Manual**: `npm run docs:generate --prefix gen.pollinations.ai` (fetches from production `gen.pollinations.ai`, so changes must be deployed first)
 
 ### Where to Make Changes

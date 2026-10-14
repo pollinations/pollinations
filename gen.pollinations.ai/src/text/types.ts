@@ -2,6 +2,8 @@
  * Shared types for the text generation service.
  */
 
+import type { UpstreamHeaders } from "@shared/error.ts";
+
 /** OpenAI-style chat message. */
 export interface ChatMessage {
     role: string;
@@ -18,6 +20,7 @@ export interface ChatMessage {
 /** Options bag threaded through transforms and generation functions. */
 export interface TransformOptions {
     model?: string;
+    metadata?: Record<string, string> | null;
     modelDef?: unknown;
     modelConfig?: Record<string, unknown>;
     requestedModel?: string;
@@ -33,14 +36,21 @@ export interface TransformOptions {
     response_format?: { type: string; [key: string]: unknown };
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
+    /** Internal transport for managed prompt-agent Responses execution. */
+    responsesFetcher?: typeof fetch;
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     modalities?: string[];
     audio?: Record<string, unknown>;
+    normalizeFinishReasonAtTokenLimit?: boolean;
     stream_options?: Record<string, unknown>;
     [key: string]: unknown;
 }
@@ -73,14 +83,23 @@ export interface ChatCompletion {
     created?: number;
     model?: string;
     choices?: CompletionChoice[];
-    usage?: Record<string, number>;
+    usage?: Record<string, unknown>;
     citations?: string[];
-    error?: string | { message?: string; status?: number; details?: unknown };
+    error?:
+        | string
+        | {
+              message?: string;
+              status?: number;
+              code?: number;
+              details?: unknown;
+          };
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
-    /** Portkey fallback target that served the call, e.g. "config.targets[1]". */
+    /** Worker fallback candidate that served the call. */
     fallbackTarget?: string;
+    /** Internal URL of the gateway request that produced this completion. */
+    upstreamRequestUrl?: URL;
     [key: string]: unknown;
 }
 
@@ -88,12 +107,25 @@ export interface ChatCompletion {
 export interface ServiceError extends Error {
     status?: number;
     upstreamStatus?: number;
+    requestUrl?: URL;
     code?: number | string;
+    /**
+     * Stable, machine-readable error code (mirrors `UpstreamError.errorCode`),
+     * propagated into the response envelope by the text error funnel.
+     */
+    errorCode?: string;
     details?: unknown;
+    /** Original provider response, retained independently of parsed routing details. */
+    responseBody?: string;
     model?: string;
     provider?: string;
     response?: { data?: unknown };
+    upstreamHeaders?: UpstreamHeaders;
 }
+
+export type TextVariables = {
+    upstreamRequestUrl?: URL;
+};
 
 /** Request data extracted from incoming HTTP requests. */
 export interface RequestData {
@@ -110,9 +142,13 @@ export interface RequestData {
     jsonMode?: boolean;
     tools?: unknown[];
     tool_choice?: unknown;
+    parallel_tool_calls?: boolean;
     modalities?: string[];
     audio?: Record<string, unknown>;
     reasoning_effort?: string;
+    web_search_options?: {
+        search_context_size: "low" | "medium" | "high";
+    };
     response_format?: { type: string; [key: string]: unknown };
     max_tokens?: number;
     max_completion_tokens?: number;
@@ -128,6 +164,6 @@ export interface RequestData {
 /** Configuration for the generic OpenAI client. */
 export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
-    defaultOptions?: Record<string, unknown>;
     additionalHeaders?: Record<string, string>;
+    fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
 }

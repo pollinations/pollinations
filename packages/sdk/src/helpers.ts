@@ -10,19 +10,15 @@
  * const image = await generateImage('A cute cat');
  * await image.saveToFile('cat.png');
  *
- * // Generate multiple images
- * const images = await generateImage('A cute cat', { n: 5 });
- *
  * // Generate text
  * const text = await generateText('Write a haiku');
  * ```
  */
 
-import { Pollinations } from "./client.js";
+import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
-    Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
     wrapAudioResponse,
@@ -42,7 +38,12 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeviceAuthorization,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -50,6 +51,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -98,24 +100,12 @@ export function configure(options: {
     defaultClient = new Pollinations(options);
 }
 
-// ============================================================================
-// Options with n parameter
-// ============================================================================
-
-interface WithN {
-    /** Number of outputs to generate (default: 1). Each gets a random seed. */
-    n?: number;
-}
-
 interface WithRaw {
     /** Return full API response instead of just the text (default: false) */
     raw?: boolean;
 }
 
-type ImageOptionsWithN = ImageGenerateOptions & WithN;
-type VideoOptionsWithN = VideoGenerateOptions & WithN;
-type TextOptionsWithN = TextGenerateOptions & WithN & WithRaw;
-type AudioOptionsWithN = AudioGenerateOptions & WithN;
+type TextOptionsWithRaw = TextGenerateOptions & WithRaw;
 
 // ============================================================================
 // Image Functions
@@ -138,38 +128,20 @@ export async function imageUrl(
 }
 
 /**
- * Generate image(s) from a prompt
+ * Generate an image from a prompt
  *
  * @example
  * ```ts
- * // Single image
  * const image = await generateImage('A robot');
  * await image.saveToFile('robot.jpg');
- *
- * // Multiple images with n parameter
- * const images = await generateImage('A robot', { n: 5 });
- * images.forEach((img, i) => img.saveToFile(`robot-${i}.jpg`));
  * ```
  */
 export async function generateImage(
     prompt: string,
-    options?: ImageOptionsWithN,
-): Promise<ImageResponseExt | ImageResponseExt[]> {
-    const { n = 1, ...imageOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.image(prompt, imageOptions);
-        return wrapImageResponse(response);
-    }
-
-    // Multiple: run in parallel with random seeds
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.image(prompt, { ...imageOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapImageResponse);
+    options?: ImageGenerateOptions,
+): Promise<ImageResponseExt> {
+    const response = await getClient().image(prompt, options);
+    return wrapImageResponse(response);
 }
 
 // ============================================================================
@@ -196,26 +168,20 @@ export async function editImage(
 }
 
 /**
- * Generate image(s) via the OpenAI-compatible POST /v1/images/generations endpoint.
+ * Generate an image via the OpenAI-compatible POST /v1/images/generations endpoint.
  *
  * @example
  * ```ts
  * // Single image, OpenAI-style size string
  * const img = await imageGenerate('A robot', { size: '1024x1024' });
  * await img.saveToFile('robot.png');
- *
- * // Multiple images
- * const imgs = await imageGenerate('A robot', { n: 3 });
  * ```
  */
 export async function imageGenerate(
     prompt: string,
     options?: ImageGenerateV1Options,
-): Promise<ImageResponseExt | ImageResponseExt[]> {
-    const response = await getClient().imageGenerate(prompt, options);
-    return Array.isArray(response)
-        ? response.map(wrapImageResponse)
-        : wrapImageResponse(response);
+): Promise<ImageResponseExt> {
+    return wrapImageResponse(await getClient().imageGenerate(prompt, options));
 }
 
 // ============================================================================
@@ -227,7 +193,7 @@ export async function imageGenerate(
  *
  * @example
  * ```ts
- * const url = await videoUrl('A bird flying', { model: 'veo', duration: 4 });
+ * const url = await videoUrl('A bird flying', { model: 'google/veo-3.1-fast', duration: 4 });
  * ```
  */
 export async function videoUrl(
@@ -238,36 +204,20 @@ export async function videoUrl(
 }
 
 /**
- * Generate video(s) from a prompt
+ * Generate a video from a prompt
  *
  * @example
  * ```ts
- * // Single video
  * const video = await generateVideo('A cat stretching', { duration: 4 });
  * await video.saveToFile('cat.mp4');
- *
- * // Multiple videos
- * const videos = await generateVideo('A cat stretching', { n: 3, duration: 4 });
  * ```
  */
 export async function generateVideo(
     prompt: string,
-    options?: VideoOptionsWithN,
-): Promise<VideoResponseExt | VideoResponseExt[]> {
-    const { n = 1, ...videoOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.video(prompt, videoOptions);
-        return wrapVideoResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.video(prompt, { ...videoOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapVideoResponse);
+    options?: VideoGenerateOptions,
+): Promise<VideoResponseExt> {
+    const response = await getClient().video(prompt, options);
+    return wrapVideoResponse(response);
 }
 
 // ============================================================================
@@ -279,11 +229,7 @@ export async function generateVideo(
  *
  * @example
  * ```ts
- * // Single response (just text)
  * const text = await generateText('Write a haiku');
- *
- * // Multiple responses
- * const texts = await generateText('Write a haiku', { n: 3 });
  *
  * // Full API response with raw: true
  * const response = await generateText('Write a haiku', { raw: true });
@@ -292,41 +238,18 @@ export async function generateVideo(
  */
 export async function generateText(
     prompt: string,
-    options?: TextOptionsWithN,
-): Promise<string | string[] | ChatResponseExt | ChatResponseExt[]> {
-    const { n = 1, raw = false, ...textOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        if (raw) {
-            const response = await client.chat(
-                [{ role: "user", content: prompt }],
-                { ...textOptions },
-            );
-            return wrapChatResponse(response);
-        }
-        return client.text(prompt, textOptions);
-    }
-
-    // Multiple: run in parallel with random seeds
+    options?: TextOptionsWithRaw,
+): Promise<string | ChatResponseExt> {
+    const { raw = false, ...textOptions } = options || {};
     if (raw) {
-        const results = await Promise.all(
-            Array.from({ length: n }, () =>
-                client.chat([{ role: "user", content: prompt }], {
-                    ...textOptions,
-                    seed: -1,
-                }),
-            ),
+        const request = buildTextRequest(prompt, textOptions);
+        const response = await getClient().chat(
+            request.messages,
+            request.options,
         );
-        return results.map(wrapChatResponse);
+        return wrapChatResponse(response);
     }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.text(prompt, { ...textOptions, seed: -1 }),
-        ),
-    );
-    return results;
+    return getClient().text(prompt, textOptions);
 }
 
 /**
@@ -351,36 +274,20 @@ export async function* generateTextStream(
 // ============================================================================
 
 /**
- * Create chat completion(s) with extended response
+ * Create a chat completion with extended response
  *
  * @example
  * ```ts
- * // Single completion
  * const response = await chat([{ role: 'user', content: 'Hello!' }]);
  * console.log(response.text);
- *
- * // Multiple completions
- * const responses = await chat([{ role: 'user', content: 'Hello!' }], { n: 3 });
  * ```
  */
 export async function chat(
     messages: Message[],
-    options?: ChatOptions & WithN,
-): Promise<ChatResponseExt | ChatResponseExt[]> {
-    const { n = 1, ...chatOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.chat(messages, chatOptions);
-        return wrapChatResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.chat(messages, { ...chatOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapChatResponse);
+    options?: ChatOptions,
+): Promise<ChatResponseExt> {
+    const response = await getClient().chat(messages, options);
+    return wrapChatResponse(response);
 }
 
 /**
@@ -401,20 +308,6 @@ export async function* chatStream(
     yield* getClient().chatStream(messages, options);
 }
 
-/**
- * Create a new conversation with the configured client
- *
- * @example
- * ```ts
- * const convo = conversation({ model: 'openai' });
- * convo.system('You are a helpful assistant');
- * const response = await convo.say('Hello!');
- * ```
- */
-export function conversation(options?: ChatOptions): Conversation {
-    return new Conversation(options, getClient());
-}
-
 // ============================================================================
 // Audio Functions
 // ============================================================================
@@ -429,31 +322,17 @@ export function conversation(options?: ChatOptions): Conversation {
  * await audio.saveToFile('speech.mp3');
  *
  * // Music generation
- * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
- * // Multiple variations
- * const audios = await generateAudio('Hello world!', { n: 3, voice: 'nova' });
  * ```
  */
 export async function generateAudio(
     text: string,
-    options?: AudioOptionsWithN,
-): Promise<AudioResponseExt | AudioResponseExt[]> {
-    const { n = 1, ...audioOptions } = options || {};
-    const client = getClient();
-
-    if (n === 1) {
-        const response = await client.audio(text, audioOptions);
-        return wrapAudioResponse(response);
-    }
-
-    const results = await Promise.all(
-        Array.from({ length: n }, () =>
-            client.audio(text, { ...audioOptions, seed: -1 }),
-        ),
-    );
-    return results.map(wrapAudioResponse);
+    options?: AudioGenerateOptions,
+): Promise<AudioResponseExt> {
+    const response = await getClient().audio(text, options);
+    return wrapAudioResponse(response);
 }
 
 // ============================================================================
@@ -461,24 +340,10 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
+ * Get available models, or only one kind of them
  */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
- * Get all available models
- */
-export async function getModels(): Promise<ModelInfo[]> {
-    return getClient().models();
+export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {
+    return getClient().models(kind);
 }
 
 // ============================================================================
@@ -511,6 +376,26 @@ export async function transcribe(
 }
 
 // ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Generate vector embeddings (OpenAI-compatible)
+ *
+ * @example
+ * ```ts
+ * const { data } = await embeddings('Hello world');
+ * console.log(data[0].embedding);
+ * ```
+ */
+export async function embeddings(
+    input: EmbeddingInput,
+    options?: EmbeddingsOptions,
+): Promise<EmbeddingsResponse> {
+    return getClient().embeddings(input, options);
+}
+
+// ============================================================================
 // Media Upload Functions
 // ============================================================================
 
@@ -519,7 +404,10 @@ export async function transcribe(
  *
  * @example
  * ```ts
- * const result = await upload(imageBuffer, { contentType: 'image/jpeg' });
+ * const result = await upload(imageBuffer, {
+ *   contentType: 'image/jpeg',
+ *   tags: ['cats'],
+ * });
  * console.log(result.url);
  * ```
  */
@@ -528,6 +416,17 @@ export async function upload(
     options?: UploadOptions,
 ): Promise<UploadResponse> {
     return getClient().upload(data, options);
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+ */
+export function decision(options: DecisionOptions): Promise<DecisionResponse> {
+    return getClient().decision(options);
 }
 
 // ============================================================================
@@ -541,7 +440,7 @@ export async function upload(
  * ```ts
  * const url = authorizeUrl({
  *   redirectUrl: 'https://myapp.com/callback',
- *   models: ['flux', 'openai'],
+ *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
  *   budget: 10,
  * });
  * ```
@@ -576,7 +475,7 @@ export async function authorizeDevice(
  * @example
  * ```ts
  * const user = await userInfo();
- * console.log(user.name, user.tier);
+ * console.log(user.name, user.preferred_username);
  * ```
  */
 export async function userInfo(): Promise<UserInfo> {
@@ -604,8 +503,14 @@ export async function getBalance(): Promise<AccountBalance> {
 /**
  * Get usage history
  */
-export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
-    return getClient().accountUsage(options);
+export async function getUsage(
+    options: UsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getUsage(options?: UsageOptions): Promise<UsageResponse>;
+export async function getUsage(
+    options?: UsageOptions,
+): Promise<UsageResponse | string> {
+    return getClient().accountUsage(options as UsageOptions);
 }
 
 /**
@@ -621,9 +526,15 @@ export async function getKeyUsage(
  * Get daily usage summary
  */
 export async function getDailyUsage(
+    options: DailyUsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getDailyUsage(
     options?: DailyUsageOptions,
-): Promise<DailyUsageResponse> {
-    return getClient().accountUsageDaily(options);
+): Promise<DailyUsageResponse>;
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse | string> {
+    return getClient().accountUsageDaily(options as DailyUsageOptions);
 }
 
 /**

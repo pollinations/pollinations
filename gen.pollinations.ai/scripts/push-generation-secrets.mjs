@@ -11,22 +11,33 @@ const REQUIRED_SECRET_KEYS = [
     "AZURE_CONTENT_SAFETY_API_KEY",
     "AZURE_CONTENT_SAFETY_ENDPOINT",
     "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
-    "AZURE_MYCELI_PROD_IMG_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_UAENORTH_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "BETTER_AUTH_SECRET",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "ELEVENLABS_API_KEY",
     "FAL_KEY",
     "FIREWORKS_API_KEY",
+    "FIREWORKS_NEO_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
-    "INCEPTION_API_KEY",
+    "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
-    "LTX2_BASE_URL",
-    "MUSIC_SERVICE_URL",
+    "MISTRAL_API_KEY",
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
@@ -36,11 +47,20 @@ const REQUIRED_SECRET_KEYS = [
     "PLN_GPU_TOKEN",
     "PORTKEY_GATEWAY_URL",
     "REPLICATE_API_TOKEN",
+    "STABILITY_API_KEY",
     "TINYBIRD_INGEST_TOKEN",
     "XAI_API_KEY",
 ];
 
-const OPTIONAL_SECRET_KEYS = ["AIRFORCE_API_KEY", "ASSEMBLYAI_API_KEY"];
+const OPTIONAL_SECRET_KEYS = [
+    "NOVITA_API_KEY",
+    "AIRFORCE_API_KEY",
+    "AI_GATEWAY_API_KEY",
+    "ASSEMBLYAI_API_KEY",
+    "E2B_API_KEY",
+    "GEMINI_API_KEY",
+    "WEFT_SELLER_API_KEY",
+];
 
 const [sourcePath, environment] = process.argv.slice(2);
 
@@ -105,8 +125,20 @@ try {
         mode: 0o600,
     });
     execFileSync(
-        "npx",
-        ["wrangler", "secret", "bulk", outputPath, "--env", environment],
+        process.execPath,
+        [
+            fileURLToPath(
+                new URL(
+                    "../../node_modules/wrangler/bin/wrangler.js",
+                    import.meta.url,
+                ),
+            ),
+            "secret",
+            "bulk",
+            outputPath,
+            "--env",
+            environment,
+        ],
         {
             stdio: "inherit",
         },

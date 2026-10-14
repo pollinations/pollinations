@@ -1,32 +1,78 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
-import { ASPECT_RATIOS, closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import {
+    resolveGrokAspectRatio,
+    resolveGrokDuration,
+} from "./openRouterVideoModel.ts";
 
 const logOps = debug("pollinations:xai-video:ops");
-const logError = debug("pollinations:xai-video:error");
 
-const XAI_VIDEO_API_URL = "https://api.x.ai/v1/videos/generations";
-const XAI_VIDEO_POLL_URL = "https://api.x.ai/v1/videos";
+const XAI_VIDEO_URL = "https://api.x.ai/v1/videos";
+const XAI_UPSTREAM_MODEL = "grok-imagine-video-1.5-lite";
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
-interface XaiVideoStatusResponse {
-    id: string;
-    status: "pending" | "processing" | "done" | "succeeded" | "failed";
+interface XaiVideoStatus {
+    status: "pending" | "done" | "expired" | "failed";
     video?: {
-        url: string;
+        url?: string;
         duration?: number;
+        respect_moderation?: boolean;
     };
-    error?: string;
-    progress?: number;
+    error?: { code?: string; message?: string };
+}
+
+async function pollXaiVideo(
+    requestId: string,
+    apiKey: string,
+): Promise<XaiVideoStatus> {
+    const url = `${XAI_VIDEO_URL}/${requestId}`;
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+
+    while (Date.now() < deadline) {
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.ok) {
+            const result = (await response.json()) as XaiVideoStatus;
+            if (result.status === "done") return result;
+            if (result.status === "failed" || result.status === "expired") {
+                const invalidInput = result.error?.code === "invalid_argument";
+                throw UpstreamError.fromProvider(invalidInput ? 400 : 502, {
+                    message: `xAI video generation ${result.status}: ${result.error?.message ?? "unknown error"}`,
+                    responseBody: JSON.stringify(result),
+                    requestUrl: new URL(url),
+                });
+            }
+        } else if (
+            response.status !== 429 &&
+            response.status >= 400 &&
+            response.status < 500
+        ) {
+            const body = await response.text();
+            throw UpstreamError.fromProvider(response.status, {
+                message: `xAI video poll failed: ${body}`,
+                responseBody: body,
+                requestUrl: new URL(url),
+            });
+        }
+        await sleep(Math.min(POLL_INTERVAL_MS, deadline - Date.now()));
+    }
+
+    throw UpstreamError.fromProvider(504, {
+        message: "xAI video generation timed out",
+        requestUrl: new URL(url),
+    });
 }
 
 /**
- * Generates a video using the official xAI video API (grok-imagine-video).
- * Always uses 720p resolution. Async: submit → poll → download.
+ * xAI direct video API for Grok Imagine Video 1.5 Lite. Requests are
+ * asynchronous: submit, poll the request id, then download the temporary URL.
  */
 export async function callXaiVideoAPI(
     prompt: string,
@@ -34,162 +80,90 @@ export async function callXaiVideoAPI(
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("XAI_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "XAI_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "XAI_API_KEY environment variable is required",
+        });
     }
 
-    const durationSeconds = Math.min(Math.max(safeParams.duration || 5, 1), 15);
-
-    logOps("Calling xAI video API:", { prompt, durationSeconds });
-
+    const duration = resolveGrokDuration(safeParams.duration);
+    const startFrame = safeParams.image?.[0];
     const requestBody: Record<string, unknown> = {
-        model: "grok-imagine-video",
+        model: XAI_UPSTREAM_MODEL,
         prompt,
-        resolution: "720p",
-        duration: durationSeconds,
+        duration,
+        resolution: safeParams.resolution ?? "720p",
     };
-
-    // When the caller passed explicit width/height, derive the aspect ratio
-    // from them. Otherwise honor an explicit `aspectRatio` param directly —
-    // params.ts fills width/height with a square default when dims are omitted,
-    // which would otherwise collapse every preset to 1:1.
-    const aspectRatio =
-        safeParams.dimensionsExplicit || !safeParams.aspectRatio
-            ? closestAspectRatio(safeParams.width, safeParams.height)
-            : ASPECT_RATIOS.some((ar) => ar.label === safeParams.aspectRatio)
-              ? safeParams.aspectRatio
-              : closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
-
-    if (safeParams.image?.length) {
-        requestBody.image = { url: safeParams.image[0] };
+    // An image-to-video request keeps the image's own ratio; sending one
+    // would stretch the frame.
+    if (startFrame) {
+        requestBody.image = { url: startFrame };
+    } else {
+        const aspectRatio = resolveGrokAspectRatio(safeParams);
+        if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
     }
 
-    logOps("Request body:", JSON.stringify(requestBody));
-
-    const submitResponse = await fetchUpstream(XAI_VIDEO_API_URL, {
+    const submitUrl = `${XAI_VIDEO_URL}/generations`;
+    const submitResponse = await fetchUpstream(submitUrl, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
         },
         body: JSON.stringify(requestBody),
         errorLabel: "xAI video generation request failed",
     });
-
-    const submitData = (await submitResponse.json()) as {
-        id?: string;
-        request_id?: string;
-    };
-    const videoId = submitData.id ?? submitData.request_id;
-
-    if (!videoId) {
-        throw new HttpError(
-            "xAI video API did not return a request ID",
-            500,
-            undefined,
-            XAI_VIDEO_API_URL,
-        );
+    const submitted = (await submitResponse.json()) as { request_id?: string };
+    if (!submitted.request_id) {
+        throw UpstreamError.fromProvider(502, {
+            message: "xAI video API did not return a request id",
+            responseBody: JSON.stringify(submitted),
+            requestUrl: new URL(submitUrl),
+        });
     }
 
-    logOps("Video generation submitted, ID:", videoId);
+    const completed = await pollXaiVideo(submitted.request_id, apiKey);
+    const video = completed.video;
+    if (video?.respect_moderation === false) {
+        throw UpstreamError.fromProvider(400, {
+            message: "xAI filtered the generated video by moderation",
+            errorCode: "content_policy_violation",
+            responseBody: JSON.stringify(completed),
+            requestUrl: new URL(submitUrl),
+        });
+    }
+    if (!video?.url) {
+        throw UpstreamError.fromProvider(502, {
+            message: "xAI video completed without a download URL",
+            responseBody: JSON.stringify(completed),
+            requestUrl: new URL(submitUrl),
+        });
+    }
 
-    const result = await pollXaiVideoStatus(videoId, apiKey);
+    const downloadResponse = await fetchUpstream(video.url, {
+        errorLabel: "Failed to download xAI video",
+    });
+    const buffer = Buffer.from(await downloadResponse.arrayBuffer());
+    // Bill the duration xAI reports for the finished video.
+    const billedSeconds =
+        Number.isFinite(video.duration) && (video.duration as number) > 0
+            ? (video.duration as number)
+            : duration;
 
-    const actualDuration = result.duration || durationSeconds;
+    logOps("xAI video generation complete", {
+        duration: billedSeconds,
+        bufferSize: buffer.length,
+    });
 
     return {
-        buffer: result.buffer,
+        buffer,
         mimeType: "video/mp4",
-        durationSeconds: actualDuration,
+        durationSeconds: billedSeconds,
         trackingData: {
-            actualModel: "grok-video-pro",
+            actualModel: safeParams.model,
             usage: {
-                completionVideoSeconds: actualDuration,
+                ...(startFrame ? { promptImageTokens: 1 } : {}),
+                completionVideoSeconds: billedSeconds,
             },
         },
     };
-}
-
-async function pollXaiVideoStatus(
-    videoId: string,
-    apiKey: string,
-): Promise<{ buffer: Buffer; duration?: number }> {
-    const maxAttempts = 90; // 3 minutes max
-    let delayMs = 3000;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        logOps(
-            `Poll attempt ${attempt}/${maxAttempts} for video ${videoId}...`,
-        );
-
-        const pollUrl = `${XAI_VIDEO_POLL_URL}/${videoId}`;
-        const pollResponse = await fetch(pollUrl, {
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        });
-
-        if (!pollResponse.ok) {
-            const errorText = await pollResponse.text();
-            logError("Poll request failed:", pollResponse.status, errorText);
-            if (pollResponse.status >= 400 && pollResponse.status < 500) {
-                throw new HttpError(
-                    `xAI video poll failed: ${errorText}`,
-                    pollResponse.status,
-                    undefined,
-                    pollUrl,
-                );
-            }
-            await sleep(delayMs);
-            delayMs = Math.min(delayMs * 1.2, 15000);
-            continue;
-        }
-
-        const pollData: XaiVideoStatusResponse = await pollResponse.json();
-        logOps("Poll status:", pollData.status);
-
-        if (pollData.status === "failed") {
-            throw new HttpError(
-                `xAI video generation failed: ${pollData.error ?? "unknown error"}`,
-                502,
-                undefined,
-                pollUrl,
-            );
-        }
-
-        if (pollData.status === "done" || pollData.status === "succeeded") {
-            if (!pollData.video?.url) {
-                throw new HttpError(
-                    "xAI video succeeded but returned no URL",
-                    500,
-                    undefined,
-                    pollUrl,
-                );
-            }
-
-            logOps("Downloading video from:", pollData.video.url);
-
-            const downloadResponse = await fetchUpstream(pollData.video.url, {
-                errorLabel: "Failed to download xAI video",
-            });
-            const buffer = Buffer.from(await downloadResponse.arrayBuffer());
-            logOps(
-                `Video downloaded, size: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`,
-            );
-            return { buffer, duration: pollData.video.duration };
-        }
-
-        await sleep(delayMs);
-        delayMs = Math.min(delayMs * 1.2, 15000);
-    }
-
-    throw new HttpError(
-        "xAI video generation timed out after 3 minutes",
-        504,
-        undefined,
-        `${XAI_VIDEO_POLL_URL}/${videoId}`,
-    );
 }

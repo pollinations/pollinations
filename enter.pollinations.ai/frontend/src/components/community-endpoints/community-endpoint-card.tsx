@@ -1,90 +1,243 @@
 import {
+    Alert,
+    BeakerIcon,
+    BotIcon,
     CardIcon,
     CheckIcon,
+    Chip,
     ClipboardIcon,
     CopyButton,
+    currentPeriod,
     ExternalLinkIcon,
+    GitHubIcon,
+    GlobeIcon,
     IconButton,
+    LockIcon,
     PencilIcon,
     Surface,
     TerminalIcon,
     TokensIcon,
     XIcon,
 } from "@pollinations/ui";
-import { COMMUNITY_ENDPOINT_PRICE_FIELDS } from "@shared/community-endpoints.ts";
+import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
+import { isModelReliable } from "@shared/model-health.ts";
+import type { ModelInfo } from "@shared/registry/model-info.ts";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
-import { type CommunityEndpoint, pricePerTokenToPerMillion } from "./types.ts";
+import { ResourceCardHeader } from "../resource-card-header.tsx";
+import {
+    type CommunityEndpoint,
+    type ManagedAgent,
+    openWebUiTestableModelId,
+    type ProxyCommunityEndpoint,
+    storedPriceToFormValue,
+    VISIBILITY_LABELS,
+} from "./types.ts";
 
 type CommunityEndpointCardProps = {
     endpoint: CommunityEndpoint;
-    onEdit: () => void;
+    agent?: ManagedAgent;
+    health?: ModelInfo["health"];
+    healthUnavailable?: boolean;
+    onEdit?: () => void;
     onDelete: () => void;
 };
 
 export function CommunityEndpointCard({
     endpoint,
+    agent,
+    health,
+    healthUnavailable,
     onEdit,
     onDelete,
 }: CommunityEndpointCardProps) {
-    const priceGroups = communityPriceGroups(endpoint);
+    const isPublic = endpoint.visibility === "public";
+    const isAgent = endpoint.type !== "proxy";
+    const filteredByReliability =
+        isPublic &&
+        endpoint.type === "proxy" &&
+        !isModelReliable(health?.success_rate);
+    const hasUpstreamEndpoint =
+        endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
+    const priceGroups =
+        endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
         <Surface className="transition-colors hover:bg-surface-opaque/90">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                        <h3 className="min-w-0 truncate text-base font-semibold text-theme-text-strong">
-                            {endpoint.name}
-                        </h3>
-                    </div>
-                    {endpoint.description && (
-                        <p className="mt-1 text-sm text-theme-text-muted">
-                            {endpoint.description}
-                        </p>
-                    )}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                    <IconButton
-                        intent="info"
-                        title="Edit model"
-                        tooltip="Edit model"
-                        tooltipAlign="center"
-                        onClick={onEdit}
-                    >
-                        <PencilIcon className="h-4 w-4" />
-                    </IconButton>
-                    <IconButton
-                        intent="danger"
-                        title="Delete model"
-                        tooltip="Delete model"
-                        tooltipAlign="center"
-                        onClick={onDelete}
-                    >
-                        <XIcon className="h-4 w-4" />
-                    </IconButton>
-                </div>
-            </div>
+            <ResourceCardHeader
+                icon={
+                    isAgent ? (
+                        <BotIcon className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                        <BeakerIcon className="h-4 w-4" aria-hidden="true" />
+                    )
+                }
+                title={
+                    testableModelId ? (
+                        <OpenWebUiLink
+                            modelId={testableModelId}
+                            title={endpoint.title}
+                        />
+                    ) : (
+                        endpoint.title
+                    )
+                }
+                description={endpoint.description}
+                badges={
+                    <>
+                        <Chip intent={isPublic ? "news" : "neutral"} size="sm">
+                            {isPublic ? (
+                                <GlobeIcon className="h-3 w-3" />
+                            ) : (
+                                <LockIcon className="h-3 w-3" />
+                            )}
+                            {VISIBILITY_LABELS[endpoint.visibility]}
+                        </Chip>
+                        {filteredByReliability && (
+                            <Chip intent="danger" size="sm">
+                                Hidden from listings
+                            </Chip>
+                        )}
+                        <Link
+                            data-size="footer"
+                            data-tone="quiet"
+                            to="/activity"
+                            search={{
+                                usageGranularity: "day",
+                                usagePeriod: currentPeriod().period,
+                                usageBucket: undefined,
+                                usageAnchor: undefined,
+                                earningsGranularity: "day",
+                                earningsPeriod: currentPeriod().period,
+                                earningsBucket: undefined,
+                                earningsAnchor: undefined,
+                                earningsModels: [endpoint.modelId],
+                                usageMetric: undefined,
+                                usageGroup: undefined,
+                                usageKeys: undefined,
+                                usageModels: undefined,
+                                earningsMetric: undefined,
+                                earningsApps: undefined,
+                            }}
+                            className="polli-link"
+                        >
+                            Activity
+                        </Link>
+                    </>
+                }
+                actions={
+                    <>
+                        {onEdit && (
+                            <IconButton
+                                intent="info"
+                                title={isAgent ? "Edit agent" : "Edit model"}
+                                onClick={onEdit}
+                            >
+                                <PencilIcon className="h-4 w-4" />
+                            </IconButton>
+                        )}
+                        <IconButton
+                            intent="danger"
+                            title={isAgent ? "Delete agent" : "Delete model"}
+                            onClick={onDelete}
+                        >
+                            <XIcon className="h-4 w-4" />
+                        </IconButton>
+                    </>
+                }
+            />
 
-            <div className="mt-4 grid gap-2">
+            <PendingChangeNotice endpoint={endpoint} />
+
+            {endpoint.type === "proxy" && !isPublic && (
+                <p className="mt-3 px-2 text-sm text-theme-text-muted">
+                    Private calls are free. Your prices, Paid Pollen setting,
+                    and fallbacks are saved for when you publish.
+                </p>
+            )}
+
+            {filteredByReliability && (
+                <Alert
+                    intent="danger"
+                    className="mt-3"
+                    title="Hidden from model lists"
+                >
+                    Recent success is {health?.success_rate?.toFixed(1)}% across{" "}
+                    {health?.requests} eligible requests (last 50 within seven
+                    days). The model still works by exact ID and can recover
+                    automatically as successful requests arrive.
+                </Alert>
+            )}
+
+            {isPublic && endpoint.type === "proxy" && healthUnavailable && (
+                <Alert
+                    intent="warning"
+                    className="mt-3"
+                    title="Listing status unavailable"
+                >
+                    Couldn’t check whether this model appears in public lists.
+                    Try again shortly.
+                </Alert>
+            )}
+
+            <div className="mt-5 grid gap-2 px-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
                     label="Model ID"
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                <CommunityDetailRow
-                    icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
-                    label="Endpoint"
-                    value={endpoint.baseUrl}
-                    copyLabel="Copy endpoint"
-                />
-                <CommunityDetailRow
-                    icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                    label="Upstream model"
-                    value={endpoint.upstreamModel}
-                />
+                {agent?.type === "code_agent" && (
+                    <CommunityDetailRow
+                        icon={<GitHubIcon className="h-3.5 w-3.5" />}
+                        label="Source"
+                        value={`${agent.repository}/agent.ts @ ${agent.deployedCommitSha.slice(0, 7)}`}
+                        copyLabel="Copy source"
+                    />
+                )}
+                {hasUpstreamEndpoint && (
+                    <CommunityDetailRow
+                        icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
+                        label="Endpoint"
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
+                        copyLabel="Copy endpoint"
+                    />
+                )}
+                {hasUpstreamEndpoint && (
+                    <>
+                        {endpoint.type === "proxy" && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Modality"
+                                value={endpoint.modality}
+                            />
+                        )}
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
+                        {endpoint.perUserRpm !== null && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Per-user limit"
+                                value={`${endpoint.perUserRpm} RPM/user`}
+                            />
+                        )}
+                    </>
+                )}
                 {priceGroups.map((group) => (
                     <CommunityDetailRow
                         key={group.key}
@@ -95,6 +248,57 @@ export function CommunityEndpointCard({
                 ))}
             </div>
         </Surface>
+    );
+}
+
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
     );
 }
 
@@ -172,14 +376,17 @@ type CommunityPriceBadge = {
 };
 
 function communityPriceGroups(
-    endpoint: CommunityEndpoint,
+    endpoint: ProxyCommunityEndpoint,
 ): CommunityPriceGroup[] {
     const groups: Record<CommunityPriceGroup["key"], CommunityPriceBadge[]> = {
         input: [],
         output: [],
     };
 
-    for (const field of COMMUNITY_ENDPOINT_PRICE_FIELDS) {
+    for (const field of communityEndpointPriceFieldsForModality(
+        endpoint.modality,
+        endpoint.imagePricing,
+    )) {
         const price = endpoint[field.key];
         if (price <= 0) continue;
         const groupKey = communityPriceGroupKey(field.usageType);
@@ -187,10 +394,16 @@ function communityPriceGroups(
         const kind = communityPriceKind(field.usageType);
         groups[groupKey].push({
             badge: {
-                price: pricePerTokenToPerMillion(price),
+                price: storedPriceToFormValue(price, field.priceUnit),
                 kind,
                 subKinds: [kind],
-                unit: "token",
+                unit:
+                    field.priceUnit === "million"
+                        ? "token"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
+                          ? "second"
+                          : "request",
             },
         });
     }
@@ -217,6 +430,7 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "completionReasoningTokens") return "reasoning";
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
-    if (usageType === "promptImageTokens") return "image";
+    if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

@@ -9,7 +9,14 @@ type TinybirdGenerationEvent = Omit<
     | "tinybirdDeliveredAt"
     | "createdAt"
     | "updatedAt"
->;
+    | "tokenCountPromptImage"
+    | "tokenCountCompletionImage"
+> & {
+    tokenCountPromptImage?: number;
+    tokenCountCompletionImage?: number;
+    usagePromptImageUnits: number;
+    usageCompletionImageUnits: number;
+};
 
 type UsageRow = Record<string, unknown>;
 
@@ -21,13 +28,17 @@ type PipeCall = {
 export type MockTinybirdState = {
     events: TinybirdGenerationEvent[];
     errorEvents: Record<string, unknown>[];
+    referralEvents: Record<string, unknown>[];
+    productEvents: Record<string, unknown>[];
     stripeEvents: Record<string, unknown>[];
     dailyResponse: UsageRow[];
     usageResponse: UsageRow[];
     earningsResponse: UsageRow[];
+    earningsTransactionsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
-    paidAppSpendResponse: UsageRow[];
+    appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
+    agentUsageResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
 
@@ -35,13 +46,17 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
     const state: MockTinybirdState = {
         events: [],
         errorEvents: [],
+        referralEvents: [],
+        productEvents: [],
         stripeEvents: [],
         dailyResponse: [],
         usageResponse: [],
         earningsResponse: [],
+        earningsTransactionsResponse: [],
         appDirectoryResponse: [],
-        paidAppSpendResponse: [],
+        appUsageResponse: [],
         modelModalitiesResponse: [],
+        agentUsageResponse: [],
         pipeCalls: [],
     };
 
@@ -50,7 +65,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             const eventName = c.req.query("name");
             const body = await c.req.text();
 
-            if (eventName === "generation_event") {
+            if (eventName === "generation_event_v2") {
                 const events = parseNdjson<TinybirdGenerationEvent>(body);
                 if (
                     events.find((event) =>
@@ -72,8 +87,12 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
 
             if (eventName === "error_event") {
                 state.errorEvents.push(...rows);
+            } else if (eventName === "referral_event") {
+                state.referralEvents.push(...rows);
             } else if (eventName === "stripe_event") {
                 state.stripeEvents.push(...rows);
+            } else if (eventName === "product_event") {
+                state.productEvents.push(...rows);
             }
 
             return c.json(
@@ -81,45 +100,63 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
                 200,
             );
         })
-        .get("/v0/pipes/user_usage.json", (c) => {
+        .get("/v0/pipes/activity_usage_transactions.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.usageResponse }, 200);
         })
-        .get("/v0/pipes/user_usage_daily_filtered.json", (c) => {
+        .get("/v0/pipes/activity_usage_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.dailyResponse }, 200);
         })
-        .get("/v0/pipes/developer_earnings.json", (c) => {
+        .get("/v0/pipes/activity_earnings_chart.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.earningsResponse }, 200);
+        })
+        .get("/v0/pipes/activity_earnings_transactions.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.earningsTransactionsResponse }, 200);
         })
         .get("/v0/pipes/app_directory_public.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.appDirectoryResponse }, 200);
         })
-        .get("/v0/pipes/quest_paid_app_spend.json", (c) => {
+        .get("/v0/pipes/quest_app_usage.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.paidAppSpendResponse }, 200);
+            return c.json({ data: state.appUsageResponse }, 200);
         })
         .get("/v0/pipes/quest_model_modalities.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.modelModalitiesResponse }, 200);
+        })
+        .get("/v0/pipes/quest_agent_usage.json", (c) => {
+            state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            return c.json({ data: state.agentUsageResponse }, 200);
+        })
+        .post("/v0/datasources/:datasource/delete", (c) => {
+            return c.json({ delete_id: "mock-delete" }, 200);
         });
 
     const handlerMap = {
         "localhost:7181": createHonoMockHandler(tinybirdAPI),
+        // The D1→Tinybird sync service uses a hardcoded base URL, so the
+        // real host must be intercepted too or tests hit live Tinybird.
+        "api.europe-west2.gcp.tinybird.co": createHonoMockHandler(tinybirdAPI),
     };
 
     const reset = () => {
         state.events = [];
         state.errorEvents = [];
+        state.referralEvents = [];
+        state.productEvents = [];
         state.stripeEvents = [];
         state.dailyResponse = [];
         state.usageResponse = [];
         state.earningsResponse = [];
+        state.earningsTransactionsResponse = [];
         state.appDirectoryResponse = [];
-        state.paidAppSpendResponse = [];
+        state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
+        state.agentUsageResponse = [];
         state.pipeCalls = [];
     };
 

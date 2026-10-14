@@ -2,10 +2,12 @@
 
 const API = "https://gen.pollinations.ai/image";
 const ENTER = "https://enter.pollinations.ai";
-const MEDIA_UPLOAD = "https://media.pollinations.ai/upload";
+const MEDIA = "https://media.pollinations.ai";
+const COMMUNITY_TAG = "catgpt";
 const ORIGINAL_CATGPT =
     "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/original-catgpt.png";
-const SELFIE_CATGPT = "https://media.pollinations.ai/657d58ee4c9c22d7";
+const SELFIE_CATGPT =
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/main/apps/catgpt/images/selfie-catgpt.png";
 const AUTH_KEY = "catgpt_api_key";
 const APP_KEY = "pk_uWjreBEkxFAhjDHo";
 
@@ -38,7 +40,7 @@ export function getAuthorizeUrl() {
         redirect_url: redirect,
         app_key: APP_KEY,
         budget: "5",
-        models: "gptimage,nanobanana,claude-fast",
+        models: "openai/gpt-image-1-mini,google/gemini-3.1-flash-lite-image,google/gemini-2.5-flash-image,anthropic/claude-haiku-4.5",
         permissions: "profile,usage",
     })}`;
 }
@@ -124,7 +126,7 @@ export function generateImageURL(prompt, model, imageUrl = null) {
 
 // ── Models ──────────────────────────────────────────────────────────────────
 
-const PREFERRED_MODEL = "nanobanana";
+const PREFERRED_MODELS = ["nanobanana-2-lite", "nanobanana"];
 const FALLBACK_MODEL = "gptimage";
 
 export async function pickModel(apiKey) {
@@ -134,9 +136,16 @@ export async function pickModel(apiKey) {
         });
         if (!res.ok) return { model: FALLBACK_MODEL, isPremium: false };
         const models = await res.json();
-        const names = models.map((m) => m.name);
-        if (names.includes(PREFERRED_MODEL)) {
-            return { model: PREFERRED_MODEL, isPremium: true };
+        for (const preferred of PREFERRED_MODELS) {
+            if (
+                models.some(
+                    (model) =>
+                        model.name === preferred ||
+                        model.aliases?.includes(preferred),
+                )
+            ) {
+                return { model: preferred, isPremium: true };
+            }
         }
         return { model: FALLBACK_MODEL, isPremium: false };
     } catch {
@@ -157,7 +166,7 @@ export async function handleImageUpload(file, notify) {
         notify("Uploading image...", "info");
         const form = new FormData();
         form.append("file", file);
-        const res = await fetch(MEDIA_UPLOAD, {
+        const res = await fetch(`${MEDIA}/upload`, {
             method: "POST",
             headers: { Authorization: `Bearer ${getStoredApiKey()}` },
             body: form,
@@ -182,4 +191,38 @@ export async function handleImageUpload(file, notify) {
             return null;
         }
     }
+}
+
+export async function publishMemeToGallery(imageUrl) {
+    const apiKey = getStoredApiKey();
+    if (!apiKey) throw new Error("Log in before publishing a meme");
+
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) throw new Error("Could not read the generated meme");
+
+    const form = new FormData();
+    form.append("file", await imageResponse.blob(), "catgpt-meme");
+    form.append("tags", COMMUNITY_TAG);
+
+    const response = await fetch(`${MEDIA}/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.error || "Could not publish the meme");
+    }
+    return data;
+}
+
+export async function fetchCommunityMemes(limit = 12) {
+    const response = await fetch(
+        `${MEDIA}/media?${new URLSearchParams({
+            tag: COMMUNITY_TAG,
+            limit: String(limit),
+        })}`,
+    );
+    if (!response.ok) throw new Error("Could not load the community gallery");
+    return response.json();
 }

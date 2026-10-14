@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Qwen-Image generation via Replicate.
  *
@@ -6,20 +7,19 @@
  *   - text-to-image → qwen/qwen-image            ($0.025/img)
  *   - image editing → qwen/qwen-image-edit-plus  ($0.03/img, multi-image)
  *
- * We bill a single $0.03/img rate (registry), so the t2i path runs slightly
- * under cost — acceptable, and avoids under-billing the edit path.
+ * The registry bills the selected route: $0.025 for text-to-image and $0.03
+ * for editing.
  */
 
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
@@ -40,10 +40,6 @@ const QWEN_ASPECT_RATIOS = [
     "2:3",
 ] as const;
 type QwenAspectRatio = (typeof QWEN_ASPECT_RATIOS)[number];
-
-// qwen/qwen-image-edit-plus accepts a multi-image array; cap matches the prior
-// DashScope edit path and registry maxReferenceImages: 3.
-const QWEN_EDIT_MAX_IMAGES = 3;
 
 /**
  * Map ImageParams.aspectRatio to Qwen's enum. Supported values pass through;
@@ -82,9 +78,7 @@ export async function callQwenImageAPI(
     let input: Record<string, unknown>;
 
     if (hasImage) {
-        const imageInput = await Promise.all(
-            images.slice(0, QWEN_EDIT_MAX_IMAGES).map(toDataUri),
-        );
+        const imageInput = await Promise.all(images.map(toDataUri));
         model = QWEN_EDIT_MODEL;
         input = {
             prompt,
@@ -122,17 +116,13 @@ export async function callQwenImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${modelLabel} generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
-        }
-        throw err;
+        throw toReplicateUpstreamError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${modelLabel} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${modelLabel} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {
@@ -147,10 +137,8 @@ export async function callQwenImageAPI(
 
     return {
         buffer: imageBuffer,
-        isMature: false,
-        isChild: false,
         trackingData: {
-            actualModel: hasImage ? "qwen-image-edit" : "qwen-image",
+            actualModel: "qwen/qwen-image",
             // Flat per-image pricing on Replicate; report 1 image token.
             usage: {
                 completionImageTokens: 1,

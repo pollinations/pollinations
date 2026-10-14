@@ -1,17 +1,15 @@
 export interface PollinationsConfig {
-    /** API key for authentication (get one at https://enter.pollinations.ai) */
+    /** API key for authentication (get one at https://enter.pollinations.ai/keys) */
     apiKey?: string;
     /** Base URL for the API (defaults to https://gen.pollinations.ai) */
     baseUrl?: string;
-    /** Maximum number of retry attempts (default: 3) */
-    maxRetries?: number;
     /** Default timeout in ms for all requests (default: 300000 = 5min) */
     timeout?: number;
     /** Timeout in ms for text requests (default: 300000 = 5min) */
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 600000 = 10min) */
+    /** Timeout in ms for video and 3D requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -25,7 +23,7 @@ export interface RequestOptions {
 // Image Generation
 // ============================================================================
 
-/** Image model (use getImageModels() to fetch available models) */
+/** Image model (use getModels("image") to fetch available models) */
 export type ImageModel = string;
 
 /** Available video models */
@@ -39,12 +37,14 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'tongyi-mai/z-image-turbo') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
     /** Image height in pixels (default: 1024) */
     height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
     /** Enable safety content filters (default: false) */
@@ -67,7 +67,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -89,18 +89,26 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (default: 'veo') */
+    /** Video model to use (server default: 'google/veo-3.1-fast') */
     model?: VideoModel;
-    /** Duration in seconds (1-30, varies by model) */
+    /** Duration in seconds (supported range varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
     /** Seed for reproducible generation */
     seed?: number;
     /** Enable audio generation where supported by the selected video model */
     audio?: boolean;
     /** Reference image URL(s) for image-to-video. For video, image[0] is the start frame and image[1] is the end frame when supported. */
     referenceImage?: string | string[];
+    /** Public image URL(s) for visual guidance, separate from first/last frames. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceImages?: string | string[];
+    /** Public video URL(s) for motion or style guidance. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceVideos?: string | string[];
+    /** Public audio URL(s) for audio-driven generation. See video_capabilities on https://gen.pollinations.ai/models for model support. */
+    referenceAudios?: string | string[];
     /** Enable safety content filters (default: false) */
     safe?: boolean;
 }
@@ -115,11 +123,25 @@ export interface VideoResponse {
     url: string;
 }
 
+export interface Model3dGenerateOptions extends RequestOptions {
+    model?: string;
+    referenceImage?: string | string[];
+    resolution?: "low" | "medium" | "high";
+    seed?: number;
+    safe?: boolean;
+}
+
+export interface Model3dResponse {
+    buffer: ArrayBuffer;
+    contentType: string;
+    url: string;
+}
+
 // ============================================================================
 // Text Generation
 // ============================================================================
 
-/** Text model (use getTextModels() to fetch available models) */
+/** Text model (use getModels("text") to fetch available models) */
 export type TextModel = string;
 
 /** Message roles for chat */
@@ -200,7 +222,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -256,10 +278,31 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai/gpt-5.4-nano') */
     model?: TextModel;
+    /**
+     * Per-capability downstream model overrides for router models. Sent as
+     * `metadata`, with `text` as `metadata.model`.
+     */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */
@@ -276,6 +319,8 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */
@@ -398,8 +443,14 @@ export interface ChatStreamChunk {
     choices: Array<{
         index: number;
         delta: {
-            role?: "assistant";
-            content?: string;
+            role?: Exclude<MessageRole, "function">;
+            content?: string | null;
+            /** Deprecated OpenAI function-call delta. */
+            function_call?: {
+                name?: string;
+                arguments?: string;
+            };
+            refusal?: string | null;
             tool_calls?: Array<{
                 index: number;
                 id?: string;
@@ -415,9 +466,13 @@ export interface ChatStreamChunk {
             | "length"
             | "tool_calls"
             | "content_filter"
+            | "function_call"
             | null;
+        logprobs?: ChatChoice["logprobs"];
     }>;
-    usage?: CompletionUsage;
+    usage?: CompletionUsage | null;
+    service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+    system_fingerprint?: string;
 }
 
 // ============================================================================
@@ -431,18 +486,59 @@ export type AudioVoice = string;
 export type AudioFormat = "wav" | "mp3" | "flac" | "opus" | "pcm16";
 
 /** Dedicated audio/music model */
-export type AudioModel = "elevenlabs" | "elevenmusic" | "acestep" | string;
+export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
-    /** Voice to use (default: 'alloy') */
+    /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs/eleven-v3') */
     model?: AudioModel;
-    /** Duration in seconds (for music models like elevenmusic, acestep) */
+    /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
     /** Seed for reproducibility */
     seed?: number;
+}
+
+/** Options for POST /v1/audio/speech */
+export interface AudioSpeechOptions extends AudioGenerateOptions {
+    /** Public audio URL for models that support reference audio */
+    referenceAudio?: string;
+}
+
+export interface AudioSpeechWithTimestampsOptions extends RequestOptions {
+    model?: AudioModel;
+    voice?: AudioVoice;
+    responseFormat?: "mp3" | "opus" | "aac" | "wav" | "pcm";
+    seed?: number;
+}
+
+export interface SpeechAlignment {
+    characters: string[];
+    character_start_times_seconds: number[];
+    character_end_times_seconds: number[];
+}
+
+export interface SpeechWordTiming {
+    word: string;
+    start: number;
+    end: number;
+}
+
+export interface AudioSpeechWithTimestampsResponse {
+    audio_base64: string;
+    alignment?: SpeechAlignment | null;
+    normalized_alignment?: SpeechAlignment | null;
+    /** Words from normalized text, or [] when normalized timings are unavailable. */
+    words: SpeechWordTiming[];
+}
+
+/** File-based voice conversion or speech isolation. */
+export interface AudioTransformOptions extends RequestOptions {
+    operation: "voice-changer" | "voice-isolator";
+    model?: AudioModel;
+    /** Target voice for voice-changer. */
+    voice?: AudioVoice;
 }
 
 /** Response from dedicated audio endpoints (binary audio data) */
@@ -475,6 +571,7 @@ export type TranscriptionModel =
     | "whisper-1"
     | "scribe"
     | "universal-2"
+    | "universal-3.5-pro"
     | "universal-3-pro"
     | string;
 
@@ -488,7 +585,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (default: 'whisper-large-v3') */
+    /** Model to use (server default: 'openai/whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -516,6 +613,78 @@ export interface TranscriptionVerboseResponse extends TranscriptionResponse {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model (use getModels() to fetch available models) */
+export type EmbeddingModel = string;
+
+/** A multimodal content part accepted by embedding models */
+export type EmbeddingContentPart =
+    | TextContentPart
+    | ImageContentPart
+    | { type: "input_audio"; input_audio: { data: string; format: string } }
+    | VideoContentPart;
+
+/**
+ * Input for embeddings: a text, a batch of texts, or multimodal content
+ * parts (text, image_url, input_audio, video_url).
+ */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | EmbeddingContentPart
+    | EmbeddingContentPart[];
+
+/** Gemini text-specific task hint */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Options for embeddings (POST /v1/embeddings) */
+export interface EmbeddingsOptions extends RequestOptions {
+    /** Embedding model to use; uses the server default when omitted */
+    model?: EmbeddingModel;
+    /** Output embedding dimensions, 128-4096 (model-specific limits apply) */
+    dimensions?: number;
+    /** Output encoding for the embedding vector (default: 'float') */
+    encodingFormat?: "float" | "base64";
+    /** Gemini text-specific task hint */
+    taskType?: EmbeddingTaskType;
+    /** Cohere-specific input role: 'document' when indexing, 'query' when searching */
+    inputType?: "query" | "document";
+}
+
+/** A single embedding result */
+export interface Embedding {
+    object: "embedding";
+    /** Float vector, or base64 Float32 (little-endian) when encodingFormat='base64' */
+    embedding: number[] | string;
+    /** Index of the embedding in the list */
+    index: number;
+}
+
+/** Token usage for an embeddings request */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Embeddings response (OpenAI-compatible) */
+export interface EmbeddingsResponse {
+    object: "list";
+    data: Embedding[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Media Upload
 // ============================================================================
 
@@ -525,11 +694,13 @@ export interface UploadOptions extends RequestOptions {
     name?: string;
     /** Content type (auto-detected if omitted) */
     contentType?: string;
+    /** Tags that publish the upload to public tag galleries */
+    tags?: string[];
 }
 
 /** Response from media upload */
 export interface UploadResponse {
-    /** Content-addressed hash ID */
+    /** Unique media id (also the retrieval id) */
     id: string;
     /** Public URL for the uploaded media */
     url: string;
@@ -537,8 +708,109 @@ export interface UploadResponse {
     contentType: string;
     /** File size in bytes */
     size: number;
-    /** Whether the file was already uploaded (dedup) */
-    duplicate: boolean;
+    /** Tags the upload was published with; present only when tagged */
+    tags?: string[];
+}
+
+// ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * State, instructions, and criteria accept a string, object, or array.
+ */
+export type DecisionContent = string | Record<string, unknown> | unknown[];
+
+/** A choice question between named options */
+export interface ChoiceQuestion {
+    type: "choice";
+    /** What to decide */
+    instructions: DecisionContent;
+    /** Selectable options mapped to what each one means (or null) */
+    criteria: Record<string, DecisionContent | null>;
+}
+
+/** A score question on an ordered scale */
+export interface ScoreQuestion {
+    type: "score";
+    /** What to rate */
+    instructions: DecisionContent;
+    /** Ordered rungs from lowest to highest (at least 2 levels) */
+    criteria: DecisionContent[];
+}
+
+/** A yes/no proposition question evaluating probability (0 to 1) */
+export interface NoulQuestion {
+    type: "noul";
+    /** The yes/no proposition to evaluate */
+    instructions: DecisionContent;
+    /** Optional descriptions of what true and false mean */
+    criteria?: {
+        true?: DecisionContent;
+        false?: DecisionContent;
+    };
+}
+
+/** A typed decision question: choice, score, or noul */
+export type DecisionQuestion = ChoiceQuestion | ScoreQuestion | NoulQuestion;
+
+/** Answer for a choice question */
+export interface ChoiceAnswer {
+    type: "choice";
+    /** The selected criteria key */
+    choice: string;
+    /** Probability assigned to each option */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a score question */
+export interface ScoreAnswer {
+    type: "score";
+    /** Position on the criteria scale (can be fractional) */
+    score: number;
+    /** Maps each scale index back to its criteria entry */
+    legend: Record<string, unknown>;
+    /** Probability assigned to each scale index */
+    probabilities: Record<string, number>;
+    /** Confidence score between 0 and 1 */
+    confidence: number;
+}
+
+/** Answer for a noul question */
+export interface NoulAnswer {
+    type: "noul";
+    /** Probability that the proposition is true, 0 to 1 */
+    noul: number;
+}
+
+/** Typed answer matching the question type */
+export type DecisionAnswer = ChoiceAnswer | ScoreAnswer | NoulAnswer;
+
+/** Token usage for a decision request */
+export interface DecisionUsage {
+    input_tokens: number;
+    output_tokens: number;
+}
+
+/** Options for requesting a decision (POST /alpha/decisions) */
+export interface DecisionOptions extends RequestOptions {
+    /** Decision model to use (default: 'typesafe/jev-1.13') */
+    model?: string;
+    /** The facts/context to decide on */
+    state: DecisionContent;
+    /** Questions to answer about the state, keyed by custom names */
+    questions: Record<string, DecisionQuestion>;
+}
+
+/** Response from the decisions endpoint */
+export interface DecisionResponse {
+    id: string;
+    model: string;
+    provider: string;
+    answers: Record<string, DecisionAnswer>;
+    usage: DecisionUsage;
 }
 
 // ============================================================================
@@ -558,7 +830,7 @@ export interface AuthorizeOptions {
     state?: string;
     /** Authorization host (defaults to https://enter.pollinations.ai) */
     authBaseUrl?: string;
-    /** Restrict to specific models */
+    /** Model categories (e.g. `image`, `text`) or model IDs the key can use; a model ID allows only that model */
     models?: string[];
     /** Numeric pollen cap. Omit for the default cap. */
     budget?: number;
@@ -576,10 +848,6 @@ export interface AuthorizeOptions {
 export interface AccountProfile {
     githubUsername: string | null;
     image: string | null;
-    /** Current tier level (e.g. `"spore"`, `"seed"`, `"flower"`, `"nectar"`). */
-    tier: string;
-    /** ISO 8601 timestamp of the next pollen refill. `null` for tiers with no refill. */
-    nextResetAt: string | null;
     /** Only returned when the API key has the `profile` permission */
     name?: string | null;
     /** Only returned when the API key has the `profile` permission */
@@ -588,7 +856,50 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
+}
+
+/** Quest reward earned by the authenticated account */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest catalog entry with the authenticated account's status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
 }
 
 /** Usage record */
@@ -601,6 +912,7 @@ export interface UsageRecord {
     meter_source: string;
     input_text_tokens: number;
     input_cached_tokens: number;
+    input_cache_write_tokens: number;
     input_audio_tokens: number;
     input_audio_seconds: number;
     input_image_tokens: number;
@@ -668,8 +980,41 @@ export interface DailyUsageResponse {
     count: number;
 }
 
+/** Developer earnings row for one (date, earning entity) bucket */
+export interface DeveloperEarningsRow {
+    /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response for GET /account/earnings */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Options for fetching developer earnings (time-window selection) */
+export type EarningsOptions = Pick<
+    DailyUsageOptions,
+    "days" | "granularity" | "period"
+>;
+
 /** API key validation response */
 export interface KeyInfo {
+    /** Opaque key ID for the owner-only editor; never the API key value. */
+    id: string;
     valid: boolean;
     type: string;
     name?: string | null;
@@ -680,6 +1025,7 @@ export interface KeyInfo {
         account?: string[] | null;
     };
     pollenBudget?: number | null;
+    questPollenOnly?: boolean;
     rateLimitEnabled?: boolean;
 }
 
@@ -695,12 +1041,12 @@ export interface AccountKey {
     expiresAt: string | null;
     lastRequest: string | null;
     permissions: {
-        tier?: string[];
         models?: string[];
         account?: string[];
     } | null;
     metadata: Record<string, unknown> | null;
     pollenBalance: number | null;
+    questPollenOnly?: boolean;
     enabled: boolean;
 }
 
@@ -715,7 +1061,7 @@ export interface CreateKeyOptions {
     type?: "secret" | "publishable";
     /** Expiry in seconds from creation */
     expiresIn?: number;
-    /** Restrict to specific model IDs */
+    /** Restrict to model categories (text, image, ...) or model IDs; a model ID allows only that model */
     allowedModels?: string[];
     /** Pollen budget cap */
     pollenBudget?: number;
@@ -723,9 +1069,11 @@ export interface CreateKeyOptions {
      * Account permissions to grant (e.g. `["profile", "usage"]`).
      * Without this, scoped keys cannot read account state beyond their
      * own key metadata, budget, and per-key usage.
-     * `"keys"` is auto-stripped server-side on the BYOP flow.
+     * `"keys"` lets the new key create, list, and revoke keys.
      */
     accountPermissions?: KeyAccountPermission[];
+    /** Never spend paid Pollen; requests stop when Quest Pollen runs out */
+    questPollenOnly?: boolean;
     /**
      * Allowed OAuth redirect URIs for publishable app keys. Required when
      * creating a `publishable` key that drives the `/authorize` BYOP flow.
@@ -757,14 +1105,13 @@ export interface CreatedKey {
         account?: string[];
     } | null;
     pollenBudget: number | null;
+    questPollenOnly?: boolean;
 }
 
 // ============================================================================
 // Model Information
 // ============================================================================
 
-/** Model tier levels */
-export type ModelTier = "anonymous" | "seed" | "flower" | "nectar";
 /** Known model categories, in catalog display order. The canonical enum lives
  * in shared/registry (ModelInfoSchema); categories the SDK doesn't know yet
  * pass through the model catalog unfiltered and sort last. */
@@ -773,6 +1120,7 @@ export const MODEL_CATEGORIES = [
     "video",
     "text",
     "audio",
+    "3d",
     "embedding",
     "realtime",
 ] as const;
@@ -780,11 +1128,26 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -792,23 +1155,77 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
+/** Model catalog to list: `/<kind>/models` on the API. */
+export type ModelKind =
+    | "text"
+    | "image"
+    | "video"
+    | "audio"
+    | "3d"
+    | "embeddings";
+
+export interface ModelStatusOptions extends RequestOptions {
+    traffic?: "all" | "regular";
+    minutes?: number;
+}
+
+export interface ModelStatusRow {
+    model: string;
+    event_type: string;
+    model_used: string;
+    provider: string;
+    is_rollup: number;
+    fallback_used: boolean;
+    total_requests: number;
+    status_2xx: number;
+    errors_4xx: number;
+    errors_5xx: number;
+    served: number;
+    fallback_rescues: number;
+    retried_503s: number;
+    last_error_at: string;
+    latency_p50_ms: number | null;
+    latency_p95_ms: number | null;
+    avg_latency_ms: number | null;
+    last_request_at: string;
+    tokens_per_second: number | null;
+}
+
+export interface ModelStatusResponse {
+    meta: { name: string; type: string }[];
+    data: ModelStatusRow[];
+    rows: number;
+    statistics?: { elapsed: number; rows_read: number; bytes_read: number };
+}
+
 export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
     id?: string;
     name: string;
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    brand?: string;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
     description?: string;
     aliases?: string[];
-    tier?: ModelTier;
     community?: boolean;
-    input_modalities?: string[];
-    output_modalities?: string[];
+    agent?: boolean;
+    base_model?: string;
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
+    resolutions?: string[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];
@@ -823,7 +1240,8 @@ export interface ModelInfo {
     supported_endpoints?: string[];
     supportsSystemMessages?: boolean;
     is_specialized?: boolean;
-    paid_only?: boolean;
+    /** True when only Paid Pollen can be spent on this model; false when Quest Pollen also works. */
+    paid_only: boolean;
     pricing?: Record<string, string> & { currency: "pollen" };
 }
 
@@ -875,8 +1293,9 @@ export interface UserInfo {
     sub?: string;
     name?: string;
     email?: string;
+    picture?: string;
+    preferred_username?: string;
     githubUsername?: string;
-    tier?: string;
     [key: string]: unknown;
 }
 
@@ -886,7 +1305,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'black-forest-labs/flux.1-schnell') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;
@@ -894,8 +1313,6 @@ export interface ImageGenerateV1Options extends RequestOptions {
     width?: number;
     /** Image height in pixels */
     height?: number;
-    /** Number of images to generate (default: 1) */
-    n?: number;
     /** Response format (default: server decides — usually b64_json) */
     responseFormat?: "url" | "b64_json";
     /** Reasoning mode for supported image models. Booleans are accepted for backward compatibility. */
@@ -931,7 +1348,7 @@ export class PollinationsError extends Error {
     status: number;
     details?: Record<string, unknown>;
     requestId?: string;
-    /** Retry-After value in seconds (for 429 rate limit errors) */
+    /** Retry-After header value in seconds */
     retryAfter?: number;
 
     constructor(

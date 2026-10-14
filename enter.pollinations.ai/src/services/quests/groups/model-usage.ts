@@ -3,16 +3,16 @@ import { fetchTinybirdRows, requireTinybirdReadToken } from "../../tinybird.ts";
 import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
+    type QuestEvaluation,
     type QuestEvaluationContext,
     type QuestUser,
     questToCard,
-    type RewardProposal,
 } from "../types.ts";
 
 const log = getLogger(["enter", "quests", "model-usage"]);
 
 /**
- * Model-usage quests: one per modality (text / image / audio).
+ * Model-usage quests: one per modality (text / image / audio / video).
  * Completion comes from the quest_model_modalities Tinybird pipe, which returns
  * the current user's boolean flags per modality (a billed, successful
  * generation in that modality within the populated recent window). The pipe
@@ -53,7 +53,23 @@ const useAudioModelQuest: QuestDefinition = {
     balanceBucket: "tier",
 };
 
-const QUESTS = [useTextModelQuest, useImageModelQuest, useAudioModelQuest];
+const useVideoModelQuest: QuestDefinition = {
+    id: "use_video_model",
+    title: "Use a video model",
+    description:
+        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models.",
+    category: "setup",
+    scope: "perUser",
+    rewardAmount: 0.25,
+    balanceBucket: "tier",
+};
+
+const QUESTS = [
+    useTextModelQuest,
+    useImageModelQuest,
+    useAudioModelQuest,
+    useVideoModelQuest,
+];
 
 // One row per user from quest_model_modalities.json. Flags are 0/1 (UInt8).
 type ModalityRow = {
@@ -61,6 +77,7 @@ type ModalityRow = {
     usedText: number;
     usedImage: number;
     usedAudio: number;
+    usedVideo: number;
 };
 
 export async function listQuestCards(
@@ -69,10 +86,10 @@ export async function listQuestCards(
     return QUESTS.map((quest) => questToCard(quest));
 }
 
-export async function findRewardProposalsForUser(
+export async function evaluateUser(
     { env }: QuestEvaluationContext,
     user: QuestUser,
-): Promise<RewardProposal[]> {
+): Promise<QuestEvaluation> {
     const tinybirdOrigin = new URL(env.TINYBIRD_INGEST_URL).origin;
     const tinybirdToken = requireTinybirdReadToken(env);
     const rows = await fetchTinybirdRows<ModalityRow>(
@@ -98,11 +115,12 @@ export async function findRewardProposalsForUser(
                 usedText: r.usedText,
                 usedImage: r.usedImage,
                 usedAudio: r.usedAudio,
+                usedVideo: r.usedVideo,
             })),
         },
     );
 
-    const proposals: RewardProposal[] = [];
+    const proposals: QuestEvaluation["proposals"] = [];
     for (const row of matched) {
         if (row.usedText) {
             proposals.push({ quest: useTextModelQuest, userId: row.userId });
@@ -113,6 +131,9 @@ export async function findRewardProposalsForUser(
         if (row.usedAudio) {
             proposals.push({ quest: useAudioModelQuest, userId: row.userId });
         }
+        if (row.usedVideo) {
+            proposals.push({ quest: useVideoModelQuest, userId: row.userId });
+        }
     }
     log.info(
         "MODEL_USAGE_PROPOSALS: userId={userId} count={count} questIds={questIds}",
@@ -122,5 +143,5 @@ export async function findRewardProposalsForUser(
             questIds: proposals.map((p) => p.quest.id),
         },
     );
-    return proposals;
+    return { proposals };
 }

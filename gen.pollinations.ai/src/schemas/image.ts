@@ -1,38 +1,29 @@
-import { DEFAULT_IMAGE_MODEL, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { z } from "zod";
+import { BooleanQueryParamSchema } from "./text.ts";
 
 const QUALITIES = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED_VALUE = 2147483647; // INT32_MAX (2^31 - 1)
 
-// Build list of valid model names: service IDs + all aliases
-const VALID_IMAGE_MODELS = [
-    ...Object.keys(IMAGE_SERVICES),
-    ...Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-] as const;
-const NOVA_REEL_MODELS = new Set([
-    "nova-reel",
-    ...IMAGE_SERVICES["nova-reel"].aliases,
-]);
-
-const GenerateImageRequestQueryParamsBaseSchema = z.object({
-    // Image model params
-    model: z
+const modelSchema = (defaultModel: string) =>
+    z
         .preprocess(
             (val) => (val === "" ? undefined : val),
-            z
-                .enum(VALID_IMAGE_MODELS as unknown as [string, ...string[]])
-                .optional()
-                .default(DEFAULT_IMAGE_MODEL),
+            z.string().trim().min(1).optional().default(defaultModel),
         )
         .meta({
             description:
-                "Model to use. **Image:** flux, zimage, gptimage, kontext, seedream5, nanobanana, nanobanana-pro, klein. **Video:** veo, seedance, seedance-pro, wan, nova-reel. See /image/models for full list.",
-        }),
+                "Model to use. See /image/models for the current canonical IDs and aliases.",
+        });
+
+const GenerateImageRequestQueryParamsBaseSchema = z.object({
+    // Image model params
+    model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
+            "Width in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -42,7 +33,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels. For video models, mapped to nearest resolution tier (480p/720p/1080p).",
+                "Height in pixels. For images, exact pixels; `flux-2-pro`, `flux-2-flex`, and `microsoft/mai-image-2.6-flash` require multiples of 16 (MAI also needs at least 768 px per side and at most 2,359,296 total pixels). `black-forest-labs/flux.1.1-pro` requires 256–1440 px per side in multiples of 32 and at most 1.6 megapixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()
@@ -53,7 +44,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(0)
         .meta({
             description:
-                "Seed for reproducible results. Use -1 for random. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter.",
+                "Seed for reproducible results. Use -1 for random. Supported by: black-forest-labs/flux.1-schnell, black-forest-labs/flux.1.1-pro, tongyi-mai/z-image-turbo, bytedance/seedream-4.0, black-forest-labs/flux.2-klein-4b, bytedance/seedance-2.0. Other models ignore this parameter.",
         }),
     safe: SafeSchema,
     quality: z
@@ -62,7 +53,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default("medium")
         .meta({
             description:
-                "Image quality level. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+                "Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`.",
         }),
     image: z
         .string()
@@ -89,44 +80,91 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, `seedance`, `seedance-2.0`, and `wan-fast`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support.",
         }),
-    transparent: z.coerce.boolean().optional().default(false).meta({
+    reference_images: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+        }),
+    reference_videos: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+        }),
+    reference_audios: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+        }),
+    transparent: BooleanQueryParamSchema.optional().default(false).meta({
         description:
-            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, and `gpt-image-2`.",
+            "Generate image with transparent background. Only supported by `gptimage`, `gptimage-large`, `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`; other models return 400.",
     }),
 
     // Video-specific params
+    resolution: z
+        .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
+        .optional()
+        .meta({
+            description:
+                "Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate.",
+        }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance`: 2-10s. `seedance-2.0`: 4-15s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. Community models may omit this if the provider reports generated seconds; billing prefers reported duration and otherwise uses this value. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s.",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by width/height.",
+            "Aspect ratio. For `bytedance/seedream-5.0-flash`, overrides width/height; `adaptive` lets the provider choose. For video models, if not set, determined by explicit width/height; `veo`, `google/gemini-omni-1.1-flash`, `seedance-2.5`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most video models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max` and `minimax/minimax-h3-max-turbo` also support `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
-    audio: z.coerce.boolean().optional().default(false).meta({
+    audio: BooleanQueryParamSchema.optional().meta({
         description:
-            "Generate audio for the video. Only applies to video models. Note: `wan` generates audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `veo` generates and bills audio only when set to `true`. `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `seedance-2.5`, and `wan-3.0` generate audio unless set to `false`. `wan2.6`, `wan-2.7`, `grok-imagine-video-1.5`, `google/gemini-omni-1.1-flash`, `minimax-h3`, `minimax/minimax-h3-max`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag.",
     }),
 });
 
-export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.superRefine((params, ctx) => {
-        if (
-            params.duration !== undefined &&
-            params.duration > 30 &&
-            !NOVA_REEL_MODELS.has(params.model)
-        ) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["duration"],
-                message:
-                    "Duration above 30 seconds is only supported by nova-reel.",
-            });
-        }
-    });
+const validateDuration = (
+    params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
+    ctx: z.RefinementCtx,
+) => {
+    if (params.duration !== undefined && params.duration > 30) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["duration"],
+            message: "Duration above 30 seconds is not supported.",
+        });
+    }
+};
 
-export type GenerateImageRequestQueryParams = z.infer<
-    typeof GenerateImageRequestQueryParamsSchema
->;
+export const GenerateImageRequestQueryParamsSchema =
+    GenerateImageRequestQueryParamsBaseSchema.superRefine(validateDuration);
+
+export const GenerateVideoRequestQueryParamsSchema =
+    GenerateImageRequestQueryParamsBaseSchema.extend({
+        model: modelSchema("google/veo-3.1-fast"),
+    }).superRefine(validateDuration);

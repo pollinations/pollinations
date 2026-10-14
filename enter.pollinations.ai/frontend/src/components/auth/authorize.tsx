@@ -1,45 +1,38 @@
 import {
+    Alert,
+    ArrowLeftIcon,
     Button,
-    Collapsible,
-    cn,
-    MailIcon,
+    KeyIcon,
     Surface,
+    Text,
     useScrollLock,
+    XIcon,
 } from "@pollinations/ui";
-import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-    SocialSignInButtons,
-} from "@pollinations/ui/auth";
-import { ModalityChip } from "@pollinations/ui/gen";
-import { formatPollen } from "@pollinations/ui/wallet";
+import { AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
+    isClientMetadataUrl,
+    PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import {
+    isLoopbackHostname,
+    redirectUriMatchesAllowlistExact,
+} from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { config } from "../../config.ts";
-import { useSocialProviders } from "../../hooks/use-social-providers.ts";
-import { useSocialSignIn } from "../../hooks/use-social-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
-import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
-import { useKeyPermissions } from "../keys/key-permissions.tsx";
-import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { fetchModelCatalog } from "../models/model-catalog.ts";
+import { AppEarningsRow } from "../keys/app-earnings-row.tsx";
 import {
-    computeCategoryModalities,
-    getModelCategoriesFromCatalog,
-    type ModelCategoryGroup,
-} from "../models/model-categories.ts";
+    KeyPermissionsInputs,
+    useKeyPermissions,
+} from "../keys/key-permissions.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
+import { AuthFlowScreen } from "./auth-flow-screen.tsx";
+import { SignInScreen } from "./sign-in-screen.tsx";
 
 type Attribution = {
     found: boolean;
@@ -49,6 +42,8 @@ type Attribution = {
     userName?: string;
     githubUsername?: string;
     appName?: string;
+    /** Host serving a Client ID Metadata Document; set instead of a pk_ owner. */
+    clientHost?: string;
     redirectUris?: string[];
     earningsEnabled?: boolean;
 };
@@ -71,6 +66,9 @@ export function Authorize() {
         user_code,
         app_key,
         state,
+        response_type,
+        code_challenge,
+        code_challenge_method,
         models,
         budget,
         expiry,
@@ -79,13 +77,16 @@ export function Authorize() {
     const navigate = useNavigate();
 
     const isDeviceMode = !!user_code;
+    // OAuth 2.1 authorization-code flow: the callback carries ?code=...
+    // instead of the legacy #api_key=... fragment.
+    const isCodeFlow = !isDeviceMode && response_type === "code";
+    // MCP clients identify with a metadata-document URL instead of a pk_.
+    const isMetadataClient = isCodeFlow && isClientMetadataUrl(app_key);
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { pendingProvider, error: signInError, signIn } = useSocialSignIn();
-    const socialProviders = useSocialProviders();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -94,11 +95,6 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const [totalBalance, setTotalBalance] = useState<number | null>(null);
-    const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const [modelCategories, setModelCategories] = useState<
-        ModelCategoryGroup[]
-    >([]);
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -113,10 +109,6 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    const modalities = computeCategoryModalities(
-        keyPermissions.permissions.allowedModels,
-        modelCategories,
-    );
     // Which optional scopes the caller requested. Stays constant once set —
     // unaffected by the user toggling a scope off in the Advanced panel.
     // Sources: `scope` URL param (both flows) and /api/device/info fallback.
@@ -128,30 +120,19 @@ export function Authorize() {
     );
     const isAttributionPending = !!app_key && !attribution;
     const canAuthorize =
-        (isDeviceMode || parsedRedirectUrl !== null) && !isAttributionPending;
+        (isDeviceMode || parsedRedirectUrl !== null) &&
+        !isAttributionPending &&
+        // The code flow only runs for registered clients with a validated
+        // redirect — no hostname-only fallback like the legacy flow.
+        (!isCodeFlow || redirectValidationState === "valid");
     const canRedirectOnDeny =
         parsedRedirectUrl !== null &&
-        (!app_key || redirectValidationState === "valid");
+        (isCodeFlow
+            ? redirectValidationState === "valid"
+            : !app_key || redirectValidationState === "valid");
 
-    useScrollLock();
-
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchModelCatalog()
-            .then((models) => {
-                if (!cancelled) {
-                    setModelCategories(getModelCategoriesFromCatalog(models));
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setModelCategories([]);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const isMobile = window.innerWidth < 768;
+    useScrollLock(!isMobile);
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
@@ -214,6 +195,51 @@ export function Authorize() {
                 return;
             }
 
+            // The legacy fragment flow is keyed on the *absence* of
+            // response_type; an explicit unknown value must not silently
+            // alias it (RFC 6749 §4.1.2.1 unsupported_response_type).
+            if (response_type && response_type !== "code") {
+                setError(
+                    'Unsupported response_type — only "code" is supported.',
+                );
+                return;
+            }
+
+            // Code-flow front door (OAuth 2.1): PKCE and a registered client
+            // are mandatory. Errors render locally — error params are never
+            // redirected to a redirect_uri that hasn't been validated.
+            if (isCodeFlow) {
+                if (!app_key) {
+                    setError(
+                        "client_id is required for the authorization code flow",
+                    );
+                    return;
+                }
+                if (!code_challenge) {
+                    setError(
+                        "PKCE code_challenge is required for the authorization code flow",
+                    );
+                    return;
+                }
+                // An omitted method means "plain" per RFC 7636 §4.3, which we
+                // don't support — require an explicit S256 so unsupported
+                // clients fail here, before sign-in and key minting.
+                if (code_challenge_method !== "S256") {
+                    setError(
+                        "code_challenge_method=S256 is required (only S256 is supported)",
+                    );
+                    return;
+                }
+                // Same check as the server's CreateCodeSchema, so malformed
+                // challenges fail before a key is minted.
+                if (!PKCE_S256_CHALLENGE_REGEX.test(code_challenge)) {
+                    setError(
+                        "code_challenge must be a 43-character base64url S256 challenge",
+                    );
+                    return;
+                }
+            }
+
             // Attribution is identified by client_id only. Without one, the
             // consent screen falls back to the hostname display.
             if (!app_key) {
@@ -244,6 +270,21 @@ export function Authorize() {
                         setError(
                             "This app key could not be verified. Authorization blocked.",
                         );
+                    } else if (
+                        isCodeFlow &&
+                        !redirectUriMatchesAllowlistExact(
+                            redirect_url,
+                            attr.redirectUris,
+                        )
+                    ) {
+                        // The code flow needs an exact match (the code rides
+                        // the query string); app-lookup applies the legacy
+                        // flow's lenient rules, so re-check strictly here —
+                        // same check POST /api/oauth/code enforces.
+                        setRedirectValidationState("invalid");
+                        setError(
+                            "This redirect URL is not registered for this app. Authorization blocked.",
+                        );
                     } else {
                         setRedirectValidationState("valid");
                     }
@@ -257,27 +298,16 @@ export function Authorize() {
         }
     }, [
         isDeviceMode,
+        isCodeFlow,
         user_code,
         urlScope,
         app_key,
         redirect_url,
+        response_type,
+        code_challenge,
+        code_challenge_method,
         setAccountPermissions,
     ]);
-
-    useEffect(() => {
-        if (!user) return;
-
-        apiClient.customer.balance
-            .$get()
-            .then((response) => (response.ok ? response.json() : null))
-            .then((data) => {
-                if (!data) return;
-                setTotalBalance(
-                    (data.tierBalance ?? 0) + (data.packBalance ?? 0),
-                );
-            })
-            .catch(() => {});
-    }, [user]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -286,17 +316,27 @@ export function Authorize() {
         setError(null);
 
         try {
-            const { allowedModels, pollenBudget, accountPermissions } =
-                keyPermissions.permissions;
+            const {
+                allowedModels,
+                pollenBudget,
+                accountPermissions,
+                questPollenOnly,
+            } = keyPermissions.permissions;
+            const grantedAccountPermissions =
+                sanitizeAuthorizeAccountPermissions(accountPermissions) ?? [];
+            const appName = attribution?.clientHost
+                ? `${attribution.appName} (${attribution.clientHost})`
+                : attribution?.appName || redirectHostname;
             const { key, id, expiresIn } = await createKeyWithPermissions({
-                name: isDeviceMode
-                    ? `Device ${user_code}`
-                    : attribution?.appName || redirectHostname,
+                name: isDeviceMode ? `Device ${user_code}` : appName,
                 prefix: "sk",
                 expiryDays: keyPermissions.permissions.expiryDays,
-                metadata: {
+                consent: {
                     ...(isDeviceMode && { deviceUserCode: user_code }),
+                    // A metadata client has no pk_ to bind; POST
+                    // /api/oauth/code checks its redirect instead.
                     ...(app_key &&
+                        !isMetadataClient &&
                         (!isDeviceMode || attribution?.found) && {
                             requestedClientId: app_key,
                         }),
@@ -309,10 +349,8 @@ export function Authorize() {
                 permissions: {
                     allowedModels,
                     pollenBudget,
-                    accountPermissions:
-                        sanitizeAuthorizeAccountPermissions(
-                            accountPermissions,
-                        ) ?? [],
+                    accountPermissions: grantedAccountPermissions,
+                    questPollenOnly,
                 },
             });
 
@@ -323,6 +361,12 @@ export function Authorize() {
                         apiKey: key,
                         apiKeyId: id,
                         expiresIn,
+                        // Same convention as the code flow below: the token
+                        // response must echo the granted scope when it
+                        // differs from the requested one (RFC 6749 §5.1)
+                        scope: requestedScopes.size
+                            ? grantedAccountPermissions.join(" ")
+                            : undefined,
                     },
                 });
                 if (!res.ok) {
@@ -338,9 +382,55 @@ export function Authorize() {
                     throw new Error("Invalid redirect URL format");
                 }
                 const url = new URL(parsedRedirectUrl.href);
-                const hash = new URLSearchParams({ api_key: key });
-                if (state) hash.set("state", state);
-                url.hash = hash.toString();
+                if (isCodeFlow) {
+                    if (!app_key || !code_challenge || !redirect_url) {
+                        throw new Error(
+                            "Missing client_id or PKCE code_challenge",
+                        );
+                    }
+                    const res = await apiClient.oauth.code
+                        .$post({
+                            json: {
+                                apiKey: key,
+                                clientId: app_key,
+                                redirectUri: redirect_url,
+                                // "" (requested but narrowed to zero) is
+                                // distinct from undefined (nothing requested)
+                                // — RFC 6749 §5.1 needs the token response to
+                                // echo the former
+                                scope: requestedScopes.size
+                                    ? grantedAccountPermissions.join(" ")
+                                    : undefined,
+                                codeChallenge: code_challenge,
+                                codeChallengeMethod: "S256",
+                                expiresIn,
+                            },
+                        })
+                        .catch(() => null);
+                    if (!res || !res.ok) {
+                        // The key was minted but can't be delivered — don't
+                        // leave an active orphan in the account.
+                        accountClient.keys[":id"]
+                            .$delete({ param: { id } })
+                            .catch(() => {});
+                        const data = (await res?.json().catch(() => null)) as {
+                            message?: string;
+                            error?: { message?: string };
+                        } | null;
+                        throw new Error(
+                            data?.message ||
+                                data?.error?.message ||
+                                "Failed to create authorization code",
+                        );
+                    }
+                    const { code } = (await res.json()) as { code: string };
+                    url.searchParams.set("code", code);
+                    if (state) url.searchParams.set("state", state);
+                } else {
+                    const hash = new URLSearchParams({ api_key: key });
+                    if (state) hash.set("state", state);
+                    url.hash = hash.toString();
+                }
                 window.location.href = url.toString();
             }
         } catch (e) {
@@ -363,331 +453,147 @@ export function Authorize() {
             setDeviceOutcome("denied");
         } else if (canRedirectOnDeny && parsedRedirectUrl) {
             const url = new URL(parsedRedirectUrl.href);
-            const hash = new URLSearchParams({ error: "access_denied" });
-            if (state) hash.set("state", state);
-            url.hash = hash.toString();
+            if (isCodeFlow) {
+                // RFC 6749 §4.1.2.1: code-flow errors ride the query string.
+                url.searchParams.set("error", "access_denied");
+                if (state) url.searchParams.set("state", state);
+            } else {
+                const hash = new URLSearchParams({ error: "access_denied" });
+                if (state) hash.set("state", state);
+                url.hash = hash.toString();
+            }
             window.location.href = url.toString();
         } else {
             navigate({ to: "/" });
         }
     }
 
+    // The card reads as one sentence: "{title} · {who} · to access your Pollinations account. {step}"
+    const title = isDeviceMode ? "Allow your device" : "Allow this app";
+    const subject = isDeviceMode ? (
+        <Surface>
+            <Text
+                size="sm"
+                weight="semibold"
+                tone="strong"
+                className="font-mono"
+            >
+                Code: {user_code}
+            </Text>
+        </Surface>
+    ) : (
+        <AppAttribution
+            attribution={attribution}
+            redirectUrl={parsedRedirectUrl}
+        />
+    );
+    const access = "to access your Pollinations account.";
+
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <AuthModal>
-                <AuthModalHeader />
-                <div className="px-8 pb-8 pt-2 text-center">
-                    <div className="text-4xl mb-4">
-                        {denied ? "\u{1F6AB}" : "\u{2705}"}
-                    </div>
-                    <h2 className="text-lg font-semibold text-theme-text-strong mb-2">
-                        {denied ? "Access Denied" : "Device Authorized"}
-                    </h2>
-                    <p className="text-sm text-theme-text-base">
-                        You can close this tab and return to your device.
-                    </p>
-                </div>
-            </AuthModal>
+            <AuthFlowScreen
+                footnote="back"
+                title={denied ? "Access declined" : "Access allowed"}
+                subject={subject}
+                description="You can close this tab and return to your device."
+            />
         );
     }
 
-    if (isPending) {
-        return <AuthModalLoading />;
+    if (isPending) return <AuthModalLoading title={title} subject={subject} />;
+
+    if (error) {
+        return (
+            <AuthFlowScreen
+                footnote="help"
+                title={title}
+                subject={subject}
+                description={access}
+                error={`Couldn’t connect: ${error}`}
+                actions={
+                    <Button
+                        intent="neutral"
+                        icon={isDeviceMode ? <XIcon /> : <ArrowLeftIcon />}
+                        onClick={handleDeny}
+                    >
+                        {isDeviceMode ? "Decline" : "Go back"}
+                    </Button>
+                }
+            />
+        );
     }
 
     if (!user) {
-        const displayedError = error ?? signInError;
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to authorize" }}
-                tone={displayedError ? "error" : undefined}
-                interior="panel"
-            >
-                <AuthModalHeader />
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    {displayedError ? (
-                        <ErrorBanner>{displayedError}</ErrorBanner>
-                    ) : (
-                        <AuthInfoCard>
-                            <AppAttribution
-                                attribution={attribution}
-                                isDeviceMode={isDeviceMode}
-                                userCode={user_code}
-                                redirectHostname={redirectHostname}
-                            />
-                            <p className="text-sm text-theme-text-base mt-3">
-                                Sign in to review and approve the requested
-                                access.
-                            </p>
-                        </AuthInfoCard>
-                    )}
-
-                    {!error && (
-                        <SocialSignInButtons
-                            providers={socialProviders.providers}
-                            isLoading={socialProviders.isLoading}
-                            error={socialProviders.error}
-                            pendingProvider={pendingProvider}
-                            onSignIn={signIn}
-                        />
-                    )}
-                </div>
-            </AuthModal>
+            <SignInScreen
+                title={title}
+                subject={subject}
+                description={`${access} Sign in to review the request.`}
+                onCancel={handleDeny}
+            />
         );
     }
 
     return (
-        <AuthModal
-            dialog={
-                error
-                    ? { label: "Authorization error" }
-                    : { labelledBy: "authorize-dialog-title" }
-            }
-            tone={error ? "error" : undefined}
-        >
-            <AuthModalHeader>
-                <div className="flex items-center gap-3 min-w-0">
-                    <a
-                        href={config.baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 min-w-0"
-                    >
-                        {user.image && (
-                            <img
-                                src={user.image}
-                                alt=""
-                                className="w-6 h-6 rounded-full shrink-0"
-                            />
-                        )}
-                        <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.githubUsername || user.email}
-                        </span>
-                    </a>
-                    <div className="inline-flex items-stretch rounded-full bg-theme-bg-pale border border-theme-border text-sm overflow-hidden shrink-0">
-                        {totalBalance !== null && (
-                            <span className="flex items-center px-3 text-theme-text-base whitespace-nowrap">
-                                {formatPollen(totalBalance)} pollen
-                            </span>
-                        )}
-                        <a
-                            href={`${config.baseUrl}/#buy-pollen`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                                "flex items-center px-3 py-1 font-medium text-theme-text-base bg-theme-bg-active hover:bg-theme-bg-hover transition-colors cursor-pointer",
-                                totalBalance !== null &&
-                                    "border-l border-theme-border",
-                            )}
-                        >
-                            Top up
-                        </a>
-                    </div>
-                </div>
-            </AuthModalHeader>
-
-            <div className="px-6 py-2 space-y-4">
-                {error ? (
-                    <ErrorBanner>{error}</ErrorBanner>
-                ) : (
-                    <div>
-                        <Surface variant="card">
-                            <p
-                                id="authorize-dialog-title"
-                                className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
-                            >
-                                Authorize
-                            </p>
-                            <AppAttribution
-                                attribution={attribution}
-                                isDeviceMode={isDeviceMode}
-                                userCode={user_code}
-                                redirectHostname={redirectHostname}
-                            />
-                        </Surface>
-
-                        <div className="p-4">
-                            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">
-                                To
-                            </p>
-                            <ul className="text-sm text-theme-text-base space-y-3">
-                                <li className="flex items-start gap-2">
-                                    <span className="w-4 shrink-0 text-theme-text-soft">
-                                        &#x1F464;
-                                    </span>
-                                    <span>
-                                        See your username and this key&apos;s
-                                        budget and usage.
-                                    </span>
-                                </li>
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "profile",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span
-                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
-                                            aria-hidden="true"
-                                        >
-                                            <MailIcon className="h-4 w-4" />
-                                        </span>
-                                        <span>See your name and email.</span>
-                                    </li>
-                                )}
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "usage",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-theme-text-soft">
-                                            &#x1F4CA;
-                                        </span>
-                                        <span>
-                                            See your account balance and usage.
-                                        </span>
-                                    </li>
-                                )}
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "keys",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-theme-text-soft">
-                                            &#x1F511;
-                                        </span>
-                                        <span>
-                                            Manage API keys and My Models when
-                                            enabled.
-                                        </span>
-                                    </li>
-                                )}
-                                <li className="flex items-start gap-2">
-                                    <span
-                                        className={`w-4 shrink-0 ${
-                                            modalities.length === 0
-                                                ? "text-intent-danger-text"
-                                                : "text-theme-text-soft"
-                                        }`}
-                                    >
-                                        {modalities.length === 0
-                                            ? "\u2717"
-                                            : "\u2713"}
-                                    </span>
-                                    {modalities.length === 0 ? (
-                                        <span>No AI models are enabled.</span>
-                                    ) : (
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span>Generate</span>
-                                            <div className="flex items-center gap-1 flex-nowrap">
-                                                {modalities.map((m) => (
-                                                    <ModalityChip
-                                                        key={m}
-                                                        modality={m}
-                                                        size="sm"
-                                                    >
-                                                        {m}
-                                                    </ModalityChip>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </li>
-                                {attribution?.earningsEnabled && (
-                                    <li className="flex items-start gap-2">
-                                        <span
-                                            className="w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        >
-                                            &#x1F331;
-                                        </span>
-                                        <span>
-                                            Earn{" "}
-                                            <span className="font-semibold">
-                                                20%
-                                            </span>{" "}
-                                            of the pollen you spend in-app.
-                                        </span>
-                                    </li>
-                                )}
-                            </ul>
-                        </div>
-
-                        <div className="-mx-6 px-10 pt-4 pb-2 border-t border-divider">
-                            <PollenBudgetInput
-                                value={keyPermissions.permissions.pollenBudget}
-                                onChange={keyPermissions.setPollenBudget}
-                                inline
-                            />
-                        </div>
-
-                        <div className="-mx-6 px-10 pt-2 pb-4">
-                            <ExpiryDaysInput
-                                value={keyPermissions.permissions.expiryDays}
-                                onChange={keyPermissions.setExpiryDays}
-                                inline
-                            />
-                        </div>
-
-                        <Collapsible
-                            expanded={permissionsExpanded}
-                            onToggle={() => setPermissionsExpanded((v) => !v)}
-                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-divider bg-transparent"
-                            hoverClassName="hover:bg-theme-bg-pale"
-                            panelClassName="px-3 pb-3 pt-1 space-y-6"
-                            label={
-                                <span className="flex justify-end">
-                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-theme-text-soft transition-colors hover:text-theme-text-strong">
-                                        Permissions
-                                    </span>
-                                </span>
-                            }
-                        >
-                            <AccountPermissionsInput
-                                value={
-                                    keyPermissions.permissions
-                                        .accountPermissions
-                                }
-                                onChange={keyPermissions.setAccountPermissions}
-                                allowedModels={
-                                    keyPermissions.permissions.allowedModels
-                                }
-                                onModelsChange={keyPermissions.setAllowedModels}
-                                visiblePermissions={visibleOptionalPermissions}
-                                showApiName={false}
-                                modelsInitiallyExpanded
-                            />
-                        </Collapsible>
-                    </div>
-                )}
-            </div>
-
-            <div className="flex items-center justify-between p-6 pt-4">
-                <a
-                    href="https://pollinations.ai/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                >
-                    Terms & Conditions
-                </a>
-                <div className="flex gap-2">
+        <AuthFlowScreen
+            size="lg"
+            footnote="legal"
+            title={title}
+            subject={subject}
+            description={`${access} You can revoke access at any time from your Keys page.`}
+            actions={
+                <>
                     <Button
-                        as="button"
+                        intent="neutral"
+                        icon={<XIcon />}
                         onClick={handleDeny}
-                        intent="danger"
                         disabled={isAuthorizing}
                     >
-                        Deny
+                        Decline
                     </Button>
-                    {!error && (
-                        <Button
-                            as="button"
-                            onClick={handleAuthorize}
-                            disabled={!canAuthorize || isAuthorizing}
-                        >
-                            {isAuthorizing ? "Authorizing..." : "Authorize"}
-                        </Button>
-                    )}
-                </div>
-            </div>
-        </AuthModal>
+                    <Button
+                        type="submit"
+                        form="authorize-permissions"
+                        intent="commit"
+                        icon={<KeyIcon />}
+                        disabled={!canAuthorize || isAuthorizing}
+                    >
+                        {isAuthorizing ? "Connecting…" : "Allow access"}
+                    </Button>
+                </>
+            }
+        >
+            {isMetadataClient &&
+                parsedRedirectUrl &&
+                isLoopbackHostname(parsedRedirectUrl.hostname) && (
+                    <Alert intent="warning" className="mb-4">
+                        Access goes to a program on this computer, and any
+                        program can use this app's name. Only allow it if you
+                        just started this sign-in yourself.
+                    </Alert>
+                )}
+            <form
+                id="authorize-permissions"
+                className="space-y-4"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleAuthorize();
+                }}
+            >
+                <KeyPermissionsInputs
+                    value={keyPermissions}
+                    accessContext={isDeviceMode ? "device" : "app"}
+                    visiblePermissions={new Set(visibleOptionalPermissions)}
+                    requestedModels={models}
+                    permissionsAfter={
+                        attribution?.earningsEnabled ? (
+                            <AppEarningsRow />
+                        ) : undefined
+                    }
+                    disabled={isAuthorizing}
+                />
+            </form>
+        </AuthFlowScreen>
     );
 }

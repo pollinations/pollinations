@@ -1,4 +1,4 @@
-const MEDIA_URL = "https://gen.pollinations.ai";
+const MEDIA_URL = "https://media.pollinations.ai";
 const MEDIA_HOST = "media.pollinations.ai";
 
 /** Check if a URL is already uploaded to media.pollinations.ai */
@@ -11,8 +11,8 @@ function isMediaUrl(url: string): boolean {
 }
 
 /**
- * Upload a gen.pollinations.ai image to media.pollinations.ai for permanent storage.
- * Returns the permanent media URL on success, or the original URL on any error.
+ * Upload a generated image to the public AI Dungeon Master media gallery.
+ * Returns the stored media URL on success, or the original URL on any error.
  * Skips upload if already a media URL (idempotent).
  */
 export async function uploadToMedia(
@@ -27,9 +27,10 @@ export async function uploadToMedia(
 
         const blob = await response.blob();
         const formData = new FormData();
-        formData.append("file", blob);
+        formData.append("file", blob, "ai-dungeon-image");
+        formData.append("tags", "ai-dungeon-master");
 
-        const uploadRes = await fetch(`${MEDIA_URL}/media`, {
+        const uploadRes = await fetch(`${MEDIA_URL}/upload`, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: formData,

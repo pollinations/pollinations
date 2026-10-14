@@ -1,10 +1,16 @@
+import { createParser } from "eventsource-parser";
 import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
+    AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
+    AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
     ChatOptions,
@@ -14,9 +20,16 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
+    DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -24,9 +37,15 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
+    ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -41,19 +60,51 @@ import type {
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
-const DEFAULT_MAX_RETRIES = 3;
-const MAX_INT32 = 2147483647;
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
-const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
+const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
-// HTTP status codes that should NOT be retried
-const NON_RETRIABLE_CODES = [400, 401, 402, 403, 404, 422];
+/** One item of an OpenAI-style image response */
+type ImageItem = { url?: string; b64_json?: string; media_type?: string };
+
+/** Adapt simple text input to the canonical chat request without SDK defaults. */
+export function buildTextRequest(
+    prompt: string,
+    options: TextGenerateOptions = {},
+): { messages: Message[]; options: ChatOptions } {
+    if (!prompt || typeof prompt !== "string") {
+        throw new PollinationsError(
+            "Prompt is required and must be a string",
+            "INVALID_INPUT",
+            400,
+        );
+    }
+
+    return {
+        messages: [
+            ...(options.systemPrompt
+                ? [{ role: "system" as const, content: options.systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ],
+        options: {
+            model: options.model,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
+            seed: options.seed,
+            private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
+            signal: options.signal,
+        },
+    };
+}
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -77,50 +128,20 @@ function getEnvVar(name: string): string | undefined {
     return undefined;
 }
 
-// Generate a random seed (0 to MAX_INT32)
-function randomSeed(): number {
-    return Math.floor(Math.random() * MAX_INT32);
-}
-
-// Resolve seed: if -1, generate random; otherwise use as-is
-function resolveSeed(seed: number | undefined): number | undefined {
-    if (seed === -1) {
-        return randomSeed();
-    }
-    return seed;
-}
-
-// Sleep helper for retry delays
+// Sleep helper for device-flow polling
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Exponential backoff delay: 1s, 2s, 4s
-function getRetryDelay(attempt: number, retryAfterSeconds?: number): number {
-    if (retryAfterSeconds !== undefined && retryAfterSeconds > 0) {
-        return retryAfterSeconds * 1000;
-    }
-    return 2 ** attempt * 1000;
-}
-
-// Check if an error should be retried
-function isRetriableError(error: unknown): boolean {
-    if (error instanceof PollinationsError) {
-        // Don't retry client errors (4xx except rate limits)
-        return !NON_RETRIABLE_CODES.includes(error.status);
-    }
-    // Network errors, timeouts, etc. are retriable
-    return true;
-}
-
 // Fetch with timeout using AbortController
-// Supports both internal timeout and external signal for cancellation
-async function fetchWithTimeout(
+// Keep timeout and cancellation active until the response consumer finishes.
+async function fetchWithTimeout<T>(
     url: string,
     options: RequestInit,
     timeoutMs: number,
-    externalSignal?: AbortSignal,
-): Promise<Response> {
+    externalSignal: AbortSignal | undefined,
+    consume: (response: Response) => Promise<T>,
+): Promise<T> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -131,11 +152,12 @@ async function fetchWithTimeout(
     }
 
     try {
+        externalSignal?.throwIfAborted();
         const response = await fetch(url, {
             ...options,
             signal: controller.signal,
         });
-        return response;
+        return await consume(response);
     } catch (err) {
         // Check if it was cancelled by external signal
         if (externalSignal?.aborted) {
@@ -145,7 +167,7 @@ async function fetchWithTimeout(
                 499, // Client Closed Request
             );
         }
-        if ((err as Error).name === "AbortError") {
+        if (controller.signal.aborted) {
             throw new PollinationsError(
                 `Request timed out after ${timeoutMs}ms`,
                 "TIMEOUT",
@@ -168,37 +190,74 @@ function stripKeyFromUrl(url: string): string {
     return urlObj.toString();
 }
 
-// SSE parsing result
-interface SSEParseResult<T> {
-    chunks: T[];
-    remainingBuffer: string;
-}
+function chatStreamError(chunk: unknown): PollinationsError | null {
+    if (!chunk || typeof chunk !== "object") return null;
+    const { error, choices } = chunk as {
+        error?: unknown;
+        choices?: { finish_reason?: unknown }[];
+    };
+    const failed =
+        Array.isArray(choices) &&
+        choices.some((choice) => choice?.finish_reason === "error");
+    if (error == null && !failed) return null;
 
-// Parse SSE lines from buffer and extract data
-function parseSSEBuffer<T>(
-    buffer: string,
-    parseChunk: (data: string) => T | null,
-): SSEParseResult<T> {
-    const lines = buffer.split("\n");
-    const remainingBuffer = lines.pop() || "";
-    const chunks: T[] = [];
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === "data: [DONE]") continue;
-        if (trimmed.startsWith("data: ")) {
-            try {
-                const parsed = parseChunk(trimmed.slice(6));
-                if (parsed !== null) {
-                    chunks.push(parsed);
-                }
-            } catch {
-                // Skip invalid JSON
-            }
+    let message = "Streaming request failed";
+    let status = 502;
+    let code = "STREAM_ERROR";
+    if (typeof error === "string") message = error;
+    else if (error && typeof error === "object") {
+        const {
+            message: errorMessage,
+            code: errorCode,
+            status: errorStatus,
+        } = error as { message?: unknown; code?: unknown; status?: unknown };
+        if (typeof errorMessage === "string") message = errorMessage;
+        const numericStatus = Number(errorStatus ?? errorCode);
+        if (
+            Number.isInteger(numericStatus) &&
+            numericStatus >= 400 &&
+            numericStatus <= 599
+        ) {
+            status = numericStatus;
+        }
+        if (
+            typeof errorCode === "string" &&
+            errorCode &&
+            !Number.isFinite(Number(errorCode))
+        ) {
+            code = errorCode;
         }
     }
+    return new PollinationsError(message, code, status);
+}
 
-    return { chunks, remainingBuffer };
+function parseChatStreamData(data: string): ChatStreamChunk {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(data);
+    } catch {
+        throw new PollinationsError(
+            "Invalid JSON in chat completion stream",
+            "MALFORMED_STREAM",
+            502,
+        );
+    }
+    const error = chatStreamError(parsed);
+    if (error) throw error;
+
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("choices" in parsed) ||
+        !Array.isArray((parsed as { choices: unknown }).choices)
+    ) {
+        throw new PollinationsError(
+            "Invalid chat completion stream event",
+            "MALFORMED_STREAM",
+            502,
+        );
+    }
+    return parsed as ChatStreamChunk;
 }
 
 /**
@@ -222,7 +281,6 @@ function parseSSEBuffer<T>(
 export class Pollinations {
     private apiKey: string;
     private baseUrl: string;
-    private maxRetries: number;
     private textTimeout: number;
     private imageTimeout: number;
     private videoTimeout: number;
@@ -233,7 +291,7 @@ export class Pollinations {
 
         if (!apiKey) {
             throw new PollinationsError(
-                "API key is required. Get one for free at https://enter.pollinations.ai",
+                "API key is required. Get one for free at https://enter.pollinations.ai/keys",
                 "API_KEY",
                 401,
             );
@@ -241,7 +299,6 @@ export class Pollinations {
 
         this.apiKey = apiKey;
         this.baseUrl = config.baseUrl?.replace(/\/$/, "") || DEFAULT_BASE_URL;
-        this.maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
 
         // Allow timeout to be a default fallback for all types
         const defaultTimeout = config.timeout ?? DEFAULT_TIMEOUT;
@@ -273,6 +330,24 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return read(response);
+            },
+        );
+    }
+
     private buildQueryParams(
         params: Record<string, unknown>,
         includeKey: boolean = true,
@@ -283,7 +358,15 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "image",
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -309,42 +392,6 @@ export class Pollinations {
         return body;
     }
 
-    /**
-     * Run `fn` with exponential-backoff retries on retriable errors.
-     * `attempt` is passed into `fn` so callers can recompute per-attempt
-     * state (e.g. a fresh random seed) on each try.
-     */
-    private async withRetries<T>(
-        fn: (attempt: number) => Promise<T>,
-        fallbackMessage: string,
-    ): Promise<T> {
-        let lastError: Error = new Error(fallbackMessage);
-
-        for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-            try {
-                return await fn(attempt);
-            } catch (err) {
-                lastError = err as Error;
-
-                // Don't retry non-retriable errors (400, 401, 403, 404, 422)
-                if (!isRetriableError(err)) {
-                    throw lastError;
-                }
-
-                if (attempt < this.maxRetries - 1) {
-                    // Use Retry-After from rate limit errors, otherwise exponential backoff
-                    const retryAfter =
-                        err instanceof PollinationsError
-                            ? err.retryAfter
-                            : undefined;
-                    await sleep(getRetryDelay(attempt, retryAfter));
-                }
-            }
-        }
-
-        throw lastError;
-    }
-
     // ============================================================================
     // Image Generation
     // ============================================================================
@@ -353,13 +400,13 @@ export class Pollinations {
     private buildImageUrl(
         prompt: string,
         options: ImageGenerateOptions = {},
-        seed?: number,
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "zimage",
+            model: options.model,
             width: options.width,
             height: options.height,
-            seed: seed !== undefined ? seed : resolveSeed(options.seed),
+            resolution: options.resolution,
+            seed: options.seed,
             safe: options.safe,
             quality: options.quality,
             image: options.referenceImage,
@@ -394,7 +441,6 @@ export class Pollinations {
 
     /**
      * Generate an image and return it as binary data.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -414,29 +460,24 @@ export class Pollinations {
             );
         }
 
-        return this.withRetries(async (attempt) => {
-            // Generate new seed for each retry (or use resolved seed on first attempt)
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-            const url = this.buildImageUrl(prompt, options, seed);
+        const url = this.buildImageUrl(prompt, options);
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.imageTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-            const response = await fetchWithTimeout(
-                url,
-                { headers: this.getHeaders() },
-                this.imageTimeout,
-                options.signal,
-            );
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "image/jpeg";
 
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
-
-            const buffer = await response.arrayBuffer();
-            const contentType =
-                response.headers.get("content-type") || "image/jpeg";
-
-            return { buffer, contentType, url: stripKeyFromUrl(url) };
-        }, "Unknown error during image generation");
+                return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
     }
 
     // ============================================================================
@@ -451,7 +492,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -469,14 +510,14 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "flux",
+            model: options.model,
         };
 
         if (options.image) {
             body.image = options.image;
         }
 
-        const response = await fetchWithTimeout(
+        const json = await fetchWithTimeout(
             `${this.baseUrl}/v1/images/edits`,
             {
                 method: "POST",
@@ -485,15 +526,14 @@ export class Pollinations {
             },
             this.imageTimeout,
             options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                return (await response.json()) as { data: ImageItem[] };
+            },
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const json = (await response.json()) as {
-            data: Array<{ url?: string; b64_json?: string }>;
-        };
 
         const item = json.data?.[0];
         if (!item) {
@@ -516,28 +556,22 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Generate image(s) via the OpenAI-compatible POST endpoint.
-     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
-     * response formats.
-     *
-     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     * Generate an image via the OpenAI-compatible POST endpoint.
+     * Supports both `url` / `b64_json` response formats.
      *
      * @example
      * ```ts
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
-     *
-     * // Multiple images
-     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
      * ```
      */
     async imageGenerate(
         prompt: string,
         options: ImageGenerateV1Options = {},
-    ): Promise<ImageResponse | ImageResponse[]> {
+    ): Promise<ImageResponse> {
         if (!prompt || typeof prompt !== "string") {
             throw new PollinationsError(
                 "Prompt is required and must be a string",
@@ -554,17 +588,16 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "zimage",
+            model: options.model,
         };
         if (size) body.size = size;
-        if (options.n !== undefined) body.n = options.n;
         if (options.responseFormat)
             body.response_format = options.responseFormat;
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
-        if (options.seed !== undefined) body.seed = resolveSeed(options.seed);
+        if (options.seed !== undefined) body.seed = options.seed;
         if (options.quality) body.quality = options.quality;
 
-        const response = await fetchWithTimeout(
+        const json = await fetchWithTimeout(
             `${this.baseUrl}/v1/images/generations`,
             {
                 method: "POST",
@@ -573,18 +606,17 @@ export class Pollinations {
             },
             this.imageTimeout,
             options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                return (await response.json()) as { data: ImageItem[] };
+            },
         );
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const json = (await response.json()) as {
-            data: Array<{ url?: string; b64_json?: string }>;
-        };
-
-        const items = json.data || [];
-        if (items.length === 0) {
+        const [item] = json.data || [];
+        if (!item) {
             throw new PollinationsError(
                 "No image data in response",
                 "NO_IMAGE",
@@ -592,35 +624,32 @@ export class Pollinations {
             );
         }
 
-        const results = await Promise.all(
-            items.map((item) => this.resolveImageItem(item, options.signal)),
-        );
-
-        // Unwrap when a single image was produced (most common case)
-        if (results.length === 1) {
-            const [single] = results;
-            if (single) return single;
-        }
-        return results;
+        return this.resolveImageItem(item, options.signal);
     }
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
     private async resolveImageItem(
-        item: { url?: string; b64_json?: string },
+        item: ImageItem,
         signal?: AbortSignal,
         invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {
         if (item.url) {
-            const imgResponse = await fetchWithTimeout(
-                item.url,
+            const url = item.url;
+            return fetchWithTimeout(
+                url,
                 {},
                 this.imageTimeout,
                 signal,
+                async (imgResponse) => {
+                    if (!imgResponse.ok) {
+                        await this.handleErrorResponse(imgResponse);
+                    }
+                    const buffer = await imgResponse.arrayBuffer();
+                    const contentType =
+                        imgResponse.headers.get("content-type") || "image/png";
+                    return { buffer, contentType, url };
+                },
             );
-            const buffer = await imgResponse.arrayBuffer();
-            const contentType =
-                imgResponse.headers.get("content-type") || "image/png";
-            return { buffer, contentType, url: item.url };
         }
         if (item.b64_json) {
             const binary = atob(item.b64_json);
@@ -630,7 +659,7 @@ export class Pollinations {
             }
             return {
                 buffer: bytes.buffer as ArrayBuffer,
-                contentType: "image/png",
+                contentType: item.media_type || "image/png",
                 url: "",
             };
         }
@@ -645,34 +674,22 @@ export class Pollinations {
     // Video Generation
     // ============================================================================
 
-    private validateVideoDuration(_model: string, duration?: number): void {
-        if (duration === undefined) return;
-
-        if (duration < 1 || duration > 30) {
-            throw new PollinationsError(
-                `Invalid duration: ${duration}. Must be between 1-30 seconds.`,
-                "INVALID_DURATION",
-                400,
-            );
-        }
-    }
-
     /** Build video URL with all params (internal use) */
     private buildVideoUrl(
         prompt: string,
         options: VideoGenerateOptions = {},
-        seed?: number,
     ): string {
-        const model = options.model || "veo";
-        this.validateVideoDuration(model, options.duration);
-
         const params: Record<string, unknown> = {
-            model,
+            model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
-            seed: seed !== undefined ? seed : resolveSeed(options.seed),
+            resolution: options.resolution,
+            seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 
@@ -688,7 +705,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -701,8 +718,7 @@ export class Pollinations {
 
     /**
      * Generate a video and return it as binary data.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
-     * Note: Video generation can take several minutes - timeout is set to 10 minutes.
+     * Note: Video generation can take several minutes - timeout is set to 20 minutes.
      *
      * @example
      * ```ts
@@ -721,28 +737,64 @@ export class Pollinations {
             );
         }
 
-        return this.withRetries(async (attempt) => {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-            const url = this.buildVideoUrl(prompt, options, seed);
+        const url = this.buildVideoUrl(prompt, options);
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-            const response = await fetchWithTimeout(
-                url,
-                { headers: this.getHeaders() },
-                this.videoTimeout,
-                options.signal,
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "video/mp4";
+
+                return { buffer, contentType, url: stripKeyFromUrl(url) };
+            },
+        );
+    }
+
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
             );
-
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
-
-            const buffer = await response.arrayBuffer();
-            const contentType =
-                response.headers.get("content-type") || "video/mp4";
-
-            return { buffer, contentType, url: stripKeyFromUrl(url) };
-        }, "Unknown error during video generation");
+        }
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url,
+                };
+            },
+        );
     }
 
     // ============================================================================
@@ -751,7 +803,6 @@ export class Pollinations {
 
     /**
      * Generate text from a prompt.
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -763,69 +814,13 @@ export class Pollinations {
         prompt: string,
         options: TextGenerateOptions = {},
     ): Promise<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        return this.withRetries(async (attempt) => {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
-
-            const messages: Message[] = [];
-
-            if (options.systemPrompt) {
-                messages.push({
-                    role: "system",
-                    content: options.systemPrompt,
-                });
-            }
-            messages.push({ role: "user", content: prompt });
-
-            const body: Record<string, unknown> = {
-                messages,
-                model: options.model || "openai",
-                temperature: options.temperature,
-                max_tokens: options.maxTokens,
-                frequency_penalty: options.frequencyPenalty,
-                presence_penalty: options.presencePenalty,
-                seed,
-                stream: false,
-                private: options.private,
-            };
-
-            if (options.json) {
-                body.response_format = { type: "json_object" };
-            }
-
-            this.stripUndefined(body);
-
-            const response = await fetchWithTimeout(
-                `${this.baseUrl}/v1/chat/completions`,
-                {
-                    method: "POST",
-                    headers: this.getHeaders("application/json"),
-                    body: JSON.stringify(body),
-                },
-                this.textTimeout,
-                options.signal,
-            );
-
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
-
-            const data = (await response.json()) as ChatResponse;
-            return data.choices[0]?.message?.content || "";
-        }, "Unknown error during text generation");
+        const request = buildTextRequest(prompt, options);
+        const response = await this.chat(request.messages, request.options);
+        return response.choices[0]?.message?.content || "";
     }
 
     /**
      * Generate text with streaming response.
-     * Automatically retries on connection failure before streaming starts.
      *
      * @example
      * ```ts
@@ -838,85 +833,11 @@ export class Pollinations {
         prompt: string,
         options: Omit<TextGenerateOptions, "stream"> = {},
     ): AsyncGenerator<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        const messages: Message[] = [];
-
-        if (options.systemPrompt) {
-            messages.push({ role: "system", content: options.systemPrompt });
-        }
-        messages.push({ role: "user", content: prompt });
-
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model || "openai",
-            temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            seed: options.seed,
-            stream: true,
-            private: options.private,
-        };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        // Retry connection establishment; the body is built once above.
-        const response = await this.withRetries(async () => {
-            const res = await fetchWithTimeout(
-                `${this.baseUrl}/v1/chat/completions`,
-                {
-                    method: "POST",
-                    headers: this.getHeaders("application/json"),
-                    body: JSON.stringify(body),
-                },
-                this.textTimeout,
-                options.signal,
-            );
-
-            if (!res.ok) {
-                await this.handleErrorResponse(res);
-            }
-
-            return res;
-        }, "Unknown error during text stream");
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-            throw new PollinationsError("No response body", "NO_BODY", 500);
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<string>(buffer, (data) => {
-                    const json = JSON.parse(data) as ChatStreamChunk;
-                    return json.choices[0]?.delta?.content || null;
-                });
-
-                buffer = result.remainingBuffer;
-                for (const content of result.chunks) {
-                    yield content;
-                }
-            }
-        } finally {
-            reader.releaseLock();
+        const request = buildTextRequest(prompt, options);
+        const chunks = this.chatStream(request.messages, request.options);
+        for await (const chunk of chunks) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) yield content;
         }
     }
 
@@ -924,20 +845,21 @@ export class Pollinations {
     // Chat Completions (OpenAI-compatible)
     // ============================================================================
 
-    /**
-     * Build the shared chat-completions request body (undefined fields stripped).
-     * `seed` is passed in explicitly so callers control resolution:
-     * `chat()` passes a per-attempt resolved seed, `chatStream()` passes the
-     * raw `options.seed` unchanged.
-     */
+    /** Build the shared chat-completions request body. */
     private buildChatBody(
         messages: Message[],
         options: Omit<ChatOptions, "stream">,
-        { stream, seed }: { stream: boolean; seed: number | undefined },
+        stream: boolean,
     ): Record<string, unknown> {
+        // Router agents read overrides from `metadata`, where `text` is `model`.
+        const { text, ...routing } = options.routing ?? {};
         return this.stripUndefined({
             messages,
-            model: options.model || "openai",
+            model: options.model,
+            metadata: options.routing && {
+                ...(text !== undefined && { model: text }),
+                ...routing,
+            },
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -945,7 +867,8 @@ export class Pollinations {
             presence_penalty: options.presencePenalty,
             repetition_penalty: options.repetitionPenalty,
             stop: options.stop,
-            seed,
+            seed: options.seed,
+            private: options.private,
             stream,
             stream_options: options.streamOptions,
             response_format: options.responseFormat,
@@ -966,7 +889,6 @@ export class Pollinations {
 
     /**
      * Create a chat completion (OpenAI-compatible).
-     * Automatically retries up to 3 times with exponential backoff on retriable failures.
      *
      * @example
      * ```ts
@@ -988,37 +910,28 @@ export class Pollinations {
             );
         }
 
-        return this.withRetries(async (attempt) => {
-            const seed =
-                attempt === 0 ? resolveSeed(options.seed) : randomSeed();
+        const body = this.buildChatBody(messages, options, false);
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-            const body = this.buildChatBody(messages, options, {
-                stream: false,
-                seed,
-            });
-
-            const response = await fetchWithTimeout(
-                `${this.baseUrl}/v1/chat/completions`,
-                {
-                    method: "POST",
-                    headers: this.getHeaders("application/json"),
-                    body: JSON.stringify(body),
-                },
-                this.textTimeout,
-                options.signal,
-            );
-
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
-
-            return response.json() as Promise<ChatResponse>;
-        }, "Unknown error during chat completion");
+                return response.json() as Promise<ChatResponse>;
+            },
+        );
     }
 
     /**
      * Create a streaming chat completion.
-     * Automatically retries on connection failure before streaming starts.
      *
      * @example
      * ```ts
@@ -1042,32 +955,24 @@ export class Pollinations {
             );
         }
 
-        // chatStream preserves the raw seed (no per-attempt resolution) and
-        // builds the body once before the connection-retry loop.
-        const body = this.buildChatBody(messages, options, {
-            stream: true,
-            seed: options.seed,
-        });
-
-        // Retry connection establishment; the body is built once above.
-        const response = await this.withRetries(async () => {
-            const res = await fetchWithTimeout(
-                `${this.baseUrl}/v1/chat/completions`,
-                {
-                    method: "POST",
-                    headers: this.getHeaders("application/json"),
-                    body: JSON.stringify(body),
-                },
-                this.textTimeout,
-                options.signal,
-            );
-
-            if (!res.ok) {
-                await this.handleErrorResponse(res);
-            }
-
-            return res;
-        }, "Unknown error during chat stream");
+        const body = this.buildChatBody(messages, options, true);
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/chat/completions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                // Streaming owns body cancellation; this timeout covers headers only.
+                return response;
+            },
+        );
 
         const reader = response.body?.getReader();
         if (!reader) {
@@ -1075,25 +980,53 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
-        let buffer = "";
+        let completed = false;
+        let events: string[] = [];
+        const parser = createParser({
+            onEvent: ({ data }) => events.push(data),
+        });
+        const cancelReader = () => {
+            void reader.cancel().catch(() => undefined);
+        };
+        options.signal?.addEventListener("abort", cancelReader, { once: true });
 
         try {
+            options.signal?.throwIfAborted();
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<ChatStreamChunk>(
-                    buffer,
-                    (data) => JSON.parse(data) as ChatStreamChunk,
-                );
-
-                buffer = result.remainingBuffer;
-                for (const chunk of result.chunks) {
+                options.signal?.throwIfAborted();
+                parser.feed(decoder.decode(value, { stream: !done }));
+                for (const data of events) {
+                    options.signal?.throwIfAborted();
+                    if (data.trim() === "[DONE]") return;
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
                     yield chunk;
                 }
+                events = [];
+                if (done) {
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
+                }
             }
+        } catch (error) {
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            throw error;
         } finally {
+            options.signal?.removeEventListener("abort", cancelReader);
+            // Release the connection on [DONE], early exit, or error.
+            await reader.cancel().catch(() => undefined);
             reader.releaseLock();
         }
     }
@@ -1111,7 +1044,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1130,32 +1063,30 @@ export class Pollinations {
             voice: options.voice,
             model: options.model,
             duration: options.duration,
-            seed:
-                options.seed !== undefined
-                    ? resolveSeed(options.seed)
-                    : undefined,
+            seed: options.seed,
         };
 
         const queryString = this.buildQueryParams(params);
         const encodedText = encodeURIComponent(text);
         const url = `${this.baseUrl}/audio/${encodedText}${queryString ? `?${queryString}` : ""}`;
 
-        const response = await fetchWithTimeout(
+        return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
             this.textTimeout,
             options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "audio/mpeg";
+
+                return { buffer, contentType };
+            },
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const buffer = await response.arrayBuffer();
-        const contentType =
-            response.headers.get("content-type") || "audio/mpeg";
-
-        return { buffer, contentType };
     }
 
     /**
@@ -1168,7 +1099,7 @@ export class Pollinations {
      */
     async audioSpeech(
         text: string,
-        options: AudioGenerateOptions = {},
+        options: AudioSpeechOptions = {},
     ): Promise<AudioBinaryResponse> {
         if (!text || typeof text !== "string") {
             throw new PollinationsError(
@@ -1180,11 +1111,14 @@ export class Pollinations {
 
         const body = {
             input: text,
-            voice: options.voice || "alloy",
-            model: options.model || "elevenlabs",
+            voice: options.voice,
+            model: options.model,
+            duration: options.duration,
+            seed: options.seed,
+            reference_audio: options.referenceAudio,
         };
 
-        const response = await fetchWithTimeout(
+        return fetchWithTimeout(
             `${this.baseUrl}/v1/audio/speech`,
             {
                 method: "POST",
@@ -1193,17 +1127,136 @@ export class Pollinations {
             },
             this.textTimeout,
             options.signal,
-        );
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
+                const buffer = await response.arrayBuffer();
+                const contentType =
+                    response.headers.get("content-type") || "audio/mpeg";
+
+                return { buffer, contentType };
+            },
+        );
+    }
+
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<AudioSpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({
+                    input: text,
+                    model: options.model,
+                    voice: options.voice,
+                    response_format: options.responseFormat,
+                    seed: options.seed,
+                }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const data =
+                    (await response.json()) as AudioSpeechWithTimestampsResponse;
+                const alignment = data?.normalized_alignment;
+                if (
+                    typeof data?.audio_base64 !== "string" ||
+                    (alignment != null &&
+                        (!Array.isArray(alignment.characters) ||
+                            !Array.isArray(
+                                alignment.character_start_times_seconds,
+                            ) ||
+                            !Array.isArray(
+                                alignment.character_end_times_seconds,
+                            ) ||
+                            alignment.characters.length !==
+                                alignment.character_start_times_seconds
+                                    .length ||
+                            alignment.characters.length !==
+                                alignment.character_end_times_seconds.length ||
+                            !alignment.characters.every(
+                                (c) => typeof c === "string",
+                            ) ||
+                            !alignment.character_start_times_seconds.every(
+                                Number.isFinite,
+                            ) ||
+                            !alignment.character_end_times_seconds.every(
+                                Number.isFinite,
+                            )))
+                ) {
+                    throw new PollinationsError(
+                        "Invalid timestamped speech response",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+                const words: SpeechWordTiming[] = [];
+                if (!alignment) return { ...data, words };
+                let current: SpeechWordTiming | undefined;
+                for (const [i, character] of alignment.characters.entries()) {
+                    if (/\s/u.test(character)) {
+                        current = undefined;
+                    } else {
+                        const start =
+                            alignment.character_start_times_seconds[i];
+                        const end = alignment.character_end_times_seconds[i];
+                        if (current) {
+                            current.word += character;
+                            current.end = end;
+                        } else {
+                            current = { word: character, start, end };
+                            words.push(current);
+                        }
+                    }
+                }
+                return { ...data, words };
+            },
+        );
+    }
+
+    /** Transform uploaded audio, or isolate speech from audio/video. */
+    async audioTransform(
+        audio: Blob,
+        options: AudioTransformOptions,
+    ): Promise<AudioBinaryResponse> {
+        const formData = new FormData();
+        formData.append("audio", audio);
+        if (options.model) formData.append("model", options.model);
+        if (options.voice && options.operation === "voice-changer") {
+            formData.append("voice", options.voice);
         }
 
-        const buffer = await response.arrayBuffer();
-        const contentType =
-            response.headers.get("content-type") || "audio/mpeg";
-
-        return { buffer, contentType };
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/${options.operation}`,
+            {
+                method: "POST",
+                headers: this.getHeaders(),
+                body: formData,
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") || "audio/mpeg",
+                };
+            },
+        );
     }
 
     // ============================================================================
@@ -1211,71 +1264,30 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/text/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/image/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
-    }
-
-    /**
-     * Get available models (OpenAI-compatible endpoint)
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
     }
 
     // ============================================================================
@@ -1290,7 +1302,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1317,8 +1329,19 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        formData.append("file", blob, "audio.mp3");
-        formData.append("model", options.model || "whisper-large-v3");
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
+        formData.append(
+            "file",
+            blob,
+            (blob as Partial<File>).name || `audio.${extension}`,
+        );
+        if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
         if (options.responseFormat)
@@ -1327,40 +1350,135 @@ export class Pollinations {
         if (options.temperature !== undefined)
             formData.append("temperature", String(options.temperature));
 
-        return this.withRetries<
-            TranscriptionResponse | TranscriptionVerboseResponse
-        >(async () => {
-            const headers = this.getHeaders();
-            // Don't set Content-Type - fetch sets it with boundary for FormData
+        const headers = this.getHeaders();
+        // Don't set Content-Type - fetch sets it with boundary for FormData
 
-            const response = await fetchWithTimeout(
-                `${this.baseUrl}/v1/audio/transcriptions`,
-                {
-                    method: "POST",
-                    headers,
-                    body: formData,
-                },
-                this.textTimeout,
-                options.signal,
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/transcriptions`,
+            {
+                method: "POST",
+                headers,
+                body: formData,
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+
+                if (
+                    options.responseFormat === "text" ||
+                    options.responseFormat === "srt" ||
+                    options.responseFormat === "vtt"
+                ) {
+                    const text = await response.text();
+                    return { text };
+                }
+
+                return response.json() as Promise<
+                    TranscriptionResponse | TranscriptionVerboseResponse
+                >;
+            },
+        );
+    }
+
+    // ============================================================================
+    // Embeddings (OpenAI-compatible)
+    // ============================================================================
+
+    /**
+     * Generate vector embeddings (OpenAI-compatible).
+     *
+     * Accepts a text, a batch of texts, or multimodal content parts
+     * (text, image_url, input_audio, video_url) for multimodal models.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.embeddings('Hello world');
+     * console.log(data[0].embedding);
+     * ```
+     */
+    async embeddings(
+        input: EmbeddingInput,
+        options: EmbeddingsOptions = {},
+    ): Promise<EmbeddingsResponse> {
+        if (!input || (Array.isArray(input) && input.length === 0)) {
+            throw new PollinationsError(
+                "Input is required and cannot be empty",
+                "INVALID_INPUT",
+                400,
             );
+        }
 
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
+        const body = this.stripUndefined({
+            model: options.model,
+            input,
+            dimensions: options.dimensions,
+            encoding_format: options.encodingFormat,
+            task_type: options.taskType,
+            input_type: options.inputType,
+        });
 
-            if (
-                options.responseFormat === "text" ||
-                options.responseFormat === "srt" ||
-                options.responseFormat === "vtt"
-            ) {
-                const text = await response.text();
-                return { text };
-            }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-            return response.json() as Promise<
-                TranscriptionResponse | TranscriptionVerboseResponse
-            >;
-        }, "Unknown error during transcription");
+                return response.json() as Promise<EmbeddingsResponse>;
+            },
+        );
+    }
+
+    // ============================================================================
+    // Decisions (TypeSafe / Jev)
+    // ============================================================================
+
+    /**
+     * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.decision({
+     *   state: "My payouts have been failing for 3 days.",
+     *   questions: {
+     *     is_urgent: { type: "noul", instructions: "Does this convey urgency?" }
+     *   }
+     * });
+     * console.log(result.answers.is_urgent.noul);
+     * ```
+     */
+    async decision({
+        state,
+        questions,
+        model,
+        signal,
+    }: DecisionOptions): Promise<DecisionResponse> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/alpha/decisions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ state, questions, model }),
+            },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return response.json() as Promise<DecisionResponse>;
+            },
+        );
     }
 
     // ============================================================================
@@ -1373,7 +1491,10 @@ export class Pollinations {
      * @example
      * ```ts
      * // Upload from ArrayBuffer
-     * const result = await pollinations.upload(imageBuffer, { contentType: 'image/jpeg' });
+     * const result = await pollinations.upload(imageBuffer, {
+     *   contentType: 'image/jpeg',
+     *   tags: ['cats'],
+     * });
      * console.log(result.url); // https://media.pollinations.ai/abc123...
      *
      * // Upload from Blob (browser)
@@ -1393,28 +1514,36 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
+        if (options.tags?.length) {
+            formData.append("tags", options.tags.join(","));
+        }
 
         const headers = this.getHeaders();
 
-        return this.withRetries(async () => {
-            const response = await fetchWithTimeout(
-                `https://media.pollinations.ai/upload`,
-                {
-                    method: "POST",
-                    headers,
-                    body: formData,
-                },
-                this.imageTimeout,
-                options.signal,
-            );
+        return fetchWithTimeout(
+            `https://media.pollinations.ai/upload`,
+            {
+                method: "POST",
+                headers,
+                body: formData,
+            },
+            this.imageTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
 
-            if (!response.ok) {
-                await this.handleErrorResponse(response);
-            }
-
-            return response.json() as Promise<UploadResponse>;
-        }, "Unknown error during upload");
+                return response.json() as Promise<UploadResponse>;
+            },
+        );
     }
 
     // ============================================================================
@@ -1429,7 +1558,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });
@@ -1491,8 +1620,11 @@ export class Pollinations {
 
         const response = await fetch(`${AUTH_BASE_URL}/api/device/code`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: clientId, scope }),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                client_id: clientId,
+                scope,
+            }).toString(),
             signal: options.signal,
         });
 
@@ -1507,7 +1639,7 @@ export class Pollinations {
 
         const code = (await response.json()) as DeviceCodeResponse;
         const expiresAt = new Date(Date.now() + code.expires_in * 1000);
-        const pollMs = Math.max(code.interval, 5) * 1000;
+        let pollMs = Math.max(code.interval, 5) * 1000;
 
         const poll = async (): Promise<string> => {
             while (Date.now() < expiresAt.getTime()) {
@@ -1521,15 +1653,18 @@ export class Pollinations {
                 }
 
                 const tokenRes = await fetch(
-                    `${AUTH_BASE_URL}/api/device/token`,
+                    `${AUTH_BASE_URL}/api/oauth/token`,
                     {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            device_code: code.device_code,
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                        body: new URLSearchParams({
                             grant_type:
                                 "urn:ietf:params:oauth:grant-type:device_code",
-                        }),
+                            device_code: code.device_code,
+                            client_id: clientId,
+                        }).toString(),
                     },
                 );
 
@@ -1540,10 +1675,12 @@ export class Pollinations {
                 if (tokenRes.ok && body.access_token) {
                     return body.access_token;
                 }
-                if (
-                    body.error === "authorization_pending" ||
-                    body.error === "slow_down"
-                ) {
+                if (body.error === "authorization_pending") {
+                    continue;
+                }
+                if (body.error === "slow_down") {
+                    // RFC 8628 §3.5: back off by 5s on slow_down
+                    pollMs += 5000;
                     continue;
                 }
                 throw new PollinationsError(
@@ -1551,7 +1688,7 @@ export class Pollinations {
                         body.error ||
                         "Device flow failed",
                     body.error || "DEVICE_FLOW_ERROR",
-                    400,
+                    tokenRes.status,
                 );
             }
             throw new PollinationsError(
@@ -1576,19 +1713,14 @@ export class Pollinations {
      * @example
      * ```ts
      * const user = await pollinations.userInfo();
-     * console.log(user.name, user.tier);
+     * console.log(user.name, user.preferred_username);
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
-        const response = await fetchWithTimeout(
+        return this.getJson<UserInfo>(
             `${AUTH_BASE_URL}/api/device/userinfo`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UserInfo>;
     }
 
     // ============================================================================
@@ -1605,14 +1737,7 @@ export class Pollinations {
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/profile`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountProfile>;
+        return this.getJson<AccountProfile>(`${this.baseUrl}/account/profile`);
     }
 
     /**
@@ -1625,14 +1750,22 @@ export class Pollinations {
      * ```
      */
     async accountBalance(): Promise<AccountBalance> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/balance`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
+        return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
+    }
 
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountBalance>;
+    /**
+     * Get quest catalog with the authenticated account's status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
     }
 
     /**
@@ -1642,9 +1775,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1656,14 +1798,9 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
+        return this.getJson<UsageResponse>(url);
     }
 
     /**
@@ -1676,8 +1813,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1689,14 +1832,9 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<DailyUsageResponse>;
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
+        return this.getJson<DailyUsageResponse>(url);
     }
 
     /**
@@ -1709,14 +1847,7 @@ export class Pollinations {
      * ```
      */
     async validateKey(): Promise<KeyInfo> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/key`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<KeyInfo>;
+        return this.getJson<KeyInfo>(`${this.baseUrl}/account/key`);
     }
 
     /**
@@ -1741,14 +1872,31 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
+        return this.getJson<UsageResponse>(url);
+    }
 
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+    /**
+     * Get developer earnings from BYOP apps and community models
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * perEntity.forEach(e => console.log(e.entity_name, e.pollen_earned));
+     * ```
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<DeveloperEarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.days !== undefined)
+            params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<DeveloperEarningsResponse>(url);
     }
 
     // ============================================================================
@@ -1765,15 +1913,10 @@ export class Pollinations {
      * ```
      */
     async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
-        const response = await fetchWithTimeout(
+        const body = await this.getJson<{ data?: AccountKey[] }>(
             `${this.baseUrl}/account/keys`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        const body = (await response.json()) as { data?: AccountKey[] };
         return body.data || [];
     }
 
@@ -1813,11 +1956,13 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.questPollenOnly !== undefined)
+            body.questPollenOnly = options.questPollenOnly;
         if (options.redirectUris) body.redirectUris = options.redirectUris;
         if (options.earningsEnabled !== undefined)
             body.earningsEnabled = options.earningsEnabled;
 
-        const response = await fetchWithTimeout(
+        return fetchWithTimeout(
             `${this.baseUrl}/account/keys`,
             {
                 method: "POST",
@@ -1826,10 +1971,11 @@ export class Pollinations {
             },
             this.textTimeout,
             options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return response.json() as Promise<CreatedKey>;
+            },
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<CreatedKey>;
     }
 
     /**
@@ -1849,7 +1995,7 @@ export class Pollinations {
             );
         }
 
-        const response = await fetchWithTimeout(
+        return fetchWithTimeout(
             `${this.baseUrl}/account/keys/${encodeURIComponent(id)}`,
             {
                 method: "DELETE",
@@ -1857,8 +2003,9 @@ export class Pollinations {
             },
             this.textTimeout,
             options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+            },
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
     }
 }

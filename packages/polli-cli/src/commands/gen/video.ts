@@ -1,9 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
+    ExitSignal,
     getOutputMode,
     printError,
     printInfo,
@@ -14,60 +14,52 @@ export function createVideoCommand() {
     return new Command("video")
         .description("Generate a video from a prompt")
         .argument("<prompt>", "Video description")
-        .option(
-            "--model <model>",
-            "Video model (default: from config or 'wan')",
-        )
-        .option("--width <n>", "Video width", "1024")
-        .option("--height <n>", "Video height", "1024")
+        .option("--model <model>", "Video model (default: API default)")
+        .option("--width <n>", "Video width")
+        .option("--height <n>", "Video height")
         .option("--duration <n>", "Duration in seconds (1-30)")
         .option("--aspect-ratio <ratio>", "16:9 or 9:16")
         .option("--audio", "Include AI soundtrack")
         .option("--seed <n>", "Random seed")
-        .option("--image <url>", "Reference frame URL")
+        .option(
+            "--image <url...>",
+            "Reference frame URL(s) for start/end frames (repeatable)",
+        )
         .option("--output <path>", "Save to file", "video.mp4")
         .action(async (prompt, opts) => {
-            const key = requireKey();
             const isHuman = getOutputMode() === "human";
 
-            const params = new URLSearchParams({
-                width: opts.width,
-                height: opts.height,
-            });
+            const params = new URLSearchParams();
             if (opts.model) params.set("model", opts.model);
+            if (opts.width) params.set("width", opts.width);
+            if (opts.height) params.set("height", opts.height);
             if (opts.duration) params.set("duration", opts.duration);
             if (opts.aspectRatio) params.set("aspectRatio", opts.aspectRatio);
             if (opts.audio) params.set("audio", "true");
             if (opts.seed) params.set("seed", opts.seed);
-            if (opts.image) {
-                if (!/^https?:\/\//i.test(opts.image)) {
+            if (opts.image?.length) {
+                const bad = opts.image.find(
+                    (u: string) => !/^https?:\/\//i.test(u),
+                );
+                if (bad) {
                     printError(
-                        `--image requires a public http(s) URL, not a local path: ${opts.image}`,
+                        `--image requires a public http(s) URL, not a local path: ${bad}`,
                     );
-                    process.exit(1);
+                    throw new ExitSignal(1);
                 }
-                params.set("image", opts.image);
+                params.set("image", opts.image.join("|"));
             }
 
             const encodedPrompt = encodeURIComponent(prompt);
-            const url = `${BASE_URL}/video/${encodedPrompt}?${params}`;
+            const path = `/video/${encodedPrompt}?${params}`;
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            mkdirSync(dirname(opts.output), { recursive: true });
             if (isHuman)
                 printInfo("Generating video (this can take up to 60s)...");
 
             try {
-                const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${key}` },
-                });
-                if (!res.ok) {
-                    const text = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, text);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(`${res.status} ${res.statusText}: ${text}`);
-                }
+                const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
@@ -76,11 +68,8 @@ export function createVideoCommand() {
                     size: buffer.length,
                     model: opts.model,
                 });
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

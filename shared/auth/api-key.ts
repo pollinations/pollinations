@@ -1,10 +1,20 @@
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey } from "better-auth/plugins";
-import { eq } from "drizzle-orm";
+import { eq, getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { alias } from "drizzle-orm/sqlite-core";
+import { byopClientAllowsMarkup } from "../billing/markup.ts";
 import * as schema from "../db/better-auth.ts";
+import {
+    AGENT_RUN_TOKEN_PREFIX,
+    type AgentRunClaims,
+    verifyAgentRunToken,
+} from "./agent-run-token.ts";
+import { parseMetadata } from "./api-key-metadata.ts";
+import { isUserBanned } from "./ban.ts";
+import { parseGithubIdList } from "./github-id-list.ts";
+import { SESSION_TOKEN_PREFIX, verifySessionToken } from "./session-token.ts";
 
 const PUBLISHABLE_KEY_PREFIX = "pk";
 
@@ -16,22 +26,30 @@ export interface AuthenticatedApiKey {
     permissions?: Record<string, string[]>;
     metadata?: Record<string, unknown>;
     pollenBalance?: number | null;
+    /** Charges never fall through to the owner's paid balance. */
+    questPollenOnly?: boolean;
     byopClientKeyId?: string | null;
     byopClientName?: string | null;
     byopClientUserId?: string | null;
+    /** True when deduction will add BYOP markup. Set at auth so preflight matches. */
+    byopMarkupApplies?: boolean;
     rawKey?: string;
 }
 
 export interface ApiKeyAuthResult {
     user?: AuthUser;
-    apiKey: AuthenticatedApiKey;
+    /** Absent for a session token: the account owner, with no key restrictions. */
+    apiKey?: AuthenticatedApiKey;
     rawApiKey: string;
+    agentRun?: AgentRunClaims;
 }
 
 export interface ApiKeyAuthBindings {
     DB: D1Database;
     ENVIRONMENT?: string;
-    STAGING_ALLOWED_USER_IDS?: string;
+    STAGING_ALLOWED_GITHUB_IDS?: string;
+    STAGING_ALLOWED_EMAILS?: string;
+    BETTER_AUTH_SECRET?: string;
 }
 
 export class BannedAccountError extends Error {
@@ -49,53 +67,56 @@ export class StagingAccessDeniedError extends Error {
 }
 
 /**
- * Parse a comma-separated list of staging allowlist Pollinations user IDs.
- * Strict enough for config: blank or whitespace-containing entries are ignored.
- */
-export function parseStagingUserIdList(
-    raw: string | undefined | null,
-): Set<string> {
-    if (!raw) return new Set();
-    const ids = new Set<string>();
-    for (const part of raw.split(",")) {
-        const id = part.trim();
-        if (!id || /\s/.test(id)) continue;
-        ids.add(id);
-    }
-    return ids;
-}
-
-/**
- * Throws StagingAccessDeniedError if the env is staging and the user's
- * Pollinations user id is not in STAGING_ALLOWED_USER_IDS. No-op outside staging.
- * Fails closed: a missing id or empty/missing allowlist denies access.
+ * Throws StagingAccessDeniedError if the env is staging and the user is not in
+ * either staging allowlist. No-op outside staging.
+ * Fails closed: a missing user or empty/missing allowlists deny access.
  *
- * The user id is provider-agnostic (works for GitHub and Google logins) and is
- * the only request-time gate: it runs on every API-key or session-cookie request
- * to defend against pre-existing sessions/keys that predate the lockdown. There
- * is no signup-time gate — new users can sign in but get denied here until their
- * id is added to the allowlist. See #11137.
+ * Called at request-time (every API-key or session-cookie request) to defend
+ * against pre-existing sessions/keys that predate the lockdown. See #11137.
  */
 export function assertStagingAccess(
-    env: { ENVIRONMENT?: string; STAGING_ALLOWED_USER_IDS?: string },
-    user: { id?: string | null } | null | undefined,
+    env: {
+        ENVIRONMENT?: string;
+        STAGING_ALLOWED_GITHUB_IDS?: string;
+        STAGING_ALLOWED_EMAILS?: string;
+    },
+    user:
+        | { githubId?: number | null; email?: string | null }
+        | null
+        | undefined,
 ): void {
     if (env.ENVIRONMENT !== "staging") return;
-    const allowed = parseStagingUserIdList(env.STAGING_ALLOWED_USER_IDS);
-    const id = user?.id;
-    if (!id || !allowed.has(id)) {
+    const allowedGithubIds = parseGithubIdList(env.STAGING_ALLOWED_GITHUB_IDS);
+    const allowedEmails = parseEmailList(env.STAGING_ALLOWED_EMAILS);
+    const ghId = user?.githubId;
+    const email = normalizeEmail(user?.email);
+    if (
+        (!ghId || !allowedGithubIds.has(Number(ghId))) &&
+        (!email || !allowedEmails.has(email))
+    ) {
         throw new StagingAccessDeniedError();
     }
+}
+
+export function parseEmailList(raw: string | undefined | null): Set<string> {
+    if (!raw) return new Set();
+    const emails = new Set<string>();
+    for (const part of raw.split(",")) {
+        const normalized = normalizeEmail(part);
+        if (normalized) emails.add(normalized);
+    }
+    return emails;
+}
+
+function normalizeEmail(value: string | null | undefined): string | null {
+    const normalized = value?.trim().toLowerCase();
+    return normalized?.includes("@") ? normalized : null;
 }
 
 type VerifyApiKeyResponse = {
     valid: boolean;
     key?: {
         id?: unknown;
-        name?: unknown;
-        userId?: unknown;
-        permissions?: unknown;
-        metadata?: unknown;
     } | null;
 };
 
@@ -137,7 +158,8 @@ export function createApiKeyPlugin() {
         },
         keyExpiration: {
             minExpiresIn: 0,
-            maxExpiresIn: 365,
+            // Override Better Auth's 365-day default with JavaScript Date's range.
+            maxExpiresIn: 100_000_000,
         },
         rateLimit: {
             enabled: false,
@@ -147,7 +169,7 @@ export function createApiKeyPlugin() {
 
 export function createApiKeyAuth(
     env: ApiKeyAuthBindings,
-    ctx?: ExecutionContext,
+    ctx?: Pick<ExecutionContext, "waitUntil">,
 ) {
     const db = drizzle(env.DB);
     return betterAuth({
@@ -175,7 +197,18 @@ export function extractApiKey(request: Request): string | null {
     const match = auth?.match(/^Bearer (.+)$/);
     if (match?.[1]) return match[1];
 
-    return new URL(request.url).searchParams.get("key");
+    // E2B's SDKs send the key in X-API-KEY.
+    const headerKey = request.headers.get("x-api-key");
+    if (headerKey) return headerKey;
+
+    // Query keys end up in access logs, referrers and browser history. Their
+    // owner can rotate them; agent run and session tokens cannot be revoked,
+    // so they are Bearer-only.
+    const queryKey = new URL(request.url).searchParams.get("key");
+    return queryKey?.startsWith(AGENT_RUN_TOKEN_PREFIX) ||
+        queryKey?.startsWith(SESSION_TOKEN_PREFIX)
+        ? null
+        : queryKey;
 }
 
 export function assertNotBanned(user: {
@@ -183,8 +216,7 @@ export function assertNotBanned(user: {
     banExpires?: Date | string | null;
     banReason?: string | null;
 }): void {
-    if (user.banned !== true) return;
-    if (user.banExpires && new Date(user.banExpires) <= new Date()) return;
+    if (!isUserBanned(user)) return;
     throw new BannedAccountError(
         user.banReason ? `Account banned: ${user.banReason}` : "Account banned",
     );
@@ -194,10 +226,17 @@ export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
     client?: VerifyApiKeyClient;
-    ctx?: ExecutionContext;
+    ctx?: Pick<ExecutionContext, "waitUntil">;
 }): Promise<ApiKeyAuthResult | null> {
     const rawApiKey = extractApiKey(opts.request);
     if (!rawApiKey) return null;
+
+    if (rawApiKey.startsWith(AGENT_RUN_TOKEN_PREFIX)) {
+        return authenticateAgentRunToken(rawApiKey, opts.env);
+    }
+    if (rawApiKey.startsWith(SESSION_TOKEN_PREFIX)) {
+        return authenticateSessionToken(rawApiKey, opts.env);
+    }
 
     const client: VerifyApiKeyClient =
         opts.client ??
@@ -211,53 +250,140 @@ export async function authenticateApiKeyRequest(opts: {
     const key = keyResult.key;
     const keyId = typeof key.id === "string" ? key.id : undefined;
     if (!keyId) return null;
+    return loadActiveApiKeyAuthResult({
+        apiKeyId: keyId,
+        rawApiKey,
+        env: opts.env,
+    });
+}
 
-    const db = drizzle(opts.env.DB, { schema });
-    const userId = typeof key.userId === "string" ? key.userId : undefined;
-    const byopClientKey = alias(schema.apikey, "byop_client_key");
-    const [apiKeyExtra, userData] = await Promise.all([
-        db
-            .select({
-                pollenBalance: schema.apikey.pollenBalance,
-                byopClientKeyId: schema.apikey.byopClientKeyId,
-                byopClientName: byopClientKey.name,
-                byopClientUserId: byopClientKey.userId,
-            })
-            .from(schema.apikey)
-            .leftJoin(
-                byopClientKey,
-                eq(byopClientKey.id, schema.apikey.byopClientKeyId),
-            )
-            .where(eq(schema.apikey.id, keyId))
-            .get(),
-        userId
-            ? db
-                  .select()
-                  .from(schema.user)
-                  .where(eq(schema.user.id, userId))
-                  .get()
-            : null,
-    ]);
+async function authenticateAgentRunToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
 
-    if (userData) {
-        assertNotBanned(userData);
+    let claims: AgentRunClaims;
+    try {
+        claims = await verifyAgentRunToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
     }
-    assertStagingAccess(opts.env, userData);
+
+    const parent = await loadActiveApiKeyAuthResult({
+        apiKeyId: claims.parentApiKeyId,
+        rawApiKey: rawToken,
+        env,
+    });
+    if (!parent) return null;
+
+    // The token carries the parent key's permissions unchanged; the owner
+    // limits what an agent can do by limiting the key it is called with.
+    return { ...parent, agentRun: claims };
+}
+
+async function authenticateSessionToken(
+    rawToken: string,
+    env: ApiKeyAuthBindings,
+): Promise<ApiKeyAuthResult | null> {
+    if (!env.BETTER_AUTH_SECRET) return null;
+
+    let userId: string;
+    try {
+        userId = await verifySessionToken(rawToken, env.BETTER_AUTH_SECRET);
+    } catch {
+        return null;
+    }
+
+    const user = await drizzle(env.DB)
+        .select()
+        .from(schema.user)
+        .where(eq(schema.user.id, userId))
+        .get();
+    if (!user) return null;
+
+    assertNotBanned(user);
+    assertStagingAccess(env, user);
+    return { user, rawApiKey: rawToken };
+}
+
+/**
+ * Loads an active API key by ID after another credential has authenticated it.
+ * This deliberately does not accept the parent key's raw value so delegated
+ * credentials never need to contain or recover that secret.
+ */
+export async function loadActiveApiKeyAuthResult(opts: {
+    apiKeyId: string;
+    rawApiKey: string;
+    env: ApiKeyAuthBindings;
+}): Promise<(ApiKeyAuthResult & { apiKey: AuthenticatedApiKey }) | null> {
+    const db = drizzle(opts.env.DB, { schema });
+    const byopClientKey = alias(schema.apikey, "byop_client_key");
+    const byopOwner = alias(schema.user, "byop_owner");
+    const row = await db
+        .select({
+            apiKey: getTableColumns(schema.apikey),
+            user: getTableColumns(schema.user),
+            byopClientName: byopClientKey.name,
+            byopOwner: {
+                banned: byopOwner.banned,
+                banExpires: byopOwner.banExpires,
+            },
+            byopClientUserId: byopClientKey.referenceId,
+            byopClientPrefix: byopClientKey.prefix,
+            byopClientEnabled: byopClientKey.enabled,
+            byopClientExpiresAt: byopClientKey.expiresAt,
+            byopClientMetadata: byopClientKey.metadata,
+        })
+        .from(schema.apikey)
+        .innerJoin(schema.user, eq(schema.user.id, schema.apikey.referenceId))
+        .leftJoin(
+            byopClientKey,
+            eq(byopClientKey.id, schema.apikey.byopClientKeyId),
+        )
+        .where(eq(schema.apikey.id, opts.apiKeyId))
+        .leftJoin(byopOwner, eq(byopOwner.id, byopClientKey.referenceId))
+        .get();
+
+    if (
+        !row ||
+        row.apiKey.enabled === false ||
+        (row.apiKey.expiresAt && row.apiKey.expiresAt <= new Date())
+    ) {
+        return null;
+    }
+
+    assertNotBanned(row.user);
+    if (row.byopOwner) assertNotBanned(row.byopOwner);
+    assertStagingAccess(opts.env, row.user);
 
     return {
-        user: userData ?? undefined,
+        user: row.user,
         apiKey: {
-            id: keyId,
-            name: typeof key.name === "string" ? key.name : undefined,
-            permissions: normalizePermissions(key.permissions),
-            metadata: normalizeMetadata(key.metadata),
-            pollenBalance: apiKeyExtra?.pollenBalance ?? null,
-            byopClientKeyId: apiKeyExtra?.byopClientKeyId ?? null,
-            byopClientName: apiKeyExtra?.byopClientName ?? null,
-            byopClientUserId: apiKeyExtra?.byopClientUserId ?? null,
-            rawKey: rawApiKey,
+            id: row.apiKey.id,
+            name: row.apiKey.name ?? undefined,
+            permissions: normalizePermissions(
+                parseMetadata(row.apiKey.permissions),
+            ),
+            metadata: normalizeMetadata(parseMetadata(row.apiKey.metadata)),
+            pollenBalance: row.apiKey.pollenBalance ?? null,
+            questPollenOnly: row.apiKey.questPollenOnly,
+            byopClientKeyId: row.apiKey.byopClientKeyId ?? null,
+            byopClientName: row.byopClientName ?? null,
+            byopClientUserId: row.byopClientUserId ?? null,
+            byopMarkupApplies: byopClientAllowsMarkup(
+                {
+                    userId: row.byopClientUserId,
+                    prefix: row.byopClientPrefix,
+                    enabled: row.byopClientEnabled,
+                    expiresAt: row.byopClientExpiresAt,
+                    metadata: row.byopClientMetadata,
+                },
+                row.user.id,
+            ),
+            rawKey: opts.rawApiKey,
         },
-        rawApiKey,
+        rawApiKey: opts.rawApiKey,
     };
 }
 
@@ -274,7 +400,9 @@ function normalizePermissions(
         const safeScopes = scopes.filter(
             (scope): scope is string => typeof scope === "string",
         );
-        if (safeScopes.length) permissions[key] = safeScopes;
+        if (safeScopes.length || key === "models") {
+            permissions[key] = safeScopes;
+        }
     }
     return Object.keys(permissions).length ? permissions : undefined;
 }

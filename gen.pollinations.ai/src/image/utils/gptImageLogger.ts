@@ -38,8 +38,8 @@ export async function logGptImageError(
             prompt,
             model: safeParams.model,
             size: `${safeParams.width}x${safeParams.height}`,
-            hasImageInput: !!safeParams.image,
-            imageUrls: safeParams.image ?? [],
+            hasImageInput: safeParams.image.length > 0,
+            imageUrls: safeParams.image,
             contentSafety: contentSafetyResults
                 ? {
                       safe: contentSafetyResults.safe,

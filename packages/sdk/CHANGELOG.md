@@ -2,6 +2,186 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [Unreleased]
+
+## [5.1.0-alpha.19] - 2026-10-14
+
+### Fixed
+- Errors whose body is `{ error: "message" }`, such as `accountEarnings()`
+  failures, keep the server's message instead of a generic
+  `Request failed with status N`.
+
+## [5.1.0-alpha.18] - 2026-10-14
+
+### Added
+- Headless image, text, audio, video and transcription hooks with cancellation
+  and rerun, using the signed-in user's key.
+- A `useChat` transport for `/v1/responses`, including server-run tool results,
+  conversation history and usage. `ai` remains an optional peer dependency.
+
+## [5.1.0-alpha.17] - 2026-10-14
+
+### Added
+- `model3d()` returns 3D files with their MIME type and a keyless URL;
+  `models("3d")` lists the available models.
+- `modelStatus()` returns typed model health rows and column metadata.
+- `audioSpeechWithTimestamps()` returns base64 audio, the original character
+  alignments and word timings grouped from normalized text when available.
+
+## [5.1.0-alpha.16] - 2026-10-14
+
+### Changed
+- README Discord link points to `discord.gg/k9F7SyTgqn`; the old invite
+  link no longer works.
+
+## [5.1.0-alpha.15] - 2026-10-13
+
+### Changed
+- README and JSDoc examples use `publisher/model` IDs, such as
+  `black-forest-labs/flux.1-schnell` instead of `flux`. Short aliases still work.
+- Key `models` and `allowedModels` accept model IDs that allow only that
+  model, next to categories. A model ID no longer widens to its category.
+
+### Added
+- `models(kind)` and `getModels(kind)` list one kind of model: `text`, `image`,
+  `video`, `audio` or `embeddings`.
+- `UsageRecord.input_cache_write_tokens`: prompt tokens written to the cache,
+  billed at the cache-write rate. Reads stay in `input_cached_tokens`.
+
+### Removed
+- `textModels()`, `imageModels()`, `getTextModels()` and `getImageModels()`.
+  Use `models("text")` or `getModels("text")`, and the same with `"image"`.
+- `Conversation` and `conversation()`. Nothing used them; keep the history in
+  your own `messages` array and pass it to `chat()` or `chatStream()`.
+
+### Fixed
+- `upload()` keeps an uploaded `File`'s name instead of always sending
+  `upload`, so the media service can detect its type from the extension.
+- `accountUsage({ format: "csv" })`, `accountUsageDaily({ format: "csv" })`,
+  `getUsage()` and `getDailyUsage()` return the CSV export as a string instead
+  of throwing a JSON `SyntaxError`.
+- `chatStream()` rejects prematurely closed responses without a terminal
+  finish event or `[DONE]` instead of silently returning partial text.
+- `transcribe()` derives unnamed audio Blob filename extensions from their MIME
+  types, excluding parameters and normalizing `x-` prefixes and MPEG to MP3.
+  File names, upload contents, and the MP3 fallback are preserved.
+
+## [5.1.0-alpha.14] - 2026-10-08
+
+### Changed
+- `ChatOptions.routing` is sent as `metadata`, with `text` as `metadata.model`.
+  Floret no longer accepts a top-level `routing` object.
+
+## [5.1.0-alpha.13] - 2026-10-07
+
+### Added
+- `referenceImages`, `referenceVideos`, and `referenceAudios` on video options
+  accept a URL or an array of URLs for guidance. `referenceImage` continues
+  to control first/last frames separately.
+
+## [5.1.0-alpha.12] - 2026-10-06
+
+### Removed
+- `imageGenerate()` no longer takes `n` and always returns one image. The API
+  generates one image per request and rejects `n` above 1.
+
+## [5.1.0-alpha.11] - 2026-10-06
+
+### Fixed
+- `transcribe()` keeps an uploaded `File`'s name instead of always sending
+  `audio.mp3`. Providers that read the format from the extension, such as
+  `openai/gpt-transcribe`, rejected WAV and other non-MP3 uploads.
+
+## [5.1.0-alpha.10] - 2026-10-06
+
+### Fixed
+- `authorizeDevice().poll()` errors keep the token endpoint's HTTP status
+  instead of always reporting 400.
+
+## [5.1.0-alpha.9] - 2026-10-06
+
+### Added
+- `questPollenOnly` on `createKey()` options and on `KeyInfo`, `AccountKey`
+  and `CreatedKey`: the key never spends paid Pollen, and requests stop when
+  Quest Pollen runs out.
+
+### Changed
+- `allowedModels` restricts a key to model categories (text, image, video,
+  audio, 3d, embedding, realtime). A model ID allows its whole category.
+
+## [5.1.0-alpha.8] - 2026-10-04
+
+### Added
+- `embeddings()` for `/v1/embeddings`, with the `Embedding*` types.
+- `audioTransform()` for voice-changer and voice-isolator, and `referenceAudio`
+  on speech options.
+
+### Fixed
+- `generateText({ raw: true })` sends `systemPrompt` and `json` like the
+  non-raw path.
+- Base64 images keep the media type the API sends instead of always PNG.
+- Cancellation stays active while a response body is read, and an
+  already-aborted signal rejects before the request is sent.
+- `PolliProvider` validates restored keys, recovers from browser auth failures,
+  and keeps the saved key when a re-login fails.
+
+## [5.1.0-alpha.7] - 2026-09-05
+
+### Added
+- `ChatOptions.routing` for per-capability model overrides on router models,
+  with the `CHAT_ROUTING_CAPABILITIES` constant and `ChatRouting` types.
+- `resolution` on image and video generation options and `ModelInfo.resolutions`.
+
+### Changed
+- `PolliProvider` now uses OAuth authorization-code + PKCE, keeping delegated
+  API tokens out of callback URLs without changing its public API.
+- Chat streaming uses `eventsource-parser` for standard SSE event boundaries,
+  multiline data, and comments. Events need a terminating blank line; incomplete
+  events at EOF are discarded. Stops at `[DONE]` and releases the connection;
+  cancellation and streamed error handling are preserved.
+
+## [5.1.0-alpha.6] - 2026-08-23
+
+### Changed
+- Simple text generation and streaming now delegate to the canonical chat
+  request and SSE implementations without changing their public API.
+
+## [5.1.0-alpha.5] - 2026-07-14
+
+### Added
+- Added `UploadOptions.tags` for publishing multipart uploads to public tag galleries.
+
+### Changed
+- Media upload response types now match unique-id storage and optional tags.
+
+## [5.1.0-alpha.4] - 2026-07-14
+
+### Removed (Breaking)
+- Removed automatic request retries and the `maxRetries` client option.
+
+### Changed
+- Seed values, including `-1`, are passed through for the API to resolve.
+- Video duration validation is left to each model's API contract.
+- `PollinationsError.retryAfter` reflects only the server's `Retry-After` header.
+
+## [5.1.0-alpha.3] - 2026-07-10
+
+### Removed (Breaking)
+- Removed retired user and model tier fields from the SDK types, including
+  `AccountProfile.tier`, `AccountProfile.nextResetAt`, `UserInfo.tier`,
+  `AccountKey.permissions.tier`, `ModelInfo.tier`, and `ModelTier`. This release
+  must ship with the Enter and Gen deployment that removes tier/drip behavior.
+
+## [5.1.0-alpha.2] - 2026-07-02
+
+### Changed
+- `authorizeDevice()` is now a spec-compliant RFC 8628 client: requests are
+  form-encoded, polling goes through the standard OAuth token endpoint
+  (`/api/oauth/token`) and includes `client_id`, and `slow_down` responses back
+  off by 5 seconds. Requires the enter.pollinations.ai deploy that ships the
+  OAuth 2.1 endpoints (publishes under the `alpha` dist-tag; sync production
+  right after merging).
+
 ## [5.1.0-alpha.1] - 2026-06-12
 
 ### Removed (Breaking)

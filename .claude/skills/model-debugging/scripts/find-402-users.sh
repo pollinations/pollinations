@@ -1,39 +1,25 @@
 #!/bin/bash
 # Find users with frequent 402 errors (billing/quota issues) from Tinybird
-# Usage: ./find-402-users.sh [hours] [min_errors] [tier_filter]
-# Example: ./find-402-users.sh 24 10 spore
+# Usage: ./find-402-users.sh [hours] [min_errors]
+# Example: ./find-402-users.sh 24 10
+set -euo pipefail
 
 HOURS="${1:-24}"
 MIN_ERRORS="${2:-10}"
-TIER_FILTER="${3:-}"  # Optional: spore, seed, flower, etc.
 
-SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
+source "$(dirname "$0")/tinybird-query.sh"
+validate_positive_integer "$HOURS" 720 hours
+validate_positive_integer "$MIN_ERRORS" 100000 min_errors
 
-# Get Tinybird admin token
-TINYBIRD_TOKEN=$(jq -r '.token' "$ENTER_DIR/observability/.tinyb" 2>/dev/null)
-if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
-    echo "Error: Could not read Tinybird token from $ENTER_DIR/observability/.tinyb" >&2
-    exit 1
-fi
-
-# Build query
-TIER_CLAUSE=""
-if [ -n "$TIER_FILTER" ]; then
-    TIER_CLAUSE="AND user_tier = '$TIER_FILTER'"
-fi
-
-QUERY="SELECT user_github_username, user_tier, count() as error_count 
-FROM generation_event 
-WHERE response_status = 402 
-  AND start_time > now() - interval $HOURS hour 
-  AND user_github_username != '' 
-  AND user_github_username != 'undefined'
-  $TIER_CLAUSE
-GROUP BY user_github_username, user_tier 
+QUERY="SELECT user_id, argMax(user_github_username, start_time) AS github_username, count() AS error_count
+FROM generation_event_v2
+WHERE is_final
+  AND response_status = 402
+  AND start_time > now() - interval $HOURS hour
+  AND user_id NOT IN ('', 'undefined')
+GROUP BY user_id
 HAVING error_count >= $MIN_ERRORS
-ORDER BY error_count DESC"
+ORDER BY error_count DESC
+LIMIT 50 FORMAT JSON"
 
-# Execute query
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_TOKEN" \
-    --data-urlencode "q=$QUERY"
+run_tinybird_query "$QUERY"

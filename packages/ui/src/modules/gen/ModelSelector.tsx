@@ -1,24 +1,15 @@
-import type { ModelCategory } from "@pollinations/sdk";
+import type { ModelCategory, ModelInfo } from "@pollinations/sdk";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
+import { ModelAccessIcon } from "./ModelAccessIcon.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
-type ModelSelectorItem = {
-    id: string;
-    name: string;
-    title: string;
-    description?: string;
-    category: ModelSelectorCategory;
-    paidOnly?: boolean;
-};
-
 type ModelSelectorProps = {
-    models: readonly ModelSelectorItem[];
+    models: readonly ModelInfo[];
     category: ModelSelectorCategory;
     value: string;
     isLoading?: boolean;
@@ -30,6 +21,7 @@ const CATEGORY_LABELS: Record<ModelSelectorCategory, string> = {
     video: "Video",
     text: "Text",
     audio: "Audio",
+    "3d": "3D",
     embedding: "Embeddings",
     realtime: "Realtime",
 };
@@ -39,6 +31,10 @@ export function categoryLabel(category: ModelSelectorCategory): string {
     return CATEGORY_LABELS[category];
 }
 
+function modelId(model: ModelInfo): string {
+    return model.id ?? model.name;
+}
+
 export function ModelSelector({
     models,
     category,
@@ -46,11 +42,13 @@ export function ModelSelector({
     isLoading = false,
     onChange,
 }: ModelSelectorProps) {
-    const filteredModels = models.filter(
-        (model) => model.category === category,
-    );
-    const currentModel = models.find((model) => model.id === value);
-    const modelLabel = currentModel?.title ?? "Select";
+    const filteredModels = models
+        .filter((model) => model.category === category)
+        .sort((a, b) => modelId(a).localeCompare(modelId(b)));
+    const currentModel = models.find((model) => modelId(model) === value);
+    const modelLabel = currentModel
+        ? (currentModel.title ?? currentModel.name)
+        : "Select";
     const accessibleLabel = currentModel
         ? `${CATEGORY_LABELS[category]} model: ${modelLabel}`
         : `Select ${CATEGORY_LABELS[category].toLowerCase()} model`;
@@ -66,13 +64,12 @@ export function ModelSelector({
                     className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                        {currentModel &&
-                            (currentModel.paidOnly ? (
-                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ) : (
-                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                            ))}
                         <span className="polli:truncate">{modelLabel}</span>
+                        {currentModel && (
+                            <ModelAccessIcon
+                                paidOnly={currentModel.paid_only}
+                            />
+                        )}
                     </span>
                     <ChevronIcon expanded={open} />
                 </Button>
@@ -84,31 +81,37 @@ export function ModelSelector({
                         Loading models...
                     </p>
                 ) : (
-                    <ScrollArea className="polli:max-h-64 polli:pr-2">
+                    <ScrollArea className="polli:max-h-80 polli:pr-2">
                         <div className="polli:flex polli:flex-col polli:gap-1">
                             {filteredModels.map((model) => {
-                                const isActive = value === model.id;
+                                const id = modelId(model);
+                                const isActive = value === id;
                                 return (
                                     <TabButton
-                                        key={model.id}
+                                        key={id}
                                         active={isActive}
                                         size="sm"
                                         variant="ghost"
                                         className="polli:w-full polli:justify-start polli:text-left"
                                         onClick={() => {
-                                            onChange(model.id);
+                                            onChange(id);
                                             close();
                                         }}
                                     >
-                                        <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
-                                            {model.paidOnly ? (
-                                                <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            ) : (
-                                                <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-                                            )}
-                                            <span className="polli:truncate">
-                                                {model.title}
+                                        <span className="polli:flex polli:min-w-0 polli:flex-col polli:gap-0.5">
+                                            <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
+                                                <span className="polli:truncate">
+                                                    {model.title ?? model.name}
+                                                </span>
+                                                <ModelAccessIcon
+                                                    paidOnly={model.paid_only}
+                                                />
                                             </span>
+                                            {model.description && (
+                                                <span className="polli:truncate polli:text-xs polli:font-normal polli:text-theme-text-muted">
+                                                    {model.description}
+                                                </span>
+                                            )}
                                         </span>
                                     </TabButton>
                                 );

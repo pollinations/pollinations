@@ -1,3 +1,9 @@
+import {
+    getRedirectUris,
+    parseMetadata,
+} from "@shared/auth/api-key-metadata.ts";
+import { isClientMetadataUrl } from "@shared/auth/authorize-config.ts";
+import { isUserBanned } from "@shared/auth/ban.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import { eq } from "drizzle-orm";
@@ -7,7 +13,7 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { getRedirectUris, parseMetadata } from "./metadata-utils.ts";
+import { fetchClientMetadata } from "../services/client-metadata.ts";
 import { redirectUriMatchesAllowlist } from "./url-utils.ts";
 
 async function resolveAttribution(
@@ -16,13 +22,14 @@ async function resolveAttribution(
 ) {
     const meta = parseMetadata(keyRow.metadata);
     const user = await db.query.user.findFirst({
-        where: eq(schema.user.id, keyRow.userId),
+        where: eq(schema.user.id, keyRow.referenceId),
     });
     const redirectUris = getRedirectUris(meta);
+    if (!user || isUserBanned(user)) return { found: false as const };
     return {
         found: true as const,
         clientId: keyRow.id,
-        userId: keyRow.userId,
+        userId: keyRow.referenceId,
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,
@@ -42,10 +49,10 @@ async function resolveAttribution(
 const AppLookupQuerySchema = z.object({
     client_id: z
         .string()
-        .startsWith("pk_")
+        .regex(/^(pk_|https:\/\/)/)
         .optional()
         .describe(
-            "Your publishable App Key (pk_...). When provided, the consent screen shows your app name and GitHub username. Canonical OAuth name.",
+            "Your publishable App Key (pk_...), or the https URL of a Client ID Metadata Document. When provided, the consent screen shows your app name and GitHub username (or the document's host). Canonical OAuth name.",
         ),
     app_key: z
         .string()
@@ -80,6 +87,20 @@ export const appLookupRoutes = new Hono<Env>().get(
         const resolvedAppKey = clientId ?? appKey;
         if (!resolvedAppKey) {
             return c.json({ found: false });
+        }
+        if (isClientMetadataUrl(resolvedAppKey)) {
+            // A metadata-document client has no pk_ owner: the host serving
+            // the document vouches for it. The document is public, so no
+            // redirect check here; the consent page and POST /api/oauth/code
+            // match the redirect exactly.
+            const metadata = await fetchClientMetadata(resolvedAppKey);
+            if (!metadata) return c.json({ found: false });
+            return c.json({
+                found: true,
+                clientHost: new URL(resolvedAppKey).hostname,
+                appName: metadata.clientName,
+                redirectUris: metadata.redirectUris,
+            });
         }
 
         const db = drizzle(c.env.DB, { schema });

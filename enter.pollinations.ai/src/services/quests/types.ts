@@ -1,8 +1,9 @@
-import type { RecordRewardInput } from "@shared/billing/rewards.ts";
+import { type RecordRewardInput, rewardKey } from "@shared/billing/rewards.ts";
 import type * as schema from "@shared/db/better-auth.ts";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import {
     type QuestDefinition,
+    type QuestGoal,
     type QuestState,
     questState,
 } from "./definitions.ts";
@@ -18,30 +19,54 @@ export type QuestUser = {
     id: string;
     githubId: number | null;
     githubUsername: string | null;
+    /** Google account id (`sub`) for users who signed in with Google. */
+    googleId?: string | null;
 };
 
 export type QuestGroup = {
     id: string;
     listQuestCards(ctx: QuestEvaluationContext): Promise<QuestCard[]>;
-    findRewardProposalsForUser(
+    evaluateUser(
         ctx: QuestEvaluationContext,
         user: QuestUser,
-    ): Promise<RewardProposal[]>;
+    ): Promise<QuestEvaluation>;
 };
 
 export type RewardProposal = {
     quest: QuestDefinition;
     userId: string;
+    /** Replaces the scope-derived key, e.g. to pay once per Discord account. */
+    idempotencyKey?: string;
 };
 
-export function toReward(proposal: RewardProposal): RecordRewardInput {
+export type QuestProgress = QuestGoal & {
+    questId: string;
+    current: number;
+};
+
+export type QuestEvaluation = {
+    proposals: RewardProposal[];
+    progress?: QuestProgress[];
+};
+
+export function toQuestProgress(
+    quest: QuestDefinition & { goal: QuestGoal },
+    current: number,
+): QuestProgress {
+    return { questId: quest.id, current, ...quest.goal };
+}
+
+export function toReward(
+    proposal: RewardProposal,
+    user: QuestUser,
+): RecordRewardInput {
     const { quest, userId } = proposal;
-    const idempotencyKey =
-        quest.scope === "once"
-            ? `quest:${quest.id}`
-            : `quest:${quest.id}:user:${userId}`;
     return {
-        idempotencyKey,
+        idempotencyKey:
+            proposal.idempotencyKey ??
+            (quest.scope === "once"
+                ? `quest:${quest.id}`
+                : rewardKey(quest.id, user)),
         userId,
         questId: quest.id,
         title: quest.title,

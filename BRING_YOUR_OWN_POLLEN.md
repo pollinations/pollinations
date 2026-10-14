@@ -1,4 +1,6 @@
-BYOP (Bring Your Own Pollen) lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
+# Connect User Wallets
+
+Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your users authorize your app to spend their own Pollen on Pollinations requests. Your publishable App Key (`pk_...`) identifies the app; after approval, Pollinations returns a scoped user key (`sk_...`) for API calls.
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
@@ -6,19 +8,19 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai) → **Create New App Key**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create New App Key**:
 
-<p align="left"><img src="https://media.pollinations.ai/1133540dc4c19635" alt="Edit App Key" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/28716f8fb8677eff" alt="Edit App Key" width="420"></p>
 
 Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-<p align="left"><img src="https://media.pollinations.ai/fbc04dd1c77dbfd8" alt="Authorize — signed out" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize — signed out" width="420"></p>
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/a7e4a1e9c5f48b8d" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize — signed in" width="420"></p>
 
 ## Developer Earnings
 
@@ -41,32 +43,46 @@ curl -X POST https://gen.pollinations.ai/account/keys \
   -d '{"name":"my-app","type":"publishable","redirectUris":["https://myapp.com/callback"],"earningsEnabled":true}'
 ```
 
-## ⚙️ Web Apps (Redirect Flow)
+## ⚙️ Web Apps (OAuth Code Flow)
+
+Use the OAuth authorization-code flow with PKCE for new web integrations. It keeps the `sk_...` key out of the browser callback URL and works with standard OAuth clients.
+
+Discovery is available at:
+
+```text
+https://enter.pollinations.ai/.well-known/oauth-authorization-server
+```
 
 ### 1. Build the Auth Link
 
-With `client_id` (consent screen shows your app name + your GitHub):
-```
-https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey
-```
+Generate a fresh PKCE verifier and S256 challenge, then send the user to `/authorize`:
 
-Without (still works, just shows the hostname):
-```
-https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com
+```text
+https://enter.pollinations.ai/authorize
+  ?response_type=code
+  &client_id=pk_yourkey
+  &redirect_uri=https://myapp.com/callback
+  &scope=profile%20usage
+  &state=random-csrf-token
+  &code_challenge=BASE64URL_SHA256_VERIFIER
+  &code_challenge_method=S256
 ```
 
 With restrictions:
-```
-https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com&client_id=pk_yourkey&scope=usage&models=flux,openai&expiry=7&budget=10
+```text
+https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage&models=image,text&expiry=7&budget=10&state=random&code_challenge=...&code_challenge_method=S256
 ```
 
 | Param | What it does | Example |
 |-------|-------------|---------|
 | `client_id` | Your publishable key — shows app name + author on consent screen, tracks traffic and developer earnings | `pk_abc123` |
-| `redirect_uri` | Where users return after authorizing — receives the temp API key in the URL fragment | `https://myapp.com` |
+| `redirect_uri` | Where users return after authorizing — must exactly match a Redirect URI on the App Key, query string included (loopback `http://localhost` matches any port) | `https://myapp.com/callback` |
+| `response_type` | Use `code` for the OAuth authorization-code flow | `code` |
 | `state` | Opaque value echoed back on the callback for CSRF protection | `any-random-string` |
+| `code_challenge` | Base64url SHA-256 of your PKCE verifier | `abc...` |
+| `code_challenge_method` | Must be `S256` | `S256` |
 | `scope` | Account access (space or comma separated) | `usage keys` |
-| `models` | Restrict to specific models | `flux,openai,gptimage` |
+| `models` | Models the key can use. A category (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) allows every model in it, including models added later; a model ID from `/models` allows only that model. The user can remove entries on the consent screen. | `image,text` or `black-forest-labs/flux.1-schnell,tongyi-mai/z-image-turbo` |
 | `budget` | Numeric Pollen cap. Defaults to `5`; users can clear the budget field on the consent screen for unlimited. | `10` |
 | `expiry` | User-authorized key lifetime in days (default: 7) | `7` |
 
@@ -74,20 +90,88 @@ Legacy names `app_key`, `redirect_url`, and `permissions` are still accepted for
 
 ### 2. Handle the Redirect
 
-User comes back with a key in the URL fragment:
+User comes back with a short-lived code:
+
+```text
+https://myapp.com/callback?code=oauth_code&state=random-csrf-token
 ```
-https://myapp.com#api_key=sk_abc123xyz
+
+Validate `state`, then exchange the code at the token endpoint. Server-backed apps
+call it from their backend; static browser apps can call it directly, because PKCE
+replaces the client secret:
+
+```bash
+curl -X POST https://enter.pollinations.ai/api/oauth/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=authorization_code' \
+  -d 'code=oauth_code' \
+  -d 'client_id=pk_yourkey' \
+  -d 'redirect_uri=https://myapp.com/callback' \
+  -d 'code_verifier=YOUR_PKCE_VERIFIER'
+# → { "access_token": "sk_...", "token_type": "bearer", "expires_in": 604800, "scope": "profile usage" }
+```
+
+The authorization code is single-use and expires after 10 minutes. Token responses use RFC 6749 error objects such as `invalid_grant`, `invalid_request`, and `unsupported_grant_type`.
+
+Scopes: `profile` (name + email), `usage` (account balance + usage), `keys` (account admin — create/list/revoke keys). The response's `scope` echoes what the user actually granted, which may be narrower than requested. Generation needs no scope — spending is bounded by the budget and expiry the user approved. There are no refresh tokens; re-run the flow when the key expires. Issued keys appear in the user's dashboard like any other API key and can be edited or revoked there at any time — revocation is immediate.
+
+**Browser-only apps.** The same request works from `fetch`:
+
+```javascript
+const res = await fetch('https://enter.pollinations.ai/api/oauth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,                                        // From the callback URL
+    client_id: 'pk_yourkey',
+    redirect_uri: 'https://myapp.com/callback',  // Exact registered URI
+    code_verifier,                               // The verifier you saved
+  }),
+});
+const { access_token } = await res.json();
+```
+
+Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a URL, analytics, or logs.
+
+### 3. Call Pollinations
+
+Use the returned `access_token` as the API key:
+
+```javascript
+fetch('https://gen.pollinations.ai/v1/chat/completions', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
+});
+```
+
+Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
+[existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)
+
+## ⚙️ Legacy Web Apps (Fragment Flow)
+
+The older BYOP redirect flow is still supported. It returns the user-authorized key directly in the URL fragment and does not use PKCE.
+
+```text
+https://enter.pollinations.ai/authorize?redirect_uri=https://myapp.com/callback&client_id=pk_yourkey&scope=usage
+```
+
+User comes back with the key in the URL fragment:
+
+```text
+https://myapp.com/callback#api_key=sk_abc123xyz
 ```
 
 Fragment, not query param — never hits server logs. 🔒 If you passed `state`, it's echoed back: `#api_key=sk_...&state=...`. On denial the fragment is `#error=access_denied&state=...`.
 
-### 💻 Code
+### Code
 
 ```javascript
 // Send user to auth
 const params = new URLSearchParams({
   redirect_uri: location.href,
-  client_id: 'pk_yourkey', // optional — shows app name + author
+  client_id: 'pk_yourkey',
 });
 window.location.href = `https://enter.pollinations.ai/authorize?${params}`;
 
@@ -98,7 +182,7 @@ const apiKey = new URLSearchParams(location.hash.slice(1)).get('api_key');
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
   headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ model: 'openai', messages: [{ role: 'user', content: 'yo' }] })
+  body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
 
@@ -106,28 +190,36 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 
 Same authorize screen, but the user opens a browser separately. Your CLI polls for the key.
 
-**Where this fits:**
-- **Discord / Telegram / WhatsApp bots** — bot DMs the code, user approves in browser, bot gets their key
-- **CLI tools** — `pollinations login` opens a browser, CLI waits for approval
-- **MCP servers** — AI agent requests access, user approves from their browser
-- **Raspberry Pi / IoT** — headless device displays a code, user approves on their phone
-- **VS Code extensions** — extension shows the code, user approves in browser
+Use this for CLIs, bots, extensions, and other apps that cannot show the authorization page themselves.
 
 ```bash
 # 1. request a device code (pass your app_key as client_id for attribution)
 curl -X POST https://enter.pollinations.ai/api/device/code \
   -H 'Content-Type: application/json' \
-  -d '{"client_id": "pk_yourkey", "scope": "generate"}'
-# → { "device_code": "...", "user_code": "ABCD-1234", "verification_uri": "/device" }
+  -d '{"client_id": "pk_yourkey"}'
+# → { "device_code": "...", "user_code": "ABCD-1234",
+#     "verification_uri": "https://enter.pollinations.ai/device",
+#     "verification_uri_complete": "https://enter.pollinations.ai/device?user_code=ABCD-1234",
+#     "expires_in": 1800, "interval": 5 }
 
-# 2. tell user: "go to enter.pollinations.ai/device and enter ABCD-1234"
+# 2. give the user verification_uri_complete to open directly,
+#    or show verification_uri and user_code
 
 # 3. poll for the key (every 5s)
 curl -X POST https://enter.pollinations.ai/api/device/token \
   -H 'Content-Type: application/json' \
   -d '{"device_code": "..."}'
 # pending → { "error": "authorization_pending" }
-# done    → { "access_token": "sk_...", "token_type": "bearer", "scope": "generate" }
+# done    → { "access_token": "sk_...", "token_type": "bearer" }
+```
+
+The same device-code exchange is also available through the standard token endpoint:
+
+```bash
+curl -X POST https://enter.pollinations.ai/api/oauth/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'grant_type=urn:ietf:params:oauth:grant-type:device_code' \
+  -d 'device_code=...'
 ```
 
 ## 👤 Who's Using This Key?
@@ -137,10 +229,11 @@ Once you have the user-authorized `sk_...` key, you can check who it belongs to:
 ```bash
 curl https://enter.pollinations.ai/api/device/userinfo \
   -H 'Authorization: Bearer sk_...'
-# → { "sub": "user-id", "name": "Thomas", "preferred_username": "voodoohop", "email": "...", "picture": "..." }
+# → { "sub": "user-id", "preferred_username": "voodoohop", "picture": "..." }
+# with the `profile` scope, also: "name": "Thomas", "email": "..."
 ```
 
-Standard OIDC userinfo shape.
+`/api/oauth/userinfo` returns the same standard OIDC userinfo shape. `name` and `email` are included only when the key carries the `profile` scope.
 
 ---
 

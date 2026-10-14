@@ -1,9 +1,15 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
-import { HttpError } from "./httpError.ts";
+import { isNetworkFailure } from "../fallback.ts";
 
 const logServer = debug("pollinations:server");
 
-export const VALID_TYPES = ["flux", "zimage", "sana", "ltx2"] as const;
+// "sana" is the pool key for the dreamshaper workers. It keeps the old name on
+// purpose: /register rejects unknown types, so a worker cannot join a pool that
+// only exists once this change is deployed. Keeping the key lets workers
+// register first and the routing switch land on a populated pool, with no
+// window where requests hit an empty one.
+export const VALID_TYPES = ["flux", "zimage", "sana"] as const;
 export type ServerType = (typeof VALID_TYPES)[number];
 
 type ServerEntry = {
@@ -137,16 +143,6 @@ export function chooseWeightedServer(servers: ServerEntry[]): string {
     return servers[servers.length - 1].url;
 }
 
-export const getNextServerUrl = async (
-    type: ServerType = "flux",
-): Promise<string> => {
-    const activeServers = await getRegisteredServers(type);
-    if (activeServers.length === 0) {
-        throw new Error(`No active ${type} servers available`);
-    }
-    return chooseWeightedServer(activeServers);
-};
-
 // Save the latency of the most recent successful /generate under the server's
 // dedicated latency key, so chooseWeightedServer can weight toward faster
 // backends. Separate key = a heartbeat can never overwrite it. Throttled to one
@@ -185,23 +181,57 @@ export function __resetLatencyStateForTests(): void {
     recentWrites.clear();
 }
 
+type ReplayableRequestInit = Omit<RequestInit, "body"> & { body?: string };
+
+/**
+ * Fetches from the weighted pool, retrying distinct workers only when the
+ * request was not accepted (HTTP 503, Cloudflare 1033, or a known network
+ * failure). The body is restricted to a string so every retry can resend it.
+ *
+ * Do not add AbortSignal.timeout() here without production Workerd validation:
+ * a timeout signal previously broke every pool request despite passing locally.
+ */
 export const fetchFromWeightedServer = async (
     type: ServerType = "flux",
-    options: RequestInit,
+    options: ReplayableRequestInit,
 ): Promise<Response> => {
-    const serverUrl = await getNextServerUrl(type);
-    const startedAt = Date.now();
-    const response = await fetch(`${serverUrl}/generate`, options);
-    // Record latency for successful responses only (a 5xx/timeout would record
-    // the full timeout window and wrongly down-weight a recovering server).
-    // Awaited (not fire-and-forget): a floating promise can be cancelled when
-    // the Worker invocation completes, dropping the KV write. The cost is
-    // bounded — recordLatency hits the in-memory throttle and returns without
-    // any KV I/O on all but ~1 request per LATENCY_WRITE_THROTTLE_MS per server.
-    if (response.ok) {
-        await recordLatency(type, serverUrl, Date.now() - startedAt);
+    const remainingServers = await getRegisteredServers(type);
+    if (remainingServers.length === 0) {
+        throw UpstreamError.fromProvider(503, {
+            message: `No active ${type} servers available`,
+        });
     }
-    if (!response.ok) {
+
+    while (true) {
+        const serverUrl = chooseWeightedServer(remainingServers);
+        const selectedIndex = remainingServers.findIndex(
+            (server) => server.url === serverUrl,
+        );
+        remainingServers.splice(selectedIndex, 1);
+
+        const startedAt = Date.now();
+        let response: Response;
+        try {
+            response = await fetch(`${serverUrl}/generate`, options);
+        } catch (error) {
+            if (!isNetworkFailure(error) || remainingServers.length === 0) {
+                throw error;
+            }
+            console.warn(
+                `[${type}] Network failure from ${serverUrl}; retrying another pool worker`,
+            );
+            continue;
+        }
+        // Record latency for successful responses only (a 5xx/timeout would
+        // record the full timeout window and wrongly down-weight a recovering
+        // server). Awaited (not fire-and-forget): a floating promise can be
+        // cancelled when the Worker invocation completes, dropping the KV
+        // write. The cost is bounded by the in-memory write throttle.
+        if (response.ok) {
+            await recordLatency(type, serverUrl, Date.now() - startedAt);
+            return response;
+        }
+
         let errorBody = "";
         try {
             errorBody = await response.text();
@@ -209,21 +239,37 @@ export const fetchFromWeightedServer = async (
             errorBody = "Could not read error response body";
         }
 
-        console.error(
-            `[${type}] Server ${serverUrl} returned ${response.status}:`,
-            {
-                status: response.status,
-                statusText: response.statusText,
-                body: errorBody,
-            },
-        );
+        const error = UpstreamError.fromProvider(response.status, {
+            message: `Image backend rejected request with status ${response.status}`,
+            responseBody: errorBody,
+            requestUrl: new URL(`${serverUrl}/generate`),
+        });
 
-        throw new HttpError(
-            `Image backend rejected request with status ${response.status}`,
-            response.status,
+        // Queue-full and Cloudflare's disconnected-tunnel error never reached
+        // inference. Retry another worker; other 5xx may have started generation.
+        const tunnelDisconnected =
+            response.status === 530 &&
+            /(?:error code:\s*1033\b|\berror\s+1033\b)/i.test(
+                errorBody.replace(/<[^>]*>/g, " "),
+            );
+        if (
+            (response.status !== 503 && !tunnelDisconnected) ||
+            remainingServers.length === 0
+        ) {
+            console.error(
+                `[${type}] Server ${serverUrl} returned ${response.status}:`,
+                {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorBody,
+                },
+            );
+            throw error;
+        }
+
+        console.warn(
+            `[${type}] Server ${serverUrl} returned ${response.status}; retrying another pool worker`,
             { body: errorBody },
-            `${serverUrl}/generate`,
         );
     }
-    return response;
 };

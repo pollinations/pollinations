@@ -3252,10 +3252,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.003,
     },
   },
-  "qwen/qwen-image-3:fal": {
+  "qwen/qwen-image-3:openrouter": {
     "cost": {
-      "completionImageTokens": 0.04,
-      "promptImageTokens": 0.003,
+      "completionImageTokens": 0.0422,
+      "promptImageTokens": 0.003165,
     },
     "costVariants": {
       "2k": {
@@ -3264,8 +3264,8 @@ exports[`effective cost and price per model — snapshot 1`] = `
       },
     },
     "price": {
-      "completionImageTokens": 0.04,
-      "promptImageTokens": 0.003,
+      "completionImageTokens": 0.0422,
+      "promptImageTokens": 0.003165,
     },
   },
   "qwen/qwen3-coder-30b-a3b-instruct": {

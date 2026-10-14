@@ -846,7 +846,8 @@ export function buildResearchControl({
                         ]),
                     ),
                     insufficient:
-                        stage === "search"
+                        stage === "search" ||
+                        actions.some(({ required }) => required)
                             ? "No required action can be executed safely within the remaining budget or tool constraints. Ordinary uncertainty about results does not justify skipping required coverage."
                             : "The evidence does not justify any supplied action.",
                 },

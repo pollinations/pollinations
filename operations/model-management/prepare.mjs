@@ -1112,7 +1112,7 @@ export async function prepareResearch(task, services) {
                         ? required
                         : [...menu, { id: "finish", kind: "finish" }],
                 );
-                if (!selected) return evidence();
+                if (!selected) break;
                 if (selected.kind === "finish") break;
                 readUrls.add(selected.url);
                 pageReads.set(
@@ -1434,7 +1434,7 @@ export async function prepareResearch(task, services) {
                         : [finish]),
                 ]);
                 if (!selected) {
-                    requiredEvidencePending = followups.some(
+                    requiredEvidencePending ||= followups.some(
                         ({ required }) => required,
                     );
                     return evidence();
@@ -1499,7 +1499,7 @@ export async function prepareResearch(task, services) {
                     action.status = source.status;
                 }
             }
-            requiredEvidencePending = followupActions().some(
+            requiredEvidencePending ||= followupActions().some(
                 ({ required }) => required,
             );
             const semantic = officialCandidates(

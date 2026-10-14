@@ -1,0 +1,44 @@
+name: Build Kodular Pollinations extension (.aix)
+
+# Builds the Kodular extension from source using the official
+# mit-cml/extension-template. Copy this file to <repo-root>/.github/workflows/
+# to activate it (GitHub only runs workflows from the repository root).
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/kodular-pollinations/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Ant
+        run: sudo apt-get install -y ant
+
+      - name: Build .aix with the official extension template
+        run: |
+          git clone --recurse-submodules --depth 1 \
+            https://github.com/mit-cml/extension-template.git /tmp/ext-tpl
+          rm -rf /tmp/ext-tpl/src/*
+          cp -r apps/kodular-pollinations/src/io /tmp/ext-tpl/src/
+          cd /tmp/ext-tpl
+          ant all > build.log 2>&1 || true
+          cat build.log
+          test -f out/io.kodular.pollinations.aix
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kodular-pollinations-aix
+          path: /tmp/ext-tpl/out/io.kodular.pollinations.aix
+          if-no-files-found: error

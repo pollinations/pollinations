@@ -53,11 +53,7 @@ export function generateCacheKey(url: URL): string {
     return generateCacheKeyWithVersion(url, CACHE_VERSION);
 }
 
-export function generateLegacyCacheKey(url: URL): string {
-    return generateCacheKeyWithVersion(url);
-}
-
-function generateCacheKeyWithVersion(url: URL, version?: string): string {
+function generateCacheKeyWithVersion(url: URL, version: string): string {
     // Apply model-specific rules first
     const transformedUrl = applyModelSpecificRules(url);
 
@@ -91,7 +87,7 @@ function generateCacheKeyWithVersion(url: URL, version?: string): string {
     const safePath = fullPath.replace(/[/\s?=&]/g, "_");
 
     // Combine path with hash, ensuring it fits within a safe limit (1000 bytes)
-    const prefix = version ? `${version}-` : "";
+    const prefix = `${version}-`;
     const maxPathLength = 1000 - prefix.length - hash.length - 1;
     const trimmedPath = safePath.substring(0, maxPathLength);
 
@@ -154,30 +150,4 @@ export async function cacheResponse(
         console.error("[EXACT] Error caching response:", error);
         return false;
     }
-}
-
-/**
- * Delete a cached image from R2
- * @param {string} cacheKey - The cache key to delete
- * @param {Cloudflare.Env} env - The environment bindings
- * @returns {Promise<boolean>} - Whether an object was deleted
- */
-export async function deleteCacheEntry(
-    cacheKey: string,
-    env: Cloudflare.Env,
-): Promise<boolean> {
-    // R2 delete() returns void and doesn't throw if the key doesn't exist,
-    // so check first to report whether something was deleted
-    try {
-        const existingObject = await env.IMAGE_BUCKET.head(cacheKey);
-        if (existingObject) {
-            await env.IMAGE_BUCKET.delete(cacheKey);
-            console.log("[DELETE] Deleted from R2:", cacheKey);
-            return true;
-        }
-        console.log("[DELETE] Object not found in R2:", cacheKey);
-    } catch (error) {
-        console.error("[DELETE] Error deleting from R2:", error);
-    }
-    return false;
 }

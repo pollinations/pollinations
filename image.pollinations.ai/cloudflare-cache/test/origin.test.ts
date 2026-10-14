@@ -392,17 +392,22 @@ test("the VM's other routes: models, about, crossdomain, register, .well-known a
     }
 });
 
-test("DELETE /delete/prompt/:prompt still removes a stored image", async () => {
-    await call("/prompt/to%20delete");
-    expect(await storedAt("/prompt/to%20delete")).not.toBeNull();
+// Changed: anyone could delete any stored image, so the route is gone
+test("DELETE /delete/prompt/:prompt answers the 404 and keeps the stored image", async () => {
+    await call("/prompt/to%20keep");
+    expect(await storedAt("/prompt/to%20keep")).not.toBeNull();
 
-    const { response, text } = await call("/delete/prompt/to%20delete", {
+    const { response, text } = await call("/delete/prompt/to%20keep", {
         method: "DELETE",
     });
 
-    expect(response.status).toBe(200);
-    expect(JSON.parse(text)).toMatchObject({ success: true, r2Deleted: true });
-    expect(await storedAt("/prompt/to%20delete")).toBeNull();
+    expect(response.status).toBe(404);
+    expect(JSON.parse(text)).toEqual({
+        error: "Not Found",
+        message: "The requested endpoint was not found",
+        path: "/delete/prompt/to%20keep",
+    });
+    expect(await storedAt("/prompt/to%20keep")).not.toBeNull();
 });
 
 test("other paths generate as /prompt{path}, uncached and without X-Cache", async () => {

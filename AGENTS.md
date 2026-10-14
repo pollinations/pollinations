@@ -16,7 +16,7 @@ Catalog fields are defined in `operations/app-management/app.js`; categories and
 
 ## Discord
 
-Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-885844321461485618) — use for Discord MCP tools.
+Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discord MCP tools.
 
 ## Repository Structure
 

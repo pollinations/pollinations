@@ -40,6 +40,7 @@ async function getBalance(_params, context) {
         createTextContent(
             {
                 pollen: data.balance,
+                accountBalance: data.accountBalance,
                 note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,

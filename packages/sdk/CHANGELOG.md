@@ -4,6 +4,36 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.19] - 2026-10-14
+
+### Fixed
+- Errors whose body is `{ error: "message" }`, such as `accountEarnings()`
+  failures, keep the server's message instead of a generic
+  `Request failed with status N`.
+
+## [5.1.0-alpha.18] - 2026-10-14
+
+### Added
+- Headless image, text, audio, video and transcription hooks with cancellation
+  and rerun, using the signed-in user's key.
+- A `useChat` transport for `/v1/responses`, including server-run tool results,
+  conversation history and usage. `ai` remains an optional peer dependency.
+
+## [5.1.0-alpha.17] - 2026-10-14
+
+### Added
+- `model3d()` returns 3D files with their MIME type and a keyless URL;
+  `models("3d")` lists the available models.
+- `modelStatus()` returns typed model health rows and column metadata.
+- `audioSpeechWithTimestamps()` returns base64 audio, the original character
+  alignments and word timings grouped from normalized text when available.
+
+## [5.1.0-alpha.16] - 2026-10-14
+
+### Changed
+- README Discord link points to `discord.gg/k9F7SyTgqn`; the old invite
+  link no longer works.
+
 ## [5.1.0-alpha.15] - 2026-10-13
 
 ### Changed

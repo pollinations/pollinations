@@ -7,7 +7,7 @@
      Level 0  Desk     --polli-color-app-bg          page background
      Level 1  Block    --polli-color-surface-block   sections, dialogs
      Level 2  Card     --polli-color-surface-opaque  cards inside a block
-              Accents  --polli-color-bg-active / bg-hover(=border)  THEMED
+              Accents  --polli-color-bg-active / bg-hover  THEMED
      Floating layers (menus, tooltips) are the only elements that keep a shadow.
 
    SINGLE-ACCENT ARCHITECTURE
@@ -19,7 +19,7 @@
      - `neutral` is the one no-hue member, for chrome that must carry no accent.
 
    DARK: add class `dark` to <html> (color-scheme owned here: :root=light,
-   .dark=dark). INVARIANT: --polli-color-border === --polli-color-bg-hover.
+   .dark=dark). Focus, border and hover fill have independent roles.
    ========================================================================== */
 
 :root {
@@ -96,7 +96,7 @@
    The accent keeps the v3 recipe form, so recoloring the whole app = change
    --polli-hue in ONE place (optionally --polli-nudge to rebalance accent
    lightness for the new hue). --polli-hue is mode-agnostic — both the light
-   (:root) and dark (.dark) recipes read it. INVARIANT: border === bg-hover.
+   (:root) and dark (.dark) recipes read it.
    `neutral` (no-hue chrome, e.g. the dashboard rail) keeps its block below;
    `data-theme="accent"` re-asserts the accent INSIDE a neutral subtree (e.g.
    accent nav buttons in the neutral rail). ─── */
@@ -107,7 +107,7 @@
 
 /* The accent recipe — reads --polli-hue/--polli-nudge from its scope. `:root`
    carries the app default; `data-theme="accent"` re-asserts the live accent inside
-   a neutral subtree. INVARIANT: border === bg-hover. */
+   a neutral subtree. */
 :root,
 [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.981 0.018 var(--polli-hue));
@@ -118,6 +118,7 @@
     --polli-color-border:          var(--polli-color-bg-hover);
     --polli-color-scrollbar-thumb: oklch(calc(0.728 + var(--polli-nudge)) 0.17 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.47 0.13 var(--polli-hue));
+    --polli-color-focus:           var(--polli-color-text-soft);
     --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
@@ -133,6 +134,7 @@
     --polli-color-border:          color-mix(in oklab, var(--polli-color-text-muted) 50%, transparent);
     --polli-color-scrollbar-thumb: color-mix(in oklab, var(--polli-color-text-muted) 55%, transparent);
     --polli-color-text-soft:       var(--polli-color-text-muted);
+    --polli-color-focus:           var(--polli-color-text-soft);
     --polli-color-text-hover:      var(--polli-color-text-strong);
 }
 
@@ -283,14 +285,20 @@
 
 /* (b) DARK accent recipe — mirror: deep tint + light text, reads the same
    --polli-hue/--polli-nudge (set once on :root). Low chroma keeps bg-pale/
-   bg-subtle cohesive without a hue rotation. border === bg-hover. ─── */
+   bg-subtle cohesive without a hue rotation. ─── */
 .dark,
 .dark [data-theme="accent"] {
     --polli-color-bg-pale:         oklch(0.262 0.009 var(--polli-hue));
     --polli-color-bg-subtle:       oklch(0.33 0.014 var(--polli-hue) / 0.7);
     --polli-color-bg-active:       oklch(calc(0.496 + var(--polli-nudge)) 0.145 var(--polli-hue));
-    --polli-color-bg-hover:        oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
-    --polli-color-border:          var(--polli-color-bg-hover);
+    /* Darken hover for light labels; preserve the brighter border separately. */
+    --polli-color-bg-hover:        oklch(calc(0.416 + var(--polli-nudge)) 0.14 var(--polli-hue));
+    --polli-color-border:          oklch(calc(0.571 + var(--polli-nudge)) 0.16 var(--polli-hue));
     --polli-color-scrollbar-thumb: oklch(calc(0.62 + var(--polli-nudge)) 0.15 var(--polli-hue) / 0.7);
     --polli-color-text-soft:       oklch(0.83 0.135 var(--polli-hue));
+    --polli-color-focus:           var(--polli-color-text-soft);
+}
+
+.dark [data-theme="neutral"] {
+    --polli-color-bg-hover: color-mix(in oklab, var(--polli-color-text-muted) 30%, transparent);
 }

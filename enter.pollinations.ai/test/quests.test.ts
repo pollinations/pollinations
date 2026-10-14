@@ -12,6 +12,7 @@ import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as agentUsage from "../src/services/quests/groups/agent-usage.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
+import * as referrals from "../src/services/quests/groups/referrals.ts";
 import * as questIndex from "../src/services/quests/index.ts";
 import type { QuestGroup } from "../src/services/quests/types.ts";
 import { createApiKeyViaApi, test } from "./fixtures.ts";
@@ -2376,6 +2377,68 @@ test("Honey Census quest pays 5 Pollen only once the survey author has bought mo
         {
             idempotencyKey: `quest:honey_census:github:${user.githubId}`,
             pollenAmount: 5,
+            balanceBucket: "tier",
+        },
+    ]);
+});
+
+test("Invite friends pays 2 Pollen once per referred user who bought more than 2 Pollen and is not banned", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const referrer = await getOnlyUser();
+    const now = new Date();
+    const referred = [
+        { name: "buyer", pollen: 5, banned: false },
+        { name: "smallest-pack", pollen: 2, banned: false },
+        { name: "banned-buyer", pollen: 5, banned: true },
+    ].map(({ name, pollen, banned }) => ({
+        id: `invite-${name}`,
+        githubId: hashGithubId(`invite-${name}`),
+        pollen,
+        banned,
+    }));
+    await db.insert(schema.user).values(
+        referred.map(({ id, githubId, banned }) => ({
+            id,
+            name: id,
+            email: `${id}@example.com`,
+            githubId,
+            banned,
+            referredBy: referrer.id,
+            createdAt: now,
+            updatedAt: now,
+        })),
+    );
+    await db.insert(schema.stripeCheckoutCredits).values(
+        referred.map(({ id, pollen }) => ({
+            sessionId: `cs_test_${id}`,
+            eventId: `evt_test_${id}`,
+            eventType: "checkout.session.completed",
+            userId: id,
+            pollenCredited: pollen,
+        })),
+    );
+
+    const groups = [{ id: "referrals", ...referrals }];
+    await checkQuestsForUser(env, referrer.id, groups);
+    await checkQuestsForUser(env, referrer.id, groups);
+
+    expect(
+        await db
+            .select({
+                userId: schema.rewards.userId,
+                idempotencyKey: schema.rewards.idempotencyKey,
+                pollenAmount: schema.rewards.pollenAmount,
+                balanceBucket: schema.rewards.balanceBucket,
+            })
+            .from(schema.rewards)
+            .where(eq(schema.rewards.questId, "invite_friends")),
+    ).toEqual([
+        {
+            userId: referrer.id,
+            idempotencyKey: `quest:invite_friends:github:${referred[0]?.githubId}`,
+            pollenAmount: 2,
             balanceBucket: "tier",
         },
     ]);

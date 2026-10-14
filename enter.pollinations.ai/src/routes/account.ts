@@ -37,6 +37,7 @@ import { discordConfigFromEnv } from "../services/discord.ts";
 import { listedAppSchema, listListedApps } from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
+import { attributeAppSignup } from "../services/quests/groups/referrals.ts";
 import {
     ACCOUNT_SETUP_QUEST_GROUP,
     listQuestCards,
@@ -1831,6 +1832,13 @@ export const accountRoutes = new Hono<Env>()
                               | string
                               | undefined)),
             });
+            if (created.byopClientKeyId) {
+                await attributeAppSignup(
+                    drizzle(c.env.DB, { schema }),
+                    user.id,
+                    created.byopClientKeyId,
+                );
+            }
 
             // Awarding the first-key quest is a few D1 queries; awaiting it
             // means the balance and quests the caller reads next include it.

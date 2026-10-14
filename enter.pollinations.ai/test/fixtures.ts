@@ -108,6 +108,68 @@ export const mintAccountToken = async (sessionToken: string) => {
     return ((await response.json()) as { token: string }).token;
 };
 
+/**
+ * Signs in through the real GitHub OAuth flow (needs the github mock) and
+ * returns the session token. `extraCookie` is sent with the OAuth callback.
+ */
+export const signInWithGithub = async (extraCookie?: string) => {
+    const signupUrl = new URL("http://localhost:3000/api/auth/sign-in/social");
+
+    const signupResponse = await SELF.fetch(signupUrl.toString(), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            provider: "github",
+        }),
+    });
+
+    expect(signupResponse.status).toBe(200);
+    const signupData = (await signupResponse.json()) as SignupData;
+
+    const signupCookies = signupResponse.headers.get("Set-Cookie");
+    if (!signupCookies) throw new Error("Set-Cookie header is missing");
+
+    const forwardUrl = new URL(signupData.url);
+    const state = forwardUrl.searchParams.get("state");
+    if (!state) throw new Error("State param is missing");
+
+    // complete OAuth callback
+    const callbackUrl = new URL(
+        "http://localhost:3000/api/auth/callback/github",
+    );
+    callbackUrl.searchParams.set("code", "test-code");
+    callbackUrl.searchParams.set("state", state);
+
+    const callbackResponse = await SELF.fetch(callbackUrl.toString(), {
+        method: "GET",
+        headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; test-browser)",
+            "Accept": "text/html,application/xhtml+xml",
+            "Cookie": extraCookie
+                ? `${signupCookies}; ${extraCookie}`
+                : signupCookies,
+        },
+        redirect: "manual",
+    });
+    expect(callbackResponse.status).toBe(302);
+    await callbackResponse.text();
+
+    // extract session cookie
+    const setCookieHeader = callbackResponse.headers.get("Set-Cookie");
+    expect(setCookieHeader).toBeTruthy();
+
+    const sessionMatch = setCookieHeader?.match(
+        /better-auth\.session_token=([^;]+)/,
+    );
+    expect(sessionMatch).toBeTruthy();
+    const sessionToken = sessionMatch?.[1];
+
+    if (!sessionToken) throw new Error("Failed to get session token");
+    return sessionToken;
+};
+
 export const test = base.extend<Fixtures>({
     // biome-ignore lint/correctness/noEmptyPattern: vitest fixture pattern requires object destructuring
     log: async ({}, use) => {
@@ -127,60 +189,7 @@ export const test = base.extend<Fixtures>({
     },
     sessionToken: async ({ mocks }, use) => {
         await mocks.enable("github", "tinybird");
-        const signupUrl = new URL(
-            "http://localhost:3000/api/auth/sign-in/social",
-        );
-
-        const signupResponse = await SELF.fetch(signupUrl.toString(), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                provider: "github",
-            }),
-        });
-
-        expect(signupResponse.status).toBe(200);
-        const signupData = (await signupResponse.json()) as SignupData;
-
-        const signupCookies = signupResponse.headers.get("Set-Cookie");
-        if (!signupCookies) throw new Error("Set-Cookie header is missing");
-
-        const forwardUrl = new URL(signupData.url);
-        const state = forwardUrl.searchParams.get("state");
-        if (!state) throw new Error("State param is missing");
-
-        // complete OAuth callback
-        const callbackUrl = new URL(
-            "http://localhost:3000/api/auth/callback/github",
-        );
-        callbackUrl.searchParams.set("code", "test-code");
-        callbackUrl.searchParams.set("state", state);
-
-        const callbackResponse = await SELF.fetch(callbackUrl.toString(), {
-            method: "GET",
-            headers: {
-                "User-Agent": "Mozilla/5.0 (compatible; test-browser)",
-                "Accept": "text/html,application/xhtml+xml",
-                "Cookie": signupCookies,
-            },
-            redirect: "manual",
-        });
-        expect(callbackResponse.status).toBe(302);
-        await callbackResponse.text();
-
-        // extract session cookie
-        const setCookieHeader = callbackResponse.headers.get("Set-Cookie");
-        expect(setCookieHeader).toBeTruthy();
-
-        const sessionMatch = setCookieHeader?.match(
-            /better-auth\.session_token=([^;]+)/,
-        );
-        expect(sessionMatch).toBeTruthy();
-        const sessionToken = sessionMatch?.[1];
-
-        if (!sessionToken) throw new Error("Failed to get session token");
+        const sessionToken = await signInWithGithub();
         mocks.clear();
         await use(sessionToken);
     },

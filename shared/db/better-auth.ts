@@ -5,6 +5,7 @@ import { LISTING_TYPES } from "../community-endpoints.ts";
 import type { SafetyFeature } from "../schemas/safety.ts";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   check,
   sqliteTable,
   text,
@@ -51,8 +52,13 @@ export const user = sqliteTable("user", {
   lowBalanceNotifiedAt: integer("low_balance_notified_at"),
   emailUnsubscribedAt: integer("email_unsubscribed_at"),
   lastPackPollen: real("last_pack_pollen"),
+  // The invite link owner or BYOP app owner this user signed up through.
+  referredBy: text("referred_by").references((): AnySQLiteColumn => user.id, {
+    onDelete: "set null",
+  }),
 }, (table) => [
   index("idx_user_email").on(table.email),
+  index("idx_user_referred_by").on(table.referredBy),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),
   // GitHub profile lookup for quest checks and account display.
   uniqueIndex("user_github_id_unique").on(table.githubId),

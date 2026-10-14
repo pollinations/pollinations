@@ -1,11 +1,14 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
-import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
+import {
+    authAdditionalFields,
+    INVITE_REF_COOKIE,
+} from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
     createApiKeyPlugin,
     StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
-import { ACCOUNT_RESTRICTED_MESSAGE } from "@shared/auth/ban.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import * as betterAuthSchema from "@shared/db/better-auth.ts";
 import {
     account as accountTable,
@@ -280,6 +283,29 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     },
                 },
                 create: {
+                    // An invite link (?ref=<GitHub id>) leaves a cookie that
+                    // the GitHub callback carries here; see main.tsx.
+                    before: async (user, context) => {
+                        const ref = Number(
+                            context?.getCookie(INVITE_REF_COOKIE) || Number.NaN,
+                        );
+                        if (
+                            !Number.isSafeInteger(ref) ||
+                            ref === githubProfile?.id
+                        )
+                            return;
+                        const [referrer] = await db
+                            .select({
+                                id: userTable.id,
+                                banned: userTable.banned,
+                                banExpires: userTable.banExpires,
+                            })
+                            .from(userTable)
+                            .where(eq(userTable.githubId, ref))
+                            .limit(1);
+                        if (!referrer || isUserBanned(referrer)) return;
+                        return { data: { ...user, referredBy: referrer.id } };
+                    },
                     after: async (user, context) => {
                         ctx?.waitUntil(
                             captureProductEvent(

@@ -1631,6 +1631,25 @@ describe("Pollinations simple text facade", () => {
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
+    it("maps an image array to the OpenAI { image_url } shape the edits endpoint accepts", async () => {
+        const client = newClient();
+
+        // "AAAA" base64 decodes to 3 zero bytes — no follow-up download.
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ data: [{ b64_json: "AAAA" }] }),
+        );
+
+        await client.imageEdit("combine these", {
+            image: ["https://in.test/a.png", "https://in.test/b.png"],
+        });
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect(JSON.parse(String(request.body)).image).toEqual([
+            { image_url: "https://in.test/a.png" },
+            { image_url: "https://in.test/b.png" },
+        ]);
+    });
+
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
 

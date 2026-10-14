@@ -1629,7 +1629,7 @@ const TEXT_BASE_SERVICES = {
         },
         title: "Lightning Text v2.1",
         description:
-            "Router that picks a fast model per prompt, serving Qwen3 27B in place of GPT-OSS, with image input, tools and JSON output",
+            "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
         tools: true,

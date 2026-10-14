@@ -1,6 +1,6 @@
 # Service Providers
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-10-14**
 
 These providers process personal data for us. Some process it outside the EEA, including in the United States; see the [Privacy Policy](/privacy) for transfer safeguards.
 
@@ -19,7 +19,7 @@ These providers process personal data for us. Some process it outside the EEA, i
 
 ## Model providers
 
-The model you choose, or its fallback, decides which of these receives your request. OpenRouter and Vercel AI Gateway pass requests on to the model's host.
+The model you choose, or its fallback, decides which of these receives your request. OpenRouter, Vercel AI Gateway and InferencePort pass requests on to the model's host.
 
 Alibaba Cloud, Amazon Bedrock, AssemblyAI, DeepInfra, ElevenLabs, fal.ai, Fireworks AI, Google, InferencePort, Microsoft Azure, Mistral AI, Novita AI, OpenAI, OpenRouter, OVHcloud, Perplexity, Replicate, Stability AI, Vast.ai, Vercel AI Gateway, xAI.
 

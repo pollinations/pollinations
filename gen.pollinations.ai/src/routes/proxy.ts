@@ -413,7 +413,7 @@ async function resolveVisibleModelEntry(
 }
 
 export const proxyRoutes = new Hono<Env>()
-    // Edge rate limiter: first line of defense (10 req/s per IP)
+    // Edge rate limiter: first line of defense (1,000 req/s per IP, set in wrangler.toml)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())

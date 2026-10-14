@@ -65,26 +65,58 @@ export function verifyUnsubscribe(
     );
 }
 
+// Footer links, shown as round icons. PNGs live in frontend/public/email,
+// because email clients don't render SVG.
+const FOOTER_LINKS = [
+    { label: "Website", icon: "website", href: "https://pollinations.ai" },
+    { label: "Dashboard", icon: "dashboard", href: "/" },
+    {
+        label: "GitHub",
+        icon: "github",
+        href: "https://github.com/pollinations/pollinations",
+    },
+    { label: "Email", icon: "email", href: `mailto:${REPLY_TO}` },
+];
+
 /** One notice as a short HTML email plus its plain-text twin. */
 export function renderNotice(
     notice: Notice,
     baseUrl: string,
     unsubscribeUrl: string,
 ): { html: string; text: string } {
-    const href = (link: Link) => new URL(link.path, baseUrl).toString();
-    const footer =
-        "You're getting this email because it's about your Pollinations account. Questions? Reply to this email.";
+    const url = (path: string) => new URL(path, baseUrl).toString();
+    const image = (name: string) => url(`/email/${name}.png`);
+    const links = FOOTER_LINKS.map((link) => ({
+        ...link,
+        href: url(link.href),
+    }));
+    const icons = links
+        .map(
+            (
+                link,
+            ) => `<td align="center" style="padding:0 8px"><a href="${link.href}" style="color:#1d1420;text-decoration:none">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr><td align="center" valign="middle" width="40" height="40" style="width:40px;height:40px;border-radius:20px;background:#fffaf0"><img src="${image(link.icon)}" width="20" height="20" alt="" style="display:block"></td></tr></table>
+<span style="display:block;margin-top:6px;font-size:12px;line-height:16px;font-weight:600">${link.label}</span></a></td>`,
+        )
+        .join("\n");
 
     const html = `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:24px 16px;background:#f4efe6;color:#1d1420;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
-<div style="max-width:520px;margin:0 auto;background:#fffaf0;border-radius:16px;padding:28px">
-<p style="margin:0 0 20px;font-size:14px;font-weight:700">pollinations.ai</p>
-<h1 style="margin:0 0 16px;font-size:22px;line-height:28px">${notice.subject}</h1>
-<p style="margin:0 0 16px;font-size:16px;line-height:24px">${notice.body}</p>
-<a href="${href(notice.button)}" style="display:inline-block;margin-top:4px;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
+<div style="max-width:520px;margin:0 auto">
+<img src="${image("polli-lockup")}" width="180" height="40" alt="pollinations.ai" style="display:block;margin:0 0 16px 4px">
+<div style="background:#fffaf0;border-radius:16px;padding:28px">
+<h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
+<p style="margin:0 0 20px;font-size:16px;line-height:24px">${notice.body}</p>
+<a href="${url(notice.button.path)}" style="display:inline-block;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
 </div>
-<p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">${footer} <a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe</a> from all our emails.<br>${ADDRESS}</p>
+<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:28px auto 0"><tr>
+${icons}
+</tr></table>
+<div style="margin:24px 16px 0;border-top:1px solid #d9d1c3"></div>
+<img src="${image("mark")}" width="28" height="27" alt="" style="display:block;margin:20px auto 0">
+<p style="margin:12px 0 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">Questions? Reply to this email · <a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe</a><br>${ADDRESS}</p>
+</div>
 </body></html>`;
 
     const text = [
@@ -92,11 +124,14 @@ export function renderNotice(
         "",
         notice.body,
         "",
-        `${notice.button.label}: ${href(notice.button)}`,
+        `${notice.button.label}: ${url(notice.button.path)}`,
         "",
         "--",
-        footer,
-        `Unsubscribe from all our emails: ${unsubscribeUrl}`,
+        ...links.map(
+            (link) => `${link.label}: ${link.href.replace("mailto:", "")}`,
+        ),
+        "Questions? Reply to this email.",
+        `Unsubscribe: ${unsubscribeUrl}`,
         ADDRESS,
     ].join("\n");
 

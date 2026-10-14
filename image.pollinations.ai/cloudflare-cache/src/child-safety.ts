@@ -117,7 +117,7 @@ const MINORS = [
     "미성년",
 ];
 
-// Minors unless the prompt gives an adult age
+// Minors, unless an age of 18 or 19 stands right by the word
 const TEENS = [
     "teen",
     "teens",
@@ -300,6 +300,14 @@ const minors = matcher(MINORS);
 const teens = matcher(TEENS);
 const sexual = matcher(SEXUAL);
 
+// "18 year old teen", "19yo teen", "teen aged 19": a teen who is an adult
+const teenWords = TEENS.map((term) => fold(term).trim()).join("|");
+const ADULT_TEEN = new RegExp(
+    `(?<!\\d)1[89] ?(?:years? old |yrs? old |yo |y o )?(?:${teenWords})(?!\\p{L})` +
+        `|(?<!\\p{L})(?:${teenWords}) (?:aged |age )?1[89](?!\\d)`,
+    "gu",
+);
+
 // Control and format characters: the generator strips control characters,
 // so each prompt is checked with them removed and with them as spaces
 const HIDDEN = /[\p{Cc}\p{Cf}]/gu;
@@ -314,6 +322,6 @@ function refuses(text: string) {
     if (always(text)) return true;
     if (!sexual(text)) return false;
     const ages = [...text.matchAll(AGE)].map(([, age]) => Number(age));
-    if (ages.some((age) => age > 0 && age < 18)) return true;
-    return minors(text) || (teens(text) && !ages.some((age) => age >= 18));
+    if (ages.some((age) => age < 18)) return true;
+    return minors(text) || teens(text.replace(ADULT_TEEN, " "));
 }

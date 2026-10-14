@@ -73,8 +73,3 @@ WORKDIR /home/user
 
 # herdr is pinned above, so it shouldn't offer updates.
 RUN mkdir -p .config/herdr && printf '[update]\nversion_check = false\n' > .config/herdr/config.toml
-
-# Hermes v0.21.7: its installer and checkout, both at that release's commit.
-RUN curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/71d34bad1045610252eda02ee79549436896e784/scripts/install.sh \
-    | bash -s -- --non-interactive --skip-browser --skip-computer-use \
-        --commit 71d34bad1045610252eda02ee79549436896e784

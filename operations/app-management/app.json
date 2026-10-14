@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "Model Match",
+    "url": "https://patbing.github.io/model-match",
+    "description": "A five-round guessing game: read one anonymous answer and pick which of four AI models wrote it. All 96 answers are pre-generated with the Pollinations API; no keys or API calls while you play.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/model-match",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-09",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/16899",
+    "approvedDate": "2026-10-14",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/e0b59a48-7971-41e8-8739-ca297df5aa2f"
+  },
+  {
     "emoji": "🎬",
     "name": "Bit — tech stories told by an AI agent",
     "url": "https://bit.sessionweave.com",

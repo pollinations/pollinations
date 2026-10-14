@@ -963,6 +963,7 @@ Generate images from text prompts. Supports `response_format: "url"` (returns th
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
@@ -1010,6 +1011,7 @@ Community image models forward edits to the registrant's OpenAI-compatible endpo
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `resolution` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
 | `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
@@ -4009,6 +4011,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `seed` | `integer` \| `null` | Seed for reproducible results. -1 maps to the stable compatibility seed. |
 | `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |

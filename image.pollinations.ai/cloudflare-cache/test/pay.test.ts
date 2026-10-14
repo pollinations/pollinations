@@ -254,6 +254,8 @@ test("browsers get the free limit's page with the time left and the VM's headers
     const wait = response.headers.get("retry-after") ?? "";
     expect(text).toContain("Your next free image is ready in");
     expect(text).toContain("0.01 USD per image with Weft");
+    expect(text).toContain("1 free image every 45 seconds");
+    expect(text).not.toContain("undefined");
     expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');
     expect(text).toContain(`let wait = ${wait};`);
     expect(text).not.toContain("{{");

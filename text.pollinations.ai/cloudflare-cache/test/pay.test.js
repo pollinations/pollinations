@@ -262,6 +262,8 @@ test("browsers get the free limit's page with the time left and the VM's challen
     expect(response.status).toBe(402);
     const wait = response.headers.get("retry-after");
     expect(text).toContain("Your next free reply is ready in");
+    expect(text).toContain("1 free reply every 30 seconds");
+    expect(text).not.toContain("undefined");
     expect(text).toContain(`>0:${wait.padStart(2, "0")}</span>`);
     expect(text).toContain(`let wait = ${wait};`);
     expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');

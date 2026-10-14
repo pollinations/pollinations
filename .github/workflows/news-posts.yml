@@ -3,8 +3,8 @@ name: News / Posts
 # Writes, saves and delivers the news posts at today's times. 06:00 records /models
 # when it changed, writes yesterday's daily (on Sunday also the week, on the 1st also
 # last month) and schedules their Buffer posts; Sunday 18:00 sends the week's Discord
-# post. Wednesday 14:00 writes the model post and 14:05 the community post, each from
-# the recorded catalog against a week earlier; each is sent to Discord and only then
+# post. Wednesday 14:00 writes the model post and the community post, each from the
+# recorded catalog against a week earlier; each is sent to Discord and only then
 # saved. A run started by hand practises by default: it shows what it would save, and
 # saves and delivers nothing.
 on:
@@ -12,16 +12,16 @@ on:
     - cron: '0 6 * * *'
     - cron: '0 18 * * 0'
     - cron: '0 14 * * 3'
-    - cron: '5 14 * * 3'
   workflow_dispatch:
     inputs:
       job:
-        description: 'morning = what the 06:00 run does on that day; afternoon = the Sunday 18:00 run (the week''s Discord post)'
+        description: 'morning = what the 06:00 run does on that day; afternoon = the Sunday 18:00 run (the week''s Discord post); wednesday = the 14:00 model and community posts'
         required: true
         type: choice
         options:
           - morning
           - afternoon
+          - wednesday
           - daily
           - weekly
           - monthly
@@ -29,7 +29,7 @@ on:
           - community
           - catalog
       date:
-        description: 'The day (morning, afternoon, daily, catalog), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (models, community)'
+        description: 'The day (morning, afternoon, daily, catalog), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (wednesday, models, community)'
         required: true
         type: string
       run:
@@ -55,12 +55,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || 'afternoon') }}
+  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'wednesday' || 'afternoon') }}
   RUN: ${{ inputs.run || 'all' }}
 
 jobs:
   posts:
-    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
+    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'wednesday' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -95,6 +95,8 @@ jobs:
           from posts import check_date
           job, day = sys.argv[1:]
           posts = [(job, day)]
+          if job == "wednesday":
+              posts = [("models", day), ("community", day)]
           if job == "morning":
               check_date("daily", day)
               today = date.fromisoformat(day)
@@ -191,12 +193,12 @@ jobs:
           path: work/
           if-no-files-found: ignore
 
-      - name: Keep the model or community post for the deliver job
-        if: ${{ (env.JOB == 'models' || env.JOB == 'community') && env.RUN != 'preview' }}
+      - name: Keep the model and community posts for the deliver job
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) && env.RUN != 'preview' }}
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.JOB }}
-          path: work/${{ env.JOB }}/
+          name: posts
+          path: work/
 
       - name: Report failure as an issue
         if: ${{ failure() && env.RUN != 'preview' }}
@@ -209,7 +211,7 @@ jobs:
     needs: posts
     # After the posts, even when one failed, so a failed month never stops the day's
     # posts; the model and community posts only after they were written.
-    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || !contains(fromJSON('["models", "community"]'), inputs.job || (github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || ''))) }}
+    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || !contains(fromJSON('["models", "community", "wednesday"]'), inputs.job || (github.event.schedule == '0 14 * * 3' && 'wednesday' || ''))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -227,12 +229,12 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Fetch the model or community post
-        if: ${{ env.JOB == 'models' || env.JOB == 'community' }}
+      - name: Fetch the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.JOB }}
-          path: work/${{ env.JOB }}
+          name: posts
+          path: work
 
       - name: Deliver
         env:
@@ -264,6 +266,8 @@ jobs:
               commands=("schedule $JOB $DATE") ;;
             models|community)
               commands=("send $JOB $DATE --work work/$JOB") ;;
+            wednesday)
+              commands=("send models $DATE --work work/models" "send community $DATE --work work/community") ;;
           esac
           failed=0
           for command in "${commands[@]}"; do
@@ -271,18 +275,20 @@ jobs:
           done
           exit $failed
 
-      - name: Checkout news for the model or community post
-        if: ${{ env.JOB == 'models' || env.JOB == 'community' }}
+      - name: Checkout news for the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         uses: actions/checkout@v5
         with:
           ref: news
           path: news
           filter: blob:none
           sparse-checkout-cone-mode: false
-          sparse-checkout: /operations/social/news/${{ env.JOB }}/
+          sparse-checkout: |
+            /operations/social/news/models/
+            /operations/social/news/community/
 
-      - name: Save the model or community post
-        if: ${{ env.JOB == 'models' || env.JOB == 'community' }}
+      - name: Save the model and community posts
+        if: ${{ contains(fromJSON('["models", "community", "wednesday"]'), env.JOB) }}
         env:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
@@ -291,16 +297,20 @@ jobs:
         # changes saves nothing, and a rerun after a save finds it saved.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
-          if [ -e "news/operations/social/news/$JOB/$DATE/discord.json" ]; then
-            echo "$JOB $DATE is already saved"
-            exit 0
-          fi
-          python operations/social/scripts/posts.py save "$JOB" "$DATE" --news news --work "work/$JOB"
+          jobs=$JOB
+          [ "$JOB" = wednesday ] && jobs="models community"
+          for job in $jobs; do
+            if [ -e "news/operations/social/news/$job/$DATE/discord.json" ]; then
+              echo "$job $DATE is already saved"
+            else
+              python operations/social/scripts/posts.py save "$job" "$DATE" --news news --work "work/$job"
+            fi
+          done
           git -C news config user.name "github-actions[bot]"
           git -C news config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C news add --all
           git -C news diff --cached --quiet && exit 0
-          git -C news commit -qm "news: add $JOB $DATE"
+          git -C news commit -qm "news: add $jobs $DATE"
           for try in 1 2 3; do
             git -C news push -q origin HEAD:news && break
             [ "$try" = 3 ] && exit 1

@@ -8,6 +8,8 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -35,10 +37,15 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
     ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -53,7 +60,7 @@ import type {
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
@@ -750,6 +757,46 @@ export class Pollinations {
         );
     }
 
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url,
+                };
+            },
+        );
+    }
+
     // ============================================================================
     // Text Generation
     // ============================================================================
@@ -1094,6 +1141,92 @@ export class Pollinations {
         );
     }
 
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<AudioSpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({
+                    input: text,
+                    model: options.model,
+                    voice: options.voice,
+                    response_format: options.responseFormat,
+                    seed: options.seed,
+                }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const data =
+                    (await response.json()) as AudioSpeechWithTimestampsResponse;
+                const alignment = data?.normalized_alignment;
+                if (
+                    typeof data?.audio_base64 !== "string" ||
+                    (alignment != null &&
+                        (!Array.isArray(alignment.characters) ||
+                            !Array.isArray(
+                                alignment.character_start_times_seconds,
+                            ) ||
+                            !Array.isArray(
+                                alignment.character_end_times_seconds,
+                            ) ||
+                            alignment.characters.length !==
+                                alignment.character_start_times_seconds
+                                    .length ||
+                            alignment.characters.length !==
+                                alignment.character_end_times_seconds.length ||
+                            !alignment.characters.every(
+                                (c) => typeof c === "string",
+                            ) ||
+                            !alignment.character_start_times_seconds.every(
+                                Number.isFinite,
+                            ) ||
+                            !alignment.character_end_times_seconds.every(
+                                Number.isFinite,
+                            )))
+                ) {
+                    throw new PollinationsError(
+                        "Invalid timestamped speech response",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+                const words: SpeechWordTiming[] = [];
+                if (!alignment) return { ...data, words };
+                let current: SpeechWordTiming | undefined;
+                for (const [i, character] of alignment.characters.entries()) {
+                    if (/\s/u.test(character)) {
+                        current = undefined;
+                    } else {
+                        const start =
+                            alignment.character_start_times_seconds[i];
+                        const end = alignment.character_end_times_seconds[i];
+                        if (current) {
+                            current.word += character;
+                            current.end = end;
+                        } else {
+                            current = { word: character, start, end };
+                            words.push(current);
+                        }
+                    }
+                }
+                return { ...data, words };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1142,6 +1275,19 @@ export class Pollinations {
     async models(kind?: ModelKind): Promise<ModelInfo[]> {
         const path = kind ? `/${kind}/models` : "/models";
         return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
+    }
+
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
+        );
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================

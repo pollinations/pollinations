@@ -229,6 +229,140 @@ inside a `"use client"` component:
   }
   ```
 
+### React generation hooks
+
+`useImageGeneration`, `useTextGeneration`, `useAudioGeneration`,
+`useVideoGeneration`, and `useTranscription` run one request with the signed-in
+user's key and render nothing. Each returns `{ data, isLoading, error, run, rerun, cancel }`.
+Nothing is sent until `run(...)`; calling `run` again cancels the request in
+flight. A logout, a key change, or unmounting cancels it too, so a late response
+never reaches the next user. `cancel()` keeps the last result.
+
+Call `run` from an event handler, not during render.
+
+```tsx
+import { useMemo } from 'react';
+import { useImageGeneration } from '@pollinations/sdk/react';
+
+function ImageButton() {
+  const { data, isLoading, error, run } = useImageGeneration();
+  // Call URL.revokeObjectURL(src) when the result changes to free the blob.
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'black-forest-labs/flux.1-schnell' })}>Generate</button>
+      {error && <p>{error.message}</p>}
+      {src && <img src={src} alt="" />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTextGeneration } from '@pollinations/sdk/react';
+
+function Haiku() {
+  const { data, isLoading, run } = useTextGeneration();
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai/gpt-5.4-nano' })}>Write</button>
+      <p>{data}</p>
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useAudioGeneration } from '@pollinations/sdk/react';
+
+function Speak() {
+  const { data, run } = useAudioGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('Hello from Pollinations', { voice: 'nova' })}>Speak</button>
+      {src && <audio src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useVideoGeneration } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, run } = useVideoGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('a paper boat drifting on a pond', { duration: 4 })}>Render</button>
+      {src && <video src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTranscription } from '@pollinations/sdk/react';
+
+function Transcribe() {
+  const { data, isLoading, run } = useTranscription();
+  return (
+    <>
+      <input type="file" accept="audio/*" disabled={isLoading} onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) void run(file, { model: 'whisper-large-v3' });
+      }} />
+      <p>{data?.text}</p>
+    </>
+  );
+}
+```
+
+### React chat transport (`useChat`)
+
+`usePollinationsChatTransport` returns a transport for the Vercel AI SDK
+`useChat`. It streams `/v1/responses` from the browser with the signed-in
+user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
+parts with their results, and `message.metadata.usage` holds the usage of the
+reply. Assistant output is kept in `message.metadata.output` and sent back on
+later turns, preserving server tool results. Stream failures become `error`
+chunks. A rejected request makes the send
+fail, which `useChat` reports as an error. Caller-run function tools are not
+supported.
+
+`ai` is an optional peer dependency; install it, and `@ai-sdk/react`, to use
+`useChat`.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePollinationsChatTransport } from '@pollinations/sdk/react';
+
+function Chat() {
+  const transport = usePollinationsChatTransport({ model: 'openai/gpt-5.4-nano' });
+  const { messages, sendMessage, status } = useChat({ transport });
+  return (
+    <>
+      {messages.map((m) => (
+        <p key={m.id}>{m.role}: {m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')}</p>
+      ))}
+      <button disabled={status !== 'ready'} onClick={() => sendMessage({ text: 'Hi' })}>Send</button>
+    </>
+  );
+}
+```
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
@@ -418,6 +552,28 @@ Reference media must use public HTTP(S) URLs. See `video_capabilities` in
 [`/models`](https://gen.pollinations.ai/models) for model support. Whether frame
 controls and guidance media can be combined depends on the selected model.
 
+## 3D Generation
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations();
+const model = await client.model3d('chair', {
+  referenceImage: 'https://example.com/chair.png',
+  resolution: 'low',
+});
+await writeFile('chair.glb', new Uint8Array(model.buffer));
+```
+
+The default model requires a public reference image and ignores the prompt.
+Use `client.models('3d')` for available models and input requirements. Options
+include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
+`safe`, and `signal`. The result contains `buffer`, `contentType` and a URL
+without an API key. The server's MIME type is preserved for GLB and PLY files.
+3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
+Check each model's `paid_only` flag before using it with Quest Pollen.
+
 ## Audio (Text-to-Speech & Music)
 
 ```javascript
@@ -455,6 +611,25 @@ audioEl.play();
 ### Available Voices
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
+
+### Speech with timestamps
+
+```javascript
+const client = new Pollinations();
+const speech = await client.audioSpeechWithTimestamps('Hello world', {
+  voice: 'nova',
+  responseFormat: 'mp3',
+});
+console.log(speech.words);
+const audio = new Audio(`data:audio/mpeg;base64,${speech.audio_base64}`);
+```
+
+`words` groups the normalized text on whitespace and reports each word's
+`start` and `end` in seconds. Punctuation stays attached to the word.
+`alignment` and `normalized_alignment` preserve the API's character timings.
+When normalized timings are absent or null, `words` is empty; the audio is still returned.
+Other options are `model`, `seed` and `signal`. Use models that advertise
+`/v1/audio/speech/with-timestamps` in `client.models('audio')`.
 
 ## Vision (Image Input)
 
@@ -535,6 +710,19 @@ const videoModels = await getModels('video'); // also 'audio', 'embeddings'
 
 console.log(textModels.map(m => m.name));
 ```
+
+### Model status
+
+```javascript
+const client = new Pollinations();
+const { data } = await client.modelStatus({ traffic: 'regular', minutes: 60 });
+console.log(data.filter(row => row.is_rollup && row.errors_5xx > 0));
+```
+
+This returns the raw `/models/status` response with typed `data`, `meta`,
+`rows` and optional `statistics`. Latency and throughput can be `null`.
+`traffic` accepts `all` or `regular`; `minutes` is a rolling window from 1
+to 10080. Both use server defaults when omitted. Pass `signal` to cancel.
 
 ## Media Upload
 

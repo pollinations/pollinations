@@ -1,0 +1,32 @@
+{
+  "pr_number": 17204,
+  "title": "fix(cli): show device consent in JSON login",
+  "author": "Saauf",
+  "url": "https://github.com/pollinations/pollinations/pull/17204",
+  "merged_at": "2026-10-14T08:52:07Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed `polli --json auth login --no-browser` so the verification URL and user code appear on stderr before authorization polling, allowing an agent to show the user how to approve login. Successful explicit login now returns `{\"authenticated\":true}` on stdout; the shared auth helper remains silent on stdout so it does not disrupt harness or generation output or expose credentials. Documented agent-assisted login in the CLI skill and bumped `polli-cli` to 0.1.43.",
+    "keywords": [
+      "polli-cli",
+      "device login",
+      "JSON output",
+      "authentication",
+      "agent-assisted login"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17204.jpg",
+    "prompt": "In a cozy terminal nook with a code-plant, Polli helps a small CRT monitor robot read a device code and browser URL glowing on a screen, with lime green (#ecf874) accents against warm cream and pastel gradients. Polli, the main character, is a small cute pixel art bee with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, small rounded light blue translucent wings, and a tiny helper headset; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-14T08:53:26.738360+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "250b73f9ffd8e3a416a3ac8671370db28278dedf",
+  "announcements": []
+}

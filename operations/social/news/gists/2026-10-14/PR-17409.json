@@ -1,0 +1,32 @@
+{
+  "pr_number": 17409,
+  "title": "fix(ui): follow system color-mode changes when no override is saved",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/17409",
+  "merged_at": "2026-10-14T17:26:38Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The shared @pollinations/ui color-mode store now follows system light/dark preference changes when no choice is saved, updating both the hook and the page’s dark-mode class. A saved choice still takes precedence, and cross-tab synchronization remains intact. The system listener attaches when the first consumer subscribes and is removed when the last unsubscribes. Added a regression test and bumped @pollinations/ui from 0.1.0-alpha.12 to 0.1.0-alpha.13.",
+    "keywords": [
+      "color mode",
+      "system preference",
+      "dark mode",
+      "UI",
+      "React"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17409.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli watches a retro monitor shift gently between light and dark as a little system-preference dial turns; a saved-choice note keeps a second lamp steady beside a lime green (#ecf874) code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-14T17:27:51.652223+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "a40953b988547e51083e7275b3447ab9e1d8688a",
+  "announcements": []
+}

@@ -21,7 +21,6 @@ type AuthedContext = Context<{
 
 const KV_TTL = 600; // 10 minutes
 const DEVICE_CODE_LENGTH = 40;
-
 const DEFAULT_EXPIRES_IN = 1800; // 30 minutes
 
 type DeviceStatus = "pending" | "approved" | "denied";

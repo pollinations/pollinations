@@ -299,6 +299,27 @@ test("gen's failures get gen's error body and are not stored: 503 when gen is bu
     }
 });
 
+test("an <img> gets the card for each failure and refusal, at its size, with the answer's status", async () => {
+    const img = {
+        accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    };
+    for (const [path, status] of [
+        ["/prompt/gen:503?width=640&height=360", 503],
+        ["/prompt/gen:empty?width=640&height=360", 500],
+        ["/prompt/gen:400?width=640&height=360", 400],
+        ["/prompt/x?model=kontext&width=640&height=360", 403],
+    ] as const) {
+        const { response, bytes } = await call(path, { headers: img });
+
+        expect(response.status, path).toBe(status);
+        expect(response.headers.get("content-type"), path).toBe("image/jpeg");
+        const card = PhotonImage.new_from_byteslice(bytes);
+        expect([card.get_width(), card.get_height()], path).toEqual([640, 360]);
+        card.free();
+        expect(await storedAt(path), path).toBeNull();
+    }
+});
+
 test("a gen refusal the caller can fix gets gen's own answer, and is not stored", async () => {
     const { response, text } = await call("/prompt/gen:400?seed=1");
 

@@ -1,4 +1,5 @@
 import { env, fetchMock } from "cloudflare:test";
+import { PhotonImage } from "@cf-wasm/photon";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import myceliHeadHeaders from "./fixtures/image.myceli.ai-head-browser.headers?raw";
 import browserHeaders from "./fixtures/image.pollinations.ai-get-browser.headers?raw";
@@ -177,6 +178,34 @@ test("a script past the free limit gets gen's error body, a Retry-After and the 
         });
         expect(without(response.headers)).toEqual(vm);
     }
+});
+
+// What Chrome sends for an <img>
+const IMG = {
+    accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    "user-agent": "Mozilla/5.0",
+};
+
+test("an <img> past the free limit gets the card at its size, with the 402, its Retry-After and the VM's challenge", async () => {
+    const { response, bytes } = await call(
+        "/prompt/a%20fox?width=300&height=500",
+        { ip: await limitedIp(), headers: IMG },
+    );
+
+    expect(response.status).toBe(402);
+    expect(response.headers.get("content-type")).toBe("image/jpeg");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    // The x402 challenge for this request, as a script gets it
+    const challenge = JSON.parse(
+        atob(response.headers.get("payment-required") ?? ""),
+    );
+    expect(challenge.resource.url).toBe(
+        "https://image-origin.pollinations.ai/prompt/a%20fox",
+    );
+    const card = PhotonImage.new_from_byteslice(bytes);
+    expect([card.get_width(), card.get_height()]).toEqual([300, 500]);
+    card.free();
 });
 
 test("a rewritten path's challenge names /prompt on the origin host, without X-Cache", async () => {

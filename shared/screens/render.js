@@ -1,11 +1,20 @@
-// Builds ../free-limit-page.js, the page a browser gets past the free limit,
-// from @pollinations/ui components, as a module both Workers and their tests
-// can import. The Workers fill in its {{placeholders}}.
-// Run after changing the page or the package: npm install && npm run render
-import { readFileSync, writeFileSync } from "node:fs";
+// Builds, from @pollinations/ui components, the screens the Classic API shows
+// instead of an image or a reply:
+// - ../free-limit-page.js: the page a browser gets past the free limit, as a
+//   module both Workers and their tests can import; the Workers fill in its
+//   {{placeholders}}
+// - the image cards a page's <img> gets instead of a broken image, PNGs in
+//   image.pollinations.ai/cloudflare-cache/assets/cards, drawn by Chrome
+// Run after changing a screen or the package: npm install && npm run render
+// (set CHROME to Chrome's binary when it is not in /Applications)
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
     Alert,
     AppBrand,
+    BrandMark,
     Chip,
     CodeBlock,
     DiscordIcon,
@@ -219,5 +228,105 @@ const html = `<!DOCTYPE html>
 
 writeFileSync(
     new URL("../free-limit-page.js", import.meta.url),
-    `// Built by free-limit-page/render.js: do not edit\nexport const PAGE = ${JSON.stringify(html)};\n`,
+    `// Built by screens/render.js: do not edit\nexport const PAGE = ${JSON.stringify(html)};\n`,
 );
+
+// The image cards, one per answer an <img> can get, in the tones of Alert
+const CARDS = {
+    limit: {
+        tone: "polli:bg-theme-bg-active",
+        title: "Free limit reached",
+        body: "The Classic API makes 1 free image every 45 seconds.",
+        cta: "Unlimited images: enter.pollinations.ai",
+    },
+    busy: {
+        tone: "polli:bg-intent-warning-bg-light polli:text-intent-warning-text",
+        title: "At its limit right now",
+        body: "The free service is full. Reload in a few seconds.",
+        cta: "Full access: enter.pollinations.ai",
+    },
+    error: {
+        tone: "polli:bg-theme-bg-pale",
+        title: "Something went wrong",
+        body: "Reload in a few seconds to try again.",
+        cta: "Full access: enter.pollinations.ai",
+    },
+    enter: {
+        tone: "polli:bg-theme-bg-active",
+        title: "This model runs on enter",
+        body: "It isn’t part of the Classic API. Sign in to use it.",
+        cta: "enter.pollinations.ai",
+    },
+    refused: {
+        tone: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
+        title: "Image refused",
+        body: "This prompt or its settings can’t be used. Try a different prompt.",
+    },
+};
+// [CSS width, CSS height, pixel ratio]; Chrome's window is at least 520 wide
+const SHAPES = {
+    square: [520, 520, 2],
+    wide: [640, 360, 2],
+    tall: [540, 960, 4 / 3],
+};
+
+const cardPage = ({ tone, title, body, cta }) => `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><style>${css}</style>
+<style>html,body{margin:0;height:100%;font-family:var(--polli-font-body)}</style></head>
+<body>${renderToStaticMarkup(
+    h(
+        "div",
+        {
+            className: `${tone} polli:flex polli:h-full polli:flex-col polli:justify-between polli:text-theme-text-strong`,
+            style: { padding: "8%" },
+        },
+        h(
+            "span",
+            { className: "polli:block polli:h-6", style: { width: 195 } },
+            h(BrandMark, {
+                variant: "lockup",
+                className: "polli:h-full polli:w-full",
+            }),
+        ),
+        h(
+            "div",
+            { className: "polli:flex polli:flex-col polli:gap-3" },
+            h(Heading, { as: "h1", size: "display" }, title),
+            h(Text, { size: "lg", tone: "strong" }, body),
+        ),
+        h(
+            "div",
+            { className: "polli:flex" },
+            cta && h(Chip, { intent: "neutral", size: "lg" }, cta),
+        ),
+    ),
+)}</body></html>`;
+
+const chrome =
+    process.env.CHROME ??
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const work = mkdtempSync(join(tmpdir(), "classic-cards-"));
+for (const [kind, card] of Object.entries(CARDS)) {
+    const file = join(work, `${kind}.html`);
+    writeFileSync(file, cardPage(card));
+    for (const [shape, [width, height, ratio]] of Object.entries(SHAPES)) {
+        const png = new URL(
+            `../../image.pollinations.ai/cloudflare-cache/assets/cards/${kind}-${shape}.png`,
+            import.meta.url,
+        );
+        execFileSync(
+            chrome,
+            [
+                "--headless=new",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                `--user-data-dir=${join(work, "profile")}`,
+                `--force-device-scale-factor=${ratio}`,
+                `--window-size=${width},${height}`,
+                `--screenshot=${png.pathname}`,
+                `file://${file}`,
+            ],
+            { stdio: "ignore" },
+        );
+    }
+}

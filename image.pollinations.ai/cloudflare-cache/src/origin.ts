@@ -7,6 +7,7 @@ import {
     REFUSED,
     refusal,
 } from "../../../shared/messages.js";
+import type { CardKind } from "./cards.ts";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
@@ -266,6 +267,30 @@ const relative = (timing: Step[]) =>
         timestamp: info.timestamp - timing[0].timestamp,
     }));
 
+/** An <img> asks for an image; a browser opening the link asks for a page */
+const wantsImage = (request: Request) => {
+    const accept = request.headers.get("accept") ?? "";
+    return accept.includes("image/") && !accept.includes("text/html");
+};
+
+/**
+ * The answer for an <img>: its status and headers, with the image card at the
+ * requested size in place of the JSON
+ */
+async function withCard(answer: Response, kind: CardKind, job: Job) {
+    if (!wantsImage(job.request)) return answer;
+    const { card } = await import("./cards.ts");
+    const headers = new Headers(answer.headers);
+    headers.set("Content-Type", "image/jpeg");
+    headers.set("Cache-Control", "no-store");
+    headers.delete("Content-Length");
+    const { width, height } = job.safeParams;
+    return new Response(card(kind, width, height), {
+        status: answer.status,
+        headers,
+    });
+}
+
 /** The VM's error JSON; timingInfo holds the steps this request reached */
 function errorJson(job: Job, error: Error & { status?: number }) {
     const status = error.status || 500;
@@ -332,7 +357,7 @@ export async function generate(c: Context, url: URL, route: string) {
             403,
             REFUSED.enterOnly(model),
         );
-        return vmResponse(body, status, headers);
+        return withCard(vmResponse(body, status, headers), "enter", job);
     }
 
     const { env, ctx } = job;
@@ -382,13 +407,21 @@ export async function generate(c: Context, url: URL, route: string) {
             );
         }
         const { pay } = await import("./pay.ts");
-        return explainFreeLimit(
+        const answer = explainFreeLimit(
             request,
             await pay(request, pathname, env, ctx, unpaid),
             "image",
             FREE_INTERVAL_MS,
             slot.until,
         );
+        // The free limit's 402 with its message: a paying client's 402 is the
+        // payment's own answer
+        const paying =
+            request.headers.has("payment-signature") ||
+            request.headers.has("x-payment");
+        return answer.status === 402 && !paying
+            ? withCard(answer, "limit", job)
+            : answer;
     }
 
     // go or wait: free the IP when the generation ends, even if the client
@@ -513,7 +546,9 @@ async function generateImage(job: Job, ended: () => void) {
             body: error.genBody,
             headers: { "Content-Type": "application/json; charset=utf-8" },
         };
-        return vmResponse(body, status, headers);
+        const kind =
+            status === 503 ? "busy" : status >= 500 ? "error" : "refused";
+        return await withCard(vmResponse(body, status, headers), kind, job);
     } finally {
         ended();
     }

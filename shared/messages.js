@@ -43,7 +43,7 @@ const limitNotice = (every, wait) =>
     `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER}), then try again.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
 
-/** The free limit's page for a browser, built by free-limit-page/render.js */
+/** The free limit's page for a browser, built by screens/render.js */
 function page(kind, wait) {
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];

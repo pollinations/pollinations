@@ -2308,10 +2308,16 @@ export async function auditEvidence(proposal, models, sources, decision) {
                     const position = text
                         .toLowerCase()
                         .indexOf(name.toLowerCase());
+                    const api =
+                        discovery.kind === "provider"
+                            ? (text.match(
+                                  /\b(?:OpenAI[- ]compatible|AI inference|inference API)\b/i,
+                              ) ?? text.match(/\bAPI key\b/i))
+                            : null;
                     return `Source URL: ${source.url}\n${text.slice(
                         Math.max(0, position - 400),
-                        position + name.length + 1100,
-                    )}`;
+                        position + name.length + (api ? 600 : 1100),
+                    )}${api ? `\n${text.slice(Math.max(0, api.index - 120), api.index + 650)}` : ""}`;
                 })
                 .filter(Boolean)
                 .join("\n---\n")

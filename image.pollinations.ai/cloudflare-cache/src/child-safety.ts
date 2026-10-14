@@ -117,19 +117,22 @@ const MINORS = [
     "미성년",
 ];
 
-// Minors, unless an age of 18 or 19 stands right by the word
-const TEENS = [
+// Minors, unless an age of 18 or 19 is given for them
+const TEEN = [
     "teen",
-    "teens",
     "teenage",
     "teenaged",
     "teenager",
-    "teenagers",
     "adolescent",
-    "adolescents",
     "adolescente",
-    "adolescentes",
     "подросток",
+];
+const TEENS = [
+    ...TEEN,
+    "teens",
+    "teenagers",
+    "adolescents",
+    "adolescentes",
     "подростки",
 ];
 
@@ -300,11 +303,14 @@ const minors = matcher(MINORS);
 const teens = matcher(TEENS);
 const sexual = matcher(SEXUAL);
 
-// "18 year old teen", "19yo teen", "teen aged 19": a teen who is an adult
-const teenWords = TEENS.map((term) => fold(term).trim()).join("|");
+// "18 year old teen", "teen aged 19", "teens 19 years old": adults. A bare
+// number is no age ("18 teens" counts them), so a unit or "aged" is needed
+const either = (terms: string[]) =>
+    terms.map((term) => fold(term).trim()).join("|");
+const UNIT = "(?:years? old|yrs? old|yo|y o)";
 const ADULT_TEEN = new RegExp(
-    `(?<!\\d)1[89] ?(?:years? old |yrs? old |yo |y o )?(?:${teenWords})(?!\\p{L})` +
-        `|(?<!\\p{L})(?:${teenWords}) (?:aged |age )?1[89](?!\\d)`,
+    `(?<!\\d)1[89] ?${UNIT} (?:${either(TEEN)})(?!\\p{L})` +
+        `|(?<!\\p{L})(?:${either(TEENS)}) (?:aged? 1[89]|1[89] ?${UNIT})(?![\\p{L}\\p{N}])`,
     "gu",
 );
 

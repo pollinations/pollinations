@@ -4,6 +4,21 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.19] - 2026-10-14
+
+### Fixed
+- Errors whose body is `{ error: "message" }`, such as `accountEarnings()`
+  failures, keep the server's message instead of a generic
+  `Request failed with status N`.
+
+## [5.1.0-alpha.18] - 2026-10-14
+
+### Added
+- Headless image, text, audio, video and transcription hooks with cancellation
+  and rerun, using the signed-in user's key.
+- A `useChat` transport for `/v1/responses`, including server-run tool results,
+  conversation history and usage. `ai` remains an optional peer dependency.
+
 ## [5.1.0-alpha.17] - 2026-10-14
 
 ### Added

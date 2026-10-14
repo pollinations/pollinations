@@ -1,3 +1,4 @@
+export { usePollinationsChatTransport } from "./chat-transport.js";
 export type {
     AuthActionsValue,
     AuthContextValue,
@@ -5,6 +6,7 @@ export type {
 } from "./contexts.js";
 export {
     type AccountResourceValue,
+    type GenerationValue,
     type UseAccountBalanceValue,
     type UseAccountKeyUsageOptions,
     type UseAccountKeyUsageValue,
@@ -15,10 +17,15 @@ export {
     useAccountKey,
     useAccountKeyUsage,
     useAccountProfile,
+    useAudioGeneration,
     useAuth,
     useAuthActions,
     useAuthState,
+    useImageGeneration,
     useModelCatalog,
+    useTextGeneration,
+    useTranscription,
+    useVideoGeneration,
 } from "./hooks.js";
 export {
     DEFAULT_ENTER_URL,

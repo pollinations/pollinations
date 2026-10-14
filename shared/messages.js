@@ -1,5 +1,6 @@
 // What Free API Classic tells a caller it did not answer: one sentence each,
 // the same in both Workers. ?ref=classic lets enter count the visits.
+import { PAGE } from "./free-limit-page.js";
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
 
@@ -29,10 +30,23 @@ const FREE_LIMIT = {
     ],
 };
 
+/** The free limit's page for a browser, built by free-limit-page/render.js */
+function page(kind, every, wait) {
+    const [item, items] =
+        kind === "image" ? ["image", "images"] : ["reply", "replies"];
+    const clock = `0:${String(wait).padStart(2, "0")}`;
+    const values = { item, items, every, wait, clock };
+    return [
+        "text/html; charset=utf-8",
+        PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]),
+    ];
+}
+
 /**
- * The paywall's 402 for a caller that is not a browser and sent no payment,
- * with the free limit's message in place of its empty {} and a Retry-After.
- * PAYMENT-REQUIRED stays as it was: x402 clients read only that header.
+ * The paywall's 402 for a caller that sent no payment, with the free limit's
+ * page for a browser, or its message in place of the empty {}, and a
+ * Retry-After. PAYMENT-REQUIRED stays as it was: x402 clients read only that
+ * header.
  * @param {"image" | "text" | "openai"} kind
  * @param {number} until when the IP's next free request may start
  */
@@ -41,16 +55,20 @@ export function explainFreeLimit(request, response, kind, intervalMs, until) {
         request.headers.has("payment-signature") ||
         request.headers.has("x-payment");
     const type = response.headers.get("content-type") ?? "";
+    const browser = type.startsWith("text/html");
     if (
         response.status !== 402 ||
         paying ||
-        !type.startsWith("application/json")
+        !(browser || type.startsWith("application/json"))
     )
         return response;
     const wait = Math.max(1, Math.ceil((until - Date.now()) / 1000));
-    const [contentType, body] = FREE_LIMIT[kind](intervalMs / 1000, wait);
+    const every = intervalMs / 1000;
+    const [contentType, body] = browser
+        ? page(kind, every, wait)
+        : FREE_LIMIT[kind](every, wait);
     const headers = new Headers(response.headers);
-    // Express's weak ETag and the length were for the empty {}
+    // Express's weak ETag and the length were for the paywall's own body
     headers.delete("ETag");
     headers.delete("Content-Length");
     headers.set("Content-Type", contentType);

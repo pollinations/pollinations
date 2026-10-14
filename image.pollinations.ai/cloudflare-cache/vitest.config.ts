@@ -3,28 +3,6 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 // @ts-expect-error
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
-// wrangler.toml's Data rule for *.webp, for the tests: the pool cannot load a
-// Data module from outside this folder (shared/assets/weft-paywall.webp). The
-// module id has no ".webp" in it, or the pool hands it to that rule anyway.
-const AS_ARRAY_BUFFER = "-webp-as-array-buffer.js";
-const webpAsArrayBuffer = {
-    name: "webp-as-array-buffer",
-    enforce: "pre" as const,
-    async resolveId(source: string, importer: string) {
-        if (!source.endsWith(".webp")) return;
-        const resolved = await this.resolve(source, importer, {
-            skipSelf: true,
-        });
-        return resolved.id.replace(/\.webp$/, AS_ARRAY_BUFFER);
-    },
-    load(id: string) {
-        if (!id.endsWith(AS_ARRAY_BUFFER)) return;
-        const file = id.replace(AS_ARRAY_BUFFER, ".webp");
-        const base64 = readFileSync(file).toString("base64");
-        return `export default Uint8Array.from(atob("${base64}"), (c) => c.charCodeAt(0)).buffer;`;
-    },
-};
-
 // What DreamShaper on gen returns: a 512x512 JPEG, or 1024x1024 for "gen:1024"
 const JPEG_512 = readFileSync(
     new URL("test/fixtures/gen-512.jpg", import.meta.url),
@@ -62,7 +40,6 @@ async function gen(req: IncomingMessage, res: ServerResponse) {
 
 // Tests run in workerd with the [env.test] bindings from wrangler.toml
 export default defineWorkersConfig({
-    plugins: [webpAsArrayBuffer],
     test: {
         include: ["test/**/*.test.ts"],
         restoreMocks: true,

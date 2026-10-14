@@ -1,7 +1,6 @@
 import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
-import browserBody from "./fixtures/text.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
@@ -237,14 +236,19 @@ test("POST /openai gets an OpenAI-style error and the VM's challenge", async () 
     );
 });
 
-test("browsers get the VM's paywall page byte for byte", async () => {
+test("browsers get the free limit's page with the time left and the VM's challenge", async () => {
     const { response, text } = await call(CAPTURED_BROWSER, {
         ip: await limitedIp(),
         headers: BROWSER,
     });
 
     expect(response.status).toBe(402);
-    expect(text).toBe(browserBody);
+    const wait = response.headers.get("retry-after");
+    expect(text).toContain("Your next free reply is ready in");
+    expect(text).toContain(`>0:${wait.padStart(2, "0")}</span>`);
+    expect(text).toContain(`let wait = ${wait};`);
+    expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');
+    expect(text).not.toContain("{{");
     const vm = capturedHeaders(browserHeaders);
     for (const name of [
         "content-type",

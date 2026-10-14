@@ -1,9 +1,6 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
-import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import art from "../../../shared/assets/weft-paywall.webp";
-import { createWeftPaywall } from "../../../shared/weft-paywall.js";
 import { CORS, etag } from "./origin.js";
 
 // The $0.01 x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
@@ -45,11 +42,9 @@ function paywallApp(env) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
-            paywall: createWeftPaywall(
-                "response",
-                findDefaultAsset,
-                Buffer.from(art).toString("base64"),
-            ),
+            // An empty page: shared/messages.js answers browsers with the
+            // free limit's page
+            paywall: { generateHtml: () => "" },
             schemes: [
                 { network: env.WEFT_NETWORK, server: new ExactEvmScheme() },
             ],

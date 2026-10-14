@@ -1,9 +1,6 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
-import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import art from "../../../shared/assets/weft-paywall.webp";
-import { createWeftPaywall } from "../../../shared/weft-paywall.js";
 import { chunked, expressPage, VM_CORS } from "./origin.ts";
 
 // The $0.01 x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
@@ -57,11 +54,9 @@ function paywallApp(env: Record<string, any>) {
             name: "Pollinations legacy image",
             type: "api",
             tags: ["image"],
-            paywall: createWeftPaywall(
-                "image",
-                findDefaultAsset,
-                Buffer.from(art).toString("base64"),
-            ),
+            // An empty page: shared/messages.js answers browsers with the
+            // free limit's page
+            paywall: { generateHtml: () => "" },
             schemes: [
                 { network: env.WEFT_NETWORK, server: new ExactEvmScheme() },
             ],

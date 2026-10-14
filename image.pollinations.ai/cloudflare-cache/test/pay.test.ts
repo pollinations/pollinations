@@ -1,7 +1,6 @@
 import { env, fetchMock } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import myceliHeadHeaders from "./fixtures/image.myceli.ai-head-browser.headers?raw";
-import browserBody from "./fixtures/image.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/image.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/image.pollinations.ai-get-json.headers?raw";
 import headFailureHeaders from "./fixtures/image.pollinations.ai-head-json.headers?raw";
@@ -209,16 +208,23 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
     );
 });
 
-test("browsers get the VM's paywall page byte for byte", async () => {
+test("browsers get the free limit's page with the time left and the VM's headers", async () => {
     const { response, text } = await call(`${CAPTURED_BROWSER}${QUERY}`, {
         ip: await limitedIp(),
         headers: BROWSER,
     });
 
     expect(response.status).toBe(402);
-    expect(text).toBe(browserBody);
-    // Every header of the live page, which had no Content-Length or ETag
-    expect(Object.fromEntries(response.headers)).toEqual(
+    const wait = response.headers.get("retry-after") ?? "";
+    expect(text).toContain("Your next free image is ready in");
+    expect(text).toContain("1 image every 45 seconds");
+    expect(text).toContain(`let wait = ${wait};`);
+    expect(text).not.toContain("{{");
+    // The live page's headers, plus the Retry-After and the page's length
+    const headers = Object.fromEntries(response.headers);
+    delete headers["content-length"];
+    delete headers["retry-after"];
+    expect(headers).toEqual(
         Object.fromEntries(capturedHeaders(browserHeaders)),
     );
 });

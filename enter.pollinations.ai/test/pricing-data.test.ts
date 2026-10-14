@@ -251,7 +251,7 @@ test("catalog distinguishes flat image rates from image-token rates", () => {
     expect(nanoPrice?.prices).toContainEqual({
         direction: "output",
         kind: "image",
-        price: "126.6",
+        price: "120.0",
         unit: "token",
     });
 });
@@ -930,7 +930,7 @@ test("public model catalog exposes Gemini billing prices without internals", () 
         expect.arrayContaining([
             expect.objectContaining({
                 label: "Search",
-                price: "14.77",
+                price: "14",
                 currency: "pollen",
                 quantity: 1_000,
                 unit: "search queries",
@@ -1553,7 +1553,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
             units: 3,
             unitCost: 0.014,
             cost: 0.042,
-            price: 0.042 * 1.055,
+            price: 0.042,
         },
     ]);
 

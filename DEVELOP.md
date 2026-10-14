@@ -250,7 +250,6 @@ graph TD
 
     subgraph SOCIAL["📢 Social Automation"]
         BUFFER["Buffer\nX · LinkedIn · IG"]:::social
-        REDDIT["Reddit VPS\nSSH deploy"]:::social
         DISCORD_W["Discord\nWebhooks"]:::social
     end
 

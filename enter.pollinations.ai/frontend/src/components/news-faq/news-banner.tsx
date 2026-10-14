@@ -43,7 +43,7 @@ type Announcement = {
     /** The day it shipped or takes effect. */
     date: string;
     until: string;
-    label: "New" | "Changing";
+    label: "New" | "Updated" | "Changing";
     title: string;
     text: string;
     icon: IconTileProps["icon"];
@@ -68,6 +68,15 @@ const ANNOUNCEMENTS: Announcement[] = [
         },
     },
     {
+        date: "2026-10-13",
+        until: "2026-10-27",
+        label: "Updated",
+        title: "Sandboxes",
+        text: "Now in your dashboard: create, resume and kill sandboxes, then connect over SSH.",
+        icon: TerminalIcon,
+        cta: { label: "Open Sandboxes", href: "/sandboxes" },
+    },
+    {
         date: "2026-10-10",
         until: "2026-10-24",
         label: "New",
@@ -87,18 +96,6 @@ const ANNOUNCEMENTS: Announcement[] = [
         text: "Buy Pollen packs with USDC: pick a pack, then choose Pay with Crypto.",
         icon: WalletIcon,
         cta: { label: "Buy Pollen", href: "/pollen" },
-    },
-    {
-        date: "2026-10-02",
-        until: "2026-10-16",
-        label: "New",
-        title: "Sandboxes",
-        text: "Create E2B-compatible sandboxes with the API or polli sandbox, then connect over SSH.",
-        icon: TerminalIcon,
-        cta: {
-            label: "Read the docs",
-            href: "https://gen.pollinations.ai/docs#tag/sandboxes",
-        },
     },
 ];
 

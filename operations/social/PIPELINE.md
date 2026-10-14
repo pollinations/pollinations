@@ -16,13 +16,14 @@ EACH MERGED PR (news-create-pr-gist.yml)
   discord_pr.py: the gist → Discord post (with the image)
 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
-  06:00 daily        yesterday's daily (X, Reddit); Sunday also the week (X, LinkedIn,
-                     Instagram, Reddit, Discord); the 1st also last month (summary + cover).
-                     Then Buffer schedules X, LinkedIn and Instagram at today's slots.
-  15:00 Mon–Sat      Reddit for yesterday's daily
-  18:00 Sunday       Reddit and Discord for the week
-  14:00 Wednesday    model post: /models compared with last Wednesday's snapshot,
-                     sent to Discord, then saved
+  06:00 daily        /models recorded when it changed; yesterday's daily (X); Sunday
+                     also the week (X, LinkedIn, Instagram, Discord); the 1st also
+                     last month (summary + cover). Then Buffer schedules X, LinkedIn
+                     and Instagram at today's slots.
+  18:00 Sunday       Discord for the week
+  14:00 Wednesday    model post: official models in the recorded catalog against a
+                     week earlier, sent to Discord, then saved
+  14:05 Wednesday    community post: the same for community models
 
 AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
   news_index.py → index.json (Enter /news, README)     readme.py → README Latest News PR at 07:00
@@ -32,13 +33,14 @@ AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
 |---|---|---|
 | Each merged PR | gist + image | Discord, right away |
 | Daily 06:00 | `daily/<yesterday>/` | X in Buffer for the next Mon–Sat 15:00 |
-| Mon–Sat 15:00 | — | Reddit, yesterday's daily |
 | Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
-| Sunday 18:00 | — | Reddit and Discord, the week |
+| Sunday 18:00 | — | Discord, the week |
+| Daily 06:00 | `models/snapshots/<today>.json` when `/models` changed | — |
 | Wednesday 14:00 | `models/` | Discord with the models role ping, then saved |
+| Wednesday 14:05 | `community/` | Discord in the same channel without a ping, then saved |
 | 1st 06:00 | also `monthly/<last month>/` | — |
 
-The Saturday daily is written on Sunday and never delivered: the week replaces it.
+The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when.
 
 ### Branch Strategy
 
@@ -130,7 +132,7 @@ Existing AI categories, text, images, and publish-tier rules remain available to
 | `announcements` | Exact official-model changes computed once from the registry before/after merge. Scheduled/unconfirmed status is retained. |
 | `image.prompt`, `image.url` | The image prompt stored once and the generated image used by realtime Discord. |
 
-`gist_context()` passes the same facts to realtime Discord, daily and weekly: summary, selection metadata, Area/Type/Source and app links. Only the per-PR Discord post also receives model `announcements`: price, balance and eligibility changes go to Discord and Enter's model news, never to X, Reddit, LinkedIn or Instagram. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration.
+`gist_context()` passes the same facts to realtime Discord, daily and weekly: summary, selection metadata, Area/Type/Source and app links. Only the per-PR Discord post also receives model `announcements`: price, balance and eligibility changes go to Discord and Enter's model news, never to X, LinkedIn or Instagram. Platform prose is generated downstream. Existing archive summaries remain readable without a backfill. Optional metadata backfills are prepared locally and preserve existing text, images and publishing flags. `gist.category` remains during classification migration.
 
 `news_index.py` (workflow `news-build-index.yml`, after every gist and every `news-posts.yml` run) writes `index.json` on the news branch: model announcements from gists and the daily `highlights`. Enter's `/news` page and the README read only this file.
 
@@ -170,7 +172,6 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 - `summary.json` — the day's summary; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) feed `index.json`
 - `twitter.json` — simplified platform envelope
-- `reddit.json` — simplified platform envelope (LinkedIn and Instagram are weekly-only)
 - `images/` — all generated images
 - `delivery.json` — written only by `deliver.py`: one entry per post sent
 
@@ -182,7 +183,6 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `twitter.json` — simplified platform envelope
 - `linkedin.json` — simplified platform envelope
 - `instagram.json` — simplified platform envelope
-- `reddit.json` — simplified platform envelope
 - `discord.json` — simplified platform envelope
 - `images/` — all generated images
 - `delivery.json` — written only by `deliver.py`
@@ -195,10 +195,14 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Model post: `operations/social/news/models/`
 
-- `snapshots/YYYY-MM-DD.json` — `/models` on that Wednesday; the next Wednesday compares with the latest one
-- `diffs/YYYY-MM-DD.json`, `YYYY-MM-DD/discord.json` — the comparison and the post, saved only after Discord confirms the send
+- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
+- `diffs/YYYY-MM-DD.json`, `YYYY-MM-DD/discord.json` — the comparison and the post, saved only after Discord confirms the send; a week without changes saves nothing
 - `YYYY-MM-DD/delivery.json` — written only by `deliver.py`
 - `models.md` — every model post, newest first
+
+### Community post: `operations/social/news/community/`
+
+`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text.
 
 ### Platform Envelope
 
@@ -206,13 +210,12 @@ Daily and weekly platform JSON now share one persisted shape:
 
 ```json
 {
-  "platform": "twitter|linkedin|instagram|reddit|discord",
+  "platform": "twitter|linkedin|instagram|discord",
   "scope": "daily|weekly",
   "date": "YYYY-MM-DD",
   "period_start": "YYYY-MM-DD",
   "period_end": "YYYY-MM-DD",
   "generated_at": "ISO-8601 timestamp",
-  "title": "optional, used by Reddit",
   "text": "optional, final publish-ready text",
   "images": [{"url": "https://..."}],
   "metadata": {"post_type": "post|carousel"}
@@ -226,7 +229,7 @@ Daily and weekly platform JSON now share one persisted shape:
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `news-create-pr-gist.yml` | `pull_request_target` closed + merged, into `main` or `master` | `gist.py`, then `discord_pr.py` |
-| `news-posts.yml` | 06:00 daily, 15:00 Mon–Sat, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer, Discord and Reddit keys) |
+| `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 and 14:05 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-build-index.yml` | after the two above, and 06:30 daily | `news_index.py` → `index.json` |
 | `news-sync-readme.yml` | 07:00 daily | `readme.py` → README Latest News PR to `main` |
 
@@ -234,10 +237,10 @@ Daily and weekly platform JSON now share one persisted shape:
 
 | Input | Values |
 |---|---|
-| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `daily`, `weekly`, `monthly`, `models` |
+| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `daily`, `weekly`, `monthly`, `models`, `community`, `catalog` (record `/models`) |
 | `date` | the day, the Sunday, the month (`YYYY-MM`) or the Wednesday |
 | `run` | `preview` (default): writes and saves into a throwaway checkout, shows the diff and keeps the texts and pictures with the run; sends nothing. `all`, `write + save`, `deliver` |
-| `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model post is never replaced |
+| `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model or community post is never replaced |
 
 A preview is the before/after check for any change to a prompt or a script: run it for a date already on `news` and compare.
 
@@ -249,7 +252,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `discord_pr.py` | Per PR: the gist → `prompts/posts/discord-pr.md` → Discord webhook |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
-| `deliver.py` | `schedule` (Buffer), `send` (Discord, Reddit; the model post from its work folder), `mark` (a person settles a stuck send) |
+| `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
 | `news_index.py` | `index.json`: model announcements, API changes and daily highlights for Enter `/news` and the README |
 | `readme.py` | README Latest News from `index.json` |
 | `model_catalog.ts` | The model list at a commit, for the gist's model changes |
@@ -263,17 +266,17 @@ A preview is the before/after check for any change to a prompt or a script: run 
 1. **One run at a time.** `news-posts.yml` runs queue; none is cancelled.
 2. **Writing and delivering are separate jobs.** Rerunning a delivery never writes new posts; a failed post never stops the others' delivery.
 3. **Save once.** Each post is one commit to `news`; a saved date is skipped unless `overwrite` is set.
-4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send; Reddit can only be recorded as `started` and is never retried. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed`.
+4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed`.
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
-6. **The model baseline moves only after a confirmed send:** the snapshot is saved after Discord has the post; a week without changes saves only the snapshot.
-7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14); older folders went out with the previous senders.
+6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
+7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); older folders went out with the previous senders.
 
 ## Error handling
 
 - **No automatic retries.** Model, picture, GitHub and Discord calls are tried once; a failure (an empty model answer included) turns the run red and a person reruns it with the repair skill (`.claude/skills/news-pipeline/SKILL.md`). The one exception is the push to `news`, which fetches, rebases and pushes again up to three times because other writers land on `news` every few minutes.
 - **Gist (`gist.py`) fails loud.** If classification, the model or API change lookup, the AI analysis, validation or the image fails, the run fails: no partial gist, no Discord post.
 - **Per-PR Discord (`discord_pr.py`)** fails the run if the message, the image or the webhook fails; the post is never degraded.
-- **Scheduled posts:** a post whose reply misses a required field, or whose picture fails, stops before anything is saved. A day or week without daily-tier gists writes nothing. Each job's failure opens its own issue ("Workflow failing: News / Posts — writing" or "— delivery"), so Reddit's known failure can't hide a writing failure.
+- **Scheduled posts:** a post whose reply misses a required field, or whose picture fails, stops before anything is saved. A day or week without daily-tier gists writes nothing. Each job's failure opens its own issue ("Workflow failing: News / Posts — writing" or "— delivery"), so a delivery failure can't hide a writing failure.
 
 ## Concurrency
 
@@ -301,8 +304,8 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | Family | Written by | Count | Used by |
 |---|---|---|---|
 | Per-PR pixel art | `gist.py` | 1 per PR | Discord per PR |
-| Daily | `posts.py` | 2 (X, Reddit) | the daily posts |
-| Weekly | `posts.py` | 7 (X, LinkedIn, 3 Instagram, Reddit, Discord) | the weekly posts |
+| Daily | `posts.py` | 1 (X) | the daily post |
+| Weekly | `posts.py` | 6 (X, LinkedIn, 3 Instagram, Discord) | the weekly posts |
 | Monthly cover | `posts.py` | 1 | the monthly page |
 
 Every picture uses `nanobanana-2-lite` with the character reference `prompts/brand/characters-ref.jpg` (one Polli, one monitor robot, one Nomnom) and the shared style text in `common.IMAGE_STYLE_SUFFIX`, which also says each character appears at most once. The model post has no picture.
@@ -312,10 +315,10 @@ Every picture uses `nanobanana-2-lite` with the character reference `prompts/bra
 | Step | AI calls | Pictures |
 |---|---|---|
 | PR gists (5×) | 5 | 5 |
-| Daily summary + X + Reddit | 3 | 2 |
-| **Total** | **8** | **7** |
+| Daily summary + X | 2 | 1 |
+| **Total** | **7** | **6** |
 
-Sunday adds 6 calls and 7 pictures, the 1st 2 calls and 1 picture, Wednesday 1 call.
+Sunday adds 5 calls and 6 pictures, the 1st 2 calls and 1 picture, Wednesday 2 calls.
 
 ---
 
@@ -329,11 +332,11 @@ operations/social/prompts/
     bee.md                  {bee_character}  Polli
     links.md                {links}          links posts may use
     characters-ref.jpg      the character sheet sent with every picture
-  tone/                     one voice per platform: twitter, linkedin, instagram, reddit, discord
+  tone/                     one voice per platform: twitter, linkedin, instagram, discord
   gist.md                   each merged PR: the gist
   posts/                    one file per post: settings between --- lines, then the task
-    discord-pr.md  daily-summary.md  daily-x.md  daily-reddit.md
-    weekly-summary.md  weekly-x.md  weekly-linkedin.md  weekly-instagram.md  weekly-reddit.md  weekly-discord.md
+    discord-pr.md  daily-summary.md  daily-x.md
+    weekly-summary.md  weekly-x.md  weekly-linkedin.md  weekly-instagram.md  weekly-discord.md
     monthly-summary.md  monthly-cover.md  model-post.md
 ```
 

@@ -77,4 +77,26 @@ describe("forwarded request client-IP resolution", () => {
         );
         expect(getRealClientIp(viaCloudFront)).toBe("46.142.212.69");
     });
+
+    // A direct hit carries the caller's real address in CF-Connecting-IP
+    // (which Cloudflare sets and clients cannot forge). Spoofed proxy headers
+    // must not be able to replace it: otherwise a caller rotating a fake
+    // X-Original-Client-IP gets a fresh identity per request and walks straight
+    // through every per-IP rate limit.
+    it("ignores spoofed proxy headers on a direct hit outside the edge egress", () => {
+        const spoofed = mockContext("https://gen.myceli.ai/text/hi", {
+            "x-forwarded-host": "gen.pollinations.ai",
+            "x-original-client-ip": "9.9.9.9",
+            "cf-connecting-ip": "203.0.113.42", // the caller's real address
+        });
+        expect(hasTrustedProxyHeaders(spoofed)).toBe(true); // header alone lies
+        expect(getRealClientIp(spoofed)).toBe("203.0.113.42");
+
+        const ipv6Direct = mockContext("https://gen.myceli.ai/text/hi", {
+            "x-forwarded-host": "gen.pollinations.ai",
+            "x-original-client-ip": "9.9.9.9",
+            "cf-connecting-ip": "2a01:4f8:1c17::1",
+        });
+        expect(getRealClientIp(ipv6Direct)).toBe("2a01:4f8:1c17::1");
+    });
 });

@@ -69,7 +69,9 @@ describe.each([
                     headers: {
                         "x-forwarded-host": "gen.pollinations.ai",
                         "x-original-client-ip": "192.0.2.1",
-                        "cf-connecting-ip": "192.0.2.2",
+                        // The TCP peer at the worker is the CloudFront
+                        // Origin Shield egress, not the visitor.
+                        "cf-connecting-ip": "64.252.67.10",
                         "user-agent": "logger-test",
                     },
                 },

@@ -359,10 +359,12 @@ describe("gen worker routing", () => {
             "polli",
             "pollinations-api",
             "quest-contributor",
+            "pollinations-sdk",
         ]);
         const [polli, apiSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
+        expect(body.skills[2].description).toMatch(/npm package/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");

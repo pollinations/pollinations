@@ -5,6 +5,7 @@ import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
+import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 
@@ -18,6 +19,7 @@ const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
     { name: "pollinations-api", markdown: API_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
+    { name: "pollinations-sdk", markdown: SDK_SKILL },
 ].map((skill) => ({
     ...skill,
     path: `/.well-known/agent-skills/${skill.name}/SKILL.md`,

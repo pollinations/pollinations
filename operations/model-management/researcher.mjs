@@ -30,6 +30,7 @@ import {
     DISCOVERY_MODES,
     mentions as mentionsModelIdentity,
     officialCandidates,
+    PROVIDER_CATALOG_URLS,
     parseLeads,
     prepareResearch,
     publicAddress,
@@ -3085,6 +3086,7 @@ export async function main(env = process.env) {
     };
     const auditClaims = (proposal, models, sources) =>
         auditEvidence(proposal, models, sources, decision);
+    const catalogSources = [];
     await reconcile();
     const run = async (target, task) => {
         target.status = "running";
@@ -3100,6 +3102,7 @@ export async function main(env = process.env) {
                         control: services.control,
                         extract: services.extract,
                         remainingPollen: services.remainingPollen,
+                        catalogSources,
                     });
                 } catch (error) {
                     const partial = error.evidence ?? {};
@@ -3338,6 +3341,17 @@ export async function main(env = process.env) {
         } catch (error) {
             report.reuseGap = `Previous evidence unavailable (${error.name}); researching current inventory`;
         }
+    }
+    if (mode === "compact" && !requested.length) {
+        for (const url of PROVIDER_CATALOG_URLS)
+            catalogSources.push(
+                await read({
+                    url,
+                    mode: "http",
+                    maxCharacters: 18000,
+                    includeLinks: true,
+                }),
+            );
     }
     if (!requested.length) {
         try {

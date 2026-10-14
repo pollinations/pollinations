@@ -383,6 +383,77 @@ test("Jev can read same-origin API documentation before paying for a followup se
     );
 });
 
+test("official provider documentation links may cross that provider's subdomains only", async () => {
+    const f = fixture([
+        {
+            url: "https://fireworks.ai/models/Alpha-v3",
+            text: "Alpha-v3 API model",
+        },
+    ]);
+    f.services.read = async (args) => {
+        f.reads.push(args);
+        return {
+            id: `s${f.reads.length}`,
+            url: args.url,
+            status: "fetched",
+            text: "Alpha-v3 API model",
+            links: args.url.includes("/models/")
+                ? [
+                      {
+                          url: "https://docs.fireworks.ai/api-reference/Alpha-v3",
+                          text: "API documentation",
+                      },
+                      {
+                          url: "https://unrelated.example/api",
+                          text: "API documentation",
+                      },
+                  ]
+                : [],
+        };
+    };
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ kind }) => kind === "read") ??
+                  actions.find(({ kind }) => kind === "finish")),
+    });
+    await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3", category: "text" }] },
+        f.services,
+    );
+    assert.ok(
+        f.reads.some(({ url }) => url.startsWith("https://docs.fireworks.ai/")),
+    );
+    assert.ok(
+        !f.reads.some(({ url }) =>
+            url.startsWith("https://unrelated.example/"),
+        ),
+    );
+});
+
+test("shared primary catalogs enter only exact matching groups and are not fetched again", async () => {
+    const f = fixture([]);
+    const source = {
+        id: "shared",
+        url: "https://fireworks.ai/catalog",
+        status: "fetched",
+        text: "Alpha-v3 is available through a serverless API.",
+    };
+    f.services.catalogSources = [source];
+    const matched = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3", category: "text" }] },
+        f.services,
+    );
+    const other = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v4", category: "text" }] },
+        f.services,
+    );
+    assert.ok(matched.sources.includes(source));
+    assert.ok(!other.sources.includes(source));
+    assert.equal(f.reads.length, 0);
+});
+
 function fixture(results, decisions = {}) {
     const searches = [],
         reads = [],
@@ -503,6 +574,63 @@ test("an insufficient native search choice stops without fabricated required cov
     assert.equal(result.coverage.get("maker/Alpha-v3").size, 0);
     assert.equal(result.reasoningAction, null);
     assert.ok(result.gaps.some((gap) => gap.includes("Jev could not select")));
+});
+
+test("every unresolved checkpoint gets targeted research before finish, including primary reads after the batch read budget", async () => {
+    const models = Array.from({ length: 8 }, (_, i) => ({
+        name: `maker/Alpha-v${i}`,
+        category: "text",
+    }));
+    const f = fixture([]);
+    f.services.search = async (query) => {
+        f.searches.push({ query });
+        const exact = models.filter(({ name }) =>
+            query.includes(JSON.stringify(name.split("/").at(-1))),
+        );
+        return JSON.stringify({
+            results:
+                exact.length === 1
+                    ? [
+                          {
+                              url: `https://reddit.com/r/models/${exact[0].name.split("/").at(-1)}`,
+                              text: exact[0].name,
+                          },
+                          {
+                              url: `https://deepinfra.com/${exact[0].name}`,
+                              text: `${exact[0].name} API pricing`,
+                          },
+                      ]
+                    : Array.from({ length: 24 }, (_, i) => ({
+                          url: `https://learn.microsoft.com/catalog/${i}`,
+                          text: models.map(({ name }) => name).join(" "),
+                      })),
+        });
+    };
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ required }) => required) ??
+                  actions.find(({ kind }) => kind === "finish")),
+    });
+    const result = await prepareResearch({ models }, f.services);
+    for (const { name } of models) {
+        assert.ok(
+            result.actions.some(
+                ({ tool, models: named, required }) =>
+                    tool === "search" &&
+                    named.length === 1 &&
+                    named[0] === name &&
+                    required,
+            ),
+            `${name} needs its own targeted research attempt`,
+        );
+        assert.ok(
+            f.reads.some(({ url }) => url === `https://deepinfra.com/${name}`),
+            `${name} needs its returned primary provider read`,
+        );
+    }
+    assert.ok(f.reads.length <= 40);
 });
 
 test("native controller cannot change a copied bounded search query", async () => {

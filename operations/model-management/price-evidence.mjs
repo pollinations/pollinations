@@ -1,7 +1,9 @@
-const excluded = /\b(?:cached?|batch|promo(?:tional)?|trial|priority)\b/i;
+const excluded =
+    /\b(?:cached?|batch|promo(?:tional)?|trial|priority|flex|fast|ultrafast|reserved|training|fine-tuning|customization)\b/i;
 const unitPattern =
     /(?:1\s*M|million|1,000,000)\s+tokens(?:\s+(?:USD|\(USD\)))?[.\s]*$/i;
-const moneyPattern = /^(?:\$|USD\s+)(\d+(?:\.\d+)?)$/;
+const moneyPattern =
+    /^(?:\$\s*|USD\s+)(\d+(?:\.\d+)?)(?:\s*\/\s*(MTok|M tokens|1M tokens))?$/i;
 const escaped = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Formatting alone may differ; checkpoint versions and suffixes stay intact.
@@ -80,7 +82,7 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             if (standard.test(value)) return true;
             const heading =
                 /^#{1,6}\s/.test(value) ||
-                /^(?:batch|promotional?|trial|priority)(?: pricing(?: data)?)?$/i.test(
+                /^(?:batch|promotional?|trial|priority|flex|fast|ultrafast|reserved)(?: pricing(?: data)?)?$/i.test(
                     value,
                 );
             if (index - j > 16 && !heading) continue;
@@ -145,15 +147,37 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             .replace(/\|$/, "")
             .split("|")
             .map((cell) => cell.trim());
+    const tokenHeading = (heading) =>
+        heading
+            .toLowerCase()
+            .replace(/^price per 1m (input|output) tokens$/, "$1")
+            .replace(/^(input|output) pricing \(per 1m tokens\)$/, "$1");
     for (let i = 0; i < lines.length - 2; i++) {
         const header = lines[i];
+        if (!header.value.startsWith("|")) continue;
+        const headings = cells(header.value);
+        const modelColumn = headings.indexOf("API model string");
+        const modelIndex = modelColumn < 0 ? 0 : modelColumn;
         if (
-            !header.value.startsWith("|") ||
-            !/^\|[\s:|-]+\|$/.test(lines[i + 1].value)
+            modelColumn < 0 &&
+            !/^(?:model|model name|name|[\w ]+ models)$/i.test(headings[0])
         )
             continue;
-        const headings = cells(header.value);
-        if (!/^(?:model|model name)$/i.test(headings[0])) continue;
+        const separator = /^\|[\s:|-]+\|$/.test(lines[i + 1].value);
+        const columnUnits = ["input", "output"].every((role) =>
+            headings.some(
+                (heading) =>
+                    tokenHeading(heading) === role &&
+                    heading.toLowerCase() !== role,
+            ),
+        );
+        const inlineUnits =
+            headings.includes("Input") &&
+            headings.includes("Output") &&
+            cells(lines[i + (separator ? 2 : 1)].value).some(
+                (value) => moneyPattern.exec(value)?.[2],
+            );
+        if (!separator && !columnUnits && !inlineUnits) continue;
         const descriptor = lines[i - 1];
         const ordered =
             descriptor &&
@@ -161,10 +185,14 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
                 descriptor.value,
             );
         // Unit must belong to this table, with only standard section labels in between.
-        let unit = ordered ? descriptor : undefined;
-        let unitIndex = ordered ? i - 1 : undefined;
+        let unit = ordered
+            ? descriptor
+            : columnUnits || inlineUnits
+              ? header
+              : undefined;
+        let unitIndex = ordered ? i - 1 : unit ? i : undefined;
         let restricted = false;
-        for (let j = i - 1; !ordered && j >= 0; j--) {
+        for (let j = i - 1; !unit && j >= 0; j--) {
             const line = lines[j];
             if (!line.value) continue;
             if (unitPattern.test(line.value)) {
@@ -180,19 +208,22 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             restricted ||
             !scopeValid(unitIndex) ||
             (!ordered && !scopeValid(i)) ||
-            (!ordered && excluded.test(unit.value)) ||
+            (!ordered &&
+                !inlineUnits &&
+                !columnUnits &&
+                excluded.test(unit.value)) ||
             restriction.test(unit.value) ||
             foreignCurrency(unit.value)
         )
             continue;
         for (
-            let j = i + 2;
+            let j = i + (separator ? 2 : 1);
             j < lines.length && lines[j].value.startsWith("|");
             j++
         ) {
             const row = lines[j];
             const values = cells(row.value);
-            if (!exact(values[0]) || values.length !== headings.length)
+            if (!exact(values[modelIndex]) || values.length !== headings.length)
                 continue;
             if (
                 ordered &&
@@ -262,7 +293,7 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
                 if (excluded.test(headings[k])) continue;
                 const match = values[k].match(moneyPattern);
                 if (!match) continue;
-                const heading = headings[k].toLowerCase();
+                const heading = tokenHeading(headings[k]);
                 if (
                     !/^(?:(?:short|long) context )?(?:input|output)(?: price)?$/.test(
                         heading,
@@ -272,12 +303,17 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
                 const candidate = {
                     k,
                     value: Number(match[1]),
+                    unit: match[2],
                     group: heading.replace(/(?:input|output)(?: price)?$/, ""),
                 };
                 (/\binput\b/.test(heading) ? input : output).push(candidate);
             }
             if (
                 input.length !== 1 ||
+                (inlineUnits &&
+                    [...input, ...output].some(
+                        (candidate) => !candidate.unit,
+                    )) ||
                 (embedding
                     ? output.length !== 0 ||
                       headings.some((heading) => /\boutput\b/i.test(heading))
@@ -285,13 +321,38 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             )
                 continue;
             const fragments = [
-                evidence("unit", unit.value, unit.start),
+                ...(!inlineUnits
+                    ? [
+                          columnUnits
+                              ? evidence(
+                                    "unit",
+                                    header.value.match(
+                                        /1M (?:input |output )?tokens/i,
+                                    )[0],
+                                    header.start +
+                                        header.value.search(
+                                            /1M (?:input |output )?tokens/i,
+                                        ),
+                                )
+                              : evidence("unit", unit.value, unit.start),
+                      ]
+                    : []),
                 evidence(
                     "model",
-                    values[0],
-                    row.start + row.value.indexOf(values[0]),
+                    values[modelIndex],
+                    row.start + row.value.indexOf(values[modelIndex]),
                 ),
             ];
+            if (modelColumn >= 0) {
+                fragments.push(
+                    evidence(
+                        "header",
+                        headings[modelIndex],
+                        header.start +
+                            header.value.indexOf(headings[modelIndex]),
+                    ),
+                );
+            }
             if (row.value.split(/\s+/).length <= 25)
                 fragments.push(evidence("row", row.value, row.start));
             for (const selected of [...input, ...output]) {
@@ -314,6 +375,17 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
                             header.value.indexOf(headings[k], headerStart),
                     ),
                 );
+                if (inlineUnits) {
+                    fragments.push(
+                        evidence(
+                            "unit",
+                            selected.unit,
+                            row.start +
+                                row.value.indexOf(values[k], rowStart) +
+                                values[k].lastIndexOf(selected.unit),
+                        ),
+                    );
+                }
                 fragments.push(
                     evidence(
                         "price",
@@ -325,6 +397,24 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
             const conditions = input[0].group.trim()
                 ? [input[0].group.trim()]
                 : [];
+            if (/^Regions?: /i.test(descriptor?.value ?? "")) {
+                conditions.push(descriptor.value);
+                if (descriptor.value.split(/\s+/).length > 25) continue;
+                fragments.push(
+                    evidence("condition", descriptor.value, descriptor.start),
+                );
+            }
+            const quantization = headings.indexOf("Quantization");
+            if (quantization >= 0 && values[quantization] !== "-") {
+                conditions.push(`Quantization: ${values[quantization]}`);
+                fragments.push(
+                    evidence(
+                        "condition",
+                        values[quantization],
+                        row.start + row.value.indexOf(values[quantization]),
+                    ),
+                );
+            }
             const result = finish(
                 input[0].value,
                 output[0]?.value ?? null,

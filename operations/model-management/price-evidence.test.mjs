@@ -53,6 +53,122 @@ function verifyPositions(source, result) {
     }
 }
 
+// Exact excerpts from saved primary Bedrock s37 and Claude s275 pages.
+const bedrock = `## Mistral AI
+On-Demand pricing
+Regions: US East (N. Virginia), US East (Ohio) and US West (Oregon)
+| Mistral models | Price per 1M input tokens | Price per 1M output tokens |
+| Devstral 2 123B | $ 0.40 | $ 2.00 |
+| Mistral Large 3 | $ 0.50 | $ 1.50 |`;
+const claude = `## Model pricing
+The following table shows pricing for all Claude models:
+| Model | Base tokens | Prompt caching |
+| Name | Input | Output | 5m writes | 1h writes | Hits and refreshes |
+| Claude Opus 5 | $5 / MTok | $25 / MTok | $6.25 / MTok | $10 / MTok | $0.50 / MTok |
+| Claude Opus 4.6 | $5 / MTok | $25 / MTok | $6.25 / MTok | $10 / MTok | $0.50 / MTok |`;
+
+test("saved Bedrock table carries token units in headings and retains region scope", () => {
+    const options = { upstreamModel: "mistral-large-3", category: "text" };
+    const result = extractPrices(bedrock, options);
+    assert.equal(result.input, 0.5);
+    assert.equal(result.output, 1.5);
+    assert.deepEqual(result.conditions, [
+        "Regions: US East (N. Virginia), US East (Ohio) and US West (Oregon)",
+    ]);
+    verifyPositions(bedrock, result);
+    for (const source of [
+        bedrock.replace("On-Demand pricing", "Priority"),
+        bedrock.replace("On-Demand pricing", "Flex"),
+        bedrock.replace("On-Demand pricing", "Batch"),
+        bedrock.replace("On-Demand pricing", "Prices in CAD"),
+        bedrock.replace("1M output tokens", "1K output tokens"),
+        bedrock.replace("1M output tokens", "1M output tokens per hour"),
+        bedrock.replace("Mistral Large 3 |", "Mistral Large 3.1 |"),
+        bedrock.replace("$ 0.50", "0.50"),
+        bedrock.replace("On-Demand pricing", "Fine-tuning pricing"),
+    ])
+        assert.equal(extractPrices(source, options), null);
+    assert.equal(extractPrices(bedrock, { ...options, quote: "$ 0.40" }), null);
+});
+
+test("saved Claude inline MTok prices exclude caching and preserve exact checkpoint", () => {
+    const options = { upstreamModel: "claude-opus-4.6", category: "text" };
+    const result = extractPrices(claude, options);
+    assert.equal(result.input, 5);
+    assert.equal(result.output, 25);
+    verifyPositions(claude, result);
+    for (const source of [
+        claude.replaceAll("/ MTok", "/ 1K tokens"),
+        claude.replaceAll("$25 / MTok", "$25"),
+        claude.replaceAll(
+            "$5 / MTok | $25 / MTok | $6.25",
+            "$5 / MTok cached | $25 / MTok | $6.25",
+        ),
+        claude.replace("## Model pricing", "## Batch pricing"),
+        claude.replace("## Model pricing", "## Promotional pricing"),
+        claude.replace("## Model pricing", "## Prices in EUR"),
+    ])
+        assert.equal(extractPrices(source, options), null);
+    assert.equal(
+        extractPrices(claude, { ...options, quote: "$0.50 / MTok" }),
+        null,
+    );
+});
+
+// Literal rows from the guarded Together primary catalog probe.
+const together = `## Chat models
+| Organization | Model name | API model string | Context length | Input pricing (per 1M tokens) | Cached input pricing (per 1M tokens) | Output pricing (per 1M tokens) | Quantization | Function calling | Structured outputs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Thinking Machines | Inkling | thinkingmachines/Inkling | 524288 | $1.00 | $0.17 | $4.05 | NVFP4 | Yes | Yes |
+| Minimax | Minimax M3 | MiniMaxAI/MiniMax-M3 | 524288 | $0.30 | $0.06 | $1.20 | FP4 | Yes | Yes |
+| Moonshot | Kimi K3 | moonshotai/Kimi-K3 | 1048576 | $2.70 | $0.30 | $13.50 | - | Yes | Yes |`;
+
+test("Together API identity column supplies exact rates with quantization condition", () => {
+    const options = { upstreamModel: "MiniMaxAI/MiniMax-M3", category: "text" };
+    const result = extractPrices(together, options);
+    assert.equal(result.input, 0.3);
+    assert.equal(result.output, 1.2);
+    assert.deepEqual(result.conditions, ["Quantization: FP4"]);
+    verifyPositions(together, result);
+    assert.ok(
+        result.evidence.some(
+            (item) =>
+                item.kind === "header" && item.quote === "API model string",
+        ),
+    );
+    for (const upstreamModel of [
+        "minimax/minimax-m3",
+        "MiniMaxAI/MiniMax-M3-fast",
+        "MiniMaxAI/MiniMax-M3-2027",
+    ])
+        assert.equal(
+            extractPrices(together, { ...options, upstreamModel }),
+            null,
+        );
+    for (const quote of ["$0.06", "$1.00"])
+        assert.equal(extractPrices(together, { ...options, quote }), null);
+    for (const source of [
+        together.replace(
+            "Output pricing (per 1M tokens)",
+            "Output pricing (per 1K tokens)",
+        ),
+        together.replace("API model string", "Description"),
+        together.replace("## Chat models", "## Batch pricing"),
+        together.replace("## Chat models", "## Prices in CAD"),
+        together.replace("$1.20", "Free"),
+    ])
+        assert.equal(extractPrices(source, options), null);
+    const kimi = extractPrices(together, {
+        upstreamModel: "moonshotai/kimi-k3",
+        category: "text",
+    });
+    assert.deepEqual(kimi.conditions, []);
+    verifyPositions(
+        together.replaceAll("\n", "\r\n"),
+        extractPrices(together.replaceAll("\n", "\r\n"), options),
+    );
+});
+
 test("saved nano table associates exact row with uncached input/output headings and unit", () => {
     const result = extractPrices(table, nano);
     assert.equal(result.input, 0.2);

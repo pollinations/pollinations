@@ -80,8 +80,21 @@ CATALOG_JOBS = ("models", "community")
 # Every public community model, including the ones the reliability filter hides,
 # so a model leaving or rejoining the default list is no news.
 COMMUNITY_CATALOG = {"community": "true", "reliability": "all"}
-# Text an owner writes freely; it never reaches the writer of a public post.
-OWNER_TEXT = ("description", "brand_url")
+# The catalog facts the community post states. Owner-written text (title, publisher,
+# description, links) never reaches the writer of a public post; the id names the owner.
+CATALOG_FACTS = (
+    "name",
+    "category",
+    "agent",
+    "paid_only",
+    "pricing",
+    "input_modalities",
+    "output_modalities",
+    "capabilities",
+    "tools",
+    "reasoning",
+    "context_length",
+)
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
@@ -229,11 +242,11 @@ def official(snapshot: dict | None) -> dict | None:
     }
 
 
-def without_owner_text(snapshot: dict | None) -> dict | None:
-    """The snapshot without owner-written text: the community post states catalog facts."""
+def catalog_facts(snapshot: dict | None) -> dict | None:
+    """The snapshot with only CATALOG_FACTS, the community post's whole input."""
     return snapshot and {
         category: [
-            {key: value for key, value in model.items() if key not in OWNER_TEXT}
+            {key: value for key, value in model.items() if key in CATALOG_FACTS}
             for model in models
         ]
         for category, models in snapshot.items()
@@ -256,9 +269,7 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
         if job == "models":
             diff = diff_models(official(previous), official(current))
         else:
-            diff = diff_models(
-                without_owner_text(previous), without_owner_text(current)
-            )
+            diff = diff_models(catalog_facts(previous), catalog_facts(current))
         user = (
             None
             if diff.is_empty()

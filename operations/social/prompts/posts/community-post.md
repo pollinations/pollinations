@@ -13,9 +13,10 @@ One output: `discord_text` — a single Discord message (≤1900 chars) for the 
 
 - Output ONLY `{"discord_text": "..."}`. No prose, no fences.
 - Use only facts from the diff. Never invent owners, prices, or capabilities.
+- Name every model by its id (`community/owner/name`); the owner is the middle part.
 - Skip any section that has no entries — no empty headers.
 - A model must appear in `added`, `removed`, or `changed` to be mentioned. Never infer or assume.
-- Factual, dev-friendly tone. No marketing language, and no claims taken from a model's description.
+- Factual, dev-friendly tone. No marketing language.
 - Never mention reliability, health or success rates.
 - No @mentions. Max 3 emojis per section header.
 
@@ -48,7 +49,7 @@ Category emojis: 🧠 text · 🎨 image · 🔢 embeddings · 🤖 agent (`agen
 Community models — {date}
 
 ### 🆕 New
-- [category emoji] **Title** by Publisher (`community/owner/name`) — one-clause note · price
+- [category emoji] `community/owner/name` — one-clause note from its modalities and capabilities · price
 
 ### 🗑️ Removed or made private
 - `community/owner/name`

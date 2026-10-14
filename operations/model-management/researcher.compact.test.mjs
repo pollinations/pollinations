@@ -21,6 +21,68 @@ import {
 } from "./researcher.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
+test("primary serverless catalog retains exact API-column prices and availability through assessment", () => {
+    const model = { name: "qwen/qwen3.7-max", category: "text" };
+    const text = `Serverless models are the fastest way to run inference on Together.
+You call any supported model through a shared per-token API, with no provisioning, no replicas to size, and no minimum cost.
+## Chat models
+| Organization | Model name | API model string | Context length | Input pricing (per 1M tokens) | Cached input pricing (per 1M tokens) | Output pricing (per 1M tokens) | Quantization | Function calling | Structured outputs |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Qwen | Qwen3.7 Max | Qwen/Qwen3.7-Max | - | $2.50 | $0.50 | $7.50 | - | Yes | Yes |`;
+    const source = {
+        id: "s1",
+        url: "https://docs.together.ai/docs/serverless/models",
+        status: "fetched",
+        text,
+        digest: hash(text),
+        pageDigest: hash(text),
+        method: "scrapling-http",
+        extractionVersion: 2,
+    };
+    const scopes = new Map(
+        ["azure", "fireworks", "bedrock", "alternatives"].map((scope) => [
+            scope,
+            new Set(["web:exa:challenge:exact checkpoint"]),
+        ]),
+    );
+    const proposal = officialCandidates([model], [source]);
+    const result = assessGroup(
+        proposal,
+        [source],
+        new Map([[model.name, scopes]]),
+        [model],
+        [model],
+    );
+    assert.equal(result.models[0].routes.length, 1);
+    const route = result.models[0].routes[0];
+    assert.equal(route.pricing.input, 2.5);
+    assert.equal(route.pricing.output, 7.5);
+    assert.equal(route.availabilitySupported, true);
+    assert.equal(route.runtimeVerified, false);
+    assert.equal(route.capabilitiesMatch, null);
+    for (const changed of [
+        { ...source, url: "https://unrelated.example/catalog" },
+        {
+            ...source,
+            text: text.replace("## Chat models", "## Dedicated models"),
+        },
+        {
+            ...source,
+            text: text.replace(
+                "You call any supported model through a shared per-token API, with no provisioning, no replicas to size, and no minimum cost.",
+                "",
+            ),
+        },
+    ]) {
+        const candidate = officialCandidates([model], [changed]).models[0]
+            .routes[0];
+        assert.notEqual(
+            candidate?.available,
+            true,
+            "A primary scoped serverless table and API statement are both required",
+        );
+    }
+});
 test("prepared discovery preserves separate exact spans and every accepted lead when Sol returns none", async () => {
     const text =
         "navigation\n".repeat(500) +

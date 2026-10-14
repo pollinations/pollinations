@@ -12,6 +12,13 @@ export const DISCOVERY_MODES = [
     "news",
     "providers",
 ];
+export const PROVIDER_CATALOG_URLS = [
+    "https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure",
+    "https://docs.fireworks.ai/serverless/pricing",
+    "https://aws.amazon.com/bedrock/pricing/",
+    "https://docs.together.ai/docs/serverless/models",
+    "https://developers.openai.com/api/docs/pricing.md",
+];
 const HUB_FEEDS = ["trendingScore", "downloads"].map((sort, index) => ({
     id: `hub-feed-${index}`,
     kind: "fetch",
@@ -220,7 +227,7 @@ export function officialCandidates(models, sources, gaps = []) {
                     continue;
                 const price = extractPrices(source.text, {
                     model,
-                    upstreamModel: checkpoint,
+                    upstreamModel: model.name,
                     category: model.category,
                 });
                 const displayed = (
@@ -236,7 +243,13 @@ export function officialCandidates(models, sources, gaps = []) {
                         ?.replace(/^#{1,6}\s+/, "") ??
                     checkpoint
                 ).replace(/^#{1,6}\s+/, "");
-                const identity = quoteFor(source.text, displayed);
+                const identity =
+                    quoteFor(source.text, displayed) ??
+                    price?.evidence.find(
+                        (fragment) =>
+                            fragment.kind === "model" &&
+                            fragment.quote.trim().length >= 8,
+                    )?.quote;
                 if (!identity) continue;
                 const providerRoot =
                     url.hostname
@@ -251,25 +264,45 @@ export function officialCandidates(models, sources, gaps = []) {
                       : /(?:^|\.)amazon\.com$/.test(url.hostname)
                         ? "bedrock"
                         : providerRoot;
-                const availability = quoteFor(
-                    source.text,
-                    displayed,
-                    (text) =>
-                        /\b(?:API|serverless|inference endpoint|managed endpoint)\b/i.test(
-                            text,
-                        ) &&
-                        !/\b(?:weights|download|dedicated|not available|unavailable|retired)\b/i.test(
-                            text,
-                        ),
-                    (text) =>
-                        Number(
-                            /\b(?:available|serves|provides|supports|call|invoke)\b/i.test(
+                const apiColumn = price?.evidence.find(
+                    (fragment) =>
+                        fragment.kind === "header" &&
+                        fragment.quote === "API model string",
+                );
+                const section = apiColumn
+                    ? [
+                          ...source.text
+                              .slice(0, apiColumn.start)
+                              .matchAll(/^#{1,6}[^\n]*/gm),
+                      ].at(-1)?.[0]
+                    : "";
+                const catalogApi =
+                    source.url === PROVIDER_CATALOG_URLS[3] &&
+                    /^#{1,6}\s+[\u200b\s]*Chat models\s*$/.test(section ?? "")
+                        ? source.text.match(
+                              /You call any supported model through a shared per-token API[^.]*\./,
+                          )?.[0]
+                        : undefined;
+                const availability =
+                    quoteFor(
+                        source.text,
+                        displayed,
+                        (text) =>
+                            /\b(?:API|serverless|inference endpoint|managed endpoint)\b/i.test(
+                                text,
+                            ) &&
+                            !/\b(?:weights|download|dedicated|not available|unavailable|retired)\b/i.test(
                                 text,
                             ),
-                        ) *
-                            2 +
-                        Number(/\bserverless\b/i.test(text)),
-                );
+                        (text) =>
+                            Number(
+                                /\b(?:available|serves|provides|supports|call|invoke)\b/i.test(
+                                    text,
+                                ),
+                            ) *
+                                2 +
+                            Number(/\bserverless\b/i.test(text)),
+                    ) ?? (catalogApi ? identity : null);
                 if (!pricingProviders.test(url.hostname) && !availability) {
                     unresolved.push(
                         `${source.id}: exact checkpoint lead does not establish this origin as a managed inference provider`,
@@ -285,16 +318,30 @@ export function officialCandidates(models, sources, gaps = []) {
                         sourceId: source.id,
                         quote: availability,
                     });
+                if (catalogApi && catalogApi.split(/\s+/).length <= 25)
+                    claims.push({
+                        kind: "availability",
+                        sourceId: source.id,
+                        quote: catalogApi,
+                    });
                 for (const fragment of price?.evidence ?? [])
                     if (
                         ["price", "row"].includes(fragment.kind) &&
-                        fragment.quote.trim().length >= 8 &&
                         fragment.quote.trim().split(/\s+/).length <= 25
                     )
                         claims.push({
                             kind: "price",
                             sourceId: source.id,
-                            quote: fragment.quote,
+                            quote:
+                                fragment.quote.trim().length >= 8
+                                    ? fragment.quote
+                                    : source.text.slice(
+                                          fragment.start,
+                                          Math.max(
+                                              fragment.end,
+                                              fragment.start + 8,
+                                          ),
+                                      ),
                         });
                 const route = {
                     providerWebsite: `https://${providerRoot}/`,
@@ -379,12 +426,28 @@ export async function prepareResearch(task, services) {
     );
     const scopes = new Map();
     const coverage = new Map(names.map((name) => [name, new Map()]));
-    const sources = [],
+    const sources = names.length
+            ? (services.catalogSources ?? []).filter(
+                  (source) =>
+                      source.status === "fetched" &&
+                      names.some(
+                          (name) =>
+                              mentions(source.text, name) ||
+                              extractPrices(source.text, {
+                                  upstreamModel: name,
+                                  category: task.models.find(
+                                      (model) => model.name === name,
+                                  ).category,
+                              }),
+                      ),
+              )
+            : [],
         actions = [],
         leads = [],
         gaps = [],
         unselectedLeadIds = [],
         unselectedLeads = [];
+    const catalogSourceCount = sources.length;
     const plans = [
         {
             questions: [
@@ -709,7 +772,13 @@ export async function prepareResearch(task, services) {
         );
         return selected;
     };
-    const runSearch = async ({ scope, mode, query, models: queryModels }) => {
+    const runSearch = async ({
+        scope,
+        mode,
+        query,
+        models: queryModels,
+        required,
+    }) => {
         const returnedLeadIds = [];
         const action = {
             tool: "search",
@@ -719,6 +788,7 @@ export async function prepareResearch(task, services) {
             purpose: "challenge",
             query,
             models: [...queryModels],
+            ...(required ? { required: true } : {}),
             status: "pending",
         };
         actions.push(action);
@@ -1181,7 +1251,8 @@ export async function prepareResearch(task, services) {
                 const seen = new Set(sources.map(({ url }) => url));
                 for (
                     let readCount = 0;
-                    readCount < 2 && sources.length < 24;
+                    readCount < names.length &&
+                    sources.length - catalogSourceCount < 32;
                     readCount++
                 ) {
                     const documents = [];
@@ -1198,8 +1269,13 @@ export async function prepareResearch(task, services) {
                             if (
                                 !url ||
                                 seen.has(url) ||
-                                new URL(url).origin !==
-                                    new URL(source.url).origin ||
+                                (new URL(url).origin !==
+                                    new URL(source.url).origin &&
+                                    !(
+                                        providerRank({ url }) < 3 &&
+                                        providerRank({ url }) ===
+                                            providerRank(source)
+                                    )) ||
                                 !/\bapi\b|pricing|serverless|documentation/i.test(
                                     `${link.text ?? ""} ${new URL(url).pathname}`,
                                 )
@@ -1268,7 +1344,8 @@ export async function prepareResearch(task, services) {
                                       {
                                           id: `identity-${index}`,
                                           kind: "search",
-                                          query: `${JSON.stringify(row.name.split("/").at(-1))} official provider managed API serverless inference availability`,
+                                          query: `${JSON.stringify(row.name.split("/").at(-1))} official provider managed API serverless inference availability pricing`,
+                                          required: true,
                                           engine: "exa",
                                           scope: "alternatives",
                                           mode: "web",
@@ -1282,6 +1359,7 @@ export async function prepareResearch(task, services) {
                                           id: `price-${index}`,
                                           kind: "search",
                                           query: `${JSON.stringify(row.name.split("/").at(-1))} official provider standard pricing USD workload units restrictions`,
+                                          required: true,
                                           engine: "exa",
                                           scope: "alternatives",
                                           mode: "web",
@@ -1291,7 +1369,11 @@ export async function prepareResearch(task, services) {
                                 : []),
                         ];
                     })
-                    .filter(({ id }) => !attempted.has(id));
+                    .filter(
+                        ({ id, models }) =>
+                            !attempted.has(id) &&
+                            !attemptedModels.has(models[0]),
+                    );
                 for (const [index, provider] of (
                     task.discoveryLeads ?? []
                 ).entries()) {
@@ -1330,12 +1412,14 @@ export async function prepareResearch(task, services) {
                 return offered;
             };
             const finish = { id: "finish", kind: "finish" };
-            while (followed < 2) {
+            while (followed < names.length + 2) {
                 const followups = followupActions();
                 if (!followups.length) break;
                 const selected = await control("followup", [
                     ...followups,
-                    finish,
+                    ...(followups.some(({ required }) => required)
+                        ? []
+                        : [finish]),
                 ]);
                 if (!selected) return evidence();
                 if (selected.kind === "finish") break;
@@ -1344,54 +1428,58 @@ export async function prepareResearch(task, services) {
                 const returnedLeadIds = await runSearch(selected);
                 followed++;
                 const focus = selected.models[0].split("/").at(-1);
-                const lead = [...candidates.values()].find(
-                    (item) =>
-                        returnedLeadIds.includes(item.id) &&
-                        !sources.some(
-                            (source) =>
-                                source.url === item.url &&
-                                source.focus === focus,
-                        ),
-                );
-                if (!lead) {
+                const returned = [...candidates.values()]
+                    .filter(
+                        (item) =>
+                            returnedLeadIds.includes(item.id) &&
+                            !sources.some(
+                                (source) =>
+                                    source.url === item.url &&
+                                    source.focus === focus,
+                            ),
+                    )
+                    .sort((a, b) => providerRank(a) - providerRank(b));
+                if (!returned.length) {
                     gaps.push(
                         `${selected.models[0]}: targeted followup returned no new safe source lead`,
                     );
                     continue;
                 }
-                if (attempts.length + followed > 24) {
-                    gaps.push(
-                        `${selected.models[0]}: followup lead unread because of the twenty-four-read preparation bound`,
-                    );
-                    continue;
+                for (const lead of returned.slice(0, 2)) {
+                    if (sources.length - catalogSourceCount >= 48) {
+                        gaps.push(
+                            `${selected.models[0]}: followup lead unread because of the forty-eight-read preparation bound`,
+                        );
+                        break;
+                    }
+                    if (!leads.some(({ id }) => id === lead.id)) {
+                        leads.push(lead);
+                        const omitted = unselectedLeadIds.indexOf(lead.id);
+                        if (omitted >= 0) unselectedLeadIds.splice(omitted, 1);
+                        const unread = unselectedLeads.findIndex(
+                            ({ id }) => id === lead.id,
+                        );
+                        if (unread >= 0) unselectedLeads.splice(unread, 1);
+                    }
+                    const args = {
+                        url: lead.url,
+                        mode: "http",
+                        maxCharacters: 3000,
+                        ...(focus.length <= 200 ? { focus } : {}),
+                    };
+                    const action = {
+                        tool: "fetch",
+                        ...args,
+                        leadId: lead.id,
+                        models: [...selected.models],
+                        status: "pending",
+                    };
+                    actions.push(action);
+                    const source = await services.read(args);
+                    sources.push(source);
+                    action.sourceId = source.id;
+                    action.status = source.status;
                 }
-                if (!leads.some(({ id }) => id === lead.id)) {
-                    leads.push(lead);
-                    const omitted = unselectedLeadIds.indexOf(lead.id);
-                    if (omitted >= 0) unselectedLeadIds.splice(omitted, 1);
-                    const unread = unselectedLeads.findIndex(
-                        ({ id }) => id === lead.id,
-                    );
-                    if (unread >= 0) unselectedLeads.splice(unread, 1);
-                }
-                const args = {
-                    url: lead.url,
-                    mode: "http",
-                    maxCharacters: 3000,
-                    ...(focus.length <= 200 ? { focus } : {}),
-                };
-                const action = {
-                    tool: "fetch",
-                    ...args,
-                    leadId: lead.id,
-                    models: [...selected.models],
-                    status: "pending",
-                };
-                actions.push(action);
-                const source = await services.read(args);
-                sources.push(source);
-                action.sourceId = source.id;
-                action.status = source.status;
             }
             const semantic = officialCandidates(
                 task.models ?? [],

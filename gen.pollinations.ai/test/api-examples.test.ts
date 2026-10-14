@@ -7,12 +7,16 @@ import { CreateMessageRequestSchema } from "../src/text/messages/schema.ts";
 
 type Operation = Spec["paths"][string][string];
 
-function specFor(operation: Operation, path = "/example"): Spec {
+function specFor(
+    operation: Operation,
+    path = "/example",
+    method = "post",
+): Spec {
     return {
         openapi: "3.1.0",
         info: { title: "Examples", description: "", version: "1" },
         servers: [{ url: "https://gen.pollinations.ai" }],
-        paths: { [path]: { post: operation } },
+        paths: { [path]: { [method]: operation } },
         components: { schemas: {} },
     };
 }
@@ -72,7 +76,7 @@ describe("API request examples", () => {
         },
     );
 
-    it("accepts a complete object example without examples on its fields", () => {
+    it("accepts a complete object example, including literal colon text", () => {
         expect(
             requestExampleErrors(
                 specFor({
@@ -83,7 +87,7 @@ describe("API request examples", () => {
                         },
                         required: ["message"],
                         additionalProperties: false,
-                        example: { message: "Hello" },
+                        example: { message: ":text" },
                     }),
                 }),
             ),
@@ -175,6 +179,140 @@ describe("API request examples", () => {
         expect(schema.enum).toEqual(allowed);
     });
 
+    it.each([
+        { method: "get", path: "/text/{prompt}", name: "seed" },
+        { method: "get", path: "/media", name: "limit" },
+        { method: "head", path: "/example", name: "limit" },
+    ])(
+        "validates integer query examples on $method $path",
+        ({ method, path, name }) => {
+            const schema = {
+                type: "integer",
+                minimum: 1,
+                example: `:${name}` as string | number,
+            };
+            const operation = {
+                parameters: [
+                    { in: "query", name, schema },
+                    ...(path.includes("{prompt}")
+                        ? [
+                              {
+                                  in: "path",
+                                  name: "prompt",
+                                  required: true,
+                                  schema: { type: "string", example: "Hello" },
+                              },
+                          ]
+                        : []),
+                ],
+            };
+            const spec = specFor(operation, path, method);
+            expect(requestExampleErrors(spec).join("\n")).toContain(
+                "must be integer",
+            );
+
+            schema.example = 42;
+            const curl = buildCurl(spec, method, path, operation);
+            expect(curl).toContain(`${name}=42`);
+            expect(requestExampleErrors(spec)).toEqual([]);
+        },
+    );
+
+    it.each(["key", "tag", "search", "safe"])(
+        "rejects unresolved string query placeholder :%s",
+        (name) => {
+            const spec = specFor(
+                {
+                    parameters: [
+                        {
+                            in: "query",
+                            name,
+                            schema: { type: "string", example: `:${name}` },
+                        },
+                    ],
+                },
+                "/example",
+                "get",
+            );
+            expect(requestExampleErrors(spec)).toEqual([
+                `GET /example: unresolved URL placeholder :${name}`,
+            ]);
+        },
+    );
+
+    it("rejects an unresolved string path placeholder", () => {
+        const spec = specFor(
+            {
+                parameters: [
+                    {
+                        in: "path",
+                        name: "model",
+                        required: true,
+                        schema: { type: "string", example: ":model" },
+                    },
+                ],
+            },
+            "/v1/models/{model}",
+            "get",
+        );
+        expect(requestExampleErrors(spec)).toEqual([
+            "GET /v1/models/{model}: unresolved URL placeholder :model",
+        ]);
+    });
+
+    it("keeps required query values after two useful optional values and omits missing examples", () => {
+        const operation = {
+            parameters: [
+                { name: "unused", schema: { type: "string" } },
+                { name: "offset", schema: { type: "integer", default: 0 } },
+                { name: "safe", schema: { type: "boolean", example: false } },
+                {
+                    name: "requiredThird",
+                    required: true,
+                    schema: { type: "string", example: "value" },
+                },
+                { name: "extra", schema: { type: "integer", example: 1 } },
+            ].map((parameter) => ({ in: "query", ...parameter })),
+        };
+        const spec = specFor(operation, "/example", "get");
+        const curl = buildCurl(spec, "get", "/example", operation);
+        const url = new URL(curl.match(/"([^"]+)"/)?.[1] ?? "");
+        expect(Object.fromEntries(url.searchParams)).toEqual({
+            offset: "0",
+            safe: "false",
+            requiredThird: "value",
+        });
+        expect(requestExampleErrors(spec)).toEqual([]);
+    });
+
+    it.each([
+        { path: "/account/keys/{id}", fallback: "key_abc123" },
+        { path: "/account/integrations/{id}", fallback: "ca_abc123" },
+        {
+            path: "/media/{id}",
+            fallback: "550e8400-e29b-41d4-a716-446655440000",
+        },
+    ])(
+        "uses a route-specific ID only when $path has no schema example",
+        ({ path, fallback }) => {
+            const schema: Record<string, unknown> = { type: "string" };
+            const operation = {
+                parameters: [
+                    { in: "path", name: "id", required: true, schema },
+                ],
+            };
+            const spec = specFor(operation, path, "get");
+            expect(buildCurl(spec, "get", path, operation)).toContain(
+                path.replace("{id}", fallback),
+            );
+            schema.example = "from/schema";
+            expect(buildCurl(spec, "get", path, operation)).toContain(
+                path.replace("{id}", "from%2Fschema"),
+            );
+            expect(requestExampleErrors(spec)).toEqual([]);
+        },
+    );
+
     it("checks emitted parameter values and required parameters omitted by synthesis", () => {
         const errors = requestExampleErrors(
             specFor(
@@ -184,7 +322,11 @@ describe("API request examples", () => {
                             in: "path",
                             name: "id",
                             required: true,
-                            schema: { type: "string", pattern: "^model_" },
+                            schema: {
+                                type: "string",
+                                pattern: "^model_",
+                                example: "key_abc123",
+                            },
                         },
                         {
                             in: "query",
@@ -198,9 +340,9 @@ describe("API request examples", () => {
                         },
                         {
                             in: "query",
-                            name: "requiredThird",
+                            name: "requiredValue",
                             required: true,
-                            schema: { type: "string", example: "value" },
+                            schema: { type: "string" },
                         },
                         {
                             in: "header",
@@ -216,7 +358,7 @@ describe("API request examples", () => {
         expect(errors).toContain('must match pattern "^model_"');
         expect(errors).toContain("must be >= 1");
         expect(errors).toContain(
-            "required query parameter requiredThird is missing",
+            "required query parameter requiredValue is missing",
         );
         expect(errors).toContain(
             "required header parameter X-Required is missing",

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T06:09:30.935796+00:00",
+  "generated_at": "2026-10-14T15:52:30.462761+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -6984,6 +6984,110 @@
         "max_reference_images": {
           "before": 1,
           "after": 3
+        }
+      }
+    },
+    {
+      "id": "pr-16265:inferenceport-ai/lightning-text-v2",
+      "model_id": "inferenceport-ai/lightning-text-v2",
+      "title": "Lightning Text v2",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-14",
+      "pr": 16265,
+      "url": "https://github.com/pollinations/pollinations/pull/16265",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 128000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "completionTextTokens": "0.00000075"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-16265:inferenceport-ai/lightning-text-v2.1",
+      "model_id": "inferenceport-ai/lightning-text-v2.1",
+      "title": "Lightning Text v2.1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-14",
+      "pr": 16265,
+      "url": "https://github.com/pollinations/pollinations/pull/16265",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": [
+            "tool_calling"
+          ]
+        },
+        "context_length": {
+          "before": null,
+          "after": 128000
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "image"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.00000075",
+            "completionTextTokens": "0.00000075"
+          }
         }
       }
     },

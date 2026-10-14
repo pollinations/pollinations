@@ -1,6 +1,6 @@
-# Pollinations Free API Classic
+# Pollinations Classic API
 
-> **Free · no signup · rate-limited.** Free API Classic is kept stable for existing apps.
+> **Free · no signup · rate-limited.** The Classic API is kept stable for existing apps.
 > **Building an app?** Get your own key, every model and higher limits at [enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-docs).
 
 ## Images

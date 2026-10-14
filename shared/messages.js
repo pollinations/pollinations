@@ -1,4 +1,4 @@
-// What Free API Classic tells a caller it did not answer, in enter's formats:
+// What the Classic API tells a caller it did not answer, in enter's formats:
 // gen's error body for scripts and, for text, a chat reply with the link, as
 // gen's text-balance-notice does. ?ref=classic lets enter count the visits.
 import { PAGE } from "./free-limit-page.js";

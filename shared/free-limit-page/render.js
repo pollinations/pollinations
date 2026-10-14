@@ -77,7 +77,7 @@ const page = h(
         "div",
         { className: "polli:flex polli:items-center polli:justify-between" },
         h(AppBrand, {
-            appName: "Free API Classic",
+            appName: "Classic API",
             href: "https://pollinations.ai",
             size: "sm",
         }),

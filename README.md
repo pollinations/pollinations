@@ -4,7 +4,7 @@
     <img src="https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/lockup-horizontal-black.png" alt="pollinations.ai" width="100%" />
   </picture>
 
-  <p><strong>Free API Classic: images and text from a plain URL. No signup, no key.</strong></p>
+  <p><strong>Classic API: free images and text from a plain URL. No signup, no key.</strong></p>
 
 [![Stars](https://img.shields.io/github/stars/pollinations/pollinations?style=for-the-badge&logo=github)](https://github.com/pollinations/pollinations/stargazers)
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
@@ -32,9 +32,9 @@ https://text.pollinations.ai/why%20do%20bees%20dance
 
 Parameters, limits and the OpenAI-compatible endpoint are in the [Free API docs](APIDOCS.md).
 
-## Free API Classic or your own key?
+## Classic API or your own key?
 
-| | Free API Classic | Your own key on [enter](https://enter.pollinations.ai/?ref=classic-readme-table) |
+| | Classic API | Your own key on [enter](https://enter.pollinations.ai/?ref=classic-readme-table) |
 |---|---|---|
 | Sign up | None | Sign in with GitHub |
 | Models | One for images, one for text | Every image, text, audio and video model |
@@ -48,6 +48,6 @@ Built something with Pollinations? Add the badge and [share it](https://pollinat
 
 ## This branch
 
-`master` serves Free API Classic from two Cloudflare Workers, `text.pollinations.ai/cloudflare-cache/` and `image.pollinations.ai/cloudflare-cache/`. Everything else, including the main API and the apps, lives on [`main`](https://github.com/pollinations/pollinations).
+`master` serves the Classic API from two Cloudflare Workers, `text.pollinations.ai/cloudflare-cache/` and `image.pollinations.ai/cloudflare-cache/`. Everything else, including the main API and the apps, lives on [`main`](https://github.com/pollinations/pollinations).
 
 Use is subject to the [Terms of Service](https://pollinations.ai/terms) and the [Privacy Policy](https://pollinations.ai/privacy).

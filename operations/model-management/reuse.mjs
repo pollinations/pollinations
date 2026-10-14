@@ -25,6 +25,7 @@ export async function reuseModel(
         assert.equal(old.contractDigest, hash(JSON.stringify(model)));
         assert.ok(
             Number.isFinite(Date.parse(old.researchedAt)) &&
+                recent(old.researchedAt, 86400000) &&
                 recent(old.refreshedAt ?? old.researchedAt),
         );
         assert.ok(
@@ -40,8 +41,7 @@ export async function reuseModel(
                     old.gaps.length &&
                     old.gaps.every(
                         (gap) => typeof gap === "string" && gap.trim(),
-                    ) &&
-                    recent(old.researchedAt, 86400000),
+                    ),
             );
         }
         assert.ok(Array.isArray(old.searches));

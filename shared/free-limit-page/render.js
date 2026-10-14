@@ -4,10 +4,15 @@
 // Run after changing the page or the package: npm install && npm run render
 import { readFileSync, writeFileSync } from "node:fs";
 import {
+    Alert,
     AppBrand,
+    Chip,
     CodeBlock,
+    DiscordIcon,
     ExternalLinkButton,
     Heading,
+    InlineLink,
+    KeyIcon,
     StableLabel,
     Surface,
     Text,
@@ -35,83 +40,150 @@ const css =
 const clock = (seconds) => `0:${String(seconds).padStart(2, "0")}`;
 const CLOCKS = Array.from({ length: 46 }, (_, seconds) => clock(seconds));
 
+// A numbered step of the Weft setup
+const step = (number, title, ...children) =>
+    h(
+        "div",
+        { className: "polli:flex polli:flex-col polli:gap-2" },
+        h(
+            "div",
+            { className: "polli:flex polli:items-center polli:gap-2" },
+            h(Chip, { intent: "neutral", size: "sm" }, number),
+            h(Heading, { as: "h2", size: "card" }, title),
+        ),
+        ...children,
+    );
+
+// A footnote line, led by its icon as Enter's are
+const footnote = (Icon, ...children) =>
+    h(
+        Text,
+        {
+            size: "sm",
+            tone: "muted",
+            className: "polli:flex polli:items-center polli:gap-2",
+        },
+        h(Icon, { className: "polli:size-3.5 polli:shrink-0" }),
+        h("span", null, ...children),
+    );
+
 const page = h(
     "main",
-    { className: "polli:mx-auto polli:max-w-xl polli:p-4" },
+    {
+        className:
+            "polli:mx-auto polli:flex polli:max-w-xl polli:flex-col polli:gap-4 polli:p-4",
+    },
     h(
-        Surface,
-        {
-            variant: "panel",
-            className: "polli:flex polli:flex-col polli:gap-6",
-        },
+        "div",
+        { className: "polli:flex polli:items-center polli:justify-between" },
         h(AppBrand, {
             appName: "Free API Classic",
             href: "https://pollinations.ai",
             size: "sm",
         }),
+        h(Text, { as: "span", size: "xs", tone: "muted" }, "Pay with x402"),
+    ),
+    h(
+        Surface,
+        {
+            variant: "panel",
+            className:
+                "polli:flex polli:flex-col polli:gap-6 polli:overflow-hidden",
+        },
+        // Runs to the panel's edges, as images in the website's cards do
         h("img", {
+            className: "bleed",
             src: `data:image/webp;base64,${base64("../assets/weft-paywall.webp")}`,
             width: 960,
             height: 540,
             alt: "The Pollinations bee and the Weft mascot exchange a flower coin and a picture.",
-            style: { width: "100%", height: "auto", borderRadius: 16 },
         }),
+        h(
+            Alert,
+            { intent: "info", title: "Free limit reached" },
+            "Your next free {{item}} is ready in ",
+            h(
+                "span",
+                { "data-clock": "" },
+                h(StableLabel, { text: "{{clock}}", options: CLOCKS }),
+            ),
+            ". This page reloads by itself.",
+        ),
         h(
             "div",
             { className: "polli:flex polli:flex-col polli:gap-2" },
             h(
                 Heading,
                 { as: "h1", size: "title" },
-                "Your next free {{item}} is ready in ",
-                h(
-                    "span",
-                    { "data-clock": "" },
-                    h(StableLabel, { text: "{{clock}}", options: CLOCKS }),
-                ),
+                "Get your {{item}} for just 0.01 USD",
             ),
             h(
                 Text,
                 { tone: "soft" },
-                "Free API Classic makes 1 {{item}} every {{every}} seconds. This page reloads by itself when the time is up.",
-            ),
-        ),
-        h(
-            "div",
-            { className: "polli:flex polli:flex-col polli:gap-2" },
-            h(
-                ExternalLinkButton,
-                {
-                    href: "https://enter.pollinations.ai/?ref=classic",
-                    external: false,
-                    size: "lg",
-                },
-                "Get unlimited {{items}}",
-            ),
-            h(
-                Text,
-                { size: "sm", tone: "muted", className: "polli:text-center" },
-                "Sign in to enter and buy pollen. More models, no waiting.",
+                "Give your AI agent a wallet. Let it pay for the {{item}} and get back to work.",
             ),
         ),
         h(
             Surface,
-            { className: "polli:flex polli:flex-col polli:gap-3" },
-            h(
-                Heading,
-                { as: "h2", size: "card" },
-                "Or let your AI agent pay 0.01 USD with Weft",
+            { className: "polli:flex polli:flex-col polli:gap-6" },
+            step(
+                "1",
+                "Connect your agent",
+                h(
+                    Text,
+                    { size: "sm", tone: "soft" },
+                    "Paste this into your agent:",
+                ),
+                h(CodeBlock, { code: "set up https://weft.network/setup.md" }),
+                h(
+                    Text,
+                    { size: "sm", tone: "soft" },
+                    "Create your Weft account and verify your email to get $3 in free credit.",
+                ),
             ),
-            h(
-                Text,
-                { size: "sm", tone: "soft" },
-                "Paste this into your agent:",
+            step(
+                "2",
+                "Ask it to pay",
+                h(CodeBlock, { code: "Pay for this {{item}} with Weft." }),
             ),
-            h(CodeBlock, { code: "set up https://weft.network/setup.md" }),
+        ),
+        h(
+            ExternalLinkButton,
+            { href: "https://weft.network/setup.md", size: "lg" },
+            "Give my agent a wallet",
+        ),
+        h(
+            Text,
+            { size: "sm", tone: "muted", className: "polli:text-center" },
+            "Already connected? Ask your agent to pay for this request.",
+        ),
+    ),
+    h(
+        "div",
+        { className: "polli:flex polli:flex-col polli:gap-1 polli:px-1" },
+        footnote(
+            KeyIcon,
+            "Prefer an account? ",
             h(
-                Text,
-                { size: "sm", tone: "soft" },
-                "Then ask it: “Pay for this {{item}} with Weft.” New Weft accounts get $3 in free credit.",
+                InlineLink,
+                { href: "https://enter.pollinations.ai/?ref=classic" },
+                "Get unlimited {{items}} on enter",
             ),
+            ".",
+        ),
+        footnote(
+            DiscordIcon,
+            "Need help? ",
+            h(
+                InlineLink,
+                {
+                    href: "https://discord.gg/k9F7SyTgqn",
+                    tone: "quiet",
+                    showIcon: false,
+                },
+                "Ask on Discord",
+            ),
+            ".",
         ),
     ),
 );
@@ -139,7 +211,7 @@ const html = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Free limit reached - Pollinations</title>
 <style>${css}</style>
-<style>body{margin:0;background:var(--polli-color-app-bg);font-family:var(--polli-font-body)}</style>
+<style>body{margin:0;background:var(--polli-color-app-bg);font-family:var(--polli-font-body)}.bleed{display:block;width:calc(100% + 2rem);max-width:none;height:auto;margin:-1rem -1rem 0}@media (min-width:40rem){.bleed{width:calc(100% + 3.5rem);margin:-1.75rem -1.75rem 0}}</style>
 </head>
 <body>${renderToStaticMarkup(page)}<script>${script}</script></body>
 </html>

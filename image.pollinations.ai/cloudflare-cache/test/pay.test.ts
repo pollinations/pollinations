@@ -225,7 +225,7 @@ test("browsers get the free limit's page with the time left and the VM's headers
     expect(response.status).toBe(402);
     const wait = response.headers.get("retry-after") ?? "";
     expect(text).toContain("Your next free image is ready in");
-    expect(text).toContain("1 image every 45 seconds");
+    expect(text).toContain("Get your image for just 0.01 USD");
     expect(text).toContain(`let wait = ${wait};`);
     expect(text).not.toContain("{{");
     // The live page's headers, plus the Retry-After and the page's length

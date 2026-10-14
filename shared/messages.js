@@ -44,11 +44,11 @@ const limitNotice = (every, wait) =>
     "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
 
 /** The free limit's page for a browser, built by free-limit-page/render.js */
-function page(kind, every, wait) {
+function page(kind, wait) {
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];
     const clock = `0:${String(wait).padStart(2, "0")}`;
-    const values = { item, items, every, wait, clock };
+    const values = { item, items, wait, clock };
     return PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]);
 }
 
@@ -93,7 +93,7 @@ export function explainFreeLimit(
 
     if (browser) {
         headers.set("Retry-After", String(wait));
-        return answer(402, "text/html; charset=utf-8", page(kind, every, wait));
+        return answer(402, "text/html; charset=utf-8", page(kind, wait));
     }
     if (kind === "text" || kind === "chat") {
         headers.set("Cache-Control", "private, no-store");

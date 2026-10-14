@@ -40,7 +40,9 @@ Category emojis: 🧠 text · 🎨 image · 🔢 embeddings · 🤖 agent (`agen
 
 - Text and embeddings: pricing values are pollen per token. Give input / output per 1M tokens
   (value × 1,000,000), e.g. `0.15 / 0.80 pollen per 1M tokens`.
-- Image: `completionImageTokens` is pollen per image, e.g. `0.25 pollen per image`.
+- Image with `flat_rate: true`: `completionImageTokens` is pollen per image, e.g. `0.25 pollen per image`.
+- Image with `flat_rate: false`: the values are pollen per token, as for text. Give input / output
+  per 1M tokens, e.g. `1.00 / 50.00 pollen per 1M tokens`.
 - Add `paid-only` when `paid_only` is true.
 
 ## discord_text format

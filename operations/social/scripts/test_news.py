@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -677,23 +677,33 @@ class PostsTest(unittest.TestCase):
         # A month without daily summaries writes no page but still has its counts.
         self.assertEqual(sorted(self.new("monthly", "2026-08")[2]), [f"{NEWS_REL_DIR}/monthly/2026-08/contributors.json"])
 
-    def test_catalog_is_recorded_only_when_it_changed(self):
+    def test_catalog_is_recorded_once_a_day_and_only_when_it_changed(self):
+        today = datetime.now(UTC).date()
+        yesterday, day_before = (str(today - timedelta(days=n)) for n in (1, 2))
+        today = str(today)
         recorded = {**EMPTY_CATALOG, "text": [{"name": "kept"}, {"name": "community/a/hidden", "community": True}]}
-        self.put("models/snapshots/2026-10-14.json", recorded)
-        snapshots = f"{NEWS_REL_DIR}/models/snapshots"
+        self.put(f"models/snapshots/{day_before}.json", recorded)
+        snapshot = f"{NEWS_REL_DIR}/models/snapshots/{today}.json"
         # Live health stats are no change: no call, nothing saved.
         busier = copy.deepcopy(recorded)
         busier["text"][0]["health"] = {"status": "healthy", "success_rate": 99.9, "requests": 45067}
         with patch("posts.fetch_all_snapshots", return_value=busier) as fetch:
-            calls, _, saved = self.new("catalog", "2026-10-15")
+            calls, _, saved = self.new("catalog", today)
         # The whole catalog, the community models the reliability filter hides included.
         fetch.assert_called_once_with({"reliability": "all"})
         self.assertEqual((calls, saved), ([], {}))
         changed = {**recorded, "text": [*recorded["text"], {"name": "new"}]}
         with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(changed)):
-            calls, _, saved = self.new("catalog", "2026-10-16")
-        self.assertEqual((calls, list(saved)), ([], [f"{snapshots}/2026-10-16.json"]))
-        self.assertEqual(json.loads(saved[f"{snapshots}/2026-10-16.json"]), changed)
+            calls, _, saved = self.new("catalog", today)
+            self.assertEqual((calls, list(saved)), ([], [snapshot]))
+            self.assertEqual(json.loads(saved[snapshot]), changed)
+            # Today's catalog is never saved as another day, and a recorded day is kept.
+            with self.assertRaisesRegex(SystemExit, "is not today"):
+                self.new("catalog", yesterday)
+            with self.assertRaisesRegex(SystemExit, "already recorded"):
+                self.new("catalog", today)
+            self.assertEqual(list(self.new("catalog", yesterday, overwrite=True)[2]),
+                             [f"{NEWS_REL_DIR}/models/snapshots/{yesterday}.json"])
 
     def test_model_post_compares_the_recorded_catalog_a_week_apart(self):
         last_week = {**EMPTY_CATALOG, "text": [{"name": "kept", "paid_only": False}]}
@@ -731,12 +741,15 @@ class PostsTest(unittest.TestCase):
         this_week = {**EMPTY_CATALOG, "text": [{"name": "official", "paid_only": True},
                                                {"name": "community/a/kept", "community": True},
                                                {"name": "community/b/new", "community": True,
-                                                "pricing": {"completionTextTokens": "0.0000003"}, **owner_text}]}
+                                                "pricing": {"completionTextTokens": "0.0000003"}, **owner_text}],
+                     "image": [{"name": "community/c/per-token", "community": True, "flat_rate": False,
+                                "pricing": {"completionImageTokens": "0.00005"}}]}
         self.put("models/snapshots/2026-10-14.json", last_week)
         self.put("models/snapshots/2026-10-21.json", this_week)
         calls, _, saved = self.new("community", "2026-10-21")
         self.assertIn("community/b/new", calls[0][1])
         self.assertIn("0.0000003", calls[0][1])
+        self.assertIn('"flat_rate": false', calls[0][1])  # per-token, not per-image, pricing
         self.assertNotIn('"name": "official"', calls[0][1])  # the model post covers it
         # Owner-written text never reaches the writer.
         for text in owner_text.values():
@@ -746,14 +759,15 @@ class PostsTest(unittest.TestCase):
         self.assertEqual((post["scope"], post["text"]), ("community_weekly", "Model updates"))  # no role mention
 
     def test_catalog_record_is_never_silently_rebuilt(self):
+        today = str(datetime.now(UTC).date())
         self.put("models/models.md", "# Pollinations Model Changelog\n")
         with patch("posts.fetch_all_snapshots", return_value={"text": [{"name": "a"}]}):
-            posts.write("catalog", "2026-10-14", self.news, self.work)
+            posts.write("catalog", today, self.news, self.work)
             with self.assertRaisesRegex(SystemExit, "refusing to rebuild the baseline"):
-                posts.save("catalog", "2026-10-14", self.news, self.work)
+                posts.save("catalog", today, self.news, self.work)
             with patch.dict(os.environ, {"ALLOW_BASELINE_REBUILD": "1"}):
-                new = self.new("catalog", "2026-10-14")
-        self.assertEqual(list(new[2]), [f"{NEWS_REL_DIR}/models/snapshots/2026-10-14.json"])
+                new = self.new("catalog", today)
+        self.assertEqual(list(new[2]), [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
 
     def test_a_saved_date_is_replaced_only_when_asked_and_keeps_its_delivery_record(self):
         self.put("gists/2026-10-06/PR-1.json", gist(1, "2026-10-06T10:00:00Z"))

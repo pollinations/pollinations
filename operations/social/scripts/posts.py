@@ -89,6 +89,7 @@ CATALOG_FACTS = (
     "agent",
     "paid_only",
     "pricing",
+    "flat_rate",
     "input_modalities",
     "output_modalities",
     "capabilities",
@@ -156,7 +157,13 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
     check_date(job, date)
     if not (news / NEWS_REL_DIR).is_dir():
         sys.exit(f"{news} is not a checkout of the news branch")
-    if job in CATALOG_JOBS:
+    if job == "catalog" and not overwrite:
+        # /models is recorded as it is now, and a recorded day is kept.
+        if date != datetime.now(UTC).strftime("%Y-%m-%d"):
+            sys.exit(f"catalog {date} is not today: /models is only recorded as it is now")
+        if (news / MODELS_NEWS_DIR / "snapshots" / f"{date}.json").exists():
+            sys.exit(f"catalog {date} is already recorded; pass --overwrite to replace it")
+    elif job in CATALOG_JOBS:
         # A saved model or community post is never replaced, even with --overwrite.
         if (news / JOB_DIRS[job] / date / "discord.json").exists():
             post = "model" if job == "models" else job

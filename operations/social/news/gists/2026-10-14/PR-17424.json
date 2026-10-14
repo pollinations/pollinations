@@ -1,0 +1,34 @@
+{
+  "pr_number": 17424,
+  "title": "Add Tiny Fighter Arena to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17424",
+  "merged_at": "2026-10-14T10:44:44Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added Tiny Fighter Arena to the games catalog. Describe a fighter in one line; AI creates its name, appearance, three moves, quirk, stats, and fighting style, an image model draws its portrait, and the fighter battles in the game.",
+    "keywords": [
+      "Tiny Fighter Arena",
+      "games",
+      "community app",
+      "AI characters",
+      "image generation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17424.jpg",
+    "prompt": "In a cozy pixel art fighting arena bordered by little flowers, a newly drawn fighter portrait glows on a retro screen while Polli watches from the referee's corner in a tiny striped visor. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-14T10:47:04.401445+00:00",
+  "app_name": "Tiny Fighter Arena",
+  "app_url": "https://tomdacatto.github.io/pollinations-fighter-arena",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "e93a938cc7e94f51f3487ea92238b6169459d382",
+  "announcements": []
+}

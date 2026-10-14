@@ -112,6 +112,7 @@ describe("shared control accessibility", () => {
         const node = { value: "25", form };
         const ref = createRef<HTMLInputElement>();
         vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        vi.useFakeTimers({ toFake: ["setTimeout"] });
         let renderer!: ReturnType<typeof create>;
         try {
             await act(async () => {
@@ -128,8 +129,10 @@ describe("shared control accessibility", () => {
             expect(input().style["--polli-slider-progress"]).toBe("75%");
             await act(async () => {
                 form.dispatchEvent(new Event("reset", { cancelable: true }));
-                // Browsers update the input after dispatching the reset event.
+                // A trusted reset can run microtasks before its default action.
+                await Promise.resolve();
                 node.value = "25";
+                await vi.runOnlyPendingTimersAsync();
             });
             expect(input().style["--polli-slider-progress"]).toBe("25%");
             await act(async () => {
@@ -142,10 +145,12 @@ describe("shared control accessibility", () => {
                     new Event("reset", { cancelable: true }),
                 );
                 expect(allowed).toBe(false);
+                await vi.runOnlyPendingTimersAsync();
             });
             expect(input().style["--polli-slider-progress"]).toBe("75%");
         } finally {
             await act(async () => renderer?.unmount());
+            vi.useRealTimers();
             vi.unstubAllGlobals();
         }
         expect(ref.current).toBeNull();

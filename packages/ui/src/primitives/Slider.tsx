@@ -87,10 +87,10 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             const form = input.form;
             if (!form) return;
             const handleReset = (event: Event) => {
-                // Wait for the native reset, including later cancellation handlers.
-                queueMicrotask(() => {
+                // Microtasks can run before a trusted reset's default action.
+                setTimeout(() => {
                     if (!event.defaultPrevented) setInputValue(input.value);
-                });
+                }, 0);
             };
             form.addEventListener("reset", handleReset);
             return () => form.removeEventListener("reset", handleReset);

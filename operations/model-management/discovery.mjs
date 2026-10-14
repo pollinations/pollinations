@@ -14,13 +14,29 @@ export function discoveryCandidates(sources, inventory) {
     for (const source of sources) {
         if (source.status !== "fetched" || typeof source.text !== "string")
             continue;
-        const names = new Set(
-            [
-                ...source.text.matchAll(
-                    /(?<![\w:/.-])([A-Za-z0-9][\w.-]{1,79}\/[A-Za-z0-9][\w.-]{1,119})(?![\w/.-])/g,
-                ),
-            ].map((match) => match[1]),
-        );
+        const names = new Set();
+        if (URL.canParse(source.url)) {
+            const host = new URL(source.url).hostname;
+            const label = host.split(".").at(-2);
+            if (
+                label?.length >= 4 &&
+                !/(?:^|\.)(?:huggingface\.co|github\.com|reddit\.com|quora\.com|replit\.com|ycombinator\.com)$/.test(
+                    host,
+                )
+            ) {
+                const brand = source.text.match(
+                    new RegExp(
+                        `(?<![\\w/.-])${label}(?:\\.[a-z]{2,})?(?![\\w/.-])`,
+                        "i",
+                    ),
+                );
+                if (brand) names.add(brand[0]);
+            }
+        }
+        for (const match of source.text.matchAll(
+            /(?<![\w:/.-])([A-Za-z0-9][\w.-]{1,79}\/[A-Za-z0-9][\w.-]{1,119})(?![\w/.-])/g,
+        ))
+            names.add(match[1]);
         for (const match of source.text.matchAll(
             /\b(?:released|introducing|launched|announcing)\s+([A-Z][\w.-]+(?:\s+(?:[A-Z][\w.-]+|\d[\w.-]*)){0,3})(?=[,.;\n]|\s+(?:our|is|as)\b)/g,
         ))
@@ -50,8 +66,11 @@ export function discoveryCandidates(sources, inventory) {
             const parts = name.split("/");
             if (
                 seen.has(key) ||
+                /^(?:get started\b|how to\b|use (?:it|this)\b)/i.test(name) ||
                 (parts.length === 2 &&
                     (/\.(?:com|org|net|io|ai|co)$/i.test(parts[0]) ||
+                        (/^\d+$/.test(parts[1]) &&
+                            source.text.includes(`${name} active providers`)) ||
                         /^(?:sec|second|minute|hour|tokens?|mtok|api|docs|features|reference)$/i.test(
                             parts[1].replace(/\.$/, ""),
                         ))) ||

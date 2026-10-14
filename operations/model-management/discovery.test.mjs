@@ -2,6 +2,68 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { discoveryCandidates } from "./discovery.mjs";
 
+test("literal primary provider brands precede a crowded model table without inventing an origin's brand", () => {
+    const result = discoveryCandidates(
+        [
+            {
+                id: "provider",
+                status: "fetched",
+                url: "https://inferhub.dev/pricing",
+                text:
+                    "Pricing & models · InferHub\nInferHub offers managed inference.\n" +
+                    Array.from({ length: 20 }, (_, i) => `Lab/Model-${i}`).join(
+                        " ",
+                    ),
+            },
+            {
+                id: "absent",
+                status: "fetched",
+                url: "https://unknown.example/pricing",
+                text: "Lab/Model-50",
+            },
+            {
+                id: "platform",
+                status: "fetched",
+                url: "https://huggingface.co/blog/release",
+                text: "HuggingFace blog.\nLab/Model-51",
+            },
+        ],
+        [],
+    );
+    assert.equal(result.candidates[0].name, "InferHub");
+    assert.ok(
+        !result.candidates.some(
+            ({ name }) => name === "unknown" || name === "HuggingFace",
+        ),
+    );
+    assert.ok(
+        result.candidates[0].quote.includes(
+            "InferHub offers managed inference",
+        ),
+    );
+});
+
+test("navigation titles and provider counters are not entity names", () => {
+    const text =
+        "LiquidAI/LFM2.5-24B-A2B is a model.\nGet Started with LFM2.5-24B-A2B\nag/99 active providers\nLab/123 is a checkpoint.\nNicheServe offers managed inference.";
+    const result = discoveryCandidates(
+        [
+            {
+                id: "s1",
+                status: "fetched",
+                url: "https://provider.example/pricing",
+                text,
+                links: [{ text: "Get Started with LFM2.5-24B-A2B" }],
+            },
+        ],
+        [],
+    );
+    assert.deepEqual(
+        result.candidates.map(({ name }) => name).sort(),
+        ["LiquidAI/LFM2.5-24B-A2B", "Lab/123", "NicheServe"].sort(),
+    );
+});
+
 test("literal discovery retains provider labels, plain headings and checkpoints with exact spans", () => {
     const text =
         "New community favorite: startup/novel-4 released this month.\n# Model Card for PlainModel 4\nPlainModel 4 is a newly released checkpoint.\nNicheServe offers hosted inference for this model.";

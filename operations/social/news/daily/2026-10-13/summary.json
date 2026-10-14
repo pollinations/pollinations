@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-13",
+  "period_start": "2026-10-13",
+  "period_end": "2026-10-13",
+  "title": "Four new models for video, images and multimodal work",
+  "summary": "Four new models, dashboard-managed sandboxes, easier key grants and Quest rewards made for a crowded day in the garden.\n\nKandinsky 6.0 Lite adds five-second video with synchronized audio from text or a start image. Qwen Image 2.1 Turbo adds image generation and editing with up to ten references. Muse Wonder 1.0 and Gemini 4 Argon expand the text lineup with large context windows and multimodal input; Gemini also supports Google Search. The community app catalog gained Bit, an AI-agent narrator of short tech stories.\n\nThe Enter dashboard now has a page to create, manage and connect to sandboxes. Timeout handling moves to ten-minute paid-ahead leases, with a way to set a limit on a running sandbox. The large template gains more disk; both templates add rclone, cron, ffmpeg, uv and other everyday tools.\n\nModel and sandbox permission refusals can now point to a focused page that grants access on an existing key without changing its other settings. Signed-in users can redeem one-off event codes for Quest Pollen, and Discord level 10 and 20 now have one-time Quest rewards. The Quest page and leaderboards received smaller fixes.",
+  "pr_count": 41,
+  "prs": [
+    {
+      "number": 15504,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16256,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16407,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16912,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16920,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16921,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16990,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 16995,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17048,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17054,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17055,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17057,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17059,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17081,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17087,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17150,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17180,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17194,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17203,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17215,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17221,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17222,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17227,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17233,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17258,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17259,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17266,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17296,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17299,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17309,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17317,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17324,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17325,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17326,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17329,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17334,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17341,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17343,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17364,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17368,
+      "date": "2026-10-13"
+    },
+    {
+      "number": 17369,
+      "date": "2026-10-13"
+    }
+  ],
+  "generated_at": "2026-10-14T06:08:24.356236+00:00",
+  "highlights": [
+    {
+      "emoji": "🎵",
+      "title": "Kandinsky video with audio",
+      "text": "Generate five-second 480p videos with synchronized audio from a prompt or start image using `kandinskylab/kandinsky-6.0-lite`. [Browse the model](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite).",
+      "prs": [
+        16995
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎨",
+      "title": "Qwen image editing",
+      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
+      "prs": [
+        17055
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Gemini 4 Argon",
+      "text": "Use `google/gemini-4-argon` with text, image, audio or video input, plus reasoning controls, tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
+      "prs": [
+        17329
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Manage sandboxes in Enter",
+      "text": "Create, pause, resume and connect to your sandboxes from the dashboard. Templates also gain tools including ffmpeg, uv and rclone. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        17150,
+        17364,
+        17368
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "Bit tells tech stories",
+      "text": "Watch short AI-agent-narrated stories about open-source projects and AI news in Italian and English. [Try it](https://bit.sessionweave.com).",
+      "prs": [
+        17324
+      ],
+      "kind": "app"
+    }
+  ]
+}

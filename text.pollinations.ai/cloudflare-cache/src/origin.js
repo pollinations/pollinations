@@ -74,7 +74,9 @@ const UNPAID = "private, no-store";
 // The VM's cors() options: every response after the blocklist and body parsing
 export const CORS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Expose-Headers": "Payment-Required,Payment-Response",
+    // Retry-After: the free limit's and a busy gen's wait, for browser code
+    "Access-Control-Expose-Headers":
+        "Payment-Required,Payment-Response,Retry-After",
 };
 const SSE_DONE = new TextEncoder().encode("data: [DONE]");
 

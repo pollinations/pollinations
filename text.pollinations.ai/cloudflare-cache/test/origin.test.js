@@ -481,7 +481,8 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     // The live 304 of 2026-10-12, without the edge's headers
     const live = {
         "access-control-allow-origin": "*",
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
         etag,
         "x-powered-by": "Express",
     };
@@ -524,7 +525,8 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     // without Content-Length (its ETag is that of "ok")
     expect(Object.fromEntries(response.headers)).toEqual({
         ...CACHE_MISS,
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
         "cache-control": "public, max-age=31536000, immutable",
         etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
         "x-model-used": "gpt-oss-20b",
@@ -561,7 +563,7 @@ test("a preflight gets the live 204: cors() headers plus the cache code's, and n
         "access-control-allow-origin": "*",
         "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
         "access-control-expose-headers":
-            "Payment-Required, Payment-Response, Link, X-Pollinations-Logo, X-Powered-By",
+            "Payment-Required, Payment-Response, Retry-After, Link, X-Pollinations-Logo, X-Powered-By",
         link: '<https://pollinations.ai>; rel="service"',
         vary: "Access-Control-Request-Headers",
         "x-cache": "MISS",
@@ -607,7 +609,8 @@ const errorPage = (message) =>
 const pageHeaders = (cors) => ({
     ...(cors && {
         "access-control-allow-origin": "*",
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
     }),
     "content-security-policy": "default-src 'none'",
     "content-type": "text/html; charset=utf-8",

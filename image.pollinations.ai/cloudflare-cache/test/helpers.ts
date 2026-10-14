@@ -55,7 +55,20 @@ export function capturedHeaders(raw: string) {
         const at = line.indexOf(":");
         return [line.slice(0, at).toLowerCase(), line.slice(at + 1).trim()];
     });
-    return new Map(pairs.filter(([name]) => !edge.includes(name)));
+    const headers = new Map(pairs.filter(([name]) => !edge.includes(name)));
+    // The Workers expose Retry-After to browser code, after the VM's list
+    const exposed = headers.get("access-control-expose-headers");
+    if (exposed) {
+        const separator = exposed.includes(", ") ? ", " : ",";
+        headers.set(
+            "access-control-expose-headers",
+            exposed.replace(
+                /Payment-Response(?=,|$)/,
+                `Payment-Response${separator}Retry-After`,
+            ),
+        );
+    }
+    return headers;
 }
 
 export const storedAt = (path: string) =>

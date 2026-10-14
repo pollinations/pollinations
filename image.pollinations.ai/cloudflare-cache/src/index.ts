@@ -22,6 +22,8 @@ app.use(
             ...Object.keys(ATTRIBUTION_HEADERS),
             "Payment-Required",
             "Payment-Response",
+            // The free limit's and a busy gen's wait, for browser code
+            "Retry-After",
         ],
     }),
 );

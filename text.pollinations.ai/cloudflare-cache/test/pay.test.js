@@ -195,6 +195,10 @@ test("a JSON-mode request past the free limit gets gen's error body and the VM's
 
     expect(response.status).toBe(402);
     const wait = response.headers.get("retry-after");
+    // Readable by browser code on another origin
+    expect(response.headers.get("access-control-expose-headers")).toContain(
+        "Retry-After",
+    );
     const body = JSON.parse(text);
     expect(body).toEqual({
         status: 402,

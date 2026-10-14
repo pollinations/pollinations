@@ -4,6 +4,8 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse as yamlParse } from "yaml";
+import { buildCurl, type Spec } from "../scripts/generate-apidocs.ts";
+import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import worker from "../src/index.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {
@@ -37,6 +39,30 @@ function envWithFailedEnterSchema(): CloudflareBindings {
 describe("docs routes", () => {
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it("generates valid request examples from the checked-out Gen schema", async () => {
+        // Enter and Media validate their own source schemas in their own suites.
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json({ paths: {} }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/open-api/generate-schema",
+            ),
+            envWithEnterSchema({ paths: {} }),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(200);
+        const schema = (await response.json()) as Spec;
+        const text = schema.paths["/text/{prompt}"]?.get;
+        expect(text).toBeDefined();
+        expect(buildCurl(schema, "get", "/text/{prompt}", text)).not.toContain(
+            "seed=:seed",
+        );
+        expect(requestExampleErrors(schema)).toEqual([]);
     });
 
     it("serves a gen-owned OpenAPI schema and merges public Enter paths only", async () => {

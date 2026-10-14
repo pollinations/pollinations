@@ -620,7 +620,7 @@ export async function review(
         } else
             pushed = request.classicToken
                 ? "Not pushed: only a fine-grained token (github_pat_...) limited to the fork is used. A classic token can write to every repository its owner can, so it was removed and ignored."
-                : "Not pushed: send a fork URL and a fine-grained token to push.";
+                : "Not pushed: no token was sent, so nothing was written anywhere.";
         lines.push(
             "",
             "**Fix**",
@@ -631,6 +631,11 @@ export async function review(
             diff,
             "```",
         );
+        if (!(request.fork && request.token))
+            lines.push(
+                "",
+                `Apply it without giving anyone a token: save the diff as \`fix.patch\`, then \`gh pr checkout ${request.number} --repo ${request.owner}/${request.repo} && git apply fix.patch\`. A maintainer can push it to the PR branch with their own access when the author allows edits from maintainers.`,
+            );
     }
     if (rejected.length)
         lines.push(

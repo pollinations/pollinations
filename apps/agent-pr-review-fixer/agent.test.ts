@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -305,6 +311,28 @@ test("without a token it returns the diff and writes nothing; ok pushes nothing"
     );
     assert.match(noToken.report, /Not pushed/);
     assert.match(noToken.report, /```diff/);
+    assert.match(
+        noToken.report,
+        /gh pr checkout 42 --repo acme\/app && git apply fix\.patch/,
+    );
+    // The printed diff is exactly what the maintainer saves and applies.
+    const printed = noToken.report.match(/```diff\n([\s\S]*?)\n```/)?.[1];
+    const dir = mkdtempSync(join(tmpdir(), "pr-fixer-"));
+    try {
+        mkdirSync(join(dir, "src"));
+        writeFileSync(join(dir, "src/add.js"), FILE);
+        writeFileSync(join(dir, "fix.patch"), `${printed}\n`);
+        execFileSync("git", ["apply", "fix.patch"], {
+            cwd: dir,
+            stdio: "pipe",
+        });
+        assert.equal(
+            readFileSync(join(dir, "src/add.js"), "utf8"),
+            FILE.replace("a - b", "a + b"),
+        );
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
     const ok = await review(
         `https://github.com/acme/app/pull/42 https://github.com/me/app ${TOKEN}`,
         modelDouble([], {

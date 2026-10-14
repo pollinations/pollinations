@@ -20,12 +20,14 @@ Chat Completions and Responses requests both work.
 curl https://gen.pollinations.ai/v1/chat/completions \
   -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"<github-username>/pr-review-fixer","messages":[{"role":"user","content":"Review https://github.com/pollinations/pollinations/pull/123 and push to https://github.com/me/pollinations with github_pat_..."}]}'
+  -d '{"model":"<github-username>/pr-review-fixer","messages":[{"role":"user","content":"Review https://github.com/pollinations/pollinations/pull/123"}]}'
 ```
 
-The fork must contain the PR head commit. A GitHub fork of the base repository has it once you fetch it (`git fetch upstream pull/123/head && git push origin FETCH_HEAD:refs/heads/pr-123`), or for PRs opened from your own fork it is already there.
+**Default: no GitHub token at all.** The agent reads the PR anonymously and replies with the review and a diff that `git apply` accepts, plus the exact commands to apply it (`gh pr checkout 123 --repo pollinations/pollinations && git apply fix.patch`). A maintainer applies the diff and pushes it to the PR branch with their own access; GitHub allows that when the author leaves "Allow edits from maintainers" on, which is the default. The agent never posts a comment, so nothing about the run is public until someone pushes.
 
-The token goes only in the private API request above. Never paste it in a PR, issue or any other public place: the agent reads it from the request, and it never posts a comment anywhere. Only a fine-grained token (`github_pat_...`) is used, because it can be limited to one repository. Give it **Contents: read and write** on that fork only and a short expiry, and revoke it after the run. A classic token (`ghp_...`) can write to every repository of its owner, so the agent removes it from the text and does not push with it.
+**Optional: push a branch for you.** Add a fork URL and a fine-grained token to the same private request (`... and push to https://github.com/me/pollinations with github_pat_...`). The fork must contain the PR head commit. A GitHub fork of the base repository has it once you fetch it (`git fetch upstream pull/123/head && git push origin FETCH_HEAD:refs/heads/pr-123`), or for PRs opened from your own fork it is already there.
+
+The token goes only in that private API request. Never paste it in a PR, issue or any other public place: the agent reads it from the request, and it never posts a comment anywhere. Only a fine-grained token (`github_pat_...`) is used, because it can be limited to one repository. Give it **Contents: read and write** on that fork only and a short expiry, and revoke it after the run. A classic token (`ghp_...`) can write to every repository of its owner, so the agent removes it from the text and does not push with it.
 
 ## Deploy
 

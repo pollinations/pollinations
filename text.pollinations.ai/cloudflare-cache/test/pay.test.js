@@ -281,6 +281,18 @@ test("browsers get the free limit's page with the time left and the VM's challen
     }
 });
 
+test("a browser sending a broken payment header still gets the page, not the paywall's empty one", async () => {
+    for (const header of ["payment-signature", "x-payment"]) {
+        const { response, text } = await call("/broken%20payment", {
+            ip: await limitedIp(),
+            headers: { ...BROWSER, [header]: "not a payment" },
+        });
+
+        expect(response.status, header).toBe(402);
+        expect(text, header).toContain("Your next free reply is ready in");
+    }
+});
+
 test("only an HTML Accept from a Mozilla user agent gets the page", async () => {
     for (const headers of [
         { accept: "text/html", "user-agent": "curl/8.7.1" },

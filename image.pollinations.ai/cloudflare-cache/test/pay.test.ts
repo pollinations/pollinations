@@ -288,6 +288,18 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     expect(await storedAt(`${CAPTURED_HEAD}${QUERY}`)).toBeNull();
 });
 
+test("a browser sending a broken payment header still gets the page, not the paywall's empty one", async () => {
+    for (const header of ["payment-signature", "x-payment"]) {
+        const { response, text } = await call("/prompt/broken%20payment", {
+            ip: await limitedIp(),
+            headers: { ...BROWSER, [header]: "not a payment" },
+        });
+
+        expect(response.status, header).toBe(402);
+        expect(text, header).toContain("Your next free image is ready in");
+    }
+});
+
 test("a rate-limited HEAD whose generation fails gets gen's 503", async () => {
     const { response } = await call("/prompt/gen:429", {
         ip: await limitedIp(),

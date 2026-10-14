@@ -50,9 +50,11 @@ export function explainFreeLimit(request, response, kind, intervalMs, until) {
         request.headers.has("x-payment");
     const type = response.headers.get("content-type") ?? "";
     const browser = type.startsWith("text/html");
+    // A paying script keeps the paywall's own JSON answer; a browser always
+    // gets the page, as the paywall's own is empty
     if (
         response.status !== 402 ||
-        paying ||
+        (paying && !browser) ||
         !(browser || type.startsWith("application/json"))
     )
         return response;

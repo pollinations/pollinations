@@ -344,7 +344,7 @@ describe("formatFallbackTarget", () => {
 
 describe("fallback response model attribution", () => {
     const publicId = "qwen/qwen-image-3";
-    const backupId = "qwen/qwen-image-3:replicate";
+    const backupId = "qwen/qwen-image-3:fal";
     const model = {
         resolved: publicId,
         definition: IMAGE_SERVICES[publicId],

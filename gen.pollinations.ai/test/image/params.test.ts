@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
@@ -415,5 +417,28 @@ describe("ImageParamsSchema", () => {
             ...dims,
         });
         expect(result.success).toBe(false);
+    });
+
+    it.each([
+        "microsoft/mai-image-2.6",
+        "bytedance/seedream-5.0-flash",
+    ] as const)("rejects more reference images than %s declares", (model) => {
+        const max =
+            (IMAGE_SERVICES[model] as ModelDefinition).maxReferenceImages ?? 0;
+        const images = Array.from(
+            { length: max + 1 },
+            (_, i) => `https://example.com/${i}.png`,
+        );
+        expect(
+            ImageParamsSchema.safeParse({ model, image: images.slice(0, max) })
+                .success,
+        ).toBe(true);
+
+        const result = ImageParamsSchema.safeParse({ model, image: images });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({
+            path: ["image"],
+            message: expect.stringContaining(`at most ${max} reference`),
+        });
     });
 });

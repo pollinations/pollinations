@@ -3268,22 +3268,6 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.003,
     },
   },
-  "qwen/qwen-image-3:replicate": {
-    "cost": {
-      "completionImageTokens": 0.03,
-      "promptImageTokens": 0,
-    },
-    "costVariants": {
-      "2k": {
-        "completionImageTokens": 0.03,
-        "promptImageTokens": 0,
-      },
-    },
-    "price": {
-      "completionImageTokens": 0.03,
-      "promptImageTokens": 0,
-    },
-  },
   "qwen/qwen3-coder-30b-a3b-instruct": {
     "cost": {
       "completionTextTokens": 0.0000006,

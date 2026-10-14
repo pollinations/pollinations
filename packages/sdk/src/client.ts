@@ -63,7 +63,7 @@ import type {
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";

@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { LOW_BALANCE_SHARE } from "../services/account-notices.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -241,9 +242,13 @@ async function creditCheckoutSessionOnce({
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
+                ),
+                low_balance_threshold = ROUND(
+                    ? * ${LOW_BALANCE_SHARE},
+                    ${POLLEN_BILLING_PRECISION}
                 )
                 WHERE id = ?`,
-            ).bind(creditsToAdd, userId),
+            ).bind(creditsToAdd, creditsToAdd, userId),
         ]);
 
         if ((updateResult.meta.changes ?? 0) !== 1) {

@@ -4,7 +4,7 @@ import { getLogger } from "@logtape/logtape";
 
 // Account emails: facts about the user's own account, sent through the
 // Cloudflare Email Service binding. A user gets at most one balance email
-// (running low or auto top-up off) per 30 days, and none after they
+// (running low or auto top-up failed) per 30 days, and none after they
 // unsubscribe.
 
 const log = getLogger(["enter", "account-notices"]);
@@ -16,6 +16,10 @@ const FROM = {
 const REPLY_TO = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
 const NOTICE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+
+// Each credited pack sets the user's low_balance_threshold to this share of
+// it. Without auto top-up, the charge that crosses it sends the email.
+export const LOW_BALANCE_SHARE = 0.2;
 
 type Link = { label: string; path: string };
 
@@ -32,7 +36,7 @@ export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
         subject: "Your paid balance is running low",
-        body: `You have ${pollen(balance)} left.`,
+        body: `You have ${pollen(balance)} left, less than ${LOW_BALANCE_SHARE * 100}% of your last pack.`,
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -175,7 +179,8 @@ export async function sendNotice(
 
 /**
  * Called when a charge takes the paid balance of a user without auto top-up
- * below the threshold. Sends at most one balance email per 30 days.
+ * below their low-balance threshold. Sends at most one balance email per 30
+ * days.
  */
 export async function sendRunningLowNotice(
     env: CloudflareBindings,
@@ -186,6 +191,7 @@ export async function sendRunningLowNotice(
     const user = await env.DB.prepare(
         `UPDATE user SET low_balance_notified_at = ?
             WHERE id = ?
+                AND COALESCE(pack_balance, 0) < low_balance_threshold
                 AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
                 AND email_unsubscribed_at IS NULL
             RETURNING email, COALESCE(pack_balance, 0) AS balance`,

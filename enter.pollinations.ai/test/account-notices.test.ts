@@ -32,17 +32,22 @@ function withOutbox(fail = false) {
 
 async function addUser(
     id: string,
-    fields: { packBalance: number; autoTopUp?: boolean },
+    fields: {
+        packBalance: number;
+        lowBalanceThreshold?: number;
+        autoTopUp?: boolean;
+    },
 ) {
     await env.DB.prepare(
-        `INSERT INTO user (id, name, email, pack_balance, auto_top_up_enabled, auto_top_up_amount_usd)
-        VALUES (?, ?, ?, ?, ?, 10)`,
+        `INSERT INTO user (id, name, email, pack_balance, low_balance_threshold, auto_top_up_enabled, auto_top_up_amount_usd)
+        VALUES (?, ?, ?, ?, ?, ?, 10)`,
     )
         .bind(
             id,
             id,
             `${id}@example.com`,
             fields.packBalance,
+            fields.lowBalanceThreshold ?? null,
             fields.autoTopUp ? 1 : 0,
         )
         .run();
@@ -66,12 +71,15 @@ const unsubscribedAt = async (userId: string) =>
             .first<{ at: number | null }>()
     )?.at;
 
-test("running-low email goes out once per 30 days below the threshold", async () => {
+test("running-low email goes out once per 30 days below 20% of the last pack", async () => {
     const { sent, notifyEnv } = withOutbox();
-    await addUser("low", { packBalance: 3 });
-    await addUser("healthy", { packBalance: 6 });
+    // Last pack of 20 Pollen, so the threshold is 4.
+    await addUser("low", { packBalance: 3, lowBalanceThreshold: 4 });
+    await addUser("healthy", { packBalance: 6, lowBalanceThreshold: 4 });
+    // Never bought a pack, so there is no threshold.
+    await addUser("nopack", { packBalance: 3 });
 
-    for (const id of ["low", "low", "healthy"]) {
+    for (const id of ["low", "low", "healthy", "nopack"]) {
         expect(await processAutoTopUpForUser(notifyEnv, id)).toEqual({
             status: "skipped",
             reason: "auto top-up disabled",
@@ -79,7 +87,9 @@ test("running-low email goes out once per 30 days below the threshold", async ()
     }
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
-    expect(sent[0].text).toContain("You have 3.00 Pollen left.");
+    expect(sent[0].text).toContain(
+        "You have 3.00 Pollen left, less than 20% of your last pack.",
+    );
 
     await env.DB.prepare(
         "UPDATE user SET low_balance_notified_at = ? WHERE id = 'low'",
@@ -91,7 +101,7 @@ test("running-low email goes out once per 30 days below the threshold", async ()
 });
 
 test("a failed running-low email frees the slot for the next crossing", async () => {
-    await addUser("bounce", { packBalance: 1 });
+    await addUser("bounce", { packBalance: 1, lowBalanceThreshold: 2 });
 
     await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");
     expect(await notifiedAt("bounce")).toBeNull();
@@ -121,7 +131,7 @@ test("switching auto top-up off emails once and replaces the running-low email",
 
 test("the unsubscribe link stops every email", async () => {
     const { sent, notifyEnv } = withOutbox();
-    await addUser("leaver", { packBalance: 3 });
+    await addUser("leaver", { packBalance: 3, lowBalanceThreshold: 4 });
     await processAutoTopUpForUser(notifyEnv, "leaver");
     expect(sent[0].headers["List-Unsubscribe-Post"]).toBe(
         "List-Unsubscribe=One-Click",

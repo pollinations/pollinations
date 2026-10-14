@@ -16,6 +16,7 @@ import {
 import type Stripe from "stripe";
 import {
     autoTopUpOffNotice,
+    LOW_BALANCE_SHARE,
     sendNotice,
     sendRunningLowNotice,
 } from "../../services/account-notices.ts";
@@ -142,9 +143,7 @@ export async function processAutoTopUpForUser(
     }
 
     if (!user.autoTopUpEnabled) {
-        if ((user.packBalance ?? 0) <= AUTO_TOP_UP_THRESHOLD_POLLEN) {
-            await sendRunningLowNotice(env, userId);
-        }
+        await sendRunningLowNotice(env, userId);
         return { status: "skipped", reason: "auto top-up disabled" };
     }
 
@@ -387,6 +386,10 @@ export async function creditAutoTopUpInvoice(
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
+                ),
+                low_balance_threshold = ROUND(
+                    ? * ${LOW_BALANCE_SHARE},
+                    ${POLLEN_BILLING_PRECISION}
                 )
                 WHERE id = ?
                     AND EXISTS (
@@ -397,6 +400,7 @@ export async function creditAutoTopUpInvoice(
                             AND status IN (?, ?)
                     )`,
         ).bind(
+            attempt.amountUsd,
             attempt.amountUsd,
             attempt.userId,
             invoice.id,

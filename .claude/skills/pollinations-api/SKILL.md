@@ -1,13 +1,13 @@
 ---
 name: pollinations-api
-description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available.
+description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. Without an API key, the user can approve a device sign-in in their own browser.
 ---
 
 # pollinations-api — Pollinations REST API
 
-Direct REST access to `https://gen.pollinations.ai`. No install, no browser login.
-Needs only the `POLLINATIONS_API_KEY` env var for authenticated calls;
-the image URL works keyless.
+Direct REST access to `https://gen.pollinations.ai` without installing the CLI.
+The image URL works keyless; authenticated calls use `POLLINATIONS_API_KEY`.
+If no key is available, the user can approve a device sign-in in their own browser.
 
 Use the `polli` CLI skill when the CLI is already installed. Use this skill
 when it is not (sandboxes, Codex cloud, Cursor chat, fresh containers)
@@ -17,8 +17,72 @@ or when you only need one quick call.
 
 - Keyless (no header): `GET /image/{prompt}`.
 - Authenticated: header `Authorization: Bearer $POLLINATIONS_API_KEY`
-  (key from `https://enter.pollinations.ai/keys`).
+  (an existing key, or a user-approved device sign-in below).
 - Same key permissions, billing and caching as the CLI path.
+
+## Get a key without copying one into the agent
+
+If `POLLINATIONS_API_KEY` is already set, skip this. Otherwise **ask the user to
+approve sign-in**, then use the [OAuth 2.0 Device Authorization Grant (RFC 8628)](https://www.rfc-editor.org/rfc/rfc8628).
+The user opens the printed URL on their own device; the agent polls at the
+server-provided interval. No credential goes into a chat, command argument,
+URL, public repository, or log. This uses Python's standard library only:
+
+```bash
+python3 - <<'PYDEVICE'
+import json, os, time, urllib.error, urllib.parse, urllib.request
+from pathlib import Path
+
+path = Path.home() / '.config/pollinations/agent-key'
+if path.exists():
+    print('Existing private key file:', path)
+    raise SystemExit(0)
+
+def post(route, fields):
+    request = urllib.request.Request(
+        'https://enter.pollinations.ai' + route,
+        data=urllib.parse.urlencode(fields).encode(),
+        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as error:
+        return json.load(error)  # Pending approval is an OAuth 400 response.
+
+code = post('/api/device/code', {})
+print('Ask the user to approve:', code['verification_uri_complete'], flush=True)
+interval = code['interval']
+deadline = time.monotonic() + code['expires_in']
+while time.monotonic() < deadline:
+    time.sleep(interval)
+    token = post('/api/oauth/token', {
+        'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
+        'device_code': code['device_code'],
+    })
+    if token.get('error') in ('authorization_pending', 'slow_down'):
+        if token['error'] == 'slow_down':
+            interval += 5
+        continue
+    if token.get('error'):
+        raise SystemExit('Authorization failed: ' + token['error'])
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as file:
+        file.write(token['access_token'])
+    print('Saved to private file:', path)  # Never print the token.
+    break
+else:
+    raise SystemExit('Approval timed out; request a new code.')
+PYDEVICE
+export POLLINATIONS_API_KEY="$(cat ~/.config/pollinations/agent-key)"
+```
+
+Do not run this under shell tracing (`set -x`). Keep that file out of projects;
+its permissions are `0600`. The user can revoke the issued key on the
+[Pollinations keys page](https://enter.pollinations.ai/keys). For all grant
+options and the browser consent details, see
+[Bring Your Own Pollen](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#️-clis--headless-apps-device-flow).
 
 ## First call (keyless image, no code)
 

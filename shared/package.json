@@ -11,9 +11,5 @@
     "hono": "4.10.6",
     "hono-openapi": "1.2.0",
     "zod": "4.5.4"
-  },
-  "devDependencies": {
-    "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1"
   }
 }

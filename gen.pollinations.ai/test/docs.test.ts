@@ -4,8 +4,8 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse as yamlParse } from "yaml";
-import { requestExampleErrors } from "../../shared/test/api-examples.ts";
 import type { Spec } from "../scripts/generate-apidocs.ts";
+import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import worker from "../src/index.ts";
 
 function envWithEnterSchema(schema: unknown): CloudflareBindings {

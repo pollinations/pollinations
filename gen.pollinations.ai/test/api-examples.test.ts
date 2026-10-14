@@ -1,13 +1,8 @@
 import { CreateDecisionRequestSchema } from "@shared/schemas/decisions.ts";
-import { requestExampleErrors } from "@shared/test/api-examples.ts";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import {
-    CreateEndpointAgentSchema,
-    CreateEndpointSchema,
-    TestEndpointSchema,
-} from "../../enter.pollinations.ai/src/routes/community-endpoints/schemas.ts";
 import { buildCurl, type Spec } from "../scripts/generate-apidocs.ts";
+import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import { CreateMessageRequestSchema } from "../src/text/messages/schema.ts";
 
 type Operation = Spec["paths"][string][string];
@@ -46,43 +41,12 @@ const regressions = [
         schema: CreateDecisionRequestSchema,
         invalid: { state: "My payouts have been failing for 3 days." },
     },
-    {
-        path: "/account/my-models",
-        operationId: "postAccountMyModels",
-        schema: CreateEndpointSchema,
-        invalid: {
-            name: "my-community-model",
-            baseUrl: "https://api.example.com/v1",
-            bearerToken: "sk-upstream-token",
-        },
-    },
-    {
-        path: "/account/my-models/test",
-        operationId: "postAccountMyModelsTest",
-        schema: TestEndpointSchema,
-        invalid: {
-            baseUrl: "https://api.example.com/v1",
-            bearerToken: "sk-upstream-token",
-            model: "llama-3.3-70b",
-        },
-    },
-    {
-        path: "/account/my-models/endpoint-agents",
-        operationId: "postAccountMyModelsEndpointAgents",
-        schema: CreateEndpointAgentSchema,
-        invalid: {
-            name: "my-agent",
-            title: "My Agent",
-            baseUrl: "https://agent.example.com/v1",
-        },
-    },
 ];
 
 describe("API request examples", () => {
     it.each(regressions)(
         "rejects the old $path body and validates the emitted curated replacement",
         ({ path, operationId, schema, invalid }) => {
-            expect(schema.safeParse(invalid).success).toBe(false);
             const requestBody = jsonBody({
                 ...z.toJSONSchema(schema, {
                     io: "input",

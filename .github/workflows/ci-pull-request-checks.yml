@@ -197,7 +197,7 @@ jobs:
       - name: Check for API example validation changes
         id: enter-docs
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- enter.pollinations.ai shared gen.pollinations.ai/scripts/generate-apidocs.ts package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- enter.pollinations.ai shared gen.pollinations.ai/scripts/generate-apidocs.ts gen.pollinations.ai/scripts/validate-request-examples.ts gen.pollinations.ai/package.json package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -269,7 +269,7 @@ jobs:
         id: gen-files
         run: |
           # Include imported docs and old paths of deleted or renamed inputs.
-          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|enter\.pollinations\.ai/src/routes/community-endpoints/schemas\.ts$|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal-white\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(pollinations-api|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
+          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal-white\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(pollinations-api|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -314,7 +314,7 @@ jobs:
       - name: Check for API example validation changes
         id: changes
         run: |
-          if ! git diff --quiet HEAD^1 HEAD -- media.pollinations.ai shared enter.pollinations.ai/drizzle gen.pollinations.ai/scripts/generate-apidocs.ts package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
+          if ! git diff --quiet HEAD^1 HEAD -- media.pollinations.ai shared enter.pollinations.ai/drizzle gen.pollinations.ai/scripts/generate-apidocs.ts gen.pollinations.ai/scripts/validate-request-examples.ts gen.pollinations.ai/package.json package.json package-lock.json .github/workflows/ci-pull-request-checks.yml; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 

@@ -4,7 +4,7 @@ import {
     buildCurl,
     type Spec,
     simplifyModelEnums,
-} from "../../gen.pollinations.ai/scripts/generate-apidocs.ts";
+} from "./generate-apidocs.ts";
 
 type RecordValue = Record<string, unknown>;
 const object = (value: unknown): RecordValue =>

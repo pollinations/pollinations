@@ -53,7 +53,12 @@ Free requests are anonymous and limited per IP address:
 | Images | One at a time, at least 45 seconds apart |
 | Text | One at a time, at least 30 seconds apart. A stream waits for the next slot |
 
-Beyond the limit you get **402 Payment Required**. You can:
+Beyond the limit:
+
+- **Text** comes back as a short notice in place of the reply (status 200), so apps show it. Requests with `json=true` get **402 Payment Required** instead.
+- **Images** get **402 Payment Required**: an image card in `<img>` tags, a page in the browser and a JSON error for scripts. `Retry-After` says when the next free image is ready.
+
+You can:
 
 1. **Use your own key on [enter.pollinations.ai](https://enter.pollinations.ai/?ref=classic-limits):** no per-IP limit, every model, no logo.
 2. Wait for the next free slot.

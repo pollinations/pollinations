@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/pollinations-ai-885844321461485618)
 
-[Website](https://pollinations.ai) · [Get a key](https://enter.pollinations.ai/?ref=classic-readme) · [Playground](https://pollinations.ai/play) · [Free API docs](APIDOCS.md) · [Full API reference](https://gen.pollinations.ai/docs) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+[Website](https://pollinations.ai) · [Get a key](https://enter.pollinations.ai/?ref=classic-readme) · [Playground](https://pollinations.ai/play) · [Classic API docs](APIDOCS.md) · [Full API reference](https://gen.pollinations.ai/docs) · [Discord](https://discord.gg/pollinations-ai-885844321461485618)
 
 </div>
 
@@ -30,7 +30,7 @@ A text answer:
 https://text.pollinations.ai/why%20do%20bees%20dance
 ```
 
-Parameters, limits and the OpenAI-compatible endpoint are in the [Free API docs](APIDOCS.md).
+Parameters, limits and the OpenAI-compatible endpoint are in the [Classic API docs](APIDOCS.md).
 
 ## Classic API or your own key?
 

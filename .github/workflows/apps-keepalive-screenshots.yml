@@ -205,10 +205,10 @@ jobs:
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS
   native-validation:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.scrape_only && !inputs.decisions_only
+    if: always() && github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.scrape_only && !inputs.decisions_only
     needs: discovery-validation
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
         with:
@@ -228,7 +228,9 @@ jobs:
           path: ${{ runner.temp }}/saved-corpus
       - uses: actions/download-artifact@v4
         with:
-          name: discovery-validation-${{ github.run_id }}
+          name: discovery-validation-38541559960
+          run-id: 38541559960
+          github-token: ${{ github.token }}
           path: ${{ runner.temp }}/discovery-validation
       - name: Replay copied official evidence through native Jev
         env:

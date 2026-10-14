@@ -9,6 +9,7 @@ import {
     calibratedAudit,
     calibrationState,
 } from "../../operations/model-management/calibration.mjs";
+import { extractDiscoveries } from "../../operations/model-management/discovery.mjs";
 import {
     buildResearchControl,
     JEV_ENDPOINT,
@@ -67,7 +68,7 @@ const catalogChanges = {
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
 const baseline =
-    4.19462079346 + budgetUsed(prior) + budgetUsed(resumedDiscovery);
+    4.19462079346 + budgetUsed(prior) + budgetUsed(resumedDiscovery) + 0.05;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -110,7 +111,7 @@ for (const source of [
 }
 const report = {
     startedAt: new Date().toISOString(),
-    deadlineAt: new Date(Date.now() + 10 * 60000).toISOString(),
+    deadlineAt: new Date(Date.now() + 30 * 60000).toISOString(),
     maxPollen: 0.05,
     reservedPollen: 0,
     calls: [],
@@ -309,9 +310,13 @@ try {
         await save();
     }
     const rates = new Map(report.models.map((row) => [row.name, row.routes]));
-    const discoveryCandidates = (
-        resumedDiscovery.discovery?.discoveries ?? []
-    ).map((item) => ({
+    const extraction = await extractDiscoveries(
+        resumedDiscovery.sources,
+        inventory,
+        decision,
+    );
+    report.extraction = extraction;
+    const discoveryCandidates = extraction.discoveries.map((item) => ({
         ...item,
         sourceIds: item.sourceIds
             .map((id) => {
@@ -341,6 +346,30 @@ try {
     assert.ok(
         report.discovery.discoveries.length > 0,
         "Source-grounded discovery leads must survive the actual evidence audit",
+    );
+    assert.ok(
+        report.discovery.discoveries.some(
+            (item) => item.kind === "provider" && item.name === "InferHub",
+        ),
+        "Real primary InferHub pricing must yield a provider lead",
+    );
+    assert.ok(
+        report.discovery.discoveries.some(
+            (item) => item.kind === "provider" && item.name === "iframe.ai",
+        ),
+        "Real primary iframe.ai pricing must yield a provider lead",
+    );
+    assert.ok(
+        report.discovery.discoveries.every(
+            (item) =>
+                !/^get started\b/i.test(item.name) && item.name !== "ag/99",
+        ),
+    );
+    assert.ok(
+        report.models
+            .flatMap((row) => row.routes)
+            .filter((route) => route.pricing.input !== null).length >= 31,
+        "The new audit must retain all fresh priced routes",
     );
     for (const [name, provider, input, output] of [
         ["openai/gpt-5.4-nano", "openai.com", 0.2, 1.25],

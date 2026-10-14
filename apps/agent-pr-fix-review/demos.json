@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-14",
+  "source": "GET /account/key/usage (redacted numeric billing rows only)",
+  "runs": [
+    {
+      "pr": "https://github.com/pollinations/pollinations/pull/17304",
+      "headSha": "ace322393f9c9b1db91409f5f09d6f5234d01311",
+      "model": "openai/gpt-6.1-sol",
+      "verdict": "fix",
+      "summary": "Prevent authenticated job results from being served from cache without authorization checks.",
+      "findings": [
+        {
+          "path": "gen.pollinations.ai/src/routes/jobs.ts",
+          "line": 134,
+          "issue": "The result endpoint returns media responses with immutable cache headers even though access depends on the authenticated account and a time-limited job record. A cached response can bypass loadJob on subsequent requests, serving the result after authorization changes or job expiry; public caching can also expose it to other accounts. Override cache"
+        }
+      ],
+      "proposalPath": "gen.pollinations.ai/src/routes/jobs.ts",
+      "pushed": {
+        "branch": "review-fix/pr-17304-ace32239",
+        "compare": "https://github.com/xiaotian1171/pollinations/compare/ace322393f9c9b1db91409f5f09d6f5234d01311...review-fix/pr-17304-ace32239"
+      },
+      "tokens": {
+        "input": 13671,
+        "output": 590,
+        "cachedInput": 0
+      },
+      "billedPollen": 0.040076,
+      "billingTimestampUtc": "2026-10-14 00:26:01"
+    },
+    {
+      "pr": "https://github.com/pollinations/pollinations/pull/17284",
+      "headSha": "5ffae0e6efd0d8b0c8ccd6ccd18182219fe36eb5",
+      "model": "openai/gpt-6.1-sol",
+      "verdict": "fix",
+      "summary": "Defer caller-tool execution until its complete arguments arrive.",
+      "findings": [
+        {
+          "path": "packages/sdk/src/react/chat-transport.ts",
+          "line": 145,
+          "issue": "Function calls emit tool-input-available on response.output_item.added, when Responses streaming arguments are still empty. The completed function_call item is then ignored, so useChat can execute caller tools with an empty string instead of the generated arguments. Emit function-call input availability on output_item.done instead."
+        }
+      ],
+      "proposalPath": "packages/sdk/src/react/chat-transport.ts",
+      "pushed": null,
+      "tokens": {
+        "input": 9736,
+        "output": 886,
+        "cachedInput": 0
+      },
+      "billedPollen": 0.0331985,
+      "billingTimestampUtc": "2026-10-14 00:27:54"
+    },
+    {
+      "pr": "https://github.com/pollinations/pollinations/pull/17380",
+      "headSha": "1628e59c03fcb421a0a7415c60aa1219db4e4b84",
+      "model": "openai/gpt-6.1-sol",
+      "verdict": "no_fix",
+      "summary": "No high-confidence, actionable correctness or security bug identified in the supplied changes and context.",
+      "findings": [],
+      "proposalPath": null,
+      "pushed": null,
+      "tokens": {
+        "input": 12172,
+        "output": 434,
+        "cachedInput": 0
+      },
+      "billedPollen": 0.0347685,
+      "billingTimestampUtc": "2026-10-14 00:27:55"
+    }
+  ]
+}

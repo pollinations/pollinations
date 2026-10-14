@@ -117,3 +117,43 @@ export function explainFreeLimit(
         ),
     );
 }
+
+const RETRY_SECONDS = 10;
+
+/**
+ * A free generation gen could not make, answered as gen answers its own
+ * failures: a busy or rate-limited gen gets a 503 that clients retry, any
+ * other failure is ours, a 500. A request the caller can fix (gen's other
+ * 4xx) gets undefined: the Worker keeps its own answer.
+ * @param {number} [genStatus] gen's status; none when the Worker itself failed
+ */
+export function failure(genStatus) {
+    if (
+        genStatus >= 400 &&
+        genStatus < 500 &&
+        ![401, 402, 403, 429].includes(genStatus)
+    )
+        return undefined;
+    if (genStatus === 429 || genStatus >= 500)
+        return {
+            status: 503,
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Retry-After": String(RETRY_SECONDS),
+            },
+            body: genError(
+                503,
+                "SERVICE_UNAVAILABLE",
+                `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a pollen key at ${ENTER}`,
+            ),
+        };
+    return {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: genError(
+            500,
+            "INTERNAL_ERROR",
+            `Something went wrong on our side. Please try again, or use every model with a pollen key at ${ENTER}`,
+        ),
+    };
+}

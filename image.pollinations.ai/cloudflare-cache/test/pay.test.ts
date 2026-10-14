@@ -3,7 +3,6 @@ import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import myceliHeadHeaders from "./fixtures/image.myceli.ai-head-browser.headers?raw";
 import browserHeaders from "./fixtures/image.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/image.pollinations.ai-get-json.headers?raw";
-import headFailureHeaders from "./fixtures/image.pollinations.ai-head-json.headers?raw";
 import postBody from "./fixtures/image.pollinations.ai-post-json.body?raw";
 import postHeaders from "./fixtures/image.pollinations.ai-post-json.headers?raw";
 import {
@@ -257,18 +256,17 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     expect(await storedAt(`${CAPTURED_HEAD}${QUERY}`)).toBeNull();
 });
 
-test("a rate-limited HEAD whose generation fails gets the paid handler's JSON", async () => {
+test("a rate-limited HEAD whose generation fails gets gen's 503", async () => {
     const { response } = await call("/prompt/gen:429", {
         ip: await limitedIp(),
         method: "HEAD",
         headers: CURL,
     });
 
-    // As the live 500 for a HEAD (gen failed then too): no X-Error-Type,
-    // Express's X-Powered-By
-    expect(response.status).toBe(500);
-    expect(Object.fromEntries(response.headers)).toEqual(
-        Object.fromEntries(capturedHeaders(headFailureHeaders)),
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("10");
+    expect(response.headers.get("content-type")).toBe(
+        "application/json; charset=utf-8",
     );
 });
 
@@ -445,19 +443,11 @@ test("an unavailable facilitator at settlement answers 503", async () => {
     );
 });
 
-test("a generation that fails after verify is not settled and gets the paid handler's JSON", async () => {
+test("a generation that fails after verify is not settled and gets gen's 503", async () => {
     const failed = await payFor("/prompt/gen:503", { headers: CURL });
 
-    expect(failed.response.status).toBe(500);
-    expect(JSON.parse(failed.text)).toEqual({
-        error: 'Gen Sana request failed with 503: {"error":"gen answered 503"}',
-    });
-    expect(failed.response.headers.get("content-type")).toBe(
-        "application/json",
-    );
-    expect(failed.response.headers.get("cache-control")).toBeNull();
-    expect(failed.response.headers.get("x-powered-by")).toBe("Express");
-    expect(failed.response.headers.get("x-error-type")).toBeNull();
+    expect(failed.response.status).toBe(503);
+    expect(JSON.parse(failed.text).error.code).toBe("SERVICE_UNAVAILABLE");
     expect(events).toEqual(["/verify", "gen"]);
 });
 

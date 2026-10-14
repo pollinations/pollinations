@@ -525,11 +525,8 @@ test("an unavailable facilitator at settlement answers 503", async () => {
 
 test("a generation that fails after verify is not settled", async () => {
     const failed = await payFor("/gen:500", { headers: CURL });
-    expect(failed.response.status).toBe(500);
-    expect(JSON.parse(failed.text)).toMatchObject({
-        error: "500 Internal Server Error",
-        status: 500,
-    });
+    expect(failed.response.status).toBe(503);
+    expect(JSON.parse(failed.text).error.code).toBe("SERVICE_UNAVAILABLE");
     expect(failed.response.headers.get("cache-control")).toBe(
         "private, no-store",
     );

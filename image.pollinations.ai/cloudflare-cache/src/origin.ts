@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
-import { explainFreeLimit } from "../../../shared/messages.js";
+import { explainFreeLimit, failure } from "../../../shared/messages.js";
 import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
@@ -523,6 +523,11 @@ async function generateImage(job: Job, paid: boolean, ended: () => void) {
                 ? { error: "gen", status: error.genStatus }
                 : { error: "exception", type: error.name },
         );
+        // Failures the caller can't fix are answered as gen answers its own;
+        // the others keep the VM's answers
+        const failed = failure(error.genStatus);
+        if (failed)
+            return vmResponse(failed.body, failed.status, failed.headers);
         if (!paid) return errorJson(job, error);
         // requireImagePayment's handler, written with res.writeHead
         const body = { error: error.message || "Image generation failed" };

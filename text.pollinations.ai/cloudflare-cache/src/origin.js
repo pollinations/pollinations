@@ -5,7 +5,7 @@ import iconv from "iconv-lite";
 import mediaTyper from "media-typer";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
-import { explainFreeLimit } from "../../../shared/messages.js";
+import { explainFreeLimit, failure } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
 import { prepareForwardedHeaders } from "./index.js";
@@ -538,7 +538,9 @@ function genMessages(messages) {
     if (!Array.isArray(messages)) {
         // The VM's model transform rejected them, then the error log in
         // generateTextBasedOnModel threw this on messages.map
-        throw new TypeError("messages.map is not a function");
+        throw Object.assign(new TypeError("messages.map is not a function"), {
+            fixable: true,
+        });
     }
     const withSystem = messages.some((message) => message.role === "system")
         ? messages
@@ -794,6 +796,14 @@ async function generate(env, job, cacheControl, ended) {
         });
 
         if (!response.ok) {
+            const failed = failure(response.status);
+            if (failed) {
+                logFailure(job.route, {
+                    error: "gen",
+                    status: response.status,
+                });
+                return await failedResponse(failed, cacheControl);
+            }
             const text = await response.text();
             let details = text;
             try {
@@ -826,6 +836,8 @@ async function generate(env, job, cacheControl, ended) {
                 typeof completion.error === "string"
                     ? { message: completion.error }
                     : completion.error;
+            const failed = failure(status);
+            if (failed) return await failedResponse(failed, cacheControl);
             return await errorResponse(
                 status || 500,
                 String(message || "An error occurred"),
@@ -841,15 +853,21 @@ async function generate(env, job, cacheControl, ended) {
             : textResponse(completion));
     } catch (error) {
         logFailure(job.route, { error: "exception", type: error.name });
-        return errorResponse(
-            500,
-            error.message || "An error occurred",
-            cacheControl,
-        );
+        // A request the caller can fix keeps the VM's answer
+        if (error.fixable)
+            return errorResponse(500, error.message, cacheControl);
+        return failedResponse(failure(), cacheControl);
     } finally {
         ended();
     }
 }
+
+/** A failure from shared/messages.js, sent as Express sent errors */
+const failedResponse = ({ status, body, headers }, cacheControl) =>
+    send(body, status, {
+        ...headers,
+        ...(cacheControl && { "Cache-Control": cacheControl }),
+    });
 
 /** genericOpenAIClient and handleRequest: gen's JSON with a pllns_ id */
 function completionOf(data) {

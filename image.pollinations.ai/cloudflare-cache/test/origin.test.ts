@@ -278,42 +278,57 @@ test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", asy
     expect(gen.requests).toHaveLength(0);
 });
 
-test("gen failures and bodies that are not images get the VM's 500 JSON and are not stored", async () => {
-    for (const [prompt, message] of [
-        [
-            "gen:503",
-            'Gen Sana request failed with 503: {"error":"gen answered 503"}',
-        ],
-        [
-            "gen:429",
-            'Gen Sana request failed with 429: {"error":"gen answered 429"}',
-        ],
-        [
-            "gen:400",
-            'Gen Sana request failed with 400: {"error":"gen answered 400"}',
-        ],
-        ["gen:html", "Input buffer contains unsupported image format"],
-        ["gen:empty", "Gen Sana returned an empty image"],
-    ]) {
+const AT_CAPACITY =
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+const OUR_FAULT =
+    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+
+test("gen's failures get gen's error body and are not stored: 503 when gen is busy, 500 when the fault is ours", async () => {
+    for (const [prompt, status, code, message] of [
+        ["gen:503", 503, "SERVICE_UNAVAILABLE", AT_CAPACITY],
+        ["gen:429", 503, "SERVICE_UNAVAILABLE", AT_CAPACITY],
+        ["gen:html", 500, "INTERNAL_ERROR", OUR_FAULT],
+        ["gen:empty", 500, "INTERNAL_ERROR", OUR_FAULT],
+    ] as const) {
         const { response, text } = await call(`/prompt/${prompt}?seed=1`);
 
-        expect(response.status, prompt).toBe(500);
-        expect(response.headers.get("x-error-type"), prompt).toBe(
-            "Internal Server Error",
-        );
-        expect(response.headers.get("content-type"), prompt).toBe(
-            "application/json",
+        expect(response.status, prompt).toBe(status);
+        expect(response.headers.get("retry-after"), prompt).toBe(
+            status === 503 ? "10" : null,
         );
         const body = JSON.parse(text);
-        expect(body.message, prompt).toBe(message);
-        expect(body.requestParameters).toMatchObject({ prompt, seed: 1 });
-        // The steps the VM had reached when gen's answer failed
-        expect(
-            body.timingInfo.map(({ step }) => step),
-            prompt,
-        ).toEqual(TIMING_STEPS.slice(0, 5));
+        expect(body, prompt).toEqual({
+            status,
+            success: false,
+            error: {
+                code,
+                message,
+                timestamp: body.error.timestamp,
+                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+            },
+        });
         expect(await storedAt(`/prompt/${prompt}?seed=1`), prompt).toBeNull();
     }
+});
+
+test("a gen refusal the caller can fix keeps the VM's 500 JSON", async () => {
+    const { response, text } = await call("/prompt/gen:400?seed=1");
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("x-error-type")).toBe("Internal Server Error");
+    const body = JSON.parse(text);
+    expect(body.message).toBe(
+        'Gen Sana request failed with 400: {"error":"gen answered 400"}',
+    );
+    expect(body.requestParameters).toMatchObject({
+        prompt: "gen:400",
+        seed: 1,
+    });
+    // The steps the VM had reached when gen's answer failed
+    expect(body.timingInfo.map(({ step }) => step)).toEqual(
+        TIMING_STEPS.slice(0, 5),
+    );
+    expect(await storedAt("/prompt/gen:400?seed=1")).toBeNull();
 });
 
 test("the VM's other routes: models, about, crossdomain, register, .well-known and 404s", async () => {
@@ -471,7 +486,7 @@ test("the IP is released when the generation succeeds, fails or throws", async (
 
     const failed = nextIp();
     const failure = await call("/prompt/gen:503", { ip: failed });
-    expect(failure.response.status).toBe(500);
+    expect(failure.response.status).toBe(503);
     expect(await released(failed)).toBe(true);
 
     const threw = nextIp();
@@ -488,7 +503,7 @@ test("the IP is released when the generation succeeds, fails or throws", async (
         testEnv: throwing,
     });
     expect(thrown.response.status).toBe(500);
-    expect(JSON.parse(thrown.text).message).toBe("gen unreachable");
+    expect(JSON.parse(thrown.text).error.code).toBe("INTERNAL_ERROR");
     expect(await released(threw)).toBe(true);
 });
 

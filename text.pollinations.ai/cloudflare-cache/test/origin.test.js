@@ -234,15 +234,34 @@ test("a stream ends after data: [DONE] and is stored once complete", async () =>
     expect(hit.text).toBe(SSE_UNTIL_DONE);
 });
 
-test("gen errors keep the VM's JSON: the status passes through, a failed stream is a 500", async () => {
-    const failed = await call("/gen:503");
-    expect(failed.response.status).toBe(503);
-    expect(JSON.parse(failed.text)).toEqual({
-        error: "503 Service Unavailable",
-        status: 503,
-        deprecation_notice: NOTICE,
-        details: { error: { message: "gen answered 503" } },
+const AT_CAPACITY =
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+const OUR_FAULT =
+    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+
+/** gen's error body, as shared/messages.js sends it */
+function expectGenError(text, status, code, message) {
+    const body = JSON.parse(text);
+    expect(body).toEqual({
+        status,
+        success: false,
+        error: {
+            code,
+            message,
+            timestamp: body.error.timestamp,
+            fixUrl: "https://enter.pollinations.ai/?ref=classic",
+        },
     });
+}
+
+test("a busy or rate-limited gen gets gen's 503 with a retry time; errors the caller can fix keep the VM's JSON", async () => {
+    for (const path of ["/gen:503", "/gen:429", "/gen:503?stream=true"]) {
+        const failed = await call(path);
+        expect(failed.response.status, path).toBe(503);
+        expect(failed.response.headers.get("retry-after"), path).toBe("10");
+        expectGenError(failed.text, 503, "SERVICE_UNAVAILABLE", AT_CAPACITY);
+        expect(await storedAt(path), path).toBeNull();
+    }
 
     // node-fetch's statusText: the reason phrase of any status gen passes on
     const unprocessable = await call("/gen:422");
@@ -255,17 +274,13 @@ test("gen errors keep the VM's JSON: the status passes through, a failed stream 
     expect(rejected.response.status).toBe(400);
     expect(await storedAt("/gen:400")).not.toBeNull();
 
-    // An error object in gen's 200 answers its status, else 500
+    // An error object in gen's 200: a 5xx is busy, no status is our fault
     const inOk = await call("/gen:200-error");
     expect(inOk.response.status).toBe(503);
-    expect(JSON.parse(inOk.text)).toEqual({
-        error: "boom",
-        status: 503,
-        deprecation_notice: NOTICE,
-    });
+    expectGenError(inOk.text, 503, "SERVICE_UNAVAILABLE", AT_CAPACITY);
     const textError = await call("/gen:200-error-text");
     expect(textError.response.status).toBe(500);
-    expect(JSON.parse(textError.text).error).toBe("oops");
+    expectGenError(textError.text, 500, "INTERNAL_ERROR", OUR_FAULT);
 
     const stream = await call("/gen:400?stream=true");
     expect(stream.response.status).toBe(500);
@@ -1031,7 +1046,7 @@ test("the IP is released when the response completes, fails or is cancelled", as
     expect(await released(completed)).toBe(true);
 
     const failed = nextIp();
-    expect((await call("/gen:500", { ip: failed })).response.status).toBe(500);
+    expect((await call("/gen:500", { ip: failed })).response.status).toBe(503);
     expect(await released(failed)).toBe(true);
 
     const cancelled = nextIp();

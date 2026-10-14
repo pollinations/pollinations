@@ -392,43 +392,36 @@ export function buildCurl(
     const queryParams = params.filter((p) => asObj(p).in === "query");
     const pathParams = params.filter((p) => asObj(p).in === "path");
     let url = `${operationBaseUrl(spec, path, op)}${path}`;
-    // Substitute path placeholders with real, URL-encoded sample values so
-    // curl examples are copy-pasteable. Falls back to `:name` only when the
-    // spec provides no example for the parameter.
+    // Prefer schema examples; resource IDs need a fallback for their route.
+    // Unresolved required values remain visible for the example guard.
     url = url.replace(/{(\w+)}/g, (_match, name: string) => {
-        const override =
-            name === "id" && MEDIA_ID_PATHS.has(path)
-                ? MEDIA_ID_EXAMPLE
-                : PATH_PARAM_OVERRIDES[name];
-        if (override !== undefined) return encodeURIComponent(override);
         const param = pathParams.find((p) => asStr(asObj(p).name) === name);
-        if (param) {
-            const ex = pickExample(spec, asObj(asObj(param).schema));
-            if (ex !== undefined) return encodeURIComponent(String(ex));
-        }
-        return `:${name}`;
+        const ex =
+            pickExample(spec, asObj(asObj(param).schema)) ??
+            PATH_PARAM_EXAMPLES[path]?.[name];
+        return ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`;
     });
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
         ? { model: "google/veo-3.1-fast" }
-        : {};
-    if (queryParams.length) {
-        const queryStr = queryParams
-            .slice(0, 2)
-            .map((p) => {
-                const obj = asObj(p);
-                const name = asStr(obj.name);
-                const override = queryOverrides[name];
-                if (override !== undefined) {
-                    return `${name}=${encodeURIComponent(override)}`;
-                }
-                const ex = pickExample(spec, asObj(obj.schema));
-                return `${name}=${ex !== undefined ? encodeURIComponent(String(ex)) : `:${name}`}`;
-            })
-            .join("&");
-        url = `${url}?${queryStr}`;
-    }
+        : path === "/media"
+          ? { tag: "my-gallery" }
+          : {};
+    // Keep examples short, but never drop a required parameter because of
+    // its position or fill an optional one with an unusable placeholder.
+    let optionalCount = 0;
+    const queryStr = queryParams
+        .flatMap((p) => {
+            const name = asStr(p.name);
+            const ex =
+                queryOverrides[name] ?? pickExample(spec, asObj(p.schema));
+            if (ex === undefined || ex === null) return [];
+            if (p.required !== true && optionalCount++ >= 2) return [];
+            return [`${name}=${encodeURIComponent(String(ex))}`];
+        })
+        .join("&");
+    if (queryStr) url = `${url}?${queryStr}`;
 
     // An empty `security: []` on an operation overrides the global auth
     // requirement — public endpoints (e.g. media retrieval) must not show an
@@ -1046,14 +1039,22 @@ const CURATED_BODIES: Record<string, Json> = {
 
 /**
  * Curated path-parameter values for parameters whose schemas don't carry a
- * useful `example`. Used to make every curl example copy-pasteable rather
- * than falling back to `:name`-style placeholders. Keyed by parameter name.
+ * useful `example`. Resource IDs are illustrative and must be replaced with
+ * an ID returned by the matching create/list operation. Keyed by path.
  */
-const MEDIA_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
-const MEDIA_ID_PATHS = new Set(["/{id}", "/{id}/metadata", "/media/{id}"]);
-
-const PATH_PARAM_OVERRIDES: Record<string, string> = {
-    id: "key_abc123",
+const RESOURCE_ID_EXAMPLE = "550e8400-e29b-41d4-a716-446655440000";
+const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
+    "/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/{id}/metadata": { id: RESOURCE_ID_EXAMPLE },
+    "/media/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/keys/{id}": { id: "key_abc123" },
+    "/account/integrations/{id}": { id: "ca_abc123" },
+    "/account/agents/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/agents/{id}/sync": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/update": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/fallback-candidates": { id: RESOURCE_ID_EXAMPLE },
+    "/v1/models/{model}": { model: "openai/gpt-5.4-nano" },
 };
 
 /**

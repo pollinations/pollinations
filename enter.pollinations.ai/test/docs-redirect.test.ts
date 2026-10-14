@@ -37,7 +37,7 @@ test("enter docs schema remains available for gen service binding", async () => 
     expect(response.status).toBe(200);
     const schema = (await response.json()) as Spec;
 
-    expect(schema.paths?.["/account/profile"]).toBeDefined();
+    expect(schema.paths?.["/account/profile"]?.get).toBeDefined();
     expect(schema.paths?.["/account/quests"]).toBeDefined();
     expect(schema.paths?.["/account/my-models"]).toBeDefined();
     expect(schema.paths?.["/account/agents"]).toBeDefined();

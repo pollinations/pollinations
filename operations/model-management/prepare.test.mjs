@@ -1482,6 +1482,35 @@ test("required free feeds all precede optional finish and insufficient selection
     assert.equal(partial.requiredEvidencePending, true);
 });
 
+test("optional crawl abstention preserves completed feed coverage and continues gap analysis", async () => {
+    const f = fixture([]);
+    const read = f.services.read;
+    f.services.read = async (args) => ({
+        ...(await read(args)),
+        links: [
+            {
+                url: "https://publisher.example.org/new-model",
+                text: "Model release",
+            },
+        ],
+    });
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : actions.find(({ required }) => required),
+    });
+    const result = await prepareResearch({}, f.services);
+    assert.equal(f.reads.length, 4);
+    assert.equal(result.requiredEvidencePending, false);
+    assert.ok(
+        result.gaps.includes(
+            "quora: fetched discovery evidence remains unresolved",
+        ),
+    );
+    assert.ok(result.gaps.some((gap) => gap.includes("Jev could not select")));
+});
+
 test("blocked required community seeds fallback only after HTTP and remain inside the shared read bounds", async () => {
     const f = fixture([]);
     let bucket = 0;

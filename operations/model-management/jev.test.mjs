@@ -17,6 +17,33 @@ import {
     validateTriage,
 } from "./jev.mjs";
 
+test("required crawl reads use execution constraints rather than uncertain evidence to abstain", () => {
+    const payload = buildResearchControl({
+        stage: "crawl",
+        models: [],
+        actions: [
+            {
+                id: "reddit-seed-1",
+                kind: "fetch",
+                required: true,
+                url: "https://www.reddit.com/r/StableDiffusion/.rss",
+                mode: "http",
+            },
+        ],
+        evidence:
+            "The other required community feed returned unavailable; this feed has not been attempted.",
+        remainingPollen: 1,
+    });
+    assert.match(
+        payload.questions.next_action.criteria.insufficient,
+        /executed safely/,
+    );
+    assert.match(
+        payload.questions.next_action.criteria.insufficient,
+        /does not justify skipping required coverage/,
+    );
+});
+
 const comparisonItem = () => ({
     id: "compare-1",
     model: "publisher/checkpoint",

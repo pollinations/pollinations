@@ -133,11 +133,18 @@ function transformStreamCompletions(
                     onEvent(event) {
                         let data = event.data;
                         if (data.trim() !== "[DONE]") {
-                            const completion = JSON.parse(
-                                data,
-                            ) as ChatCompletion;
-                            transform(completion);
-                            data = JSON.stringify(completion);
+                            try {
+                                const completion = JSON.parse(
+                                    data,
+                                ) as ChatCompletion;
+                                transform(completion);
+                                data = JSON.stringify(completion);
+                            } catch {
+                                // Non-JSON data events (keep-alives, provider
+                                // metadata) pass through unchanged — the same
+                                // tolerance as the usage parser and
+                                // publicChatStream.
+                            }
                         }
                         const fields: string[] = [];
                         if (event.event !== undefined)

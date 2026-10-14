@@ -238,6 +238,37 @@ describe("genericOpenAIClient", () => {
         },
     );
 
+    it("passes non-JSON SSE data events through instead of aborting the stream", async () => {
+        const first = {
+            choices: [
+                { index: 0, delta: { content: "Hel" }, finish_reason: null },
+            ],
+        };
+        const last = {
+            choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+            usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 },
+        };
+        // include_reasoning:false routes every chunk through the
+        // transformStreamCompletions rewriter, whose JSON.parse used to
+        // throw on keep-alive/metadata data events and kill the stream.
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hi" }],
+            { model: "test", stream: true, include_reasoning: false },
+            {
+                endpoint: "https://provider.test/chat",
+                fetcher: async () =>
+                    new Response(
+                        `data: ${JSON.stringify(first)}\n\ndata: ping\n\ndata: ${JSON.stringify(last)}\n\ndata: [DONE]\n\n`,
+                    ),
+            },
+        );
+        const body = await new Response(completion.responseStream).text();
+        expect(body).toContain("Hel");
+        expect(body).toContain("ping");
+        expect(body).toContain("finish_reason");
+        expect(body).toContain("[DONE]");
+    });
+
     it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
         const responseBody = JSON.stringify({
             error: {

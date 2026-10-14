@@ -705,6 +705,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.09,
     },
   },
+  "cloudflare/clef-omni": {
+    "cost": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000015825,
+    },
+    "price": {
+      "completionTextTokens": 0,
+      "promptTextTokens": 0.00000015825,
+    },
+  },
   "cohere/command-a-plus": {
     "cost": {
       "completionTextTokens": 0.0000015825,

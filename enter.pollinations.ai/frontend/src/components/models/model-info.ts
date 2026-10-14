@@ -7,6 +7,7 @@ const BRAND_LOGOS: Record<string, string> = {
     AssemblyAI: "assemblyai",
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
+    Cloudflare: "cloudflare",
     Cohere: "cohere",
     Deemos: "deemos",
     DeepSeek: "deepseek",

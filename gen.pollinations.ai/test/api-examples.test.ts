@@ -116,15 +116,21 @@ describe("API request examples", () => {
         expect(errors).toContain("/payload/text must be string");
     });
 
-    it("allows bodyless and optional-body writes but rejects missing required bodies", () => {
-        const requestBody = jsonBody({ type: "string" }, false);
+    it("allows bodyless writes but rejects a declared body without an example", () => {
         expect(requestExampleErrors(specFor({}))).toEqual([]);
-        expect(requestExampleErrors(specFor({ requestBody }))).toEqual([]);
-        expect(
-            requestExampleErrors(
-                specFor({ requestBody: { ...requestBody, required: true } }),
-            ),
-        ).toEqual(["POST /example: required request body is missing"]);
+        // The promo redemption shape: a plain required string, body not
+        // marked required. The generator emits no body for it.
+        const requestBody = jsonBody(
+            {
+                type: "object",
+                properties: { code: { type: "string" } },
+                required: ["code"],
+            },
+            false,
+        );
+        expect(requestExampleErrors(specFor({ requestBody }))).toEqual([
+            "POST /example: request body example is missing",
+        ]);
     });
 
     it("validates the synthesized fallback and rejects an undocumented curated body", () => {

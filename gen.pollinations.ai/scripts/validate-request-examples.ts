@@ -124,9 +124,12 @@ export function requestExampleErrors(spec: Spec): string[] {
                     );
                 }
                 if (body === undefined) {
-                    if (requestBody.required === true)
+                    // The published reference rejects any write example
+                    // without a body, and most generated schemas leave
+                    // `required` unset, so a declared body is enough.
+                    if (Object.keys(content).length > 0)
                         errors.push(
-                            `${label}: required request body is missing`,
+                            `${label}: request body example is missing`,
                         );
                 } else {
                     if (!contentType || !object(content[contentType]).schema)

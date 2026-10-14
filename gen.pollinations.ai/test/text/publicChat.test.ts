@@ -54,39 +54,38 @@ describe("client gateway metadata", () => {
             ])?.[0].message?.provider_metadata,
         ).toBeUndefined();
     });
-    it.each([
-        "\n",
-        "\r\n",
-        "\r",
-    ])("keeps billing metadata, usage, content and terminal marker across split %j frames", async (newline) => {
-        const text =
-            `id: first\nevent: message\ndata: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼", provider_metadata: metadata } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]`.replaceAll(
-                "\n",
-                newline,
-            );
-        const bytes = encoder.encode(text);
-        for (let split = 1; split < bytes.length; split++) {
-            const source = new ReadableStream<Uint8Array<ArrayBuffer>>({
-                start(c) {
-                    c.enqueue(bytes.slice(0, split));
-                    c.enqueue(bytes.slice(split));
-                    c.close();
-                },
-            });
-            const [client, tracking] = requireChatStreamUsage(source).tee();
-            const [publicText, billingText] = await Promise.all([
-                new Response(publicChatStream(client)).text(),
-                new Response(tracking).text(),
-            ]);
-            expect(billingText).toBe(text);
-            expect(publicText).not.toContain('"gateway"');
-            expect(publicText).toContain('"other"');
-            expect(publicText).toContain("🌼");
-            expect(publicText).toContain("id: first\nevent: message\n");
-            expect(publicText).toContain("data: [DONE]\n\n");
-            expect(publicText).toContain(JSON.stringify(usage));
-        }
-    });
+    it.each(["\n", "\r\n", "\r"])(
+        "keeps billing metadata, usage, content and terminal marker across split %j frames",
+        async (newline) => {
+            const text =
+                `id: first\nevent: message\ndata: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼", provider_metadata: metadata } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage })}\n\ndata: [DONE]`.replaceAll(
+                    "\n",
+                    newline,
+                );
+            const bytes = encoder.encode(text);
+            for (let split = 1; split < bytes.length; split++) {
+                const source = new ReadableStream<Uint8Array<ArrayBuffer>>({
+                    start(c) {
+                        c.enqueue(bytes.slice(0, split));
+                        c.enqueue(bytes.slice(split));
+                        c.close();
+                    },
+                });
+                const [client, tracking] = requireChatStreamUsage(source).tee();
+                const [publicText, billingText] = await Promise.all([
+                    new Response(publicChatStream(client)).text(),
+                    new Response(tracking).text(),
+                ]);
+                expect(billingText).toBe(text);
+                expect(publicText).not.toContain('"gateway"');
+                expect(publicText).toContain('"other"');
+                expect(publicText).toContain("🌼");
+                expect(publicText).toContain("id: first\nevent: message\n");
+                expect(publicText).toContain("data: [DONE]\n\n");
+                expect(publicText).toContain(JSON.stringify(usage));
+            }
+        },
+    );
     it("preserves retry instructions on sanitized Vercel streams", async () => {
         const body = new Response("retry: 1500\n\ndata: [DONE]\n\n").body;
         if (!body) throw new Error("Test response has no body");
@@ -106,18 +105,23 @@ describe("client gateway metadata", () => {
     });
 });
 
-afterEach(() => vi.restoreAllMocks());
-it("passes non-Vercel stream bytes through the real handler unchanged", async () => {
-    const model = "google/gemini-2.5-flash-lite:search";
+afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+});
+
+async function streamThroughHandler(model: string, host: string, wire: string) {
     const { key } = await createTestApiKey({
         expiresIn: 600,
         user: { packBalance: 100 },
     });
-    const wire = `retry: 001500\n\ndata: { "custom_number": 1e+2, "choices": [{"delta":{"content":"🌼"}}] }\n\ndata: { "choices": [], "usage": ${JSON.stringify(usage)} }\n\ndata: [DONE]\n\n`;
     let calls = 0;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
         const request = new Request(input, init);
-        if (new URL(request.url).host === "openrouter.ai") {
+        // Custom-host providers go out through the Portkey gateway.
+        const target =
+            request.headers.get("x-portkey-custom-host") ?? request.url;
+        if (new URL(target).host === host) {
             calls++;
             return new Response(wire, {
                 headers: { "content-type": "text/event-stream" },
@@ -146,8 +150,44 @@ it("passes non-Vercel stream bytes through the real handler unchanged", async ()
     );
     const text = await response.text();
     await waitOnExecutionContext(context);
+    return { response, text, calls };
+}
+
+it("passes non-Vercel stream bytes through the real handler unchanged", async () => {
+    const model = "google/gemini-2.5-flash-lite:search";
+    const wire = `retry: 001500\n\ndata: { "custom_number": 1e+2, "choices": [{"delta":{"content":"🌼"}}] }\n\ndata: { "choices": [], "usage": ${JSON.stringify(usage)} }\n\ndata: [DONE]\n\n`;
+    const { response, text, calls } = await streamThroughHandler(
+        model,
+        "openrouter.ai",
+        wire,
+    );
     expect(response.status, text).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(model);
     expect(calls).toBe(1);
     expect(text).toBe(wire);
+});
+
+it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
+    vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+    const streamUsage = {
+        prompt_tokens: 3,
+        completion_tokens: 1,
+        total_tokens: 4,
+    };
+    const ledger = {
+        payg_credits_charged: 0.0001,
+        payg_ledger_entry: { balance_after: 38.9 },
+    };
+    const wire = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "🌼" } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: streamUsage })}\n\ndata: ${JSON.stringify({ id: "chatcmpl-proxy-meta", choices: [], payg_usage: ledger })}\n\ndata: [DONE]\n\n`;
+    const { response, text, calls } = await streamThroughHandler(
+        "inferenceport-ai/lightning-text-v2.1",
+        "api.inferenceport.ai",
+        wire,
+    );
+    expect(response.status, text).toBe(200);
+    expect(calls).toBe(1);
+    expect(text).toContain("🌼");
+    expect(text).toContain(JSON.stringify(streamUsage));
+    expect(text).toContain("data: [DONE]\n\n");
+    expect(text).not.toContain("payg");
 });

@@ -50,9 +50,10 @@ export function publicChatStream(
                         let data = event.data;
                         if (data.trim() !== "[DONE]") {
                             try {
-                                const chunk = JSON.parse(
-                                    data,
-                                ) as ChatCompletion;
+                                const { payg_usage: _paygUsage, ...chunk } =
+                                    JSON.parse(data) as ChatCompletion & {
+                                        payg_usage?: unknown;
+                                    };
                                 data = JSON.stringify({
                                     ...chunk,
                                     choices: publicChatChoices(chunk.choices),

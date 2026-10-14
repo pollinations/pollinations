@@ -549,11 +549,62 @@ function ownCard(pane) {
     }
 }
 
+// ---------- pages (written by the thread itself with dash-page) ----------
+
+const pageFile = (pane) =>
+    path.join(STATUS_DIR, `${pane.replace(/[^\w:-]/g, "_")}.page.html`);
+const ENTITIES = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+};
+const pageCache = new Map(); // file -> {mtime, title}
+
+function pageInfo(pane) {
+    const f = pageFile(pane);
+    let st;
+    try {
+        st = fs.statSync(f);
+    } catch {
+        return null;
+    }
+    let c = pageCache.get(f);
+    if (!c || c.mtime !== st.mtimeMs) {
+        const title = fs
+            .readFileSync(f, "utf8")
+            .match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]
+            .replace(/&(amp|lt|gt|quot|#39);/g, (e) => ENTITIES[e])
+            .trim();
+        c = { mtime: st.mtimeMs, title: title || "Page" };
+        pageCache.set(f, c);
+    }
+    return { at: new Date(st.mtimeMs).toISOString(), title: c.title };
+}
+
+// Gives the page dashReply(text), which puts text into Thomas's reply box for
+// this pane, and passes Esc on so the viewer closes while the page has focus
+// (unless the page handled Esc itself). Inserted after <head> (or <html>, or the
+// doctype) so a page with a doctype stays out of quirks mode.
+const HELPER = `<script>window.dashReply = (text) => parent.postMessage({ dashReply: String(text) }, "*");
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !e.defaultPrevented) parent.postMessage({ dashClose: true }, "*"); });</script>`;
+function withHelper(html) {
+    const m =
+        html.match(/<head(\s[^>]*)?>/i) ??
+        html.match(/<html(\s[^>]*)?>/i) ??
+        html.match(/^\s*<!doctype[^>]*>/i);
+    const at = m ? m.index + m[0].length : 0;
+    return html.slice(0, at) + HELPER + html.slice(at);
+}
+
 async function state() {
     const cur = curated();
     const agents = await herdrAgents();
     return {
         at: new Date().toISOString(),
+        // the open page reloads itself when index.html changes
+        build: fs.statSync(path.join(DIR, "index.html")).mtimeMs,
         coordinator: cur.coordinator ?? null,
         agents: await Promise.all(
             agents.map(async (a) => {
@@ -594,6 +645,7 @@ async function state() {
                     card,
                     live: l,
                     newReport: !!(l?.report && card && !covered),
+                    page: pageInfo(a.pane),
                     sent: sent.filter((s) => s.pane === a.pane).slice(-5),
                 };
             }),
@@ -642,6 +694,20 @@ const server = http.createServer(async (req, res) => {
             return json(res, 200, await state());
         if (req.method === "GET" && url.pathname === "/api/history")
             return json(res, 200, await history(url.searchParams.get("pane")));
+        if (req.method === "GET" && url.pathname === "/page") {
+            const f = pageFile(url.searchParams.get("pane") ?? "");
+            if (!fs.existsSync(f)) return json(res, 404, { error: "no page" });
+            res.writeHead(200, {
+                "content-type": "text/html; charset=utf-8",
+                "cache-control": "no-store",
+                // its own opaque origin, even when opened directly: no access to the
+                // dashboard's token, API or storage, and only this page may frame it
+                "content-security-policy": `sandbox allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox; frame-ancestors ${ORIGIN}`,
+                "cross-origin-resource-policy": "same-origin",
+                "x-content-type-options": "nosniff",
+            });
+            return res.end(withHelper(fs.readFileSync(f, "utf8")));
+        }
         if (req.method === "POST" && url.pathname === "/api/send") {
             if (
                 req.headers.origin !== ORIGIN ||

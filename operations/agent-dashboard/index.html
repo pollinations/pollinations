@@ -197,6 +197,27 @@ button.go { background: var(--ink); color: var(--bg); border: 0; border-radius: 
 .phase.needs { color: var(--ask); background: var(--ask-bg); }
 .phase.blocked { color: var(--bad); background: var(--bad-bg); }
 .empty { color: var(--soft); font-size: 13px; }
+/* pages a thread published with dash-page */
+.pagebtn { all: unset; box-sizing: border-box; cursor: pointer; display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; min-width: 0; }
+.pagebtn:hover { border-color: var(--new); }
+.pagebtn.new { border-color: var(--new); background: var(--new-bg); }
+.pagebtn b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pagebtn .hint { white-space: nowrap; }
+.pagebtn .open { margin-left: auto; color: var(--new); font-weight: 600; font-size: 12.5px; }
+#viewer { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .45); display: grid; place-items: center; }
+#viewer[hidden] { display: none; }
+.vbox { width: min(1400px, 96vw); height: 94vh; background: var(--card); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px var(--shadow); }
+.vhead { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); min-width: 0; }
+.vhead .vtitle { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vhead button { all: unset; cursor: pointer; border-radius: 6px; padding: 2px 9px; font-size: 12.5px; }
+.vhead [hidden] { display: none; } /* "all: unset" above would show hidden buttons */
+.vhead .vreload { color: var(--new); background: var(--new-bg); font-weight: 600; }
+.vhead .vclose { margin-left: auto; font-size: 16px; color: var(--soft); }
+.vhead .vclose:hover { background: var(--code); color: var(--ink); }
+#viewer iframe { flex: 1; border: 0; width: 100%; background: #fff; }
+.vreply { display: flex; gap: 8px; align-items: flex-end; padding: 8px 12px; border-top: 1px solid var(--line); }
+.vreply textarea { flex: 1; max-height: 30vh; }
+.vreply textarea.got { animation: flash 1.4s ease-out; }
 #tip { position: fixed; z-index: 10; pointer-events: none; max-width: 440px; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--ink); color: var(--bg); font-size: 12px; line-height: 1.4; padding: 6px 9px; border-radius: 7px; box-shadow: 0 6px 20px var(--shadow); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
 </style>
@@ -234,6 +255,13 @@ button.go { background: var(--ink); color: var(--bg); border: 0; border-radius: 
   <h2>Working</h2><div class="grid" id="sec-working"></div>
   <h2>Parked</h2><div class="grid" id="sec-parked"></div>
 </main>
+<div id="viewer" hidden>
+  <div class="vbox">
+    <div class="vhead"><b class="vtitle"></b><span class="hint vmeta"></span><button class="vreload" hidden>Newer version · reload</button><button class="vclose" title="Close (Esc)">✕</button></div>
+    <iframe sandbox="allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
+    <div class="vreply"><textarea placeholder="Reply about this page. Its buttons add their answer here; nothing is sent until you press Send (⌘↵)."></textarea><button class="go">Send</button><span class="hint"></span></div>
+  </div>
+</div>
 <div id="tip" hidden></div>
 <script>
 const TOKEN = "__TOKEN__";
@@ -276,6 +304,15 @@ function answerFor(a, q) {
 }
 const openQs = (a) => (a.card?.waiting || []).filter((w) => !answerFor(a, w.q));
 
+// a thread's page counts as seen once it was opened here
+let seen = {};
+try { seen = JSON.parse(localStorage.getItem("seen-pages") || "{}"); } catch {}
+const unseenPage = (a) => !!a.page && seen[a.pane] !== a.page.at;
+function markSeen(pane, at) {
+  seen[pane] = at;
+  try { localStorage.setItem("seen-pages", JSON.stringify(seen)); } catch {}
+}
+
 // Is it busy with something you sent, waiting for you, or idle?
 // sec: section, st: state style, c: ring centre, sub: tile caption, text: banner.
 function phase(a) {
@@ -299,6 +336,7 @@ function phase(a) {
   }
   const qs = openQs(a).length;
   if (qs) return { sec: "needs", st: "needs", c: qs > 1 ? `${qs}?` : "?", sub: `asked ${since(a.card.at)} ago`, text: `❓ Waiting for your answer${qs > 1 ? ` (${qs} questions)` : ""} since ${hm(a.card.at)}.` };
+  if (unseenPage(a)) return { sec: "needs", st: "news", c: "▤", sub: `page ${since(a.page.at)} ago`, text: `📊 New page at ${hm(a.page.at)}: "${a.page.title}". Open it below.` };
   if (a.newReport) return { sec: "needs", st: "news", c: "✉", sub: `replied ${since(a.live.report.ts)} ago`, text: `📄 Replied at ${hm(a.live.report.ts)}. Read it below.` };
   if (last?.doneAt && a.live?.answeredAt > last.doneAt) return { sec: "parked", st: "idle", c: "", sub: `answered ${since(a.live.answeredAt)} ago`, text: `✓ Answered your ${hm(last.ts)} message at ${hm(a.live.answeredAt)}. Nothing open.` };
   return { sec: "parked", st: "idle", c: "", sub: a.live?.lastAt ? `idle ${since(a.live.lastAt)}` : "idle", text: "💤 Idle. Nothing open." };
@@ -469,6 +507,7 @@ function dynHtml(a) {
   if (c.doing) h += `<div class="row"><span class="k">${a.status === "working" ? "Task" : "State"}</span><span>${md(c.doing)}</span></div>`;
   else if (a.live?.prompt) h += `<div class="row"><span class="k">Task</span><span>${esc(first(a.live.prompt.text))}</span></div>`;
   if (c.next) h += `<div class="row"><span class="k">Next</span><span>${md(c.next)}</span></div>`;
+  if (a.page) h += `<button class="pagebtn${unseenPage(a) ? " new" : ""}" data-tip="Open the page this thread published">▤ <b>${esc(a.page.title)}</b><span class="hint">page · ${day(a.page.at)}${unseenPage(a) ? " · new" : ""}</span><span class="open">Open</span></button>`;
   h += trailRow(a);
   if (a.newReport) h += `<div class="newrep">New report at ${hm(a.live.report.ts)}, not summarized yet: ${esc(first(a.live.report.text, 140))}</div>`;
   if (c.waiting?.length) {
@@ -508,6 +547,7 @@ function makeCard(a) {
   el.querySelector(".go").onclick = send;
   c.ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); });
   el.addEventListener("click", (e) => {
+    if (e.target.closest(".pagebtn")) return openPage(a.pane);
     const b = e.target.closest(".choice");
     if (!b) return;
     if (!c.ta.value.split("\n").includes(b.dataset.text)) c.ta.value = c.ta.value ? c.ta.value + "\n" + b.dataset.text : b.dataset.text;
@@ -539,13 +579,73 @@ function place(box, els) {
   while (box.children.length > els.length) box.lastChild.remove();
 }
 
-let busy = false, order = [];
+// ---------- page viewer ----------
+
+const latest = new Map(); // pane -> agent from the last refresh
+const viewer = { el: document.getElementById("viewer"), pane: null, draftPane: null, at: null, title: "" };
+const vq = (s) => viewer.el.querySelector(s);
+const vta = vq(".vreply textarea"), vhint = vq(".vreply .hint");
+
+function openPage(pane) {
+  const a = latest.get(pane);
+  if (!a?.page) return;
+  if (viewer.draftPane !== pane) { vta.value = ""; viewer.draftPane = pane; }
+  Object.assign(viewer, { pane, at: a.page.at, title: a.page.title });
+  vq(".vtitle").textContent = a.page.title;
+  vq(".vmeta").textContent = `${cardName(a)} · ${pane} · ${day(a.page.at)}`;
+  vq(".vreload").hidden = true;
+  vhint.textContent = "";
+  vq("iframe").src = `/page?pane=${encodeURIComponent(pane)}&v=${encodeURIComponent(a.page.at)}`;
+  viewer.el.hidden = false;
+  markSeen(pane, a.page.at);
+  refresh();
+}
+function closePage() {
+  viewer.el.hidden = true;
+  viewer.pane = null;
+  vq("iframe").src = "about:blank";
+}
+async function sendPageReply() {
+  const text = vta.value.trim();
+  if (!text || !viewer.pane) return;
+  vhint.textContent = "sending…";
+  const r = await fetch("/api/send", { method: "POST", headers: { "content-type": "application/json", "x-token": TOKEN }, body: JSON.stringify({ pane: viewer.pane, text }) });
+  if (r.ok) { vta.value = ""; vhint.textContent = "queued for the thread"; refresh(); }
+  else vhint.textContent = "failed: " + (await r.text());
+}
+vq(".vclose").onclick = closePage;
+vq(".vreload").onclick = () => openPage(viewer.pane);
+vq(".vreply .go").onclick = sendPageReply;
+vta.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) sendPageReply(); });
+viewer.el.addEventListener("click", (e) => { if (e.target === viewer.el) closePage(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !viewer.el.hidden) closePage(); });
+// Messages from the open page (only that frame): Esc closes the viewer;
+// dashReply(text) only fills the box for its own pane; Thomas still presses Send
+addEventListener("message", (e) => {
+  if (viewer.el.hidden || e.source !== vq("iframe").contentWindow) return;
+  if (e.data?.dashClose === true) return closePage();
+  if (typeof e.data?.dashReply !== "string") return;
+  const text = e.data.dashReply.trim();
+  if (!text) return;
+  const head = `Re your page "${viewer.title}":`;
+  if (!vta.value.includes(head)) vta.value = head + (vta.value.trim() ? "\n" + vta.value.trim() : "");
+  if (!vta.value.includes(text)) vta.value += "\n" + text;
+  vta.classList.remove("got");
+  void vta.offsetWidth;
+  vta.classList.add("got");
+});
+
+let busy = false, order = [], build = null;
 async function refresh() {
   if (busy) return;
   busy = true;
   try {
     const s = await (await fetch("/api/state", { cache: "no-store" })).json();
-    for (const a of s.agents) a.ph = phase(a);
+    // a new index.html: reload, unless you're typing somewhere
+    if (build === null) build = s.build;
+    else if (s.build !== build && ![...document.querySelectorAll("textarea")].some((t) => t.value.trim()) && viewer.el.hidden) location.reload();
+    for (const a of s.agents) { a.ph = phase(a); latest.set(a.pane, a); }
+    if (viewer.pane && latest.get(viewer.pane)?.page?.at !== viewer.at) vq(".vreload").hidden = !latest.get(viewer.pane)?.page;
     const secs = { coord: [], needs: [], working: [], parked: [] };
     for (const a of s.agents) secs[a.pane === s.coordinator ? "coord" : a.ph.sec].push(a);
     const urgent = { blocked: 0, needs: 1, news: 2 };

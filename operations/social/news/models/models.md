@@ -1,5 +1,131 @@
 # Pollinations Model Changelog
 
+## 2026-10-14
+
+### Added
+- `google/gemini-4-argon` (Google, text) — text, image, audio and video input; tool calling and web search.
+- `meta/muse-wonder-1.0` (Meta, text) — image input, tool calling and reasoning; 1M context.
+- `anthropic/claude-opus-5.5:fast` (Anthropic, text) — image input and tool calling.
+- `stepfun/step-5-preview` (StepFun, text) — image input, reasoning and tool calling.
+- `anthropic/claude-haiku-5.5` (Anthropic, text) — image input, reasoning and tool calling.
+- `openai/gpt-6-luna-decisions` (OpenAI, text) — typed decisions with probabilities; text input only.
+- `mistralai/mistral-large-4` (Mistral, text) — image input, reasoning and tool calling.
+- `nex-agi/nex-n2.5-mini` (Nex AGI, text) — image input and reasoning.
+- `nex-agi/nex-n2.5-pro` (Nex AGI, text) — image input, reasoning and tool calling.
+- `community/chigwell/claude-haiku-5-5` (LLM7.io, text) — reasoning and tool calling.
+- `community/Saauf/nemotron-3-super-120b-a12b` (SaaufAI, text) — reasoning.
+- `community/Saauf/glm-5.3-flash` (SaaufAI, text) — reasoning.
+- `community/morriszdweck/glm-5.3-flash-free` (OSAII, text) — image input, reasoning and tool calling.
+- `community/Saauf/llama3.1-8B:ultrafast` (SaaufAI, text) — text input and output.
+- `community/Saauf/gemini-3.1-flash-lite` (SaaufAI, text) — image input, reasoning and tool calling.
+- `community/chigwell/claude-opus-5-5` (LLM7.io, text) — image input, reasoning and tool calling.
+- `community/sharktide/inferenceport-ai-FW-GLM-5.2-Fast:azure:data-zone` (InferencePort AI, InferencePort LLC., text) — image input, reasoning and tool calling.
+- `community/Saauf/glm-5.3` (SaaufAI, text) — image input, reasoning and tool calling.
+- `community/MarcosFRG/deepseek-v3.2` (JankRouter, text) — reasoning and tool calling.
+- `community/MarcosFRG/deepseek-v4.1-flash:paid` (JankRouter, text) — image input, reasoning and tool calling.
+- `community/Derlifed/retail-fastfood-interview-coach` (Community, text) — interview-coaching agent with web search.
+- `community/samueltargino0567-ux/Gt3` (Community, text) — image input, reasoning and tool calling.
+- `community/Lorodn4x/top-tools-ai` (Lordos, text) — image input, reasoning and tool calling.
+- `community/scriptsnsenses-sys/diffusiongema-26B-free` (My discord server, text) — image and video input; reasoning.
+- `community/tomdacatto/gemma-4-31B-it-uncensored` (TomdacatAI, text) — image input, reasoning and tool calling.
+- `community/vendouple/laguna-s-2.1:free` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/vendouple/claude-sonnet-5.5:stable` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/vendouple/claude-opus-5.5:stable` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/scriptsnsenses-sys/glm-5.3-flash-free` (My discord server, text) — text input and output.
+- `community/vendouple/deepseek-v3.2` (OrchidLLM Proxy, text) — reasoning and tool calling.
+- `community/MarcosFRG/deepseek-v4-flash-0731:paid` (JankRouter, text) — reasoning and tool calling.
+- `community/MarcosFRG/glm-5.3:paid` (JankRouter, text) — reasoning and tool calling.
+- `community/iotserver24/kimi-k2.7-code-nitro` (R3AP3R editz, text) — image input, reasoning and tool calling.
+- `community/JustScriptzz/glm-5.3-flash` (Free AI API, text) — image and video input; reasoning and tool calling.
+- `community/iotserver24/route-r3ap3r` (R3AP3R editz, text) — model router with reasoning and tool calling.
+- `community/Spit-fires/muse-glimmer` (Community, text) — text input and output.
+- `community/MarcosFRG/nemotron-3.5-lightning:paid` (JankRouter, text) — reasoning and tool calling.
+- `community/MarcosFRG/gemma-4-26b-a4b:paid` (JankRouter, text) — image and video input; reasoning and tool calling.
+- `community/vendouple/glm-5.3` (OrchidLLM Proxy, text) — text input and output.
+- `community/JustScriptzz/glm-5-2` (Free AI API, text) — image and audio input; reasoning and tool calling.
+- `community/vendouple/kimi-k3` (OrchidLLM Proxy, text) — image input, reasoning and tool calling.
+- `community/sharktide/inferenceport-ai-gemini-2.5-flash` (InferencePort AI, InferencePort LLC., text) — image and audio input; reasoning and tool calling.
+- `community/sharktide/inferenceport.ai-gpt-oss-20b` (InferencePort AI, InferencePort LLC., text) — reasoning and tool calling.
+- `community/sharktide/inferenceport-ai-lightning-text-v2` (InferencePort AI, InferencePort LLC., text) — image input, reasoning and tool calling.
+- `community/sharktide/inferenceport-ai-qwen-3.8-27b` (InferencePort AI, InferencePort LLC., text) — image input, reasoning and tool calling.
+- `community/vendouple/deepseek-v4-pro` (OrchidLLM Proxy, text) — reasoning and tool calling.
+- `community/MarcosFRG/gemini-3.1-flash-lite` (JankRouter, text) — image, audio and video input; reasoning and tool calling.
+- `community/mikl-shortcuts/ministral-3` (Community, text) — image and audio input.
+- `community/MarcosFRG/minimax-m3:paid` (JankRouter, text) — image and video input; reasoning and tool calling.
+- `community/MarcosFRG/gemini-3-flash-preview:paid` (JankRouter, text) — image, audio and video input; reasoning and tool calling.
+- `qwen/qwen-image-2.1-turbo` (Qwen, image) — generation and editing with up to ten reference images.
+- `community/tomdacatto/gpt-image-2.5-flare` (TomdacatAI, image) — generation and editing.
+- `community/chigwell/gpt-image-2.5` (LLM7.io, image) — text-to-image generation.
+- `community/sharktide/inferenceport-ai-gpt-image-2.5-sunburst` (InferencePort AI, InferencePort LLC., image) — generation and editing.
+- `community/sharktide/inferenceport-ai-gpt-image-2.5-flare` (InferencePort AI, InferencePort LLC., image) — generation and editing.
+- `community/MarcosFRG/sdxl-lightning` (JankRouter, image) — generation and editing.
+- `community/sharktide/inferenceport-ai-gpt-image-router` (InferencePort AI, InferencePort LLC., image) — text-to-image router.
+- `community/MarcosFRG/lucid-origin` (JankRouter, image) — generation and editing.
+- `community/vendouple/animagine` (OrchidLLM Proxy, image) — text-to-image generation.
+- `community/sharktide/inferenceport-ai-lightning-image-turbo` (InferencePort AI, InferencePort LLC., image) — generation and editing.
+- `kandinskylab/kandinsky-6.0-lite` (Kandinsky Lab, video) — five-second 480p video with audio from text or a start image.
+- `microsoft/mai-transcribe-2` (Microsoft, audio) — multilingual audio transcription with timed segments.
+- `microsoft/mai-voice-2.1` (Microsoft, audio) — text-to-speech across 23 languages.
+- `microsoft/mai-voice-2.1-flash` (Microsoft, audio) — low-latency text-to-speech across 23 languages.
+- `qwen/qwen-audio-3.0-tts-flash` (Qwen, audio) — instruction-directed text-to-speech.
+
+### Changed
+- `inclusionai/ling-3.1-flash` — now paid-only.
+- `jaredpalmer/kev-4b` — now paid-only.
+- `typesafe/jev-1.13` — now paid-only.
+- `deepseek/deepseek-v4.1-flash` — now paid-only; completion-text rate also fell ~10%.
+- `cohere/command-a-plus` — now paid-only; completion-text rate also fell ~35%.
+- `amazon/nova-2-lite-v1` — now paid-only; added video input.
+- `amazon/nova-micro-v1` — now paid-only.
+- `community/AkshayCoder48/free-voice` — now paid-only.
+- `community/vendouple/uncensored-image-v2` — now paid-only; image rate also fell ~15%.
+- `assemblyai/universal-2` — now paid-only.
+- `assemblyai/universal-3.5-pro` — now paid-only.
+- `qwen/qwen3.8-27b` — completion-text price cut ~45%.
+- `openai/gpt-5.6-sol` — completion-text price cut ~35%; input and long-context rates also fell.
+- `community/Catniti/catniti-ai-agent` — completion-text price cut ~35%; input and long-context rates also fell.
+- `community/vendouple/glm-5.3-flash` — completion-text price cut ~15%.
+- `google/gemini-3.8-flash`, `google/gemini-3.7-flash`, `google/gemini-3.5-flash-lite`, `google/gemini-3-flash-preview`, `google/gemini-3.1-pro-preview` — completion-text price cuts ~5%; other listed token rates also fell.
+- `google/gemini-3.1-flash-lite-image`, `google/gemini-3.1-flash-image`, `google/gemini-3-pro-image`, `google/gemini-2.5-flash-image` — completion-image price cuts ~5%; other listed token rates also fell.
+- `anthropic/claude-sonnet-5.5` — cached-input rate cut 50%; completion-text rate unchanged.
+- `qwen/qwen3.8-max`, `qwen/qwen3.8-max-0902` — added explicit-cache pricing variants with lower cached-input rates; default rates unchanged.
+- `qwen/qwen3guard-gen-8b` — prompt and completion token rates removed; remains not paid-only.
+- `x-ai/grok-4.7` — completion-text price increased ~20%.
+- `z-ai/glm-5.3-flashx` — cached-input rate increased 20%; completion-text rate unchanged.
+- `z-ai/glm-5.3-flash` — cached-input rate increased ~3%; completion-text rate unchanged.
+- `qwen/qwen3-vl-30b-a3b-instruct` — completion-text price increased ~15%.
+- `community/iotserver24/supercharge`, `community/MarcosFRG/glm-5.3-flash`, `community/MarcosFRG/metraxai` — completion-text prices increased 20%.
+- `black-forest-labs/flux-3-image` — image price increased 100% at both 1K and 2K.
+- `elevenlabs/eleven-v4`, `elevenlabs/eleven-v4-turbo` — audio-output prices increased ~265%.
+- `hexgrad/kokoro-82m` — audio-output price increased ~60%.
+- `microsoft/mai-image-2.6`, `microsoft/mai-image-2.6-flash` — maximum reference images increased from one to five.
+- `x-ai/grok-imagine-image-quality` — maximum reference images increased from one to three.
+- `x-ai/grok-imagine-image` — maximum reference images increased from one to five.
+- `minimax/minimax-h3-max-turbo` — fixed per-second video rates replaced by provider-reported-unit billing.
+- `openai/tts-1` — added the `tts` alias.
+- `elevenlabs/eleven-v3` — removed the `tts` alias.
+
+### Removed
+- `community/MarcosFRG/qwen3.8-flash:paid` (was: text)
+- `community/vendouple/gpt-6-luna:stable` (was: text)
+- `community/vendouple/gpt-6-sol` (was: text)
+- `community/AkshayCoder48/claude-fable-5` (was: text)
+- `community/pegalink/jimmy` (was: text)
+- `community/ZapGaming/llama3.1-8b-xturbo` (was: text)
+- `community/CloudCompile/agnes-3.0-flash` (was: text)
+- `community/JustScriptzz/qwen-3.8-max` (was: text)
+- `community/iotserver24/deepseek-fast` (was: text)
+- `community/iotserver24/stealth-code` (was: text)
+- `community/gggff123/gpt-5-nano` (was: text)
+- `community/JustScriptzz/gpt-oss-120b` (was: text)
+- `community/MarcosFRG/deepseek-v4-flash-0731` (was: text)
+- `community/vendouple/gemma-4-31b-isometry-rp` (was: text)
+- `community/tomdacatto/ezra` (was: text)
+- `community/voodoohop/airforce-qwen3-max` (was: text)
+- `community/vendouple/anima` (was: image)
+- `qwen/qwen3-tts-instruct-flash` (was: audio)
+- `community/pegalink/embedding-gemma-300m` (was: embedding)
+
 ## 2026-10-07
 
 ### Added

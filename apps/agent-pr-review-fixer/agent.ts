@@ -288,36 +288,54 @@ export function applyEdits(
     return { changed, rejected };
 }
 
-/** One-hunk unified diff per file (first to last changed line, 3 lines of context). */
+/** Lines of a text; a final newline ends the last line instead of adding an empty one. */
+function splitLines(text: string): { lines: string[]; eol: boolean } {
+    const lines = text.split("\n");
+    const eol = lines.at(-1) === "";
+    if (eol) lines.pop();
+    return { lines, eol };
+}
+
+/** One-hunk unified diff per file (first to last changed line, 3 lines of context) that `git apply` accepts. */
 export function unifiedDiff(
     file: string,
     before: string,
     after: string,
 ): string {
-    const a = before.split("\n");
-    const b = after.split("\n");
+    const { lines: a, eol: aEol } = splitLines(before);
+    const { lines: b, eol: bEol } = splitLines(after);
+    const open = (lines: string[], eol: boolean, i: number) =>
+        i === lines.length - 1 && !eol;
+    // A last line without a newline is not the same line as that text with one.
+    const same = (i: number, j: number) =>
+        a[i] === b[j] && open(a, aEol, i) === open(b, bEol, j);
     let start = 0;
-    while (start < a.length && start < b.length && a[start] === b[start])
-        start++;
+    while (start < a.length && start < b.length && same(start, start)) start++;
     let endA = a.length;
     let endB = b.length;
-    while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
+    while (endA > start && endB > start && same(endA - 1, endB - 1)) {
         endA--;
         endB--;
     }
     const from = Math.max(0, start - 3);
     const toA = Math.min(a.length, endA + 3);
     const toB = Math.min(b.length, endB + 3);
-    const lines = [
+    const range = (count: number) =>
+        count ? `${from + 1},${count}` : `${from},0`;
+    const out = [
         `--- a/${file}`,
         `+++ b/${file}`,
-        `@@ -${from + 1},${toA - from} +${from + 1},${toB - from} @@`,
-        ...a.slice(from, start).map((l) => ` ${l}`),
-        ...a.slice(start, endA).map((l) => `-${l}`),
-        ...b.slice(start, endB).map((l) => `+${l}`),
-        ...a.slice(endA, toA).map((l) => ` ${l}`),
+        `@@ -${range(toA - from)} +${range(toB - from)} @@`,
     ];
-    return lines.join("\n");
+    const emit = (prefix: string, lines: string[], eol: boolean, i: number) => {
+        out.push(`${prefix}${lines[i]}`);
+        if (open(lines, eol, i)) out.push("\\ No newline at end of file");
+    };
+    for (let i = from; i < start; i++) emit(" ", a, aEol, i);
+    for (let i = start; i < endA; i++) emit("-", a, aEol, i);
+    for (let i = start; i < endB; i++) emit("+", b, bEol, i);
+    for (let i = endA; i < toA; i++) emit(" ", a, aEol, i);
+    return out.join("\n");
 }
 
 /** Push one commit on top of the PR head to a new branch; never moves an existing ref. */

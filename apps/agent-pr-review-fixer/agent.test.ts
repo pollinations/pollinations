@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import agent, {
     applyEdits,
@@ -96,14 +100,41 @@ test("edits apply only when their text matches exactly once", () => {
         [
             "--- a/src/add.js",
             "+++ b/src/add.js",
-            "@@ -1,4 +1,4 @@",
+            "@@ -1,3 +1,3 @@",
             " export function add(a, b) {",
             "-    return a - b;",
             "+    return a + b;",
             " }",
-            " ",
         ].join("\n"),
     );
+});
+
+test("the reply's diff applies with git apply", () => {
+    const cases: [string, string][] = [
+        [FILE, FILE.replace("a - b", "a + b")],
+        ["a\nb\nc", "a\nB\nc"],
+        ["a\nb\nc", "a\nb\nc\n"],
+        ["a\nb\n", "a\nb\nc\n"],
+        ["1\n2\n3\n4\n5\n6\n7\n8\n9\n", "1\n2\n3\n4\n6\n7\n8\n9\n"],
+        ["", "first\n"],
+    ];
+    for (const [before, after] of cases) {
+        const dir = mkdtempSync(join(tmpdir(), "pr-fixer-"));
+        try {
+            writeFileSync(join(dir, "f.js"), before);
+            writeFileSync(
+                join(dir, "fix.patch"),
+                `${unifiedDiff("f.js", before, after)}\n`,
+            );
+            execFileSync("git", ["apply", "fix.patch"], {
+                cwd: dir,
+                stdio: "pipe",
+            });
+            assert.equal(readFileSync(join(dir, "f.js"), "utf8"), after);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    }
 });
 
 test("an ok verdict stays ok; findings force issues", () => {

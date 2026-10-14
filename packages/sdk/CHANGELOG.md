@@ -4,6 +4,15 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 
 ## [Unreleased]
 
+## [5.1.0-alpha.17] - 2026-10-14
+
+### Added
+- `model3d()` returns 3D files with their MIME type and a keyless URL;
+  `models("3d")` lists the available models.
+- `modelStatus()` returns typed model health rows and column metadata.
+- `audioSpeechWithTimestamps()` returns base64 audio, the original character
+  alignments and word timings grouped from normalized text when available.
+
 ## [5.1.0-alpha.16] - 2026-10-14
 
 ### Changed

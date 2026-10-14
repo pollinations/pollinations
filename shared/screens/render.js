@@ -71,11 +71,10 @@ const path = (title, label, body, button) =>
             h(
                 "div",
                 {
-                    className:
-                        "polli:flex polli:items-center polli:justify-between polli:gap-2",
+                    className: "polli:flex polli:items-center polli:gap-2",
                 },
                 h(Heading, { as: "h2", size: "card" }, title),
-                label && h(Chip, { intent: "info", size: "sm" }, label),
+                label && h(Chip, { intent: "info", size: "md" }, label),
             ),
             ...body,
         ),

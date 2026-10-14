@@ -992,10 +992,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            {!state.anonymous && (
-                <RedeemCode onRedeemed={() => void refreshRewards()} />
-            )}
-
             {state.standings && (
                 <QuestStandings
                     standings={state.standings}
@@ -1068,6 +1064,10 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         ))}
                     </div>
                 </Section>
+            )}
+            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
+            {!state.anonymous && !state.loading && (
+                <RedeemCode onRedeemed={() => void refreshRewards()} />
             )}
         </>
     );

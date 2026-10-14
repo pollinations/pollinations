@@ -16,7 +16,7 @@ Catalog fields are defined in `operations/app-management/app.js`; categories and
 
 ## Discord
 
-Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-885844321461485618) — use for Discord MCP tools.
+Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discord MCP tools.
 
 ## Repository Structure
 
@@ -215,6 +215,7 @@ npx vitest run test/file.test.ts
 
 ## Workflow Orchestration
 
+- For support email, use `.claude/skills/pollinations-support-triage/SKILL.md`.
 - Plan non-trivial work and re-plan when assumptions change.
 - Delegate only large, independent work; handle small tasks and self-verification locally.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.

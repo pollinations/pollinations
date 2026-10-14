@@ -232,11 +232,18 @@ jobs:
           run-id: 38541559960
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/discovery-validation
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-validation-38543919267
+          run-id: 38543919267
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/verified-native
       - name: Replay copied official evidence through native Jev
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           CORPUS_OUT: ${{ runner.temp }}/saved-corpus
           DISCOVERY_OUT: ${{ runner.temp }}/discovery-validation
+          VERIFIED_OUT: ${{ runner.temp }}/verified-native
           RESEARCH_OUT: ${{ runner.temp }}/native-validation
         run: node .github/scripts/model-researcher-corpus-validation.mjs
       - uses: actions/upload-artifact@v4

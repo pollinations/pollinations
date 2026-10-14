@@ -52,6 +52,16 @@ const resumedDiscovery = JSON.parse(
     await readFile(join(process.env.DISCOVERY_OUT, "research.json"), "utf8"),
 );
 assert.equal(resumedDiscovery.status, "complete");
+const verified = JSON.parse(
+    await readFile(join(process.env.VERIFIED_OUT, "research.json"), "utf8"),
+);
+assert.equal(
+    verified.reason,
+    "Real primary InferHub pricing must yield a provider lead",
+);
+assert.equal(verified.calibration.errors, 0);
+assert.equal(verified.calibration.disabled, false);
+assert.ok(verified.calls.every((call) => call.status === "received"));
 const current = officialCatalog(
     await readJsonWithRetries(
         "https://gen.pollinations.ai/models?reliability=all",
@@ -68,7 +78,11 @@ const catalogChanges = {
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
 const baseline =
-    4.19462079346 + budgetUsed(prior) + budgetUsed(resumedDiscovery) + 0.05;
+    4.19462079346 +
+    budgetUsed(prior) +
+    budgetUsed(resumedDiscovery) +
+    0.011555206110000004 +
+    budgetUsed(verified);
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -112,9 +126,10 @@ for (const source of [
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 30 * 60000).toISOString(),
-    maxPollen: 0.05,
+    maxPollen: 0.01,
     reservedPollen: 0,
     calls: [],
+    replayedDecisions: [],
     calibration: calibrationState(),
     sources,
     models: [],
@@ -148,6 +163,31 @@ const decision = async (payload, validate) => {
     const billed = await readBilledUsage(key, report.startedAt);
     report.billing = { ...billed, callCount: report.calls.length };
     const quote = jevQuote(jev, payload);
+    const cached = verified.calls.find(
+        (call) =>
+            call.requestDigest === quote.requestDigest &&
+            call.status === "received" &&
+            call.nativeResponse,
+    );
+    if (cached) {
+        let result = validate(payload, cached.nativeResponse, {
+            rejectInvalidChoices: true,
+        });
+        if (calibration)
+            result = applyCalibration(
+                report.calibration,
+                result,
+                cached.nativeResponse,
+                calibration.controls,
+            );
+        report.replayedDecisions.push({
+            requestDigest: quote.requestDigest,
+            originalRequestId: cached.requestId,
+            runId: 38543919267,
+        });
+        await save();
+        return result;
+    }
     assert.ok(
         !prior.calls.some(
             (call) =>

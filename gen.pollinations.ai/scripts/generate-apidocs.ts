@@ -21,7 +21,7 @@ const OPENAPI_URL =
 type Json = Record<string, unknown>;
 type Schema = Json;
 type Operation = Json;
-type Spec = {
+export type Spec = {
     info: { title: string; description: string; version: string };
     openapi: string;
     servers: { url: string }[];
@@ -381,7 +381,7 @@ function operationBaseUrl(spec: Spec, path: string, op: Operation): string {
 // Curl example
 // ────────────────────────────────────────────────────────────────────────────
 
-function buildCurl(
+export function buildCurl(
     spec: Spec,
     method: string,
     path: string,
@@ -921,7 +921,7 @@ All endpoints return errors in this envelope:
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Replace long enum arrays with a description pointing to /models. */
-function simplifyModelEnums(spec: Spec): void {
+export function simplifyModelEnums(spec: Spec): void {
     for (const methods of Object.values(asObj(spec.paths))) {
         for (const op of Object.values(asObj(methods))) {
             const operation = asObj(op);
@@ -1216,7 +1216,9 @@ async function main() {
     );
 }
 
-main().catch((err) => {
-    console.error("❌ Error:", err.message);
-    process.exit(1);
-});
+if (import.meta.main) {
+    main().catch((err) => {
+        console.error("❌ Error:", err.message);
+        process.exit(1);
+    });
+}

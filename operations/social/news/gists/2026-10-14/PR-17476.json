@@ -1,0 +1,32 @@
+{
+  "pr_number": 17476,
+  "title": "feat(news): group community models and agents in the community post",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17476",
+  "merged_at": "2026-10-14T16:21:40Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Community news posts now put 🧩 Models before 🤖 Agents. Agent entries show their base model’s catalog name instead of inherited price or paid-only status, and report additions, removals, base-model changes, and new capabilities. Owner-entered base-model text, which Enter allows up to 253 characters, reaches the writer only when it matches a catalog name or alias; aliases are normalized to catalog names. All 30 current agents with a base model resolve. In an unsent same-week preview, the number of compared agent entries fell from 7 to 4 because 3 had only followed a base-model price change.",
+    "keywords": [
+      "community news",
+      "agents",
+      "models",
+      "catalog aliases",
+      "social pipeline"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17476.jpg",
+    "prompt": "In a cozy pixel-art garden newsroom, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears tiny editor’s glasses, and sorts two paper stacks labeled 'MODELS' and 'AGENTS' beside a little agent card pointing to its base-model card. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, pixel flowers, and a prominent lime green (#ecf874) desk lamp glow against a warm cream background."
+  },
+  "generated_at": "2026-10-14T16:23:08.728426+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "07f03449c38164928d30a3db26ace34ff6c47989",
+  "announcements": []
+}

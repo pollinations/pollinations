@@ -1,10 +1,10 @@
 # Privacy Policy
 
-**Last updated: 2026-10-10**
+**Last updated: 2026-10-13**
 
 ## 1) Scope & Roles
 
-This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, and (c) the Polli Discord bot and its HTTP API. For Discord/GitHub use, their policies also apply.
+This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, (c) the Polli Discord bot and its HTTP API, and (d) the Free API Classic at text.pollinations.ai and image.pollinations.ai, which needs no account. For Discord/GitHub use, their policies also apply.
 
 **Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we act as processor. Our Terms do not currently incorporate a standard DPA; contact **hello@pollinations.ai** before using the Service for processing that requires one. Any separately agreed processing terms remain applicable.
 
@@ -14,10 +14,11 @@ This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community
 * **API keys & app authorization:** key type, key ID, scopes, model restrictions, expiry, Pollen budget/cap, app name, redirect URI, GitHub identity shown on consent screens, connected-app records, revocations, and developer-earnings settings.
 * **Billing & wallet (commercial):** plan, invoices, payment status, VAT ID, company details, Pollen purchases, Quest Pollen balance, Paid Pollen balance, grants, rewards, developer earnings, refunds, chargebacks, and wallet adjustments. Card data is handled by our payment provider; we do not store full card numbers.
 * **Service usage & API metadata (commercial):** timestamps, endpoints/models, token/Pollen usage, balance bucket used, baseline model cost, app markup/developer credit where applicable, rate-limit events, IP, user-agent, and error logs.
+* **Free API Classic usage (no account):** timestamps, endpoints, request status, IP address and country, and the referring site or app name a request carries. We use the IP address to apply the free limit and prevent abuse. Usage records keep a keyed hash and the network prefix of the IP address instead of the full address; the hash counts distinct callers.
 * **Quests & rewards (commercial/community):** quest availability, progress, completions, reward amounts, credited balance bucket, source references, and display/audit metadata such as quest titles, app names/URLs, app-directory approval records, GitHub issue/PR numbers, issue titles/URLs, assignees, labels, and completion timestamps.
 * **Prompts/outputs (commercial & demos):** processed transiently to deliver results; not retained beyond what's necessary to run the Service, except configuration you save and short-lived response caches. Generated responses may be cached temporarily for performance, reliability, cost control, and abuse prevention. Generated media cache identifiers and image metadata may include prompt-derived data.
 * **Community identifiers (community):** Discord ID/username (if you link or use our bots); GitHub ID/username and public GitHub profile/repository/activity signals if you link GitHub, contribute, identify an app, or complete GitHub-based quests; email if you contact us.
-* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes.
+* **Analytics processing:** we also use the data categories above (account identifiers, email, name, GitHub identity where linked, wallet balance attributes, API key metadata, session metadata, and payment-provider event records including customer email) for product analytics, billing attribution, abuse prevention, and developer-earnings reporting. We do not use passwords, password hashes, OAuth tokens, API key secrets, session tokens, or IP addresses for these analytics purposes; Free API Classic analytics use only the keyed IP hash described above.
 * **Telemetry:** aggregated counters and performance metrics.
 * **Support:** emails, tickets, in-app chats.
 

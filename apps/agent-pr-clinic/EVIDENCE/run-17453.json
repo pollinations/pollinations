@@ -1,0 +1,31 @@
+{
+  "pr": 17453,
+  "repo": "pollinations/pollinations",
+  "title": "Spoofable X-Forwarded-Host lets any direct-hit caller control their \"client IP\" and bypass per-IP rate limits",
+  "author": "NamanSoni78",
+  "head_sha": "37399d640e231be3ad3833bacaa59f3ecd2b6e39",
+  "head_ref": "solution9-client-ip-edge-egress-gate",
+  "base_sha": "e3d14460bdabf0b3a9c44661f20d2ba9600ef3fb",
+  "model_requested": "openai/gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "verdict": "FIX",
+  "usage": {
+    "prompt_tokens": 1610,
+    "completion_tokens": 1051,
+    "total_tokens": 2661,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 1607,
+      "audio_tokens": 0,
+      "image_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 423,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "ms": 21884,
+  "started_at": "2026-10-14T21:11:51.511Z"
+}

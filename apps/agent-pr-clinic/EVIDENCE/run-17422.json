@@ -1,0 +1,31 @@
+{
+  "pr": 17422,
+  "repo": "pollinations/pollinations",
+  "title": "fix(sdk): return the stored media URL from videoUrl",
+  "author": "ale-rls",
+  "head_sha": "3141d2ad67a050388ce43596d9bbebccbeff5dd5",
+  "head_ref": "ribbert/77-return-the-stored-media-url-from-videour",
+  "base_sha": "9d5df0548b6647f3e19c6bf8b9e383767adcaf7e",
+  "model_requested": "openai/gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "verdict": "NO-FIX",
+  "usage": {
+    "prompt_tokens": 1786,
+    "completion_tokens": 273,
+    "total_tokens": 2059,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 1783,
+      "audio_tokens": 0,
+      "image_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 189,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "ms": 11764,
+  "started_at": "2026-10-14T21:14:20.880Z"
+}

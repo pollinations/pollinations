@@ -1,0 +1,31 @@
+{
+  "pr": 17484,
+  "repo": "pollinations/pollinations",
+  "title": "feat: add Decider V1.1 27B decision model via OpenRouter",
+  "author": "tomdacatto",
+  "head_sha": "59e76bd649e10a772e38092e787208eaeaaed65e",
+  "head_ref": "feat/add-perplexity-decider",
+  "base_sha": "a40953b988547e51083e7275b3447ab9e1d8688a",
+  "model_requested": "openai/gpt-6.1-sol",
+  "model_served": "gpt-6.1-sol",
+  "verdict": "NO-FIX",
+  "usage": {
+    "prompt_tokens": 1669,
+    "completion_tokens": 308,
+    "total_tokens": 1977,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 1666,
+      "audio_tokens": 0,
+      "image_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 213,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "ms": 12975,
+  "started_at": "2026-10-14T21:13:51.176Z"
+}

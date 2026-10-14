@@ -191,6 +191,13 @@ export function isRetryableFallbackError(error: unknown): boolean {
     const failure = error as UpstreamFailure;
     const status = upstreamStatus(failure);
     if (!status) return false;
+    // Clients may recognize an input/policy rejection inside a provider 5xx/403.
+    // Respect that classification instead of retrying the original status.
+    if (
+        (failure.status === 400 || failure.status === 422) &&
+        failure.status !== status
+    )
+        return false;
     // A generic provider 408 can benefit from a fallback. Portkey's exact
     // timeout envelope is our own total deadline and must not multiply across
     // fallback candidates.

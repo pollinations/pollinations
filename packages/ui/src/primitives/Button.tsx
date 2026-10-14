@@ -5,7 +5,7 @@ import type {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-/** Semantic soft-fill roles. Label recipes live on Chip. */
+/** Semantic action roles. Label recipes live on Chip. */
 type ButtonIntent = "danger" | "info" | "neutral" | "brand" | "commit";
 export type ButtonAppearance = "pill" | "raised";
 
@@ -37,8 +37,8 @@ const themeClasses =
     "polli:bg-theme-bg-active polli:text-theme-text-strong " +
     "polli:hover:bg-theme-bg-hover polli:hover:text-theme-text-hover polli:transition-colors";
 
-// Soft intent recipes — light tile + deep text, slightly deeper bg on hover.
-// No filled CTAs at rest. Two outlined families share one look: `brand` for
+// Primary and destructive actions use outlines at rest.
+// Two accent families share one look: `brand` for
 // signing in (identity, calm pale hover) and `commit` for granting or saving
 // (fills with the accent only under the pointer or keyboard focus).
 const outlined =
@@ -51,8 +51,8 @@ const intentClasses: Record<ButtonIntent, string> = {
         "polli:focus-visible:border-theme-bg-active polli:focus-visible:bg-theme-bg-active " +
         "polli:[.dark_&]:hover:bg-theme-bg-active polli:[.dark_&]:focus-visible:bg-theme-bg-active",
     danger:
-        "polli:bg-intent-danger-bg-light polli:text-intent-danger-text " +
-        "polli:hover:bg-intent-danger-bg-hover polli:transition-colors",
+        "polli:border polli:border-intent-danger-text polli:bg-transparent polli:text-intent-danger-text " +
+        "polli:hover:bg-intent-danger-bg-hover polli:focus-visible:bg-intent-danger-bg-hover polli:transition-colors",
     info:
         "polli:bg-intent-info-bg-light polli:text-intent-info-text " +
         "polli:hover:bg-intent-info-bg-hover polli:transition-colors",
@@ -83,7 +83,7 @@ const buttonClasses = ({
     const colorClasses = intent ? intentClasses[intent] : themeClasses;
     const sizeClasses = appearance === "raised" ? raisedSizes : pillSizes;
     return cn(
-        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border",
+        "polli-control polli:inline-flex polli:items-center polli:justify-center polli:self-center polli:font-body polli:text-sm polli:font-medium polli:leading-normal polli:box-border polli:border polli:border-transparent",
         disabled
             ? "polli:opacity-50 polli:cursor-not-allowed"
             : "polli:hover:filter polli:hover:brightness-105 polli:cursor-pointer",

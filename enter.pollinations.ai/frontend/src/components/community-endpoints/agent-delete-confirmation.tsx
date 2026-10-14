@@ -1,5 +1,5 @@
-import { Button } from "@pollinations/ui";
-import { ResourceDialog } from "../layout/resource-dialog.tsx";
+import { ConfirmationDialog } from "@pollinations/ui";
+import { ResourceConfirmationContent } from "./resource-confirmation-content.tsx";
 import type { ManagedAgent } from "./types.ts";
 
 export function AgentDeleteConfirmation({
@@ -12,25 +12,17 @@ export function AgentDeleteConfirmation({
     onCancel: () => void;
 }) {
     return (
-        <ResourceDialog
+        <ConfirmationDialog
             open={!!agent}
-            onOpenChange={(open) => !open && onCancel()}
-            title="Delete Agent"
-            size="sm"
-            contentClassName="p-6"
+            title="Delete agent?"
+            confirmLabel="Delete"
+            onConfirm={onConfirm}
+            onCancel={onCancel}
         >
-            <p className="mb-6 mt-4">
-                Delete this agent and its model registration? This cannot be
+            <ResourceConfirmationContent resource={agent?.title ?? agent?.name}>
+                This removes the agent and its model registration and cannot be
                 undone.
-            </p>
-            <div className="flex justify-end gap-2">
-                <Button type="button" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button type="button" intent="danger" onClick={onConfirm}>
-                    Delete
-                </Button>
-            </div>
-        </ResourceDialog>
+            </ResourceConfirmationContent>
+        </ConfirmationDialog>
     );
 }

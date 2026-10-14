@@ -43,3 +43,17 @@ export function shouldPostKeyMetadata(
         next.earningsEnabled !== (apiKey.metadata?.earningsEnabled === true)
     );
 }
+
+/** Display context only; authorization remains enforced by the server. */
+export function getKeyAccessContext(
+    apiKey: ApiKey,
+): "app" | "device" | undefined {
+    const { deviceUserCode, redirectOrigin } = apiKey.metadata ?? {};
+    if (typeof deviceUserCode === "string" && deviceUserCode) return "device";
+    if (
+        apiKey.byopClientKeyId ||
+        (typeof redirectOrigin === "string" && redirectOrigin)
+    )
+        return "app";
+    return undefined;
+}

@@ -85,6 +85,18 @@ describe("account Pollen", () => {
         expect(menu).not.toContain("<a ");
     });
 
+    it("keeps the top-up return destination in the same tab", () => {
+        const href = "/top-up?redirect=%2Fauthorize%3Fclient_id%3Dexample";
+        const markup = renderToStaticMarkup(
+            <AccountPollen
+                source={{ type: "wallet", balances: { paid: 0, quest: 0 } }}
+                topUpHref={href}
+            />,
+        );
+        expect(markup).toContain(`href="${href}"`);
+        expect(markup).not.toContain('target="_blank"');
+    });
+
     it("renders nothing while the wallet is unavailable", () => {
         expect(
             renderToStaticMarkup(<AccountPollen source={{ type: "wallet" }} />),

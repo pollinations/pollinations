@@ -1,8 +1,42 @@
 import {
+    fetchModelCatalog,
     getModelPricesFromCatalog,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../frontend/src/config.ts", () => ({
+    config: {
+        genBaseUrl: "https://gen.example",
+    },
+}));
+
+it("fetches the full catalog for show-all without a separate health request", async () => {
+    const fetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation(async (input) => {
+            const url = new URL(String(input));
+            expect(url.pathname).toBe("/models");
+            expect(url.searchParams.get("reliability")).toBe("all");
+            return Response.json([
+                {
+                    name: "example/model",
+                    health: { status: "down", success_rate: 0, requests: 1 },
+                },
+            ]);
+        });
+    try {
+        const catalog = await fetchModelCatalog({ refresh: true });
+        expect(fetch).toHaveBeenCalled();
+        expect(catalog[0].health).toEqual({
+            status: "down",
+            success_rate: 0,
+            requests: 1,
+        });
+    } finally {
+        fetch.mockRestore();
+    }
+});
 
 it("keeps catalog health for filtering and status display", () => {
     const health = [

@@ -7,6 +7,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import {
@@ -94,6 +95,9 @@ export async function createAndReturnVideo(
             result = await callSeedanceV2API(prompt, safeParams);
             break;
         case "alibaba/wan-2.6":
+            result = await callAlibabaVideo(prompt, safeParams, "2.6");
+            break;
+        case "alibaba/wan-2.6:replicate":
             result = await callWanAPI(prompt, safeParams);
             break;
         case "alibaba/wan-2.2-fast":
@@ -103,6 +107,9 @@ export async function createAndReturnVideo(
             result = await callWanProAPI(prompt, safeParams);
             break;
         case "alibaba/wan-3.0":
+            result = await callAlibabaVideo(prompt, safeParams, "3.0");
+            break;
+        case "alibaba/wan-3.0:fal":
             result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "prunaai/p-video":

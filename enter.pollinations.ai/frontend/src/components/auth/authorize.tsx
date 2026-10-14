@@ -1,19 +1,16 @@
 import {
+    AccountIcon,
+    ArrowLeftIcon,
     Button,
-    Collapsible,
-    ExternalLinkIcon,
-    MailIcon,
-    ScrollArea,
+    InfoTip,
+    KeyIcon,
+    SproutIcon,
+    Surface,
+    Text,
     useScrollLock,
+    XIcon,
 } from "@pollinations/ui";
-import {
-    AuthInfoCard,
-    AuthModal,
-    AuthModalHeader,
-    AuthModalLoading,
-    ErrorBanner,
-} from "@pollinations/ui/auth";
-import { ModalityChip } from "@pollinations/ui/gen";
+import { AuthAccessItem, AuthModalLoading } from "@pollinations/ui/auth";
 import {
     CONSENT_PERMISSIONS,
     getAuthorizeInitialPermissions,
@@ -25,18 +22,14 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
-import { useAccountBalance } from "../../hooks/use-account-balance.ts";
-import { useGitHubSignIn } from "../../hooks/use-github-sign-in.ts";
 import { createKeyWithPermissions } from "../../lib/create-api-key.ts";
-import { AccountPermissionsInput } from "../keys/account-permissions-input.tsx";
-import { ExpiryDaysInput } from "../keys/expiry-days-input.tsx";
-import { useKeyPermissions } from "../keys/key-permissions.tsx";
-import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
-import { computeCategoryModalities } from "../models/model-categories.ts";
-import { useModelCategories } from "../models/use-model-categories.ts";
-import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
+import {
+    KeyPermissionsInputs,
+    useKeyPermissions,
+} from "../keys/key-permissions.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
-import { AuthAccountIdentity } from "./auth-account-identity.tsx";
+import { AuthFlowScreen } from "./auth-flow-screen.tsx";
+import { SignInScreen } from "./sign-in-screen.tsx";
 
 type Attribution = {
     found: boolean;
@@ -87,7 +80,6 @@ export function Authorize() {
     const user = session?.user as User | undefined;
 
     const [isAuthorizing, setIsAuthorizing] = useState(false);
-    const { isSigningIn, error: signInError, signIn } = useGitHubSignIn();
     const [error, setError] = useState<string | null>(null);
     const [attribution, setAttribution] = useState<Attribution | null>(null);
     const [redirectValidationState, setRedirectValidationState] = useState<
@@ -96,12 +88,6 @@ export function Authorize() {
     const [deviceOutcome, setDeviceOutcome] = useState<
         "pending" | "approved" | "denied"
     >("pending");
-    const balance = useAccountBalance(Boolean(user));
-    const [permissionsExpanded, setPermissionsExpanded] = useState(false);
-    const topUpHref =
-        typeof window === "undefined"
-            ? "/top-up"
-            : `/top-up?${new URLSearchParams({ redirect: window.location.href })}`;
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -116,14 +102,6 @@ export function Authorize() {
     );
     const { setAccountPermissions } = keyPermissions;
 
-    // The minted key is the signed-in user's, so it reaches their own private
-    // models just as their dashboard keys do — but the anonymous catalog omits
-    // them, so the consent screen has to learn them separately.
-    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
-    const modalities = computeCategoryModalities(
-        keyPermissions.permissions.allowedModels,
-        modelCategories,
-    );
     // Which optional scopes the caller requested. Stays constant once set —
     // unaffected by the user toggling a scope off in the Advanced panel.
     // Sources: `scope` URL param (both flows) and /api/device/info fallback.
@@ -472,307 +450,137 @@ export function Authorize() {
         }
     }
 
+    // The card reads as one sentence: "{title} · {who} · to access your Pollinations account. {step}"
+    const title = isDeviceMode ? "Allow your device" : "Allow this app";
+    const subject = isDeviceMode ? (
+        <Surface>
+            <Text
+                size="sm"
+                weight="semibold"
+                tone="strong"
+                className="font-mono"
+            >
+                Code: {user_code}
+            </Text>
+        </Surface>
+    ) : (
+        <AppAttribution
+            attribution={attribution}
+            redirectHostname={redirectHostname}
+        />
+    );
+    const access = "to access your Pollinations account.";
+
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
-            <AuthModal>
-                <AuthModalHeader />
-                <div className="px-8 pb-8 pt-2 text-center">
-                    <div className="text-4xl mb-4">
-                        {denied ? "\u{1F6AB}" : "\u{2705}"}
-                    </div>
-                    <h2 className="text-lg font-semibold text-theme-text-strong mb-2">
-                        {denied ? "Access Denied" : "Device Authorized"}
-                    </h2>
-                    <p className="text-sm text-theme-text-base">
-                        You can close this tab and return to your device.
-                    </p>
-                </div>
-            </AuthModal>
+            <AuthFlowScreen
+                footnote="back"
+                title={denied ? "Access declined" : "Access allowed"}
+                subject={subject}
+                description="You can close this tab and return to your device."
+            />
         );
     }
 
-    if (isPending) {
-        return <AuthModalLoading />;
+    if (isPending) return <AuthModalLoading title={title} subject={subject} />;
+
+    if (error) {
+        return (
+            <AuthFlowScreen
+                footnote="help"
+                title={title}
+                subject={subject}
+                description={access}
+                error={`Couldn’t connect: ${error}`}
+                actions={
+                    <Button
+                        intent="neutral"
+                        icon={isDeviceMode ? <XIcon /> : <ArrowLeftIcon />}
+                        onClick={handleDeny}
+                    >
+                        {isDeviceMode ? "Decline" : "Go back"}
+                    </Button>
+                }
+            />
+        );
     }
 
     if (!user) {
-        const displayedError = error ?? signInError;
         return (
-            <AuthModal
-                dialog={{ label: "Sign in to authorize" }}
-                tone={displayedError ? "error" : undefined}
-            >
-                <AuthModalHeader />
-                <div className="px-6 pb-6 pt-4 space-y-4">
-                    {displayedError ? (
-                        <ErrorBanner>{displayedError}</ErrorBanner>
-                    ) : (
-                        <AuthInfoCard>
-                            <AppAttribution
-                                attribution={attribution}
-                                isDeviceMode={isDeviceMode}
-                                userCode={user_code}
-                                redirectHostname={redirectHostname}
-                            />
-                            <p className="text-sm text-theme-text-base mt-3">
-                                Sign in to review and approve the requested
-                                access.
-                            </p>
-                        </AuthInfoCard>
-                    )}
-
-                    <div className="flex gap-2 justify-end">
-                        <Button
-                            as="button"
-                            onClick={handleDeny}
-                            intent="danger"
-                            disabled={isSigningIn}
-                        >
-                            Deny
-                        </Button>
-                        {!error && (
-                            <Button
-                                as="button"
-                                onClick={signIn}
-                                disabled={isSigningIn}
-                            >
-                                {isSigningIn
-                                    ? "Signing in..."
-                                    : "Continue with GitHub"}
-                            </Button>
-                        )}
-                    </div>
-                </div>
-            </AuthModal>
+            <SignInScreen
+                title={title}
+                subject={subject}
+                description={`${access} Sign in to review the request.`}
+                onCancel={handleDeny}
+            />
         );
     }
 
     return (
-        <AuthModal
-            dialog={
-                error
-                    ? { label: "Authorization error" }
-                    : { labelledBy: "authorize-dialog-title" }
-            }
-            tone={error ? "error" : undefined}
-        >
-            <AuthModalHeader>
-                <AuthAccountIdentity
-                    user={user}
-                    balance={balance}
-                    topUpHref={topUpHref}
-                />
-            </AuthModalHeader>
-
-            <ScrollArea className="min-h-0 px-6 py-2 space-y-4 overscroll-contain">
-                {error ? (
-                    <ErrorBanner>{error}</ErrorBanner>
-                ) : (
-                    <div>
-                        <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
-                            <p
-                                id="authorize-dialog-title"
-                                className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-2"
-                            >
-                                Authorize
-                            </p>
-                            <AppAttribution
-                                attribution={attribution}
-                                isDeviceMode={isDeviceMode}
-                                userCode={user_code}
-                                redirectHostname={redirectHostname}
-                            />
-                        </div>
-
-                        <div className="p-4">
-                            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">
-                                To
-                            </p>
-                            <ul className="text-sm text-theme-text-base space-y-3">
-                                <li className="flex items-start gap-2">
-                                    <span className="w-4 shrink-0 text-theme-text-soft">
-                                        &#x1F464;
-                                    </span>
-                                    <span>
-                                        See your username and this key&apos;s
-                                        budget and usage.
-                                    </span>
-                                </li>
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "profile",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span
-                                            className="flex h-5 w-4 shrink-0 items-center justify-center text-theme-text-soft"
-                                            aria-hidden="true"
-                                        >
-                                            <MailIcon className="h-4 w-4" />
-                                        </span>
-                                        <span>See your name and email.</span>
-                                    </li>
-                                )}
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "usage",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-theme-text-soft">
-                                            &#x1F4CA;
-                                        </span>
-                                        <span>
-                                            See your account balance and usage.
-                                        </span>
-                                    </li>
-                                )}
-                                {keyPermissions.permissions.accountPermissions?.includes(
-                                    "keys",
-                                ) && (
-                                    <li className="flex items-start gap-2">
-                                        <span className="w-4 shrink-0 text-theme-text-soft">
-                                            &#x1F511;
-                                        </span>
-                                        <span>
-                                            Manage API keys, agents, and models
-                                            when enabled.
-                                        </span>
-                                    </li>
-                                )}
-                                <li className="flex items-start gap-2">
-                                    <span
-                                        className={`w-4 shrink-0 ${
-                                            modalities.length === 0
-                                                ? "text-intent-danger-text"
-                                                : "text-theme-text-soft"
-                                        }`}
-                                    >
-                                        {modalities.length === 0
-                                            ? "\u2717"
-                                            : "\u2713"}
-                                    </span>
-                                    {modalities.length === 0 ? (
-                                        <span>No AI models are enabled.</span>
-                                    ) : (
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span>Generate</span>
-                                            <div className="flex flex-wrap items-center gap-1">
-                                                {modalities.map((m) => (
-                                                    <ModalityChip
-                                                        key={m}
-                                                        modality={m}
-                                                        size="sm"
-                                                    >
-                                                        {m}
-                                                    </ModalityChip>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </li>
-                                {attribution?.earningsEnabled && (
-                                    <li className="flex items-start gap-2">
-                                        <span
-                                            className="w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        >
-                                            &#x1F331;
-                                        </span>
-                                        <span>
-                                            Earn{" "}
-                                            <span className="font-semibold">
-                                                20%
-                                            </span>{" "}
-                                            of the pollen you spend in-app.
-                                        </span>
-                                    </li>
-                                )}
-                            </ul>
-                        </div>
-
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
-                            <PollenBudgetInput
-                                value={keyPermissions.permissions.pollenBudget}
-                                onChange={keyPermissions.setPollenBudget}
-                                inline
-                            />
-                        </div>
-
-                        <div className="-mx-6 px-10 py-4 border-t border-divider">
-                            <ExpiryDaysInput
-                                value={keyPermissions.permissions.expiryDays}
-                                onChange={keyPermissions.setExpiryDays}
-                                inline
-                            />
-                        </div>
-
-                        <Collapsible
-                            expanded={permissionsExpanded}
-                            onToggle={() => setPermissionsExpanded((v) => !v)}
-                            wrapperClassName="-mx-6 rounded-none border-x-0 border-b-0 border-divider bg-transparent"
-                            hoverClassName="hover:bg-theme-bg-pale"
-                            panelClassName="px-3 pb-3 pt-1 space-y-6"
-                            label={
-                                <span className="flex justify-end">
-                                    <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium text-theme-text-soft transition-colors hover:text-theme-text-strong">
-                                        Permissions
-                                    </span>
-                                </span>
-                            }
-                        >
-                            <AccountPermissionsInput
-                                value={
-                                    keyPermissions.permissions
-                                        .accountPermissions
-                                }
-                                onChange={keyPermissions.setAccountPermissions}
-                                allowedModels={
-                                    keyPermissions.permissions.allowedModels
-                                }
-                                onModelsChange={keyPermissions.setAllowedModels}
-                                visiblePermissions={visibleOptionalPermissions}
-                                showApiName={false}
-                                modelsInitiallyExpanded
-                                modelCategories={modelCategories}
-                            />
-                        </Collapsible>
-                    </div>
-                )}
-            </ScrollArea>
-
-            <div className="flex shrink-0 items-center justify-between border-t border-divider p-6 pt-4">
-                <a
-                    href="https://pollinations.ai/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Terms & Conditions"
-                    className="inline-flex items-center gap-1 text-xs text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                >
-                    <span className="sm:hidden">Terms</span>
-                    <span className="hidden sm:inline">Terms & Conditions</span>
-                    <ExternalLinkIcon
-                        aria-hidden="true"
-                        className="h-3.5 w-3.5 shrink-0 opacity-65"
-                    />
-                </a>
-                <div className="flex gap-2">
+        <AuthFlowScreen
+            size="lg"
+            footnote="legal"
+            title={title}
+            subject={subject}
+            description={`${access} Choose what it can use. You can revoke access at any time from your Keys page. Only connect apps you trust.`}
+            actions={
+                <>
                     <Button
-                        as="button"
+                        intent="neutral"
+                        icon={<XIcon />}
                         onClick={handleDeny}
-                        intent="danger"
                         disabled={isAuthorizing}
                     >
-                        Deny
+                        Decline
                     </Button>
-                    {!error && (
-                        <Button
-                            as="button"
-                            onClick={handleAuthorize}
-                            disabled={!canAuthorize || isAuthorizing}
-                        >
-                            {isAuthorizing ? "Authorizing..." : "Authorize"}
-                        </Button>
-                    )}
-                </div>
-            </div>
-        </AuthModal>
+                    <Button
+                        type="submit"
+                        form="authorize-permissions"
+                        intent="commit"
+                        icon={<KeyIcon />}
+                        disabled={!canAuthorize || isAuthorizing}
+                    >
+                        {isAuthorizing ? "Connecting…" : "Allow access"}
+                    </Button>
+                </>
+            }
+        >
+            <form
+                id="authorize-permissions"
+                className="space-y-4"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleAuthorize();
+                }}
+            >
+                <KeyPermissionsInputs
+                    value={keyPermissions}
+                    accessContext={isDeviceMode ? undefined : "app"}
+                    visiblePermissions={new Set(visibleOptionalPermissions)}
+                    requestedModels={models}
+                    lead={
+                        <AuthAccessItem icon={<AccountIcon />}>
+                            <span className="inline-flex items-center">
+                                Username and picture
+                                <InfoTip
+                                    text="This app can also see this key’s budget and usage."
+                                    label="Username and picture information"
+                                />
+                            </span>
+                        </AuthAccessItem>
+                    }
+                    accountAfter={
+                        attribution?.earningsEnabled ? (
+                            <AuthAccessItem icon={<SproutIcon />}>
+                                20% of the Pollen you spend in this app goes to
+                                its developer.
+                            </AuthAccessItem>
+                        ) : undefined
+                    }
+                    disabled={isAuthorizing}
+                />
+            </form>
+        </AuthFlowScreen>
     );
 }

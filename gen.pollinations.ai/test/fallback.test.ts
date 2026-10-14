@@ -467,6 +467,19 @@ describe("isRetryableFallbackError", () => {
     });
 
     it("does not fail over on caller errors", () => {
+        for (const [status, upstreamStatus] of [
+            [400, 500],
+            [422, 403],
+        ]) {
+            expect(
+                isRetryableFallbackError(
+                    Object.assign(new Error("Provider returned error"), {
+                        status,
+                        upstreamStatus,
+                    }),
+                ),
+            ).toBe(false);
+        }
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
         expect(
             isRetryableFallbackError(

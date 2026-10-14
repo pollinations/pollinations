@@ -53,6 +53,70 @@ afterEach(() => {
 });
 
 describe("callAzureMaiImage", () => {
+    it("routes 2.6 Flash to its exact Azure deployment", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
+            expect(init?.headers).toMatchObject({
+                "api-key": "test-azure-key",
+            });
+            expect(JSON.parse(init?.body as string)).toEqual({
+                model: "MAI-Image-2.6-Flash",
+                prompt: "a red bicycle",
+                width: 1024,
+                height: 1024,
+            });
+            return successResponse({
+                num_output_tokens: 1024,
+                num_input_text_tokens: 24,
+                num_input_image_tokens: 0,
+            });
+        });
+
+        const result = await callAzureMaiImage(
+            "a red bicycle",
+            { ...baseParams, model: "microsoft/mai-image-2.6-flash" },
+            USER_INFO,
+        );
+        expect(result.trackingData).toEqual({
+            actualModel: "microsoft/mai-image-2.6-flash",
+            usage: { promptTextTokens: 24, completionImageTokens: 1024 },
+        });
+    });
+
+    it("accepts the 2.6 maximum size but rejects larger images", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            successResponse({
+                num_output_tokens: 2304,
+                num_input_text_tokens: 12,
+                num_input_image_tokens: 0,
+            }),
+        );
+        const params = {
+            ...baseParams,
+            model: "microsoft/mai-image-2.6-flash" as const,
+            width: 1536,
+            height: 1536,
+        };
+
+        await expect(
+            callAzureMaiImage("a poster", params, USER_INFO),
+        ).resolves.toMatchObject({
+            trackingData: { usage: { completionImageTokens: 2304 } },
+        });
+        expect(fetchSpy).toHaveBeenCalledOnce();
+        await expect(
+            callAzureMaiImage(
+                "a poster",
+                { ...params, width: 1552 },
+                USER_INFO,
+            ),
+        ).rejects.toMatchObject({
+            status: 400,
+            message: expect.stringContaining("2,359,296 pixels"),
+        });
+        expect(fetchSpy).toHaveBeenCalledOnce();
+    });
+
     it("generates through the MAI route forwarding only the supported fields", async () => {
         let requestBody: Record<string, unknown> | undefined;
         const fetchSpy = vi

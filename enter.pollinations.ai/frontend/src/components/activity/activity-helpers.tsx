@@ -114,7 +114,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             triggerAs="span"
             content={disabledReason}
             align="center"
-            className="inline-flex"
+            className="inline-flex polli:cursor-not-allowed"
         >
             {button}
         </Tooltip>
@@ -192,7 +192,7 @@ export function PollenUsageBadges(usage: {
         <div className="grid min-w-44 grid-cols-2 items-center justify-items-start gap-2">
             <PaidChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -201,7 +201,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="gap-2 whitespace-nowrap tabular-nums"
+                className="cursor-help gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >

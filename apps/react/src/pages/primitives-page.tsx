@@ -288,7 +288,7 @@ export function PrimitivesPage() {
                         <div className="space-y-3">
                             <p>
                                 Read the{" "}
-                                <InlineLink href="/compositions">
+                                <InlineLink href="/?view=compositions">
                                     component guide
                                 </InlineLink>{" "}
                                 or{" "}
@@ -304,7 +304,7 @@ export function PrimitivesPage() {
                                 </InlineLink>
                                 .
                             </p>
-                            <InlineLink href="/modules" size="sm">
+                            <InlineLink href="/?view=modules" size="sm">
                                 Explore modules
                             </InlineLink>
                         </div>

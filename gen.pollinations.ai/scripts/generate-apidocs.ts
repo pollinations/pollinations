@@ -953,6 +953,20 @@ const CURATED_BODIES: Record<string, Json> = {
         model: "openai/gpt-5.4-nano",
         input: "Hello!",
     },
+    postV1Messages: {
+        model: "openai/gpt-5.4-nano",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: "Hello" }],
+    },
+    postAlphaDecisions: {
+        state: "My payouts have been failing for 3 days.",
+        questions: {
+            is_urgent: {
+                type: "noul",
+                instructions: "Does this convey urgency?",
+            },
+        },
+    },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "black-forest-labs/flux.1-schnell",
@@ -982,7 +996,9 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postAccountMyModels: {
         name: "my-community-model",
-        baseUrl: "https://api.example.com/v1",
+        title: "My Community Model",
+        api: "chat_completions",
+        url: "https://api.example.com/v1/chat/completions",
         bearerToken: "sk-upstream-token",
     },
     postAccountMyModelsProvider: {
@@ -994,7 +1010,8 @@ const CURATED_BODIES: Record<string, Json> = {
         bearerToken: "sk-upstream-token",
     },
     postAccountMyModelsTest: {
-        baseUrl: "https://api.example.com/v1",
+        api: "chat_completions",
+        url: "https://api.example.com/v1/chat/completions",
         bearerToken: "sk-upstream-token",
         model: "llama-3.3-70b",
     },
@@ -1004,7 +1021,8 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsEndpointAgents: {
         name: "my-agent",
         title: "My Agent",
-        baseUrl: "https://agent.example.com/v1",
+        api: "responses",
+        url: "https://agent.example.com/v1/responses",
     },
     postAccountAgents: {
         name: "my-agent",

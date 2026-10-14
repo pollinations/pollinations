@@ -168,6 +168,13 @@ jobs:
         working-directory: enter.pollinations.ai
         run: npm run build:frontend
 
+      - name: Build UI for package export tests
+        if: steps.enter-frontend.outputs.any_changed != 'true'
+        run: npm run build:js --workspace @pollinations/ui
+
+      - name: Test UI package exports
+        run: node --test packages/ui/scripts/package-exports.test.mjs
+
   enter:
     name: Test enter.pollinations.ai
     runs-on: ubuntu-latest

@@ -90,22 +90,6 @@ jobs:
           assert.equal(process.env.MODELS,'');
           assert.ok(Number(process.env.MAX_POLLEN)>0 && Number(process.env.MAX_POLLEN)<=4);
           JS
-      - name: Restore the stopped full-catalog validation evidence
-        id: previous
-        run: |
-          echo 'run_id=38401926804' >> "$GITHUB_OUTPUT"
-          echo 'artifact_id=11818950748' >> "$GITHUB_OUTPUT"
-      - name: Restore previous evidence for free source refresh
-        id: restore
-        if: steps.previous.outputs.artifact_id != ''
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          artifact-ids: ${{ steps.previous.outputs.artifact_id }}
-          run-id: ${{ steps.previous.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/model-research-previous
-          merge-multiple: true
       - name: Research official catalog and market with Jev and optional Sol
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
@@ -115,7 +99,6 @@ jobs:
           CHECK_BILLING: 'true'
           RESEARCH_MODE: 'compact'
           RESEARCH_OUT: ${{ runner.temp }}/model-research
-          PREVIOUS_RESEARCH: ${{ runner.temp }}/model-research-previous/research.json
         run: |
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
@@ -212,7 +195,12 @@ jobs:
           assert.equal(r.status,'complete','Partial coverage must remain an unsuccessful validation');
           assert.ok(r.calls.every(c=>c.status==='received'||(c.status==='uncertain'&&r.calls.some(done=>done.operationId===c.operationId&&done.status==='received'))));
           assert.ok(r.calls.some(c=>c.kind==='inference:typesafe/jev-1.13'));
-          assert.ok(r.quality.postedPriceRoutes>5, 'Fresh research must improve on the five posted-price baseline');
+          assert.ok(r.quality.postedPriceRoutes>17, 'Fresh research must exceed the five free catalogs alone');
+          const priceModels=ready.filter(m=>m.routes.some(x=>x.identitySupported && Number.isFinite(x.pricing.input))).length;
+          const targeted=ready.filter(m=>m.actions.some(a=>a.tool==='search' && a.required && a.status==='searched' && a.models.length===1 && a.models[0]===m.name)).length;
+          assert.ok(targeted>44, 'Targeted research must exceed the old full-run coverage');
+          console.log(JSON.stringify({priceModels,targeted,providerComparisons:ready.filter(m=>m.providerComparison?.status==='selected').length,acceptedDiscoveries:r.discovery.discoveries.length,cumulativeAccountedPollen:4.19462079346+budgetUsed(r)}));
+          assert.ok(4.19462079346+budgetUsed(r)<10, 'All researcher qualification spend must stay under 10 Pollen');
           const issue=parentIssue(r,process.env.RESEARCH_ARTIFACT_URL);
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS

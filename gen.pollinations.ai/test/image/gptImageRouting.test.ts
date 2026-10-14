@@ -60,11 +60,20 @@ function successResponse(): Response {
     });
 }
 
-/** Client error and a timeout that may already have been billed. */
-const UPSTREAM_FAILURES = [400, 524];
+/** The caller's own request errors: every region would reject them. */
+const CALLER_ERRORS = [400, 422];
 
-/** Rate limit and missing deployment: Azure generated nothing. */
-const AZURE_REFUSALS = [429, 404];
+/** Azure-side failures: bad key, quota, blocked resource, missing deployment, rate limit, timeout, server error. */
+const AZURE_FAILURES = [401, 402, 403, 404, 408, 429, 500, 503, 524];
+
+/** Azure's per-resource abuse block, which quotes content-policy wording. */
+const AZURE_RESOURCE_BLOCK = JSON.stringify({
+    error: {
+        code: "403",
+        message:
+            "Your resource has been temporarily blocked because we detected behavior that may violate our content policy.",
+    },
+});
 
 syncImageEnv(AZURE_KEY_ENV as CloudflareBindings, AZURE_KEY_NAMES);
 
@@ -90,9 +99,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         expect(urls.every((url) => url.includes("api-version="))).toBe(true);
     });
 
-    // A second region would pay Azure for a second image, and a timeout is
-    // exactly the case where the first one may already have been generated.
-    for (const status of UPSTREAM_FAILURES) {
+    for (const status of CALLER_ERRORS) {
         it(`fails a ${status} to the caller instead of trying another region`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
@@ -110,7 +117,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
         });
     }
 
-    for (const status of AZURE_REFUSALS) {
+    for (const status of AZURE_FAILURES) {
         it(`tries the other region after a ${status}`, async () => {
             const hosts: string[] = [];
             vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -126,7 +133,7 @@ describe("openai/gpt-image-2 Azure routing", () => {
             expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
         });
 
-        it(`fails a ${status} to the caller once every region refused`, async () => {
+        it(`fails a ${status} to the caller once every region failed`, async () => {
             const fetchMock = vi
                 .spyOn(globalThis, "fetch")
                 .mockImplementation(
@@ -139,6 +146,42 @@ describe("openai/gpt-image-2 Azure routing", () => {
             expect(fetchMock).toHaveBeenCalledTimes(EXPECTED_HOSTS.size);
         });
     }
+
+    it("tries the other region when Azure blocks one resource", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            hosts.push(new URL(String(input)).host);
+            return hosts.length === 1
+                ? new Response(AZURE_RESOURCE_BLOCK, { status: 403 })
+                : successResponse();
+        });
+
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+
+        expect(new Set(hosts).size).toBe(2);
+        expect(hosts.every((host) => EXPECTED_HOSTS.has(host))).toBe(true);
+    });
+
+    // Every region would refuse the same prompt, so a retry only adds a call.
+    it("fails a content-policy refusal without trying another region", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            Response.json(
+                {
+                    error: {
+                        code: "content_policy_violation",
+                        message:
+                            "Your request was rejected as a result of our safety system.",
+                    },
+                },
+                { status: 403 },
+            ),
+        );
+
+        await expect(
+            callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
+        ).rejects.toMatchObject({ upstreamStatus: 403 });
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
 });
 
 describe("GPT Image OpenAI fallback routing", () => {

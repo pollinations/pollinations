@@ -8,6 +8,7 @@ import {
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
     createOpenRouterModelConfig,
@@ -692,6 +693,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-glimmer-30b",
         "together",
     ),
+    "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
+        "meta/muse-wonder",
+        "meta",
+    ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
@@ -709,6 +714,22 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "google-vertex/global",
     ),
+    // The base slug "google-ai-studio" also matches its priority tier (1.8x the
+    // rate) and its flex tier, so both are excluded explicitly.
+    "gemini-4-argon-openrouter-ai-studio": () =>
+        createOpenRouterModelConfig({
+            model: "google/gemini-4-argon",
+            defaultOptions: {
+                provider: {
+                    only: ["google-ai-studio"],
+                    ignore: [
+                        "google-ai-studio/priority",
+                        "google-ai-studio/flex",
+                    ],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
         "gemini-2.5-flash-lite",
         "google-ai-studio",
@@ -969,6 +990,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.8-flash",
         "global",
     ),
+    "google/gemini-4-argon": createVertexGeminiConfig(
+        "gemini-4-argon",
+        "global",
+    ),
 
     // Dedicated Gemini Search services use the same direct Vertex adapter.
     "vertex/gemini-3.5-flash-lite": createVertexGeminiConfig(
@@ -1032,6 +1057,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
         }),
+    "meta/muse-wonder-1.0:vercel": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-wonder-1.0",
+        }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
@@ -1079,6 +1108,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "stepfun-ai/Step-3.7-Flash",
         }),
+
+    // -- InferencePort (Lightning routers) ------------------------------------
+    // "lightning" is the router id that `lightning-text-v2` aliases.
+    "inferenceport-lightning-text-v2": () =>
+        createInferencePortModelConfig({ model: "lightning" }),
+    "inferenceport-lightning-text-v2.1": () =>
+        createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

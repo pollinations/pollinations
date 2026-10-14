@@ -358,11 +358,13 @@ describe("gen worker routing", () => {
         expect(body.skills.map((s) => s.name)).toEqual([
             "polli",
             "pollinations-api",
+            "bring-your-own-pollen",
             "quest-contributor",
         ]);
-        const [polli, apiSkill] = body.skills;
+        const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
+        expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");
@@ -398,6 +400,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {
             expect(llms).toContain(`/.well-known/agent-skills/${path}`);

@@ -112,7 +112,7 @@
 .polli-textarea:focus-visible {
     border-color: var(--polli-color-border);
     outline: 2px solid var(--polli-color-focus);
-    outline-offset: 2px;
+    outline-offset: -1px;
 }
 
 .polli-input-shell {
@@ -125,7 +125,7 @@
 .polli-input-shell:focus-within {
     border-color: var(--polli-color-border);
     outline: 2px solid var(--polli-color-focus);
-    outline-offset: 2px;
+    outline-offset: -1px;
 }
 
 .polli-input-shell > .polli-input,
@@ -194,7 +194,7 @@
 .polli-control:focus-visible,
 .polli-slider:focus-visible {
     outline: 2px solid var(--polli-color-focus);
-    outline-offset: 2px;
+    outline-offset: -1px;
 }
 
 .polli-control[data-intent="danger"]:focus-visible {

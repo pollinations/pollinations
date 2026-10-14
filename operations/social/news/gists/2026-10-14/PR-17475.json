@@ -1,0 +1,33 @@
+{
+  "pr_number": 17475,
+  "title": "fix(ui): connect styled controls to field labels",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17475",
+  "merged_at": "2026-10-14T18:22:06Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Styled Input and Textarea controls now connect to their field labels, helper or error descriptions, and invalid state while preserving caller-provided ARIA attributes and existing asChild wrappers. Clicking labels can focus the corresponding Playground and Websim text controls. Playground’s two Dimensions inputs now sit in a group named by the visible Dimensions text instead of sharing a single field ID; redundant Language and Length ARIA labels were removed, and the Dimensions row retains its responsive alignment. FieldStack now documents its one-text-control-per-field convention. @pollinations/ui was bumped from 0.1.0-alpha.13 to 0.1.0-alpha.14, with accessibility regression tests added.",
+    "keywords": [
+      "accessibility",
+      "field labels",
+      "input",
+      "textarea",
+      "Playground",
+      "Websim"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17475.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and gently ties a glowing label tag to its matching text field while a pair of Dimensions boxes sit together beneath one sign; lime green (#ecf874) code-plants grow beside a warm cream CRT screen. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium within the scene, with consistent rounded proportions, strictly pixel art and never realistic, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes with chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-14T18:23:28.900350+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "68607663c6c74f41855c1d3c122fbea14a2725cb",
+  "announcements": []
+}

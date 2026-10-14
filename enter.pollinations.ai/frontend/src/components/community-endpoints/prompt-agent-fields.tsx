@@ -41,8 +41,6 @@ export function PromptAgentFields({
                         name="prompt-agent-system-prompt"
                         value={form.systemPrompt}
                         placeholder="You are a helpful assistant that…"
-                        rows={1}
-                        style={{ minHeight: "2.625rem" }}
                         maxLength={8000}
                         disabled={disabled}
                         onChange={(e) =>

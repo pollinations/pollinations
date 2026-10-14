@@ -117,7 +117,7 @@ curl "$BASE_URL/generate/image/test6?model=flux&image=https://example.com/image.
   -H "Authorization: Bearer $TOKEN"
 
 # Transparent background
-curl "$BASE_URL/generate/image/test7?model=flux&transparent=true" \
+curl "$BASE_URL/generate/image/test7?model=gptimage&transparent=true" \
   -H "Authorization: Bearer $TOKEN"
 
 # Save to file
@@ -594,7 +594,7 @@ https://enter.pollinations.ai/authorize?response_type=code&redirect_uri=YOUR_CAL
 | `response_type` | `code` for OAuth code flow; omit for legacy fragment flow | `code` |
 | `code_challenge` | PKCE S256 challenge for code flow | `abc...` |
 | `code_challenge_method` | Must be `S256` for code flow | `S256` |
-| `models` | Comma-separated model categories; a model ID allows its whole category | `text,image` |
+| `models` | Comma-separated model categories and model IDs; a model ID allows only that model | `text,image` |
 | `budget` | Pollen budget limit | `10` |
 | `expiry` | Expiry in days (default: 7) | `7` |
 | `scope` | Account permissions; `permissions` is legacy alias | `profile usage` |

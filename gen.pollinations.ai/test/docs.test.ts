@@ -127,6 +127,13 @@ describe("docs routes", () => {
                 "/api/account/quests/rewards": {
                     get: { tags: ["👤 Account"] },
                 },
+                // Drifted enter tag literals must still land in gen's groups.
+                "/api/account/integrations": {
+                    get: { tags: ["🔗 Account"] },
+                },
+                "/api/account/my-models/endpoint-agents": {
+                    post: { tags: ["Community Agents "] },
+                },
                 "/api/customer/portal": { get: { tags: ["Customer"] } },
                 "/api-keys": { get: { tags: ["Customer"] } },
                 "/generate/text/{prompt}": { get: { tags: ["Old"] } },
@@ -321,6 +328,39 @@ describe("docs routes", () => {
         expect(agentsGet?.description).toContain("account:keys");
         expect(agentsGet?.tags).toEqual(["Community Agents"]);
 
+        const integrationsGet = (
+            schema.paths["/account/integrations"] as Record<string, unknown>
+        )?.get as Record<string, unknown> | undefined;
+        expect(integrationsGet?.tags).toEqual(["Account"]);
+
+        const endpointAgentsPost = (
+            schema.paths["/account/my-models/endpoint-agents"] as Record<
+                string,
+                unknown
+            >
+        )?.post as Record<string, unknown> | undefined;
+        expect(endpointAgentsPost?.tags).toEqual(["Community Agents"]);
+
+        // Every operation tag must be one gen declares, or Scalar shows an
+        // extra, undescribed sidebar group.
+        const declaredTags = new Set(schema.tags.map((tag) => tag.name));
+        const undeclared = Object.entries(schema.paths).flatMap(
+            ([path, pathItem]) =>
+                Object.entries(pathItem as Record<string, unknown>).flatMap(
+                    ([method, operation]) =>
+                        (
+                            ((operation as { tags?: unknown })?.tags ??
+                                []) as string[]
+                        )
+                            .filter((tag) => !declaredTags.has(tag))
+                            .map((tag) => `${method} ${path}: ${tag}`),
+                ),
+        );
+        expect(undeclared).toEqual([]);
+        expect(new Set(schema.tags.map((tag) => tag.name)).size).toBe(
+            schema.tags.length,
+        );
+
         // The catalog is unauthenticated → marked public (security: []).
         const questsCatalogGet = (
             schema.paths["/quests/catalog"] as Record<string, unknown>
@@ -386,6 +426,76 @@ describe("docs routes", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
+    });
+
+    it("serves the guide as Markdown when an agent prefers it", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "text/markdown" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe(
+            "text/markdown; charset=utf-8",
+        );
+        expect(response.headers.get("Vary")).toBe("Accept");
+        expect(response.headers.get("Cache-Control")).toBe(
+            "private, max-age=3600",
+        );
+        const markdown = await response.text();
+        expect(markdown).toContain("Base URL:");
+        expect(markdown).toContain("POST /v1/embeddings");
+        expect(markdown).not.toContain("<html");
+    });
+
+    it("keeps the HTML reference for clients that do not ask for Markdown", async () => {
+        const ctx = createExecutionContext();
+        // curl and generic clients send */*.
+        const generic = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: { Accept: "*/*" },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(generic.headers.get("Content-Type")).toContain("text/html");
+
+        // Section endpoints are plain text and are not negotiated.
+        const section = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=cli",
+                {
+                    headers: { Accept: "text/markdown" },
+                },
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(section.headers.get("Content-Type")).toContain("text/plain");
+        await waitOnExecutionContext(ctx);
+    });
+
+    it("keeps the HTML reference for browser-style Accept headers", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs", {
+                headers: {
+                    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
+            }),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(response.headers.get("Vary")).toBe("Accept");
     });
 
     it("serves the OpenAPI schema as YAML when ?format=yaml", async () => {

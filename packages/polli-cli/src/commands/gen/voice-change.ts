@@ -1,9 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { requireFile } from "../../lib/input-file.js";
 import { mimeTypeFor } from "../../lib/mime.js";
-import { fail, getOutputMode, printInfo, printMeta } from "../../lib/output.js";
+import { getOutputMode, printInfo, printMeta } from "../../lib/output.js";
 
 export function createVoiceChangeCommand() {
     return new Command("voice-change")
@@ -21,9 +22,7 @@ export function createVoiceChangeCommand() {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `voice.${opts.format}`;
 
-            if (!existsSync(file)) {
-                fail(`File not found: ${file}`);
-            }
+            requireFile(file);
 
             const formData = new FormData();
             formData.append(

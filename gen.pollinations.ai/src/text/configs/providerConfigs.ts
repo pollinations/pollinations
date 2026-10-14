@@ -80,6 +80,7 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
         ...overrides,
     });
 }
@@ -117,6 +118,16 @@ export function createDeepInfraModelConfig(
     return createOpenAICompatibleConfig(
         "https://api.deepinfra.com/v1/openai",
         process.env.DEEPINFRA_API_KEY,
+        overrides,
+    );
+}
+
+export function createInferencePortModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inferenceport.ai/v1",
+        textEnvironmentValue("INFERENCEPORT_API_KEY"),
         overrides,
     );
 }

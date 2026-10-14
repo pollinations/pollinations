@@ -27,19 +27,17 @@ on:
       - regenerate-apidocs
 
 jobs:
-  # The production workflow deploys enter, gen and media in a single run, so its
-  # aggregate conclusion says nothing about gen specifically: an enter-only run
-  # succeeds without ever touching gen, and an enter failure marks the whole run
-  # failed even when gen deployed cleanly. Ask the jobs API what `deploy-gen`
-  # actually did instead of trusting the run-level conclusion.
+  # All three workers contribute to the merged OpenAPI schema. Check each
+  # deployment job: the live reference changes after any successful deploy,
+  # even when another service was skipped or failed in the same run.
   gate:
     runs-on: ubuntu-latest
     permissions:
       actions: read
     outputs:
-      gen_deployed: ${{ steps.check.outputs.gen_deployed }}
+      schema_deployed: ${{ steps.check.outputs.schema_deployed }}
     steps:
-      - name: Check whether gen deployed
+      - name: Check whether a schema service deployed
         id: check
         env:
           GH_TOKEN: ${{ github.token }}
@@ -50,21 +48,17 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" != "workflow_run" ]; then
             echo "Triggered by $EVENT_NAME - regenerating unconditionally."
-            echo "gen_deployed=true" >> "$GITHUB_OUTPUT"
+            echo "schema_deployed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          conclusion=$(gh api "/repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate \
-            --jq '.jobs[] | select(.name == "deploy-gen") | .conclusion')
-          echo "deploy-gen conclusion: ${conclusion:-<absent>}"
-          if [ "$conclusion" = "success" ]; then
-            echo "gen_deployed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "gen_deployed=false" >> "$GITHUB_OUTPUT"
-          fi
+          deployed=$(gh api "/repos/$REPO/actions/runs/$RUN_ID/jobs" --paginate --slurp | \
+            jq -r 'any(.[].jobs[]; (.name == "deploy-gen" or .name == "deploy-enter" or .name == "deploy-media") and .conclusion == "success")')
+          echo "Schema service deployed: $deployed"
+          echo "schema_deployed=$deployed" >> "$GITHUB_OUTPUT"
 
   regenerate-docs:
     needs: gate
-    if: needs.gate.outputs.gen_deployed == 'true'
+    if: needs.gate.outputs.schema_deployed == 'true'
     runs-on: ubuntu-latest
     # Serialize runs so two back-to-back production deploys (or manual dispatches)
     # cannot race on the `docs/apidocs-sync` branch tip. The second run waits

@@ -5,6 +5,7 @@ const unitPattern =
 const moneyPattern =
     /^(?:\$\s*|USD\s+)(\d+(?:\.\d+)?)(?:\s*\/\s*(MTok|M tokens|1M tokens))?$/i;
 const escaped = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const currencyCodes = new Set(Intl.supportedValuesOf("currency"));
 
 // Formatting alone may differ; checkpoint versions and suffixes stay intact.
 export function exactModelIdentity(value, upstreamModel) {
@@ -37,9 +38,7 @@ export function extractPrices(text, { model, upstreamModel, category, quote }) {
     }
     const foreignCurrency = (value) =>
         [...value.matchAll(/\b[A-Z]{3}\b/g)].some(
-            ([code]) =>
-                code !== "USD" &&
-                Intl.supportedValuesOf("currency").includes(code),
+            ([code]) => code !== "USD" && currencyCodes.has(code),
         );
     const standard = /^(?:#{1,6}\s*)?standard(?: pricing(?: data)?)?$/i;
     const restriction =

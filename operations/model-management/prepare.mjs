@@ -177,6 +177,15 @@ export function mentions(text, name) {
 
 // Copy only bounded, contiguous source text; semantic support is audited later.
 export function officialCandidates(models, sources, gaps = []) {
+    const seen = new Set();
+    const pages = sources.filter((source) => {
+        if (source.status !== "fetched" || typeof source.text !== "string")
+            return true;
+        const key = JSON.stringify([source.url, source.text]);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
     const pricingProviders =
         /(?:^|\.)(?:microsoft\.com|azure\.com|fireworks\.ai|amazon\.com|openai\.com|anthropic\.com|claude\.com|google\.com|x\.ai|deepseek\.com|mistral\.ai|cohere\.com|together\.ai|groq\.com|cerebras\.ai|nvidia\.com|cloudflare\.com|replicate\.com|fal\.ai|runware\.ai|bfl\.ai|recraft\.ai|ideogram\.ai|minimax\.io|kimi\.ai|aliyun\.com|alibabacloud\.com|byteplus\.com|digitalocean\.com|openrouter\.ai)$/;
     const quoteFor = (text, name, predicate = () => true, score = () => 0) => {
@@ -201,7 +210,7 @@ export function officialCandidates(models, sources, gaps = []) {
             const routes = [];
             const unresolved = [];
             const checkpoint = model.name.split("/").at(-1);
-            for (const source of sources) {
+            for (const source of pages) {
                 if (
                     source.status !== "fetched" ||
                     typeof source.text !== "string"

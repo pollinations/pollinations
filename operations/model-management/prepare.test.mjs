@@ -454,6 +454,34 @@ test("shared primary catalogs enter only exact matching groups and are not fetch
     assert.equal(f.reads.length, 0);
 });
 
+test("repeated exact primary pages preserve facts without repeating whole-page parsing", () => {
+    let reads = 0;
+    const text = `Alpha-v3 is available through a serverless API.
+Prices per 1M tokens.
+| Model | Input | Output |
+| --- | --- | --- |
+| Alpha-v3 | $0.20 | $0.40 |`;
+    const source = {
+        id: "s1",
+        url: "https://fireworks.ai/pricing",
+        status: "fetched",
+        get text() {
+            reads++;
+            return text;
+        },
+    };
+    const models = [{ name: "maker/Alpha-v3", category: "text" }];
+    const single = officialCandidates(models, [source]);
+    const singleReads = reads;
+    reads = 0;
+    const repeated = officialCandidates(models, Array(128).fill(source));
+    assert.deepEqual(repeated, single);
+    assert.ok(
+        reads <= singleReads + 2 * 127,
+        "Duplicate source pages must not repeat model and pricing scans",
+    );
+});
+
 function fixture(results, decisions = {}) {
     const searches = [],
         reads = [],

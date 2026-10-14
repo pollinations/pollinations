@@ -120,6 +120,7 @@ export const sandboxCommand = new Command("sandbox")
                         // A paused sandbox's endAt is when it paused.
                         sandboxes.map((sandbox) => ({
                             id: sandbox.sandboxID,
+                            name: sandbox.metadata?.name,
                             template: sandbox.alias ?? sandbox.templateID,
                             size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
                             state:

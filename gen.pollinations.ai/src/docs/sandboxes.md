@@ -28,6 +28,7 @@ polli sandbox kill <id>
 - cron runs in every sandbox, but only while the sandbox runs, so keep it running with `--timeout 0` for jobs around the clock. A paused sandbox runs nothing, and `@reboot` never fires, since sandboxes resume instead of booting. Your crontab starts with a `PATH` line that finds node, polli and uv; keep it when you replace the crontab.
 - Both include [rclone](https://rclone.org) to mount a bucket as a folder, for big files that should outlive the sandbox: set it up once with `rclone config` (S3, R2, Google Cloud Storage and others), then `mkdir ~/bucket && rclone mount <remote>:<bucket> ~/bucket --daemon --vfs-cache-mode full`. The mount stays through pause and resume. Buckets are slow with many small files, so keep git repos, `node_modules` and databases on the sandbox's own disk, which `kill` deletes.
 - `polli sandbox create <template>` starts another E2B template instead, such as `claude` (Claude Code), `codex`, `opencode` or `amp` (2 vCPU, 2 GB each), or [any public one](https://docs.e2b.dev/use-cases/coding-agents). Bigger templates cost more per second.
+- A sandbox's name is its E2B `metadata.name`, set at creation: the dashboard suggests one such as `brave-otter`, and API callers pass `"metadata": {"name": "…"}`. `polli sandbox list` shows it. E2B can't change metadata later, so a name stays as created.
 - `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.
 

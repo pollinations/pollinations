@@ -1,0 +1,32 @@
+{
+  "pr_number": 17412,
+  "title": "fix(sandbox): drop Hermes Agent from the sandbox templates",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17412",
+  "merged_at": "2026-10-14T09:43:05Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Removed the unused Hermes Agent installation from the pollinations and pollinations-large sandbox templates, cutting roughly 2.5 GB from each image: 2.4 GB in ~/.hermes and 0.1 GB for its Python 3.14 installation. The preinstalled harnesses are now Claude Code, OpenCode, Pi, and OpenClaw. The first-login harness loop no longer attempts Hermes, avoiding a failure log, and the sandbox docs reflect the new list. `polli harness hermes on` still works after Hermes is installed separately. Smaller images can build faster, but free disk in a new sandbox remains governed by `--min-free-disk-mb` (50 GiB on large).",
+    "keywords": [
+      "sandboxes",
+      "E2B",
+      "Hermes Agent",
+      "harnesses",
+      "image size"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17412.jpg",
+    "prompt": "In a cozy pixel art workshop, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; small in the scene and wearing a tiny tool belt, she gently lifts a box labeled 'HERMES' out of a sandbox template beside a CRT monitor and flowering code-plants, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) details."
+  },
+  "generated_at": "2026-10-14T09:45:18.374041+00:00",
+  "area": "Agents & agent tools",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "a9f9ceee1bdb3b6f5ab8b86f07fb05af5e6d6c54",
+  "announcements": []
+}

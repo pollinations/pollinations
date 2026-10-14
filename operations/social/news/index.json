@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T15:52:30.462761+00:00",
+  "generated_at": "2026-10-14T23:37:01.458586+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -8949,6 +8949,48 @@
       "date": "2026-10-11",
       "pr": 17130,
       "url": "https://github.com/pollinations/pollinations/pull/17130"
+    },
+    {
+      "id": "pr-17507:POST /account/my-models/endpoint-agents",
+      "endpoint": "POST /account/my-models/endpoint-agents",
+      "summary": "Create Endpoint Agent",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:capabilities",
+          "before": null,
+          "after": {
+            "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-14",
+      "pr": 17507,
+      "url": "https://github.com/pollinations/pollinations/pull/17507"
+    },
+    {
+      "id": "pr-17507:POST /account/my-models/{id}/update",
+      "endpoint": "POST /account/my-models/{id}/update",
+      "summary": "Update My Model",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:capabilities",
+          "before": null,
+          "after": {
+            "type": "\"tool_calling\"|\"reasoning\"|\"web_search\"|\"code_execution\"|\"pollinations_models\"[]",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-14",
+      "pr": 17507,
+      "url": "https://github.com/pollinations/pollinations/pull/17507"
     }
   ],
   "highlights": [

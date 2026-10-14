@@ -205,7 +205,8 @@ jobs:
           assert.ok(issue.body.split('\n').every(line=>line.startsWith('- ')));
           JS
   native-validation:
-    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.discovery_only && !inputs.scrape_only && !inputs.decisions_only
+    if: github.ref == 'refs/heads/codex/model-researcher-e2e' && inputs.native_only && !inputs.audit_only && !inputs.scrape_only && !inputs.decisions_only
+    needs: discovery-validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -221,14 +222,19 @@ jobs:
       - run: python -m pip install 'scrapling[fetchers]==0.4.15'
       - uses: actions/download-artifact@v4
         with:
-          name: model-research-38469531452-1
-          run-id: 38469531452
+          name: model-research-38523933029-1
+          run-id: 38523933029
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/saved-corpus
+      - uses: actions/download-artifact@v4
+        with:
+          name: discovery-validation-${{ github.run_id }}
+          path: ${{ runner.temp }}/discovery-validation
       - name: Replay copied official evidence through native Jev
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
           CORPUS_OUT: ${{ runner.temp }}/saved-corpus
+          DISCOVERY_OUT: ${{ runner.temp }}/discovery-validation
           RESEARCH_OUT: ${{ runner.temp }}/native-validation
         run: node .github/scripts/model-researcher-corpus-validation.mjs
       - uses: actions/upload-artifact@v4
@@ -253,6 +259,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install 'scrapling[fetchers]==0.4.15'
+      - run: python -m patchright install --with-deps chromium
       - name: Run capped live discovery
         env:
           POLLINATIONS_API_KEY: ${{ secrets.PLN_GITHUB_POLLY_KEY }}

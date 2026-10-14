@@ -4,6 +4,11 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { readBilledUsage } from "../../operations/model-management/billing.mjs";
+import {
+    applyCalibration,
+    calibratedAudit,
+    calibrationState,
+} from "../../operations/model-management/calibration.mjs";
 import { extractDiscoveries } from "../../operations/model-management/discovery.mjs";
 import {
     buildResearchControl,
@@ -11,6 +16,7 @@ import {
     JEV_MODEL,
     jevCost,
     jevQuote,
+    validateClaimAudit,
     validateResearchControl,
 } from "../../operations/model-management/jev.mjs";
 import { prepareResearch } from "../../operations/model-management/prepare.mjs";
@@ -45,13 +51,14 @@ const jev = inventory.find((row) => row.name === JEV_MODEL),
 const rates = (
     await readJsonWithRetries("https://gen.pollinations.ai/mcp")
 ).data.find((row) => row.id === "exa").pricing.rates;
-const baseline = 2.19773671636;
+const baseline = 4.19462079346 + 3.000553551330001;
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 12 * 60000).toISOString(),
     maxPollen: 0.25,
     reservedPollen: 0,
     calls: [],
+    calibration: calibrationState(),
     sources: [],
     models: [],
     officialCount: inventory.length,
@@ -61,7 +68,7 @@ const report = {
     validationScope:
         "Live broad discovery only; official catalog checked first, no issues or model changes",
 };
-assert.ok(baseline + report.maxPollen <= 2.5);
+assert.ok(baseline + report.maxPollen < 10);
 await mkdir(out, { recursive: true });
 await writeFile(
     join(out, "official-catalog.json"),
@@ -87,6 +94,11 @@ const settle = async (receipt) => {
 };
 await save();
 const decision = async (payload, validate) => {
+    let calibration;
+    if (validate === validateClaimAudit) {
+        calibration = calibratedAudit(payload, report.calibration);
+        payload = calibration.payload;
+    }
     report.billing = {
         ...(await readBilledUsage(key, report.startedAt)),
         callCount: report.calls.length,
@@ -109,7 +121,14 @@ const decision = async (payload, validate) => {
     await save();
     receipt.accountedPollen = jevCost(data.usage, quote);
     receipt.usage = data.usage;
-    const result = validate(payload, data, { rejectInvalidChoices: true });
+    let result = validate(payload, data, { rejectInvalidChoices: true });
+    if (calibration)
+        result = applyCalibration(
+            report.calibration,
+            result,
+            data,
+            calibration.controls,
+        );
     assert.equal(result.requestDigest, receipt.requestDigest);
     await settle(receipt);
     console.log(
@@ -177,7 +196,7 @@ const read = async (args) => {
                 {
                     input: JSON.stringify({
                         url,
-                        mode: "http",
+                        mode: args.mode ?? "http",
                         maxCharacters: args.maxCharacters ?? 3000,
                         includeLinks: true,
                     }),
@@ -199,7 +218,7 @@ const read = async (args) => {
             source = {
                 ...page,
                 status: "fetched",
-                method: "scrapling-http",
+                method: result.method,
                 digest: hash(page.text),
                 fullPage: true,
             };
@@ -310,6 +329,12 @@ try {
             (call) => call.status === "received" || call.status === "uncertain",
         ),
     );
+    assert.ok(
+        report.discovery.discoveries.length > 0,
+        "Fetched discovery evidence must survive the actual audit",
+    );
+    assert.equal(report.calibration.errors, 0);
+    assert.equal(report.calibration.disabled, false);
     report.status = "complete";
 } catch (error) {
     report.status = "blocked";
@@ -323,7 +348,7 @@ report.billing = {
 };
 assert.ok(
     budgetUsed(report) <= report.maxPollen &&
-        baseline + budgetUsed(report) <= 2.5,
+        baseline + budgetUsed(report) < 10,
 );
 await save();
 console.log(

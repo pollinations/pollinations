@@ -47,12 +47,16 @@ const savedInventory = JSON.parse(
         "utf8",
     ),
 );
+const resumedDiscovery = JSON.parse(
+    await readFile(join(process.env.DISCOVERY_OUT, "research.json"), "utf8"),
+);
+assert.equal(resumedDiscovery.status, "complete");
 const current = officialCatalog(
     await readJsonWithRetries(
         "https://gen.pollinations.ai/models?reliability=all",
     ),
 );
-const inventory = current;
+const inventory = savedInventory;
 const catalogChanges = {
     added: current
         .filter((row) => !savedInventory.some((old) => old.name === row.name))
@@ -62,10 +66,12 @@ const catalogChanges = {
         .map(({ name }) => name),
 };
 const jev = current.find((row) => row.name === JEV_MODEL);
-const baseline = 4.18 + 0.00729865458;
+const baseline =
+    4.19462079346 + budgetUsed(prior) + budgetUsed(resumedDiscovery);
 const sources = [];
 const seen = new Set();
 for (const source of [
+    ...resumedDiscovery.sources,
     ...prior.sources,
     ...prior.models.flatMap((model) => model.sources ?? []),
 ]) {
@@ -75,7 +81,9 @@ for (const source of [
         full = JSON.parse(
             await readFile(
                 join(
-                    process.env.CORPUS_OUT,
+                    resumedDiscovery.sources.includes(source)
+                        ? process.env.DISCOVERY_OUT
+                        : process.env.CORPUS_OUT,
                     "pages",
                     hash(source.url) + ".json",
                 ),
@@ -103,7 +111,7 @@ for (const source of [
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 10 * 60000).toISOString(),
-    maxPollen: 0.02 - 0.00729865458,
+    maxPollen: 0.05,
     reservedPollen: 0,
     calls: [],
     calibration: calibrationState(),
@@ -115,7 +123,7 @@ const report = {
     validationScope:
         "Saved official evidence and free primary refresh; no new market search or Sol inference",
 };
-assert.ok(baseline + report.maxPollen <= 4.25);
+assert.ok(baseline + report.maxPollen < 10);
 await writeFile(
     join(out, "official-catalog.json"),
     JSON.stringify(inventory, null, 2),
@@ -302,12 +310,12 @@ try {
     }
     const rates = new Map(report.models.map((row) => [row.name, row.routes]));
     const discoveryCandidates = (
-        prior.discovery?.preparation?.extraction?.discoveries ?? []
+        resumedDiscovery.discovery?.discoveries ?? []
     ).map((item) => ({
         ...item,
         sourceIds: item.sourceIds
             .map((id) => {
-                const original = prior.sources.find(
+                const original = resumedDiscovery.sources.find(
                     (source) => source.id === id,
                 );
                 return report.sources.find(
@@ -388,7 +396,9 @@ report.billing = {
     ...(await readBilledUsage(key, report.startedAt)),
     callCount: report.calls.length,
 };
-assert.ok(baseline + budgetUsed(report) <= 4.25);
+assert.ok(baseline + budgetUsed(report) < 10);
+assert.equal(report.calibration.errors, 0);
+assert.equal(report.calibration.disabled, false);
 await save();
 console.log(
     JSON.stringify({

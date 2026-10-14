@@ -1,11 +1,14 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
+import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { act, create } from "react-test-renderer";
+import { describe, expect, it, vi } from "vitest";
 import {
     AccountIdentity,
     AccountIdentityLink,
 } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { ConfirmationDialog } from "../compositions/ConfirmationDialog.tsx";
 import { FieldStack } from "../compositions/FieldStack.tsx";
 import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
@@ -18,10 +21,136 @@ import { DropdownItem } from "./DropdownItem.tsx";
 import { Field } from "./Field.tsx";
 import { IconButton } from "./IconButton.tsx";
 import { Input } from "./Input.tsx";
+import { Slider } from "./Slider.tsx";
 import { TableHeaderCell } from "./Table.tsx";
 import { Textarea } from "./Textarea.tsx";
 
 describe("shared control accessibility", () => {
+    it.each([false, true])(
+        "honors cancelDisabled=%s for dialog dismissal",
+        (cancelDisabled) => {
+            const onCancel = vi.fn();
+            const dialog = ConfirmationDialog({
+                open: true,
+                title: "Delete item?",
+                confirmLabel: "Delete",
+                cancelDisabled,
+                onConfirm: () => {},
+                onCancel,
+            });
+            dialog.props.onOpenChange(true);
+            expect(onCancel).not.toHaveBeenCalled();
+            dialog.props.onOpenChange(false);
+            expect(onCancel).toHaveBeenCalledTimes(cancelDisabled ? 0 : 1);
+        },
+    );
+
+    it("tracks uncontrolled slider input while preserving handlers and progress overrides", async () => {
+        const onInput = vi.fn();
+        const onChange = vi.fn();
+        const props = { defaultValue: 25, onInput, onChange };
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer!: ReturnType<typeof create>;
+        try {
+            await act(async () => {
+                renderer = create(<Slider {...props} />);
+            });
+            const input = () => renderer.root.findByType("input").props;
+            expect(input().style["--polli-slider-progress"]).toBe("25%");
+            const event = { currentTarget: { value: "75" } };
+            await act(async () => input().onInput(event));
+            expect(input().style["--polli-slider-progress"]).toBe("75%");
+            expect(input().value).toBeUndefined();
+            expect(input().defaultValue).toBe(25);
+            expect(onInput).toHaveBeenCalledOnce();
+            expect(onInput).toHaveBeenCalledWith(event);
+            input().onChange(event);
+            expect(onChange).toHaveBeenCalledOnce();
+            expect(onChange).toHaveBeenCalledWith(event);
+
+            await act(async () => {
+                renderer?.update(<Slider {...props} progress={40} />);
+                input().onInput({ currentTarget: { value: "90" } });
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("40%");
+            await act(async () => renderer?.update(<Slider {...props} />));
+            expect(input().style["--polli-slider-progress"]).toBe("90%");
+        } finally {
+            await act(async () => renderer?.unmount());
+            vi.unstubAllGlobals();
+        }
+    });
+
+    it("keeps controlled slider progress tied to value", async () => {
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer!: ReturnType<typeof create>;
+        try {
+            await act(async () => {
+                renderer = create(<Slider min={10} max={30} value={15} />);
+            });
+            const input = () => renderer.root.findByType("input").props;
+            expect(input().style["--polli-slider-progress"]).toBe("25%");
+            await act(async () => {
+                input().onInput({ currentTarget: { value: "25" } });
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("25%");
+            await act(async () => {
+                renderer?.update(<Slider min={10} max={30} value={25} />);
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("75%");
+        } finally {
+            await act(async () => renderer?.unmount());
+            vi.unstubAllGlobals();
+        }
+        expect(renderToStaticMarkup(<Slider min={10} max={30} />)).toContain(
+            "--polli-slider-progress:50%",
+        );
+    });
+
+    it("resynchronizes slider fill after form reset and preserves canceled resets and refs", async () => {
+        const form = new EventTarget();
+        const node = { value: "25", form };
+        const ref = createRef<HTMLInputElement>();
+        vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+        let renderer!: ReturnType<typeof create>;
+        try {
+            await act(async () => {
+                renderer = create(<Slider ref={ref} defaultValue={25} />, {
+                    createNodeMock: () => node,
+                });
+            });
+            const input = () => renderer.root.findByType("input").props;
+            expect(ref.current).toBe(node);
+            await act(async () => {
+                node.value = "75";
+                input().onInput({ currentTarget: node });
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("75%");
+            await act(async () => {
+                form.dispatchEvent(new Event("reset", { cancelable: true }));
+                // Browsers update the input after dispatching the reset event.
+                node.value = "25";
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("25%");
+            await act(async () => {
+                node.value = "75";
+                input().onInput({ currentTarget: node });
+            });
+            form.addEventListener("reset", (event) => event.preventDefault());
+            await act(async () => {
+                const allowed = form.dispatchEvent(
+                    new Event("reset", { cancelable: true }),
+                );
+                expect(allowed).toBe(false);
+            });
+            expect(input().style["--polli-slider-progress"]).toBe("75%");
+        } finally {
+            await act(async () => renderer?.unmount());
+            vi.unstubAllGlobals();
+        }
+        expect(ref.current).toBeNull();
+    });
+
     it.each([
         ["input", Input],
         ["textarea", Textarea],

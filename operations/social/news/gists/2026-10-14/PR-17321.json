@@ -1,0 +1,32 @@
+{
+  "pr_number": 17321,
+  "title": "feat: add context7.json so Context7 serves current Pollinations docs",
+  "author": "danhquach",
+  "url": "https://github.com/pollinations/pollinations/pull/17321",
+  "merged_at": "2026-10-14T09:36:39Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added a schema-validated context7.json that scopes Context7 indexing to public Pollinations guides, API docs, SDK, MCP, and polli CLI documentation, excluding apps, operations, internal services, tests, and contributor-only files. Its six agent rules point to gen.pollinations.ai, Bearer keys from enter.pollinations.ai/keys, live model listings, and the hosted MCP endpoint at gen.pollinations.ai/mcp/pollinations; they also say to keep sk_ keys server-side. A fork indexing test returned no retired npx @pollinations/mcp snippets or internal-doc snippets for an MCP setup query. Existing documentation content is unchanged.",
+    "keywords": [
+      "Context7",
+      "documentation",
+      "MCP",
+      "agent rules",
+      "indexing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17321.jpg",
+    "prompt": "In a cozy pixel art library, Polli sorts public API and MCP guidebooks onto a lime green (#ecf874) shelf beside a glowing terminal, while closed cabinets hold internal files and small code-plants grow nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and tiny librarian glasses; she is small-to-medium sized within the scene, sharing the frame with other elements—never oversized or dominating the image, strictly pixel art style, never realistic; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream and lavender tones and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-14T09:38:03.868243+00:00",
+  "area": "Docs & support",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "be1b2406a2ba07ff811212ed824a4acd0f9d9042",
+  "announcements": []
+}

@@ -1,0 +1,25 @@
+{
+  "pr": "https://github.com/pollinations/pollinations/pull/17449",
+  "at": "2026-10-14T14:23:03.121Z",
+  "startedAtUtc": "2026-10-14 14:22:58",
+  "model": "openai/gpt-6.1-sol",
+  "shell": "local:C:\\Users\\user\\AppData\\Local\\Temp\\pr-surgeon-ws",
+  "reviewOnly": false,
+  "pushRepo": "rekty/pollinations",
+  "seconds": 208.7,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 4065,
+    "output_tokens": 87,
+    "total_tokens": 4152
+  },
+  "pollenCost": 0,
+  "costSource": "unattributed",
+  "balance": {
+    "before": 102.82657245,
+    "after": 102.82657245,
+    "delta": 0
+  },
+  "calls": [],
+  "review": "## Review of https://github.com/pollinations/pollinations/pull/17449\n\nThe change correctly converts SDK image URL arrays to the edits endpoint’s documented object-array shape while preserving single-string inputs. The added regression test covers the previously broken multi-image request body; no defects are evident in the supplied diff.\n\nNo defects found in this diff.\n\nNo fix prepared.\n\n_model openai/gpt-6.1-sol_"
+}

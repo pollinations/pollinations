@@ -1,0 +1,34 @@
+{
+  "pr": "https://github.com/pollinations/pollinations/pull/17422",
+  "at": "2026-10-14T14:18:42.923Z",
+  "startedAtUtc": "2026-10-14 14:18:37",
+  "model": "openai/gpt-6.1-sol",
+  "shell": "local:C:\\Users\\user\\AppData\\Local\\Temp\\pr-surgeon-ws",
+  "reviewOnly": false,
+  "pushRepo": "rekty/pollinations",
+  "seconds": 31,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 9083,
+    "output_tokens": 1169,
+    "total_tokens": 10252
+  },
+  "pollenCost": 0.011031,
+  "costSource": "usage rows",
+  "balance": {
+    "before": 102.83760345,
+    "after": 102.82657245,
+    "delta": 0.011031
+  },
+  "calls": [
+    {
+      "type": "generate.text",
+      "model": "openai/gpt-6.1-sol",
+      "cost_usd": 0.011031,
+      "input_text_tokens": 3,
+      "output_text_tokens": 87,
+      "response_time_ms": 13491
+    }
+  ],
+  "review": "## Review of https://github.com/pollinations/pollinations/pull/17422\n\nThe enclosure parser rejects valid Link headers when rel is unquoted, follows another parameter, or contains multiple relation types. Parse the link parameters so these responses return their stored URL instead of throwing NO_VIDEO_URL.\n\n### Findings\n- **medium** `packages/sdk/src/client.ts:765` — Accept valid enclosure Link header forms: The regex requires rel=\"enclosure\" immediately after the URL. Valid headers such as <url>; type=\"video/mp4\"; rel=\"enclosure\", <url>; rel=enclosure, and <url>; rel=\"alternate enclosure\" all produce undefined and cause videoUrl() to throw despite an enclosure being present. The added regression tests only the exact format accepted by this regex.\n\n### Fix pushed\nBranch `fix-sdk-enclosure-link-parsing` on `rekty/pollinations` at `c29a8e41d9e768e1532547a0548990fa540e194b`.\n\n```\nc29a8e4 Fix enclosure Link parsing for valid parameter forms\n packages/sdk/src/client.test.ts |  2 +-\n packages/sdk/src/client.ts      | 18 +++++++++++++++---\n 2 files changed, 16 insertions(+), 4 deletions(-)\n```\n\n```diff\ndiff --git a/packages/sdk/src/client.ts b/packages/sdk/src/client.ts\n--- a/packages/sdk/src/client.ts\n+++ b/packages/sdk/src/client.ts\n@@ -757,12 +757,24 @@\n                 }\n \n                 const buffer = await response.arrayBuffer();\n                 const contentType =\n                     response.headers.get(\"content-type\") || \"video/mp4\";\n \n-                const storedUrl = response.headers\n-                    .get(\"link\")\n-                    ?.match(/<([^>]+)>;\\s*rel=\"enclosure\"/)?.[1];\n+                const storedUrl = Array.from(\n+                    (response.headers.get(\"link\") || \"\").matchAll(\n+                        /<([^>]+)>((?:[^\",<>]|\"(?:\\\\.|[^\"\\\\])*\")*)/g,\n+                    ),\n+                ).find((link) =>\n+                    Array.from(\n+                        link[2].matchAll(\n+                            /;\\s*([!#$%&'*+.^_`|~0-9A-Za-z-]+)\\s*=\\s*(?:\"((?:\\\\.|[^\"\\\\])*)\"|([^;\\s,]+))/g,\n+                        ),\n+                    ).some(\n+                        (param) =>\n+                            param[1].toLowerCase() === \"rel\" &&\n+                            (param[2] ?? param[3]).split(/\\s+/).includes(\"enclosure\"),\n+                    ),\n+                )?.[1];\n \n                 return { buffer, contentType, url: storedUrl };\n             },\ndiff --git a/packages/sdk/src/client.test.ts b/packages/sdk/src/client.test.ts\n--- a/packages/sdk/src/client.test.ts\n+++ b/packages/sdk/src/client.test.ts\n@@ -661,10 +661,15 @@\n         expect(await files[2].text()).toBe(\"RIFF sample audio\");\n         expect(await files[3].text()).toBe(\"WebM sample audio\");\n     });\n });\n \n describe(\"Pollinations video reference media\", () => {\n-    it(\"videoUrl returns the stored media enclosure URL for sharing\", async () => {\n+    it.each([\n+        'rel=\"enclosure\"',\n+        'type=\"video/mp4\"; rel=\"enclosure\"',\n+        'rel=enclosure',\n+        'rel=\"alternate enclosure\"',\n+    ])(\"videoUrl returns the stored media enclosure URL for sharing (%s)\", async (parameters) => {\n         const storedUrl = \"https://media.pollinations.ai/0123456789abcdef.mp4\";\n         fetchMock\n             .mockResolvedValueOnce(\ndiff --git a/packages/sdk/src/client.test.ts b/packages/sdk/src/client.test.ts\n--- a/packages/sdk/src/client.test.ts\n+++ b/packages/sdk/src/client.test.ts\n@@ -668,10 +668,10 @@\n         const storedUrl = \"https://media.pollinations.ai/0123456789abcdef.mp4\";\n         fetchMock\n             .mockResolvedValueOnce(\n                 new Response(new Uint8Array([0, 1]), {\n                     headers: {\n                         \"Content-Type\": \"video/mp4\",\n-                        Link: `<${storedUrl}>; rel=\"enclosure\"`,\n+                        Link: `<https://example.com/other>; title=\"a, b; rel=enclosure\"; rel=\"alternate\", <${storedUrl}>; ${parameters}`,\n                     },\n                 }),\n             )\n```\n\n_model openai/gpt-6.1-sol_"
+}

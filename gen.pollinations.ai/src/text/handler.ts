@@ -165,7 +165,7 @@ export async function generateChatAttempt(
     const result = assembled
         ? await chatStreamToCompletion(response)
         : response;
-    if (!requestData.stream) requireChatCompletionUsage(result);
+    if (assembled || !attemptData.stream) requireChatCompletionUsage(result);
     return buffered ? completionToChatStream(result) : result;
 }
 

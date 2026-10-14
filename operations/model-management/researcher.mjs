@@ -3476,11 +3476,11 @@ export async function main(env = process.env) {
             task: "Shared catalog/pricing research for these official models. Batch one query naming the covered models per preferred provider and alternatives (challenge). Fetch primary publisher/provider model and pricing pages for EVERY model, using focus and saved sections; do not spend all fetches on the easiest model. When batch search misses a model, target its exact checkpoint in alternatives. Preserve complete workload prices and conditions; a price for one resolution is not a universal price. Verify each exact model separately; unknowns name the attempted source and remaining gap. Use prepared evidence when supplied and verify directly. For unprepared tasks finish in six turns: plan; batch search; batch fetch; follow essential gaps; verify; submit digest.",
             models,
             discoveryLeads: [
+                ...(report.discovery.discoveries ?? []),
                 ...(report.providerIndex?.providers ?? []).filter(
                     ({ modelNames }) =>
                         models.some(({ name }) => modelNames.includes(name)),
                 ),
-                ...(report.discovery.discoveries ?? []),
             ],
         });
         const searched = new Map(

@@ -1,7 +1,7 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import { chunked, expressPage, VM_CORS } from "./origin.ts";
+import { expressPage, VM_CORS } from "./origin.ts";
 
 // The $0.01 x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
 // for GET requests outside the free limit. origin.ts loads this module only
@@ -128,19 +128,13 @@ async function etag(bytes: ArrayBuffer) {
 /**
  * Express wrote the payment middleware's own responses: its Content-Type
  * strings, weak ETag on JSON and X-Powered-By, after the VM's CORS headers.
- * The paywall page reached clients without Content-Length. Generated
- * responses and error pages already have them.
+ * Generated responses and error pages already have them.
  */
 async function expressHeaders(response: Response) {
     if (!PAYWALL_STATUSES.includes(response.status)) return response;
     const headers = new Headers(response.headers);
     const body = await response.arrayBuffer();
     const type = headers.get("content-type") ?? "";
-    const html = /^text\/html/i.test(type);
-    if (html) {
-        headers.set("Content-Type", "text/html; charset=utf-8");
-        headers.delete("Content-Length");
-    }
     if (/^application\/json/i.test(type)) {
         headers.set("Content-Type", "application/json; charset=utf-8");
         headers.set("ETag", await etag(body));
@@ -149,8 +143,5 @@ async function expressHeaders(response: Response) {
     headers.set("X-Powered-By", "Express");
     for (const [name, value] of Object.entries(VM_CORS))
         headers.set(name, value);
-    return new Response(html ? chunked(new Uint8Array(body)) : body, {
-        status: response.status,
-        headers,
-    });
+    return new Response(body, { status: response.status, headers });
 }

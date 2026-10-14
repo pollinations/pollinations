@@ -4,6 +4,7 @@
 import { PAGE } from "./free-limit-page.js";
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
+const JSON_TYPE = "application/json; charset=utf-8";
 
 /** gen's error body (shared/error.ts on main) */
 const genError = (status, code, message) =>
@@ -102,14 +103,14 @@ export function explainFreeLimit(
             ? answer(200, "text/plain; charset=utf-8", limitNotice(every, wait))
             : answer(
                   200,
-                  "application/json; charset=utf-8",
+                  JSON_TYPE,
                   chatReply(model, limitNotice(every, wait)),
               );
     }
     headers.set("Retry-After", String(wait));
     return answer(
         402,
-        "application/json; charset=utf-8",
+        JSON_TYPE,
         genError(
             402,
             "FREE_LIMIT",
@@ -119,12 +120,27 @@ export function explainFreeLimit(
 }
 
 const RETRY_SECONDS = 10;
+const CODES = {
+    400: "BAD_REQUEST",
+    403: "FORBIDDEN",
+    404: "NOT_FOUND",
+    429: "RATE_LIMITED",
+    500: "INTERNAL_ERROR",
+    503: "SERVICE_UNAVAILABLE",
+};
+
+/** An answer in gen's error body, with gen's code for its status */
+export const genAnswer = (status, message, headers = {}) => ({
+    status,
+    headers: { "Content-Type": JSON_TYPE, ...headers },
+    body: genError(status, CODES[status] ?? "BAD_REQUEST", message),
+});
 
 /**
  * A free generation gen could not make, answered as gen answers its own
  * failures: a busy or rate-limited gen gets a 503 that clients retry, any
  * other failure is ours, a 500. A request the caller can fix (gen's other
- * 4xx) gets undefined: the Worker keeps its own answer.
+ * 4xx) gets undefined: the Worker passes gen's own refusal on.
  * @param {number} [genStatus] gen's status; none when the Worker itself failed
  */
 export function failure(genStatus) {
@@ -134,44 +150,19 @@ export function failure(genStatus) {
         ![401, 402, 403, 429].includes(genStatus)
     )
         return undefined;
-    if (genStatus === 429 || genStatus >= 500)
-        return {
-            status: 503,
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Retry-After": String(RETRY_SECONDS),
-            },
-            body: genError(
-                503,
-                "SERVICE_UNAVAILABLE",
-                `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a pollen key at ${ENTER}`,
-            ),
-        };
-    return {
-        status: 500,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: genError(
-            500,
-            "INTERNAL_ERROR",
-            `Something went wrong on our side. Please try again, or use every model with a pollen key at ${ENTER}`,
-        ),
-    };
+    return genStatus === 429 || genStatus >= 500
+        ? genAnswer(
+              503,
+              `The Classic API is at its limit right now. Retry after ${RETRY_SECONDS}s, or get full access to every model with a pollen key at ${ENTER}`,
+              { "Retry-After": String(RETRY_SECONDS) },
+          )
+        : genAnswer(
+              500,
+              `Something went wrong on our side. Please try again, or use every model with a pollen key at ${ENTER}`,
+          );
 }
 
-const CODES = {
-    400: "BAD_REQUEST",
-    403: "FORBIDDEN",
-    404: "NOT_FOUND",
-    429: "RATE_LIMITED",
-};
-
-/** A request the caller can fix, refused in gen's error body */
-export const refusal = (status, message) => ({
-    status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: genError(status, CODES[status] ?? "BAD_REQUEST", message),
-});
-
+/** The Workers' refusals of a request the caller can fix */
 export const REFUSED = {
     replyBusy: `Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at ${ENTER}`,
     imageBusy: `Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at ${ENTER}`,

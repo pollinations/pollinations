@@ -90,9 +90,6 @@ async function expressHeaders(response) {
     const headers = new Headers(response.headers);
     const body = await response.arrayBuffer();
     const type = headers.get("content-type") ?? "";
-    if (/^text\/html/i.test(type)) {
-        headers.set("Content-Type", "text/html; charset=utf-8");
-    }
     if (/^application\/json/i.test(type)) {
         headers.set("Content-Type", "application/json; charset=utf-8");
         headers.set("ETag", await etag(body));

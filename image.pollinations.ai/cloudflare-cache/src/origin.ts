@@ -4,8 +4,8 @@ import { takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
+    genAnswer,
     REFUSED,
-    refusal,
 } from "../../../shared/messages.js";
 import type { CardKind } from "./cards.ts";
 import { words } from "./mature-words.ts";
@@ -75,7 +75,7 @@ export const logFailure = (route: string, details: object) =>
  * A body without Content-Length, as clients got every response node:http
  * wrote with writeHead() first, and the VM's HTML pages
  */
-export const chunked = (body: string | Uint8Array) =>
+const chunked = (body: string | Uint8Array) =>
     new ReadableStream({
         start(controller) {
             controller.enqueue(
@@ -353,7 +353,7 @@ export async function generate(c: Context, url: URL, route: string) {
     job.timing.push(step("Request received and queued."));
     const { model } = job.safeParams;
     if (BLOCKED_MODELS.includes(model)) {
-        const { status, body, headers } = refusal(
+        const { status, body, headers } = genAnswer(
             403,
             REFUSED.enterOnly(model),
         );
@@ -384,7 +384,7 @@ export async function generate(c: Context, url: URL, route: string) {
     }
 
     if (slot.action === "full") {
-        const { status, body, headers } = refusal(429, REFUSED.imageBusy);
+        const { status, body, headers } = genAnswer(429, REFUSED.imageBusy);
         return vmResponse(body, status, headers);
     }
     if (slot.action === "pay") {

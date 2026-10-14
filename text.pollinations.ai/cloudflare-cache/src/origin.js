@@ -8,8 +8,8 @@ import { takeSlot } from "../../../shared/ip-slot.js";
 import {
     explainFreeLimit,
     failure,
+    genAnswer,
     REFUSED,
-    refusal,
 } from "../../../shared/messages.js";
 import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 // index.js imports this module too; the function is only called per request
@@ -264,7 +264,7 @@ async function answer(request, env, ctx) {
     }
     if (method === "POST" && path === "/") {
         if (!Array.isArray(body.messages)) {
-            return failedResponse(refusal(400, REFUSED.badMessages));
+            return sendGenAnswer(genAnswer(400, REFUSED.badMessages));
         }
         return generate(undefined, "text", "POST /");
     }
@@ -617,7 +617,7 @@ async function generation(
     }
 
     if (slot.action === "full") {
-        return failedResponse(refusal(429, REFUSED.replyBusy));
+        return sendGenAnswer(genAnswer(429, REFUSED.replyBusy));
     }
     if (slot.action === "pay") {
         // Outside the free limit: books no slot
@@ -758,8 +758,8 @@ function referrerOf(request, url, body) {
 async function generate(env, job, cacheControl, ended) {
     try {
         if (!MODELS.has(job.model)) {
-            return await failedResponse(
-                refusal(404, REFUSED.unknownModel(job.model)),
+            return await sendGenAnswer(
+                genAnswer(404, REFUSED.unknownModel(job.model)),
                 cacheControl,
             );
         }
@@ -788,7 +788,7 @@ async function generate(env, job, cacheControl, ended) {
                     error: "gen",
                     status: response.status,
                 });
-                return await failedResponse(failed, cacheControl);
+                return await sendGenAnswer(failed, cacheControl);
             }
             logFailure(job.route, { error: "gen", status: response.status });
             // gen's own refusal of a request the caller can fix, as gen sent
@@ -809,9 +809,9 @@ async function generate(env, job, cacheControl, ended) {
                 typeof completion.error === "string"
                     ? { message: completion.error }
                     : completion.error;
-            return await failedResponse(
+            return await sendGenAnswer(
                 failure(status) ??
-                    refusal(status, String(message || "An error occurred")),
+                    genAnswer(status, String(message || "An error occurred")),
                 cacheControl,
             );
         }
@@ -824,8 +824,8 @@ async function generate(env, job, cacheControl, ended) {
             : textResponse(completion));
     } catch (error) {
         logFailure(job.route, { error: "exception", type: error.name });
-        return failedResponse(
-            error.fixable ? refusal(400, REFUSED.badMessages) : failure(),
+        return sendGenAnswer(
+            error.fixable ? genAnswer(400, REFUSED.badMessages) : failure(),
             cacheControl,
         );
     } finally {
@@ -833,8 +833,8 @@ async function generate(env, job, cacheControl, ended) {
     }
 }
 
-/** A failure from shared/messages.js, sent as Express sent errors */
-const failedResponse = ({ status, body, headers }, cacheControl) =>
+/** An answer in gen's error body from shared/messages.js, sent as Express sent errors */
+const sendGenAnswer = ({ status, body, headers }, cacheControl) =>
     send(body, status, {
         ...headers,
         ...(cacheControl && { "Cache-Control": cacheControl }),

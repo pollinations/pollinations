@@ -139,12 +139,13 @@ jobs:
             (github.event_name == 'repository_dispatch' && (github.event.client_payload.create_pr == true || github.event.client_payload.create_pr == 'true'))
           ) }}
         run: |
+          set -euo pipefail
           BRANCH="docs/apidocs-sync"
           git config user.name "pollinations-ai[bot]"
           git config user.email "pollinations-ai[bot]@users.noreply.github.com"
 
           # Save the regenerated file so we can re-apply it after resetting the branch
-          cp APIDOCS.md /tmp/APIDOCS.md.new
+          cp APIDOCS.md "$RUNNER_TEMP/APIDOCS.md.new"
           # Discard the dirty worktree change so the upcoming checkout to
           # origin/main can't fail with "local changes would be overwritten"
           # when main has advanced (or the input ref differs from main).
@@ -155,29 +156,50 @@ jobs:
           git fetch origin main
           git checkout -B "$BRANCH" origin/main
 
-          cp /tmp/APIDOCS.md.new APIDOCS.md
+          cp "$RUNNER_TEMP/APIDOCS.md.new" APIDOCS.md
 
           if git diff --quiet APIDOCS.md; then
             echo "Generated docs already match main; nothing to push."
             exit 0
           fi
 
+          # Compare operation identities against the latest published reference,
+          # so title/section changes do not require manual review.
+          REMOVED=$(node .github/scripts/docs-removed-operations.mjs <(git show HEAD:APIDOCS.md) APIDOCS.md)
+          PR=$(gh pr list --head "$BRANCH" --base main --state open --json number,autoMergeRequest --jq '.[0] // {}')
+          EXISTING=$(jq -r '.number // empty' <<< "$PR")
+          BODY="Auto-generated from OpenAPI spec changes after a successful production deploy."
+          if [ -n "$REMOVED" ]; then
+            # Disable first: an already-approved PR must not merge the removal
+            # as soon as the updated branch is pushed.
+            if [ "$(jq -r '.autoMergeRequest != null' <<< "$PR")" = "true" ]; then
+              gh pr merge --disable-auto "$EXISTING"
+            fi
+            BODY+=$'\n\nManual review required: these operations disappeared from the generated reference.\n\n'
+            BODY+="$REMOVED"
+          fi
+          printf '%s\n' "$BODY" > "$RUNNER_TEMP/apidocs-pr-body.md"
+
           git add APIDOCS.md
           git commit -m "docs: regenerate APIDOCS.md"
           git push -f -u origin "$BRANCH"
 
-          # Create the PR only if one doesn't already exist for this branch,
-          # then enable auto-merge so it lands once required checks pass.
-          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' || echo "")
+          # Create the PR only if one doesn't already exist for this branch.
           if [ -z "$EXISTING" ]; then
             gh pr create \
               --title "docs: regenerate APIDOCS.md" \
-              --body "Auto-generated from OpenAPI spec changes after a successful production deploy." \
+              --body-file "$RUNNER_TEMP/apidocs-pr-body.md" \
               --base main \
               --head "$BRANCH"
             EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
           else
+            gh pr edit "$EXISTING" --body-file "$RUNNER_TEMP/apidocs-pr-body.md"
             echo "PR #$EXISTING already open — updated in place."
+          fi
+
+          if [ -n "$REMOVED" ]; then
+            echo "PR #$EXISTING requires manual review of removed operations."
+            exit 0
           fi
 
           # Fail loud if auto-merge can't be enabled — otherwise the docs PR

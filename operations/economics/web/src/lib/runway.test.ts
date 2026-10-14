@@ -927,36 +927,37 @@ describe("buildRunway", () => {
         expect(result.runwayMonths).not.toBeNull();
     });
 
-    it.each(
-        [0, 250, 700, 900].map((paid) => ({ paid })),
-    )("offsets $paid of current-month payments against the estimated bill exactly once", ({
-        paid,
-    }) => {
-        const result = buildRunway(
-            [opening(), ...(paid ? [transaction({ amount: -paid })] : [])],
-            NOW,
-            [
-                cloud({
-                    start: "2026-07-01 00:00:00",
-                    end: "2026-08-01 00:00:00",
-                    paid: -700,
-                }),
-                balance("google", 0),
-            ],
-            undefined,
-            [stripeSales()],
-        );
-        const google = result.rows.find((r) => r.vendor === "google");
-        expect(google?.values["2026-08:forecast"]).toBe(-Math.max(paid, 700));
-        expect(google?.values["2026-09:forecast"]).toBeCloseTo(-700, 8);
-        expect(result.currentCashUsd).toBe(20000 - paid);
-        expect(result.remainingCurrentPlanUsd).toBe(
-            95 - Math.max(0, 700 - paid),
-        );
-        expect(result.projectedMonthEndCashUsd).toBe(
-            20095 - Math.max(700, paid),
-        );
-    });
+    it.each([0, 250, 700, 900].map((paid) => ({ paid })))(
+        "offsets $paid of current-month payments against the estimated bill exactly once",
+        ({ paid }) => {
+            const result = buildRunway(
+                [opening(), ...(paid ? [transaction({ amount: -paid })] : [])],
+                NOW,
+                [
+                    cloud({
+                        start: "2026-07-01 00:00:00",
+                        end: "2026-08-01 00:00:00",
+                        paid: -700,
+                    }),
+                    balance("google", 0),
+                ],
+                undefined,
+                [stripeSales()],
+            );
+            const google = result.rows.find((r) => r.vendor === "google");
+            expect(google?.values["2026-08:forecast"]).toBe(
+                -Math.max(paid, 700),
+            );
+            expect(google?.values["2026-09:forecast"]).toBeCloseTo(-700, 8);
+            expect(result.currentCashUsd).toBe(20000 - paid);
+            expect(result.remainingCurrentPlanUsd).toBe(
+                95 - Math.max(0, 700 - paid),
+            );
+            expect(result.projectedMonthEndCashUsd).toBe(
+                20095 - Math.max(700, paid),
+            );
+        },
+    );
 
     it("matches payments once across a postpaid vendor's categories without consuming promotional credits", () => {
         const result = buildRunway(
@@ -1400,29 +1401,29 @@ describe("ledger-based P&L categories", () => {
         ).toBe(true);
     });
 
-    it.each([
-        "assemblyai",
-        "openai",
-    ])("budgets continued %s API usage after prepaid credit runs out", (vendor) => {
-        const result = buildRunway([opening()], NOW, [
-            cloud({ vendor, paid: 0, credit: -220 }),
-            {
-                ...balance(vendor, 0, 100),
-                end: "2027-12-31",
-            },
-        ]);
-        const row = result.rows.find(
-            (row) => row.vendor === vendor && row.category === "compute",
-        );
-        // 220 through August 22 => 310/month. Remaining August usage
-        // consumes 90 credits; September's 310 uses the final 10 first.
-        expect(row?.forecastMethod).toBe("last");
-        expect(row?.forecastPaymentTiming).toBe("prepaid");
-        expect(row?.forecastIssue).toBeUndefined();
-        expect(row?.values["2026-08:forecast"]).toBe(0);
-        expect(row?.values["2026-09:forecast"]).toBeCloseTo(-300);
-        expect(row?.values["2026-10:forecast"]).toBeCloseTo(-310);
-    });
+    it.each(["assemblyai", "openai"])(
+        "budgets continued %s API usage after prepaid credit runs out",
+        (vendor) => {
+            const result = buildRunway([opening()], NOW, [
+                cloud({ vendor, paid: 0, credit: -220 }),
+                {
+                    ...balance(vendor, 0, 100),
+                    end: "2027-12-31",
+                },
+            ]);
+            const row = result.rows.find(
+                (row) => row.vendor === vendor && row.category === "compute",
+            );
+            // 220 through August 22 => 310/month. Remaining August usage
+            // consumes 90 credits; September's 310 uses the final 10 first.
+            expect(row?.forecastMethod).toBe("last");
+            expect(row?.forecastPaymentTiming).toBe("prepaid");
+            expect(row?.forecastIssue).toBeUndefined();
+            expect(row?.values["2026-08:forecast"]).toBe(0);
+            expect(row?.values["2026-09:forecast"]).toBeCloseTo(-300);
+            expect(row?.values["2026-10:forecast"]).toBeCloseTo(-310);
+        },
+    );
 
     it("budgets OVH compute and infrastructure against one shared credit balance", () => {
         const result = buildRunway([opening()], NOW, [

@@ -215,20 +215,20 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for([
-    "pollinations",
-    "ask-jev",
-])("requires a Pollinations credential before invoking %s", async (serverId) => {
-    const response = await SELF.fetch(
-        `https://gen.pollinations.ai/mcp/${serverId}`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(MCP_REQUEST),
-        },
-    );
-    expect(response.status).toBe(401);
-});
+test.for(["pollinations", "ask-jev"])(
+    "requires a Pollinations credential before invoking %s",
+    async (serverId) => {
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({

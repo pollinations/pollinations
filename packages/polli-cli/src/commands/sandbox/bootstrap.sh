@@ -39,6 +39,13 @@ if ! { [ -s /run/polli-ws.pid ] && kill -0 "$(cat /run/polli-ws.pid)" 2>/dev/nul
     setsid nohup sh -c 'while :; do websocat -b -E "ws-l:0.0.0.0:$POLLI_SSH_PORT" tcp:127.0.0.1:22; sleep 1; done' >/dev/null 2>&1 </dev/null &
     echo $! > /run/polli-ws.pid
 fi
+# Templates with herdr, like `pollinations`, get its server, so agents in its
+# panes keep running between ssh sessions. A fixed environment, not envd's.
+# `herdr status server` exits 0 either way.
+if [ -x /usr/local/bin/herdr ] && ! runuser -u user -- herdr status server | grep -qx 'status: running'; then
+    setsid runuser -u user -- env -i HOME=/home/user USER=user LOGNAME=user SHELL=/bin/bash LANG=C.UTF-8 \
+        PATH=/home/user/.local/bin:/usr/local/bin:/usr/bin:/bin herdr server >/dev/null 2>&1 </dev/null &
+fi
 for _ in $(seq 50); do
     (exec 3<>/dev/tcp/127.0.0.1/22 4<>/dev/tcp/127.0.0.1/"$POLLI_SSH_PORT") 2>/dev/null && exit 0
     sleep 0.1

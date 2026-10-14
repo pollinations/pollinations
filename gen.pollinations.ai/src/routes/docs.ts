@@ -942,7 +942,18 @@ export async function buildMergedOpenApiSpec(
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
+                // Pinned: the unversioned CDN URL serves every new release, and
+                // 1.74.0 broke the sidebar our CSS and nav script target.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,

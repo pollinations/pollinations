@@ -22,6 +22,7 @@ const genAliases = [
     "events.ts",
     "logger",
     "logger.ts",
+    "middleware/agent-discovery.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
     "middleware/generation-cache.ts",
@@ -51,6 +52,7 @@ const genAliases = [
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/refusals.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];

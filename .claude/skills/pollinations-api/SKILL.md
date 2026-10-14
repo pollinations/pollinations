@@ -1,6 +1,6 @@
 ---
 name: pollinations-api
-description: Use Pollinations REST without the CLI. Make a keyless image, sign in through the OAuth device flow without copying an API key, and call text or audio endpoints from curl or Python.
+description: Call the Pollinations API directly via REST without installing anything. Use when the polli CLI cannot be installed, when browser login steps are blocked, or when only curl or fetch is available. Without an API key, the user can approve a device sign-in in their own browser.
 ---
 
 # pollinations-api — Pollinations REST API

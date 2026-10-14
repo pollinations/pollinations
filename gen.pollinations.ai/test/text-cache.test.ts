@@ -645,7 +645,7 @@ describe("text cache", () => {
         expect(originHits).toBe(2);
     });
 
-    it("caches chat streams whose output is text or tool calls", async () => {
+    it("caches chat streams whose output is text, tool calls or a refusal", async () => {
         const bodies: Record<string, string> = {
             content:
                 'data: {"choices":[{"delta":{"content":""}}]}\n\n' +
@@ -653,6 +653,9 @@ describe("text cache", () => {
                 "data: [DONE]\n\n",
             tools:
                 'data: {"choices":[{"delta":{"content":null,"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"lookup","arguments":"{}"}}]}}]}\n\n' +
+                "data: [DONE]\n\n",
+            refusal:
+                'data: {"choices":[{"delta":{"refusal":"I can\'t help with that."}}]}\n\n' +
                 "data: [DONE]\n\n",
         };
         let originHits = 0;
@@ -678,7 +681,7 @@ describe("text cache", () => {
             expect(first.response.headers.get("X-Cache")).toBe("MISS");
             expect(second.response.headers.get("X-Cache")).toBe("HIT");
         }
-        expect(originHits).toBe(2);
+        expect(originHits).toBe(3);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

@@ -51,7 +51,13 @@ function isStreamingErrorResponse(text: string): boolean {
 // Fields of a Chat Completions stream delta that carry output. Reasoning is
 // not output: `reasoning_content` and Claude's `content_blocks` (thinking and
 // signature deltas only) are left out on purpose.
-const CHAT_OUTPUT_FIELDS = ["content", "tool_calls", "function_call", "audio"];
+const CHAT_OUTPUT_FIELDS = [
+    "content",
+    "refusal",
+    "tool_calls",
+    "function_call",
+    "audio",
+];
 
 /**
  * A Chat Completions stream whose choices carry no output, e.g. a reasoning

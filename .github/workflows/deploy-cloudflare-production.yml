@@ -85,7 +85,8 @@ jobs:
             gen:
               - 'gen.pollinations.ai/**'
               - 'packages/mcp/**'
-              - 'packages/ui/**'
+              - 'packages/ui/src/styles/tokens.css'
+              - 'packages/ui/src/brand/lockup-horizontal-white.svg'
               - 'BRING_YOUR_OWN_MODEL.md'
               - 'BRING_YOUR_OWN_POLLEN.md'
               - 'BUILD_YOUR_OWN_AGENT.md'

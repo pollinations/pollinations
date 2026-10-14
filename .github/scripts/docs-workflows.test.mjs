@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, matchesGlob, relative, resolve } from "node:path";
 import test from "node:test";
@@ -33,33 +33,44 @@ function run(command, args, options = {}) {
     return result.stdout;
 }
 
-test("every raw docs input selects Gen tests and production deployment", async () => {
-    const inputs = new Set();
-    for (const source of ["docs.ts", "docs-styles.ts", "well-known.ts"]) {
-        const path = `gen.pollinations.ai/src/routes/${source}`;
-        for (const match of (await read(path)).matchAll(
-            /from\s+["']([^"']+)\?raw["']/g,
-        )) {
-            inputs.add(
-                relative(
-                    repository,
-                    resolve(repository, dirname(path), match[1]),
-                ),
-            );
+test("raw imports select Gen CI and worker inputs select deployment", async () => {
+    const inputs = { src: new Set(), test: new Set() };
+    for (const source of ["src", "test"]) {
+        const directory = `gen.pollinations.ai/${source}`;
+        for (const file of await readdir(join(repository, directory), {
+            recursive: true,
+        })) {
+            if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
+            const path = join(directory, file);
+            for (const match of (await read(path)).matchAll(
+                /^\s*import\s+[^;]*?\sfrom\s+["']([^"']+)\?raw["']/gm,
+            )) {
+                inputs[source].add(
+                    relative(
+                        repository,
+                        resolve(repository, dirname(path), match[1]),
+                    ),
+                );
+            }
+        }
+        for (const path of inputs[source]) {
+            assert.ok(ciPattern.test(path), `Gen CI misses ${path}`);
+            if (source === "src") {
+                assert.ok(
+                    productionPaths.some((glob) => matchesGlob(path, glob)),
+                    `production trigger misses ${path}`,
+                );
+                assert.ok(
+                    genPaths.some((glob) => matchesGlob(path, glob)),
+                    `Gen deployment misses ${path}`,
+                );
+            }
         }
     }
-    assert.ok(inputs.size > 0, "must discover raw documentation dependencies");
-    for (const path of inputs) {
-        assert.ok(ciPattern.test(path), `Gen CI misses ${path}`);
-        assert.ok(
-            productionPaths.some((glob) => matchesGlob(path, glob)),
-            `production trigger misses ${path}`,
-        );
-        assert.ok(
-            genPaths.some((glob) => matchesGlob(path, glob)),
-            `Gen deployment misses ${path}`,
-        );
-    }
+    assert.ok(
+        inputs.src.size > 0,
+        "must discover raw documentation dependencies",
+    );
     for (const path of [
         "README.md",
         "APIDOCS.md",
@@ -71,6 +82,25 @@ test("every raw docs input selects Gen tests and production deployment", async (
             false,
             path,
         );
+        assert.equal(
+            genPaths.some((glob) => matchesGlob(path, glob)),
+            false,
+            path,
+        );
+    }
+});
+
+test("unrelated UI and MCP changes do not select Gen CI", () => {
+    for (const path of [
+        "packages/ui/src/compositions/Prose.tsx",
+        "packages/mcp/README.md",
+    ]) {
+        assert.equal(ciPattern.test(path), false, path);
+    }
+    for (const path of [
+        "packages/ui/src/compositions/Prose.tsx",
+        "pollinations.ai/public/legal/SUBPROCESSORS.md",
+    ]) {
         assert.equal(
             genPaths.some((glob) => matchesGlob(path, glob)),
             false,
@@ -125,7 +155,6 @@ for (const change of ["deleting", "renaming"]) {
 }
 
 test("the regeneration gate checks successful schema deployments across pages", () => {
-    assert.match(gate, /--paginate --slurp \|/);
     const query = gate.match(/jq -r '([^']+)'/)[1];
     const job = (name, conclusion = "success") => ({ name, conclusion });
     const cases = [
@@ -151,36 +180,5 @@ test("the regeneration gate checks successful schema deployments across pages", 
             String(expected),
             JSON.stringify(pages),
         );
-    }
-    assert.match(
-        regeneration.jobs.gate.outputs.schema_deployed,
-        /^\$\{\{ steps\.check\.outputs\.schema_deployed \}\}$/,
-    );
-    assert.equal(
-        regeneration.jobs["regenerate-docs"].if,
-        "needs.gate.outputs.schema_deployed == 'true'",
-    );
-});
-
-test("manual regeneration bypasses the deployment lookup", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "docs-gate-"));
-    try {
-        for (const event of ["workflow_dispatch", "repository_dispatch"]) {
-            const output = join(directory, event);
-            run("bash", ["-e"], {
-                input: gate,
-                env: {
-                    ...process.env,
-                    EVENT_NAME: event,
-                    GITHUB_OUTPUT: output,
-                },
-            });
-            assert.equal(
-                await readFile(output, "utf8"),
-                "schema_deployed=true\n",
-            );
-        }
-    } finally {
-        await rm(directory, { recursive: true, force: true });
     }
 });

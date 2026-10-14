@@ -191,10 +191,11 @@
     outline: none;
 }
 
-.polli-control:focus-visible,
-.polli-slider:focus-visible {
+/* A ring outside the shape, so a focused filled button never reads as an
+   outlined one. */
+.polli-control:focus-visible {
     outline: 2px solid var(--polli-color-focus);
-    outline-offset: -1px;
+    outline-offset: 2px;
 }
 
 .polli-control[data-intent="danger"]:focus-visible {
@@ -293,6 +294,27 @@
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
     transition: transform 150ms ease;
+}
+
+/* Focus rings the thumb, not the track. */
+.polli-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+.polli-slider:focus-visible::-moz-range-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+/* Forced colors drop box-shadow, so outline the slider instead. */
+@media (forced-colors: active) {
+    .polli-slider:focus-visible {
+        outline: 2px solid;
+        outline-offset: 2px;
+    }
 }
 
 .polli-slider:hover::-webkit-slider-thumb {

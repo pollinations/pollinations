@@ -524,6 +524,37 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("charges Microsoft Decision-1's OpenRouter quote on its Vercel fallback", () => {
+        const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
+        const fallback = TEXT_SERVICES["microsoft/microsoft-decision-1:vercel"];
+        expect(primary.fallbacks).toEqual([
+            "microsoft/microsoft-decision-1:vercel",
+        ]);
+        expect(fallback).toMatchObject({
+            provider: "vercel",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
+        ).toMatchObject({
+            model: "microsoft/microsoft-decision-1",
+            provider: "openai",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        const billing = calculateUsageBilling({
+            model: "microsoft/microsoft-decision-1",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00004431, 12);
+    });
+
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-luna-decisions"];
         const fallback =

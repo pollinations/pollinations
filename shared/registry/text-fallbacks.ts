@@ -23,6 +23,17 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "microsoft/microsoft-decision-1": {
+        // Same Azure backend; covers gateway failures, not Microsoft outages.
+        "microsoft/microsoft-decision-1:vercel": {
+            provider: "vercel",
+            // Vercel's posted rate, without OpenRouter's credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.04),
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "openai/gpt-6-luna-decisions": {
         // Same OpenAI backend; covers direct-route failures, not OpenAI outages.
         "openai/gpt-6-luna-decisions:openrouter": {

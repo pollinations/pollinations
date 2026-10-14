@@ -8,6 +8,7 @@ import agent, {
     applyEdits,
     buildPrompt,
     hunkRanges,
+    MAX_READ_ROUNDS,
     parseRequest,
     parseReview,
     redact,
@@ -197,7 +198,36 @@ function githubDouble(writes: Write[]) {
             return new Response(FILE);
         if (url.endsWith("/git/commits/head123"))
             return Response.json({ tree: { sha: "tree1" } });
+        if (
+            url ===
+            "https://raw.githubusercontent.com/dev/app/head123/src/caller.js"
+        )
+            return new Response(CALLER);
         return new Response("not found", { status: 404 });
+    };
+}
+
+const CALLER = `import { add } from "./add.js";\nexport const total = (xs) => xs.reduce(add, 0);\n// ${TOKEN}\n`;
+
+/** Model double that answers each call with the next scripted reply. */
+function scriptedModel(bodies: string[], answers: object[]) {
+    let call = 0;
+    const respond = modelDouble(bodies, {});
+    return async (path: string, init?: RequestInit) => {
+        if (path === "/v1/models") return respond(path, init);
+        bodies.push(String(init?.body));
+        const answer = answers[Math.min(call++, answers.length - 1)];
+        return Response.json({
+            output: [
+                {
+                    type: "message",
+                    content: [
+                        { type: "output_text", text: JSON.stringify(answer) },
+                    ],
+                },
+            ],
+            usage: { input_tokens: 1000, output_tokens: 100 },
+        });
     };
 }
 
@@ -287,6 +317,70 @@ test("without a token it returns the diff and writes nothing; ok pushes nothing"
     );
     assert.match(ok.report, /nothing wrong found/);
     assert.equal(writes.length, 0);
+});
+
+test("the model can ask to read more code before it answers, and edit what it read", async () => {
+    const writes: Write[] = [];
+    const bodies: string[] = [];
+    const { report, usage } = await review(
+        `https://github.com/acme/app/pull/42 https://github.com/me/app ${TOKEN}`,
+        scriptedModel(bodies, [
+            {
+                reads: [
+                    { file: "src/caller.js", from: 1, to: 2 },
+                    { file: "../../etc/passwd" },
+                ],
+            },
+            {
+                verdict: "issues",
+                summary: "total starts from 0 but add subtracts.",
+                findings: [{ file: "src/caller.js", line: 2, problem: "x" }],
+                edits: [
+                    {
+                        file: "src/caller.js",
+                        find: "reduce(add, 0)",
+                        replace: "reduce((a, b) => a + b, 0)",
+                    },
+                ],
+            },
+        ]),
+        githubDouble(writes),
+    );
+    assert.equal(bodies.length, 2);
+    assert.match(bodies[1], /READ src\/caller\.js lines 1-2 of 4/);
+    assert.match(bodies[1], /2\| export const total/);
+    assert.match(bodies[1], /READ \.\.\/\.\.\/etc\/passwd: not readable/);
+    assert.ok(
+        !bodies.some((b) => b.includes(TOKEN)),
+        "token reached the model",
+    );
+    assert.match(report, /Read on request: src\/caller\.js:1-2/);
+    assert.deepEqual(usage, { input_tokens: 2000, output_tokens: 200 });
+    assert.deepEqual(
+        (writes[0].body.tree as { path: string }[]).map((t) => t.path),
+        ["src/caller.js"],
+    );
+});
+
+test("reads stop after the last round and the reply says there is no verdict", async () => {
+    const bodies: string[] = [];
+    const writes: Write[] = [];
+    const { report } = await review(
+        "https://github.com/acme/app/pull/42",
+        scriptedModel(bodies, [{ reads: [{ file: "src/caller.js" }] }]),
+        githubDouble(writes),
+    );
+    assert.equal(bodies.length, MAX_READ_ROUNDS + 1);
+    assert.match(bodies.at(-1) ?? "", /No reads are left/);
+    assert.match(report, /no verdict: the model still asked/);
+    assert.doesNotMatch(report, /nothing wrong found/);
+    assert.equal(writes.length, 0);
+    const silent = await review(
+        "https://github.com/acme/app/pull/42",
+        scriptedModel([], [{}]),
+        githubDouble(writes),
+    );
+    assert.match(silent.report, /no verdict: the model gave none/);
 });
 
 test("answers in the caller's API shape and asks for a link when none is given", async () => {

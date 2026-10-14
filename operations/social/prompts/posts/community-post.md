@@ -41,8 +41,8 @@ Category emojis: 🧠 text · 🎨 image · 🔢 embeddings
 
 Entries with `agent: true` are agents; every other entry is a model. Never list an agent
 among the models. An agent runs on its `base_model` and costs what that model costs, so an
-agent never gets a price, an access change or a price change. When its `base_model` is empty,
-call it a code agent.
+agent never gets a price, an access change or a price change. When it has no `base_model`,
+write just `agent`.
 
 ## Prices of new models
 

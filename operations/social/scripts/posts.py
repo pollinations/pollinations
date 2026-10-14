@@ -257,14 +257,19 @@ def read_snapshot(news: Path, date: str | None) -> dict | None:
     )
 
 
-def community_facts(model: dict) -> dict:
-    """A community model's CATALOG_FACTS; an agent's without what its base model sets."""
+def community_facts(model: dict, names: dict) -> dict:
+    """A community model's CATALOG_FACTS; an agent's without what its base model sets.
+    An owner types the base model freely, so it stays only as a catalog model's name."""
     dropped = BASE_MODEL_FACTS if model.get("agent") else ()
-    return {
+    facts = {
         key: value
         for key, value in model.items()
         if key in CATALOG_FACTS and key not in dropped
     }
+    base = names.get(facts.pop("base_model", None))
+    if base:
+        facts["base_model"] = base
+    return facts
 
 
 def covered(job: str, snapshot: dict | None) -> dict | None:
@@ -277,8 +282,16 @@ def covered(job: str, snapshot: dict | None) -> dict | None:
             category: [model for model in models if not model.get("community")]
             for category, models in snapshot.items()
         }
+    names = {
+        alias: model["name"]
+        for models in snapshot.values()
+        for model in models
+        for alias in (model["name"], *(model.get("aliases") or ()))
+    }
     return {
-        category: [community_facts(model) for model in models if model.get("community")]
+        category: [
+            community_facts(model, names) for model in models if model.get("community")
+        ]
         for category, models in snapshot.items()
     }
 

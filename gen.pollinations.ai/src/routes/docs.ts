@@ -41,6 +41,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -80,6 +81,7 @@ const DOC_TAGS = {
     model3d: "3D",
     audio: "Audio",
     embeddings: "Embeddings",
+    asyncJobs: "Async Jobs",
     models: "Models",
     quests: "Quests",
     mediaStorage: "Media Storage",
@@ -102,6 +104,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
+    "⏳ Async Jobs": DOC_TAGS.asyncJobs,
     "🤖 Models": DOC_TAGS.models,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
     "📊 Public Stats": DOC_TAGS.publicStats,
@@ -167,6 +170,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.embeddings]: docsIcon(
         '<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18" />',
+    ),
+    [DOC_TAGS.asyncJobs]: docsIcon(
+        '<circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" />',
     ),
     [DOC_TAGS.models]: docsIcon(
         '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
@@ -307,6 +313,7 @@ const REALTIME_DOCS = [
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");
 const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
@@ -494,6 +501,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
                     DOC_TAGS.embeddings,
+                    DOC_TAGS.asyncJobs,
                 ],
             },
             {
@@ -593,6 +601,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.embeddings,
                 description: stripLeadingHeading(EMBEDDINGS_DOCS),
+            },
+            {
+                name: DOC_TAGS.asyncJobs,
+                description: stripLeadingHeading(ASYNC_JOBS_DOCS),
             },
             {
                 name: DOC_TAGS.models,

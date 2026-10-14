@@ -741,6 +741,35 @@ const media = await upload(imageBuffer, {
 console.log(media.url);
 ```
 
+## Async Generation Jobs
+
+For generations too long to hold one connection open for (video, large images,
+audio, 3D), submit the request as a job and collect the result later. Works
+with any media generation endpoint path — the body takes the same JSON the
+endpoint takes:
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const pollinations = new Pollinations({ apiKey: 'your_key' });
+
+const job = await pollinations.submitJob({
+  path: '/v1/images/generations',
+  body: { prompt: 'a cat on the moon', model: 'black-forest-labs/flux.1-schnell' },
+});
+
+// Later — in another process, minutes or hours from now:
+const status = await pollinations.getJob(job.id);   // queued | processing | succeeded | failed
+const result = await pollinations.getJobResult(job.id); // the generated content
+// Or poll until it settles, then fetch:
+const response = await pollinations.waitForJob(job.id);
+const buffer = await response.arrayBuffer();
+```
+
+One generation and one charge per job: the identical request always maps to the
+same job id, so resubmitting joins it rather than starting a new one. Settled
+jobs stay collectable for 24 hours.
+
 ## Error Handling
 
 ```javascript

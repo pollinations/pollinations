@@ -20,6 +20,57 @@ export interface RequestOptions {
 }
 
 // ============================================================================
+// Async Generation Jobs
+// ============================================================================
+
+/** Lifecycle of a job submitted with `Prefer: respond-async`. */
+export type GenerationJobStatus =
+    | "queued"
+    | "processing"
+    | "succeeded"
+    | "failed";
+
+/** A handle returned when a generation is submitted asynchronously. */
+export interface GenerationJob {
+    /** SHA-256 hex id; the identical request always maps to the same job */
+    id: string;
+    status: GenerationJobStatus;
+    /** Result endpoints; absolute on submit, relative on status polls */
+    urls?: {
+        status: string;
+        result: string;
+    };
+    /** Present on failed jobs */
+    error?: {
+        httpStatus?: number;
+        message?: string;
+    };
+}
+
+/** Options for submitting a generation job with `Prefer: respond-async`. */
+export interface SubmitJobOptions extends RequestOptions {
+    /**
+     * Generation endpoint path, e.g. `/v1/images/generations`,
+     * `/v1/audio/speech` or `/prompt`.
+     */
+    path: string;
+    /** HTTP method; defaults to `POST` when a body is given, else `GET` */
+    method?: "GET" | "POST";
+    /** JSON-serializable request body, sent as `application/json` */
+    body?: unknown;
+    /** Extra headers merged into the submission request */
+    headers?: Record<string, string>;
+}
+
+/** Options for waiting on a job until it settles. */
+export interface JobWaitOptions extends RequestOptions {
+    /** Poll interval in ms (default: 2000, matching the API's Retry-After) */
+    intervalMs?: number;
+    /** Give up after this many ms (default: 1200000 = 20min) */
+    timeoutMs?: number;
+}
+
+// ============================================================================
 // Image Generation
 // ============================================================================
 

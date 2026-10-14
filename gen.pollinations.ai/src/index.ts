@@ -29,6 +29,7 @@ import { logger } from "@/middleware/logger.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import { buildMergedOpenApiSpec, createDocsRoutes } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
@@ -245,6 +246,10 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     // still runs first because the cards are mounted after it.
     .route("/", mcpCardRoutes)
     .route(E2B_PATH, e2bRoutes)
+    // Async generation jobs: submit with `Prefer: respond-async` on any
+    // generation route, then collect at /v1/jobs/:id. Must be registered
+    // before the "/" proxy catch-all or it gets shadowed.
+    .route("/", jobRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.
     // Must be registered before the "/" proxy catch-all or it gets shadowed.

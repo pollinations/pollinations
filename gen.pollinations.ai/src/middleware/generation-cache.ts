@@ -214,6 +214,22 @@ function capture(
     return captured.write;
 }
 
+/**
+ * RFC 7240 `Prefer: respond-async` — the caller wants a job handle, not a
+ * synchronously delivered answer.
+ */
+export function requestsAsyncResponse(headers: Headers): boolean {
+    const prefer = headers.get("prefer");
+    if (!prefer) return false;
+    return prefer
+        .split(",")
+        .some(
+            (pref) =>
+                pref.trim().split(";")[0]?.trim().toLowerCase() ===
+                "respond-async",
+        );
+}
+
 /** Shared cache lifecycle; storage and serialization stay adapter-owned. */
 export function createGenerationCache(adapter: GenerationCacheAdapter) {
     return createMiddleware<GenerationCacheEnv>(async (c, next) => {
@@ -227,8 +243,13 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         const coordinate = streamRequested !== true;
 
         try {
-            const cached = await lookup(c, adapter, cacheKey);
-            if (cached) return cached;
+            // A caller that prefers respond-async always receives the job
+            // handle: the coordinator settles such jobs from this same cache,
+            // so collection stays uniform even when the result already exists.
+            if (!requestsAsyncResponse(c.req.raw.headers)) {
+                const cached = await lookup(c, adapter, cacheKey);
+                if (cached) return cached;
+            }
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
             if (coordinate) {

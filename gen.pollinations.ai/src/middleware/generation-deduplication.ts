@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -13,7 +14,10 @@ import type {
     GenerationCacheEnv,
     GenerationCacheStorage,
 } from "@/middleware/generation-cache.ts";
-import { hashGenerationCacheIdentity } from "@/middleware/generation-cache.ts";
+import {
+    hashGenerationCacheIdentity,
+    requestsAsyncResponse,
+} from "@/middleware/generation-cache.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 
 export type GenerationErrorSnapshot = {
@@ -135,7 +139,7 @@ async function createJob(
 }
 
 /** Replays an error response already handled by the detached executor. */
-function replayFailedResponse(error: GenerationErrorSnapshot): Response {
+export function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     const status =
         error.httpStatus >= 400 && error.httpStatus <= 599
             ? error.httpStatus
@@ -171,6 +175,42 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+
+        if (requestsAsyncResponse(c.req.raw.headers)) {
+            // Async submission: register the job and return its handle. The
+            // generation runs detached exactly as for a disconnected sync
+            // caller — one execution, one charge — collected at /v1/jobs/:id.
+            try {
+                const status = await stub.submit(
+                    job,
+                    body &&
+                        (new Response(body as Uint8Array<ArrayBuffer>).body ??
+                            undefined),
+                );
+                const origin = getPublicOrigin(c);
+                return c.json(
+                    {
+                        id: name,
+                        status,
+                        urls: {
+                            status: `${origin}/v1/jobs/${name}`,
+                            result: `${origin}/v1/jobs/${name}/result`,
+                        },
+                    },
+                    202,
+                    { Location: `/v1/jobs/${name}` },
+                );
+            } catch (error) {
+                c.get("log").error("Generation submission failed: {error}", {
+                    error,
+                });
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+        }
+
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {

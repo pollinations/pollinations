@@ -341,7 +341,7 @@ function useGeneration<A extends unknown[], T>(
         setIsLoading(false);
     }, []);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: a key change resets state and aborts the request in flight
+    // A key change resets state and aborts the request in flight.
     useEffect(() => {
         lastArgsRef.current = null;
         setData(null);

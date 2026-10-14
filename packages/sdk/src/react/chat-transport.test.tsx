@@ -251,6 +251,67 @@ describe("responses chat transport", () => {
         });
     });
 
+    it("replays server tool calls and results unchanged on the next turn", async () => {
+        const output = [
+            {
+                type: "function_call",
+                call_id: "call_1",
+                name: "mcp__search__find",
+                arguments: '{"q":"x"}',
+            },
+            {
+                type: "function_call_output",
+                call_id: "call_1",
+                output: [{ type: "input_text", text: '{"content":[]}' }],
+            },
+            {
+                type: "message",
+                role: "assistant",
+                content: [{ type: "output_text", text: "Found it" }],
+            },
+        ];
+        const fetchMock = vi
+            .spyOn(globalThis, "fetch")
+            .mockImplementation(async () =>
+                sseResponse(
+                    sse([{ type: "response.completed", response: { output } }]),
+                ),
+            );
+        const transport = transportWithKey();
+        const chunks = await collect(
+            await transport.sendMessages({ messages }),
+        );
+        const finish = chunks.find((chunk) => chunk.type === "finish");
+        expect(finish?.messageMetadata.output).toEqual(output);
+
+        await collect(
+            await transport.sendMessages({
+                messages: [
+                    ...messages,
+                    {
+                        role: "assistant",
+                        parts: [{ type: "text", text: "Found it" }],
+                        metadata: finish?.messageMetadata,
+                    },
+                    {
+                        role: "user",
+                        parts: [
+                            { type: "text", text: "What did the tool return?" },
+                        ],
+                    },
+                ],
+            }),
+        );
+        const input = JSON.parse(
+            String(fetchMock.mock.calls[1]?.[1]?.body),
+        ).input;
+        expect(input).toEqual([
+            { role: "user", content: "hi" },
+            ...output,
+            { role: "user", content: "What did the tool return?" },
+        ]);
+    });
+
     it("ignores caller-run function calls", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             sseResponse(
@@ -339,6 +400,17 @@ describe("responses chat transport", () => {
         await expect(
             transportWithKey(null).sendMessages({ messages }),
         ).rejects.toMatchObject({ status: 401 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("sends nothing when the caller has already stopped", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        await expect(
+            transportWithKey().sendMessages({
+                messages,
+                abortSignal: AbortSignal.abort(),
+            }),
+        ).rejects.toMatchObject({ name: "AbortError" });
         expect(fetchMock).not.toHaveBeenCalled();
     });
 

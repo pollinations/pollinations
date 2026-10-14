@@ -9,6 +9,7 @@ import { useAuth } from "./hooks.js";
 export interface ChatMessage {
     role: string;
     parts: { type: string; text?: string }[];
+    metadata?: unknown;
 }
 
 /** The UI message chunks this transport emits (a subset of `ai`'s `UIMessageChunk`). */
@@ -42,7 +43,7 @@ export type PollinationsChatChunk =
     | {
           type: "finish";
           finishReason: "stop" | "length" | "content-filter";
-          messageMetadata: { usage: unknown };
+          messageMetadata: { usage: unknown; output?: unknown[] };
       };
 
 interface TransportSettings {
@@ -59,6 +60,7 @@ type ResponsesEvent = {
     item?: ResponseItem;
     response?: {
         usage?: unknown;
+        output?: unknown[];
         error?: { message?: string } | null;
         incomplete_details?: { reason?: string } | null;
     };
@@ -83,9 +85,11 @@ function parseJson(text: string): unknown {
     }
 }
 
-/** Responses `input`: each message's text parts, as one plain message. */
-function toResponsesInput(messages: ChatMessage[]) {
-    return messages.flatMap(({ role, parts }) => {
+/** Replay assistant output unchanged so later turns retain server tool results. */
+function toResponsesInput(messages: ChatMessage[]): unknown[] {
+    return messages.flatMap(({ role, parts, metadata }): unknown[] => {
+        const output = (metadata as { output?: unknown[] } | undefined)?.output;
+        if (role === "assistant" && output?.length) return output;
         const content = parts
             .map((part) => (part.type === "text" ? (part.text ?? "") : ""))
             .join("");
@@ -189,6 +193,7 @@ function responseEventChunks(
                         finishReason,
                         messageMetadata: {
                             usage: event.response?.usage ?? null,
+                            output: event.response?.output,
                         },
                     },
                 ],
@@ -298,6 +303,7 @@ export function createResponsesTransport(
             abortSignal?: AbortSignal;
             body?: object;
         }): Promise<ReadableStream<PollinationsChatChunk>> {
+            abortSignal?.throwIfAborted();
             const { apiKey, model } = readSettings();
             if (!apiKey) {
                 throw new PollinationsError(
@@ -382,7 +388,7 @@ export function usePollinationsChatTransport(
     const [transport] = useState(() =>
         createResponsesTransport(() => settings.current),
     );
-    // biome-ignore lint/correctness/useExhaustiveDependencies: a key change aborts the streams of the previous key
+    // A key change aborts the streams of the previous key.
     useEffect(() => () => transport.abort(), [apiKey, transport]);
     return transport;
 }

@@ -253,7 +253,7 @@ function ImageButton() {
   );
   return (
     <>
-      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'flux' })}>Generate</button>
+      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'black-forest-labs/flux.1-schnell' })}>Generate</button>
       {error && <p>{error.message}</p>}
       {src && <img src={src} alt="" />}
     </>
@@ -268,7 +268,7 @@ function Haiku() {
   const { data, isLoading, run } = useTextGeneration();
   return (
     <>
-      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai' })}>Write</button>
+      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai/gpt-5.4-nano' })}>Write</button>
       <p>{data}</p>
     </>
   );
@@ -336,7 +336,9 @@ function Transcribe() {
 `useChat`. It streams `/v1/responses` from the browser with the signed-in
 user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
 parts with their results, and `message.metadata.usage` holds the usage of the
-reply. Stream failures become `error` chunks. A rejected request makes the send
+reply. Assistant output is kept in `message.metadata.output` and sent back on
+later turns, preserving server tool results. Stream failures become `error`
+chunks. A rejected request makes the send
 fail, which `useChat` reports as an error. Caller-run function tools are not
 supported.
 
@@ -348,7 +350,7 @@ import { useChat } from '@ai-sdk/react';
 import { usePollinationsChatTransport } from '@pollinations/sdk/react';
 
 function Chat() {
-  const transport = usePollinationsChatTransport({ model: 'openai' });
+  const transport = usePollinationsChatTransport({ model: 'openai/gpt-5.4-nano' });
   const { messages, sendMessage, status } = useChat({ transport });
   return (
     <>

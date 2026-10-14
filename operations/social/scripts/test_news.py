@@ -23,12 +23,30 @@ from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollination
 from contributors import github_account, rank_contributors
 from discord_pr import generate_snippet
 from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
+                  changes_text,
                   enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
 from news_index import api_entries, build_index, highlight_entries, model_entries
 from readme import get_top_highlights
 
 
 class GistEnrichmentTest(unittest.TestCase):
+    def test_the_writer_reads_each_diff_except_lockfiles_and_snapshots_within_a_cap(self):
+        def file(name, patch, additions=1):
+            return {"filename": name, "status": "modified", "additions": additions, "deletions": 0, "patch": patch}
+        text = changes_text([file("gen.pollinations.ai/src/a.ts", "+fix the bug"),
+                             file("package-lock.json", "+lock noise"),
+                             file("gen.pollinations.ai/test/mocks/snapshots/b.json", "+snapshot noise"),
+                             file("enter.pollinations.ai/src/big.ts", "+x" * 5000, 5000)])
+        self.assertIn("modified: package-lock.json (+1/-0)", text)
+        self.assertIn("+fix the bug", text)
+        self.assertNotIn("noise", text)
+        self.assertIn("… (cut)", text)  # one file's diff is capped
+        with patch("gist.DIFF_CHARS", len("+first")):
+            text = changes_text([file("a.py", "+first"), file("b.py", "+second")])
+        self.assertIn("b.py", text)
+        self.assertNotIn("+second", text)
+        self.assertIn("diffs of 1 more files not shown", text)
+
     def test_exact_price_balance_capabilities_and_official_models(self):
         old = {"name": "example/model", "paid_only": False,
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000001"},

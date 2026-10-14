@@ -79,6 +79,8 @@ Explore at https://gen.pollinations.ai/docs
 
 Rules:
 - Omit any section with no entries.
+- List every new official model (`community` is not `true`) in 🆕 New. If space runs short,
+  shorten the price and paid-only lists first.
 - Within price-cut/increase sections, collapse models into one line per category, separated by `·`.
 - If all models in a price group have the same % change, state it once in the section header.
   If changes vary, omit the % from the header and note per-model where it differs significantly.

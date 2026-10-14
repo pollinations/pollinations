@@ -46,8 +46,4 @@ Built something with Pollinations? Add the badge and [share it](https://pollinat
 
 [![Made with Pollinations](https://raw.githubusercontent.com/pollinations/pollinations/main/packages/ui/src/brand/badge-made-with.svg)](https://pollinations.ai)
 
-## This branch
-
-`master` serves Free API Classic from two Cloudflare Workers, `text.pollinations.ai/cloudflare-cache/` and `image.pollinations.ai/cloudflare-cache/`. Everything else, including the main API and the apps, lives on [`main`](https://github.com/pollinations/pollinations).
-
 Use is subject to the [Terms of Service](https://pollinations.ai/terms) and the [Privacy Policy](https://pollinations.ai/privacy).

@@ -59,15 +59,24 @@ const footnote = (Icon, ...children) =>
         h("span", null, ...children),
     );
 
-// One way past the limit: a title, what it takes, and its button at the foot
-const path = (title, body, button) =>
+// One way past the limit: a title with its label, what it takes, and its
+// button at the foot
+const path = (title, label, body, button) =>
     h(
         Surface,
         { className: "polli:flex polli:flex-col polli:gap-4" },
         h(
             "div",
             { className: "polli:flex polli:flex-1 polli:flex-col polli:gap-3" },
-            h(Heading, { as: "h2", size: "card" }, title),
+            h(
+                "div",
+                {
+                    className:
+                        "polli:flex polli:items-center polli:justify-between polli:gap-2",
+                },
+                h(Heading, { as: "h2", size: "card" }, title),
+                h(Chip, { intent: "info", size: "sm" }, label),
+            ),
             ...body,
         ),
         button,
@@ -133,6 +142,7 @@ const page = h(
             { className: "paths" },
             path(
                 "Sign in to enter",
+                "pollen",
                 [
                     h(
                         Text,
@@ -157,11 +167,12 @@ const page = h(
             ),
             path(
                 "Let your AI agent pay",
+                "x402",
                 [
                     h(
                         Text,
                         { size: "sm", tone: "soft" },
-                        "0.01 USD per {{item}} with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
+                        "0.01 USD per {{item}}, paid over x402 with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
                     ),
                     h(CodeBlock, {
                         code: "set up https://weft.network/setup.md",

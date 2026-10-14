@@ -1,0 +1,33 @@
+{
+  "pr_number": 17402,
+  "title": "docs: update README — 2026-10-14",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17402",
+  "merged_at": "2026-10-14T07:14:42Z",
+  "labels": [
+    "NEWS"
+  ],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "Updated the README’s Latest News section for 2026-10-14 and refreshed the dark and light star-history SVGs. Recent Apps is refreshed separately when an app is published.",
+    "keywords": [
+      "README",
+      "Latest News",
+      "star history",
+      "documentation"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17402.jpg",
+    "prompt": "In a cozy pixel-art garden, Polli pins a fresh news page beside two little star-history charts while code-plants grow around the noticeboard. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses and stays small within the scene. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) accents."
+  },
+  "generated_at": "2026-10-14T07:15:48.047849+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Agent",
+  "merge_commit_sha": "338650005e5d423899351b6af7ad54545c28ef40",
+  "announcements": []
+}

@@ -1,0 +1,38 @@
+{
+  "pr_number": 17441,
+  "title": "[2026-10-14] fix: fall Qwen Image 3 back to the same Pro model on OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17441",
+  "merged_at": "2026-10-14T13:30:32Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Qwen Image 3 (Pro) now falls back to OpenRouter’s Alibaba-hosted qwen/qwen-image-3-pro when DashScope fails, rather than fal’s plain Qwen Image 3.0. The fallback uses the primary route’s resolved image size to keep both routes on the same price tier and bills OpenRouter’s reported usage.cost plus a 5.5% credit fee. The fal Qwen Image 3 route and its test were removed. In local end-to-end tests with DashScope forced to fail, a 1024×1024 text-to-image request took 57 seconds and a one-reference edit took 95 seconds; a three-reference edit received an Alibaba 524 after roughly 300 seconds and was not billed. The fallback is slower and costs roughly 5.5% above the listed price.",
+    "keywords": [
+      "Qwen Image 3 Pro",
+      "image generation",
+      "fallback",
+      "OpenRouter",
+      "DashScope",
+      "Alibaba",
+      "billing"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17441.jpg",
+    "prompt": "In a cozy pixel art garden server room, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny tool belt and tends a code-plant beside two matching image screens as one route hands work to the other. Strictly pixel art style, never realistic: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream and lavender, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-14T13:33:34.911526+00:00",
+  "area": "Models",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "e3d14460bdabf0b3a9c44661f20d2ba9600ef3fb",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "e3d14460bdabf0b3a9c44661f20d2ba9600ef3fb^1",
+    "after_ref": "e3d14460bdabf0b3a9c44661f20d2ba9600ef3fb"
+  }
+}

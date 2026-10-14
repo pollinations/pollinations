@@ -119,8 +119,8 @@ export interface VideoResponse {
     buffer: ArrayBuffer;
     /** Content type (video/mp4) */
     contentType: string;
-    /** The URL that was used to generate the video */
-    url: string;
+    /** Stored media URL from the rel="enclosure" Link header, or undefined if absent */
+    url?: string;
 }
 
 export interface Model3dGenerateOptions extends RequestOptions {

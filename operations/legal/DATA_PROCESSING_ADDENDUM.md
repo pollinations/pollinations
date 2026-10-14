@@ -1,12 +1,14 @@
 # Data Processing Addendum
 
-**Version: 2026-10-09 — Internal draft; not part of the customer Terms.**
+**Version: 2026-10-15 — Internal draft; not part of the customer Terms.**
 
 This working document is excluded from the website. It is not offered to customers or incorporated into the Terms. Supplier coverage and operational measures have not been established; the public provider disclosure is an inventory, not an approved contractual annex.
 
 Before offering this agreement, establish applicable supplier processing terms and transfer safeguards, a deletion process covering untagged uploads and provider-held data, and the security/retention measures below. Standard electronic supplier terms may suffice; separate signed paperwork is not inherently required.
 
 Before deploying the revised public Terms and Privacy Policy, prepare the material-change notice required by those documents and record its delivery and effective date. The Terms already promise termination deletion within 30 days; moving this draft does not resolve the existing untagged-upload deletion gap. This repository change is not a customer notice or a website deployment.
+
+**Direct Anthropic route review (2026-10-15; pending):** the proposed Claude routing sends messages, images, PDF documents, tool definitions and results, and generation settings through Pollinations' Portkey gateway to Anthropic, with AWS global inference profiles as the first fallback. Existing Vercel and OpenRouter routes remain later fallbacks where configured. Before production cutover, verify the account's contracted Anthropic entity, processing countries, retention and training settings, written processing terms, transfer safeguards, and any applicable customer notice or objection requirements. These account-specific facts and notice delivery remain unverified; an endpoint hostname or AWS signing region does not establish processing location. This note changes no contractual commitment.
 
 ## 1) Parties, acceptance, and scope
 

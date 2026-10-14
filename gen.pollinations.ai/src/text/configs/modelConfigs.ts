@@ -3,6 +3,7 @@ import { textEnvironmentValue } from "../environment.js";
 import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
     createBedrockNativeConfig,
@@ -883,18 +884,28 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
         ),
 
-    // -- Claude via AWS Bedrock -----------------------------------------------
+    // -- Claude via Anthropic and AWS Bedrock ---------------------------------
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-sonnet-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-haiku-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-haiku-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-haiku-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
@@ -928,6 +939,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
@@ -938,6 +954,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },

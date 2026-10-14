@@ -1,3 +1,4 @@
+import { env } from "cloudflare:test";
 import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
 import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
@@ -15,6 +16,8 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
+import { createBedrockNativeConfig } from "../src/text/configs/providerConfigs.ts";
+import { syncTextEnvironment } from "../src/text/environment.ts";
 import {
     supportsTextFallbackRequest,
     textCapabilityError,
@@ -169,6 +172,66 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("uses current Worker bindings for AWS fallback credentials", () => {
+        try {
+            syncTextEnvironment({
+                ...env,
+                AWS_ACCESS_KEY_ID: "local-binding-id",
+                AWS_SECRET_ACCESS_KEY: "not-a-secret-test-only",
+                AWS_REGION: "eu-west-1",
+            });
+            expect(createBedrockNativeConfig()).toMatchObject({
+                "aws-access-key-id": "local-binding-id",
+                "aws-secret-access-key": "not-a-secret-test-only",
+                "aws-region": "eu-west-1",
+            });
+        } finally {
+            syncTextEnvironment(env);
+        }
+    });
+
+    it.each([
+        [
+            "anthropic/claude-haiku-5.5",
+            "claude-haiku-5-5",
+            ["anthropic/claude-haiku-5.5:vercel"],
+        ],
+        ["anthropic/claude-sonnet-5.5", "claude-sonnet-5-5", []],
+        [
+            "anthropic/claude-opus-5.5",
+            "claude-opus-5-5",
+            ["anthropic/claude-opus-5.5:openrouter:anthropic"],
+        ],
+        ["anthropic/claude-fable-5.1", "claude-fable-5-1", []],
+    ] as const)(
+        "tries direct Anthropic before AWS for %s",
+        (model, upstream, remaining) => {
+            const primary: ModelDefinition = TEXT_SERVICES[model];
+            const fallback: ModelDefinition = TEXT_SERVICES[`${model}:aws`];
+            expect(primary.provider).toBe("anthropic");
+            expect(primary.fallbacks).toEqual([`${model}:aws`, ...remaining]);
+            expect(fallback).toMatchObject({
+                provider: "aws",
+                hidden: true,
+                fallbackOnly: true,
+                aliases: [],
+            });
+            expect(fallback.cost).toEqual(primary.cost);
+            expect(fallback.costVariants).toEqual(primary.costVariants);
+            expect(findModelByName(model)?.config()).toMatchObject({
+                provider: "anthropic",
+                model: upstream,
+                defaultOptions: { max_tokens: 128000 },
+            });
+            expect(findModelByName(`${model}:aws`)?.config()).toMatchObject({
+                provider: "bedrock",
+                model: `global.anthropic.${upstream}`,
+                defaultOptions: { max_tokens: 128000 },
+            });
+            expect(getVisibleTextModels()).not.toContain(`${model}:aws`);
+        },
+    );
+
     it("lets OpenRouter recover GLM Flash across independent providers", () => {
         const model = "z-ai/glm-5.3-flash";
         const route = `${model}:openrouter`;
@@ -583,14 +646,17 @@ describe("static provider fallbacks", () => {
         }
     });
 
-    it("prices Claude Haiku 5.5 on Vercel exactly as on Bedrock, including the long-context tier", () => {
+    it("prices Claude Haiku 5.5 on Vercel exactly as on Anthropic, including the long-context tier", () => {
         const primary = TEXT_SERVICES["anthropic/claude-haiku-5.5"];
         const fallback = TEXT_SERVICES["anthropic/claude-haiku-5.5:vercel"];
         expect(primary).toMatchObject({
-            provider: "aws",
+            provider: "anthropic",
             paidOnly: true,
             aliases: [],
-            fallbacks: ["anthropic/claude-haiku-5.5:vercel"],
+            fallbacks: [
+                "anthropic/claude-haiku-5.5:aws",
+                "anthropic/claude-haiku-5.5:vercel",
+            ],
         });
         expect(fallback).toMatchObject({
             provider: "vercel",

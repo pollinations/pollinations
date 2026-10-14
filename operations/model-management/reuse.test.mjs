@@ -11,6 +11,22 @@ const model = {
     community: false,
 };
 const guidanceDigest = hash("current guidance");
+test("fresh page refreshes cannot extend yesterday's provider search coverage", async () => {
+    const { previous, row, refreshed } = fixture();
+    row.researchedAt = new Date(Date.now() - 25 * 3600000).toISOString();
+    row.refreshedAt = new Date().toISOString();
+    let reads = 0;
+    const result = await reuseModel(
+        previous,
+        model,
+        options(async () => {
+            reads++;
+            return refreshed;
+        }),
+    );
+    assert.equal(result, null);
+    assert.equal(reads, 0);
+});
 function fixture() {
     const at = new Date(Date.now() - 60000).toISOString();
     const text =
@@ -312,10 +328,10 @@ test("reuse preserves the original extraction window for quotes beyond 5000 char
     );
 });
 
-test("fresh refresh dates permit old research without resetting its provenance", async () => {
+test("same-day refreshes preserve the provider search date rather than resetting its provenance", async () => {
     const { previous, row, source, refreshed } = fixture();
-    const oldDate = new Date(Date.now() - 31 * 86400000).toISOString();
-    const recentDate = new Date(Date.now() - 86400000).toISOString();
+    const oldDate = new Date(Date.now() - 12 * 3600000).toISOString();
+    const recentDate = new Date(Date.now() - 6 * 3600000).toISOString();
     row.researchedAt = oldDate;
     row.refreshedAt = recentDate;
     source.at = recentDate;
@@ -330,7 +346,7 @@ test("fresh refresh dates permit old research without resetting its provenance",
     assert.equal(result.researchedAt, oldDate);
     assert.deepEqual(result.searches, row.searches);
     assert.equal(calls, 1);
-    row.refreshedAt = oldDate;
+    row.refreshedAt = new Date(Date.now() - 31 * 86400000).toISOString();
     calls = 0;
     assert.equal(await reuseModel(previous, model, options(fetch)), null);
     assert.equal(calls, 0);

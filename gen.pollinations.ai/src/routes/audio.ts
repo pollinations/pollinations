@@ -4420,11 +4420,11 @@ export const audioRoutes = new Hono<Env>()
                                 duration: {
                                     type: "number",
                                     minimum: 0.5,
-                                    maximum: 300,
+                                    maximum: 380,
                                 },
                                 seconds: {
                                     type: "number",
-                                    minimum: 1,
+                                    minimum: 0.5,
                                     maximum: 380,
                                 },
                                 steps: {

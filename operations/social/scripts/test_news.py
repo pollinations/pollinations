@@ -695,8 +695,10 @@ class PostsTest(unittest.TestCase):
         self.assertEqual(json.loads(saved[f"{models}/snapshots/2026-10-14.json"]), current)
         self.assertLess(saved[f"{models}/models.md"].decode().index("## 2026-10-14"),
                         saved[f"{models}/models.md"].decode().index("## 2026-10-07"))
-        # A week without changes makes no call and saves only the snapshot.
-        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(current)):
+        # A week without changes makes no call and saves only the snapshot; live health stats are no change.
+        busier = copy.deepcopy(current)
+        busier["text"][0]["health"] = {"status": "healthy", "success_rate": 99.9, "requests": 45067}
+        with patch("posts.fetch_all_snapshots", return_value=busier):
             calls, _, saved = self.new("models", "2026-10-28")
         self.assertEqual((calls, list(saved)), ([], [f"{models}/snapshots/2026-10-28.json"]))
         # A saved model post is never replaced; a week without changes can be taken again.

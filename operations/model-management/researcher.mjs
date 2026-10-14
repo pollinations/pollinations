@@ -462,10 +462,24 @@ export function modelContract(model) {
     return contract;
 }
 
-export function modelGroups(models) {
+export function modelGroups(models, previousModels = []) {
+    const previous = new Map(previousModels.map((row) => [row.name, row]));
+    const priority = (model) => {
+        const row = previous.get(model.name);
+        if (
+            !row ||
+            row.contractDigest !== hash(JSON.stringify(modelContract(model)))
+        )
+            return 0;
+        return row.status === "researched" ? 2 : 1;
+    };
     const families = new Map();
-    for (const model of [...models].sort((a, b) =>
-        `${a.publisher}:${a.name}`.localeCompare(`${b.publisher}:${b.name}`),
+    for (const model of [...models].sort(
+        (a, b) =>
+            priority(a) - priority(b) ||
+            `${a.publisher}:${a.name}`.localeCompare(
+                `${b.publisher}:${b.name}`,
+            ),
     )) {
         const key = model.category;
         if (!families.has(key)) families.set(key, []);
@@ -913,11 +927,13 @@ export function assess(
     });
     const eligible = routes.filter(
         (route) =>
-            route.exactMatch &&
-            route.available &&
-            route.capabilitiesMatch !== false &&
-            route.identitySupported &&
-            route.availabilitySupported,
+            route.verification === "documented" ||
+            (["text", "embedding"].includes(model?.category) &&
+                route.exactMatch &&
+                route.available &&
+                route.capabilitiesMatch !== false &&
+                route.identitySupported &&
+                route.availabilitySupported),
     );
     const preferred = PREFERENCE.flatMap((provider) =>
         routes.filter(
@@ -1318,7 +1334,7 @@ export async function research(
     try {
         assert.ok(
             !services.prepared?.requiredEvidencePending,
-            "Required discovery source coverage was not attempted; preserving partial evidence",
+            "Required research coverage was not attempted; preserving partial evidence",
         );
         if (
             services.prepared &&
@@ -3434,7 +3450,10 @@ export async function main(env = process.env) {
         } else pending.push(contract);
     }
     await save();
-    for (const models of modelGroups(pending)) {
+    for (const models of modelGroups(
+        pending,
+        Array.isArray(previous?.models) ? previous.models : [],
+    )) {
         const targets = models.map(({ name }) =>
             report.models.find((row) => row.name === name),
         );

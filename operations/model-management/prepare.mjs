@@ -1323,6 +1323,7 @@ export async function prepareResearch(task, services) {
             }
             const attempted = new Set();
             const attemptedModels = new Set();
+            let optionalFollowed = 0;
             const followupActions = () => {
                 const offered = officialCandidates(task.models ?? [], sources)
                     .models.flatMap((row, index) => {
@@ -1416,15 +1417,23 @@ export async function prepareResearch(task, services) {
                 const followups = followupActions();
                 if (!followups.length) break;
                 const selected = await control("followup", [
-                    ...followups,
+                    ...followups.filter(
+                        (action) => action.required || optionalFollowed < 2,
+                    ),
                     ...(followups.some(({ required }) => required)
                         ? []
                         : [finish]),
                 ]);
-                if (!selected) return evidence();
+                if (!selected) {
+                    requiredEvidencePending = followups.some(
+                        ({ required }) => required,
+                    );
+                    return evidence();
+                }
                 if (selected.kind === "finish") break;
                 attempted.add(selected.id);
-                attemptedModels.add(selected.models[0]);
+                if (selected.required) attemptedModels.add(selected.models[0]);
+                else optionalFollowed++;
                 const returnedLeadIds = await runSearch(selected);
                 followed++;
                 const focus = selected.models[0].split("/").at(-1);
@@ -1481,6 +1490,9 @@ export async function prepareResearch(task, services) {
                     action.status = source.status;
                 }
             }
+            requiredEvidencePending = followupActions().some(
+                ({ required }) => required,
+            );
             const semantic = officialCandidates(
                 task.models ?? [],
                 sources,

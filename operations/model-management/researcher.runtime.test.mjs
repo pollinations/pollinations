@@ -171,6 +171,45 @@ test("budget exhaustion happens before the first paid provider request", async (
     assert.equal(report.status, "partial");
 });
 
+test("each full run adopts newly official models and excludes new community entries", async (t) => {
+    const exit = process.exitCode;
+    let rows = inventory;
+    let paid = 0;
+    t.mock.method(globalThis, "fetch", async (url) => {
+        if (url.includes("/models?")) return Response.json(rows);
+        const free = catalog(url);
+        if (free) return free;
+        paid++;
+        return noAction();
+    });
+    const first = await main({
+        ...envFor(await output(t)),
+        MODELS: "",
+        MAX_POLLEN: "0.000001",
+    });
+    const added = { ...model, name: "publisher/new-official-v2", aliases: [] };
+    rows = [
+        ...inventory,
+        added,
+        { ...added, name: "community/owner/model", community: true },
+    ];
+    const second = await main({
+        ...envFor(await output(t)),
+        MODELS: "",
+        MAX_POLLEN: "0.000001",
+    });
+    t.after(() => {
+        process.exitCode = exit;
+    });
+    assert.equal(second.officialCount, first.officialCount + 1);
+    assert.ok(second.models.some(({ name }) => name === added.name));
+    assert.ok(
+        second.models.every(({ name }) => name !== "community/owner/model"),
+    );
+    assert.equal(second.selectedCount, second.officialCount);
+    assert.equal(paid, 0);
+});
+
 test("explicit model selection spends inference only on its group; full catalog retains discovery", async (t) => {
     const exit = process.exitCode;
     for (const selection of [model.name, "runtime", ""]) {

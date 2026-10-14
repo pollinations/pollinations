@@ -96,7 +96,11 @@ CATALOG_FACTS = (
     "tools",
     "reasoning",
     "context_length",
+    "base_model",
 )
+# An agent costs what its base model costs and is paid-only when it is, so the post
+# names the base model instead.
+BASE_MODEL_FACTS = ("pricing", "flat_rate", "paid_only")
 DATES = {
     "daily": "a day (YYYY-MM-DD)",
     "weekly": "a Sunday (YYYY-MM-DD)",
@@ -253,9 +257,19 @@ def read_snapshot(news: Path, date: str | None) -> dict | None:
     )
 
 
+def community_facts(model: dict) -> dict:
+    """A community model's CATALOG_FACTS; an agent's without what its base model sets."""
+    dropped = BASE_MODEL_FACTS if model.get("agent") else ()
+    return {
+        key: value
+        for key, value in model.items()
+        if key in CATALOG_FACTS and key not in dropped
+    }
+
+
 def covered(job: str, snapshot: dict | None) -> dict | None:
     """The models a post covers: the official ones for the model post, the community
-    ones with only CATALOG_FACTS for the community post."""
+    ones' facts for the community post."""
     if not snapshot:
         return snapshot
     if job == "models":
@@ -264,11 +278,7 @@ def covered(job: str, snapshot: dict | None) -> dict | None:
             for category, models in snapshot.items()
         }
     return {
-        category: [
-            {key: value for key, value in model.items() if key in CATALOG_FACTS}
-            for model in models
-            if model.get("community")
-        ]
+        category: [community_facts(model) for model in models if model.get("community")]
         for category, models in snapshot.items()
     }
 

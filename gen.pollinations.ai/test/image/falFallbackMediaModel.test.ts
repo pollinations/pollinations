@@ -41,7 +41,18 @@ function mockFal(output: Record<string, unknown>, status = 200) {
         if (href === STATUS_URL) {
             return Response.json({ status: "COMPLETED" });
         }
-        if (href === RESULT_URL) return Response.json(output, { status });
+        if (href.startsWith("https://api.fal.ai/v1/models/pricing")) {
+            const endpoint_id = new URL(href).searchParams.get("endpoint_id");
+            return Response.json({
+                prices: [{ endpoint_id, unit_price: 0.17, currency: "USD" }],
+            });
+        }
+        if (href === RESULT_URL) {
+            return Response.json(output, {
+                status,
+                headers: { "x-fal-billable-units": "1" },
+            });
+        }
         if (href === MEDIA_URL) {
             return new Response(MEDIA_BYTES, {
                 headers: { "content-type": "video/mp4" },
@@ -284,6 +295,32 @@ describe("Fal fallback media models", () => {
         expect(requests[0].body?.aspect_ratio).toBe("1:1");
     });
 
+    it.each([
+        ["x-ai/grok-imagine-video-1.5:fal", "9:16", false, "9:16"],
+        ["alibaba/wan-2.6:fal", "16:9", false, "16:9"],
+        ["alibaba/wan-2.2-fast:fal", "16:9", false, "16:9"],
+        ["bytedance/seedance-1-pro-fast:fal", "21:9", false, "21:9"],
+        // Wan 2.2 Turbo has no 4:3, so the default 1024×1024 decides.
+        ["alibaba/wan-2.2-fast:fal", "4:3", false, "1:1"],
+        // Explicit dimensions win over the requested ratio.
+        ["alibaba/wan-2.6:fal", "16:9", true, "1:1"],
+    ] as const)(
+        "sends %s aspectRatio %s (explicit dimensions: %s) as %s",
+        async (model, aspectRatio, dimensionsExplicit, expected) => {
+            const requests = mockFal({ video: { url: MEDIA_URL } });
+            const resultPromise = callFalFallbackVideo("a blue circle", {
+                ...baseParams,
+                model,
+                aspectRatio,
+                dimensionsExplicit,
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            await resultPromise;
+
+            expect(requests[0].body?.aspect_ratio).toBe(expected);
+        },
+    );
+
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
@@ -306,6 +343,59 @@ describe("Fal fallback media models", () => {
             seed: 42,
         });
     });
+
+    it.each([
+        [
+            [],
+            undefined,
+            "fal-ai/kandinsky6-lite/text-to-video",
+            { generate_audio: true, aspect_ratio: "1:1" },
+        ],
+        [
+            [],
+            "16:9",
+            "fal-ai/kandinsky6-lite/text-to-video",
+            { generate_audio: true, aspect_ratio: "16:9" },
+        ],
+        [
+            ["https://example.com/start.png"],
+            undefined,
+            "fal-ai/kandinsky6-lite/image-to-video",
+            {
+                generate_audio: true,
+                image_url: "https://example.com/start.png",
+            },
+        ],
+    ] as const)(
+        "bills Kandinsky 6.0 Lite (%j, %s) from fal's units and live price",
+        async (image, ratio, endpoint, input) => {
+            const requests = mockFal({
+                video: { url: MEDIA_URL, content_type: "video/mp4" },
+            });
+            const resultPromise = callFalFallbackVideo("move", {
+                ...baseParams,
+                model: "kandinskylab/kandinsky-6.0-lite",
+                duration: 10,
+                aspectRatio: ratio,
+                image: [...image],
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            const result = await resultPromise;
+
+            expect(requests[0].url).toBe(
+                `https://api.fal.ai/v1/models/pricing?endpoint_id=${encodeURIComponent(endpoint)}`,
+            );
+            expect(requests[1]).toEqual({
+                url: `https://queue.fal.run/${endpoint}`,
+                body: { prompt: "move", ...input, seed: 42 },
+            });
+            expect(result.durationSeconds).toBe(5);
+            expect(result.trackingData.providerBilling).toEqual({
+                units: 1,
+                unitCost: 0.17,
+            });
+        },
+    );
 
     it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
         const requests = mockFal({

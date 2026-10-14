@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Bit — tech stories told by an AI agent",
+    "url": "https://bit.sessionweave.com",
+    "description": "Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E",
+    "language": "it",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "EnzinoBB",
+    "githubUserId": "189984483",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-11",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17116",
+    "approvedDate": "2026-10-13",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/c6940fcc-b289-4a41-8f26-1437afdc5ae4"
+  },
+  {
     "emoji": "💬",
     "name": "Colmena",
     "url": "https://lotxo1.github.io/colmena",

@@ -65,7 +65,7 @@ Beyond the limit you get **402 Payment Required**. You can:
 - **Public feed.** [image.pollinations.ai/feed](https://image.pollinations.ai/feed) and [text.pollinations.ai/feed](https://text.pollinations.ai/feed) show prompts as they are generated. Use `nofeed=true` (images) or `private=true` (text) to stay off it.
 - **Cached results.** The same URL returns the same result, to anyone who has the URL.
 - **No keys in URLs.** This API needs no key; never put one in a URL.
-- **Safety filters.** Some prompts are refused.
+- **Safety filters.** Some prompts are refused. Image prompts asking for sexual content involving minors always get a 400 error.
 - Use is subject to the [Terms of Service](https://pollinations.ai/terms) and the [Privacy Policy](https://pollinations.ai/privacy).
 
 ## For AI assistants

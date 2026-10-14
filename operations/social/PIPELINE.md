@@ -202,7 +202,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Community post: `operations/social/news/community/`
 
-`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text.
+`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text. Models and agents are two groups; an agent shows its base model instead of a price or access change, which follow that model.
 
 ### Platform Envelope
 

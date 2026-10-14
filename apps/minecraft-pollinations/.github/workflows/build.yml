@@ -1,0 +1,43 @@
+# CI for the Pollinations Minecraft plugin.
+#
+# GitHub Actions only loads workflows from the repository root, so this file
+# is a template: copy it to .github/workflows/minecraft-pollinations.yml in
+# the repository root to enable it (see README.md).
+
+name: minecraft-pollinations
+
+on:
+  push:
+    paths:
+      - 'apps/minecraft-pollinations/**'
+      - '.github/workflows/minecraft-pollinations.yml'
+  pull_request:
+    paths:
+      - 'apps/minecraft-pollinations/**'
+      - '.github/workflows/minecraft-pollinations.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/minecraft-pollinations
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B package
+
+      - name: Upload plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: minecraft-pollinations-jar
+          path: apps/minecraft-pollinations/target/*.jar
+          if-no-files-found: error

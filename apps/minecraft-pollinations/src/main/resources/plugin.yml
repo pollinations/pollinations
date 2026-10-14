@@ -1,0 +1,35 @@
+name: Pollinations
+version: 1.0.0
+main: io.pollinations.minecraft.PollinationsPlugin
+api-version: '1.21'
+description: Chatting villagers and prompt-to-map art, powered by Pollinations.
+website: https://pollinations.ai
+
+commands:
+  ai:
+    description: Chat with an AI persona.
+    usage: |
+      /ai <message> - chat with your selected persona
+      /ai persona - list personas
+      /ai persona <name> - select a persona
+      /ai reset - clear the conversation
+  draw:
+    description: Turn a prompt into an image on a map.
+    usage: /draw <prompt>
+    aliases: [paint]
+  pollinations:
+    description: Manage the Pollinations plugin.
+    usage: |
+      /pollinations key <sk_...> - set the server API key
+      /pollinations key clear - remove the key
+      /pollinations models [text|image] - list live models
+      /pollinations status - key, models and API health
+    aliases: [polli]
+
+permissions:
+  pollinations.use:
+    description: Use AI chat, image maps and villager personas (spends the server's Pollen).
+    default: true
+  pollinations.admin:
+    description: Manage the server Pollinations API key and view live model lists.
+    default: op

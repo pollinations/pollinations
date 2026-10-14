@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-14T01:08:08.301269+00:00",
+  "generated_at": "2026-10-14T06:09:30.935796+00:00",
   "models": [
     {
       "id": "pr-14890:openai/gpt-image-2.5-flare",
@@ -8848,6 +8848,58 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-13",
+      "emoji": "🎵",
+      "title": "Kandinsky video with audio",
+      "text": "Generate five-second 480p videos with synchronized audio from a prompt or start image using `kandinskylab/kandinsky-6.0-lite`. [Browse the model](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite).",
+      "prs": [
+        16995
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🎨",
+      "title": "Qwen image editing",
+      "text": "Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).",
+      "prs": [
+        17055
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "🤖",
+      "title": "Gemini 4 Argon",
+      "text": "Use `google/gemini-4-argon` with text, image, audio or video input, plus reasoning controls, tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).",
+      "prs": [
+        17329
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "💡",
+      "title": "Manage sandboxes in Enter",
+      "text": "Create, pause, resume and connect to your sandboxes from the dashboard. Templates also gain tools including ffmpeg, uv and rclone. [Open the dashboard](https://enter.pollinations.ai/keys).",
+      "prs": [
+        17150,
+        17364,
+        17368
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-13",
+      "emoji": "📱",
+      "title": "Bit tells tech stories",
+      "text": "Watch short AI-agent-narrated stories about open-source projects and AI news in Italian and English. [Try it](https://bit.sessionweave.com).",
+      "prs": [
+        17324
+      ],
+      "kind": "app"
+    },
     {
       "date": "2026-10-12",
       "emoji": "🤖",

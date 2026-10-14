@@ -48,21 +48,6 @@ async function addUser(
         .run();
 }
 
-async function addPurchase(userId: string, pollen: number, createdAt: number) {
-    await env.DB.prepare(
-        `INSERT INTO stripe_checkout_credits (session_id, event_id, event_type, user_id, pollen_credited, created_at)
-        VALUES (?, ?, 'checkout.session.completed', ?, ?, ?)`,
-    )
-        .bind(
-            crypto.randomUUID(),
-            crypto.randomUUID(),
-            userId,
-            pollen,
-            createdAt,
-        )
-        .run();
-}
-
 const notifiedAt = async (userId: string) =>
     (
         await env.DB.prepare(
@@ -85,7 +70,6 @@ test("running-low email goes out once per 30 days below the threshold", async ()
     const { sent, notifyEnv } = withOutbox();
     await addUser("low", { packBalance: 3 });
     await addUser("healthy", { packBalance: 6 });
-    await addPurchase("low", 20, Date.now() - 4 * 24 * 60 * 60 * 1000);
 
     for (const id of ["low", "low", "healthy"]) {
         expect(await processAutoTopUpForUser(notifyEnv, id)).toEqual({
@@ -94,17 +78,8 @@ test("running-low email goes out once per 30 days below the threshold", async ()
         });
     }
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
-    expect(sent[0].subject).toBe("Your paid Pollen is running low");
-    expect(sent[0].text).toContain(
-        "You have 3.00 Pollen left in your paid balance.",
-    );
-    expect(sent[0].text).toContain(
-        "Your last pack of 20.00 Pollen lasted 4 days.",
-    );
-    expect(sent[0].html).toContain("/quests");
-    expect(sent[0].text).toContain(
-        "When auto top-up first refills your balance, you get 20 Quest Pollen.",
-    );
+    expect(sent[0].subject).toBe("Your paid balance is running low");
+    expect(sent[0].text).toContain("You have 3.00 Pollen left.");
 
     await env.DB.prepare(
         "UPDATE user SET low_balance_notified_at = ? WHERE id = 'low'",
@@ -117,11 +92,6 @@ test("running-low email goes out once per 30 days below the threshold", async ()
 
 test("a failed running-low email frees the slot for the next crossing", async () => {
     await addUser("bounce", { packBalance: 1 });
-    // Already earned the auto top-up quest, so the email doesn't offer it.
-    await env.DB.prepare(
-        `INSERT INTO rewards (id, idempotency_key, user_id, quest_id, title, pollen_amount, balance_bucket)
-        VALUES ('reward_bounce', 'quest:first_auto_top_up:bounce', 'bounce', 'first_auto_top_up', 'First auto top-up', 20, 'tier')`,
-    ).run();
 
     await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");
     expect(await notifiedAt("bounce")).toBeNull();
@@ -129,8 +99,6 @@ test("a failed running-low email frees the slot for the next crossing", async ()
     const { sent, notifyEnv } = withOutbox();
     await processAutoTopUpForUser(notifyEnv, "bounce");
     expect(sent).toHaveLength(1);
-    expect(sent[0].text).not.toContain("Your last pack");
-    expect(sent[0].text).not.toContain("Quest Pollen.");
     expect(await notifiedAt("bounce")).not.toBeNull();
 });
 
@@ -147,9 +115,8 @@ test("switching auto top-up off emails once and replaces the running-low email",
         status: "skipped",
         reason: "auto top-up disabled",
     });
-    expect(sent.map((email) => email.subject)).toEqual(["Auto top-up is off"]);
-    expect(sent[0].text).toContain("paid balance of 2.00 Pollen");
-    expect(sent[0].text).toContain("you get 20 Quest Pollen");
+    expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
+    expect(sent[0].text).toContain("You have 2.00 Pollen left.");
 });
 
 test("the unsubscribe link stops every email", async () => {

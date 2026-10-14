@@ -15,7 +15,6 @@ import {
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import {
-    AUTO_TOP_UP_OFFER_COLUMN,
     autoTopUpOffNotice,
     sendNotice,
     sendRunningLowNotice,
@@ -802,21 +801,19 @@ async function disableAutoTopUp(
             SET auto_top_up_enabled = 0, low_balance_notified_at = ?
             WHERE id = ? AND auto_top_up_enabled = 1
             RETURNING email, COALESCE(pack_balance, 0) AS balance,
-                email_unsubscribed_at AS unsubscribedAt,
-                ${AUTO_TOP_UP_OFFER_COLUMN}`,
+                email_unsubscribed_at AS unsubscribedAt`,
     )
         .bind(Date.now(), userId)
         .first<{
             email: string;
             balance: number;
             unsubscribedAt: number | null;
-            autoTopUpOffer: number;
         }>();
     if (user && !user.unsubscribedAt) {
         await sendNotice(
             env,
             { id: userId, email: user.email },
-            autoTopUpOffNotice(user.balance, Boolean(user.autoTopUpOffer)),
+            autoTopUpOffNotice(user.balance),
         );
     }
 }

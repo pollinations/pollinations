@@ -16,73 +16,32 @@ const FROM = {
 const REPLY_TO = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
 const NOTICE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type Link = { label: string; path: string };
 
 type Notice = {
     id: "running_low" | "auto_top_up_off";
     subject: string;
-    paragraphs: string[];
+    body: string;
     button: Link;
-    footnote?: { text: string; link: Link };
 };
 
 const pollen = (amount: number) => `${Math.max(0, amount).toFixed(2)} Pollen`;
 
-// The first_auto_top_up quest pays 20 Quest Pollen once per account for a
-// paid auto top-up, so users who already earned it don't get the offer.
-export const AUTO_TOP_UP_OFFER_COLUMN = `NOT EXISTS (
-    SELECT 1 FROM rewards
-        WHERE user_id = user.id AND quest_id = 'first_auto_top_up'
-) AS autoTopUpOffer`;
-
-export function runningLowNotice(
-    balance: number,
-    lastPack: { pollen: number; days: number } | null,
-    autoTopUpOffer: boolean,
-): Notice {
+export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
-        subject: "Your paid Pollen is running low",
-        paragraphs: [
-            `You have ${pollen(balance)} left in your paid balance. When it runs out, requests that need paid Pollen will fail.`,
-            ...(lastPack
-                ? [
-                      `Your last pack of ${pollen(lastPack.pollen)} lasted ${lastPack.days === 1 ? "1 day" : `${lastPack.days} days`}.`,
-                  ]
-                : []),
-            "Top up now, or turn on auto top-up in your wallet so it refills by itself.",
-            ...(autoTopUpOffer
-                ? [
-                      "When auto top-up first refills your balance, you get 20 Quest Pollen.",
-                  ]
-                : []),
-        ],
+        subject: "Your paid balance is running low",
+        body: `You have ${pollen(balance)} left.`,
         button: { label: "Top up", path: "/top-up" },
-        footnote: {
-            text: "You can also earn Quest Pollen:",
-            link: { label: "see quests", path: "/quests" },
-        },
     };
 }
 
-export function autoTopUpOffNotice(
-    balance: number,
-    autoTopUpOffer: boolean,
-): Notice {
+export function autoTopUpOffNotice(balance: number): Notice {
     return {
         id: "auto_top_up_off",
-        subject: "Auto top-up is off",
-        paragraphs: [
-            "We couldn't use your saved payment details, so auto top-up is now off.",
-            `Your keys keep working until your paid balance of ${pollen(balance)} runs out. You can update your card and turn it back on in your wallet.`,
-            ...(autoTopUpOffer
-                ? [
-                      "When auto top-up first refills your balance, you get 20 Quest Pollen.",
-                  ]
-                : []),
-        ],
+        subject: "Auto top-up failed",
+        body: `We couldn't use your saved payment method, so auto top-up is now off. You have ${pollen(balance)} left.`,
         button: { label: "Open wallet", path: "/pollen" },
     };
 }
@@ -115,11 +74,6 @@ export function renderNotice(
     const href = (link: Link) => new URL(link.path, baseUrl).toString();
     const footer =
         "You're getting this email because it's about your Pollinations account. Questions? Reply to this email.";
-    const p = (text: string) =>
-        `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${text}</p>`;
-    const footnote = notice.footnote
-        ? `<p style="margin:20px 0 0;font-size:14px;line-height:20px;color:#6b6359">${notice.footnote.text} <a href="${href(notice.footnote.link)}" style="color:#1d1420">${notice.footnote.link.label}</a></p>`
-        : "";
 
     const html = `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -127,9 +81,8 @@ export function renderNotice(
 <div style="max-width:520px;margin:0 auto;background:#fffaf0;border-radius:16px;padding:28px">
 <p style="margin:0 0 20px;font-size:14px;font-weight:700">pollinations.ai</p>
 <h1 style="margin:0 0 16px;font-size:22px;line-height:28px">${notice.subject}</h1>
-${notice.paragraphs.map(p).join("\n")}
+<p style="margin:0 0 16px;font-size:16px;line-height:24px">${notice.body}</p>
 <a href="${href(notice.button)}" style="display:inline-block;margin-top:4px;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
-${footnote}
 </div>
 <p style="max-width:520px;margin:16px auto 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center">${footer} <a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe</a> from all our emails.<br>${ADDRESS}</p>
 </body></html>`;
@@ -137,11 +90,9 @@ ${footnote}
     const text = [
         notice.subject,
         "",
-        ...notice.paragraphs.flatMap((paragraph) => [paragraph, ""]),
+        notice.body,
+        "",
         `${notice.button.label}: ${href(notice.button)}`,
-        ...(notice.footnote
-            ? ["", `${notice.footnote.text} ${href(notice.footnote.link)}`]
-            : []),
         "",
         "--",
         footer,
@@ -202,33 +153,13 @@ export async function sendRunningLowNotice(
             WHERE id = ?
                 AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
                 AND email_unsubscribed_at IS NULL
-            RETURNING email, COALESCE(pack_balance, 0) AS balance,
-                ${AUTO_TOP_UP_OFFER_COLUMN}`,
+            RETURNING email, COALESCE(pack_balance, 0) AS balance`,
     )
         .bind(now, userId, now - NOTICE_COOLDOWN_MS)
-        .first<{ email: string; balance: number; autoTopUpOffer: number }>();
+        .first<{ email: string; balance: number }>();
     if (!user) return;
 
-    // created_at holds seconds on old rows and milliseconds on new ones.
-    const lastPack = await env.DB.prepare(
-        `SELECT pollen_credited AS pollen,
-                CASE WHEN created_at < 100000000000 THEN created_at * 1000 ELSE created_at END AS createdMs
-            FROM stripe_checkout_credits
-            WHERE user_id = ?
-            ORDER BY createdMs DESC
-            LIMIT 1`,
-    )
-        .bind(userId)
-        .first<{ pollen: number; createdMs: number }>();
-
-    const notice = runningLowNotice(
-        user.balance,
-        lastPack && {
-            pollen: lastPack.pollen,
-            days: Math.max(1, Math.round((now - lastPack.createdMs) / DAY_MS)),
-        },
-        Boolean(user.autoTopUpOffer),
-    );
+    const notice = runningLowNotice(user.balance);
     if (await sendNotice(env, { id: userId, email: user.email }, notice)) {
         return;
     }

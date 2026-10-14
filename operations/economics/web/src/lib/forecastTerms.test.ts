@@ -18,19 +18,22 @@ describe("forecast terms", () => {
         ["bedrock", "aws", "compute"],
         ["fx revaluation", "fx revaluation", "balance_sheet"],
         ["pre-window movements", "pre-window movements", "balance_sheet"],
-    ])("applies a saved %s override to %s (%s)", (savedVendor, vendor, category) => {
-        const override = { activeThrough: "2026-09" };
-        const { forecastRules } = parsePrivateConfig({
-            config: JSON.stringify({
-                ...PRIVATE_CONFIG_FIXTURE,
-                forecastRules: { [`${savedVendor}|${category}`]: override },
-            }),
-            recorded_at: "2026-09-08",
-        });
-        expect(forecastLineRule(vendor, category, forecastRules)).toMatchObject(
-            override,
-        );
-    });
+    ])(
+        "applies a saved %s override to %s (%s)",
+        (savedVendor, vendor, category) => {
+            const override = { activeThrough: "2026-09" };
+            const { forecastRules } = parsePrivateConfig({
+                config: JSON.stringify({
+                    ...PRIVATE_CONFIG_FIXTURE,
+                    forecastRules: { [`${savedVendor}|${category}`]: override },
+                }),
+                recorded_at: "2026-09-08",
+            });
+            expect(
+                forecastLineRule(vendor, category, forecastRules),
+            ).toMatchObject(override);
+        },
+    );
 
     it.each([
         ["vast.ai|compute", "vast|compute"],

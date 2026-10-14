@@ -59,7 +59,9 @@ export function createTextCommand() {
         .action(async (promptArg, opts, command: Command) => {
             // With a prompt argument, stdin is optional context: don't wait
             // forever on a caller that leaves stdin open.
-            const stdinText = await readStdin(promptArg ? 3000 : undefined);
+            const stdinText = (
+                await readStdin(promptArg ? 3000 : undefined)
+            ).trim();
             const prompt = promptArg || stdinText;
 
             if (!prompt) {

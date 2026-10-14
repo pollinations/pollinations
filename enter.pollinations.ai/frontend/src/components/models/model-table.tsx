@@ -1,6 +1,7 @@
 import { InlineLink, Surface, Tooltip } from "@pollinations/ui";
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CopyValue } from "./copy-value.tsx";
+import { ModelDescription } from "./model-description.tsx";
 import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
@@ -205,9 +206,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         />
                     </div>
                     {modelDescription && (
-                        <p className="line-clamp-2 text-xs leading-snug text-theme-text-muted">
-                            {modelDescription}
-                        </p>
+                        <ModelDescription text={modelDescription} />
                     )}
                     {model.brandUrl && model.publisher && (
                         <InlineLink

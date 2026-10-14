@@ -950,7 +950,7 @@ const CURATED_BODIES: Record<string, Json> = {
         messages: [{ role: "user", content: "Hello!" }],
     },
     postV1Responses: {
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         input: "Hello!",
     },
     postV1ImagesGenerations: {
@@ -1010,19 +1010,19 @@ const CURATED_BODIES: Record<string, Json> = {
         name: "my-agent",
         title: "My Agent",
         systemPrompt: "You are a helpful assistant.",
-        baseModel: "openai",
+        baseModel: "openai/gpt-5.4-nano",
         mcpServers: ["pollinations"],
     },
     patchAccountAgentsById: {
         systemPrompt: "You are a concise assistant.",
-        baseModel: "openai",
+        baseModel: "openai/gpt-5.4-nano",
         mcpServers: ["pollinations"],
     },
     postAccountIntegrations: {
         toolkit: "github",
     },
     post3dByPrompt: {
-        model: "hyper3d-rodin",
+        model: "hyper3d/rodin-2.5",
     },
 };
 

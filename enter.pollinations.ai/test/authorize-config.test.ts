@@ -134,37 +134,32 @@ describe("sanitizeAuthorizeAccountPermissions", () => {
 });
 
 describe("model category selection", () => {
-    const catalog = [
-        { name: "flux", aliases: ["flux-schnell"], category: "image" as const },
-        { name: "openai", category: "text" as const },
-    ];
-
-    it("reads requested model IDs and aliases as their categories", () => {
-        const selection = readModelSelection(
-            ["flux-schnell", "openai", "audio"],
-            catalog,
-        );
-        expect([...selection.categories]).toEqual(["image", "text", "audio"]);
-        expect(selection.unknown).toEqual([]);
-    });
-
-    it("keeps values the catalog lacks for the server to resolve", () => {
-        const selection = readModelSelection(
-            ["openai", "community/alice/private"],
-            catalog,
-        );
+    it("keeps model IDs beside categories so a save never widens them", () => {
+        const selection = readModelSelection([
+            "flux-schnell",
+            "audio",
+            "community/alice/private",
+        ]);
+        expect([...selection.categories]).toEqual(["audio"]);
+        expect(selection.models).toEqual([
+            "flux-schnell",
+            "community/alice/private",
+        ]);
+        selection.categories.add("text");
         expect(writeModelSelection(selection)).toEqual([
             "text",
+            "audio",
+            "flux-schnell",
             "community/alice/private",
         ]);
     });
 
     it("stores every category as all models and keeps none distinct", () => {
-        const all = readModelSelection(null, catalog);
+        const all = readModelSelection(null);
         expect(all.categories.size).toBe(7);
         expect(writeModelSelection(all)).toBeNull();
         expect(
-            writeModelSelection({ categories: new Set(), unknown: [] }),
+            writeModelSelection({ categories: new Set(), models: [] }),
         ).toEqual([]);
     });
 });

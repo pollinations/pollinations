@@ -87,17 +87,16 @@ describe("RunwayTab labels", () => {
         expect(html).not.toContain("polli:bg-ink-100/80");
     });
 
-    it.each([
-        "MIXED",
-        "bank",
-        "vendor",
-    ])("keeps %s metadata neutral", (label) => {
-        const html = renderToStaticMarkup(
-            createElement(ForecastBadge, { label }),
-        );
-        expect(html).toContain("polli:bg-ink-100/80");
-        expect(html).toContain(`>${label}</span>`);
-    });
+    it.each(["MIXED", "bank", "vendor"])(
+        "keeps %s metadata neutral",
+        (label) => {
+            const html = renderToStaticMarkup(
+                createElement(ForecastBadge, { label }),
+            );
+            expect(html).toContain("polli:bg-ink-100/80");
+            expect(html).toContain(`>${label}</span>`);
+        },
+    );
 
     it("uses the same projection rules for labels and calculations", () => {
         for (const vendor of ["fal", "fireworks", "vast"]) {

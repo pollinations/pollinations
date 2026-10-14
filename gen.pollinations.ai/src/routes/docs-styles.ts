@@ -144,7 +144,7 @@ export const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app .download-container { display: none !important; }
 
 /* Hide "Powered by Scalar" sidebar footer link. */
-.scalar-app a[href="https://www.scalar.com"] { display: none !important; }
+.scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
    These render in the sidebar regardless of showDeveloperTools. We target
@@ -156,7 +156,8 @@ export const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app a[href^="cursor:"],
 .scalar-app a[href*="mcp.scalar.com"],
 .scalar-app a[href*="generate-mcp"],
-.scalar-app a[href*="modelcontextprotocol"] { display: none !important; }
+.scalar-app a[href*="modelcontextprotocol"],
+.scalar-app .scalar-mcp-layer { display: none !important; }
 .scalar-app section:has(> a[href^="vscode:"]),
 .scalar-app section:has(> a[href^="cursor:"]) { display: none !important; }
 

@@ -43,7 +43,7 @@ export function fetchModelHealthRows(): Promise<ModelHealthRow[]> {
 export const modelStatusRoutes = new Hono<Env>().get(
     "/models/status",
     describeRoute({
-        tags: ["📊 Monitor"],
+        tags: ["🤖 Models"],
         summary: "Model Health Status",
         description: [
             "Pollinations-specific diagnostics, not part of the OpenAI-compatible surface. Returns the raw response of the public Tinybird `model_route_health` pipe: a `data` array of rows plus a `meta` array typing each column.",
@@ -110,7 +110,7 @@ export const modelStatusRoutes = new Hono<Env>().get(
 export const modelStatsRoutes = new Hono<Env>().get(
     "/models/stats",
     describeRoute({
-        tags: ["📊 Monitor"],
+        tags: ["🤖 Models"],
         summary: "Model Usage Stats",
         description: [
             "Pollinations-specific usage statistics for the last 7 days, from the public Tinybird `public_model_stats` pipe: a `data` array with one row per model.",

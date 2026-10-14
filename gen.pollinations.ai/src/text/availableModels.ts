@@ -789,6 +789,14 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "inferenceport-ai/lightning-text-v2.1",
+        config: portkeyConfig["inferenceport-lightning-text-v2.1"],
+    },
+    {
+        name: "inferenceport-ai/lightning-text-v2",
+        config: portkeyConfig["inferenceport-lightning-text-v2"],
+    },
+    {
         name: "openai/gpt-6-luna-decisions",
         config: portkeyConfig["gpt-6-luna-decisions"],
         useSystemOneApi: true,

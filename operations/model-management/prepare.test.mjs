@@ -633,6 +633,54 @@ test("every unresolved checkpoint gets targeted research before finish, includin
     assert.ok(f.reads.length <= 40);
 });
 
+test("an unresolved mandatory followup choice retains partial coverage rather than reporting completion", async () => {
+    const f = fixture([]);
+    f.services.control = async ({ stage, actions }) => ({
+        action: stage === "search" ? actions[0] : undefined,
+    });
+    const result = await prepareResearch(
+        { models: [{ name: "maker/Alpha-v3", category: "text" }] },
+        f.services,
+    );
+    assert.equal(f.searches.length, 4);
+    assert.equal(result.requiredEvidencePending, true);
+    assert.ok(result.gaps.some((gap) => gap.includes("followup")));
+});
+
+test("optional provider searches cannot consume another model's required targeted slot", async () => {
+    const models = Array.from({ length: 8 }, (_, i) => ({
+        name: `maker/Alpha-v${i}`,
+        category: "text",
+    }));
+    const f = fixture([]);
+    f.services.control = async ({ stage, actions }) => ({
+        action:
+            stage === "search"
+                ? actions[0]
+                : (actions.find(({ id }) => id.startsWith("niche-")) ??
+                  actions.find(({ required }) => required) ??
+                  actions.find(({ kind }) => kind === "finish")),
+    });
+    const result = await prepareResearch(
+        {
+            models,
+            discoveryLeads: Array.from({ length: 6 }, (_, i) => ({
+                name: `provider-${i}`,
+                kind: "provider",
+            })),
+        },
+        f.services,
+    );
+    for (const { name } of models)
+        assert.ok(
+            result.actions.some(
+                (a) =>
+                    a.tool === "search" && a.required && a.models[0] === name,
+            ),
+        );
+    assert.ok(f.searches.length <= 14);
+});
+
 test("native controller cannot change a copied bounded search query", async () => {
     const f = fixture([]);
     f.services.control = async ({ actions }) => ({

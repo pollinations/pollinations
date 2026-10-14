@@ -1027,7 +1027,7 @@ function nativeResponse(
         (payload.state.actions
             ? payload.state.stage === "search"
                 ? payload.state.actions[0].id
-                : payload.state.stage === "crawl" &&
+                : ["crawl", "followup"].includes(payload.state.stage) &&
                     payload.state.actions.some(({ required }) => required)
                   ? payload.state.actions.find(({ required }) => required).id
                   : payload.state.stage === "reasoning" &&

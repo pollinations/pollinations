@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
     assess,
@@ -61,6 +62,33 @@ const search = (scope, selected = models, extra = {}) => ({
 const call = (name, args) => ({ name, args });
 const latest = (messages) =>
     JSON.parse(messages.findLast((message) => message.role === "tool").content);
+
+test("catalog growth and previously blocked models precede already researched groups", () => {
+    const previous = models.map((model) => ({
+        name: model.name,
+        status: "researched",
+        contractDigest: createHash("sha256")
+            .update(JSON.stringify(modelContract(model)))
+            .digest("hex"),
+    }));
+    previous[7].status = "blocked";
+    const added = { ...models[0], name: "publisher/zz-new-model" };
+    const ordered = modelGroups([...models, added], previous).flat();
+    assert.equal(ordered[0].name, added.name);
+    assert.equal(ordered[1].name, models[7].name);
+    assert.deepEqual(
+        new Set(ordered.map(({ name }) => name)),
+        new Set([...models, added].map(({ name }) => name)),
+    );
+    const changed = { ...models[6], aliases: ["new-official-alias"] };
+    assert.equal(
+        modelGroups(
+            [...models.slice(0, 6), changed, models[7]],
+            previous,
+        ).flat()[0].name,
+        changed.name,
+    );
+});
 
 test("a second verified report replaces the first digest and binds submission to its exact gaps", async () => {
     const first = report();

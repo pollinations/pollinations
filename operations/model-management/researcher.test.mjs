@@ -262,6 +262,47 @@ test("unknown Azure capability parity stays conditional; a known mismatch disqua
     }
 });
 
+test("sourced alternative providers with unknown capability parity remain conditional candidates", () => {
+    const low = {
+        ...route("low", "l", "low.example", 1, 1),
+        capabilitiesMatch: null,
+    };
+    const high = {
+        ...route("high", "h", "high.example", 2, 2),
+        capabilitiesMatch: null,
+    };
+    const result = assess(
+        { routes: [high, low], discoveries: [], gaps: [] },
+        [source("l", "low.example", 1, 1), source("h", "high.example", 2, 2)],
+        scopes,
+        model,
+        [model],
+    );
+    assert.equal(result.recommendation?.provider, "low");
+    assert.equal(
+        result.recommendation.status,
+        "requires-account-and-route-verification",
+    );
+    assert.ok(
+        result.routes.every(
+            (candidate) =>
+                candidate.verification === "unverified" &&
+                candidate.runtimeVerified === false &&
+                candidate.capabilitiesMatch === null,
+        ),
+    );
+    assert.match(result.recommendation.rationale, /capability parity/i);
+    low.capabilitiesMatch = false;
+    const mismatch = assess(
+        { routes: [low, high], discoveries: [], gaps: [] },
+        [source("l", "low.example", 1, 1), source("h", "high.example", 2, 2)],
+        scopes,
+        model,
+        [model],
+    );
+    assert.equal(mismatch.recommendation?.provider, "high");
+});
+
 test("missing preferred-provider coverage prevents final submission", () => {
     assert.throws(
         () =>

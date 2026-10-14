@@ -10,6 +10,7 @@ import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
 import { AuthAccessItem, ErrorBanner } from "../modules/auth/AuthModal.tsx";
 import { GitHubSignInButton } from "../modules/auth/GitHubSignInButton.tsx";
+import { GoogleSignInButton } from "../modules/auth/GoogleSignInButton.tsx";
 import { PollinationsSignInButton } from "../modules/auth/PollinationsSignInButton.tsx";
 import { DialogFooter, DialogHeader } from "./Dialog.tsx";
 import { Dropdown } from "./Dropdown.tsx";
@@ -292,6 +293,15 @@ describe("shared control accessibility", () => {
         expect(githubPending).toContain("Signing in…");
         expect(githubPending).toContain('aria-busy="true"');
         expect(githubPending).toContain('disabled=""');
+
+        const googlePending = renderToStaticMarkup(
+            <GoogleSignInButton isSigningIn />,
+        );
+        expect(renderToStaticMarkup(<GoogleSignInButton />)).toContain(
+            "Sign in with Google",
+        );
+        expect(googlePending).toContain('aria-busy="true"');
+        expect(googlePending).toContain('disabled=""');
     });
 
     it("announces authentication errors", () => {

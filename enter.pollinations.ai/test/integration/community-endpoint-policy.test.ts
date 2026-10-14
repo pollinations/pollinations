@@ -57,6 +57,20 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("lists no models for an account without GitHub", async ({
+        accountToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubId: null, githubUsername: null });
+
+        const response = await SELF.fetch(endpointUrl, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({ data: [] });
+    });
+
     test("creates, reads and edits endpoint-agent modalities without losing unrelated settings", async ({
         accountToken,
     }) => {

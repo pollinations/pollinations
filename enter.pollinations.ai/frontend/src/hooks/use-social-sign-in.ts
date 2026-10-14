@@ -1,24 +1,28 @@
 import { useState } from "react";
 import { authClient } from "../auth.ts";
 
-export function useGitHubSignIn(callbackURL?: string) {
-    const [isSigningIn, setIsSigningIn] = useState(false);
+export type SignInProvider = "github" | "google";
+
+export function useSocialSignIn(callbackURL?: string) {
+    const [signingInWith, setSigningInWith] = useState<SignInProvider | null>(
+        null,
+    );
     const [error, setError] = useState<string | null>(null);
 
-    async function signIn(): Promise<void> {
-        setIsSigningIn(true);
+    async function signIn(provider: SignInProvider): Promise<void> {
+        setSigningInWith(provider);
         setError(null);
         const { error } = await authClient.signIn.social({
-            provider: "github",
+            provider,
             callbackURL: callbackURL ?? window.location.href,
         });
         if (error) {
-            setIsSigningIn(false);
+            setSigningInWith(null);
             setError(
                 "We couldn’t sign you in to your Pollinations account. Please try again.",
             );
         }
     }
 
-    return { isSigningIn, error, signIn };
+    return { signingInWith, error, signIn };
 }

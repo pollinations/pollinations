@@ -62,25 +62,46 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const discordConfig = discordConfigFromEnv(env);
     let githubProfile: { id: number; username: string } | undefined;
 
-    const hasDiscordAccount = async (userId: string) => {
+    // Connected accounts are one per provider: quests key their rewards on
+    // the Discord and GitHub ids, so a second link would earn them again.
+    const connectableProviders: Record<string, string> = {
+        discord: "Discord",
+        github: "GitHub",
+    };
+
+    const hasAccount = async (userId: string, providerId: string) => {
         const [account] = await db
             .select({ id: accountTable.id })
             .from(accountTable)
             .where(
                 and(
                     eq(accountTable.userId, userId),
-                    eq(accountTable.providerId, "discord"),
+                    eq(accountTable.providerId, providerId),
                 ),
             )
             .limit(1);
         return Boolean(account);
     };
 
-    const discordAccountAlreadyConnected = () =>
+    const accountAlreadyConnected = (providerId: string) =>
         new APIError("BAD_REQUEST", {
-            code: "DISCORD_ACCOUNT_ALREADY_CONNECTED",
-            message: "Only one Discord account can be connected.",
+            code: `${providerId.toUpperCase()}_ACCOUNT_ALREADY_CONNECTED`,
+            message: `Only one ${connectableProviders[providerId]} account can be connected.`,
         });
+
+    const assertStagingSignIn = (user: {
+        githubId?: number;
+        email?: string | null;
+    }) => {
+        try {
+            assertStagingAccess(env, user);
+        } catch (error) {
+            if (error instanceof StagingAccessDeniedError) {
+                throw new APIError("FORBIDDEN", { message: error.message });
+            }
+            throw error;
+        }
+    };
 
     const adminPlugin = admin({
         adminUserIds: ADMIN_USER_IDS,
@@ -146,7 +167,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 // not a failure of our callback.
                 if (
                     authContext.path === "/callback/:id" &&
-                    authContext.params?.id === "github" &&
+                    ["github", "google"].includes(
+                        authContext.params?.id ?? "",
+                    ) &&
                     authContext.query?.code
                 ) {
                     ctx?.waitUntil(
@@ -158,15 +181,19 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                         ),
                     );
                 }
+                const linkProvider = authContext.body?.provider;
                 if (
                     authContext.path === "/link-social" &&
-                    authContext.body.provider === "discord"
+                    Object.hasOwn(connectableProviders, linkProvider)
                 ) {
                     const session = await getSessionFromCtx(authContext);
-                    if (session && (await hasDiscordAccount(session.user.id))) {
-                        throw discordAccountAlreadyConnected();
+                    if (
+                        session &&
+                        (await hasAccount(session.user.id, linkProvider))
+                    ) {
+                        throw accountAlreadyConnected(linkProvider);
                     }
-                    if (session)
+                    if (session && linkProvider === "discord")
                         ctx?.waitUntil(
                             captureProductEvent(
                                 env,
@@ -220,9 +247,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                     before: async (account) => {
                         if (
                             account.providerId === "discord" &&
-                            (await hasDiscordAccount(account.userId))
+                            (await hasAccount(account.userId, "discord"))
                         ) {
-                            throw discordAccountAlreadyConnected();
+                            throw accountAlreadyConnected("discord");
                         }
                     },
                     after: async (account, context) => {
@@ -303,23 +330,23 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                 clientId: env.GITHUB_CLIENT_ID,
                 clientSecret: env.GITHUB_CLIENT_SECRET,
                 mapProfileToUser: (profile) => {
-                    try {
-                        assertStagingAccess(env, {
-                            githubId: Number(profile.id),
-                            email: profile.email,
-                        });
-                    } catch (error) {
-                        if (error instanceof StagingAccessDeniedError) {
-                            throw new APIError("FORBIDDEN", {
-                                message: error.message,
-                            });
-                        }
-                        throw error;
-                    }
+                    assertStagingSignIn({
+                        githubId: Number(profile.id),
+                        email: profile.email,
+                    });
                     githubProfile = {
                         id: Number(profile.id),
                         username: profile.login,
                     };
+                    return {};
+                },
+            },
+            google: {
+                clientId: env.GOOGLE_CLIENT_ID,
+                clientSecret: env.GOOGLE_CLIENT_SECRET,
+                prompt: "select_account",
+                mapProfileToUser: (profile) => {
+                    assertStagingSignIn({ email: profile.email });
                     return {};
                 },
             },
@@ -377,8 +404,8 @@ function githubProfileSyncPlugin(
  * We fetch the current profile from GitHub API using the immutable github_id
  * and update D1 if it changed. Non-blocking via waitUntil.
  *
- * GitHub is the only auth provider, so every user row has a github_id; we skip
- * the sync defensively if it is ever missing.
+ * Users who signed in with Google and never connected GitHub have no
+ * github_id; they are skipped.
  */
 export function onAfterSessionCreate(
     env: Cloudflare.Env,

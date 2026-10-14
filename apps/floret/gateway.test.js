@@ -66,6 +66,22 @@ test("text requests never allocate a shell or charge callers for catalog mainten
     assert.equal(env.FLORET_SHELL, undefined);
 });
 
+test("direct callers can use a publishable or secret key", async () => {
+    const { calls, env, gateway } = setup();
+    for (const key of ["pk_test", "sk_test"]) {
+        const response = await gateway(
+            new Request("https://floret.test/v1/chat/completions", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${key}` },
+            }),
+            env,
+        );
+        assert.equal(response.status, 200);
+    }
+    assert.equal(calls.auth, 2);
+    assert.equal(calls.agent, 2);
+});
+
 test("invalid credentials and private paths never reach agent", async () => {
     const { calls, env, ctx, gateway } = setup();
     const unauthenticated = await gateway(
@@ -92,6 +108,26 @@ test("invalid credentials and private paths never reach agent", async () => {
     }
     assert.equal(calls.agent, 0);
     assert.equal(calls.auth, 0);
+});
+
+test("a rejected bearer never reaches the agent", async () => {
+    let allocations = 0;
+    const gateway = createGateway(
+        () => {
+            allocations++;
+            return { fetch: () => new Response("result") };
+        },
+        async () => Response.json({ valid: false }),
+    );
+    const response = await gateway(
+        new Request("https://floret.test/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: "Bearer sk_invalid" },
+        }),
+        {},
+    );
+    assert.equal(response.status, 401);
+    assert.equal(allocations, 0);
 });
 
 test("read requests preserve current service and do not review catalog", async () => {

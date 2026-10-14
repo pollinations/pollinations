@@ -19,7 +19,7 @@ The Community Agent remains the source of behavior. This app adds only Discord i
 
 Pollinations' SDK device helper currently transports `client_id` and OAuth account `scope`, while model permissions are selected on the consent page. This adapter keeps the SDK's device-code issuance and polling, but sends the user directly to the same Pollinations `/authorize` page with safe defaults:
 
-- allowed models: `morriszdweck/osaii-swarm` and its base model `morriszdweck/osaii-api-smart`;
+- requested models: `morriszdweck/osaii-swarm` and its base model `morriszdweck/osaii-api-smart`, which the key grants as their category (text models);
 - Pollen budget: `5`;
 - expiry: `7` days;
 - no `profile`, `usage`, or `keys` account permission requested.

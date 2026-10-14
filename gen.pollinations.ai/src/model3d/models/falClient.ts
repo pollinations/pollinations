@@ -16,7 +16,6 @@ import { getModel3dEnv } from "../env.ts";
 
 const QUEUE_BASE = "https://queue.fal.run";
 const POLL_INTERVAL_MS = 5000;
-const POLL_MAX_ATTEMPTS = 120; // 10 min ceiling for the slowest providers (Rodin HighPack)
 
 export class FalError extends Error {
     constructor(
@@ -30,7 +29,6 @@ export class FalError extends Error {
 }
 
 interface FalQueueSubmitResponse {
-    request_id: string;
     status_url: string;
     response_url: string;
 }
@@ -49,7 +47,6 @@ export interface FalModelMesh {
 export interface RunFalJobOptions {
     endpoint: string;
     input: Record<string, unknown>;
-    pollMaxAttempts?: number;
 }
 
 function requireFalApiKey(): string {
@@ -64,33 +61,36 @@ export async function runFalJob(
     opts: RunFalJobOptions,
     apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
+    return (await runFalJobResponse(opts, apiKey)).json();
+}
+
+/** Preserve the result headers for callers that use fal's reported billing units. */
+export async function runFalJobResponse(
+    opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
+): Promise<Response> {
+    const submitted = await falFetch(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
         body: opts.input,
     });
+    const submission = (await submitted.json()) as FalQueueSubmitResponse;
 
-    let pollAttempts = 0;
-    const pollMaxAttempts = opts.pollMaxAttempts ?? POLL_MAX_ATTEMPTS;
+    // Fal still runs and bills a job we stop polling, so wait until it
+    // finishes. The durable generation alarm bounds the wait.
     while (true) {
-        if (pollAttempts >= pollMaxAttempts) {
-            throw new FalError(
-                `fal.ai request ${submission.request_id} timed out after ${(pollMaxAttempts * POLL_INTERVAL_MS) / 1000}s`,
-                504,
-            );
-        }
         await sleep(POLL_INTERVAL_MS);
-        const status = await falFetch<FalQueueStatusResponse>(apiKey, {
+        const polled = await falFetch(apiKey, {
             method: "GET",
             url: submission.status_url,
         });
+        const status = (await polled.json()) as FalQueueStatusResponse;
         if (status.status === "COMPLETED") {
-            return falFetch<Record<string, unknown>>(apiKey, {
+            return falFetch(apiKey, {
                 method: "GET",
                 url: submission.response_url,
             });
         }
-        pollAttempts++;
     }
 }
 
@@ -112,14 +112,14 @@ export function extractFalModelMesh(
     return modelMesh;
 }
 
-async function falFetch<T>(
+async function falFetch(
     apiKey: string,
     args: {
         method: "GET" | "POST";
         url: string;
         body?: Record<string, unknown>;
     },
-): Promise<T> {
+): Promise<Response> {
     const headers: Record<string, string> = {
         Authorization: `Key ${apiKey}`,
     };
@@ -139,7 +139,7 @@ async function falFetch<T>(
             text,
         );
     }
-    return (await response.json()) as T;
+    return response;
 }
 
 export function classifyFalHttpStatus(httpStatus: number): number {

@@ -20,6 +20,8 @@ Think: the person in the hackerspace who just deployed something and pops into t
 - Use `code` for technical terms
 - Bullet points with emojis for scannable reading
 - Frame changes as: "you can now do X" or "X is faster/fixed/new"
+- Match the source's availability: use "added" or "merged" for unconfirmed work; a merge alone does not prove it is live.
+- For model changes, prioritize the changed price, balance eligibility or capability over unchanged features. For new models, include the recorded price when its billing basis is known. Keep billing units explicit and never infer token billing from a field name.
 - Keep it short — say more with less
 - Include links to relevant repos, PRs, or docs when useful
 
@@ -30,11 +32,12 @@ Think: the person in the hackerspace who just deployed something and pops into t
 - Strip out the concrete specifics — model names, endpoint paths, version bumps, prices, limits, before/after values, named features. If the PR is about changing or adding a specific thing, that thing must appear in the message. Don't replace it with a category label ("new model", "updated plans", "API improvements").
 - Editorialize about internal motivations (revenue, costs, abuse, complaints) — state factual changes neutrally
 - Add unnecessary length — if it can be said in 3 lines, don't use 10
-- Frame changes as losses — focus on what's new or better, but keep the concrete specifics
+- Conceal price increases, restrictions or removals — state the change neutrally
 
 ### Content Filtering:
 - Only include changes that matter to people using the tools
 - Skip internal tooling, styling tweaks, infrastructure plumbing
+- Omit credential approvals, secret handling, deployment instructions and internal workspace names
 
 TONE: Concise, technically aware, genuine. Like a changelog written by someone who actually uses the product.
 

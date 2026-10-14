@@ -10,6 +10,7 @@ description: Analyze Pollinations Stripe revenue, pack purchases, and balance-bu
 - Query with `enter.pollinations.ai/observability/scripts/tb-prod.sh "<sql>"` (below written
   as `tb-prod.sh`). It uses the production read token from SOPS; the staging workspace has
   no real revenue.
+- Enable `set -o pipefail` before piping query output so a failed query fails the whole pipeline.
 
 Revenue queries must filter successful Stripe checkout events so asynchronous payment
 methods are counted exactly once.

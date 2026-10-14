@@ -4,12 +4,12 @@ import { createApiKeyViaApi, test } from "./fixtures.ts";
 
 describe("GET /api/account/key/usage", () => {
     test("forwards the calling key's id to the usage pipe (no scope needed)", async ({
-        sessionToken,
+        accountToken,
         mocks,
     }) => {
         await mocks.enable("tinybird");
 
-        const created = await createApiKeyViaApi(sessionToken, {
+        const created = await createApiKeyViaApi(accountToken, {
             name: "my-key",
         });
         const myKeyId = created.id;
@@ -58,12 +58,12 @@ describe("GET /api/account/key/usage", () => {
         expect(calls[0].query.api_key_ids).toBe(myKeyId);
     });
 
-    test("returns 401 without an API key", async ({ sessionToken }) => {
+    test("returns 401 without an API key", async ({ accountToken }) => {
         const res = await SELF.fetch(
             "http://localhost:3000/api/account/key/usage",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );

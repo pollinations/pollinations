@@ -14,7 +14,7 @@ import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "openai/gpt-6-sol";
 const PLUGIN_SPEC = "opencode-pollinations-plugin";
 
 /**

@@ -1,7 +1,14 @@
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { commandExists, readTextIfExists } from "../harnesses/fs.js";
+import { isMap, parseDocument } from "yaml";
+import {
+    commandExists,
+    readTextIfExists,
+    writeTextAtomic,
+} from "../harnesses/fs.js";
+import { hermesHome } from "../harnesses/hermes.js";
 import { opencodeConfigFile } from "../harnesses/opencode.js";
+import { piAgentDir } from "../harnesses/pi.js";
 import { BASE_URL } from "../lib/config.js";
 import type { McpServer } from "./catalog.js";
 import {
@@ -214,6 +221,114 @@ const urlEntry = (server: McpServer, key: string): JsonObject => ({
     headers: bearerHeader(key),
 });
 
+/**
+ * YAML config file clients (Hermes Agent's config.yaml `mcp_servers` table).
+ * parseDocument preserves comments and unrelated entries on rewrite.
+ */
+const yamlClient = (adapter: {
+    id: string;
+    label: string;
+    description: string;
+    file: (ctx: McpContext) => string;
+    table: string;
+}): McpClientAdapter => {
+    const { id, label, description, file } = adapter;
+    const table = adapter.table;
+
+    const readTable = (ctx: McpContext): JsonObject => {
+        const doc = parseDocument(readTextIfExists(file(ctx)) ?? "");
+        if (doc.contents === null) return {};
+        const value = doc.toJS()?.[table];
+        return value && typeof value === "object" ? (value as JsonObject) : {};
+    };
+
+    const update = (
+        ctx: McpContext,
+        mutate: (entries: JsonObject) => string[],
+    ): { installed: string[]; removed: string[] } => {
+        const path = file(ctx);
+        const doc = parseDocument(readTextIfExists(path) ?? "");
+        if (doc.errors.length) throw doc.errors[0];
+        if (doc.contents === null) doc.contents = doc.createNode({}) as never;
+        if (
+            !isMap(doc.contents) ||
+            (doc.get(table) != null && !isMap(doc.get(table)))
+        ) {
+            throw new Error(
+                `${path}: expected YAML mappings for config and ${table}`,
+            );
+        }
+        const entries = readTable(ctx);
+        const before = { ...entries };
+        const removed = mutate(entries);
+        if (JSON.stringify(entries) === JSON.stringify(before)) {
+            return { installed: ownedEntryNames(entries), removed };
+        }
+        // A bare `mcp_servers:` has no mapping to write into yet.
+        if (doc.get(table) == null) doc.set(table, doc.createNode({}));
+        for (const name of Object.keys(before)) {
+            if (!(name in entries)) doc.deleteIn([table, name]);
+        }
+        for (const [name, entry] of Object.entries(entries)) {
+            if (JSON.stringify(entry) !== JSON.stringify(before[name])) {
+                doc.setIn([table, name], entry);
+            }
+        }
+        if (Object.keys(entries).length === 0) doc.delete(table);
+        writeTextAtomic(path, doc.toString({ lineWidth: 0 }), 0o600);
+        return { installed: ownedEntryNames(entries), removed };
+    };
+
+    return {
+        id,
+        label,
+        description,
+        install: (ctx, servers, key) => {
+            const skipped: string[] = [];
+            const { installed } = update(ctx, (entries) => {
+                for (const server of servers) {
+                    const existing = entries[server.id];
+                    if (existing !== undefined && !isOwnedEntry(existing)) {
+                        skipped.push(server.id);
+                        continue;
+                    }
+                    entries[server.id] = urlEntry(server, key);
+                }
+                return [];
+            });
+            return {
+                client: id,
+                label,
+                installed,
+                files: [file(ctx)],
+                notes: skipped.map(
+                    (serverId) =>
+                        `Kept existing non-Pollinations server "${serverId}" - not overwritten.`,
+                ),
+            };
+        },
+        remove: (ctx, serverIds) => {
+            const { installed, removed } = update(ctx, (entries) => {
+                const names = serverIds?.length
+                    ? serverIds.filter((name) => isOwnedEntry(entries[name]))
+                    : ownedEntryNames(entries);
+                for (const name of names) delete entries[name];
+                return names;
+            });
+            return {
+                client: id,
+                label,
+                installed,
+                removed,
+                files: [file(ctx)],
+                notes: [],
+            };
+        },
+        status: (ctx) => ({ installed: ownedEntryNames(readTable(ctx)) }),
+        existingKey: (ctx) => recoverKeyFromTable(readTable(ctx)),
+    };
+};
+
 const vscodeUserDir = (ctx: McpContext): string => {
     if (process.platform === "win32") {
         return join(
@@ -351,6 +466,44 @@ const jsonClients: McpClientAdapter[] = [
             entry: urlEntry,
         },
     }),
+    yamlClient({
+        id: "hermes",
+        label: "Hermes Agent",
+        description:
+            "Hermes Agent (mcp_servers in $HERMES_HOME/config.yaml, Bearer auth)",
+        file: (ctx) => join(hermesHome(ctx), "config.yaml"),
+        table: "mcp_servers",
+    }),
+    {
+        ...jsonClient({
+            id: "pi",
+            label: "Pi",
+            description: "Pi native MCP (0.99+, ~/.pi/agent/mcp.json)",
+            target: {
+                file: (ctx) => join(piAgentDir(ctx), "mcp.json"),
+                table: "mcpServers",
+                entry: urlEntry,
+                notes: () => ["Run /reload in Pi, or start a new session."],
+            },
+        }),
+        preflight: (ctx) => {
+            const result = spawnSync("pi", ["--version"], {
+                env: ctx.env,
+                encoding: "utf8",
+                timeout: 5000,
+            });
+            const version = result.stdout?.trim().match(/^(\d+)\.(\d+)\.\d+/);
+            if (
+                result.status !== 0 ||
+                !version ||
+                (Number(version[1]) === 0 && Number(version[2]) < 99)
+            ) {
+                throw new Error(
+                    "Pi 0.99+ is required for native MCP. Install or upgrade: npm install -g --ignore-scripts @earendil-works/pi-coding-agent@latest",
+                );
+            }
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -479,6 +632,9 @@ const jsonTableIds =
             : Object.keys((config[table] ?? {}) as JsonObject);
     };
 
+const claudeConfigFile = (ctx: McpContext) =>
+    join(ctx.env.CLAUDE_CONFIG_DIR || ctx.home, ".claude.json");
+
 const codexConfigToml = (ctx: McpContext) =>
     join(ctx.env.CODEX_HOME ?? join(ctx.home, ".codex"), "config.toml");
 
@@ -533,18 +689,11 @@ const cliClients: McpClientAdapter[] = [
                 serverId,
             ],
             installHint: "Install it from https://claude.com/claude-code.",
-            installedIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-            ),
-            configuredIds: jsonTableIds(
-                (ctx) => join(ctx.home, ".claude.json"),
-                "mcpServers",
-                false,
-            ),
+            installedIds: jsonTableIds(claudeConfigFile, "mcpServers"),
+            configuredIds: jsonTableIds(claudeConfigFile, "mcpServers", false),
             recoverKey: (ctx) =>
                 recoverKeyFromTable(
-                    readJsonObject(join(ctx.home, ".claude.json")).mcpServers,
+                    readJsonObject(claudeConfigFile(ctx)).mcpServers,
                 ),
         },
     }),
@@ -694,7 +843,7 @@ const cliClients: McpClientAdapter[] = [
 
 // Exported table matches the issue's priority list:
 // claude-code, codex, vscode, cursor, opencode, gemini, copilot, windsurf,
-// cline, amp, kiro, zed, warp.
+// cline, amp, kiro, zed, warp, then the Pollinations harness clients.
 const PRIORITY = [
     "claude-code",
     "codex",
@@ -709,6 +858,8 @@ const PRIORITY = [
     "kiro",
     "zed",
     "warp",
+    "hermes",
+    "pi",
 ];
 
 const byId = new Map(

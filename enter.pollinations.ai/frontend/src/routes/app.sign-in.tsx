@@ -3,7 +3,6 @@ import { AuthModalLoading } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
-import { AppAttribution } from "../components/auth/app-attribution.tsx";
 import { AuthFlowScreen } from "../components/auth/auth-flow-screen.tsx";
 import { SignInScreen } from "../components/auth/sign-in-screen.tsx";
 import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
@@ -19,15 +18,24 @@ export const Route = createFileRoute("/app/sign-in")({
     component: AppSignIn,
 });
 
+// Any OAuth app lands here, ours or a developer's. Name Pollinations as the
+// account and the app by its signed callback host, which an app cannot fake
+// the way it can pick a display name. Each app states its own requirements
+// (such as admin access) on its own screen.
+const title = "Sign in to Pollinations";
+
 function AppSignIn() {
     const { client_id, redirect_uri } = Route.useSearch();
-    const { data: session } = authClient.useSession();
+    const { data: session, isPending } = authClient.useSession();
+    // Signed-out background checks can set isPending again.
+    const [sessionChecked, setSessionChecked] = useState(!isPending);
+    if (!isPending && !sessionChecked) setSessionChecked(true);
     const user = session?.user;
     // The issuer signs the whole query. "invalid" means the server knows no
     // such client (hand-typed or expired link); "unreachable" means the
     // check itself failed and can be retried.
     const [client, setClient] = useState<
-        { name: string } | "loading" | "invalid" | "unreachable"
+        "valid" | "loading" | "invalid" | "unreachable"
     >("loading");
     const [lookupAttempt, setLookupAttempt] = useState(0);
     // biome-ignore lint/correctness/useExhaustiveDependencies: lookupAttempt re-runs the check when the user selects Try again.
@@ -38,9 +46,7 @@ function AppSignIn() {
             .publicClientPrelogin({ client_id })
             .then(({ data }) => {
                 if (cancelled) return;
-                setClient(
-                    data?.client_name ? { name: data.client_name } : "invalid",
-                );
+                setClient(data?.client_name ? "valid" : "invalid");
             })
             .catch(() => {
                 if (!cancelled) setClient("unreachable");
@@ -53,17 +59,17 @@ function AppSignIn() {
     const parsedRedirect = parseAppUrl(redirect_uri);
     const redirectHost = parsedRedirect ? new URL(parsedRedirect).host : "";
 
-    if (client === "loading") return <AuthModalLoading title="Sign in" />;
+    if (!sessionChecked || client === "loading")
+        return <AuthModalLoading title={title} />;
 
     if (client === "unreachable") {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Sign in"
+                title={title}
                 error="Couldn’t check this sign-in link."
                 actions={
                     <Button
-                        intent="neutral"
                         icon={<RefreshIcon />}
                         onClick={() =>
                             setLookupAttempt((attempt) => attempt + 1)
@@ -82,8 +88,7 @@ function AppSignIn() {
         return (
             <AuthFlowScreen
                 footnote="help"
-                title="Sign in"
-                description="with your Pollinations account."
+                title={title}
                 error="This sign-in link is invalid or has expired. Open the dashboard again to get a new one."
                 actions={
                     parsedRedirect ? (
@@ -91,12 +96,7 @@ function AppSignIn() {
                             returnUrl={new URL(parsedRedirect).origin}
                         />
                     ) : (
-                        <Button
-                            as="a"
-                            intent="neutral"
-                            icon={<ArrowRightIcon />}
-                            href="/"
-                        >
+                        <Button as="a" icon={<ArrowRightIcon />} href="/">
                             Go to dashboard
                         </Button>
                     )
@@ -109,27 +109,15 @@ function AppSignIn() {
         typeof window === "undefined"
             ? undefined
             : oauthSignInCallback(window.location.href);
-    const appCard = (
-        <AppAttribution
-            attribution={{ appName: client.name }}
-            redirectHostname={redirectHost}
-        />
-    );
 
     // A signed-in admin only needs to resume the dashboard's authorize request.
     if (user) {
         return (
             <AuthFlowScreen
-                title="Sign in"
-                subject={appCard}
-                description={`as ${user.name || user.githubUsername || user.email}.`}
+                title="Continue"
+                description={`to ${redirectHost} as ${user.name || user.githubUsername || user.email}.`}
                 actions={
-                    <Button
-                        as="a"
-                        href={callbackURL}
-                        intent="neutral"
-                        icon={<ArrowRightIcon />}
-                    >
+                    <Button as="a" href={callbackURL} icon={<ArrowRightIcon />}>
                         Continue
                     </Button>
                 }
@@ -139,9 +127,9 @@ function AppSignIn() {
 
     return (
         <SignInScreen
-            title="Sign in"
-            subject={appCard}
-            description="with your Pollinations admin account."
+            title={title}
+            // No full stop: after a host it reads as part of the address.
+            description={`to continue to ${redirectHost}`}
             callbackURL={callbackURL}
         />
     );

@@ -38,7 +38,12 @@ export default defineWorkersConfig(async ({ mode }) => {
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
-            exclude: [...configDefaults.exclude, "test/e2e/**", "scripts/**"],
+            exclude: [
+                ...configDefaults.exclude,
+                "test/e2e/**",
+                "scripts/**",
+                "observability/scripts/**",
+            ],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {
@@ -77,6 +82,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                                                 id: "ca_test",
                                                 toolkit: "github",
                                                 name: "GitHub",
+                                                description: "Code hosting",
                                                 logo: "https://logos.composio.test/github",
                                                 alias: null,
                                                 status: "ACTIVE",

@@ -2,6 +2,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
@@ -11,6 +12,7 @@ import {
     isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
+import { UserImageError } from "../userImage.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -36,13 +38,12 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
 } from "./params.ts";
-import { sanitizeString, sleep } from "./util.ts";
+import { sanitizeString } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
@@ -80,7 +81,9 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
@@ -88,6 +91,7 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "FAL_KEY",
+    "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
     "OPENAI_API_KEY",
@@ -159,6 +163,16 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {
@@ -260,18 +274,12 @@ async function generateImageResult(
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
-    const result = await createAndReturnImageCached(
+    return await createAndReturnImageCached(
         prompt,
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
-
-    if (result.isChild && result.isMature) {
-        await sleep(5000);
-    }
-
-    return result;
 }
 
 /** Tries the requested model and its fallbacks through one modality-neutral loop. */
@@ -289,8 +297,12 @@ async function generateMediaWithFallback(
             candidate.definition?.provider === "azure" &&
             candidate.definition.publisher === "OpenAI"
         ) {
+            // Every Azure region failed, or the reference image host is rate
+            // limiting and the next target downloads it again.
             return (
-                error instanceof UpstreamError && error.upstreamStatus === 429
+                isRetryableFallbackError(error) ||
+                (error instanceof UserImageError &&
+                    error.upstreamStatus === 429)
             );
         }
         return isRetryableFallbackError(error);
@@ -323,7 +335,7 @@ async function generateMediaWithFallback(
                 return { result: generated, params };
             }
             if (isVideoModel(params.model)) {
-                const generated = await generateVideoResult(c, prompt, params);
+                const generated = await generateVideoResult(prompt, params);
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
@@ -342,15 +354,10 @@ async function generateMediaWithFallback(
 }
 
 async function generateVideoResult(
-    c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(
-        originalPrompt,
-        safeParams as ImageParams,
-        c.get("requestId"),
-    );
+    return createAndReturnVideo(originalPrompt, safeParams as ImageParams);
 }
 
 /**
@@ -406,19 +413,12 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    const pricingDimensions =
-        c.var.model.resolved === "amazon/nova-canvas-v1"
-            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
-            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
         hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(
-            pricingDimensions.width,
-            pricingDimensions.height,
-        ),
+        maxImageDimension: Math.max(safeParams.width, safeParams.height),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
@@ -428,6 +428,9 @@ export async function generateImageOrVideoResponse(
             originalPrompt,
             safeParams,
         );
+        if (result.trackingData.pricingInput) {
+            c.var.track.setPricingInput(result.trackingData.pricingInput);
+        }
         const headers = mediaHeaders(
             originalPrompt,
             params,
@@ -471,13 +474,14 @@ function extractRegisterToken(
     return null;
 }
 
-function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterWrite(
     c: ImageContext,
     body: Record<string, unknown>,
-): boolean {
+): Promise<boolean> {
     const expected = getImageEnv("PLN_GPU_TOKEN");
-    if (!expected) return false;
-    return extractRegisterToken(c, body) === expected;
+    const presented = extractRegisterToken(c, body);
+    if (!expected || !presented) return false;
+    return secretEquals(presented, expected);
 }
 
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
@@ -496,7 +500,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!isAuthorizedRegisterWrite(c, {})) {
+        if (!(await isAuthorizedRegisterWrite(c, {}))) {
             return c.json({ success: false, message: "Unauthorized" }, 401);
         }
         if (!isValidType(typeParam)) {
@@ -520,7 +524,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!isAuthorizedRegisterWrite(c, body)) {
+    if (!(await isAuthorizedRegisterWrite(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

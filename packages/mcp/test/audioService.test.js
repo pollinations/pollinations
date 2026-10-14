@@ -1,9 +1,40 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { transcribeAudio } from "../src/services/audioService.js";
+import { z } from "zod";
+import { audioTools, transcribeAudio } from "../src/services/audioService.js";
 
 const SOURCE = "https://cdn.example.com/speech.mp3";
 const CONTEXT = { http: { authInfo: { token: "sk_test" } } };
+
+test("generateAudio forwards the emotion/style instruction to the API", async (t) => {
+    const [, , shape, generateAudio] = audioTools.find(
+        ([name]) => name === "generateAudio",
+    );
+    const originalFetch = globalThis.fetch;
+    let capturedUrl;
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) => {
+        capturedUrl = new URL(String(input));
+        return new Response(null, {
+            headers: {
+                "Content-Type": "audio/mpeg",
+                Link: '<https://media.pollinations.ai/abc.mp3>; rel="enclosure"',
+            },
+        });
+    };
+
+    // The MCP server validates arguments against the tool schema first.
+    const args = z.object(shape).parse({
+        text: "hello",
+        model: "gemini-tts",
+        instructions: "speak warmly",
+    });
+    await generateAudio(args, CONTEXT);
+
+    assert.equal(capturedUrl.searchParams.get("instructions"), "speak warmly");
+});
 
 test("transcribes public audio through the Pollinations API", async (t) => {
     const originalFetch = globalThis.fetch;
@@ -15,6 +46,8 @@ test("transcribes public audio through the Pollinations API", async (t) => {
         const url = String(input);
         calls.push({ url, init });
         if (url === SOURCE) {
+            // Workers throw on redirect: "error".
+            assert.equal(init.redirect, "manual");
             return new Response(new Uint8Array([1, 2, 3]), {
                 headers: {
                     "Content-Type": "audio/mpeg",
@@ -63,4 +96,25 @@ test("rejects private audio URLs before fetching", async (t) => {
         /public HTTPS URL/,
     );
     assert.equal(calls, 0);
+});
+
+test("rejects redirecting audio URLs without following them", async (t) => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    t.after(() => {
+        globalThis.fetch = originalFetch;
+    });
+    globalThis.fetch = async (input) => {
+        calls.push(String(input));
+        return new Response(null, {
+            status: 302,
+            headers: { Location: "https://127.0.0.1/audio.mp3" },
+        });
+    };
+
+    await assert.rejects(
+        transcribeAudio({ source: SOURCE }, CONTEXT),
+        /redirects/,
+    );
+    assert.deepEqual(calls, [SOURCE]);
 });

@@ -43,7 +43,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-1.5": {
@@ -51,7 +51,7 @@ export const IMAGE_FALLBACKS = {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
             // OpenAI shutdown_date.
-            retirementDate: new Date("2026-12-01").getTime(),
+            // Provider retires this route on 2026-12-01.
         },
     },
     "openai/gpt-image-2": {
@@ -110,11 +110,12 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.2-max:openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-13").getTime(),
-            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment),
-            // verified 2026-09-13: flat $0.07 per output megapixel (0.07 *
-            // 1.055 with the mandatory OpenRouter credit fee, #14895), no
-            // input charge and no flat execution fee — replaces the
-            // Replicate adjustment entirely rather than adding to it.
+            // OpenRouter (BFL's own "black-forest-labs/us-3" deployment). The
+            // handler records OpenRouter's reported usage.cost (plus the
+            // 5.5% credit fee, #14895) as this route's cost, since BFL bills
+            // tiered megapixels of the size it picks. These rates only
+            // describe the route: $0.07 per output megapixel with the fee,
+            // no input charge, no execution fee.
             cost: {
                 promptImageTokens: 0,
                 completionImageTokens: 0.07 * 1.055,
@@ -126,20 +127,6 @@ export const IMAGE_FALLBACKS = {
     },
     "qwen/qwen-image-3": {
         "qwen/qwen-image-3:fal": { provider: "fal" },
-        "qwen/qwen-image-3:replicate": {
-            provider: "replicate",
-            addedDate: new Date("2026-09-01").getTime(),
-            cost: {
-                promptImageTokens: 0,
-                completionImageTokens: 0.03,
-            },
-            costVariants: {
-                "2k": {
-                    promptImageTokens: 0,
-                    completionImageTokens: 0.03,
-                },
-            },
-        },
     },
     "prunaai/p-image-edit": {
         "prunaai/p-image-edit:replicate": {
@@ -153,7 +140,7 @@ export const IMAGE_FALLBACKS = {
             priceMultiplier: 1,
             addedDate: new Date("2026-09-21").getTime(),
             // OpenRouter expiration_date.
-            retirementDate: new Date("2027-03-15").getTime(),
+            // Provider retires this route on 2027-03-15.
             cost: {
                 promptTextTokens: perMillion(0.3) * 1.055,
                 promptImageTokens: perMillion(0.3) * 1.055,
@@ -249,6 +236,24 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
+    "x-ai/grok-imagine-video-1.5-lite": {
+        "x-ai/grok-imagine-video-1.5-lite:openrouter": {
+            provider: "openrouter",
+            addedDate: new Date("2026-10-06").getTime(),
+            cost: {
+                promptImageTokens: 0.01 * 1.055, // per start-frame image
+                completionVideoSeconds: 0.03 * 1.055, // per sec at 720p
+            },
+            costVariants: {
+                "480p": {
+                    completionVideoSeconds: 0.02 * 1.055,
+                },
+                "1080p": {
+                    completionVideoSeconds: 0.14 * 1.055,
+                },
+            },
+        },
+    },
     "alibaba/wan-2.6": {
         "alibaba/wan-2.6:replicate": { provider: "replicate" },
         "alibaba/wan-2.6:fal": {
@@ -296,9 +301,10 @@ export const IMAGE_FALLBACKS = {
         "tongyi-mai/z-image-turbo:fal": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
-            // Fal bills $0.005 per output megapixel. The token line stays at
-            // zero; the adjustment below records the exact provider cost while
-            // the caller keeps the public zimage flat price.
+            // Fal bills $0.005 per output megapixel, rounded up per image; the
+            // handler passes fal's reported count as `megapixels`. The token
+            // line stays at zero; the adjustment below records the exact
+            // provider cost while the caller keeps the public zimage flat price.
             cost: {
                 completionImageTokens: 0,
             },

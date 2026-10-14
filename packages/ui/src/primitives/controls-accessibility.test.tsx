@@ -1,7 +1,10 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AccountIdentity } from "../compositions/AccountIdentity.tsx";
+import {
+    AccountIdentity,
+    AccountIdentityLink,
+} from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
 import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
@@ -181,6 +184,20 @@ describe("shared control accessibility", () => {
         expect(markup).not.toContain("<button");
     });
 
+    it("makes the whole identity pill one external link", () => {
+        const markup = renderToStaticMarkup(
+            <AccountIdentityLink
+                name="@alex"
+                href="https://github.com/alex"
+                avatarUrl="https://github.com/alex.png"
+            />,
+        );
+        expect(markup.match(/<a\b/g)).toHaveLength(1);
+        expect(markup).toContain('href="https://github.com/alex"');
+        expect(markup).toContain('target="_blank"');
+        expect(markup).toContain('rel="noopener noreferrer"');
+    });
+
     it("exposes the pressed state of toggle icon buttons", () => {
         const markup = renderToStaticMarkup(
             <IconButton title="Favorite" pressed onClick={() => undefined}>
@@ -304,4 +321,29 @@ it("renders editable and required permissions as labelled native checkboxes", ()
     expect(editable).toContain('checked=""');
     expect(editable).not.toContain('disabled=""');
     expect(required).toContain('disabled=""');
+});
+
+it("keeps permission help outside checkbox labels with an explicit label association", () => {
+    const html = renderToStaticMarkup(
+        <AuthAccessItem
+            checked
+            onChange={() => {}}
+            info={<button type="button">Help</button>}
+        >
+            Receive earnings
+        </AuthAccessItem>,
+    );
+    const inputId = html.match(/<input[^>]*id="([^"]+)"/)?.[1];
+    expect(inputId).toBeDefined();
+    expect(html).toContain(`<label for="${inputId}"`);
+    const labels = [...html.matchAll(/<label[^>]*>([\s\S]*?)<\/label>/g)].map(
+        (match) => match[1],
+    );
+    expect(labels.some((label) => label.includes('type="checkbox"'))).toBe(
+        true,
+    );
+    expect(labels.some((label) => label.includes("Receive earnings"))).toBe(
+        true,
+    );
+    expect(labels.every((label) => !label.includes("<button"))).toBe(true);
 });

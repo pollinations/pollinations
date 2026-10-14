@@ -1,14 +1,15 @@
 ## 🔐 Authentication
 
-Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surface you're building.
+Pollinations uses `pk_` for public App Keys and `sk_` for both personal Secret Keys and scoped user-authorized keys. Their roles differ:
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
-| Secret key | `sk_` | Server-only (env var, secrets manager) | Full account access. Can create child keys, list usage, run any model the account allows. **Never ship to a browser, mobile app, or repo.** |
-| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user `sk_`. Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
-| Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
+| Personal Secret Key | `sk_` | Server-only (env var, secrets manager) | Uses its configured budget, model and account permissions. **Never embed it in a browser, mobile app, or repo.** |
+| App Key (BYOP) | `pk_` | Public OAuth `client_id` for web/mobile/CLI consent | New App Keys have a zero generation budget. Register redirect URIs for web authorization at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys); users authorize your app to receive a scoped `sk_`. |
+| User-authorized key (BYOP) | `sk_` | The app the user authorized, including browser apps | Uses the budget, expiry, model and account permissions the user approved. For generation alone, request no account scopes and choose a budget, expiry and allowed models. |
+| Legacy publishable key | `pk_` | Existing direct-spend integrations only | Some existing keys still have a generation budget and are rate-limited to 1 Pollen per IP per hour. Migrate to BYOP; do not use them for new browser generation. |
 
-Both forms accept the same transports:
+Generation keys support header authentication and, where documented, query authentication:
 
 ```http
 Authorization: Bearer <key>
@@ -18,7 +19,7 @@ Authorization: Bearer <key>
 GET /image/cat?key=<key>
 ```
 
-The header is preferred for everything except browser flows that can't set custom headers (image/audio `GET` endpoints and WebSocket realtime sessions).
+Prefer the header, including browser `fetch` requests. Browser WebSockets cannot set custom headers, so they can use `?key=` with the scoped BYOP user key. The URL carries a credential: do not share or log it. Never use your personal Secret Key or the App Key for new browser generation. Use an authenticated backend relay if you need to keep the credential out of the WebSocket URL.
 
 **Endpoints with relaxed auth requirements**
 
@@ -232,7 +233,7 @@ Each upload gets its own unique id — re-uploading the same bytes yields a new 
 
 ## 💡 Tips
 
-- **Do not put raw `pk_` keys in browsers.** For client apps, register an App Key and use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) so users authorize a scoped `sk_`. Raw `pk_` keys are legacy and rate-limited (1 pollen/IP/hour).
+- **Use App Keys to request user authorization.** For client generation, use [BYOP](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) to obtain a scoped user `sk_`. New App Keys have a zero generation budget; existing direct-spend `pk_` keys are legacy.
 - **One key per app.** Child keys scope budget and permissions independently — easier to audit, easier to revoke without touching production.
 - **Retry the same request after a timeout.** Keep the endpoint, body, query parameters, and seed unchanged. Your retry waits for the generation already in progress or receives the completed cached result instead of starting another generation.
 - **Watch `429` and `503`.** A `Retry-After` header tells you how long to back off. `502` from us means upstream provider — usually transient.

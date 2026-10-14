@@ -26,7 +26,7 @@ export const RealtimeRequestQueryParamsSchema = z
             }),
         key: z.string().optional().meta({
             description:
-                "Pollinations API key. Useful for browser WebSocket clients that cannot set custom Authorization headers.",
+                "Generation API key. Browser WebSockets can use a scoped BYOP user key (sk_) because they cannot set custom Authorization headers. Never use your personal Secret Key or App Key for new browser generation; do not share or log this URL. Server clients should use the Authorization header.",
         }),
     })
     .strict();

@@ -4,6 +4,60 @@ Connect User Wallets—also called BYOP (Bring Your Own Pollen)—lets your user
 
 Users stay in control of their balance, budgets, and revocation; your app never has to pay for their usage.
 
+## Migrate from direct publishable-key requests
+
+The dashboard announces **November 1, 2026** as the migration date for publishable keys to identify apps while users pay through Connect User Wallets. New App Keys already start with a zero Pollen budget, and creation rejects a nonzero budget. Migrate existing direct `pk_` requests before the announced date; do not rely on an older key's current ability to spend or assume a particular cutoff time.
+
+The key prefix alone does not tell you whose balance a request spends:
+
+| Credential | Purpose | Where to use it |
+|---|---|---|
+| App Key (`pk_...`) | Identifies your app as the OAuth `client_id` | Public app configuration and authorization requests |
+| Personal Secret Key (`sk_...`) | Makes requests using your account, within the key's permissions and budget | Your backend or private scripts; never embed it in a public client |
+| User-authorized key (`sk_...`) | Makes requests using the approving user's balance, within their chosen access, budget, and expiry | The authorized user's session in your app |
+
+A server integration that uses your own Secret Key can keep using that model. If you want users to pay from their own wallets, use the migration below.
+
+### Change the authorization flow
+
+1. Register an App Key with your callback URI using the App Key instructions below. Keep this public `pk_` value as your `client_id`.
+2. Use the OAuth code flow with PKCE below for web apps, or the device flow for CLI/headless apps. Ask the user to approve the models, budget, and expiry the app needs. Generation does not require account scopes; request `profile`, `usage`, `keys`, or `machines` only for features that need them.
+3. Use the returned `access_token` for generation. It is the user's scoped `sk_` credential. Do not replace a public `pk_` with your personal Secret Key.
+
+| Request | Before: direct publishable-key use | After: user authorization |
+|---|---|---|
+| Identify the app during authorization | No user authorization | `client_id=pk_your_app_key` |
+| Authenticate an HTTP generation request | `Authorization: Bearer pk_your_app_key` | `Authorization: Bearer <access_token>` |
+| Pay for generation | The app owner's balance | The approving user's balance and key budget |
+
+For browser HTTP requests, use `fetch` with a Bearer header, as in step 3 of the OAuth walkthrough below. Browser WebSocket authentication is covered in the realtime note after that example.
+
+### Verify the migration
+
+After the code or device exchange, use the returned token to inspect its metadata without generating paid output:
+
+```javascript
+const keyResponse = await fetch('https://gen.pollinations.ai/account/key', {
+  headers: { Authorization: `Bearer ${access_token}` },
+});
+if (!keyResponse.ok) throw new Error(`Key check failed: ${keyResponse.status}`);
+const keyInfo = await keyResponse.json();
+```
+
+Expect `valid: true`, `type: "secret"`, and a `byopApp` entry for the app the user authorized. Its `clientKeyId` is the App Key's internal ID, not the public `pk_` value. Check `permissions`, `pollenBudget`, and `expiresAt` against the access the user approved. `null` for the budget means no per-key cap; the user's wallet still needs enough Pollen.
+
+Then make one small generation request with that token and inspect its usage in the user's dashboard. This request spends Pollen and may include your app's developer-earnings markup. Finally, revoke the test user key in the dashboard and confirm a new `/account/key` request returns `401`.
+
+### Recover from authorization or funding errors
+
+Check the response content as well as its status: text/chat endpoints can return HTTP `200` with an assistant notice about insufficient funds or model access.
+
+- **Missing, expired, or revoked token (`401`):** ask the user to authorize again. There are no refresh tokens.
+- **Model access denied (`403`):** check the requested model against the user's approved permissions; request approval for any additional access.
+- **Insufficient funds (`402`):** read the returned message and check both the key's remaining budget and the user's eligible wallet balance. Adding Pollen does not raise the key's spending cap.
+
+Keep the sign-in path available and handle a declined authorization. Never fall back to your personal Secret Key in the browser.
+
 ## 🗝️ App Key
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
@@ -132,7 +186,7 @@ const res = await fetch('https://enter.pollinations.ai/api/oauth/token', {
 const { access_token } = await res.json();
 ```
 
-Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a URL, analytics, or logs.
+Keep the token in memory, or `sessionStorage` if a callback page must hand it back within the same tab. Never put it in `localStorage`, a page URL, analytics, or logs. The browser WebSocket transport described below uses a credential-bearing connection URL; keep that URL out of logs and shared links too.
 
 ### 3. Call Pollinations
 
@@ -141,10 +195,12 @@ Use the returned `access_token` as the API key:
 ```javascript
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  headers: { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```
+
+**Browser realtime sessions.** Native browser WebSockets cannot set an `Authorization` header. For a direct connection, pass the user's authorized `access_token` through `?key=` as shown in the [Realtime reference](https://gen.pollinations.ai/docs#tag/realtime). Request only the needed realtime model access, choose a budget and expiry, and omit account scopes if the app only generates. The full connection URL contains a credential: do not log, publish, or share it. An authenticated relay on your own backend can forward the token as a Bearer header if you need to keep credentials out of connection URLs. Do not use your personal Secret Key or an App Key for this browser generation flow.
 
 Examples: [browser-only](https://github.com/pollinations/pollinations/tree/main/apps/oauth-client-demo) ·
 [existing user database](https://github.com/pollinations/pollinations/tree/main/apps/oauth-account-linking-demo)

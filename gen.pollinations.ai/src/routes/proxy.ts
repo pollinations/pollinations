@@ -168,7 +168,7 @@ function describeRealtimeWebSocket(path: "/realtime" | "/v1/realtime") {
             "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
             "",
             `Connect with \`wss://gen.pollinations.ai${path}?model=${DEFAULT_REALTIME_MODEL}\` and send/receive OpenAI Realtime JSON events over the socket. Selecting \`elevenlabs/scribe-v2-realtime\` creates a transcription session automatically.`,
-            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSocket clients can use `?key=pk_...` because they cannot set custom authorization headers.",
+            "Server clients can authenticate with `Authorization: Bearer <key>`. Browser WebSockets cannot set custom headers: use `?key=` with a scoped user-authorized `sk_` from [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets). For generation alone, request no account scopes and choose a budget, expiry and allowed models. Never use your personal Secret Key or App Key for new browser generation. The URL contains a credential; do not share or log it. An authenticated backend relay can keep the credential out of the WebSocket URL.",
             "",
             `**Models:** ${REALTIME_MODEL_NAMES.map((model) => `\`${model}\``).join(", ")}.`,
             "",

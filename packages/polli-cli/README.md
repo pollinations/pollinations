@@ -92,23 +92,26 @@ polli quests --claimed       # already-completed and earned quest status
 
 ## Account
 
-Two kinds of keys:
+Choose a credential for its purpose:
 
-- **Secret (`sk_`)** — backend use, full access. Default.
-- **Publishable (`pk_`)** — safe to ship in frontend code.
+- **Personal Secret Key (`sk_`)** — private CLI/backend requests, subject to the key's permissions and budget. The default type for `polli keys create`.
+- **App Key (`pk_`)** — public app identifier for OAuth/device authorization. Newly created App Keys have a zero spending budget.
+- **User-authorized key (`sk_`)** — the credential returned after approval through `polli auth login` or your own app's authorization flow. It spends the approving user's Pollen within their chosen access, budget, and expiry.
+
+If you previously supplied a `pk_` key for generation, use `polli auth login` to authorize the CLI, or supply a personal Secret Key for your private automation. For your own public app, follow the [Connect User Wallets migration guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md#migrate-from-direct-publishable-key-requests). Keep its App Key as `client_id`; do not embed your personal Secret Key in the app.
 
 ```bash
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
-polli keys create --name myapp --type publishable              # API publishable
-polli keys create --name myapp --type publishable \            # 3rd-party app key
+# Register an App Key; --earnings opts in to developer earnings.
+polli keys create --name myapp --type publishable \
   --redirect-uri https://myapp.com/callback --earnings
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
 polli keys revoke <id>
 ```
 
-`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. Publishable app keys default developer earnings off; pass `--earnings` to enable them.
+`--models` takes categories (`text`, `image`, ...) and model IDs from `polli models`; a category includes models added later, a model ID allows only that model. To change a key's name or budget, use the dashboard or revoke and recreate. App Keys default developer earnings off; pass `--earnings` to enable them. App Key creation rejects nonzero `--budget` values; set the spending budget on the user-authorized key during consent instead.
 
 ```bash
 polli usage                  # pollen balance

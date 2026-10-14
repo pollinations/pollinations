@@ -240,10 +240,10 @@ Install globally and use the shorter `polli` command: `npm install -g @pollinati
 Stream AI responses over an OpenAI-compatible WebSocket:
 
 ```
-wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1&key=pk_YOUR_API_KEY
+wss://gen.pollinations.ai/v1/realtime?model=openai/gpt-realtime-2.1
 ```
 
-Browser clients pass the key as a query parameter (`?key=`); server clients can use the `Authorization: Bearer` header instead.
+Server clients authenticate with `Authorization: Bearer YOUR_API_KEY`. For direct browser connections, first obtain a scoped user `access_token` through [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md), then pass it as the `key` query parameter. Choose a budget, expiry, and realtime model access; generation needs no account scopes. Do not use an App Key or embed your personal Secret Key. The connection URL contains the user's credential, so keep it out of logs and shared links; an authenticated relay on your backend can use a Bearer header instead.
 
 ### MCP Servers
 
@@ -263,14 +263,15 @@ Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 ### Key Types
 
-| Key             | Prefix | Use Case                       | Rate Limits              | Status  |
-| --------------- | ------ | ------------------------------ | ------------------------ | ------- |
-| **App Key** | `pk_`  | Browsers, mobile apps, public clients | Budget & permissions set at creation | Stable |
-| **Secret**      | `sk_`  | Server-side only               | No rate limits           | Stable  |
+| Credential | Prefix | Purpose |
+|---|---|---|
+| **App Key** | `pk_` | Public app identifier used as the OAuth `client_id`; newly created App Keys have a zero spending budget. |
+| **Personal Secret Key** | `sk_` | Backend or private-script requests using your account, subject to the key's permissions and budget. |
+| **User-authorized key** | `sk_` | Requests using the approving user's balance, with the access, budget, and expiry they chose. |
 
-> ⚠️ **Never expose `sk_` keys** in client-side code, git repos, or public URLs
+Keep your personal Secret Key on your backend. A user-authorized key is also a credential: use it only within that user's authorized session and keep it out of source code, shared links, and logs.
 
-> 💡 **Building an app?** Use [Connect User Wallets](./BRING_YOUR_OWN_POLLEN.md) — users pay for their own usage, you pay $0
+**Migrating a browser app that sends `pk_` directly to generation endpoints?** The dashboard announces November 1, 2026 as the migration date. Follow the [Connect User Wallets migration steps](./BRING_YOUR_OWN_POLLEN.md#migrate-from-direct-publishable-key-requests): keep the App Key for app identification and use the returned user token for generation. New App Keys already start with zero budget.
 
 ### Model Restrictions
 

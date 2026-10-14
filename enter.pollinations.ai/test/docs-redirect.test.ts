@@ -1,5 +1,11 @@
 import { SELF } from "cloudflare:test";
+import { requestExampleErrors } from "@shared/test/api-examples.ts";
+import {
+    isPublicEnterPath,
+    publicEnterPath,
+} from "@shared/utils/public-docs.ts";
 import { expect, test } from "vitest";
+import type { Spec } from "../../gen.pollinations.ai/scripts/generate-apidocs.ts";
 
 test("legacy enter docs page redirects to gen docs", async () => {
     const response = await SELF.fetch(
@@ -20,14 +26,25 @@ test("enter docs schema remains available for gen service binding", async () => 
     );
 
     expect(response.status).toBe(200);
-    const schema = (await response.json()) as {
-        paths?: Record<string, unknown>;
-    };
+    const schema = (await response.json()) as Spec;
 
     expect(schema.paths?.["/account/profile"]).toBeDefined();
     expect(schema.paths?.["/account/quests"]).toBeDefined();
     expect(schema.paths?.["/account/my-models"]).toBeDefined();
     expect(schema.paths?.["/account/agents"]).toBeDefined();
+
+    const publicSchema = {
+        ...schema,
+        paths: Object.fromEntries(
+            Object.entries(schema.paths)
+                .filter(([path]) => isPublicEnterPath(path))
+                .map(([path, operations]) => [
+                    publicEnterPath(path),
+                    operations,
+                ]),
+        ),
+    };
+    expect(requestExampleErrors(publicSchema)).toEqual([]);
 });
 
 test("legacy enter docs redirect keeps the docs path boundary", async () => {

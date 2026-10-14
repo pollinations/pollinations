@@ -1,11 +1,12 @@
 import { Dialog as ArkDialog } from "@ark-ui/react/dialog";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
     AccountIdentity,
     AccountIdentityLink,
 } from "../compositions/AccountIdentity.tsx";
 import { AccountMenu } from "../compositions/AccountMenu.tsx";
+import { ConfirmationDialog } from "../compositions/ConfirmationDialog.tsx";
 import { FieldStack } from "../compositions/FieldStack.tsx";
 import { MultiSelect } from "../compositions/MultiSelect.tsx";
 import { PeriodPicker } from "../compositions/PeriodPicker.tsx";
@@ -22,6 +23,25 @@ import { TableHeaderCell } from "./Table.tsx";
 import { Textarea } from "./Textarea.tsx";
 
 describe("shared control accessibility", () => {
+    it.each([false, true])(
+        "honors cancelDisabled=%s for dialog dismissal",
+        (cancelDisabled) => {
+            const onCancel = vi.fn();
+            const dialog = ConfirmationDialog({
+                open: true,
+                title: "Delete item?",
+                confirmLabel: "Delete",
+                cancelDisabled,
+                onConfirm: () => {},
+                onCancel,
+            });
+            dialog.props.onOpenChange(true);
+            expect(onCancel).not.toHaveBeenCalled();
+            dialog.props.onOpenChange(false);
+            expect(onCancel).toHaveBeenCalledTimes(cancelDisabled ? 0 : 1);
+        },
+    );
+
     it.each([
         ["input", Input],
         ["textarea", Textarea],

@@ -41,6 +41,7 @@ test("enter docs schema remains available for gen service binding", async () => 
     expect(schema.paths?.["/account/quests"]).toBeDefined();
     expect(schema.paths?.["/account/my-models"]).toBeDefined();
     expect(schema.paths?.["/account/agents"]).toBeDefined();
+    expect(schema.paths?.["/account/promo-codes/redeem"]).toBeUndefined();
 
     const publicSchema = {
         ...schema,

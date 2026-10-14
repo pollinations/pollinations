@@ -27,7 +27,9 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),
-    seed: z.coerce.number().int().min(-1).optional().meta({
+    // Mirrors CreateChatCompletionRequestSchema: INT32_MAX keeps strict
+    // providers (Vertex AI, Azure OpenAI) from rejecting the forwarded body.
+    seed: z.coerce.number().int().min(-1).max(2147483647).optional().meta({
         description:
             "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
@@ -49,7 +51,11 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
     repetition_penalty: FloatQueryParamSchema,
     max_tokens: IntQueryParamSchema,
     max_completion_tokens: IntQueryParamSchema,
-    reasoning_effort: z.string().optional(),
+    // Same enum as /v1/chat/completions so a typo fails here with a clean
+    // validation error instead of a raw provider rejection downstream.
+    reasoning_effort: z
+        .enum(["none", "minimal", "low", "medium", "high", "xhigh", "max"])
+        .optional(),
     voice: z.string().optional(),
     stream: BooleanQueryParamSchema.optional().default(false).meta({
         description:

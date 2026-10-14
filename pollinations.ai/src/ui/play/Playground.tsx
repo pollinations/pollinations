@@ -1652,11 +1652,19 @@ export function Playground() {
                                     )}
 
                                     {customSize && (
-                                        <FieldStack
-                                            label="Dimensions"
-                                            orientation="inline"
-                                            className="min-w-0"
+                                        <fieldset
+                                            aria-label="Dimensions"
+                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
                                         >
+                                            <Text
+                                                as="span"
+                                                size="sm"
+                                                weight="semibold"
+                                                tone="strong"
+                                                className="polli:leading-5"
+                                            >
+                                                Dimensions
+                                            </Text>
                                             <div className="flex min-w-0 items-center gap-2">
                                                 {(
                                                     [
@@ -1718,7 +1726,7 @@ export function Playground() {
                                                     px
                                                 </span>
                                             </div>
-                                        </FieldStack>
+                                        </fieldset>
                                     )}
 
                                     <FieldStack

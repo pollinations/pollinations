@@ -53,10 +53,10 @@ Free requests are anonymous and limited per IP address:
 | Images | One at a time, at least 45 seconds apart |
 | Text | One at a time, at least 30 seconds apart. A stream waits for the next slot |
 
-Beyond the limit:
+Beyond the limit you get **402 Payment Required**, with a `Retry-After` header saying when the next free request is ready, and a short explanation:
 
-- **Text** comes back as a short notice in place of the reply (status 200), so apps show it. Requests with `json=true` get **402 Payment Required** instead.
-- **Images** get **402 Payment Required**: an image card in `<img>` tags, a page in the browser and a JSON error for scripts. `Retry-After` says when the next free image is ready.
+- **Text:** a one-line notice as plain text, or a JSON error for OpenAI-style and `json=true` requests.
+- **Images:** an image card in `<img>` tags, a page in the browser, and a JSON error for scripts.
 
 You can:
 

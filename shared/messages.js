@@ -1,6 +1,6 @@
 // What the Classic API tells a caller it did not answer, in enter's formats:
-// gen's error body for scripts and, for text, a chat reply with the link, as
-// gen's text-balance-notice does. ?ref=classic lets enter count the visits.
+// gen's error body for scripts and, for plain text, a notice worded as gen's
+// text-balance-notice. ?ref=classic lets enter count the visits.
 import { PAGE } from "./free-limit-page.js";
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
@@ -19,27 +19,10 @@ const genError = (status, code, message) =>
         },
     });
 
-/** A chat completion whose answer is the notice, as gen sends its own */
-const chatReply = (model, content) =>
-    JSON.stringify({
-        id: `chatcmpl-${crypto.randomUUID()}`,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model,
-        choices: [
-            {
-                index: 0,
-                message: { role: "assistant", content },
-                finish_reason: "stop",
-            },
-        ],
-        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    });
-
 const limitError = (item, every, wait) =>
     `Free limit reached: 1 ${item} every ${every} seconds per IP. Retry after ${wait}s, or get unlimited ${item === "image" ? "images" : "replies"} with a pollen key at ${ENTER}`;
 
-// Read as the reply in apps and chats, so it names the fix as gen's notice does
+// Apps print a plain text answer as it is, so it names the fix as gen's notice does
 const limitNotice = (every, wait) =>
     `Free limit reached: 1 reply every ${every} seconds per IP. Please wait ${wait} seconds or [get unlimited replies](${ENTER}), then try again.\n\n` +
     "If you're using someone else's app, ask whoever runs it to switch to a pollen key.";
@@ -54,22 +37,14 @@ function page(kind, wait) {
 }
 
 /**
- * The paywall's 402 for a caller that sent no payment, as enter answers it:
- * a browser gets the free limit's page, a text request a 200 reply with the
- * notice, which no cache keeps, and an image or JSON request gen's error body.
- * The 402s keep PAYMENT-REQUIRED: x402 clients read only that header.
- * @param {"image" | "text" | "chat" | "json"} kind
+ * The paywall's 402 for a caller that sent no payment, with an answer in place
+ * of its empty {}: the free limit's page for a browser, the notice for a plain
+ * text request, gen's error body for an image, OpenAI or JSON request. The 402
+ * and PAYMENT-REQUIRED stay: x402 clients pay from that header.
+ * @param {"image" | "text" | "json"} kind
  * @param {number} until when the IP's next free request may start
- * @param {string} [model] the model a chat request named
  */
-export function explainFreeLimit(
-    request,
-    response,
-    kind,
-    intervalMs,
-    until,
-    model,
-) {
+export function explainFreeLimit(request, response, kind, intervalMs, until) {
     const paying =
         request.headers.has("payment-signature") ||
         request.headers.has("x-payment");
@@ -87,29 +62,16 @@ export function explainFreeLimit(
     // Express's weak ETag and the length were for the paywall's own body
     headers.delete("ETag");
     headers.delete("Content-Length");
-    const answer = (status, contentType, body) => {
+    headers.set("Retry-After", String(wait));
+    const answer = (contentType, body) => {
         headers.set("Content-Type", contentType);
-        return new Response(body, { status, headers });
+        return new Response(body, { status: 402, headers });
     };
 
-    if (browser) {
-        headers.set("Retry-After", String(wait));
-        return answer(402, "text/html; charset=utf-8", page(kind, wait));
-    }
-    if (kind === "text" || kind === "chat") {
-        headers.set("Cache-Control", "private, no-store");
-        headers.delete("PAYMENT-REQUIRED");
-        return kind === "text"
-            ? answer(200, "text/plain; charset=utf-8", limitNotice(every, wait))
-            : answer(
-                  200,
-                  JSON_TYPE,
-                  chatReply(model, limitNotice(every, wait)),
-              );
-    }
-    headers.set("Retry-After", String(wait));
+    if (browser) return answer("text/html; charset=utf-8", page(kind, wait));
+    if (kind === "text")
+        return answer("text/plain; charset=utf-8", limitNotice(every, wait));
     return answer(
-        402,
         JSON_TYPE,
         genError(
             402,

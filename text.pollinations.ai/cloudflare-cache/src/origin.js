@@ -628,19 +628,17 @@ async function generation(
         if (request.method === "HEAD") return unpaid();
         const { pay } = await import("./pay.js");
         const format = job.options.response_format?.type;
-        const kind =
-            format === "json_object" || format === "json_schema"
-                ? "json"
-                : job.format === "openai"
-                  ? "chat"
-                  : "text";
+        // OpenAI and JSON callers read errors as JSON, the rest print the text
+        const json =
+            job.format === "openai" ||
+            format === "json_object" ||
+            format === "json_schema";
         return explainFreeLimit(
             request,
             await pay(request, env, ctx, unpaid),
-            kind,
+            json ? "json" : "text",
             FREE_INTERVAL_MS,
             slot.until,
-            job.model,
         );
     }
 

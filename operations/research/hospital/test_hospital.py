@@ -52,7 +52,7 @@ def fixture(tmp):
     return root, repo
 
 def drive(tmp, root, repo, rows, *argv, mode='normal'):
-    fake = lambda role, prompt, output, model=None: [sys.executable, str(tmp / 'fake.py'), str(HERE / 'hospital.py'), str(output), mode, role]
+    fake = lambda role, prompt, output, model=None, effort=None: [sys.executable, str(tmp / 'fake.py'), str(HERE / 'hospital.py'), str(output), mode, role]
     with patch.object(h, 'ROOT', root), patch.object(h, 'REPO', repo), patch.object(h, 'POLL', 0.05), \
          patch.object(h, 'usage', return_value=rows), patch.object(h, 'role_cmd', fake), patch.object(sys, 'argv', ['hospital.py', *argv]):
         h.main()
@@ -166,4 +166,21 @@ with tempfile.TemporaryDirectory() as t:
     prompt = (root / 'cases' / '7' / 'workup-1.prompt').read_text()
     assert 'Competing PR #8' in prompt and f"Do not read {root}/quick" in prompt
 
-print('PASS: key-ID costs; verdict parsing; version-bump check; full offline run to discharge; test-evidence, case-count, trial and case budget gates; partial note on timeout; blind quick review; rival PR comparison')
+with tempfile.TemporaryDirectory() as t:
+    tmp = pathlib.Path(t)
+    root, repo = fixture(tmp)
+    # An effort-level review keeps its own record and starts from the given base, not today's main.
+    base = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip()
+    (repo / 'a.txt').write_text('later\n')
+    git(repo, 'commit', '-q', '-am', 'later')
+    git(repo, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
+    drive(tmp, root, repo, [], 'quick-review', '7', '--model', 'deepseek/deepseek-v4.1-flash', '--effort', 'low', '--base', base)
+    quick = json.loads((root / 'quick' / '7' / 'deepseek-v4.1-flash-low.json').read_text())
+    assert quick['effort'] == 'low' and quick['base'] == base, quick
+    assert subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'quick/7'], text=True).strip() == base
+    assert f'scratch branch at {base}' in (root / 'quick' / '7' / 'deepseek-v4.1-flash-low.prompt').read_text()
+    cmd = h.role_cmd('quick', 'the prompt', 'out.md', 'deepseek/deepseek-v4.1-flash', 'low')
+    assert cmd[cmd.index('--effort') + 1] == 'low' and cmd[-1] == 'the prompt', cmd
+    assert '--effort' not in h.role_cmd('quick', 'the prompt', 'out.md')
+
+print('PASS: key-ID costs; verdict parsing; version-bump check; full offline run to discharge; test-evidence, case-count, trial and case budget gates; partial note on timeout; blind quick review; rival PR comparison; quick review effort and base')

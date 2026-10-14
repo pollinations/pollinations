@@ -33,9 +33,11 @@ runs one stage at a time. It is a dry run: nothing is posted to GitHub.
   from run 5 (`openai/gpt-6-astra` before), so the reviewer is a different model.
 - Runs 1–4 used a local proxy for Codex, which replayed reasoning state that gen's
   `/v1/responses` rejected. #17123 fixed that on production.
-- `hospital.py quick-review N --model M [--rival R]`: one review pass by one
-  model on a scratch branch, before admission and blind to the hospital. Run 5
-  compares these cheap reviews with the full hospital.
+- `hospital.py quick-review N --model M [--rival R] [--effort E] [--base SHA]`:
+  one review pass by one model on a scratch branch, before admission and blind
+  to the hospital. `--effort` sets Claude Code's reasoning effort (default
+  high); `--base` repeats a review on an earlier commit. Run 5 compares these
+  cheap reviews with the full hospital.
 - Codex isn't in the current `pollinations-large` template; install
   `@openai/codex` on the box. The box's sandbox key can't create keys, so
   create the Claude key from the account login and seed it into

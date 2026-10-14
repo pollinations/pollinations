@@ -100,13 +100,14 @@ def verdict(body):
     found = re.findall(r'^\W*VERDICT:\s*(APPROVE|REWORK|ESCALATE|CHANGES)\b', body, re.M)
     return found[-1] if found else None
 
-def role_cmd(role, prompt, output, model='anthropic/claude-opus-5.5'):
+def role_cmd(role, prompt, output, model='anthropic/claude-opus-5.5', effort=None):
     if role == 'review-attending':
         return ['codex', 'exec', '--model', REVIEW_MODEL, '--dangerously-bypass-approvals-and-sandbox', '-C', str(REPO), '-o', str(output), prompt]
     # Only the tools a role needs: no subagents or web access, and a smaller prompt.
     # stream-json logs each step as it happens, so a stopped stage still has its findings.
     return ['claude', '-p', '--settings', str(pathlib.Path.home() / '.pollinations/claude-code.json'), '--model', model,
-            '--tools', 'Bash,Read,Edit,Write,Grep,Glob', '--dangerously-skip-permissions', '--output-format', 'stream-json', '--verbose', prompt]
+            '--tools', 'Bash,Read,Edit,Write,Grep,Glob', '--dangerously-skip-permissions', '--output-format', 'stream-json', '--verbose',
+            *(['--effort', effort] if effort else []), prompt]
 
 def run_role(cmd, log, env, over):
     """Runs one model process; stops it when over(usage rows) names a reason or the stage runs out of time."""
@@ -125,25 +126,25 @@ def run_role(cmd, log, env, over):
                 break
     return stop, proc.returncode
 
-def quick_review(number, rival, model, run, keys):
+def quick_review(number, rival, model, run, keys, effort=None, base='origin/main'):
     """One review pass by one model, before and blind to the hospital: the baseline the hospital must beat."""
     if git('status', '--porcelain'): raise SystemExit('Dirty repository')
     folder = ROOT / 'quick' / str(number)
-    name = model.split('/')[-1]
+    name = model.split('/')[-1] + (f'-{effort}' if effort else '')
     folder.mkdir(parents=True, exist_ok=True)
     task = f'Compare PR #{number} and PR #{rival}, which fix the same issue, and recommend which to merge.' if rival else f'Review PR #{number} for merge.'
     diffs = ', '.join(f'{ROOT}/cache/pr-{n}.diff' for n in [number, rival] if n)
-    prompt = f'''You are one independent reviewer. {task} Cached diffs: {diffs}. Repo: {REPO}, on a scratch branch at origin/main; you may apply a diff there. Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Do not read {ROOT}/cases or {ROOT}/quick.
+    prompt = f'''You are one independent reviewer. {task} Cached diffs: {diffs}. Repo: {REPO}, on a scratch branch at {base}; you may apply a diff there. Run every test command through `python3 {ROOT}/hospital.py run-test -- <command>` from the directory it needs. Do not read {ROOT}/cases or {ROOT}/quick.
 Do not spawn agents or call another model. No external writes, secrets, live APIs, installs, full test suites; do not commit. Aim for about 15 tool calls and read only the lines you need. Print your review as final output, under 500 words: blockers that require the diff to change, questions for the maintainer, and the evidence for each. End with a standalone line VERDICT: APPROVE (merge as is), VERDICT: CHANGES (the diff must change) or VERDICT: ESCALATE (cannot judge offline).'''
     (folder / f'{name}.prompt').write_text(prompt)
-    git('switch', '-C', f'quick/{number}', 'origin/main')
+    git('switch', '-C', f'quick/{number}', base)
     start, output = now(), folder / f'{name}.md'
     env = {**os.environ, 'HOSPITAL_CASE': str(folder), 'HOSPITAL_STAGE': name}
     over = lambda rows: f"Run exceeded {run['trial_limit']} Pollen" if sum(costs(rows, keys, run['start']).values()) >= run['trial_limit'] else None
-    stop, code = run_role(role_cmd('quick', prompt, output, model), folder / f'{name}.log', env, over)
+    stop, code = run_role(role_cmd('quick', prompt, output, model, effort), folder / f'{name}.log', env, over)
     output.write_text(final_note('quick', folder / f'{name}.log', output))
     git('reset', '--hard'); git('clean', '-fd')
-    save(folder / f'{name}.json', dict(model=model, start=start, end=now(), stop=stop, exit=code, verdict=verdict(output.read_text())))
+    save(folder / f'{name}.json', dict(model=model, effort=effort, base=git('rev-parse', base), start=start, end=now(), stop=stop, exit=code, verdict=verdict(output.read_text())))
     print(f'{name}: {verdict(output.read_text())}')
 
 def close(folder, state, outcome, reason, keys):
@@ -162,6 +163,8 @@ def main():
     p.add_argument('--reason')
     p.add_argument('--rival', type=int, help='an open PR that fixes the same issue; the case compares both')
     p.add_argument('--model', help='quick-review: the one model that reviews')
+    p.add_argument('--effort', choices=['low', 'medium', 'high', 'xhigh', 'max'], help="quick-review: Claude Code's reasoning effort (its default is high)")
+    p.add_argument('--base', default='origin/main', help='quick-review: the commit the scratch branch starts from')
     a = p.parse_args()
     lock = (ROOT / '.lock').open('w')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -176,7 +179,7 @@ def main():
         return
     if a.action == 'quick-review':
         if total >= run['trial_limit']: raise SystemExit('Trial cost stop')
-        return quick_review(a.number, a.rival, a.model, run, keys)
+        return quick_review(a.number, a.rival, a.model, run, keys, a.effort, a.base)
     folder = ROOT / 'cases' / str(a.number)
     if a.action == 'admit':
         if total >= run['trial_limit']: raise SystemExit('Trial cost stop')

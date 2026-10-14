@@ -636,12 +636,20 @@ async function generation(
         // The paywall covers GET and POST only, so a HEAD generates unpaid
         if (request.method === "HEAD") return unpaid();
         const { pay } = await import("./pay.js");
+        const format = job.options.response_format?.type;
+        const kind =
+            format === "json_object" || format === "json_schema"
+                ? "json"
+                : job.format === "openai"
+                  ? "chat"
+                  : "text";
         return explainFreeLimit(
             request,
             await pay(request, env, ctx, unpaid),
-            job.format,
+            kind,
             FREE_INTERVAL_MS,
             slot.until,
+            job.model,
         );
     }
 

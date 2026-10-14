@@ -2,9 +2,7 @@ import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import { MAX_HOLD_MS } from "../../../shared/ip-slot.js";
 import browserHeaders from "./fixtures/text.pollinations.ai-get-browser.headers?raw";
-import jsonHeaders from "./fixtures/text.pollinations.ai-get-json.headers?raw";
 import headHeaders from "./fixtures/text.pollinations.ai-head-json.headers?raw";
-import openAiHeaders from "./fixtures/text.pollinations.ai-post-openai-json.headers?raw";
 import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
 import {
     alarmOf,
@@ -143,10 +141,14 @@ function paymentFor(paymentRequired) {
     );
 }
 
-/** A 402 for path, then the same request paid */
+/** The challenge on the browser page for path, then the same request paid */
 async function payFor(path, options) {
     const ip = await limitedIp();
-    const challenge = await call(path, { ip, ...options });
+    const challenge = await call(path, {
+        ip,
+        ...options,
+        headers: { ...options?.headers, ...BROWSER },
+    });
     expect(challenge.response.status).toBe(402);
     events.length = 0;
     const signature = paymentFor(
@@ -159,43 +161,59 @@ async function payFor(path, options) {
     });
 }
 
-// The headers the free limit's message replaces on the paywall's JSON 402
-const MESSAGE_HEADERS = [
-    "content-type",
-    "content-length",
-    "etag",
-    "retry-after",
-];
-const without = (headers, names) =>
-    Object.fromEntries([...headers].filter(([name]) => !names.includes(name)));
+const ENTER = "https://enter.pollinations.ai/?ref=classic";
+const NOTICE =
+    /^Free limit reached: 1 reply every 30 seconds per IP\. Please wait \d+ seconds or \[get unlimited replies\]\(https:\/\/enter\.pollinations\.ai\/\?ref=classic\), then try again\./;
 
-test("a script past the free limit gets the sentence, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
-    const vm = without(capturedHeaders(jsonHeaders), MESSAGE_HEADERS);
-
+test("a script or app past the free limit gets the notice as its reply, which no cache keeps", async () => {
     for (const host of ["text.pollinations.ai", "text.myceli.ai"]) {
         const { response, text } = await call(
             `${CAPTURED_JSON}?token=secret&referrer=app`,
             { ip: await limitedIp(), host, headers: CURL },
         );
 
-        expect(response.status).toBe(402);
-        const wait = Number(response.headers.get("retry-after"));
-        expect(wait).toBeGreaterThan(0);
-        expect(wait).toBeLessThanOrEqual(30);
-        expect(text).toBe(
-            `Free limit: 1 reply every 30 seconds. Try again in ${wait} s, or get unlimited replies at enter.pollinations.ai`,
-        );
+        expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe(
             "text/plain; charset=utf-8",
         );
-        const headers = Object.fromEntries(response.headers);
-        expect(without(response.headers, MESSAGE_HEADERS)).toEqual(vm);
-        // The challenge names the VM's origin host and path, without the query
-        const challenge = JSON.parse(atob(headers["payment-required"]));
-        expect(challenge.resource.url).toBe(
-            `https://text-origin.pollinations.ai${CAPTURED_JSON}`,
-        );
+        expect(response.headers.get("cache-control")).toBe("private, no-store");
+        expect(response.headers.get("payment-required")).toBeNull();
+        expect(text).toMatch(NOTICE);
     }
+    // A free request for the same prompt is generated, not served the notice
+    const free = await call(`${CAPTURED_JSON}?token=secret&referrer=app`, {
+        ip: nextIp(),
+        headers: CURL,
+    });
+    expect(free.text).toBe("ok");
+});
+
+test("a JSON-mode request past the free limit gets gen's error body and the VM's challenge", async () => {
+    const { response, text } = await call(`${CAPTURED_JSON}?json=true`, {
+        ip: await limitedIp(),
+        headers: CURL,
+    });
+
+    expect(response.status).toBe(402);
+    const wait = response.headers.get("retry-after");
+    const body = JSON.parse(text);
+    expect(body).toEqual({
+        status: 402,
+        success: false,
+        error: {
+            code: "FREE_LIMIT",
+            message: `Free limit reached: 1 reply every 30 seconds per IP. Retry after ${wait}s, or get unlimited replies with a pollen key at ${ENTER}`,
+            timestamp: body.error.timestamp,
+            fixUrl: ENTER,
+        },
+    });
+    // The challenge names the VM's origin host and path, without the query
+    const challenge = JSON.parse(
+        atob(response.headers.get("payment-required")),
+    );
+    expect(challenge.resource.url).toBe(
+        `https://text-origin.pollinations.ai${CAPTURED_JSON}`,
+    );
 });
 
 test("the facilitator sees the VM's seller identity, once per isolate", async () => {
@@ -218,22 +236,18 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
     );
 });
 
-test("POST /openai gets an OpenAI-style error and the VM's challenge", async () => {
+test("POST /openai past the free limit gets the notice as the assistant's reply", async () => {
     const { response, text } = await call("/openai", {
         ip: await limitedIp(),
         ...jsonPost({ messages: [{ role: "user", content: "hi" }] }),
     });
 
-    expect(response.status).toBe(402);
-    const wait = response.headers.get("retry-after");
-    expect(JSON.parse(text)).toEqual({
-        error: {
-            message: `Free limit: 1 request every 30 seconds. Try again in ${wait} s, or use a pollen key from https://enter.pollinations.ai/?ref=classic with base URL https://gen.pollinations.ai/v1`,
-        },
-    });
-    expect(response.headers.get("payment-required")).toBe(
-        capturedHeaders(openAiHeaders).get("payment-required"),
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("private, no-store");
+    const completion = JSON.parse(text);
+    expect(completion.object).toBe("chat.completion");
+    expect(completion.model).toBe("openai-fast");
+    expect(completion.choices[0].message.content).toMatch(NOTICE);
 });
 
 test("browsers get the free limit's page with the time left and the VM's challenge", async () => {
@@ -276,7 +290,7 @@ test("only an HTML Accept from a Mozilla user agent gets the page", async () => 
         expect(response.headers.get("content-type")).toBe(
             "text/plain; charset=utf-8",
         );
-        expect(text).toMatch(/^Free limit: /);
+        expect(text).toMatch(NOTICE);
     }
 });
 
@@ -310,7 +324,7 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     expect(await storedAt(CAPTURED_HEAD)).toBeNull();
 });
 
-test("an unknown model books the free slot and gets the VM's 404; then the IP gets 402s", async () => {
+test("an unknown model books the free slot and gets the VM's 404; then the IP gets the notice", async () => {
     const ip = nextIp();
 
     const free = await call("/check?model=zz-nonexistent-model", {
@@ -321,12 +335,12 @@ test("an unknown model books the free slot and gets the VM's 404; then the IP ge
     expect(free.text).toBe(vm404);
 
     const next = await call("/check%202", { ip, headers: CURL });
-    expect(next.response.status).toBe(402);
+    expect(next.text).toMatch(NOTICE);
     const unknown = await call("/check%203?model=zz-nonexistent-model", {
         ip,
         headers: CURL,
     });
-    expect(unknown.response.status).toBe(402);
+    expect(unknown.text).toMatch(NOTICE);
 });
 
 test("X-PAYMENT alone gets a fresh 402 without a /verify call", async () => {
@@ -426,7 +440,7 @@ test("a paid GET with a matching If-None-Match settles, then gets the 304 with i
 test("a paid generation leaves the IP's slot as it was", async () => {
     const ip = await limitedIp();
     const hold = await alarmOf(ip);
-    const challenge = await call("/paid%20slot", { ip, headers: CURL });
+    const challenge = await call("/paid%20slot", { ip, headers: BROWSER });
     const signature = paymentFor(
         challenge.response.headers.get("payment-required"),
     );
@@ -551,7 +565,7 @@ async function freshWorker() {
     return (await import("../src/index.js")).default;
 }
 
-test("50 concurrent first requests in a fresh isolate all get a 402 and share one /supported call", async () => {
+test("50 concurrent first requests in a fresh isolate all get the notice and share one /supported call", async () => {
     const app = await freshWorker();
     const ip = await limitedIp();
 
@@ -561,9 +575,7 @@ test("50 concurrent first requests in a fresh isolate all get a 402 and share on
         ),
     );
 
-    expect(answers.map(({ response }) => response.status)).toEqual(
-        Array(50).fill(402),
-    );
+    expect(answers.every(({ text }) => NOTICE.test(text))).toBe(true);
     expect(events.filter((event) => event === "/supported")).toHaveLength(1);
 });
 

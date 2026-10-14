@@ -152,7 +152,7 @@ const without = (headers: Headers) =>
         [...headers].filter(([name]) => !MESSAGE_HEADERS.includes(name)),
     );
 
-test("a script past the free limit gets the message, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
+test("a script past the free limit gets gen's error body, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
     const vm = without(capturedHeaders(jsonHeaders));
 
     for (const host of ["image.pollinations.ai", "image.myceli.ai"]) {
@@ -165,8 +165,16 @@ test("a script past the free limit gets the message, a Retry-After and the VM's 
         const wait = Number(response.headers.get("retry-after"));
         expect(wait).toBeGreaterThan(0);
         expect(wait).toBeLessThanOrEqual(45);
-        expect(JSON.parse(text)).toEqual({
-            error: `Free limit: 1 image every 45 seconds. Try again in ${wait} s, or get unlimited images with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+        const body = JSON.parse(text);
+        expect(body).toEqual({
+            status: 402,
+            success: false,
+            error: {
+                code: "FREE_LIMIT",
+                message: `Free limit reached: 1 image every 45 seconds per IP. Retry after ${wait}s, or get unlimited images with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+                timestamp: body.error.timestamp,
+                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+            },
         });
         expect(without(response.headers)).toEqual(vm);
     }

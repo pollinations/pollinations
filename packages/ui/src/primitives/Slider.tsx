@@ -1,11 +1,4 @@
-import {
-    type CSSProperties,
-    forwardRef,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { type CSSProperties, forwardRef } from "react";
 import { cn } from "../lib/cn.ts";
 
 const toNumber = (value: unknown): number | undefined => {
@@ -30,16 +23,17 @@ const getProgressPercent = ({
     defaultValue: React.ComponentPropsWithoutRef<"input">["defaultValue"];
     min: React.ComponentPropsWithoutRef<"input">["min"];
     max: React.ComponentPropsWithoutRef<"input">["max"];
-}): number => {
+}): number | undefined => {
     if (typeof progress === "number" && Number.isFinite(progress)) {
         return clampPercent(progress);
     }
 
+    const numericValue = toNumber(value ?? defaultValue);
+    if (numericValue === undefined) return undefined;
+
     const numericMin = toNumber(min) ?? 0;
     const numericMax = toNumber(max) ?? 100;
     if (numericMax <= numericMin) return 100;
-    const numericValue =
-        toNumber(value ?? defaultValue) ?? (numericMin + numericMax) / 2;
 
     return clampPercent(
         ((numericValue - numericMin) / (numericMax - numericMin)) * 100,
@@ -56,61 +50,26 @@ export type SliderProps = Omit<
 
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     (
-        {
-            className,
-            defaultValue,
-            max,
-            min,
-            onInput,
-            progress,
-            style,
-            value,
-            ...props
-        },
+        { className, defaultValue, max, min, progress, style, value, ...props },
         ref,
     ) => {
-        const inputRef = useRef<HTMLInputElement | null>(null);
-        const [inputValue, setInputValue] = useState<string>();
-        const setRef = useCallback(
-            (input: HTMLInputElement | null) => {
-                inputRef.current = input;
-                if (typeof ref === "function") return ref(input);
-                if (ref) ref.current = input;
-            },
-            [ref],
-        );
-
-        useEffect(() => {
-            const input = inputRef.current;
-            if (!input || value !== undefined) return;
-            setInputValue(input.value);
-            const form = input.form;
-            if (!form) return;
-            const handleReset = (event: Event) => {
-                // Microtasks can run before a trusted reset's default action.
-                setTimeout(() => {
-                    if (!event.defaultPrevented) setInputValue(input.value);
-                }, 0);
-            };
-            form.addEventListener("reset", handleReset);
-            return () => form.removeEventListener("reset", handleReset);
-        }, [value, defaultValue, min, max, props.step, props.form]);
-
         const progressPercent = getProgressPercent({
             progress,
-            value: value ?? inputValue,
+            value,
             defaultValue,
             min,
             max,
         });
         const sliderStyle = {
             ...style,
-            "--polli-slider-progress": `${progressPercent}%`,
+            ...(progressPercent === undefined
+                ? null
+                : { "--polli-slider-progress": `${progressPercent}%` }),
         } as CSSProperties;
 
         return (
             <input
-                ref={setRef}
+                ref={ref}
                 type="range"
                 min={min}
                 max={max}
@@ -119,12 +78,6 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
                 style={sliderStyle}
                 className={cn("polli-slider", className)}
                 {...props}
-                onInput={(event) => {
-                    if (value === undefined) {
-                        setInputValue(event.currentTarget.value);
-                    }
-                    onInput?.(event);
-                }}
             />
         );
     },

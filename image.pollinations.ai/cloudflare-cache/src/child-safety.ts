@@ -300,8 +300,17 @@ const minors = matcher(MINORS);
 const teens = matcher(TEENS);
 const sexual = matcher(SEXUAL);
 
+// Control and format characters: the generator strips control characters,
+// so each prompt is checked with them removed and with them as spaces
+const HIDDEN = /[\p{Cc}\p{Cf}]/gu;
+
 export function asksForSexualContentWithMinors(prompt: string) {
-    const text = fold(prompt);
+    return [prompt.replace(HIDDEN, ""), prompt.replace(HIDDEN, " ")].some(
+        (variant) => refuses(fold(variant)),
+    );
+}
+
+function refuses(text: string) {
     if (always(text)) return true;
     if (!sexual(text)) return false;
     const ages = [...text.matchAll(AGE)].map(([, age]) => Number(age));

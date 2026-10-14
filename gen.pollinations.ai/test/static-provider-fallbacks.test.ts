@@ -913,12 +913,6 @@ describe("static provider fallbacks", () => {
             completionTextTokens: (0.59 / 1_000_000) * 1.055,
         });
         expect(
-            IMAGE_SERVICES["qwen/qwen-image-3:replicate"].cost,
-        ).toMatchObject({
-            promptImageTokens: 0,
-            completionImageTokens: 0.03,
-        });
-        expect(
             TEXT_SERVICES["google/gemini-3.7-flash:openrouter:vertex-global"]
                 .cost,
         ).toMatchObject({

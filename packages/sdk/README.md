@@ -229,6 +229,140 @@ inside a `"use client"` component:
   }
   ```
 
+### React generation hooks
+
+`useImageGeneration`, `useTextGeneration`, `useAudioGeneration`,
+`useVideoGeneration`, and `useTranscription` run one request with the signed-in
+user's key and render nothing. Each returns `{ data, isLoading, error, run, rerun, cancel }`.
+Nothing is sent until `run(...)`; calling `run` again cancels the request in
+flight. A logout, a key change, or unmounting cancels it too, so a late response
+never reaches the next user. `cancel()` keeps the last result.
+
+Call `run` from an event handler, not during render.
+
+```tsx
+import { useMemo } from 'react';
+import { useImageGeneration } from '@pollinations/sdk/react';
+
+function ImageButton() {
+  const { data, isLoading, error, run } = useImageGeneration();
+  // Call URL.revokeObjectURL(src) when the result changes to free the blob.
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'black-forest-labs/flux.1-schnell' })}>Generate</button>
+      {error && <p>{error.message}</p>}
+      {src && <img src={src} alt="" />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTextGeneration } from '@pollinations/sdk/react';
+
+function Haiku() {
+  const { data, isLoading, run } = useTextGeneration();
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai/gpt-5.4-nano' })}>Write</button>
+      <p>{data}</p>
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useAudioGeneration } from '@pollinations/sdk/react';
+
+function Speak() {
+  const { data, run } = useAudioGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('Hello from Pollinations', { voice: 'nova' })}>Speak</button>
+      {src && <audio src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useVideoGeneration } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, run } = useVideoGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('a paper boat drifting on a pond', { duration: 4 })}>Render</button>
+      {src && <video src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTranscription } from '@pollinations/sdk/react';
+
+function Transcribe() {
+  const { data, isLoading, run } = useTranscription();
+  return (
+    <>
+      <input type="file" accept="audio/*" disabled={isLoading} onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) void run(file, { model: 'whisper-large-v3' });
+      }} />
+      <p>{data?.text}</p>
+    </>
+  );
+}
+```
+
+### React chat transport (`useChat`)
+
+`usePollinationsChatTransport` returns a transport for the Vercel AI SDK
+`useChat`. It streams `/v1/responses` from the browser with the signed-in
+user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
+parts with their results, and `message.metadata.usage` holds the usage of the
+reply. Assistant output is kept in `message.metadata.output` and sent back on
+later turns, preserving server tool results. Stream failures become `error`
+chunks. A rejected request makes the send
+fail, which `useChat` reports as an error. Caller-run function tools are not
+supported.
+
+`ai` is an optional peer dependency; install it, and `@ai-sdk/react`, to use
+`useChat`.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePollinationsChatTransport } from '@pollinations/sdk/react';
+
+function Chat() {
+  const transport = usePollinationsChatTransport({ model: 'openai/gpt-5.4-nano' });
+  const { messages, sendMessage, status } = useChat({ transport });
+  return (
+    <>
+      {messages.map((m) => (
+        <p key={m.id}>{m.role}: {m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')}</p>
+      ))}
+      <button disabled={status !== 'ready'} onClick={() => sendMessage({ text: 'Hi' })}>Send</button>
+    </>
+  );
+}
+```
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:

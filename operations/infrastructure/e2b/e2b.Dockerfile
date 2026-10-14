@@ -3,18 +3,16 @@
 # what `ssh <id>.polli` needs, so the first ssh doesn't install it. Gen logs polli
 # in inside each new sandbox; the first interactive login connects the
 # harnesses (polli-harnesses.sh).
-# Versions are pinned: E2B reuses a cached step while its text stays the same,
-# so a new release reaches the image only by bumping its version here. Rebuild
-# with the E2B team key:
-#   E2B_API_KEY=... npx -y @e2b/cli@2.21.2 template create pollinations \
+# Versions are pinned, the base image by digest: E2B reuses a cached step while
+# its text stays the same, so a new release reaches the image only by bumping
+# its version here. .github/workflows/deploy-e2b-templates.yml rebuilds
+# `pollinations` and `pollinations-large` when a change here reaches production.
+# Test a change first under another name with the E2B team key:
+#   E2B_API_KEY=... npx -y @e2b/cli@2.21.2 template create pollinations-test \
 #     --path operations/infrastructure/e2b --cpu-count 2 --memory-mb 2048
-# and its larger size, `pollinations-large`, with --cpu-count 4 --memory-mb 8192
-# --min-free-disk-mb 51200: 50 GiB free, our team's cap (the default leaves 21).
-# A rebuild without the flag drops back to the default.
-# Test a change first under another name, like pollinations-test, on a box from
-# `polli sandbox create pollinations-test`; then delete it with
+# on a box from `polli sandbox create pollinations-test`; then delete it with
 # `npx -y @e2b/cli@2.21.2 template delete -y pollinations-test`.
-FROM e2bdev/base
+FROM e2bdev/base@sha256:4a369f01a820fe5e65f53c2c5727a78899daf86f0541b721097f289559c8b73f
 
 USER root
 

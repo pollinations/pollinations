@@ -912,7 +912,12 @@ export function assess(
         };
     });
     const eligible = routes.filter(
-        (route) => route.verification === "documented",
+        (route) =>
+            route.exactMatch &&
+            route.available &&
+            route.capabilitiesMatch !== false &&
+            route.identitySupported &&
+            route.availabilitySupported,
     );
     const preferred = PREFERENCE.flatMap((provider) =>
         routes.filter(
@@ -998,7 +1003,7 @@ export function assess(
                   status: "requires-account-and-route-verification",
                   rationale: preferred.length
                       ? "Preferred provider per maintainer credit policy; missing pricing/source evidence, capability parity, route-specific credit eligibility and remaining credit coverage require Stewardess verification."
-                      : "Lowest documented equivalent-workload price among eligible researched routes; completeness and account access remain unverified.",
+                      : "Lowest sourced comparable-workload price among conditional candidates; capability parity, account access, runtime and research completeness remain unverified.",
                   comparisonWorkload:
                       unit === "1M_tokens" && model?.category === "embedding"
                           ? "1M embedding input tokens"

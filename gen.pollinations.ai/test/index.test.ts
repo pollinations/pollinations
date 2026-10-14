@@ -264,6 +264,51 @@ describe("gen worker routing", () => {
         expect(body).toContain(
             "Content-Signal: search=yes, ai-input=yes, ai-train=yes",
         );
+        expect(body).toContain(
+            "Sitemap: https://staging.gen.pollinations.ai/sitemap.xml",
+        );
+    });
+
+    it("serves a minimal sitemap for the public pages", async () => {
+        const response = await fetchWorker("/sitemap.xml");
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toBe(
+            "application/xml; charset=utf-8",
+        );
+        expect(response.headers.get("Cache-Control")).toBe(
+            "public, max-age=3600",
+        );
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body).toContain(
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        );
+        const locs = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
+            (match) => match[1],
+        );
+        expect(locs).toEqual([
+            "https://staging.gen.pollinations.ai/",
+            "https://staging.gen.pollinations.ai/docs",
+        ]);
+
+        // A trusted forwarded host is reflected in both discovery files.
+        const forwarded = {
+            "x-forwarded-host": "gen.pollinations.ai",
+            "x-forwarded-proto": "https",
+        };
+        const prodSitemap = await fetchWorker("/sitemap.xml", envWithEnter(), {
+            headers: forwarded,
+        });
+        expect(await prodSitemap.text()).toContain(
+            "<loc>https://gen.pollinations.ai/docs</loc>",
+        );
+        const prodRobots = await fetchWorker("/robots.txt", envWithEnter(), {
+            headers: forwarded,
+        });
+        expect(await prodRobots.text()).toContain(
+            "Sitemap: https://gen.pollinations.ai/sitemap.xml",
+        );
     });
 
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {

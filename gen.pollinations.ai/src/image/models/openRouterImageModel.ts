@@ -528,7 +528,10 @@ export async function callOpenRouterGrokImagineProAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const referenceImage = safeParams.image?.[0];
+    const inputReferences = safeParams.image.map((url) => ({
+        type: "image_url",
+        image_url: { url },
+    }));
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
         prompt,
@@ -539,13 +542,8 @@ export async function callOpenRouterGrokImagineProAPI(
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
-    if (referenceImage) {
-        requestBody.input_references = [
-            {
-                type: "image_url",
-                image_url: { url: referenceImage },
-            },
-        ];
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
     }
 
     const data = await postOpenRouterImage(
@@ -563,7 +561,7 @@ export async function callOpenRouterGrokImagineProAPI(
     }
 
     logOps("Grok Imagine Pro generation complete", {
-        edit: Boolean(referenceImage),
+        referenceImages: inputReferences.length,
         providerCost: data.usage?.cost,
     });
 
@@ -572,7 +570,9 @@ export async function callOpenRouterGrokImagineProAPI(
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
-                ...(referenceImage ? { promptImageTokens: 1 } : {}),
+                ...(inputReferences.length > 0
+                    ? { promptImageTokens: inputReferences.length }
+                    : {}),
                 completionImageTokens: 1,
             },
         },

@@ -368,7 +368,7 @@ describe("error observability", () => {
     });
 
     it.each(["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"] as const)(
-        "preserves the payment reason %s in the 402 envelope",
+        "preserves the payment reason %s and its fix link in the 402 envelope",
         async (code) => {
             const app = new Hono<Env>();
             app.use("*", logger);
@@ -376,6 +376,7 @@ describe("error observability", () => {
                 throw new PaymentRequiredError(
                     code,
                     "Actionable payment guidance",
+                    "https://enter.test/top-up",
                 );
             });
             app.onError(handleError);
@@ -391,7 +392,11 @@ describe("error observability", () => {
             expect(response.status).toBe(402);
             expect(await response.json()).toMatchObject({
                 status: 402,
-                error: { code, message: "Actionable payment guidance" },
+                error: {
+                    code,
+                    message: "Actionable payment guidance",
+                    fixUrl: "https://enter.test/top-up",
+                },
             });
             expect(getErrorCodesForStatus(402)).toContain(code);
         },

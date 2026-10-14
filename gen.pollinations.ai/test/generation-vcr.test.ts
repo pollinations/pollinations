@@ -4,6 +4,7 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
+import { remapUpstreamStatus } from "@shared/error.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -433,6 +434,16 @@ function createGenerationMocks() {
                             { error: { code: "RateLimitReached" } },
                             { status: gptImageState.azureStatus },
                         ),
+                "westus3.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
+                "polandcentral.api.cognitive.microsoft.com": async () =>
+                    Response.json(
+                        { error: { code: "RateLimitReached" } },
+                        { status: gptImageState.azureStatus },
+                    ),
                 "api.openai.com": async (request) => {
                     gptImageState.openAIRequests.push(
                         request.headers
@@ -3288,46 +3299,46 @@ test("OpenAI image generation returns token usage", async ({
     await wait();
 });
 
-test("gpt-image-2 rejects transparent backgrounds with 400", async ({
-    paidApiKey,
-    mocks,
-}) => {
-    await mocks.enable("tinybird");
+test.for(["openai/gpt-image-2", "tongyi-mai/z-image-turbo"])(
+    "%s rejects transparent backgrounds with 400",
+    async (model, { paidApiKey, mocks }) => {
+        await mocks.enable("tinybird");
 
-    const { response, wait } = await fetchWorker("/v1/images/generations", {
-        method: "POST",
-        headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${paidApiKey}`,
-        },
-        body: JSON.stringify({
-            model: "openai/gpt-image-2",
-            prompt: "transparent",
-            transparent: true,
-        }),
-    });
+        const { response, wait } = await fetchWorker("/v1/images/generations", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${paidApiKey}`,
+            },
+            body: JSON.stringify({
+                model,
+                prompt: "transparent",
+                transparent: true,
+            }),
+        });
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({
-        success: false,
-        error: {
-            code: "BAD_REQUEST",
-            message:
-                "Invalid parameters: Transparent backgrounds are not supported by gpt-image-2.",
-        },
-    });
-    await wait();
+        expect(response.status).toBe(400);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            error: {
+                code: "BAD_REQUEST",
+                message: `Invalid parameters: Transparent backgrounds are not supported by ${model}.`,
+            },
+        });
+        await wait();
 
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        eventType: "generate.image",
-        modelRequested: "openai/gpt-image-2",
-        responseStatus: 400,
-    });
-});
+        expect(mocks.tinybird.state.events).toHaveLength(1);
+        expect(mocks.tinybird.state.events[0]).toMatchObject({
+            eventType: "generate.image",
+            modelRequested: model,
+            responseStatus: 400,
+        });
+    },
+);
 
 // 429: rate limited. 404: Azure lost the deployment (DeploymentNotFound).
-test.for([429, 404])(
+// 403: Azure blocked the resource. 500 and 524: Azure failed or timed out.
+test.for([429, 404, 403, 500, 524])(
     "gpt-image-2 falls back to OpenAI direct on an Azure %i",
     async (azureStatus, { mocks }) => {
         await mocks.enable("tinybird", "gptImage");
@@ -3362,7 +3373,7 @@ test.for([429, 404])(
         expect(mocks.tinybird.state.events[0]).toMatchObject({
             modelUsed: "openai/gpt-image-2",
             modelProviderUsed: "azure",
-            responseStatus: 502,
+            responseStatus: remapUpstreamStatus(azureStatus),
             isFinal: false,
         });
         expect(mocks.tinybird.state.events[1]).toMatchObject({
@@ -3429,35 +3440,6 @@ test("gpt-image-2 does not retry a dead reference image link on OpenAI", async (
     await wait();
     expect(mocks.gptImage.state.imageHostRequests).toBe(1);
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-});
-
-test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
-    mocks,
-}) => {
-    await mocks.enable("tinybird", "gptImage");
-    mocks.gptImage.state.azureStatus = 524;
-    const { key } = await createTestApiKey({
-        allowedModels: ["openai/gpt-image-2"],
-        user: { tierBalance: 100 },
-    });
-
-    const { response, wait } = await fetchWorker(
-        "/image/timeout%20probe?model=gpt-image-2&quality=low&seed=9348",
-        { headers: { authorization: `Bearer ${key}` } },
-    );
-
-    expect(response.status).toBe(502);
-    await response.arrayBuffer();
-    await wait();
-    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
-    expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2",
-        modelProviderUsed: "azure",
-        responseStatus: 502,
-        isFinal: true,
-        isBilledUsage: false,
-    });
 });
 
 test("the sana alias routes to the dreamshaper pool and records its flat price", async ({

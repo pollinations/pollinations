@@ -10,6 +10,7 @@ import {
     generateImage,
     generateText,
     generateVideo,
+    getModels,
     resetClient,
 } from "./helpers.js";
 import type { EmbeddingInput } from "./index.js";
@@ -359,32 +360,35 @@ describe("Pollinations request attempts", () => {
         await expect(stream.next()).resolves.toMatchObject({ done: true });
     });
 
-    it("keeps video requests alive until the 20-minute default timeout", async () => {
-        vi.useFakeTimers();
-        let aborted = false;
-        fetchMock.mockImplementation(
-            (_url: string, init: RequestInit) =>
-                new Promise<Response>((_, reject) => {
-                    init.signal?.addEventListener("abort", () => {
-                        aborted = true;
-                        reject(new DOMException("Aborted", "AbortError"));
-                    });
-                }),
-        );
+    it.each(["video", "model3d"] as const)(
+        "keeps %s requests alive until the 20-minute default timeout",
+        async (method) => {
+            vi.useFakeTimers();
+            let aborted = false;
+            fetchMock.mockImplementation(
+                (_url: string, init: RequestInit) =>
+                    new Promise<Response>((_, reject) => {
+                        init.signal?.addEventListener("abort", () => {
+                            aborted = true;
+                            reject(new DOMException("Aborted", "AbortError"));
+                        });
+                    }),
+            );
 
-        const request = newClient().video("a long-running scene");
-        const assertion = expect(request).rejects.toMatchObject({
-            code: "TIMEOUT",
-            status: 408,
-            message: "Request timed out after 1200000ms",
-        });
+            const request = newClient()[method]("a long-running scene");
+            const assertion = expect(request).rejects.toMatchObject({
+                code: "TIMEOUT",
+                status: 408,
+                message: "Request timed out after 1200000ms",
+            });
 
-        await vi.advanceTimersByTimeAsync(1_200_000 - 1);
-        expect(aborted).toBe(false);
-        await vi.advanceTimersByTimeAsync(1);
-        await assertion;
-        expect(aborted).toBe(true);
-    });
+            await vi.advanceTimersByTimeAsync(1_200_000 - 1);
+            expect(aborted).toBe(false);
+            await vi.advanceTimersByTimeAsync(1);
+            await assertion;
+            expect(aborted).toBe(true);
+        },
+    );
 
     it("does not retry uploads after a network failure", async () => {
         const client = newClient();
@@ -1725,14 +1729,29 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
 });
 
 describe("Pollinations model discovery", () => {
-    it("returns the model array from the registry endpoint", async () => {
+    it.each([
+        [undefined, "https://example.test/models"],
+        ["text", "https://example.test/text/models"],
+        ["image", "https://example.test/image/models"],
+        ["video", "https://example.test/video/models"],
+        ["audio", "https://example.test/audio/models"],
+        ["embeddings", "https://example.test/embeddings/models"],
+    ] as const)("models(%s) fetches %s", async (kind, expectedUrl) => {
         const client = newClient();
-        const models = [{ name: "openai", title: "OpenAI" }];
+        const models = [{ name: "test-model", title: "Test Model" }];
         fetchMock.mockResolvedValueOnce(makeResponse(models));
 
-        await expect(client.models()).resolves.toEqual(models);
+        await expect(client.models(kind)).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(expectedUrl);
+    });
+
+    it("getModels passes the kind through", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValueOnce(makeResponse([]));
+
+        await getModels("video");
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
-            "https://example.test/models",
+            "https://example.test/video/models",
         );
     });
 });
@@ -1839,6 +1858,237 @@ describe("usage CSV export", () => {
     });
 });
 
+describe("3D, model status and timestamped speech", () => {
+    const alignment = {
+        characters: ["H", "i", "\t", " ", "🌻", "!"],
+        character_start_times_seconds: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
+        character_end_times_seconds: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6],
+    };
+    const speech = {
+        audio_base64: "QUJD",
+        alignment: {
+            ...alignment,
+            characters: ["h", "i", "\t", " ", "🌻", "!"],
+        },
+        normalized_alignment: alignment,
+    };
+
+    it.each(["model/gltf-binary", "application/octet-stream"])(
+        "returns 3D bytes and the server MIME type (%s) without putting the key in URLs",
+        async (contentType) => {
+            fetchMock.mockResolvedValue(makeResponse(null, { contentType }));
+            const result = await newClient().model3d("a chair / blue?", {
+                model: "microsoft/trellis-2",
+                referenceImage: [
+                    "https://a.test/x?a=1&b=2",
+                    "https://b.test/y",
+                ],
+                resolution: "low",
+                seed: 0,
+                safe: false,
+            });
+            const [url, init] = fetchMock.mock.calls[0];
+            const parsed = new URL(url);
+            expect(parsed.pathname).toBe("/3d/a%20chair%20%2F%20blue%3F");
+            expect(Object.fromEntries(parsed.searchParams)).toEqual({
+                model: "microsoft/trellis-2",
+                image: "https://a.test/x?a=1&b=2|https://b.test/y",
+                resolution: "low",
+                seed: "0",
+                safe: "false",
+            });
+            expect(init.headers.Authorization).toBe("Bearer sk_test");
+            expect(result).toEqual({
+                buffer: new ArrayBuffer(8),
+                contentType,
+                url,
+            });
+        },
+    );
+
+    it("leaves 3D model defaults to the server and lists 3D models", async () => {
+        fetchMock.mockResolvedValue(makeResponse([]));
+        await newClient().model3d("chair");
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://example.test/3d/chair",
+        );
+        await newClient().models("3d");
+        expect(fetchMock.mock.calls[1][0]).toBe(
+            "https://example.test/3d/models",
+        );
+    });
+
+    it.each([
+        [{ timeout: 50 }, 50],
+        [{ timeout: 50, videoTimeout: 20 }, 20],
+    ] as const)(
+        "uses the configured 3D timeout (%j)",
+        async (config, timeout) => {
+            vi.useFakeTimers();
+            fetchMock.mockImplementation(
+                (_url: string, init: RequestInit) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        init.signal?.addEventListener("abort", () =>
+                            reject(new DOMException("Aborted", "AbortError")),
+                        );
+                    }),
+            );
+            const client = new Pollinations({ apiKey: "test", ...config });
+            const assertion = expect(
+                client.model3d("test"),
+            ).rejects.toMatchObject({ code: "TIMEOUT", status: 408 });
+            await vi.advanceTimersByTimeAsync(timeout);
+            await assertion;
+        },
+    );
+
+    it("returns model status metadata and nullable metrics without reshaping them", async () => {
+        const body = {
+            meta: [],
+            data: [{ model: "test", latency_p50_ms: null }],
+            rows: 1,
+        };
+        fetchMock.mockResolvedValue(makeResponse(body));
+        await expect(
+            newClient().modelStatus({ traffic: "regular", minutes: 1 }),
+        ).resolves.toEqual(body);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/models/status?traffic=regular&minutes=1",
+        );
+        expect(init.headers.Authorization).toBe("Bearer sk_test");
+        await newClient().modelStatus();
+        expect(fetchMock.mock.calls[1][0]).toBe(
+            "https://example.test/models/status",
+        );
+    });
+
+    it("posts speech options and derives words from normalized character timings", async () => {
+        fetchMock.mockResolvedValue(makeResponse(speech));
+        const result = await newClient().audioSpeechWithTimestamps("hi 🌻!", {
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            responseFormat: "pcm",
+            seed: 0,
+        });
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe(
+            "https://example.test/v1/audio/speech/with-timestamps",
+        );
+        expect(init.method).toBe("POST");
+        expect(init.headers).toEqual({
+            Authorization: "Bearer sk_test",
+            "Content-Type": "application/json",
+        });
+        expect(JSON.parse(init.body)).toEqual({
+            input: "hi 🌻!",
+            voice: "nova",
+            model: "elevenlabs/eleven-v3",
+            response_format: "pcm",
+            seed: 0,
+        });
+        expect(result).toEqual({
+            ...speech,
+            words: [
+                { word: "Hi", start: 0, end: 0.2 },
+                { word: "🌻!", start: 0.4, end: 0.6 },
+            ],
+        });
+    });
+
+    it.each([
+        null,
+        { audio_base64: 123 },
+        {
+            ...speech,
+            normalized_alignment: {
+                ...alignment,
+                character_end_times_seconds: [],
+            },
+        },
+        {
+            ...speech,
+            normalized_alignment: {
+                ...alignment,
+                character_start_times_seconds: ["0", 0, 0, 0, 0, 0],
+            },
+        },
+    ])("rejects malformed timestamp data (%j)", async (body) => {
+        fetchMock.mockResolvedValue(makeResponse(body));
+        await expect(
+            newClient().audioSpeechWithTimestamps("hi"),
+        ).rejects.toMatchObject({ code: "INVALID_RESPONSE", status: 502 });
+    });
+
+    it.each([null, undefined])(
+        "preserves audio when normalized timings are %s",
+        async (normalized_alignment) => {
+            const body = {
+                audio_base64: speech.audio_base64,
+                alignment: null,
+                normalized_alignment,
+            };
+            fetchMock.mockResolvedValue(makeResponse(body));
+            await expect(
+                newClient().audioSpeechWithTimestamps("hi"),
+            ).resolves.toEqual({ ...body, words: [] });
+        },
+    );
+
+    it("uses normalized timings even when original alignment is missing", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse({ ...speech, alignment: null }),
+        );
+        const result = await newClient().audioSpeechWithTimestamps("hi 🌻!");
+        expect(result.words).toEqual([
+            { word: "Hi", start: 0, end: 0.2 },
+            { word: "🌻!", start: 0.4, end: 0.6 },
+        ]);
+        expect(result.audio_base64).toBe(speech.audio_base64);
+        expect(result.alignment).toBeNull();
+    });
+
+    it.each(["model3d", "audioSpeechWithTimestamps"] as const)(
+        "%s rejects empty input before fetching",
+        async (method) => {
+            await expect(newClient()[method]("")).rejects.toMatchObject({
+                code: "INVALID_INPUT",
+                status: 400,
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each(["model3d", "modelStatus", "audioSpeechWithTimestamps"] as const)(
+        "%s preserves API errors and rejects pre-aborted requests",
+        async (method) => {
+            fetchMock.mockResolvedValue(
+                makeResponse(
+                    { error: { message: "Try later", code: "UNAVAILABLE" } },
+                    { ok: false, status: 503 },
+                ),
+            );
+            const client = newClient();
+            const run = (signal?: AbortSignal) =>
+                method === "modelStatus"
+                    ? client.modelStatus({ signal })
+                    : client[method]("hi", { signal });
+            await expect(run()).rejects.toMatchObject({
+                status: 503,
+                message: "Try later",
+            });
+            fetchMock.mockClear();
+            const controller = new AbortController();
+            controller.abort();
+            await expect(run(controller.signal)).rejects.toMatchObject({
+                code: "CANCELLED",
+                status: 499,
+            });
+            expect(fetchMock).not.toHaveBeenCalled();
+        },
+    );
+});
+
 describe("response body cancellation", () => {
     let server: Server;
     let baseUrl: string;
@@ -1879,7 +2129,13 @@ describe("response body cancellation", () => {
         );
     });
 
-    for (const method of ["chat", "image"] as const) {
+    for (const method of [
+        "chat",
+        "image",
+        "model3d",
+        "modelStatus",
+        "audioSpeechWithTimestamps",
+    ] as const) {
         for (const responseStatus of [200, 503]) {
             for (const cancellation of ["abort", "timeout"] as const) {
                 it(`${method} ${cancellation} after actual ${responseStatus} headers interrupts the body`, async () => {
@@ -1910,9 +2166,13 @@ describe("response body cancellation", () => {
                             ? client.chat([{ role: "user", content: "test" }], {
                                   signal: controller.signal,
                               })
-                            : client.image("test", {
-                                  signal: controller.signal,
-                              });
+                            : method === "modelStatus"
+                              ? client.modelStatus({
+                                    signal: controller.signal,
+                                })
+                              : client[method]("test", {
+                                    signal: controller.signal,
+                                });
                     await expect(request).rejects.toMatchObject({
                         code:
                             cancellation === "abort" ? "CANCELLED" : "TIMEOUT",

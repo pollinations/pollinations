@@ -323,8 +323,8 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.8-27b:openrouter:akashml-fp8",
-        config: portkeyConfig["qwen3.8-27b-openrouter-akashml"],
+        name: "qwen/qwen3.8-27b:openrouter:reka-fp8",
+        config: portkeyConfig["qwen3.8-27b-openrouter-reka"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -424,13 +424,13 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
-        transform: fireworksThinkingWithoutCacheControl,
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash"],
+        transform: fireworksThinking,
     },
     {
-        name: "deepseek/deepseek-v4.1-flash:openrouter:deepinfra-fp8",
-        config: portkeyConfig["deepseek-v41-flash-openrouter-deepinfra"],
-        transform: fireworksThinking,
+        name: "deepseek/deepseek-v4.1-flash:fireworks",
+        config: portkeyConfig["accounts/fireworks/models/deepseek-v4p1-flash"],
+        transform: fireworksThinkingWithoutCacheControl,
     },
     {
         name: "deepseek/deepseek-v4-flash:deepinfra",
@@ -495,7 +495,11 @@ const models: ModelDefinition[] = [
     },
     {
         name: "x-ai/grok-4.7",
-        config: portkeyConfig["x-ai/grok-4.7"],
+        config: portkeyConfig["grok-4.7-xai"],
+    },
+    {
+        name: "x-ai/grok-4.7:openrouter",
+        config: portkeyConfig["grok-4.7-openrouter"],
     },
     {
         name: "x-ai/grok-4.6:azure:sweden",
@@ -655,6 +659,25 @@ const models: ModelDefinition[] = [
     {
         name: "google/gemini-3.8-flash:openrouter:vertex-global",
         config: portkeyConfig["gemini-3.8-openrouter-vertex-global"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-argon",
+        config: portkeyConfig["google/gemini-4-argon"],
+        transform: pipe(
+            sanitizeToolSchemas,
+            adaptGoogleSearchToolForVertex,
+            // Gemini 4 Argon requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-4-argon:openrouter:ai-studio",
+        config: portkeyConfig["gemini-4-argon-openrouter-ai-studio"],
         transform: pipe(
             sanitizeToolSchemas,
             adaptGoogleSearchToolForOpenRouter,
@@ -1012,10 +1035,6 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["inclusionai/ling-3.1-flash:vercel:novita"],
     },
     {
-        name: "inclusionai/ling-3.1-flash:openrouter:novita",
-        config: portkeyConfig["inclusionai/ling-3.1-flash:openrouter:novita"],
-    },
-    {
         name: "nex-agi/nex-n2.5-mini",
         config: portkeyConfig["nex-agi/nex-n2.5-mini"],
     },
@@ -1054,6 +1073,16 @@ const models: ModelDefinition[] = [
     {
         name: "meta/muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
+    },
+    {
+        name: "meta/muse-wonder-1.0",
+        config: portkeyConfig["meta/muse-wonder-1.0"],
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "meta/muse-wonder-1.0:vercel",
+        config: portkeyConfig["meta/muse-wonder-1.0:vercel"],
+        transform: mandatoryReasoning,
     },
     {
         name: "meta/llama-3.3-70b-instruct",

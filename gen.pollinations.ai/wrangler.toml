@@ -92,7 +92,7 @@ binding = "IMAGES"
 
 # Renews kept sandboxes (src/routes/e2b.ts).
 [env.production.triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/5 * * * *"]
 
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
@@ -211,7 +211,7 @@ binding = "IMAGES"
 
 # Renews kept sandboxes (src/routes/e2b.ts).
 [env.staging.triggers]
-crons = ["*/10 * * * *"]
+crons = ["*/5 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"

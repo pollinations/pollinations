@@ -1,6 +1,6 @@
 ---
 name: news-pipeline
-description: "Rerun or repair the Pollinations news pipeline by hand: a missing or wrong daily, weekly, monthly or model post, a missing PR gist, a stuck Buffer, Discord or Reddit send, or an item missing from Enter's News page or the README."
+description: "Rerun or repair the Pollinations news pipeline by hand: a missing or wrong daily, weekly, monthly or model post, a missing PR gist, a stuck Buffer or Discord send, or an item missing from Enter's News page or the README."
 ---
 
 # News Pipeline Repairs
@@ -17,9 +17,9 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 
 - Runs: `gh run list --workflow news-posts.yml` (or `news-create-pr-gist.yml`, `news-build-index.yml`, `news-sync-readme.yml`); `gh run view <id> --log`.
 - Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
-- Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Reddit sending is broken (draft fix #14651), but read every failed run: another post can fail in the same run.
+- Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Read every failed run: more than one post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/<daily|weekly|monthly|models>/<date>/` — `summary.json`, the post files, `images/`, `delivery.json`.
-- `delivery.json` states: `done` (sent, never again), `failed` (nothing sent; the next delivery retries), `attempt` (unknown: the run stays red until a person decides), `started` (Reddit: handed to the server, never retried).
+- `delivery.json` states: `done` (sent, never again), `failed` (nothing sent; the next delivery retries), `attempt` (unknown: the run stays red until a person decides).
 
 ## Rerun posts
 
@@ -30,17 +30,17 @@ gh workflow run news-posts.yml -f job=daily -f date=2026-10-12 -f run=preview
 | Need | Inputs |
 |---|---|
 | What a 06:00 run does on day T (T−1's daily, Sunday's week, the 1st's month, their Buffer posts) | `job=morning date=T` |
-| What a 15:00 / Sunday 18:00 run does on day T (Reddit, the week's Discord) | `job=afternoon date=T` |
+| What the Sunday 18:00 run does (the week's Discord post) | `job=afternoon date=SUNDAY` |
 | One post | `job=daily date=DAY`, `job=weekly date=SUNDAY`, `job=monthly date=YYYY-MM`, `job=models date=WEDNESDAY` |
 | Write and save only | `run="write + save"` (for `models` this only writes: nothing is saved before Discord has the post) |
-| Deliver only | `run=deliver`. With `job=daily` or `weekly` it schedules Buffer only; Reddit and the week's Discord post go with `job=afternoon`. Not for `models` (below) |
+| Deliver only | `run=deliver`. With `job=daily` or `weekly` it schedules Buffer only; the week's Discord post goes with `job=afternoon`. Not for `models` (below) |
 | Rewrite a saved date | add `overwrite=true`; its `delivery.json` is kept, so posts already `done` are not sent again, and a saved model post is never replaced |
 
 `deliver.py` refuses dates before its `START`; those went out with the previous senders. Download a preview's texts and pictures with `gh run download <id> -n preview`.
 
 ## Settle a stuck send (`attempt`)
 
-1. Look everywhere it could be: in Buffer both the Queue and the Sent tab (a post whose answer was lost may already be published), and the destination itself (X, LinkedIn, Instagram, the Discord channel, Reddit).
+1. Look everywhere it could be: in Buffer both the Queue and the Sent tab (a post whose answer was lost may already be published), and the destination itself (X, LinkedIn, Instagram, the Discord channel).
 2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin.json done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
 
 ## Recover a model post

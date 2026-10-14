@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
-import { setOutputMode } from "../../lib/output.js";
+import { ExitSignal, setOutputMode } from "../../lib/output.js";
 import { createAudioCommand } from "./audio.js";
 
 const originalStdinTTY = process.stdin.isTTY;
@@ -198,4 +198,30 @@ describe("gen audio output", () => {
         ).rejects.toMatchObject({ code: "commander.unknownOption" });
         expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it.each([
+        [["hi", "--timestamps", "--duration", "30"]],
+        [["hi", "--timestamps", "--instrumental"]],
+        [["hi", "--timestamps", "--duration", "30", "--instrumental"]],
+    ])(
+        "rejects --timestamps combined with music options (%j)",
+        async (args) => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal("fetch", fetchMock);
+            const stderr: string[] = [];
+            vi.spyOn(process.stderr, "write").mockImplementation((str) => {
+                stderr.push(String(str));
+                return true;
+            });
+
+            await expect(
+                createAudioCommand().parseAsync(args, { from: "user" }),
+            ).rejects.toThrow(ExitSignal);
+
+            expect(fetchMock).not.toHaveBeenCalled();
+            expect(stderr.join("")).toContain(
+                "--timestamps cannot be combined with --duration or --instrumental",
+            );
+        },
+    );
 });

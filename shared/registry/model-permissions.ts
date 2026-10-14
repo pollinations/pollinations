@@ -52,16 +52,16 @@ export async function toModelPermissions(
     const permissions = new Set([...registry, ...community.values()]);
     return [
         ...MODEL_CATEGORIES.filter((category) => permissions.has(category)),
-        ...[...permissions].filter((value) => !isCategory(value)),
+        ...[...permissions].filter((value) => !isModelCategory(value)),
     ];
 }
 
-function isCategory(value: string): value is Category {
+export function isModelCategory(value: string): value is Category {
     return (MODEL_CATEGORIES as readonly string[]).includes(value);
 }
 
 function registryPermission(value: string): string | undefined {
-    if (isCategory(value)) return value;
+    if (isModelCategory(value)) return value;
     try {
         const modelName = resolveModelName(value);
         // Provider routes are internal; callers select the public model.

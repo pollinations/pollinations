@@ -30,11 +30,19 @@ For each `{before, after}` pair, identify what actually changed:
    - Image: `completionImageTokens`
    - Embeddings: `promptTextTokens`
 3. **Capability change** — `input_modalities`, `output_modalities`, `capabilities`, `tools` or `reasoning` changed → ✨ section.
-4. Ignore every other change.
-5. If multiple change types apply to one model, list it only in the most prominent section
-   (access > price > capability).
+4. **Base model change** (agents) — `base_model` changed → 🔁 section.
+5. Ignore every other change.
+6. If multiple change types apply to one model, list it only in the most prominent section
+   (access > price > base model > capability).
 
-Category emojis: 🧠 text · 🎨 image · 🔢 embeddings · 🤖 agent (`agent: true`)
+Category emojis: 🧠 text · 🎨 image · 🔢 embeddings
+
+## Two groups: models, then agents
+
+Entries with `agent: true` are agents; every other entry is a model. Never list an agent
+among the models. An agent runs on its `base_model` and costs what that model costs, so an
+agent never gets a price, an access change or a price change. When it has no `base_model`,
+write just `agent`.
 
 ## Prices of new models
 
@@ -48,7 +56,9 @@ Category emojis: 🧠 text · 🎨 image · 🔢 embeddings · 🤖 agent (`agen
 ## discord_text format
 
 ```
-Community models — {date}
+Community models and agents — {date}
+
+## 🧩 Models
 
 ### 🆕 New
 - [category emoji] `community/owner/name` — one-clause note from its modalities and capabilities · price
@@ -65,13 +75,27 @@ Community models — {date}
 ### ✨ Capability updates
 - `community/owner/name` — what changed (e.g. "added image input", "tools now supported")
 
+## 🤖 Agents
+
+### 🆕 New
+- `community/owner/name` — agent on `base_model` · one-clause note from its capabilities
+
+### 🗑️ Removed or made private
+- `community/owner/name`
+
+### 🔁 New base model
+- `community/owner/name` — now on `new base_model` (was `old base_model`)
+
+### ✨ Capability updates
+- `community/owner/name` — what changed
+
 Explore at https://gen.pollinations.ai/docs
 ```
 
 Rules:
-- Omit any section with no entries.
-- List every new model in 🆕 New. If space runs short, shorten the other sections first
-  (for example "and N more").
+- Omit any section or group with no entries.
+- List every new model and every new agent. If space runs short, shorten the other sections
+  first (for example "and N more").
 - Stay under 1900 characters total.
 
 ## Inputs

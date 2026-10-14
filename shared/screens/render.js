@@ -13,7 +13,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
     Alert,
-    AppBrand,
     BrandMark,
     Chip,
     CodeBlock,
@@ -82,15 +81,19 @@ const page = h(
         className:
             "polli:mx-auto polli:flex polli:max-w-xl polli:flex-col polli:gap-4 polli:p-4",
     },
+    // The lockup alone, linked as Enter's dashboard brand is
     h(
-        "div",
-        { className: "polli:flex polli:items-center polli:justify-between" },
-        h(AppBrand, {
-            appName: "Classic API",
+        "a",
+        {
             href: "https://pollinations.ai",
-            size: "sm",
+            "aria-label": "Pollinations",
+            className: "polli:block polli:h-6 polli:text-theme-text-strong",
+            style: { width: 195 },
+        },
+        h(BrandMark, {
+            variant: "lockup",
+            className: "polli:h-full polli:w-full",
         }),
-        h(Text, { as: "span", size: "xs", tone: "muted" }, "Pay with x402"),
     ),
     h(
         Surface,

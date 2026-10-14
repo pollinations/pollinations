@@ -7,6 +7,7 @@ import {
     generateLegacyCacheKey,
 } from "./cache-utils.ts";
 import type { Env } from "./env";
+import { childSafety, childSafetyRefusal } from "./middleware/child-safety.ts";
 import { exactCache } from "./middleware/exact-cache";
 import { turnstileVerification } from "./middleware/turnstile.ts";
 import { feed, generate, logFailure, utility } from "./origin.ts";
@@ -71,12 +72,18 @@ app.delete("/delete/prompt/:prompt", async (c) => {
 });
 
 // cache image requests; misses are generated here
-app.all("/prompt/:prompt", turnstileVerification, exactCache, async (c) => {
-    const url = new URL(c.req.url);
-    const response = await generateOr500(c, url, "/prompt/:prompt");
-    response.headers.set("X-Cache", "MISS");
-    return response;
-});
+app.all(
+    "/prompt/:prompt",
+    childSafety,
+    turnstileVerification,
+    exactCache,
+    async (c) => {
+        const url = new URL(c.req.url);
+        const response = await generateOr500(c, url, "/prompt/:prompt");
+        response.headers.set("X-Cache", "MISS");
+        return response;
+    },
+);
 
 // answer known utility endpoints; every other path generates as /prompt{path}
 app.all("*", async (c) => {
@@ -105,7 +112,7 @@ app.all("*", async (c) => {
     if (!pathname.startsWith("/prompt") && !pathname.startsWith("/delete")) {
         url.pathname = `/prompt${pathname}`;
     }
-    return generateOr500(c, url, "*");
+    return childSafetyRefusal(url, "*") ?? generateOr500(c, url, "*");
 });
 
 /**

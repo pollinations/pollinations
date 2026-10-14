@@ -44,7 +44,7 @@ START = {
     "daily": "2026-10-12",
     "weekly": "2026-10-18",
     "models": "2026-10-14",
-    "community": "2026-10-15",
+    "community": "2026-10-21",
 }
 # The channel today's lookup picks: the first listed of each service in Buffer.
 BUFFER_CHANNELS = {

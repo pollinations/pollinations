@@ -1,17 +1,18 @@
 name: News / Posts
 
-# Writes, saves and delivers the news posts at today's times. 06:00 writes
-# yesterday's daily (on Sunday also the week, on the 1st also last month) and
-# schedules their Buffer posts; Sunday 18:00 sends the week's Discord post. Wednesday 14:00 writes the
-# model post and every day at 14:00 the community post; each is sent to Discord and
-# only then saved, so a failed send never moves the next comparison. A run started
-# by hand practises by default: it shows what it would save, and saves and delivers nothing.
+# Writes, saves and delivers the news posts at today's times. 06:00 records /models
+# when it changed, writes yesterday's daily (on Sunday also the week, on the 1st also
+# last month) and schedules their Buffer posts; Sunday 18:00 sends the week's Discord
+# post. Wednesday 14:00 writes the model post and 14:05 the community post, each from
+# the recorded catalog against a week earlier; each is sent to Discord and only then
+# saved. A run started by hand practises by default: it shows what it would save, and
+# saves and delivers nothing.
 on:
   schedule:
     - cron: '0 6 * * *'
     - cron: '0 18 * * 0'
     - cron: '0 14 * * 3'
-    - cron: '0 14 * * *'
+    - cron: '5 14 * * 3'
   workflow_dispatch:
     inputs:
       job:
@@ -26,8 +27,9 @@ on:
           - monthly
           - models
           - community
+          - catalog
       date:
-        description: 'The day (morning, afternoon, daily, community), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (models)'
+        description: 'The day (morning, afternoon, daily, catalog), the Sunday (weekly), the month, YYYY-MM (monthly) or the Wednesday (models, community)'
         required: true
         type: string
       run:
@@ -53,12 +55,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '0 14 * * *' && 'community' || 'afternoon') }}
+  JOB: ${{ inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || 'afternoon') }}
   RUN: ${{ inputs.run || 'all' }}
 
 jobs:
   posts:
-    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '0 14 * * *' && 'community' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
+    if: ${{ (inputs.job || (github.event.schedule == '0 6 * * *' && 'morning' || github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || 'afternoon')) != 'afternoon' && (inputs.run || 'all') != 'deliver' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -82,8 +84,8 @@ jobs:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
         # A scheduled run is for the day it was created, so a rerun keeps it.
-        # The 06:00 run on day T writes T−1's daily, on Sunday also the week
-        # ending T, and on the 1st also last month, in that order.
+        # The 06:00 run on day T records the catalog, then writes T−1's daily, on
+        # Sunday also the week ending T, and on the 1st also last month, in that order.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
           python - "$JOB" "$DATE" >> "$GITHUB_OUTPUT" <<'EOF'
@@ -97,7 +99,7 @@ jobs:
               check_date("daily", day)
               today = date.fromisoformat(day)
               yesterday = today - timedelta(days=1)
-              posts = [("daily", yesterday.isoformat())]
+              posts = [("catalog", day), ("daily", yesterday.isoformat())]
               if today.isoweekday() == 7:
                   posts.append(("weekly", today.isoformat()))
               if today.day == 1:
@@ -107,8 +109,10 @@ jobs:
           print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
           print("folders<<FOLDERS")
           for job, day in posts:
-              # The model and community posts compare with their latest snapshot.
-              print(f"/operations/social/news/{job}/" if job in ("models", "community") else f"/operations/social/news/{job}/{day}/")
+              # The catalog record and the posts compared from it read models/snapshots.
+              folders = {"catalog": ["models"], "models": ["models"], "community": ["models", "community"]}
+              for folder in folders.get(job, [f"{job}/{day}"]):
+                  print(f"/operations/social/news/{folder}/")
           print("FOLDERS")
           EOF
 
@@ -144,7 +148,7 @@ jobs:
             saved="news/operations/social/news/$1/$2/summary.json"
             commands="write save"
             if [ "$1" = models ] || [ "$1" = community ]; then
-              saved="news/operations/social/news/$1/snapshots/$2.json"
+              saved="news/operations/social/news/$1/$2/discord.json"
               [ "$RUN" != preview ] && commands=write
             fi
             if [ -z "$flag" ] && [ -e "$saved" ]; then
@@ -201,7 +205,7 @@ jobs:
     needs: posts
     # After the posts, even when one failed, so a failed month never stops the day's
     # posts; the model and community posts only after they were written.
-    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || !contains(fromJSON('["models", "community"]'), inputs.job || (github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '0 14 * * *' && 'community' || ''))) }}
+    if: ${{ !cancelled() && (inputs.run || 'all') != 'preview' && (inputs.run || 'all') != 'write + save' && (needs.posts.result == 'success' || !contains(fromJSON('["models", "community"]'), inputs.job || (github.event.schedule == '0 14 * * 3' && 'models' || github.event.schedule == '5 14 * * 3' && 'community' || ''))) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -279,11 +283,11 @@ jobs:
           DATE: ${{ inputs.date }}
           GH_TOKEN: ${{ github.token }}
           DISCORD_MODELS_ROLE_ID: ${{ secrets.DISCORD_MODELS_ROLE_ID }}
-        # Only after Discord has it (or there was nothing to send): the snapshot is
-        # the next comparison. A rerun after a save finds it saved.
+        # Only after Discord has it: the saved post is what went out. A week without
+        # changes saves nothing, and a rerun after a save finds it saved.
         run: |
           DATE=${DATE:-$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at[:10]')}
-          if [ -e "news/operations/social/news/$JOB/snapshots/$DATE.json" ]; then
+          if [ -e "news/operations/social/news/$JOB/$DATE/discord.json" ]; then
             echo "$JOB $DATE is already saved"
             exit 0
           fi
@@ -291,6 +295,7 @@ jobs:
           git -C news config user.name "github-actions[bot]"
           git -C news config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C news add --all
+          git -C news diff --cached --quiet && exit 0
           git -C news commit -qm "news: add $JOB $DATE"
           for try in 1 2 3; do
             git -C news push -q origin HEAD:news && break

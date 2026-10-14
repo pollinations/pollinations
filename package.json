@@ -24,7 +24,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "yaml": "^2.9.0"
   },
   "dependencies": {
     "@better-auth/core": "1.6.30",

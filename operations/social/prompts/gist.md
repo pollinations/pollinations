@@ -26,6 +26,10 @@ Given a PR's title, description, labels, changed files with their diff, and exac
 
 The diff is what the PR does. The title and description are the author's account of it: they can describe an earlier plan, more or less than the diff, or the work instead of its result. Write `summary` and `image_prompt` from what the diff changes. Keep a claim from the description only when the diff supports it, leave out plans and steps the diff does not contain, and include a change users would notice even when the description does not mention it. Long diffs are cut, and lockfiles and test snapshots are listed without one: judge those files by their path and line counts.
 
+## Costs stay internal
+
+What Pollinations pays providers (costs, credit fees, margins) and how it records them are internal, even when the PR or the code says "bills" or "billing" for them. Never put them in `summary` or `image_prompt`. Mention what users pay only when the diff changes the price users are charged, and say it in their terms, e.g. "Ling 3.1 Flash now costs 0.1 pollen per 1M input tokens".
+
 ## Availability
 
 The PR has just merged; a merge alone does not establish production availability. Describe what the change does ("Enter's rail gets a bolder lotus") without claiming it is live or visible now unless verified. Routine deployment caveats (verification or activation status, uncertain release cutoffs) belong in metadata. Omit them from `summary` and `image_prompt`, even if the PR body mentions them. Include announced effective dates for scheduled changes when relevant.

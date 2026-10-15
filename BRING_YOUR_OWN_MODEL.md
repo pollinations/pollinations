@@ -8,7 +8,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 
 | Model family | Required upstream endpoint | Pollinations endpoint |
 |---|---|---|
-| Text: Chat Completions | One exact Chat Completions endpoint URL | `POST /v1/chat/completions` |
+| Text: Chat Completions | One exact Chat Completions endpoint URL | `POST /v1/chat/completions` and `POST /v1/responses` |
 | Text: Responses | One exact Responses endpoint URL | `POST /v1/responses` and `POST /v1/chat/completions` |
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
@@ -59,6 +59,8 @@ Any signed-in user can register and call a private model. Private models are own
 
 Publishing a model requires account-level community publisher access while community model publishing is in alpha. Submit a [publisher access request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml); the request enables public publishing for the account but does not register a model for you.
 
+Publishing a model or changing its public prices takes effect after 3 hours.
+
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
 - Text models use the token categories reported by the upstream endpoint.
@@ -73,7 +75,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 ## Register in the Dashboard
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
-2. Choose **Add model**.
+2. Choose **Create model**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
 5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.
@@ -112,7 +114,7 @@ npx @pollinations/cli my-models create \
 
 Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission.
 
-Text models use `--api responses --url https://api.example.com/v1/responses` or `--api chat_completions --url https://api.example.com/v1/chat/completions` instead of `--base-url`. Supply both flags when changing an existing text target. The selected URL is used exactly, including query parameters. The text endpoint test checks JSON and streaming responses for valid usage.
+Text models use `--api responses --url https://api.example.com/v1/responses` or `--api chat_completions --url https://api.example.com/v1/chat/completions` instead of `--base-url`. Supply both flags when changing an existing text target. The selected URL is used exactly, including query parameters. The text endpoint test checks JSON and streaming responses for valid usage. An endpoint that answers `stream: false` but has no SSE still passes: if it returns JSON to the streaming request, or rejects it with a 400 or 422, the test reports `streaming: false`. Register it with `--no-streaming` (the dashboard does this for you after the test). An endpoint that does send SSE must still report terminal usage.
 
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
@@ -122,7 +124,7 @@ Public models support these owner controls in the dashboard or Account API:
 
 - `paidOnly` restricts calls to Paid Pollen.
 - `perUserRpm` limits each Pollinations user; `null` removes the limit.
-- Text models can declare `advertised.contextLength` and the `tool_calling` or `reasoning` capabilities.
+- Text models can declare `advertised.contextLength` and the `tool_calling` or `reasoning` capabilities. `advertised.streaming: false` marks an endpoint without SSE; the dashboard sets it from the endpoint test.
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can make a model private without deleting it. Its prices and fallbacks are saved for later publication.
 
@@ -144,7 +146,11 @@ curl https://gen.pollinations.ai/v1/chat/completions \
 
 Authenticated model-list requests include your own private models. Public discovery endpoints accept `community=true` to return only community models.
 
-Each text registration declares one upstream API with `{ "api": "responses" | "chat_completions", "url": "https://…" }`. A Responses model advertises both `/v1/responses` and `/v1/chat/completions` in `supported_endpoints`. Responses calls go to the registered URL; Chat Completions calls use that same upstream through Pollinations' stateless adapter. A Chat Completions registration advertises only Chat Completions. Both paths require valid terminal usage for billing; missing or malformed usage fails the request and produces no charge for that model request.
+Each text registration declares one upstream API with `{ "api": "responses" | "chat_completions", "url": "https://…" }`. A Responses model advertises both `/v1/responses` and `/v1/chat/completions` in `supported_endpoints`. Responses calls go to the registered URL; Chat Completions calls use that same upstream through Pollinations' stateless adapter. A Chat Completions registration also advertises both: Responses calls run through its Chat Completions URL and are translated back. Both paths require valid terminal usage for billing; missing or malformed usage fails the request and produces no charge for that model request.
+
+### Endpoints without streaming
+
+A model registered with `advertised.streaming: false` is listed in `/models` and `/v1/models` with `supports_streaming: false`. `stream: false` calls work and are billed like any other community model, from the usage your endpoint returns. Pollinations never sends `stream: true` to it. A `stream: true` call on Chat Completions or Responses is sent to your endpoint as `stream: false`, and the finished answer comes back to the caller as a valid event stream in one go, with the terminal usage billing needs. Clients that stream by default, such as Open WebUI, keep working without any setting; they just see the whole answer arrive at once instead of token by token.
 
 Endpoint agents also select one upstream API and exact URL. Managed prompt agents use Pollinations' Responses runtime and have no publisher-configured endpoint URL. Both kinds of agent use the outer request ID to group child model and tool calls: the outer wrapper is free, and each completed child operation is billed once even if a later step fails.
 

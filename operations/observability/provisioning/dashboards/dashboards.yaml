@@ -4,9 +4,8 @@ providers:
   - name: observability
     orgId: 1
     type: file
-    disableDeletion: false
+    disableDeletion: true
     updateIntervalSeconds: 30
-    allowUiUpdates: true
+    allowUiUpdates: false
     options:
       path: /etc/grafana/provisioning/dashboards
-      foldersFromFilesStructure: true

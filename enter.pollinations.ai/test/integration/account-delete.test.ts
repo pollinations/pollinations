@@ -15,7 +15,7 @@ import {
 } from "@shared/db/media-catalog.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { mintAccountToken, test } from "../fixtures.ts";
 
 describe("POST /api/auth/delete-user", () => {
     test("deletes the account while preserving GitHub-scoped reward protection", async ({
@@ -52,17 +52,8 @@ describe("POST /api/auth/delete-user", () => {
             upstreamModel: "openai-fast",
             payload: "{}",
         });
-        await db.insert(rewardsTable).values({
-            id: "test-reward",
-            idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
-            userId: user.id,
-            questId: "first_api_key",
-            title: "Create your first API key",
-            pollenAmount: 0.25,
-            balanceBucket: "tier",
-            earnedAt: new Date(),
-            claimedAt: new Date(),
-        });
+        // Creating the fixture key already earned and claimed the first-key
+        // reward, keyed by the GitHub identity.
         await db.insert(stripeCheckoutCreditsTable).values({
             sessionId: "test-checkout",
             eventId: "test-checkout-event",
@@ -105,7 +96,6 @@ describe("POST /api/auth/delete-user", () => {
         const retainedRewards = await db.select().from(rewardsTable);
         expect(retainedRewards).toHaveLength(1);
         expect(retainedRewards[0]).toMatchObject({
-            id: "test-reward",
             userId: null,
             idempotencyKey: `quest:first_api_key:github:${user.githubId}`,
         });
@@ -188,7 +178,7 @@ describe("POST /api/auth/delete-user", () => {
             "http://localhost:3000/api/account/quests",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${replacementSessionToken}`,
+                    Authorization: `Bearer ${await mintAccountToken(replacementSessionToken)}`,
                 },
             },
         );

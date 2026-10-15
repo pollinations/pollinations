@@ -136,6 +136,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         file_id: z.string().optional(),
         file_name: z.string().optional(),
         file_url: z.string().optional(),
+        filename: z.string().optional(),
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
@@ -150,9 +151,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -213,6 +212,7 @@ const ChatCompletionMessageToolCallSchema = z.object({
     function: z.object({
         name: z.string(),
         arguments: z.string(),
+        thought_signature: z.string().optional(),
     }),
 });
 
@@ -313,6 +313,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
         metadata: z
             .record(z.string(), z.string())
             .nullish()
@@ -395,6 +401,7 @@ export type CreateChatCompletionRequest = z.infer<
 >;
 
 const StatelessResponseIncludeSchema = z.enum([
+    "reasoning.encrypted_content",
     "web_search_call.action.sources",
     "code_interpreter_call.outputs",
     "computer_call_output.output.image_url",
@@ -444,6 +451,8 @@ export const CreateResponseRequestSchema = z
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).nullish(),
+        // Codex session telemetry; accepted, never sent upstream.
+        client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -568,9 +577,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -754,6 +761,11 @@ export const OpenAIModelSchema = z
         supported_endpoints: z.array(z.string()).optional(),
         agent: z.boolean().optional(),
         base_model: z.string().optional(),
+        paid_only: z
+            .boolean()
+            .describe(
+                "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
+            ),
         pricing: z.record(z.string(), z.string()).optional(),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
@@ -764,6 +776,12 @@ export const OpenAIModelSchema = z
             ),
         tools: z.boolean().optional(),
         reasoning: z.boolean().optional(),
+        supports_streaming: z
+            .boolean()
+            .optional()
+            .describe(
+                "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+            ),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
         health: ModelHealthSchema.optional(),
@@ -810,6 +828,20 @@ const imageSizeField = z
     .default("1024x1024")
     .meta(imageSizeMeta);
 const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+// Same bounds as the GET image route and the chat route: out-of-range seeds
+// are rejected here instead of being silently replaced with seed 42 by the
+// generation pipeline.
+const imageSeedField = z
+    .number()
+    .int()
+    .min(-1)
+    .max(2147483647)
+    .nullable()
+    .optional()
+    .meta({
+        description:
+            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -843,6 +875,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -923,6 +956,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,

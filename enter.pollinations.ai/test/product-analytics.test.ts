@@ -120,6 +120,52 @@ test("signed-out views are recorded without a user and pass attribution through"
     ]);
 });
 
+test("website views come only from the sibling site and keep their own event", async () => {
+    const originalFetch = globalThis.fetch;
+    const rows: Record<string, unknown>[] = [];
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        if (
+            new URL(String(input)).searchParams.get("name") === "product_event"
+        ) {
+            rows.push(JSON.parse(String(init?.body)));
+            return new Response(null, { status: 202 });
+        }
+        return originalFetch(input, init);
+    });
+    const websiteView = async (page: string, origin: string) => {
+        const ctx = createExecutionContext();
+        const response = await productAnalyticsRoutes.fetch(
+            new Request(
+                `http://localhost:3000/website-page-view?${new URLSearchParams({ page, utm_source: "reddit" })}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Origin: origin,
+                        "X-Forwarded-Host": "enter.pollinations.ai",
+                    },
+                },
+            ),
+            env,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        return response.status;
+    };
+    expect(await websiteView("/play", "https://pollinations.ai")).toBe(204);
+    expect(await websiteView("/play", "https://enter.pollinations.ai")).toBe(
+        403,
+    );
+    expect(await websiteView("/keys", "https://pollinations.ai")).toBe(400);
+    expect(rows).toEqual([
+        expect.objectContaining({
+            event: "website_page_viewed",
+            page: "/play",
+            utm_source: "reddit",
+            user_id: "",
+        }),
+    ]);
+});
+
 test("views record the visitor's country from Cloudflare, never the IP", async () => {
     const originalFetch = globalThis.fetch;
     const rows: Record<string, unknown>[] = [];

@@ -72,8 +72,9 @@ export async function callVercelSearch(
             response_format: undefined,
             stream: false,
             stream_options: undefined,
-            // Preparation is separately billed; max_tokens still limits the final answer.
-            max_tokens: Math.max(options.max_tokens ?? 2048, 2048),
+            // The caller's limit is for the answer they receive, not this hidden step.
+            max_tokens: undefined,
+            max_completion_tokens: undefined,
         },
         config,
     );

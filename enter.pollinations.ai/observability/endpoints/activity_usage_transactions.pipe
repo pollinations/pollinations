@@ -17,6 +17,7 @@ SQL >
         meter_source,
         input_text_tokens,
         input_cached_tokens,
+        input_cache_write_tokens,
         input_audio_tokens,
         input_audio_seconds,
         input_image_units AS input_image_tokens,

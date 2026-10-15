@@ -18,6 +18,7 @@ import {
     toDataUri,
 } from "../utils/imageDownload.ts";
 import { writeExifMetadata } from "../writeExifMetadata.ts";
+import { resolveQwenImage3Size } from "./falQwenImageModel.ts";
 
 const logOps = debug("pollinations:openrouter-image:ops");
 const logError = debug("pollinations:openrouter-image:error");
@@ -28,13 +29,8 @@ const GROK_IMAGINE_IMAGE_2_MODEL = "x-ai/grok-imagine-image-2.0";
 const RECRAFT_VECTOR_MODEL = "recraft/recraft-v4.1-vector";
 const RECRAFT_FLASH_MODEL = "recraft/recraft-v4.1-flash";
 // Docs show PNG, but the live endpoint returned WebP (2026-09-23).
-const RECRAFT_FLASH_ASPECT_RATIOS = [
-    "1:1",
-    "4:3",
-    "3:4",
-    "16:9",
-    "9:16",
-] as const;
+// Both Recraft V4.1 models accept these (and "auto"); 3:2 is rejected.
+const RECRAFT_ASPECT_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16"] as const;
 const FLUX2_MAX_MODEL = "black-forest-labs/flux.2-max";
 const FLUX3_MODEL = "black-forest-labs/flux-3-image";
 const FLUX3_ASPECT_RATIOS = [
@@ -55,6 +51,7 @@ const FLUX3_ASPECT_RATIOS = [
     "9:21",
 ] as const;
 const SEEDREAM_PRO_MODEL = "bytedance-seed/seedream-4.5";
+const QWEN_IMAGE_3_PRO_MODEL = "qwen/qwen-image-3-pro";
 const SEEDREAM_FLASH_MODEL = "bytedance-seed/seedream-5-0-flash";
 const SEEDREAM_FLASH_ASPECT_RATIOS = [
     "1:1",
@@ -528,12 +525,72 @@ export async function callOpenRouterSeedreamFlashAPI(
     };
 }
 
+/**
+ * Qwen Image 3 Pro through OpenRouter's Alibaba endpoint: the same
+ * qwen-image-3.0-pro checkpoint as the DashScope primary, with up to 3
+ * references. OpenRouter prices the size it is sent, so the primary's size
+ * resolver keeps both routes on the same price tier.
+ */
+export async function callOpenRouterQwenImage3API(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const apiKey = requireOpenRouterImageApiKey();
+    const { width, height } = resolveQwenImage3Size(safeParams);
+    const references = await Promise.all(safeParams.image.map(toDataUri));
+    const requestBody: Record<string, unknown> = {
+        model: QWEN_IMAGE_3_PRO_MODEL,
+        prompt,
+        n: 1,
+        seed: safeParams.seed,
+        size: `${width}x${height}`,
+        provider: { only: ["alibaba"], allow_fallbacks: false },
+    };
+    if (references.length > 0) {
+        requestBody.input_references = references.map((url) => ({
+            type: "image_url",
+            image_url: { url },
+        }));
+    }
+
+    const data = await postOpenRouterImage(
+        apiKey,
+        requestBody,
+        "OpenRouter Qwen Image 3 request failed",
+    );
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        throw buildOpenRouterNoImageError(data);
+    }
+    const providerCost = data.usage?.cost;
+    if (typeof providerCost !== "number" || !(providerCost > 0)) {
+        invalidOpenRouterImageUsage(data.usage);
+    }
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        trackingData: {
+            actualModel: "qwen/qwen-image-3:openrouter",
+            providerBilling: { units: providerCost, unitCost: 1.055 },
+            usage: {
+                ...(references.length > 0
+                    ? { promptImageTokens: references.length }
+                    : {}),
+                completionImageTokens: 1,
+            },
+        },
+    };
+}
+
 export async function callOpenRouterGrokImagineProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const referenceImage = safeParams.image?.[0];
+    const inputReferences = safeParams.image.map((url) => ({
+        type: "image_url",
+        image_url: { url },
+    }));
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
         prompt,
@@ -544,13 +601,8 @@ export async function callOpenRouterGrokImagineProAPI(
     const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
     if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
-    if (referenceImage) {
-        requestBody.input_references = [
-            {
-                type: "image_url",
-                image_url: { url: referenceImage },
-            },
-        ];
+    if (inputReferences.length > 0) {
+        requestBody.input_references = inputReferences;
     }
 
     const data = await postOpenRouterImage(
@@ -568,7 +620,7 @@ export async function callOpenRouterGrokImagineProAPI(
     }
 
     logOps("Grok Imagine Pro generation complete", {
-        edit: Boolean(referenceImage),
+        referenceImages: inputReferences.length,
         providerCost: data.usage?.cost,
     });
 
@@ -577,7 +629,9 @@ export async function callOpenRouterGrokImagineProAPI(
         trackingData: {
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
-                ...(referenceImage ? { promptImageTokens: 1 } : {}),
+                ...(inputReferences.length > 0
+                    ? { promptImageTokens: inputReferences.length }
+                    : {}),
                 completionImageTokens: 1,
             },
         },
@@ -896,26 +950,19 @@ export async function callOpenRouterGeminiImageAPI(
     };
 }
 
-function resolveRecraftFlashAspectRatio(
-    safeParams: ImageParams,
-): (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number] | "auto" {
+// A requested ratio goes through as-is (Recraft rejects unsupported ones and
+// lists the accepted values); width/height snap to a ratio Recraft accepts.
+function resolveRecraftAspectRatio(safeParams: ImageParams): string {
     const requested = safeParams.aspectRatio;
-    if (!requested) {
-        return closestRatioLogSpace(
+    if (requested === "adaptive") return "auto";
+    return (
+        requested ??
+        closestRatioLogSpace(
             safeParams.width,
             safeParams.height,
-            RECRAFT_FLASH_ASPECT_RATIOS,
-        );
-    }
-    if (requested === "adaptive") return "auto";
-    if (
-        !(RECRAFT_FLASH_ASPECT_RATIOS as readonly string[]).includes(requested)
-    ) {
-        throw UpstreamError.fromProvider(400, {
-            message: `aspectRatio "${requested}" is not supported by Recraft V4.1 Flash. Supported: auto, ${RECRAFT_FLASH_ASPECT_RATIOS.join(", ")}.`,
-        });
-    }
-    return requested as (typeof RECRAFT_FLASH_ASPECT_RATIOS)[number];
+            RECRAFT_ASPECT_RATIOS,
+        )
+    );
 }
 
 export async function callOpenRouterRecraftFlashAPI(
@@ -923,7 +970,7 @@ export async function callOpenRouterRecraftFlashAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const aspectRatio = resolveRecraftFlashAspectRatio(safeParams);
+    const aspectRatio = resolveRecraftAspectRatio(safeParams);
     const data = await postOpenRouterImage(
         apiKey,
         {
@@ -967,14 +1014,12 @@ export async function callOpenRouterRecraftVectorAPI(
         model: RECRAFT_VECTOR_MODEL,
         prompt,
         n: 1,
+        aspect_ratio: resolveRecraftAspectRatio(safeParams),
         provider: {
             only: ["recraft"],
             allow_fallbacks: false,
         },
     };
-
-    const aspectRatio = closestAspectRatio(safeParams.width, safeParams.height);
-    if (aspectRatio) requestBody.aspect_ratio = aspectRatio;
 
     if (referenceImage) {
         requestBody.input_references = [

@@ -240,6 +240,7 @@
         }
       ],
       "modelLabels": {
+        "qwen-audio-3.0-tts-flash": "qwen/qwen-audio-3.0-tts-flash",
         "qwen-image-edit-plus": "qwen-image",
         "qwen-image-plus": "qwen-image",
         "qwen3-coder-next": "qwen-coder-large",

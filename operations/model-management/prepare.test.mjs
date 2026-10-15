@@ -7,6 +7,61 @@ import {
     prepareResearch,
 } from "./prepare.mjs";
 
+test("provider API documentation precedes optional model links inside the same crawl bound", async () => {
+    for (const documentation of [
+        "https://niche.example/docs",
+        "https://docs.niche.example/guide",
+    ]) {
+        const f = fixture([
+            {
+                url: "https://niche.example/pricing",
+                text: "Niche offers hosted inference.",
+            },
+        ]);
+        delete f.services.triage;
+        f.services.read = async (args) => {
+            f.reads.push(args);
+            return {
+                id: `s${f.reads.length}`,
+                url: args.url,
+                status: "fetched",
+                text: "Niche offers hosted inference.",
+                links: args.url.endsWith("/pricing")
+                    ? [
+                          ...Array.from({ length: 10 }, (_, i) => ({
+                              url: `https://models.example/checkpoint-${i}`,
+                              text: `Model checkpoint ${i}`,
+                          })),
+                          {
+                              url: documentation,
+                              text: "Documentation",
+                          },
+                          {
+                              url: "https://other.example/docs",
+                              text: "Documentation",
+                          },
+                      ]
+                    : [],
+            };
+        };
+        const result = await prepareResearch({}, f.services);
+        assert.ok(f.reads.some(({ url }) => url === documentation));
+        assert.ok(
+            result.actions.some(
+                (action) =>
+                    action.url === documentation &&
+                    action.providerDocumentation &&
+                    action.parentSourceId === "s1",
+            ),
+        );
+        assert.ok(
+            !f.reads.some(({ url }) => url === "https://other.example/docs"),
+        );
+        assert.ok(f.reads.length <= 9);
+        assert.equal(result.requiredEvidencePending, false);
+    }
+});
+
 test("two discovery runs read older deferred URLs and retain failed and skipped crawl receipts", async () => {
     const run = async (deferredSources = []) => {
         const f = fixture([]);

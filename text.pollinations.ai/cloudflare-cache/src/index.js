@@ -1,4 +1,6 @@
 // No imports needed for Web Crypto API
+
+import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
 import { checkTurnstile } from "../../../shared/turnstile.js";
 import { origin } from "./origin.js";
 
@@ -337,9 +339,25 @@ function workerError(err) {
     });
 }
 
+/**
+ * Add migration headers to every response, cache hits and errors included,
+ * so clients can find the Gen API without parsing the body.
+ */
+export function withMigrationHeaders(response) {
+    const headers = new Headers(response.headers);
+    addMigrationHeaders(headers, "text");
+    return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+    });
+}
+
 export default {
     async fetch(request, env, ctx) {
-        return withAttributionHeaders(await worker.fetch(request, env, ctx));
+        return withMigrationHeaders(
+            withAttributionHeaders(await worker.fetch(request, env, ctx)),
+        );
     },
 };
 

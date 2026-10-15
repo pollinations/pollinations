@@ -1,5 +1,6 @@
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
+import { addMigrationHeaders } from "../../../shared/legacy-migration.js";
 import { ATTRIBUTION_HEADERS, addAttributionHeaders } from "./attribution.ts";
 import type { Env } from "./env";
 import { exactCache } from "./middleware/exact-cache";
@@ -21,10 +22,32 @@ app.use(
     }),
 );
 
+// Why a request failed, readable by browser clients too
+const ERROR_EXPOSED_HEADERS = [
+    "X-Error-Type",
+    "X-Error-Status",
+    "X-Error-Message",
+    "X-Rate-Limited",
+    "X-Cache",
+];
+
+/** The migration pointers and the exposed error headers of every response */
+export function addImageMigrationHeaders(headers: Headers) {
+    addMigrationHeaders(headers, "image", ERROR_EXPOSED_HEADERS);
+}
+
 app.use("*", async (c, next) => {
     await next();
     if (c.res.ok) {
         addAttributionHeaders(c.res.headers);
+    }
+    // Cache hits and errors carry the migration pointers too.
+    try {
+        addImageMigrationHeaders(c.res.headers);
+    } catch {
+        // Immutable headers (e.g. a raw cached Response): rebuild once.
+        c.res = new Response(c.res.body, c.res);
+        addImageMigrationHeaders(c.res.headers);
     }
 });
 

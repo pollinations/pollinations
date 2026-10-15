@@ -7,6 +7,10 @@ import {
 } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
 import { beforeAll, describe, expect, test } from "vitest";
+import {
+    gatedImageModelMessage,
+    migrationInfo,
+} from "../../../shared/legacy-migration.js";
 import worker from "../src/index.ts";
 import { ImageParamsSchema } from "../src/params.ts";
 import feedHeaders from "./fixtures/image.pollinations.ai-feed.headers?raw";
@@ -242,9 +246,12 @@ test("a blocked model gets the VM's 500 JSON before the free limit, with no gen 
     const vm = JSON.parse(blockedBody);
     const body = JSON.parse(text);
     expect(body.requestId).toMatch(/^[0-9a-z]+$/);
-    expect(JSON.stringify({ ...body, requestId: vm.requestId })).toBe(
-        blockedBody.trim(),
-    );
+    // The VM's JSON, with the Gen message and pointers instead of Enter's
+    expect({ ...body, requestId: vm.requestId }).toEqual({
+        ...vm,
+        message: gatedImageModelMessage("kontext"),
+        migration: migrationInfo("image"),
+    });
     const headers = Object.fromEntries(response.headers);
     expect(headers).toEqual(
         Object.fromEntries(capturedHeaders(blockedHeaders)),
@@ -255,7 +262,7 @@ test("a blocked model gets the VM's 500 JSON before the free limit, with no gen 
     for (const model of ["seedream", "nanobanana"]) {
         const blocked = await call(`/prompt/x?model=${model}`);
         expect(JSON.parse(blocked.text).message).toBe(
-            `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
+            `${model} model is only available on gen.pollinations.ai. Get a key at https://enter.pollinations.ai/?ref=image and see https://gen.pollinations.ai/docs.`,
         );
     }
 });

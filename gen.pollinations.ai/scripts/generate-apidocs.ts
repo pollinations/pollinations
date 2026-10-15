@@ -580,10 +580,10 @@ export function renderEndpoint(
         }
     }
 
-    // Responses — render 2xx only (errors are in dedicated section)
+    // Responses — render 2xx and protocol upgrades (errors have their own section)
     const responses = asObj(op.responses);
-    const successCodes = Object.keys(responses).filter((c) =>
-        /^2\d{2}$/.test(c),
+    const successCodes = Object.keys(responses).filter(
+        (c) => c === "101" || /^2\d{2}$/.test(c),
     );
     for (const code of successCodes) {
         const r = asObj(responses[code]);
@@ -630,7 +630,7 @@ export function renderEndpoint(
 
     // Response example: prefer the media-type example injected by
     // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
-    const firstOk = successCodes[0];
+    const firstOk = successCodes.find((code) => code !== "101");
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);

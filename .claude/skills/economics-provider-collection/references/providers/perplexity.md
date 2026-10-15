@@ -32,8 +32,10 @@ Collection steps:
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
    status matters. Save evidence to `<collection-dir>/evidence/`.
 4. For a closed month, open **Invoice history** and download the original PDF.
-   The invoice subtotal is the authoritative provider total and its SKU lines
-   are the strongest model/request/token detail.
+   Inspect its line items before classifying it: this history and the
+   `RC9JSEWU-` series contain both credit purchases and model/SKU usage invoices.
+   Only a usage invoice's subtotal and SKU lines establish provider usage;
+   a manual credit purchase is wallet funding, including any separate tax.
 5. Use this skill to extract or reconcile it.
 6. For model attribution, retain Paid/Quest usage from
    `economics_pollen_usage_api` separately. Join exact provider lines through
@@ -61,10 +63,11 @@ Collection steps:
 - No public usage or billing API exists; the console routes are limited to
   `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
 
-- Closed months in the current billing group produce a monthly invoice in the
-  `RC9JSEWU-` series (period runs from the last day of the previous month);
-  its lines carry model, SKU (requests by search context size, input, output,
-  citation and reasoning tokens) and amount. Book one row per line with the
+- Usage invoices in the current billing group use the `RC9JSEWU-` series
+  (period runs from the last day of the previous month), which also contains
+  credit-purchase invoices. Identify usage from lines carrying model, SKU
+  (requests by search context size, input, output, citation and reasoning
+  tokens) and amount; the series or date alone does not identify usage. Book one row per line with the
   model as the label and the SKU as `resource_sku` (`api_requests high`,
   `api_requests low`, `input_tokens`, `output_tokens`, …) so the same labels
   serve the console analytics rows.

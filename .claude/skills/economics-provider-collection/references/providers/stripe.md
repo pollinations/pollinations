@@ -24,7 +24,10 @@ Account identity:
   its balance transactions.
 - Live accounts: `acct_1SrY3q7rcjS3l7tr` → `pollen`;
   `acct_1QzdqWGHtmCJlpeq` → `kofi`. Verify identities before each collection.
-  The Stripe MCP can read both with explicit `stripe_context` and `livemode: true`.
+  Enumerate the Stripe MCP's currently available contexts before reading. Use
+  explicit `stripe_context` and `livemode: true`; do not assume both accounts
+  are connected. For an unavailable account, use its existing authenticated
+  dashboard and verify the account ID before exporting.
 
 Required credential:
 
@@ -55,7 +58,22 @@ Collection steps:
    `fee` → standalone fees. Include embedded `fee` once (also on reversals and
    FX), including Ko-fi application fees. Exclude payouts and FX principal.
    Reconcile net to included source transactions in integer minor units.
-   Stop on an unreviewed category; never silently omit it.
+   Stop on an unreviewed category; never silently omit it. Fee-category credits
+   reduce fees and may make an account-month-currency fee total negative;
+   preserve that sign and reconcile the result to source net.
+
+Dashboard fallback for calendar-month activity:
+
+- Reports → Balance summary → set the exact date range and UTC timezone.
+- Export Balance change from activity as Itemized CSV, all reporting categories.
+- Include balance transaction ID, Created (UTC), Currency, Gross, Fee, Net,
+  Reporting category and Source ID. Application fee can verify it is already
+  inside Fee; never add it again. Customer names, emails and addresses are not
+  needed for the monthly ledger.
+- Verify the loaded summary totals against the original export and preserve
+  the verified account and period in a sidecar manifest. Archive the original
+  CSV outside Invoices. An EUR-filtered report alone cannot prove other
+  settlement currencies have zero activity.
 
 Known traps:
 

@@ -42,8 +42,12 @@ Collection steps:
 1. Prefer existing `economics_bank_ledger` when it already covers the requested
    period; it is the Economics cash ledger derived from Wise.
 2. For a missing or live period, request Wise activities with explicit ISO 8601
-   `since` and `until` bounds, `size=100`, and follow `cursor` with
-   `nextCursor` until it is null. Re-read the preceding 35 days: an activity
+   `since` and `until` bounds, `size=100`, and pass the response's `cursor`
+   as the next request's `nextCursor` until the response cursor is null.
+   Do not use `cursor` as a query parameter or look for a response
+   `nextCursor`: either mistake can repeat or truncate the first page.
+   Verify unique resource IDs and date coverage after pagination.
+   Re-read the preceding 35 days: an activity
    created as pending before the month boundary can settle inside the requested
    month. The statement settlement date still decides which month is booked.
 3. For cash-now verification, list `STANDARD` balances and convert each balance

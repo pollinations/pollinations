@@ -49,7 +49,11 @@ with the Drive connector (`create_file` with the folder MIME type), then an
 ## Commands
 
 - Account: `gog --account elliot@myceli.ai`; the generic Drive connection may
-  be a different account. Verify the accounting parent before any write.
+  be a different account. Use the business account explicitly for reads as well
+  as writes. Verify the accounting parent; an empty generic-connector search
+  does not establish that an accounting document is absent. If local access is
+  sandbox-blocked, use the approved existing credential outside the sandbox;
+  do not create or rotate credentials to work around that limitation.
 - Upload: `gog --account elliot@myceli.ai drive upload <file> --parent <folderId> --json --results-only`
   (the local file name becomes the Drive title, so rename before uploading).
 - List a folder: Drive connector `search_files` with
@@ -62,9 +66,41 @@ with the Drive connector (`create_file` with the folder MIME type), then an
 
 ## Coverage check
 
-Before booking a month, list the month folder and compare it with the
-vendor's own invoice list (provider CLI/API, billing page, or the Gmail
-invoice emails). Download what is missing, rename, upload, and only then
-parse and reconcile. Uploaded is not reconciled: verify supplier, account,
+Before collecting again or declaring evidence missing, list both `Invoices`
+and `Supporting Evidence` for the requested month and adjacent issue/collection
+months. Search vendor aliases and known invoice references too. Include JSON,
+CSV, screenshots, email and compressed exports, not just PDFs. Follow every
+`nextPageToken`; inspect source contents before claiming month coverage.
+
+For a precise folder listing with the business account, use:
+
+```sh
+gog --account elliot@myceli.ai drive search "'<verified-folder-id>' in parents and trashed = false" --raw-query --max 100 --json
+```
+
+Compare the archive with the effective Economics rows and their evidence links:
+archived but unbooked, linked to the wrong account/period, pending approval, or
+verified in the ledger. Preserve unresolved source differences and partial
+periods. A balance observation is not monthly usage, and a billing-cycle invoice
+is not automatically a calendar-month total. Only call a document `not found`
+after recording which business folders and references were checked; an access
+error means `archive check blocked`.
+
+For an open dashboard item, carry the reviewed archive check into
+`economics_private_config.reconciliation.archiveChecks` through the normal
+named-batch/environment approval gate. Store `month` (service month), canonical
+`provider`, exact `account`, `checkedAt` (ISO timestamp), `status`, short `note`
+(next action/limitation), and exact Drive file links in `evidence`. Use `found`
+for relevant retained sources awaiting reconciliation, `partial` when the
+required fact is still missing, `not_found` only after the recorded archive
+search, and `blocked` for an access failure. Found/partial checks require file
+links; folder links do not prove retention. Replace the same provider/account/
+month check on each review; remove obsolete checks after verified import.
+These annotations never book money, certify coverage or clear issue counts.
+Do not put account observations into the public repository or provider registry.
+
+Then compare the archive with the vendor's own invoice list (provider CLI/API,
+billing page, or Gmail invoice emails). Download what is missing, rename,
+upload, and only then parse and reconcile. Uploaded is not reconciled: verify supplier, account,
 invoice number, service period, amount/currency and funding before linking.
 Retain genuine missing/lost-document exceptions.

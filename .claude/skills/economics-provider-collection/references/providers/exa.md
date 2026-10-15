@@ -58,3 +58,13 @@ Known traps:
 - Do not classify the promotional balance as prepaid cash.
 - A balance snapshot is not monthly usage evidence.
 - No activity was visible for August 19–26 at verification time.
+
+## Verified — 2026-10-14
+
+- Billing → Invoices → View all opens the account's private Orb portal.
+  **View credit block detail** shows individual blocks, original and remaining
+  amounts, effective dates and expiry dates, including future allocations.
+- Archive the visible credit table without its signed portal URL. Exclude
+  future allocations from current available balances. A dash in the expiry
+  column alone is not verified non-expiring terms. Preserve discrepancies
+  between the Exa expiry popup and Orb's date display for clarification.

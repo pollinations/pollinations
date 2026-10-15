@@ -44,3 +44,13 @@ Known traps:
 - Internal request counts are not provider billing evidence.
 - Keep missing model granularity explicit; do not allocate it without a stated
   and reproducible rule.
+
+## Verified — 2026-10-14
+
+- Account-specific Startup Program email terms can impose monthly grant
+  expiry even when the general free-credit help page says credits do not
+  expire. Use the account's actual grant terms and dates.
+- Billing's single current balance does not identify its cash/credit split or
+  current grant lots. Do not classify the whole balance as prepaid cash or
+  reuse an older snapshot's user-approved expiry exception. Request the
+  current credit-lot breakdown when the dashboard does not expose it.

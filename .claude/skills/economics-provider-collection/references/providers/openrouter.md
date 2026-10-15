@@ -35,8 +35,10 @@ Current balance snapshot:
 
 - `/credits` returns `total_credits` and `total_usage`; current remaining credit
   is `total_credits - total_usage`.
-- Save a snapshot only when the user asks for balance now. The all-time counters
-  do not prove month-to-date usage without a separately evidenced baseline.
+- Collect a current balance snapshot for each active balance-tracked account
+  during every monthly close, and for an explicit balance request. Verify paid
+  versus grant funding and expiry separately. The all-time counters do not
+  prove month-to-date usage without a separately evidenced baseline.
 
 ## Verified — 2026-10-02
 

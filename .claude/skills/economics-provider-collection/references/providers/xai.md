@@ -12,8 +12,10 @@ Canonical vendor: `xai`
   quantity, and amount detail. Use the sum of `lines[].amount` as gross usage;
   the invoice `total` can be lower because prepaid balance was applied.
 - The console Usage page can export daily CSVs for the total account and each
-  model. It reports calendar periods in GMT+2, so use it for an open month and
-  use invoice billing-cycle lines for closed UTC months.
+  model. The calendar defaults to local time; on October 6, 2026 its date picker
+  also supports explicit `UTC` (`tz=UTC` in the Usage URL). Select UTC and the
+  entire month before exporting. Prefer issued cycle invoices; while one is
+  unpublished, collect source-backed provisional UTC usage for review.
 - Grouping the full 2026 Usage view by API key showed all spend on the
   `pollinations` runtime key. No second usage key was observed.
 
@@ -55,9 +57,11 @@ Known traps:
 - Pending cycle invoices can still represent real usage; status alone should not make usage disappear.
 - Do not use OP Pollen as the provider-usage source. It is the independent
   internal meter being reconciled and can have historical tracking gaps.
-- The dashboard calendar is GMT+2 while cycle invoice lines are UTC. Small
-  amounts can move across month boundaries; do not overwrite a closed invoice
-  month with the dashboard calendar total.
+- Small amounts move across timezone boundaries, and later exports can add
+  historical requests. Verify timezone and source revision separately.
+  Preserve both originals and correct the same
+  daily entry ID through the batch gate; never append the entire month again
+  or overwrite an issued invoice with provisional dashboard usage.
 - For the current open month, supersede provisional Pollen-derived provider
   rows with exact dashboard CSV rows. Replace them again with invoice-line rows
   once the monthly cycle invoice closes.

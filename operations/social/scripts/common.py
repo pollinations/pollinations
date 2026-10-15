@@ -1147,14 +1147,18 @@ class Diff:
         return {"added": self.added, "removed": self.removed, "changed": self.changed}
 
 
-def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
+def fetch_all_snapshots(
+    params: Optional[Dict[str, str]] = None,
+) -> dict[str, list[dict[str, Any]]]:
     """GET /models returns every model in one call with a 'category' field.
-    We bucket by that field into the known categories.
+    We bucket by that field into the known categories. params narrow the catalog.
 
     No auth — authenticated requests filter by key permissions, which would
     create false 'removed' entries when keys differ between runs."""
     url = f"{GEN_BASE}/models"
-    resp = requests.get(url, headers={"Accept": "application/json"}, timeout=30)
+    resp = requests.get(
+        url, params=params, headers={"Accept": "application/json"}, timeout=30
+    )
     resp.raise_for_status()
     payload = resp.json()
     # /v1/models wraps in {data:[...]}; /models returns a bare list.
@@ -1187,10 +1191,11 @@ def fetch_all_snapshots() -> dict[str, list[dict[str, Any]]]:
 # Fields ignored when comparing models.
 # description: prose edits with no capability change.
 # added_date: static timestamp, never changes for existing models.
+# health: live request stats that change every minute, not model news.
 # name / id: identity key fields used for lookup — excluded from value comparison
 #   so that snapshots migrating from 'id' to 'name' don't flood the diff.
 _DIFF_IGNORED_FIELDS: frozenset[str] = frozenset(
-    {"description", "added_date", "name", "id"}
+    {"description", "added_date", "health", "name", "id"}
 )
 
 
@@ -1305,6 +1310,7 @@ def discord_payload(
     previous_date: str | None,
     role_id: str | None,
     generated_at: str,
+    scope: str,
 ) -> dict[str, Any]:
     text = discord_text
     if role_id:
@@ -1313,7 +1319,7 @@ def discord_payload(
         text = text.replace("<@&MODEL_ROLE_ID>", "").lstrip()
     return {
         "platform": "discord",
-        "scope": "models_weekly",
+        "scope": scope,
         "date": date_str,
         "previous_date": previous_date,
         "generated_at": generated_at,

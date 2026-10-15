@@ -23,6 +23,13 @@ const LABEL = "OpenCode";
 const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "openai/gpt-6-sol";
 const PROVIDER_NPM = "@ai-sdk/openai-compatible";
+/**
+ * OpenCode's config schema requires `limit.output` alongside `limit.context`
+ * and rejects the whole file without it ("Configuration is invalid ... Missing
+ * key ...limit.output"). The models API exposes no output cap, so cap at a
+ * value safe for every catalog model.
+ */
+const MAX_OUTPUT_TOKENS = 32768;
 /** The 1.x plugin earlier versions of `on` enabled; cleaned up when found. */
 const LEGACY_PLUGIN = "opencode-pollinations-plugin";
 
@@ -160,7 +167,10 @@ const providerBlock = (models: HarnessModel[], apiKey: string) => ({
             {
                 name: model.id,
                 tool_call: true,
-                limit: { context: model.contextWindow },
+                limit: {
+                    context: model.contextWindow,
+                    output: Math.min(model.contextWindow, MAX_OUTPUT_TOKENS),
+                },
                 modalities: { input: model.input, output: ["text"] },
             },
         ]),

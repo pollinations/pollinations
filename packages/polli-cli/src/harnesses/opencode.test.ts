@@ -74,7 +74,7 @@ describe("opencode harness", () => {
         ]);
         expect(config.provider.pollinations.models.openai).toMatchObject({
             tool_call: true,
-            limit: { context: 128000 },
+            limit: { context: 128000, output: 32768 },
             modalities: { input: ["text", "image"], output: ["text"] },
         });
         expect(config.model).toBe("pollinations/openai");

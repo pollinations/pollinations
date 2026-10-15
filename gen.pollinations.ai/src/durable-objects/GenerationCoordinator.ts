@@ -7,6 +7,7 @@ import type {
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
+import { EMPTY_OUTPUT_METADATA } from "@/utils/text-cache.ts";
 
 const JOB_KEY = "job";
 const ASYNC_KEY = "async";
@@ -61,9 +62,13 @@ async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
 ): Promise<boolean> {
-    return cache.storage === "media"
-        ? env.MEDIA.has(cache.key)
-        : (await env.TEXT_BUCKET.head(cache.key)) !== null;
+    if (cache.storage === "media") return env.MEDIA.has(cache.key);
+    // Text entries marked as carrying no output are written only for the
+    // coordinator's delivery read; they must not stop a fresh run.
+    const head = await env.TEXT_BUCKET.head(cache.key);
+    return (
+        head !== null && head.customMetadata?.[EMPTY_OUTPUT_METADATA] !== "true"
+    );
 }
 
 function unavailable(message: string): GenerationOutcome {

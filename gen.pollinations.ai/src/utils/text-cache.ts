@@ -29,6 +29,15 @@ const SAFETY_CACHE_VERSION = "bedrock-input-v1";
 // Streams stopped caching empty output (#14994). The version retires stream
 // entries written before that, which reads would otherwise keep alive.
 const STREAM_CACHE_VERSION = "stream-output-v1";
+// Non-streaming completions with no output stopped being replayed after that.
+// The version retires completions written before the marker, including empty
+// ones (#16911's non-stream twin).
+const COMPLETION_CACHE_VERSION = "completion-output-v1";
+// R2 metadata flag marking an entry whose body carries no client output.
+// The write stays (the generation coordinator delivers non-streaming results
+// by reading the entry back), but reads treat the entry as a miss so the next
+// identical request reaches a model again.
+export const EMPTY_OUTPUT_METADATA = "empty_output";
 
 function sseData(text: string): string[] {
     return text
@@ -102,6 +111,57 @@ function isUncacheableStream(response: Response, body: Uint8Array): boolean {
     }
     const text = new TextDecoder().decode(body);
     return isStreamingErrorResponse(text) || isEmptyChatStream(text);
+}
+
+function hasOutputField(record: Record<string, unknown> | undefined): boolean {
+    return CHAT_OUTPUT_FIELDS.some((field) => {
+        const value = record?.[field];
+        return Array.isArray(value) ? value.length > 0 : Boolean(value);
+    });
+}
+
+/**
+ * A non-streaming completion that carries no output — the non-stream twin of
+ * {@link isEmptyChatStream}. Recognizes the Chat Completions shape (all
+ * choices empty) and the GET /text fallback for a content-less assistant
+ * message. Other JSON shapes (embeddings, responses, decisions) never match.
+ */
+function isEmptyChatCompletionBody(text: string): boolean {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return false;
+    }
+    if (!parsed || typeof parsed !== "object") return false;
+    const record = parsed as Record<string, unknown>;
+    if (Array.isArray(record.choices)) {
+        let sawChoice = false;
+        for (const choice of record.choices) {
+            sawChoice = true;
+            if (
+                hasOutputField(
+                    (choice as { message?: Record<string, unknown> })?.message,
+                )
+            )
+                return false;
+        }
+        return sawChoice;
+    }
+    return record.role === "assistant" && !hasOutputField(record);
+}
+
+/**
+ * True when a non-streaming response carries no client output and must be
+ * cached with the empty-output marker instead of being replayed later.
+ */
+function isEmptyOutputResponse(response: Response, body: Uint8Array): boolean {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+        return isEmptyChatCompletionBody(new TextDecoder().decode(body));
+    }
+    // GET /text renders an empty completion as an empty plain-text body.
+    return contentType.includes("text/plain") && body.byteLength === 0;
 }
 
 function hasActiveSafety(value: unknown): boolean {
@@ -187,6 +247,7 @@ export async function generateCacheKey(
         parts.push(SAFETY_CACHE_VERSION);
     }
     if (streams) parts.push(STREAM_CACHE_VERSION);
+    else parts.push(COMPLETION_CACHE_VERSION);
     if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API
@@ -205,12 +266,16 @@ export async function generateCacheKey(
  * Prepare metadata for caching
  * Minimal metadata - only what's needed to serve the cached response
  */
-export function prepareMetadata(response: Response): Record<string, string> {
+export function prepareMetadata(
+    response: Response,
+    emptyOutput = false,
+): Record<string, string> {
     const metadata: Record<string, string> = {
         response_content_type: response.headers.get("content-type") || "",
         status: response.status.toString(),
         statusText: response.statusText,
         cachedAt: new Date().toISOString(),
+        ...(emptyOutput && { [EMPTY_OUTPUT_METADATA]: "true" }),
     };
     for (const [name, value] of response.headers.entries()) {
         const lowerName = name.toLowerCase();
@@ -235,9 +300,11 @@ type TextCacheEnv = {
 };
 
 /**
- * Get a cached response from R2
+ * Get a cached response from R2. The delivery variant serves any entry,
+ * including ones marked as carrying no output: the generation coordinator
+ * must be able to read back what a run just wrote, even an empty one.
  */
-export async function getCachedResponse<TEnv extends TextCacheEnv>(
+export async function getDeliveryCachedResponse<TEnv extends TextCacheEnv>(
     c: Context<TEnv>,
     key: string,
 ): Promise<Response | null> {
@@ -286,6 +353,22 @@ export async function getCachedResponse<TEnv extends TextCacheEnv>(
         statusText: metadata.statusText || "OK",
         headers,
     });
+}
+
+/**
+ * Get a cached response for a fresh client request. Entries marked as carrying
+ * no output are treated as misses so the request reaches a model again
+ * (#16911's non-stream twin); the coordinator's delivery read bypasses this.
+ */
+export async function getCachedResponse<TEnv extends TextCacheEnv>(
+    c: Context<TEnv>,
+    key: string,
+): Promise<Response | null> {
+    const head = await c.env.TEXT_BUCKET.head(key);
+    if (!head || head.customMetadata?.[EMPTY_OUTPUT_METADATA] === "true") {
+        return null;
+    }
+    return getDeliveryCachedResponse(c, key);
 }
 
 /**
@@ -346,9 +429,17 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         resolveWrite();
                         return;
                     }
+                    // Non-streaming results must still be written — the
+                    // generation coordinator delivers them by reading this
+                    // entry back — but entries with no client output are
+                    // marked so later reads treat them as misses.
+                    const emptyOutput = isEmptyOutputResponse(
+                        response,
+                        completeResponse,
+                    );
 
                     await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
-                        customMetadata: prepareMetadata(response),
+                        customMetadata: prepareMetadata(response, emptyOutput),
                     });
                     log?.info(
                         "[TEXT-CACHE] Streaming response cached successfully ({size} bytes)",

@@ -9,6 +9,7 @@ import {
     createCaptureStream,
     generateCacheKey,
     getCachedResponse,
+    getDeliveryCachedResponse,
 } from "@/utils/text-cache.ts";
 import type { AuthVariables } from "./auth.ts";
 import {
@@ -54,6 +55,9 @@ const textCacheAdapter: GenerationCacheAdapter = {
         );
     },
     get: getCachedResponse,
+    // The coordinator's read-back of a just-written entry, which may carry
+    // the no-output marker (see utils/text-cache.ts).
+    getForDelivery: getDeliveryCachedResponse,
     shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },

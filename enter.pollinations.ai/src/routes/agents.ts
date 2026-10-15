@@ -107,7 +107,7 @@ const AgentResponseBaseSchema = z.object({
     // The exact string to pass as `model` when calling this agent, e.g.
     // "community/octocat/my-agent". Null only for pre-migration agents whose
     // owner has not linked a GitHub account; new agents always have one.
-    model: z.string().nullable(),
+    modelId: z.string().nullable(),
     title: z.string(),
     description: z.string().nullable(),
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
@@ -148,7 +148,7 @@ function toResponse(row: AgentRow, ownerGithubUsername: string | null) {
     return {
         id: row.id,
         name: row.name,
-        model: ownerGithubUsername
+        modelId: ownerGithubUsername
             ? communityModelId(ownerGithubUsername, row.name)
             : null,
         title: row.title,

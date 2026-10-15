@@ -307,6 +307,9 @@ describe("community endpoint configuration policy", () => {
         expect(created.status, await created.clone().text()).toBe(200);
         expect(await created.json<{ description: string }>()).toMatchObject({
             description: maxDescription,
+            modelId: expect.stringMatching(
+                /^community\/[^/]+\/long-description-agent$/,
+            ),
         });
 
         const rejected = await request(`${maxDescription}d`);

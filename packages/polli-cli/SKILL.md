@@ -20,11 +20,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
 
+For agent-assisted login, use `polli --json auth login --no-browser`. Read stderr while the command runs and show the user the verification URL and user code so they can review access. On approval, stdout contains one JSON result: `{"authenticated":true}`. Tokens are stored locally and never included in that result.
+
 ## Quick reference
 
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Agent-assisted login | `polli --json auth login --no-browser` |
 | Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
@@ -230,7 +233,7 @@ polli agents update <id> --config agent.json
 polli agents sync <id>
 polli agents delete <id>
 ```
-Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers` (add `composio` to act in the caller's own accounts, such as a GitHub commit; callers connect apps at https://enter.pollinations.ai/account#connectors); create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 

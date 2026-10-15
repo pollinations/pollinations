@@ -3,6 +3,7 @@ import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
 import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
+import BYOP_SKILL from "../../../.claude/skills/bring-your-own-pollen/SKILL.md?raw";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
 import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
@@ -17,6 +18,7 @@ const SKILLS_SCHEMA =
 const AGENT_SKILLS = [
     { name: "polli", markdown: CLI_SKILL },
     { name: "pollinations-api", markdown: API_SKILL },
+    { name: "bring-your-own-pollen", markdown: BYOP_SKILL },
     { name: "quest-contributor", markdown: QUEST_CONTRIBUTOR_SKILL },
 ].map((skill) => ({
     ...skill,

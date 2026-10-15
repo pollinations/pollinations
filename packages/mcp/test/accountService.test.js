@@ -18,9 +18,15 @@ const REQUESTS = [
     ],
     [
         "getUsage",
-        { daily: true, days: 14, limit: 5, model: ["openai"] },
+        {
+            daily: true,
+            days: 14,
+            limit: 5,
+            model: ["openai"],
+            key: ["k1", "k2"],
+        },
         "GET",
-        "/account/usage/daily?days=14",
+        "/account/usage/daily?days=14&api_key_ids=k1%2Ck2",
     ],
     ["getEarnings", { days: 30 }, "GET", "/account/earnings?days=30"],
     ["listQuests", {}, "GET", "/account/quests"],

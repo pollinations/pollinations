@@ -1642,6 +1642,56 @@ const TEXT_BASE_SERVICES = {
         contextLength: 65536,
         isSpecialized: true,
     },
+    "inferenceport-ai/lightning-text-v2.1": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2.1",
+        description:
+            "Router that picks a fast model per prompt, serving Qwen3.8 27B in place of GPT-OSS, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
+    "inferenceport-ai/lightning-text-v2": {
+        supportedParameters: CHAT_PARAMETERS.inferenceportLightning,
+        aliases: [],
+        provider: "inferenceport",
+        publisher: "InferencePort",
+        category: "text",
+        addedDate: new Date("2026-10-02").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // InferencePort /v1/models list price (2026-10-02): $0.75 per
+            // million input and output tokens, no cache discount.
+            promptTextTokens: perMillion(0.75),
+            completionTextTokens: perMillion(0.75),
+        },
+        title: "Lightning Text v2",
+        description:
+            "Router that picks a fast model per prompt, with image input, tools and JSON output",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: false,
+        contextLength: 128000,
+        isSpecialized: false,
+    },
     "openai/gpt-6-luna-decisions": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
@@ -1803,14 +1853,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-haiku-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global standard rates (prompts up to 100K tokens);
+            // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -1854,7 +1904,7 @@ const TEXT_BASE_SERVICES = {
             "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -1915,14 +1965,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-sonnet-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
@@ -1933,7 +1983,7 @@ const TEXT_BASE_SERVICES = {
             "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -2025,14 +2075,13 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
-        // Verify against AWS's price list when the launch-day entry appears.
+        // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
             promptCachedTokens: perMillion(0.2),
@@ -2044,7 +2093,7 @@ const TEXT_BASE_SERVICES = {
             "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         contextLength: 1000000,
         isSpecialized: false,
@@ -2107,14 +2156,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
             promptCachedTokens: perMillion(0.25),
             promptCacheWriteTokens: perMillion(12.5),
@@ -2125,7 +2174,7 @@ const TEXT_BASE_SERVICES = {
             "Frontier intelligence for complex reasoning, coding and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,

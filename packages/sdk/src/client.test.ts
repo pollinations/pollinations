@@ -1631,6 +1631,25 @@ describe("Pollinations simple text facade", () => {
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
+    it("maps an image array to the OpenAI { image_url } shape the edits endpoint accepts", async () => {
+        const client = newClient();
+
+        // "AAAA" base64 decodes to 3 zero bytes — no follow-up download.
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ data: [{ b64_json: "AAAA" }] }),
+        );
+
+        await client.imageEdit("combine these", {
+            image: ["https://in.test/a.png", "https://in.test/b.png"],
+        });
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect(JSON.parse(String(request.body)).image).toEqual([
+            { image_url: "https://in.test/a.png" },
+            { image_url: "https://in.test/b.png" },
+        ]);
+    });
+
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
 
@@ -2187,4 +2206,76 @@ describe("response body cancellation", () => {
             }
         }
     }
+});
+
+describe("async media jobs", () => {
+    const id = "b".repeat(64);
+
+    it("submits all four media kinds with Prefer and no credential in the URL", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                {
+                    id,
+                    status: "pending",
+                    status_url: `https://example.test/v1/jobs/${id}`,
+                },
+                { status: 202 },
+            ),
+        );
+        const client = newClient();
+        for (const submit of [
+            () => client.imageAsync("an owl", { seed: 1 }),
+            () => client.videoAsync("an owl flies", { duration: 4 }),
+            () => client.audioAsync("hello", { voice: "nova" }),
+            () => client.model3dAsync("an owl sculpture", { seed: 2 }),
+        ]) {
+            expect(await submit()).toMatchObject({ id, status: "pending" });
+        }
+        expect(fetchMock).toHaveBeenCalledTimes(4);
+        for (const [url, init] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("key")).toBe(false);
+            expect((init as RequestInit).headers).toMatchObject({
+                Authorization: "Bearer sk_test",
+                Prefer: "respond-async",
+            });
+        }
+    });
+
+    it("reads status and binary result, handling an immediate cache hit", async () => {
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({
+                    id,
+                    status: "succeeded",
+                    created_at: 1,
+                    result_url: `https://example.test/v1/jobs/${id}/result`,
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    contentType: "image/png",
+                    kind: "binary",
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    contentType: "image/png",
+                    kind: "binary",
+                }),
+            );
+        const client = newClient();
+        expect((await client.job(id)).status).toBe("succeeded");
+        const result = await client.jobResult(id);
+        expect(result.contentType).toBe("image/png");
+        expect(result.buffer.byteLength).toBe(8);
+        expect(await client.imageAsync("cached owl")).toMatchObject({
+            status: "succeeded",
+            result: { contentType: "image/png" },
+        });
+        await expect(client.job("../other-account")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
 });

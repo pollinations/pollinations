@@ -1,9 +1,10 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
+import { PRICE_USD } from "../../../shared/messages.js";
 import { expressPage, VM_CORS } from "./origin.ts";
 
-// The $0.01 x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
+// The x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
 // for GET requests outside the free limit. origin.ts loads this module only
 // then.
 
@@ -36,7 +37,7 @@ function paywallApp(env: Record<string, any>) {
                     scheme: "exact",
                     network: env.WEFT_NETWORK,
                     payTo: env.WEFT_PAY_TO,
-                    price: "$0.01",
+                    price: `$${PRICE_USD}`,
                 },
                 description: "Generate one image with Pollinations",
             },

@@ -5,6 +5,9 @@ import { PAGE } from "./free-limit-page.js";
 
 const ENTER = "https://enter.pollinations.ai/?ref=classic";
 const JSON_TYPE = "application/json; charset=utf-8";
+// One request past the free limit over x402: the price the paywalls of
+// pay.js and pay.ts charge, and the price the free limit's page names
+export const PRICE_USD = "0.01";
 
 /** gen's error body (shared/error.ts on main) */
 const genError = (status, code, message) =>
@@ -32,7 +35,7 @@ function page(kind, every, wait) {
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];
     const clock = `0:${String(wait).padStart(2, "0")}`;
-    const values = { item, items, every, wait, clock };
+    const values = { item, items, every, wait, clock, price: PRICE_USD };
     return PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]);
 }
 

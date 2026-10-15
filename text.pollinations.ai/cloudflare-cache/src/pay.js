@@ -1,9 +1,10 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
+import { PRICE_USD } from "../../../shared/messages.js";
 import { CORS, etag } from "./origin.js";
 
-// The $0.01 x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
+// The x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
 // requests outside the free limit. origin.js loads this module only then.
 
 // The VM's payment challenges name its origin host and the path, without the
@@ -23,7 +24,7 @@ function paywallApp(env) {
             scheme: "exact",
             network: env.WEFT_NETWORK,
             payTo: env.WEFT_PAY_TO,
-            price: "$0.01",
+            price: `$${PRICE_USD}`,
         },
         description: "Generate one text response with Pollinations",
     });

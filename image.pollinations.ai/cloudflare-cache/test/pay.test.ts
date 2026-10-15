@@ -253,7 +253,13 @@ test("browsers get the free limit's page with the time left and the VM's headers
     expect(response.status).toBe(402);
     const wait = response.headers.get("retry-after") ?? "";
     expect(text).toContain("Your next free image is ready in");
-    expect(text).toContain("0.01 USD per image, paid over x402 with Weft");
+    // The page names the price the challenge asks, in USDC's 6 decimals
+    const { accepts } = JSON.parse(
+        atob(response.headers.get("payment-required") ?? ""),
+    );
+    const [, price] =
+        text.match(/([\d.]+) USD per image, paid over x402 with Weft/) ?? [];
+    expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain("1 free image every 45 seconds");
     expect(text).not.toContain("undefined");
     expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');

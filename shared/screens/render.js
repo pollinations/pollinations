@@ -171,7 +171,7 @@ const page = h(
                     h(
                         Text,
                         { size: "sm", tone: "soft" },
-                        "0.01 USD per {{item}}, paid over x402 with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
+                        "{{price}} USD per {{item}}, paid over x402 with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
                     ),
                     h(CodeBlock, {
                         code: "set up https://weft.network/setup.md",

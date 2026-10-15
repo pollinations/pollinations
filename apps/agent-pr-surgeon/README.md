@@ -29,7 +29,7 @@ Branch `fix-sdk-enclosure-link-parsing` on `rekty/pollinations` at `7a1a8e7`.
 
 The pipeline is deterministic code, not a model-driven tool loop: one model call
 per review, and the sandbox does the git work in four commands. That keeps the
-agent cheap, testable (`npx tsx --test agent.test.ts`, 13 tests, no network) and
+agent cheap, testable (`node --test agent.test.ts`, 16 tests, no network) and
 predictable, and it means the same handler runs in the sandbox, in the tests and
 in a local runner.
 
@@ -50,6 +50,8 @@ in a local runner.
    budget.
 5. **Deliver.** Clone the PR head branch (`--depth 1`) in the caller's computer,
    write each fixed file, commit on a new branch, push to the target repository.
+   When the sandbox's git cannot push the repository at all (see below), the
+   same commit is created through GitHub's Git Data API from the agent itself.
    The agent writes its **own unified diff** (the sandbox git has no `git apply`)
    and prints it in the review, so the maintainer sees the change even when the
    push is refused.
@@ -80,7 +82,7 @@ produced this branch, against the live Pollinations API. Cost is the
 | PR | what it is | verdict | cost (pollen) | model + git | pushed fix |
 | --- | --- | --- | --- | --- | --- |
 | [17422](https://github.com/pollinations/pollinations/pull/17422) | `videoUrl()` returns the stored media URL | one `medium` finding | 0.011031 | 28 s | [`fix-sdk-enclosure-link-parsing`](https://github.com/rekty/pollinations/compare/3141d2ad67a050388ce43596d9bbebccbeff5dd5...fix-sdk-enclosure-link-parsing) |
-| [17443](https://github.com/pollinations/pollinations/pull/17443) | seeds outside the range are rewritten to 42 | one `high` finding | 0.0499735 (0.050796 on the second billed run) | 26–69 s | [`fix-multipart-image-seed-validation`](https://github.com/rekty/pollinations/branches/fix-multipart-image-seed-validation) |
+| [17443](https://github.com/pollinations/pollinations/pull/17443) | seeds outside the range are rewritten to 42 | one `high` finding | 0.0499735 (0.050796 on the second billed run) | 26–69 s | [`fix-multipart-image-seed-validation`](https://github.com/rekty/pollinations/branches/fix-multipart-image-seed-validation), re-pushed from the hosted computer at [`1ff09aa`](https://github.com/rekty/pollinations/commit/1ff09aa1b2ecb9520aaa69a8fdd530f1867b380e) |
 | [17449](https://github.com/pollinations/pollinations/pull/17449) | SDK `imageEdit()` with multiple images | no defects, no fix | 0.011336 | 28 s | — |
 
 Raw output, including the full review text and the usage rows, is in
@@ -132,17 +134,22 @@ maintainer pays for.
    computes the unified diff itself. A patch is the more natural exchange format
    for a reviewer; if `git apply` were available the agent could hand over a real
    patch instead of whole files.
-3. **A symlink with an unsafe target cannot be created in the sandbox
-   workspace.** The first run through the hosted `computer` failed the clone with
+3. **The sandbox's git is `just-git`, and it cannot check the PR head out as
+   it is.** The first run through the hosted `computer` failed the clone with
    `refusing to create symlink with unsafe target
-   '../../.claude/skills/abuse-detection'`, because the tree that was checked out
-   contains one. Cloning with `core.symlinks=false` writes the target path as a
-   regular file instead and the clone succeeds; only the fixed paths are staged,
-   so that file never travels with the fix.
-4. **The sandbox has no git identity.** `git commit` fails with "Author identity
-   unknown" and nothing is pushed. The agent now passes `-c user.name` and
-   `-c user.email` on the commit command only, so it works whether or not the
-   sandbox is configured.
+   '../../.claude/skills/abuse-detection'`, because the tree contains one. The
+   obvious fix, `git clone -c core.symlinks=false`, then failed with
+   `Unknown option "-c"`: just-git 1.8.2 accepts no global option and ignores
+   `core.symlinks` anyway (verified by cloning without a checkout, setting it,
+   and checking out — the symlink error came back). The agent now clones with
+   `--no-checkout` and runs `git reset --mixed HEAD`: no working tree exists,
+   so no symlink is ever created, while the index keeps the whole head tree
+   and only the fixed paths are replaced before the commit.
+4. **`git -c` does not exist in the sandbox, and `git add -- <path>` stages
+   nothing.** just-git rejects every global option, so the commit identity is
+   set with `git config user.name/user.email` in the repository — which also
+   covers a local shell with no configured identity — and it drops everything
+   after `--`, so the paths to stage are quoted instead of separated.
 5. **Stdin is the only way to put a file's content into the sandbox**, and a
    command that hangs is worse than a command that fails: during development,
    `cat > file` with stdin that never arrived left a 2023-line file **empty**, and
@@ -159,13 +166,24 @@ maintainer pays for.
    seconds. A hosted runner needs a command budget well above a couple of minutes,
    and the hosted `computer` tool bills each call (`mcp.call` rows at 0.0002), so
    a fix that touches many files costs more than the review itself.
-8. **The second review of the same pull request meets two leftovers in the
+8. **The second review of the same pull request meets leftovers in the
    sandbox.** The branch is already there, so a plain push is refused — the agent
-   now retries it with a lease taken from the remote immediately before the push,
+   fetches the remote branch (its git has no `ls-remote`), reads the sha that
+   fetch wrote, and retries with `--force-with-lease` where that option exists,
    which replaces only the branch it created itself. The clone directory is also
    already there, and `git clone` refuses a target that is not empty, so the agent
    clears it first. Both were found by running the same pull request twice, which
    is exactly what a maintainer does after a fix is revised.
+9. **The hosted computer cannot push a repository with real history.** Its git is
+   `just-git` 1.8.2: it ignores the shallow boundary and packs by walking every
+   ancestor of the new commit, so it needs the whole history on disk — about
+   840 MB for this repository, inside commands capped at 60 seconds — and its
+   `fetch` does not download trees either. Every push of a fix onto a PR head
+   dies with `object <sha> not found`, new branch or not, which is another face
+   of #17528. After the shell push fails, the agent creates the same commit with
+   GitHub's Git Data API — head tree, fix tree, commit, ref — from the agent
+   itself, where the caller's token lives and no history is needed. That is how
+   the hosted run of 17443 pushed `1ff09aa` above.
 
 ## What agents would need to do this fully
 
@@ -200,7 +218,7 @@ configuration the dashboard takes:
 
 Point **My Models → Add agent → Code agent** at it and the repository name becomes
 the model ID. The deployment was checked against the platform's own steps: the
-head revision of that repository serves `agent.ts` at 39,709 bytes (the limit is
+head revision of that repository serves `agent.ts` at 47,578 bytes (the limit is
 64 KiB), `sucrase` with `transforms: ["typescript"]` and `disableESTransforms`
 compiles it, and the result loads as an ES module with a default export function.
 A change here must be copied to that repository to be published.
@@ -217,5 +235,5 @@ caller who supplies it.
   model considers most important.
 - The agent reviews the diff it is given. It does not run the tests it proposes,
   so a fix is a proposal for a maintainer, not a verified change.
-- The push creates a new branch; the agent never force-pushes and never writes to
-  the branch it reviewed.
+- The fix goes to the agent's own branch on your fork; a re-run replaces only
+  that branch, and the agent never writes to the branch it reviewed.

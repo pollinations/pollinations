@@ -1,0 +1,50 @@
+{
+  "pr": "https://github.com/pollinations/pollinations/pull/17443",
+  "at": "2026-10-15T05:04:03.336Z",
+  "startedAtUtc": "2026-10-15 05:03:58",
+  "model": "openai/gpt-6.1-sol",
+  "shell": "pollinations computer",
+  "reviewOnly": false,
+  "pushRepo": "rekty/pollinations",
+  "seconds": 31.9,
+  "status": "completed",
+  "usage": {
+    "input_tokens": 16517,
+    "output_tokens": 911,
+    "total_tokens": 17428
+  },
+  "pollenCost": 0.0006,
+  "costSource": "usage rows",
+  "balance": {
+    "before": 103.00717145,
+    "after": 103.00557145,
+    "delta": 0.0016
+  },
+  "calls": [
+    {
+      "type": "mcp.call",
+      "model": "computer",
+      "cost_usd": 0.0002,
+      "input_text_tokens": 0,
+      "output_text_tokens": 0,
+      "response_time_ms": 3085
+    },
+    {
+      "type": "mcp.call",
+      "model": "computer",
+      "cost_usd": 0.0002,
+      "input_text_tokens": 0,
+      "output_text_tokens": 0,
+      "response_time_ms": 676
+    },
+    {
+      "type": "mcp.call",
+      "model": "computer",
+      "cost_usd": 0.0002,
+      "input_text_tokens": 0,
+      "output_text_tokens": 0,
+      "response_time_ms": 4961
+    }
+  ],
+  "review": "## Review of https://github.com/pollinations/pollinations/pull/17443\n\nThe new schema validates JSON requests, but multipart image edits still bypass it. Validate the multipart seed before manual parsing so out-of-range seeds cannot still produce billed images using seed 42.\n\n### Findings\n- **high** `shared/schemas/openai.ts:953` — Multipart image edits still bypass seed validation: CreateImageEditRequestSchema is explicitly JSON-only; multipart/form-data is parsed manually in parseEditInput. Adding seed to this schema therefore does not reject multipart edits with seed=-5 or seed=3000000000, leaving the reported silent fallback reachable through a documented input format. The added regression test exercises only JSON generations.\n\n### Fix pushed\nBranch `fix-multipart-image-seed-validation` on `rekty/pollinations` at `1ff09aa1b2ecb9520aaa69a8fdd530f1867b380e`.\n\n```\n\n```\n\n```diff\ndiff --git a/gen.pollinations.ai/src/routes/images.ts b/gen.pollinations.ai/src/routes/images.ts\n--- a/gen.pollinations.ai/src/routes/images.ts\n+++ b/gen.pollinations.ai/src/routes/images.ts\n@@ -136,9 +136,21 @@\n             formData = c.get(\"formData\") || (await c.req.formData());\n         } catch {\n             throw new UpstreamError(400, {\n                 message: \"Invalid multipart form data\",\n             });\n         }\n+        const rawSeed = formData.get(\"seed\");\n+        if (\n+            rawSeed !== null &&\n+            (typeof rawSeed !== \"string\" ||\n+                !Number.isInteger(Number(rawSeed)) ||\n+                Number(rawSeed) < -1 ||\n+                Number(rawSeed) > 2147483647)\n+        ) {\n+            throw new UpstreamError(400, {\n+                message: \"Seed must be an integer between -1 and 2147483647\",\n+            });\n+        }\n         const prompt = formData.get(\"prompt\") as string;\n         if (!prompt)\n             throw new UpstreamError(400, {\n```\n\n_model openai/gpt-6.1-sol_"
+}

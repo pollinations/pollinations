@@ -614,6 +614,119 @@ function pushUrl(repo: string, token: string | null): string {
 }
 
 /**
+ * The fix pushed through GitHub's Git Data API, from the agent itself. The
+ * sandbox's git builds a pack by walking every ancestor of the fix commit and
+ * ignores the shallow boundary, so a repository with more history than a
+ * 60-second command can download cannot be pushed from there at all (the gap
+ * issue #17528 tracks for computer git). The API builds the commit on GitHub's
+ * side from the head tree, so no history is needed locally.
+ */
+export async function pushViaApi(
+    deps: SurgeonDeps,
+    options: {
+        token: string;
+        target: string;
+        branch: string;
+        headSha: string;
+        files: FileChange[];
+        commit: string;
+    },
+): Promise<{ sha: string } | { error: string }> {
+    const { token, target, branch, headSha, files, commit } = options;
+    const ask = async (
+        path: string,
+        init: { method?: string; body?: unknown } = {},
+    ) => {
+        const response = await deps.fetch(`https://api.github.com${path}`, {
+            method: init.method ?? "GET",
+            headers: {
+                authorization: `Bearer ${token}`,
+                accept: "application/vnd.github+json",
+                "content-type": "application/json",
+                "x-github-version": "2022-11-28",
+            },
+            ...(init.body !== undefined
+                ? { body: JSON.stringify(init.body) }
+                : {}),
+        });
+        const data = (await response
+            .json()
+            .catch(() => ({}))) as Record<string, unknown>;
+        return { ok: response.ok, status: response.status, data };
+    };
+    // The target must contain the PR head; a fork of the head repository does.
+    const head = await ask(`/repos/${target}/git/commits/${headSha}`);
+    const baseTree = head.data.tree;
+    const baseTreeSha =
+        baseTree && typeof baseTree === "object"
+            ? (baseTree as { sha?: unknown }).sha
+            : undefined;
+    if (!head.ok || typeof baseTreeSha !== "string") {
+        return {
+            error: `GitHub did not return the head tree of ${target} (HTTP ${head.status})`,
+        };
+    }
+    const tree = await ask(`/repos/${target}/git/trees`, {
+        method: "POST",
+        body: {
+            base_tree: baseTreeSha,
+            tree: files.map((file) => ({
+                path: file.path,
+                mode: "100644",
+                type: "blob",
+                content: file.content,
+            })),
+        },
+    });
+    const treeSha = tree.data.sha;
+    if (!tree.ok || typeof treeSha !== "string") {
+        return {
+            error: `GitHub did not create the fix tree (HTTP ${tree.status})`,
+        };
+    }
+    const made = await ask(`/repos/${target}/git/commits`, {
+        method: "POST",
+        body: {
+            message: `${commit}\n\nPrepared by the Pollinations pr-surgeon agent.`,
+            tree: treeSha,
+            parents: [headSha],
+        },
+    });
+    const sha = made.data.sha;
+    if (!made.ok || typeof sha !== "string" || !/^[0-9a-f]{40}$/.test(sha)) {
+        return {
+            error: `GitHub did not create the fix commit (HTTP ${made.status})`,
+        };
+    }
+    const ref = await ask(`/repos/${target}/git/ref/heads/${branch}`);
+    if (ref.status === 404) {
+        const created = await ask(`/repos/${target}/git/refs`, {
+            method: "POST",
+            body: { ref: `refs/heads/${branch}`, sha },
+        });
+        return created.ok
+            ? { sha }
+            : {
+                  error: `GitHub did not create ${branch} (HTTP ${created.status})`,
+              };
+    }
+    if (!ref.ok) {
+        return {
+            error: `GitHub did not read ${branch} (HTTP ${ref.status})`,
+        };
+    }
+    // The second-review case: this branch is the agent's own fix branch, and
+    // GitHub checks the update server-side.
+    const updated = await ask(`/repos/${target}/git/refs/heads/${branch}`, {
+        method: "PATCH",
+        body: { sha, force: true },
+    });
+    return updated.ok
+        ? { sha }
+        : { error: `GitHub did not update ${branch} (HTTP ${updated.status})` };
+}
+
+/**
  * Clone the PR head branch into the caller's computer, write the fixed files,
  * commit them on a new branch and push. Sandbox calls: one clone, one write per
  * file, one commit-and-push, one log.
@@ -629,10 +742,13 @@ export async function deliverFix(
         branch: string;
         commit: string;
         headRef: string | null;
+        /** Head revision the fix is built on; the API fallback needs it. */
+        headSha: string | null;
         token: string | null;
     },
 ): Promise<Delivery> {
-    const { files, source, target, branch, commit, headRef, token } = options;
+    const { files, source, target, branch, commit, headRef, headSha, token } =
+        options;
     const directory = `/workspace/pr-surgeon-${branch.replace(/[^a-z0-9]+/g, "-")}`;
     const repo = `${directory}/repo`;
     const cloneUrl = pushUrl(source, token);
@@ -643,21 +759,24 @@ export async function deliverFix(
         // A second review of the same pull request lands in the same directory,
         // and git clone refuses a target that is already there.
         //
-        // The hosted computer refuses to create a symlink with an unsafe target,
-        // so a repository whose tree contains one cannot be checked out as it
-        // is: `core.symlinks=false` writes the target path as a regular file
-        // instead, which the agent never commits because only the fixed paths
-        // are staged.
-        `rm -rf ${repo} && mkdir -p ${directory} && cd ${directory} && git clone -c core.symlinks=false --depth 1 --branch ${headRef} ${cloneUrl} repo`,
+        // The hosted computer's git is just-git, which has no global options
+        // (`git clone -c` is "Unknown option"), ignores `core.symlinks`, and
+        // refuses to create a symlink with an unsafe target, so checking the
+        // PR head out as it is fails before any fix can be pushed. Cloning
+        // without a checkout and then resetting the index to HEAD writes no
+        // working tree at all: the commit is built from the head tree, with
+        // only the fixed paths replaced.
+        `rm -rf ${repo} && mkdir -p ${directory} && cd ${directory} && git clone --no-checkout --depth 1 --branch ${headRef} ${cloneUrl} repo && cd repo && git reset --mixed HEAD >/dev/null`,
         ...files.map(
             (file) =>
                 `cd ${repo} && mkdir -p $(dirname ${file.path}) && cat > ${file.path}`,
         ),
         // Only the paths the agent changed are staged, so the commit never
         // carries a conversion, a line ending or anything else from the clone.
-        // The sandbox has no git identity configured, and a commit without one
-        // fails, so both values are passed for this command only.
-        `cd ${repo} && git checkout -b ${branch} && git add -- ${files.map((file) => file.path).join(" ")} && git -c user.name="pr-surgeon" -c user.email="pr-surgeon@users.noreply.github.com" commit -m ${JSON.stringify(commit)} -m "Prepared by the Pollinations pr-surgeon agent." && git push ${remote} ${branch}`,
+        // just-git drops everything after `git add --`, so the paths are
+        // quoted instead of separated, and it rejects `git -c`, so the
+        // identity comes from `git config` in the repository itself.
+        `cd ${repo} && git checkout -B ${branch} >/dev/null && git config user.name "pr-surgeon" && git config user.email "pr-surgeon@users.noreply.github.com" && git add ${files.map((file) => JSON.stringify(file.path)).join(" ")} && git commit -m ${JSON.stringify(commit)} -m "Prepared by the Pollinations pr-surgeon agent." && git push ${remote} ${branch}`,
     ].map(redact);
     const executed = commands.map((command) =>
         token ? command.split("***").join(token) : command,
@@ -700,16 +819,70 @@ export async function deliverFix(
     if (pushed.exitCode !== 0) {
         // A second review of the same pull request finds its own branch already
         // there, and a plain push is then refused. Replacing that branch is
-        // intended, but only against a lease read from the remote just now: a
-        // branch that moved in between is rejected by git, not overwritten.
-        const head = await runCommand(
-            `git ls-remote ${redact(remote)} refs/heads/${branch}`,
+        // intended, but only against the remote read just now: a branch that
+        // moved in between is rejected, not overwritten. `git ls-remote` does
+        // not exist in the sandbox's just-git, so the branch is fetched and
+        // the ref that fetch wrote is read instead — the remote-tracking name
+        // under just-git, FETCH_HEAD under real git.
+        const fetched = await runCommand(
+            `cd ${repo} && git fetch ${remote} refs/heads/${branch} >/dev/null`,
         );
-        const lease = head.stdout.trim().split(/\s+/)[0] ?? "";
-        if (/^[0-9a-f]{40}$/.test(lease)) {
-            const forced = `cd ${repo} && git push --force-with-lease=refs/heads/${branch}:${lease} ${remote} ${branch}`;
-            commands.push(redact(forced));
-            pushed = await runCommand(forced);
+        if (fetched.exitCode === 0) {
+            const head = await runCommand(
+                `cd ${repo} && git rev-parse origin/${branch} 2>/dev/null || git rev-parse FETCH_HEAD`,
+            );
+            const lease =
+                head.stdout
+                    .trim()
+                    .split(/\s+/)
+                    .find((token) => /^[0-9a-f]{40}$/.test(token)) ?? "";
+            if (lease) {
+                const forced = `cd ${repo} && git push --force-with-lease=refs/heads/${branch}:${lease} ${remote} ${branch}`;
+                commands.push(redact(forced));
+                pushed = await runCommand(forced);
+                // just-git's push only knows -f: it rejects the lease option
+                // itself. The remote branch was fetched a moment ago, so the
+                // forced push replaces exactly the tip that was just read.
+                if (
+                    pushed.exitCode !== 0 &&
+                    /Unknown option|Not all git options|not supported|unsupported|not implemented/i.test(
+                        `${pushed.stderr}${pushed.stdout}`,
+                    )
+                ) {
+                    const plain = `cd ${repo} && git push -f ${remote} ${branch}`;
+                    commands.push(redact(plain));
+                    pushed = await runCommand(plain);
+                }
+            }
+        }
+    }
+    let apiSha: string | null = null;
+    if (pushed.exitCode !== 0 && token && headSha && /^[0-9a-f]{40}$/.test(headSha)) {
+        // Every sandbox push is a dead end for a repository with real history:
+        // just-git walks every ancestor of the fix commit, ignores the shallow
+        // boundary, and needs the whole history on disk, which no 60-second
+        // command can download. The same commit is then created through
+        // GitHub's Git Data API from the agent, where no history is needed.
+        const viaApi = await pushViaApi(deps, {
+            token,
+            target,
+            branch,
+            headSha,
+            files,
+            commit,
+        });
+        if ("sha" in viaApi) {
+            apiSha = viaApi.sha;
+            commands.push(
+                `# the sandbox git cannot pack this history; the same fix went through GitHub's Git Data API: POST /repos/${target}/git/trees, /git/commits, /git/refs`,
+            );
+            pushed = { stdout: viaApi.sha, stderr: "", exitCode: 0 };
+        } else {
+            pushed = {
+                stdout: "",
+                stderr: `${(pushed.stderr || pushed.stdout).trim()}\nThe GitHub API fallback failed: ${viaApi.error}`,
+                exitCode: 1,
+            };
         }
     }
     if (pushed.exitCode !== 0) {
@@ -732,7 +905,9 @@ export async function deliverFix(
         status: "pushed",
         branch,
         target,
-        commit: lines[0] ?? null,
+        // The API fallback creates its own commit on GitHub, so its sha, not
+        // the sandbox commit's, is what the branch points at.
+        commit: apiSha ?? lines[0] ?? null,
         diffstat: lines.slice(1).join("\n"),
         commands,
         error: null,
@@ -1051,6 +1226,7 @@ export default async function agent(context: AgentContext): Promise<Response> {
                 branch: review.branch ?? `pr-surgeon/${ref.number}-fix`,
                 commit: review.commit ?? `Fix review findings in PR #${ref.number}`,
                 headRef: pr.headRef,
+                headSha: pr.headSha,
                 token,
             });
         }

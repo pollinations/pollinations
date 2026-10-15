@@ -230,20 +230,30 @@ test("a fix is pushed from the sandbox in one clone, one write per file, one pus
         branch: "pr-surgeon/12-fix",
         commit: "Keep the empty-path guard",
         headRef: "feature/async",
+        headSha: "0".repeat(40),
         token: "ghp_secret",
     });
     assert.equal(delivery.status, "pushed");
     assert.equal(commands.length, 4);
-    // The sandbox refuses to create unsafe symlinks, so the clone checks them
-    // out as regular files instead of failing.
+    // just-git has no global options and refuses unsafe symlinks, so the
+    // clone materialises no working tree at all: the index alone carries the
+    // head tree into the commit.
     assert.match(
         commands[0],
-        /git clone -c core\.symlinks=false --depth 1 --branch feature\/async/,
+        /git clone --no-checkout --depth 1 --branch feature\/async/,
     );
+    assert.match(commands[0], /git reset --mixed HEAD/);
+    assert.ok(!commands[0].includes("clone -c"));
     assert.match(commands[1], /cd \/workspace\/pr-surgeon-pr-surgeon-12-fix\/repo && mkdir -p \$\(dirname src\/audio\.js\) && cat > src\/audio\.js$/);
-    // Only the fixed path is staged: a converted symlink or a line ending
-    // must not travel with the fix.
-    assert.match(commands[2], /git add -- src\/audio\.js &&/);
+    // Only the fixed path is staged, quoted because `git add -- <path>` stages
+    // nothing in just-git, and the identity comes from `git config` because
+    // `git -c` does not exist there.
+    assert.match(commands[2], /git checkout -B pr-surgeon\/12-fix >\/dev\/null &&/);
+    assert.match(commands[2], /git config user\.name "pr-surgeon" &&/);
+    assert.match(commands[2], /git config user\.email "pr-surgeon@users\.noreply\.github\.com" &&/);
+    assert.match(commands[2], /git add "src\/audio\.js" &&/);
+    assert.ok(!commands[2].includes("git add -- "));
+    assert.ok(!commands[2].includes("git -c "));
     assert.match(commands[2], /git push https:\/\/x-access-token:ghp_secret@github\.com\/octo\/fork\.git/);
     // The command list handed back to the caller never carries the secret.
     assert.ok(
@@ -269,6 +279,7 @@ test("a rejected push without a token still returns the fix", async () => {
         branch: "pr-surgeon/12-fix",
         commit: "Keep the empty-path guard",
         headRef: "feature/async",
+        headSha: "0".repeat(40),
         token: null,
     });
     assert.equal(delivery.status, "patch_only");
@@ -280,9 +291,11 @@ test("a push refused because the branch is already there is retried against a fr
     const { deps } = fakeDeps({
         runCommand: async (command) => {
             seen.push(command);
-            if (command.includes("git ls-remote"))
+            if (command.includes("git fetch "))
+                return { stdout: "", stderr: "", exitCode: 0 };
+            if (command.includes("git rev-parse"))
                 return {
-                    stdout: `${"a".repeat(40)}\trefs/heads/pr-surgeon/12-fix\n`,
+                    stdout: `${"a".repeat(40)}\n`,
                     stderr: "",
                     exitCode: 0,
                 };
@@ -312,9 +325,19 @@ test("a push refused because the branch is already there is retried against a fr
         branch: "pr-surgeon/12-fix",
         commit: "Keep the empty-path guard",
         headRef: "feature/async",
+        headSha: "0".repeat(40),
         token: "ghp_secret",
     });
     assert.equal(delivery.status, "pushed");
+    // The lease is read from a fetch of the remote branch, not from
+    // `git ls-remote`, which the sandbox's git does not have.
+    assert.ok(
+        seen.some((command) =>
+            command.includes(
+                `git fetch https://x-access-token:ghp_secret@github.com/octo/other-fork.git refs/heads/pr-surgeon/12-fix >/dev/null`,
+            ),
+        ),
+    );
     assert.ok(
         seen.some((command) =>
             command.includes(
@@ -329,6 +352,138 @@ test("a push refused because the branch is already there is retried against a fr
     );
 });
 
+test("a git without a lease option forces the branch it fetched moments ago", async () => {
+    const seen: string[] = [];
+    const { deps } = fakeDeps({
+        runCommand: async (command) => {
+            seen.push(command);
+            if (command.includes("git fetch "))
+                return { stdout: "", stderr: "", exitCode: 0 };
+            if (command.includes("git rev-parse"))
+                return {
+                    stdout: `${"e".repeat(40)}\n`,
+                    stderr: "",
+                    exitCode: 0,
+                };
+            if (command.includes("--force-with-lease"))
+                return {
+                    stdout: "",
+                    stderr: 'Unknown option "--force-with-lease".\nNot all git options are supported.',
+                    exitCode: 1,
+                };
+            if (command.includes("git push -f"))
+                return {
+                    stdout: "To https://github.com/octo/fork.git",
+                    stderr: "",
+                    exitCode: 0,
+                };
+            if (command.includes("git push"))
+                return {
+                    stdout: "",
+                    stderr: "! [rejected] (fetch first)",
+                    exitCode: 1,
+                };
+            return {
+                stdout: "deadbeef\n 1 file changed",
+                stderr: "",
+                exitCode: 0,
+            };
+        },
+    });
+    const delivery = await deliverFix(deps, {
+        files: FILES,
+        source: "octo/fork",
+        target: "octo/other-fork",
+        branch: "pr-surgeon/12-fix",
+        commit: "Keep the empty-path guard",
+        headRef: "feature/async",
+        headSha: "0".repeat(40),
+        token: "ghp_secret",
+    });
+    assert.equal(delivery.status, "pushed");
+    // Only the option is missing: the remote branch was fetched first, so the
+    // forced push replaces the tip that was just read, never a moved one.
+    const fetched = seen.findIndex((command) => command.includes("git fetch "));
+    const forced = seen.findIndex((command) => command.includes("git push -f "));
+    assert.ok(fetched !== -1 && forced > fetched);
+    assert.ok(
+        delivery.commands.every((command) => !command.includes("ghp_secret")),
+    );
+});
+
+test("when no sandbox push can go through, the fix is pushed with the GitHub API", async () => {
+    const apiCalls: { method: string; path: string }[] = [];
+    const { deps } = fakeDeps({
+        fetch: async (url, init) => {
+            const path = String(url);
+            const method = init?.method ?? "GET";
+            apiCalls.push({ method, path });
+            if (
+                method === "GET" &&
+                path.includes("/git/commits/")
+            )
+                return Response.json({ tree: { sha: "b".repeat(40) } });
+            if (path.endsWith("/git/trees"))
+                return Response.json({ sha: "c".repeat(40) });
+            if (path.endsWith("/git/commits"))
+                return Response.json({ sha: "d".repeat(40) });
+            if (path.endsWith("/git/ref/heads/pr-surgeon/12-fix"))
+                return Response.json(
+                    { message: "Not Found" },
+                    { status: 404 },
+                );
+            if (path.endsWith("/git/refs"))
+                return Response.json({
+                    ref: "refs/heads/pr-surgeon/12-fix",
+                });
+            return new Response(`unexpected ${path}`, { status: 500 });
+        },
+        runCommand: async (command) => ({
+            stdout: command.includes("git rev-parse")
+                ? `${"e".repeat(40)}\n`
+                : "",
+            stderr: command.includes("git push")
+                ? command.includes("--force-with-lease")
+                    ? 'Unknown option "--force-with-lease".'
+                    : "object 4030dc6abc62fd70b94769400018fd4ba825f542 not found"
+                : "",
+            exitCode: command.includes("git push") ? 1 : 0,
+        }),
+    });
+    const delivery = await deliverFix(deps, {
+        files: FILES,
+        source: "octo/fork",
+        target: "octo/other-fork",
+        branch: "pr-surgeon/12-fix",
+        commit: "Keep the empty-path guard",
+        headRef: "feature/async",
+        headSha: "0".repeat(40),
+        token: "ghp_secret",
+    });
+    assert.equal(delivery.status, "pushed");
+    // The commit GitHub created is what the branch points at, not the local
+    // sandbox commit the shell could not pack.
+    assert.equal(delivery.commit, "d".repeat(40));
+    // The branch did not exist, so it was created rather than replaced.
+    assert.ok(
+        apiCalls.some(
+            (call) => call.method === "GET" && call.path.endsWith("/git/ref/heads/pr-surgeon/12-fix"),
+        ),
+    );
+    assert.ok(
+        apiCalls.some(
+            (call) => call.method === "POST" && call.path.endsWith("/git/refs"),
+        ),
+    );
+    assert.ok(
+        !apiCalls.some((call) => call.path.includes("octo/fork.git")),
+    );
+    assert.ok(delivery.commands.some((command) => command.includes("Git Data API")));
+    assert.ok(
+        delivery.commands.every((command) => !command.includes("ghp_secret")),
+    );
+});
+
 test("without a head branch the agent refuses to guess", async () => {
     const { deps, commands } = fakeDeps();
     const delivery = await deliverFix(deps, {
@@ -338,6 +493,7 @@ test("without a head branch the agent refuses to guess", async () => {
         branch: "pr-surgeon/12-fix",
         commit: "Keep the empty-path guard",
         headRef: null,
+        headSha: null,
         token: "ghp_secret",
     });
     assert.equal(delivery.status, "patch_only");

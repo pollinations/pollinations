@@ -34,13 +34,13 @@ type Notice = {
 const amount = (balance: number) =>
     (Math.floor(Math.max(0, balance) * 100 + 1e-9) / 100).toFixed(2);
 
-// Bodies separate paragraphs with a blank line.
+// Bodies separate paragraphs with a blank line and mark bold as **text**.
 export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
         subject: "Your paid balance is running low",
         balance,
-        body: "When it runs out, requests that need it will fail.\n\nTop up now, or turn on auto top-up so it refills by itself.",
+        body: "When it runs out, requests that need it will fail.\n\nTop up now, or turn on **auto top-up** so it refills by itself.",
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -122,7 +122,7 @@ ${notice.body
     .split("\n\n")
     .map(
         (paragraph) =>
-            `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${paragraph}</p>`,
+            `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${paragraph.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</p>`,
     )
     .join("\n")}
 <a href="${url(notice.button.path)}" style="display:inline-block;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
@@ -141,7 +141,7 @@ ${icons}
         "",
         `💳 ${amount(notice.balance)} pollen left`,
         "",
-        notice.body,
+        notice.body.replaceAll("**", ""),
         "",
         `${notice.button.label}: ${url(notice.button.path)}`,
         "",

@@ -1,8 +1,8 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { useMemo, useState } from "react";
-import { categoryLabel, type EXPENSE_CATEGORY_ORDER } from "../lib/categories";
+import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
-import { monthLabel, monthName } from "../lib/months";
+import { monthLabel, monthName, monthShift } from "../lib/months";
 import {
     isTrendExpense,
     monthlyPollenTrends,
@@ -10,6 +10,7 @@ import {
     type PollenTrendMonth,
     type TrendMonth,
     type TrendScope,
+    trendPercentChange,
     trendPeriod,
 } from "../lib/trends";
 import type { Data } from "../types";
@@ -57,19 +58,22 @@ const QUEST_FUNDING_SERIES: Series[] = [
         dashed: true,
     },
 ];
-const EXPENSE_SERIES: Series[] = [
-    { key: "compute", label: categoryLabel("compute"), color: "#fbbf24" },
-    {
-        key: "infrastructure",
-        label: categoryLabel("infrastructure"),
-        color: "#2dd4bf",
-    },
-    {
-        key: "development",
-        label: categoryLabel("development"),
-        color: "#c084fc",
-    },
+const EXPENSE_COLORS = [
+    "#fbbf24",
+    "#2dd4bf",
+    "#c084fc",
+    "#fb7185",
+    "#60a5fa",
+    "#fb923c",
+    "#a3e635",
+    "#e879f9",
 ];
+const EXPENSE_SERIES: Series[] = EXPENSE_CATEGORY_ORDER.map((key, i) => ({
+    key,
+    label: categoryLabel(key),
+    color: EXPENSE_COLORS[i],
+}));
+type ChartScope = Exclude<TrendScope, "company">;
 const RESULT_SERIES: Series[] = [
     {
         key: "result",
@@ -96,6 +100,7 @@ function TrendChart({
     series,
     kind = "line",
     activeMonth,
+    previousRow,
     onInspect,
     hiddenSeries = [],
     onToggleSeries,
@@ -110,14 +115,15 @@ function TrendChart({
     series: Series[];
     kind?: "line" | "bar" | "stacked";
     activeMonth: string | null;
+    previousRow?: TrendRow;
     onInspect: (month: string | null) => void;
     hiddenSeries?: Series["key"][];
     onToggleSeries?: (key: Series["key"]) => void;
     unit?: "USD" | "Pollen";
     note?: string;
     creditKey?: "credits" | "questCredits";
-    scope?: TrendScope;
-    onScopeChange?: (scope: TrendScope) => void;
+    scope?: ChartScope;
+    onScopeChange?: (scope: ChartScope) => void;
 }) {
     const visibleSeries = series.filter((s) => !hiddenSeries.includes(s.key));
     const LegendItem = onToggleSeries ? "button" : "span";
@@ -177,102 +183,149 @@ function TrendChart({
             aria-label={title}
             className="w-full min-w-0 max-w-4xl p-4 sm:p-5"
         >
-            <div className={`flex flex-col ${scope ? "h-40" : "h-32"}`}>
-                <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2">
-                    <Heading as="h3" size="card">
+            <div className="flex h-52 flex-col">
+                <div className="flex h-12 shrink-0 items-start justify-between gap-2">
+                    <Heading as="h3" size="card" className="min-w-0 !text-lg">
                         {title}
                     </Heading>
-                    <span className="text-xs text-theme-text-soft">
-                        {active ? `${monthName(active.month)} · ${unit}` : unit}
-                    </span>
-                </div>
-                {scope && onScopeChange && (
-                    <fieldset
-                        className="mt-2 flex shrink-0 gap-1"
-                        aria-label={`${title} scope`}
-                    >
-                        {(["product", "company"] as const).map((value) => (
-                            <TabButton
-                                key={value}
-                                active={scope === value}
-                                onClick={() => onScopeChange(value)}
-                                size="xs"
-                                variant="soft"
-                            >
-                                {value === "product"
-                                    ? "Product"
-                                    : "Whole company"}
-                            </TabButton>
-                        ))}
-                    </fieldset>
-                )}
-                {note && (
-                    <p className="mt-1 shrink-0 text-xs text-theme-text-soft">
-                        {note}
-                    </p>
-                )}
-                <div
-                    className="mt-3 flex min-h-0 flex-wrap content-start gap-x-5 gap-y-2 overflow-y-auto text-xs tabular-nums"
-                    aria-live="polite"
-                >
-                    {series.map((s) => (
-                        <LegendItem
-                            key={s.key}
-                            type={onToggleSeries ? "button" : undefined}
-                            aria-label={
-                                onToggleSeries ? `Toggle ${s.label}` : undefined
-                            }
-                            aria-pressed={
-                                onToggleSeries
-                                    ? !hiddenSeries.includes(s.key)
-                                    : undefined
-                            }
-                            onClick={
-                                onToggleSeries
-                                    ? () => onToggleSeries(s.key)
-                                    : undefined
-                            }
-                            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap ${onToggleSeries ? "cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current" : ""} ${hiddenSeries.includes(s.key) ? "opacity-40" : ""}`}
+                    {scope && onScopeChange && (
+                        <fieldset
+                            className="ml-auto flex shrink-0 gap-1"
+                            aria-label={`${title} scope`}
                         >
-                            <svg width="18" height="10" aria-hidden="true">
-                                <line
-                                    x1="0"
-                                    x2="18"
-                                    y1="5"
-                                    y2="5"
-                                    stroke={s.color}
-                                    strokeWidth="3"
-                                    strokeDasharray={
-                                        s.dashed ? "4 2" : undefined
+                            {(["product", "overhead"] as const).map((value) => (
+                                <TabButton
+                                    key={value}
+                                    active={scope === value}
+                                    onClick={() => onScopeChange(value)}
+                                    size="xs"
+                                    variant="soft"
+                                    aria-label={
+                                        value === "product"
+                                            ? "Product"
+                                            : "Company overhead"
                                     }
-                                />
-                            </svg>
-                            <span className="text-theme-text-soft">
-                                {s.label}
-                            </span>
-                            <strong>{format(active?.[s.key])}</strong>
-                            {s.adjustedKey &&
-                                active?.[s.adjustedKey] != null && (
-                                    <span>◇ {usd(active[s.adjustedKey])}</span>
-                                )}
-                        </LegendItem>
-                    ))}
-                    {kind === "bar" &&
-                        rows.some((row) => row.oneOffFraud != null) && (
-                            <span className="text-theme-text-soft">
-                                ◇ Excluding identified fraud costs
-                            </span>
-                        )}
-                    {funded != null &&
-                        total != null &&
-                        total > 0 &&
-                        funded >= 0 &&
-                        funded <= total && (
-                            <strong>
-                                {Math.round((100 * funded) / total)}% funded by
-                                credits
-                            </strong>
-                        )}
+                                >
+                                    {value === "product"
+                                        ? "Product"
+                                        : "Overhead"}
+                                </TabButton>
+                            ))}
+                        </fieldset>
+                    )}
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-black/10 p-2.5 dark:bg-white/5">
+                    <div className="mb-2 flex shrink-0 items-baseline justify-between gap-2">
+                        <h4 className="text-sm font-semibold">
+                            {active ? monthName(active.month) : "Months"}
+                        </h4>
+                        <span className="text-xs text-theme-text-soft">
+                            {active
+                                ? `vs ${monthName(monthShift(active.month, -1))}`
+                                : ""}
+                        </span>
+                    </div>
+                    <div
+                        className="min-h-0 space-y-0.5 overflow-y-auto text-xs tabular-nums"
+                        aria-live="polite"
+                    >
+                        {series.map((s) => {
+                            const change = trendPercentChange(
+                                active?.[s.key],
+                                previousRow?.[s.key],
+                            );
+                            const rounded =
+                                change == null
+                                    ? null
+                                    : Math.round(change * 10) / 10;
+                            return (
+                                <div
+                                    key={s.key}
+                                    className={
+                                        hiddenSeries.includes(s.key)
+                                            ? "opacity-40"
+                                            : ""
+                                    }
+                                >
+                                    <LegendItem
+                                        type={
+                                            onToggleSeries
+                                                ? "button"
+                                                : undefined
+                                        }
+                                        aria-label={
+                                            onToggleSeries
+                                                ? `Toggle ${s.label}`
+                                                : undefined
+                                        }
+                                        aria-pressed={
+                                            onToggleSeries
+                                                ? !hiddenSeries.includes(s.key)
+                                                : undefined
+                                        }
+                                        onClick={
+                                            onToggleSeries
+                                                ? () => onToggleSeries(s.key)
+                                                : undefined
+                                        }
+                                        className={`grid w-full grid-cols-[minmax(0,1fr)_auto_4.5rem] items-baseline gap-2 text-left ${onToggleSeries ? "cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current" : ""}`}
+                                    >
+                                        <span className="flex min-w-0 items-center gap-1.5 text-theme-text-soft">
+                                            <svg
+                                                width="18"
+                                                height="10"
+                                                className="shrink-0"
+                                                aria-hidden="true"
+                                            >
+                                                <line
+                                                    x1="0"
+                                                    x2="18"
+                                                    y1="5"
+                                                    y2="5"
+                                                    stroke={s.color}
+                                                    strokeWidth="3"
+                                                    strokeDasharray={
+                                                        s.dashed
+                                                            ? "4 2"
+                                                            : undefined
+                                                    }
+                                                />
+                                            </svg>
+                                            <span>{s.label}</span>
+                                        </span>
+                                        <strong className="whitespace-nowrap">
+                                            {format(active?.[s.key])}
+                                        </strong>
+                                        <span
+                                            className={`whitespace-nowrap text-right ${rounded == null || rounded === 0 ? "text-theme-text-soft" : rounded > 0 ? "text-outcome-positive-text" : "text-outcome-negative-text"}`}
+                                        >
+                                            {rounded == null
+                                                ? "—"
+                                                : `${rounded > 0 ? "+" : rounded < 0 ? "−" : ""}${Math.abs(rounded).toLocaleString("en-US")}%`}
+                                        </span>
+                                    </LegendItem>
+                                    {s.adjustedKey &&
+                                        active?.[s.adjustedKey] != null && (
+                                            <div className="mt-0.5 pl-6 text-theme-text-soft">
+                                                ◇ {usd(active[s.adjustedKey])}{" "}
+                                                excluding fraud
+                                            </div>
+                                        )}
+                                </div>
+                            );
+                        })}
+                        {funded != null &&
+                            total != null &&
+                            total > 0 &&
+                            funded >= 0 &&
+                            funded <= total && (
+                                <p className="text-theme-text-soft">
+                                    {Math.round((100 * funded) / total)}% funded
+                                    by credits
+                                </p>
+                            )}
+                        {note && <p className="text-theme-text-soft">{note}</p>}
+                    </div>
                 </div>
             </div>
             <div className="mt-2 overflow-x-auto">
@@ -470,25 +523,33 @@ export function TrendsTab({
     period: 3 | 6 | 12;
     onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
-    const [resultScope, setResultScope] = useState<TrendScope>("company");
-    const [expenseScope, setExpenseScope] = useState<TrendScope>("company");
-    const [fundingScope, setFundingScope] = useState<TrendScope>("company");
+    const [resultScope, setResultScope] = useState<ChartScope>("product");
+    const [expenseScope, setExpenseScope] = useState<ChartScope>("product");
+    const [fundingScope, setFundingScope] = useState<ChartScope>("product");
     const [hiddenSeries, setHiddenSeries] = useState<Series["key"][]>([]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
     const months = useMemo(() => {
         const now = new Date();
         const company = monthlyTrends(data, "company", now).months;
         const product = monthlyTrends(data, "product", now).months;
+        const overhead = monthlyTrends(data, "overhead", now).months;
         const pollen = monthlyPollenTrends(
             data,
             company.map((row) => row.month),
         );
         const withPollen = (rows: TrendMonth[]): TrendRow[] =>
             rows.map((row, i) => ({ ...row, ...pollen[i] }));
-        return { company: withPollen(company), product: withPollen(product) };
+        return {
+            company: withPollen(company),
+            product: withPollen(product),
+            overhead: withPollen(overhead),
+        };
     }, [data]);
     const { start, end } = trendPeriod(period);
     const scopeRows = {
+        overhead: months.overhead.filter(
+            (row) => row.month >= start && row.month <= end,
+        ),
         company: months.company.filter(
             (row) => row.month >= start && row.month <= end,
         ),
@@ -499,7 +560,11 @@ export function TrendsTab({
     const rows = scopeRows.company;
     const selected =
         rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
+    const previousMonth = selected ? monthShift(selected.month, -1) : null;
+    const previousRow = (scope: TrendScope) =>
+        months[scope].find((row) => row.month === previousMonth);
     const chartProps = {
+        previousRow: previousRow("company"),
         rows,
         activeMonth: selected?.month ?? null,
         onInspect: setActiveMonth,
@@ -537,6 +602,7 @@ export function TrendsTab({
                     kind="bar"
                     {...chartProps}
                     rows={scopeRows[resultScope]}
+                    previousRow={previousRow(resultScope)}
                     scope={resultScope}
                     onScopeChange={setResultScope}
                 />
@@ -553,6 +619,7 @@ export function TrendsTab({
                     }
                     {...chartProps}
                     rows={scopeRows[expenseScope]}
+                    previousRow={previousRow(expenseScope)}
                     scope={expenseScope}
                     onScopeChange={setExpenseScope}
                 />
@@ -563,6 +630,7 @@ export function TrendsTab({
                     creditKey="credits"
                     {...chartProps}
                     rows={scopeRows[fundingScope]}
+                    previousRow={previousRow(fundingScope)}
                     scope={fundingScope}
                     onScopeChange={setFundingScope}
                 />

@@ -1,5 +1,8 @@
 import type { Data } from "../types";
-import { EXPENSE_CATEGORY_ORDER } from "./categories";
+import {
+    EXPENSE_CATEGORY_ORDER,
+    isComputeOrInfrastructureCategory,
+} from "./categories";
 import { toUsd } from "./fx";
 import { modelReconcileRows } from "./modelReconcile";
 import { monthShift, reportingMonths, WINDOW_START } from "./months";
@@ -14,14 +17,23 @@ export function trendPeriod(count: 3 | 6 | 12, now = new Date()) {
     return { start: start < WINDOW_START ? WINDOW_START : start, end };
 }
 
-export type TrendScope = "product" | "company";
+export type TrendScope = "product" | "company" | "overhead";
+
+export function trendPercentChange(
+    current: number | null | undefined,
+    previous: number | null | undefined,
+) {
+    if (current == null || previous == null || previous === 0) return null;
+    return ((current - previous) / Math.abs(previous)) * 100;
+}
 
 export function isTrendExpense(category: string, scope: TrendScope) {
     return (
         category !== "revenue" &&
         category !== "balance_sheet" &&
         (scope === "company" ||
-            ["compute", "infrastructure"].includes(category))
+            isComputeOrInfrastructureCategory(category) ===
+                (scope === "product"))
     );
 }
 export type TrendMonth = {
@@ -53,6 +65,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         data.stripeSales ?? [],
     );
     const currentMonth = now.toISOString().slice(0, 7);
+    const overhead = scope === "overhead";
     const invalidSales = runway.flags.some(
         (flag) => flag.includes("Stripe sales") && flag.includes("invalid"),
     );
@@ -70,50 +83,62 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         const sales = (data.stripeSales ?? []).filter((r) => r.month === month);
         const issues: string[] = [];
         if (month === currentMonth) issues.push("Month in progress");
-        if (!sales.length) issues.push("Stripe sales missing");
-        else if (sales.some((r) => r.coverage_complete !== 1))
+        if (!overhead && !sales.length) issues.push("Stripe sales missing");
+        else if (!overhead && sales.some((r) => r.coverage_complete !== 1))
             issues.push("Stripe reconciliation pending");
-        if (invalidSales) issues.push("Invalid Stripe data");
-        const hasCosts = (data.vendorLedger ?? []).some(
-            (r) =>
-                r.start.slice(0, 7) === month &&
-                ledgerCategory(r) === "compute" &&
-                !(r.credit > 0 && r.paid === 0),
-        );
-        if (!hasCosts) issues.push("API costs missing");
+        if (!overhead && invalidSales) issues.push("Invalid Stripe data");
+        const hasCosts = overhead
+            ? (data.opTransactions ?? []).some(
+                  (r) =>
+                      r.kind === "transaction" && r.date.slice(0, 7) === month,
+              )
+            : (data.vendorLedger ?? []).some(
+                  (r) =>
+                      r.start.slice(0, 7) === month &&
+                      ledgerCategory(r) === "compute" &&
+                      !(r.credit > 0 && r.paid === 0),
+              );
+        if (!hasCosts)
+            issues.push(
+                overhead ? "Bank expenses missing" : "API costs missing",
+            );
         const missingProviders = missingCostRows
-            .filter((row) => row.month === month)
+            .filter((row) => !overhead && row.month === month)
             .map((row) => row.vendor);
         if (missingProviders.length)
             issues.push(
                 `Usage without provider costs: ${missingProviders.join(", ")}`,
             );
-        const bankCostGap = warnings.some(
-            (w) => w.includes("the P&L shows nothing") && w.includes(month),
-        );
+        const bankCostGap =
+            !overhead &&
+            warnings.some(
+                (w) => w.includes("the P&L shows nothing") && w.includes(month),
+            );
         if (bankCostGap)
             issues.push("Paid provider invoice or usage evidence missing");
         const costIncomplete =
             !hasCosts || missingProviders.length > 0 || bankCostGap;
-        const revenue =
-            column && sales.length && !invalidSales
-                ? runway.rows
-                      .filter((r) => r.category === "revenue")
-                      .reduce((n, r) => n + (r.values[column.id] ?? 0), 0)
-                : null;
-        const deductions =
-            sales.length && !invalidSales
-                ? sales.reduce(
-                      (n, r) =>
-                          n +
-                          toUsd(
-                              r.refunds + r.reversals + r.stripe_fees,
-                              r.currency,
-                              month,
-                          ),
-                      0,
-                  )
-                : null;
+        const revenue = overhead
+            ? 0
+            : column && sales.length && !invalidSales
+              ? runway.rows
+                    .filter((r) => r.category === "revenue")
+                    .reduce((n, r) => n + (r.values[column.id] ?? 0), 0)
+              : null;
+        const deductions = overhead
+            ? 0
+            : sales.length && !invalidSales
+              ? sales.reduce(
+                    (n, r) =>
+                        n +
+                        toUsd(
+                            r.refunds + r.reversals + r.stripe_fees,
+                            r.currency,
+                            month,
+                        ),
+                    0,
+                )
+              : null;
         const costs = runway.rows.filter((r) =>
             isTrendExpense(r.category, scope),
         );
@@ -123,8 +148,8 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
                 : null;
         const credits =
             column && hasCosts
-                ? -costs.reduce(
-                      (n, r) => n + (r.creditValues?.[column.id] ?? 0),
+                ? costs.reduce(
+                      (n, r) => n - (r.creditValues?.[column.id] ?? 0),
                       0,
                   )
                 : null;
@@ -151,6 +176,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
             })
             .filter((amount): amount is number => amount != null);
         const oneOffFraud =
+            !overhead &&
             revenue != null &&
             sales.every((sale) => sale.coverage_complete === 1) &&
             adjustments.length > 0 &&

@@ -746,13 +746,19 @@ function viewInfoContent(activeView: ActiveView) {
                     after deductions.
                 </li>
                 <li>
-                    Product: Compute and Infrastructure, including Quest usage.
-                    Whole company: all expenses. Result, expenses and funding
-                    switch independently.
+                    Product: sales less Compute and Infrastructure. Overhead:
+                    all other company costs, with no sales counted again.
+                    Together they make the whole-company result.
                 </li>
                 <li>
                     Expense curves: full costs before credits. Click a legend
                     label to hide or show a category.
+                </li>
+                <li>
+                    Percentages: change in recorded amounts from the previous
+                    month, divided by its absolute value. Blue means an
+                    increase; red means a decrease. No percentage when the
+                    previous value is zero or missing.
                 </li>
                 <li>Sales: customer payments before and after deductions.</li>
                 <li>Pollen consumed is usage, not sales or provider cost.</li>

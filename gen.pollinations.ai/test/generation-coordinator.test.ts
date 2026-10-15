@@ -506,19 +506,25 @@ describe("GenerationCoordinator", () => {
         }
         expect(received).toBe(size);
     });
+
     it("rejects a public handoff without the alarm's nonce", async () => {
-        const id = env.GENERATION_COORDINATOR.idFromName(
-            `test-${crypto.randomUUID()}`,
-        );
-        const response = await SELF.fetch(
-            `https://gen.pollinations.ai/internal/generation/${id}`,
-            {
-                method: "POST",
-                headers: { "x-generation-handoff": crypto.randomUUID() },
-            },
-        );
-        expect(response.status).toBe(404);
-        await response.text();
+        const ids = [
+            env.GENERATION_COORDINATOR.idFromName(
+                `test-${crypto.randomUUID()}`,
+            ).toString(),
+            "a".repeat(64),
+        ];
+        for (const id of ids) {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai/internal/generation/${id}`,
+                {
+                    method: "POST",
+                    headers: { "x-generation-handoff": crypto.randomUUID() },
+                },
+            );
+            expect(response.status, id).toBe(404);
+            await response.text();
+        }
     });
 
     it("returns an existing cached generation without scheduling work", async () => {

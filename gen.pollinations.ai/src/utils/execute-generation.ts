@@ -165,9 +165,15 @@ export const generationHandoffRoutes = new Hono<Env>().post(
     "/:id{[0-9a-f]{64}}",
     async (c) => {
         const coordinators = c.env.GENERATION_COORDINATOR;
+        let id: DurableObjectId;
+        try {
+            id = coordinators.idFromString(c.req.param("id"));
+        } catch {
+            return c.notFound();
+        }
         // RPC typing can't map the auth snapshot; the value is unchanged.
         const job = (await coordinators
-            .get(coordinators.idFromString(c.req.param("id")))
+            .get(id)
             .takeHandoff(
                 c.req.header(GENERATION_HANDOFF_HEADER) ?? "",
             )) as GenerationJobHead | null;

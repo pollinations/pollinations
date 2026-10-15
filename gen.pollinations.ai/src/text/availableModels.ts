@@ -789,6 +789,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "perplexity/pplx-decider-v1.1-27b",
+        config: portkeyConfig["pplx-decider-v1.1-27b"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "perplexity/pplx-decider-v1.1-27b:openrouter",
+        config: portkeyConfig["perplexity/pplx-decider-v1.1-27b:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
         useSystemOneApi: true,

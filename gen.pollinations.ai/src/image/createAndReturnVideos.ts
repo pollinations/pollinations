@@ -6,7 +6,10 @@
 import { getVideoModelIds } from "@shared/registry/image.ts";
 import debug from "debug";
 import { callAlibabaVideo } from "./models/alibabaVideoModel.ts";
-import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
+import {
+    callFalFallbackVideo,
+    callMireloSfxAPI,
+} from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import {
     callMinimaxH3API,
@@ -68,6 +71,9 @@ export async function createAndReturnVideo(
         case "x-ai/grok-imagine-video-1.5:fal":
         case "kandinskylab/kandinsky-6.0-lite":
             result = await callFalFallbackVideo(prompt, safeParams);
+            break;
+        case "mirelo/sfx-2.0":
+            result = await callMireloSfxAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-2.0":
         case "bytedance/seedance-2.0-mini":

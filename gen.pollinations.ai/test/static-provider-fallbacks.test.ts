@@ -628,6 +628,46 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
+    it("charges Decider's Vercel price on its OpenRouter fallback", () => {
+        const primary = TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b"];
+        const fallback =
+            TEXT_SERVICES["perplexity/pplx-decider-v1.1-27b:openrouter"];
+        expect(primary.fallbacks).toEqual([
+            "perplexity/pplx-decider-v1.1-27b:openrouter",
+        ]);
+        expect(fallback).toMatchObject({
+            provider: "openrouter",
+            paidOnly: true,
+            hidden: true,
+            fallbackOnly: true,
+            aliases: [],
+        });
+        expect(
+            findModelByName("perplexity/pplx-decider-v1.1-27b")?.config(),
+        ).toMatchObject({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            directEndpoint:
+                "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        expect(
+            findModelByName(
+                "perplexity/pplx-decider-v1.1-27b:openrouter",
+            )?.config(),
+        ).toMatchObject({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        });
+        const billing = calculateUsageBilling({
+            model: "perplexity/pplx-decider-v1.1-27b",
+            usage: { promptTextTokens: 1000, completionTextTokens: 0 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.0000211, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00002, 12);
+    });
+
     it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
         const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
         const fallback =

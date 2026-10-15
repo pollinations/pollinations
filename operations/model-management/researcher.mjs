@@ -2300,6 +2300,20 @@ export async function auditEvidence(proposal, models, sources, decision) {
                         discovery.sourceIds.includes(source.id) &&
                         source.status === "fetched",
                 )
+                .sort((a, b) =>
+                    discovery.kind === "provider"
+                        ? Number(
+                              /(?:\/\/|\.)docs\.|\/(?:docs?|api|reference|integration|quickstart)(?:\/|$)/i.test(
+                                  b.url,
+                              ),
+                          ) -
+                          Number(
+                              /(?:\/\/|\.)docs\.|\/(?:docs?|api|reference|integration|quickstart)(?:\/|$)/i.test(
+                                  a.url,
+                              ),
+                          )
+                        : 0,
+                )
                 .map((source) => {
                     const text = norm(source.text);
                     const name = [

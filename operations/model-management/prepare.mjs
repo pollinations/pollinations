@@ -1042,6 +1042,18 @@ export async function prepareResearch(task, services) {
         }
         if (!names.length) {
             const readUrls = new Set(sources.map(({ url }) => url));
+            const providerSources = new Set(
+                actions
+                    .filter((action) =>
+                        leads.some(
+                            (lead) =>
+                                lead.id === action.leadId &&
+                                lead.modes.includes("providers"),
+                        ),
+                    )
+                    .map((action) => action.sourceId),
+            );
+            const providerDocs = new Map();
             const pageReads = new Map();
             const linkIds = new Map();
             let crawled = 0;
@@ -1063,6 +1075,22 @@ export async function prepareResearch(task, services) {
                     for (const link of source.links ?? []) {
                         const url = safeUrl(link.url);
                         if (!url) continue;
+                        if (
+                            providerSources.has(source.id) &&
+                            !providerDocs.has(source.id) &&
+                            (new URL(url).hostname ===
+                                new URL(source.url).hostname.replace(
+                                    /^www\./,
+                                    "",
+                                ) ||
+                                new URL(url).hostname.endsWith(
+                                    `.${new URL(source.url).hostname.replace(/^www\./, "")}`,
+                                )) &&
+                            /\b(?:docs?|documentation|integration|reference|quickstart)\b/i.test(
+                                `${link.text ?? ""} ${new URL(url).pathname}`,
+                            )
+                        )
+                            providerDocs.set(source.id, url);
                         const observed = retain({
                             url,
                             title: link.title,
@@ -1082,6 +1110,9 @@ export async function prepareResearch(task, services) {
                             mode: "http",
                             maxCharacters: 3000,
                             sourceId: source.id,
+                            ...(providerDocs.get(source.id) === url
+                                ? { required: true }
+                                : {}),
                             text:
                                 typeof link.text === "string"
                                     ? link.text.slice(0, 160)
@@ -1092,16 +1123,17 @@ export async function prepareResearch(task, services) {
                 const menu = [...links.values()]
                     .sort(
                         (a, b) =>
+                            Number(!!b.required) - Number(!!a.required) ||
                             Number(
                                 /model|provider|pricing|release|inference|checkpoint/i.test(
                                     b.text,
                                 ),
                             ) -
-                            Number(
-                                /model|provider|pricing|release|inference|checkpoint/i.test(
-                                    a.text,
+                                Number(
+                                    /model|provider|pricing|release|inference|checkpoint/i.test(
+                                        a.text,
+                                    ),
                                 ),
-                            ),
                     )
                     .slice(0, 12);
                 if (!menu.length) break;
@@ -1130,6 +1162,9 @@ export async function prepareResearch(task, services) {
                     ...(selected.feed
                         ? { feed: true }
                         : { parentSourceId: selected.sourceId }),
+                    ...(providerDocs.get(selected.sourceId) === selected.url
+                        ? { providerDocumentation: true }
+                        : {}),
                     models: [],
                     status: "pending",
                 };
@@ -1140,12 +1175,20 @@ export async function prepareResearch(task, services) {
                 action.status = source.status;
                 crawled++;
             }
-            requiredEvidencePending = REQUIRED_FEEDS.some(
+            const feedsPending = REQUIRED_FEEDS.some(
                 (feed) => !readUrls.has(feed.url),
             );
-            if (requiredEvidencePending)
+            const docsPending = [...providerDocs.values()].some(
+                (url) => !readUrls.has(url),
+            );
+            requiredEvidencePending = feedsPending || docsPending;
+            if (feedsPending)
                 gaps.push(
                     "Required public feeds were not attempted; discovery remains incomplete",
+                );
+            if (docsPending)
+                gaps.push(
+                    "Linked provider API documentation was not attempted; discovery remains incomplete",
                 );
             const blockedSources = () => [
                 ...new Map(
@@ -1252,6 +1295,20 @@ export async function prepareResearch(task, services) {
                     );
         if (!names.length && services.extract) {
             extraction = await services.extract(sources);
+            for (const discovery of extraction.discoveries.filter(
+                (item) => item.kind === "provider",
+            )) {
+                for (const action of actions.filter(
+                    (action) =>
+                        action.tool === "fetch" &&
+                        action.providerDocumentation === true &&
+                        discovery.sourceIds.includes(action.parentSourceId) &&
+                        action.status === "fetched",
+                )) {
+                    if (!discovery.sourceIds.includes(action.sourceId))
+                        discovery.sourceIds.push(action.sourceId);
+                }
+            }
             gaps.push(...extraction.gaps);
         }
         let followed = 0;

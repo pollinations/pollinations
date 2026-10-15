@@ -6,6 +6,36 @@ import { fileURLToPath } from "node:url";
 const adapter = fileURLToPath(new URL("./fetch.py", import.meta.url));
 const python = process.env.PYTHON ?? "python";
 
+test("source links preserve API documentation and integration routes alongside pricing", () => {
+    const result = spawnSync(
+        python,
+        [
+            "-c",
+            `
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("fetch", sys.argv[1])
+fetch = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(fetch)
+parser = fetch._TextParser()
+parser.feed('<a href="/docs">Docs</a><a href="/integration">Integration</a><a href="/api/reference">API reference</a><a href="/pricing">Pricing</a><a href="/privacy">Privacy</a>')
+print(json.dumps(fetch._source_links("https://niche.example/", parser.links)))
+`,
+            adapter,
+        ],
+        { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(
+        JSON.parse(result.stdout).map(({ url }) => url),
+        [
+            "https://niche.example/docs",
+            "https://niche.example/integration",
+            "https://niche.example/api/reference",
+            "https://niche.example/pricing",
+        ],
+    );
+});
+
 function run(request) {
     const env = {
         PATH: process.env.PATH,

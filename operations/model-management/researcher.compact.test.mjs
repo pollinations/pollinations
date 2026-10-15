@@ -69,6 +69,53 @@ import {
 } from "./researcher.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
+
+test("provider documentation is kept before lengthy marketing excerpts in a bounded audit", async () => {
+    const api = "InferHub offers an OpenAI-compatible inference API.";
+    let audited = 0;
+    await auditEvidence(
+        {
+            routes: [],
+            discoveries: [
+                {
+                    name: "InferHub",
+                    kind: "provider",
+                    reason: discoveryLeadReason("provider"),
+                    sourceIds: ["pricing", "docs"],
+                },
+            ],
+            gaps: [],
+        },
+        null,
+        [
+            {
+                id: "pricing",
+                url: "https://inferhub.dev/pricing",
+                status: "fetched",
+                text: `InferHub prices. ${"Price row. ".repeat(400)}`,
+            },
+            {
+                id: "docs",
+                url: "https://docs.inferhub.dev/guide",
+                status: "fetched",
+                text: `InferHub documentation. ${"Navigation. ".repeat(400)}${api}`,
+            },
+        ],
+        async (payload) => {
+            const [item] = payload.state.items;
+            assert.ok(
+                item.excerpt.startsWith(
+                    "Source URL: https://docs.inferhub.dev/guide",
+                ),
+            );
+            assert.ok(item.excerpt.includes(api));
+            assert.ok(item.excerpt.length <= 1600);
+            audited++;
+            return { grades: [], requestDigest: "test" };
+        },
+    );
+    assert.equal(audited, 1);
+});
 test("primary serverless catalog retains exact API-column prices and availability through assessment", () => {
     const model = { name: "qwen/qwen3.7-max", category: "text" };
     const text = `Serverless models are the fastest way to run inference on Together.

@@ -147,7 +147,7 @@ def _source_links(url, anchors):
         except ValueError:
             pass
         value = target._replace(fragment="").geturl()
-        if value in seen or not re.search(r"model|pricing|inference|release|checkpoint|github|huggingface|provider|serverless", value + " " + anchor["text"], re.I):
+        if value in seen or not re.search(r"model|pricing|inference|release|checkpoint|github|huggingface|provider|serverless|\b(?:docs?|documentation|api|integration|reference|quickstart)\b", value + " " + anchor["text"], re.I):
             continue
         seen.add(value)
         links.append({"url": value, "text": anchor["text"]})

@@ -1219,11 +1219,40 @@ export function buildRunway(
         );
     }
 
-    const openingRows = transactions.filter(
+    const statementOpeningRows = transactions.filter(
         (row) =>
             row.kind === "opening_balance" &&
             !unsupportedBankRows.includes(row),
     );
+    const firstOpeningDate = statementOpeningRows
+        .map((row) => row.date)
+        .sort()[0];
+    const openingRows = statementOpeningRows.filter((row) => {
+        if (
+            row.date === firstOpeningDate ||
+            statementOpeningRows.filter(
+                (other) => other.currency === row.currency,
+            ).length !== 1
+        )
+            return true;
+        const priorMovements = bankRows.filter(
+            (movement) =>
+                movement.currency === row.currency &&
+                movement.date >= firstOpeningDate &&
+                movement.date < row.date,
+        );
+        // A later first-currency anchor can confirm the balance already
+        // reconstructed from recorded movements; it must not hide that history.
+        return (
+            priorMovements.length === 0 ||
+            Math.abs(
+                priorMovements.reduce(
+                    (sum, movement) => sum + Number(movement.amount),
+                    0,
+                ) - Number(row.amount),
+            ) > 1e-8
+        );
+    });
     const openingDatesByCurrency = new Map<string, string>();
     const conflictingCurrencies = new Set<string>();
     for (const row of openingRows) {

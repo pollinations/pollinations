@@ -414,6 +414,52 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(20);
     });
 
+    it("preserves cash history when a later currency opening confirms recorded movements", () => {
+        const transactions = [
+            opening(100, { entry_id: "eur-opening", currency: "EUR" }),
+            transaction({
+                entry_id: "eur-spend",
+                date: "2026-08-31",
+                currency: "EUR",
+                amount: -100,
+            }),
+            transaction({
+                entry_id: "usd-receipt",
+                date: "2026-08-31",
+                amount: 80,
+            }),
+            transaction({
+                entry_id: "usd-spend",
+                date: "2026-09-10",
+                amount: -10,
+            }),
+        ];
+        const now = new Date("2026-09-15T12:00:00.000Z");
+        const original = buildRunway(transactions, now);
+        const checkpoint = opening(80, {
+            entry_id: "usd-opening",
+            date: "2026-09-01",
+        });
+        const confirmed = buildRunway([...transactions, checkpoint], now);
+        expect(confirmed.openingBalanceDate).toBe("2026-01-01");
+        expect(confirmed.currentCashUsd).toBe(70);
+        expect(
+            confirmed.columns
+                .filter((column) => column.month < "2026-09")
+                .map((column) => column.runningCashUsd),
+        ).toEqual(
+            original.columns
+                .filter((column) => column.month < "2026-09")
+                .map((column) => column.runningCashUsd),
+        );
+        const different = buildRunway(
+            [...transactions, { ...checkpoint, amount: 80.01 }],
+            now,
+        );
+        expect(different.openingBalanceDate).toBe("2026-09-01");
+        expect(different.currentCashUsd).toBeCloseTo(70.01, 8);
+    });
+
     it("keeps cash unavailable for conflicting anchors in one currency", () => {
         const result = buildRunway(
             [

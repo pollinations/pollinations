@@ -1,0 +1,32 @@
+{
+  "pr_number": 17502,
+  "title": "fix: keep tooltips on screen and readable by screen readers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17502",
+  "merged_at": "2026-10-14T23:16:19Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Tooltips now use their measured size to center beside their trigger, stay within viewport edges, and open above the trigger when there is not enough room below. They remain open while the pointer moves onto the tooltip; Escape, outside taps, and scrolling still dismiss them. Tooltip descriptions are attached to the focusable control, including Enter’s Open WebUI model link, so screen readers can read them. Bumped @pollinations/ui from 0.1.0-alpha.16 to 0.1.0-alpha.17.",
+    "keywords": [
+      "tooltips",
+      "accessibility",
+      "screen readers",
+      "Open WebUI",
+      "UI package"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-14/PR-17502.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli adjusts a small tooltip so it sits neatly above a link near the edge of a lime green (#ecf874) CRT screen, with a tiny speaker icon beside the link and code-plants growing nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny reading glasses, stays small within the scene, and is strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, a warm cream background, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T20:30:33.473393+00:00",
+  "area": "Dashboard",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "4c0ecc533a2be51c3ee6690cc9bf223c10c75352",
+  "announcements": []
+}

@@ -22,8 +22,9 @@ export type ModelNews = {
     /** Retirements announced in a PR description (#16818). */
     status?: "scheduled" | "cancelled";
     previous_date?: string;
-    pr: number;
-    url: string;
+    /** The PR that announced it; a change seen in the live model list has none. */
+    pr?: number;
+    url?: string;
     pricing_units?: {
         before?: ApiModelInfo["pricing_units"];
         after?: ApiModelInfo["pricing_units"];

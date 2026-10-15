@@ -1,0 +1,32 @@
+{
+  "pr_number": 17444,
+  "title": "fix: refuse image sizes under 16 px instead of passing them on",
+  "author": "NamanSoni78",
+  "url": "https://github.com/pollinations/pollinations/pull/17444",
+  "merged_at": "2026-10-15T20:25:10Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Image requests now reject zero or negative GET width/height and POST size dimensions. Image dimensions under 16 px per side return a field-specific 400 before reaching a provider, rather than being silently resized or returning a provider error. Video models still accept small positive dimensions as aspect ratios, including 16×9; community video endpoints discard width and height before image-parameter validation. Model-specific image minimums above 16 px still apply.",
+    "keywords": [
+      "image API",
+      "dimensions",
+      "validation",
+      "video aspect ratio",
+      "error handling"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17444.jpg",
+    "prompt": "In a cozy pixel-art garden shed, Polli wears a tiny tool belt and checks a 16-pixel ruler beside a framed image, while a separate video screen shows a 16×9 aspect ratio; code-plants grow around a lime green (#ecf874) terminal. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She should be small-to-medium sized within the scene, sharing the frame with other elements — never oversized or dominating the image. Strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with warm cream surroundings and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T20:26:25.128888+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "7459a6c88734e178584abd7d93cdf9a8810a9e5d",
+  "announcements": []
+}

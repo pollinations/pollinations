@@ -21,6 +21,6 @@ These providers process personal data for us. Some process it outside the EEA, i
 
 The model you choose, or its fallback, decides which of these receives your request. OpenRouter, Vercel AI Gateway and InferencePort pass requests on to the model's host.
 
-Alibaba Cloud, Amazon Bedrock, Anthropic, AssemblyAI, DeepInfra, ElevenLabs, fal.ai, Fireworks AI, Google, InferencePort, Microsoft Azure, Mirelo AI, Mistral AI, Novita AI, OpenAI, OpenRouter, OVHcloud, Perplexity, Replicate, Stability AI, Vast.ai, Vercel AI Gateway, xAI.
+Alibaba Cloud, Amazon Bedrock, Anthropic, AssemblyAI, DeepInfra, ElevenLabs, fal.ai, Fireworks AI, Google, InferencePort, Microsoft Azure, Mistral AI, Novita AI, OpenAI, OpenRouter, OVHcloud, Perplexity, Replicate, Stability AI, Vast.ai, Vercel AI Gateway, xAI.
 
 Questions, including which host serves a specific model: **hello@pollinations.ai**

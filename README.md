@@ -14,18 +14,6 @@
 
 </div>
 
-## Guides
-
-| Guide | Purpose |
-| --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
-| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
-| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
-| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
-| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
-| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
-| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
-
 > [!IMPORTANT]
 > **Model IDs are now standardized**
 >
@@ -100,6 +88,18 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🔢 **Embeddings Creation** — Semantic search, retrieval, similarity matching
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
+
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
+| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
+| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
+| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
+| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
+| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
 
 <!-- Updated daily by .github/workflows/news-sync-readme.yml.
      Regenerate locally with:

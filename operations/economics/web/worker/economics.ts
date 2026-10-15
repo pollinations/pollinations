@@ -41,12 +41,17 @@ export const economicsRoutes = new Hono<Env>().get(
             });
         }
         const origin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
-        const upstream = await fetch(
+        const url = new URL(
             `${origin}/v0/pipes/${encodeURIComponent(upstreamPipe)}.json`,
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            },
         );
+        if (c.env.TINYBIRD_DEPLOYMENT_ID)
+            url.searchParams.set(
+                "__tb__deployment",
+                c.env.TINYBIRD_DEPLOYMENT_ID,
+            );
+        const upstream = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
         return c.newResponse(upstream.body, {
             status: (upstream.ok ? upstream.status : 502) as StatusCode,
             headers: {

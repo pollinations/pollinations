@@ -1,8 +1,10 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { useMemo, useState } from "react";
+import { ProductMixCard } from "../components/ProductMixCard";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName, monthShift } from "../lib/months";
+import { monthlyProductMix } from "../lib/productMix";
 import {
     isTrendExpense,
     monthlyPollenTrends,
@@ -540,6 +542,15 @@ export function TrendsTab({
         return {
             company: withPollen(company),
             product: withPollen(product),
+            questMix: monthlyProductMix(
+                data,
+                company.map((row) => row.month),
+                "quest",
+            ),
+            mix: monthlyProductMix(
+                data,
+                company.map((row) => row.month),
+            ),
         };
     }, [data]);
     const { start, end } = trendPeriod(period);
@@ -632,6 +643,19 @@ export function TrendsTab({
                     title="Sales"
                     series={SALES_SERIES}
                     {...chartProps}
+                />
+                <ProductMixCard
+                    questRows={months.questMix.filter(
+                        (row) => row.month >= start && row.month <= end,
+                    )}
+                    rows={months.mix.filter(
+                        (row) => row.month >= start && row.month <= end,
+                    )}
+                    activeMonth={selected?.month ?? null}
+                    previous={months.mix.find(
+                        (row) => row.month === previousMonth,
+                    )}
+                    onInspect={setActiveMonth}
                 />
                 <TrendChart
                     title="Pollen consumed"

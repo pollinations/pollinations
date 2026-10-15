@@ -23,8 +23,12 @@ const share = (
     paid_usage: 100,
     paid_creator_earnings: 35,
     paid_pollinations_profit: 45,
+    paid_community_usage: 0,
+    paid_model_creator_earnings: 0,
     quest_usage: 50,
     quest_creator_earnings: 15,
+    quest_community_usage: 0,
+    quest_model_creator_earnings: 0,
     paid_requests: 10,
     quest_requests: 5,
     ...over,
@@ -119,6 +123,8 @@ describe("revenueShareSummary", () => {
             paid_usage: 100,
             paid_creator_earnings: 95,
             paid_pollinations_profit: 5,
+            paid_community_usage: 0,
+            paid_model_creator_earnings: 0,
             paid_requests: 1,
         });
         const otherDeveloper = share({
@@ -127,6 +133,8 @@ describe("revenueShareSummary", () => {
             recipient_name: "Developer Two",
             paid_usage: 100,
             paid_pollinations_profit: 5,
+            paid_community_usage: 0,
+            paid_model_creator_earnings: 0,
             paid_requests: 1,
         });
 

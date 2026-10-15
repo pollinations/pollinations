@@ -30,7 +30,8 @@ it("renders charts and unknown values without repeating the reconciliation messa
     }
     expect(html.match(/aria-label="[^"]+ scope"/g)).toHaveLength(3);
     expect(html).not.toContain("Company performance");
-    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(6);
+    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(9);
+    expect(html).not.toContain("Retained over time · Pollen");
     expect(html).not.toContain("Monthly details");
     expect(html).not.toContain("Provider credit dates &amp; limits");
     expect(html).toContain("Pollen consumed. Pollen by month");

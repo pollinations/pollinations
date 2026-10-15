@@ -7,5 +7,6 @@ export type Env = {
         TINYBIRD_INGEST_URL: string;
         TINYBIRD_ECONOMICS_READ_TOKEN: string;
         TINYBIRD_POLLEN_PIPE: string;
+        TINYBIRD_DEPLOYMENT_ID?: string; // Local preview of an unpromoted staging endpoint.
     };
 };

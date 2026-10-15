@@ -63,8 +63,13 @@ export type RevenueShareSourceRow = {
     paid_usage: number;
     paid_creator_earnings: number;
     paid_pollinations_profit: number;
+    // App source rows only: community usage and owner earnings already included.
+    paid_community_usage: number;
+    paid_model_creator_earnings: number;
     quest_usage: number;
     quest_creator_earnings: number;
+    quest_community_usage: number;
+    quest_model_creator_earnings: number;
     paid_requests: number;
     quest_requests: number;
 };

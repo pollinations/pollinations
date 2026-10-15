@@ -105,7 +105,13 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     "revenue-share-ledger": ["revenueShare"],
     "revenue-share": ["revenueShare", "opTransactions"],
     balances: ["vendorLedger", "opTransactions"],
-    trends: ["opTransactions", "vendorLedger", "stripeSales", "opPollen"],
+    trends: [
+        "opTransactions",
+        "vendorLedger",
+        "stripeSales",
+        "opPollen",
+        "revenueShare",
+    ],
     runway: [
         "opTransactions",
         "vendorLedger",

@@ -1,0 +1,35 @@
+{
+  "pr_number": 17577,
+  "title": "chore: remove the public feeds from the Classic workers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17577",
+  "merged_at": "2026-10-15T10:51:31Z",
+  "labels": [
+    "INFRA"
+  ],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Removed the public image.pollinations.ai/feed and text.pollinations.ai/feed streams and stopped publishing generation events to them. Both paths now return 404 rather than starting a feed or treating “feed” as a prompt. The image nofeed and text private parameters remain accepted but have no effect; their public-feed guidance was removed from APIDOCS.md. The feed-only FeedHub Durable Object, its Worker bindings, the image feed’s mature-word list, and related tests and fixtures were removed.",
+    "keywords": [
+      "classic API",
+      "image feed",
+      "text feed",
+      "public feeds",
+      "404",
+      "FeedHub"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17577.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli gently closes two little doors marked “IMAGE /feed” and “TEXT /feed” beside a lime green (#ecf874) glowing terminal, while code-plants grow around it. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized, wears a tiny caretaker’s scarf, and appears only once in the scene, with chunky retro sprites, a warm cream and soft pastel gradient background, dark purple (#110518) outlines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-15T10:52:45.172984+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "febf55361145ad19d38acc9e961d218459061984",
+  "announcements": []
+}

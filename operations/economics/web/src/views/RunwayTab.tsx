@@ -1,8 +1,6 @@
 import {
-    Alert,
     Chip,
     cn,
-    DatabaseIcon,
     Heading,
     TableBody,
     TableCell,
@@ -15,14 +13,13 @@ import {
 import {
     type ComponentProps,
     type ComponentType,
+    useLayoutEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
-import {
-    DataTable,
-    GROUP_BORDER,
-    TableScroller,
-} from "../components/DataTable";
+import { DataTable, TableScroller } from "../components/DataTable";
+import { MonthIssueCount } from "../components/Filters";
 import { StatCards, type StatTone } from "../components/StatCards";
 import { categoryLabel, pnlSource } from "../lib/categories";
 import type { ForecastPaymentTiming } from "../lib/forecastTerms";
@@ -128,12 +125,127 @@ export function ForecastBadge({
     );
 }
 
+const SUMMARY_HELP: Record<string, string[]> = {
+    Expenses: [
+        "Main amount: costs funded with cash.",
+        "Parentheses: additional costs covered by provider credits.",
+    ],
+    "Cash change": [
+        "Actual: bank inflows minus outflows, including exchange-rate changes.",
+        "Plan: expected cash increase or decrease that month.",
+    ],
+    "Cash balance": [
+        "Past months: balance at the END of the month.",
+        "To date: balance from the latest imported bank entries.",
+        "Plan: expected balance at the END of the month.",
+    ],
+};
+
+const REVENUE_HELP: Record<string, string[]> = {
+    "Gross customer payments": [
+        "Customer payments recorded by Stripe this month.",
+        "Before fees, refunds and chargebacks.",
+    ],
+    "Stripe fees (including dispute fees)": [
+        "Stripe fees charged this month, including dispute fees.",
+        "May relate to older sales.",
+    ],
+    Refunds: ["Refunds recorded this month, including older purchases."],
+    "Chargebacks / other reversals": [
+        "Payments reversed this month.",
+        "Dispute fees are listed under Stripe fees.",
+    ],
+    "stripe sales": [
+        "Customer payments minus Stripe fees.",
+        "Refunds and reversals appear separately.",
+    ],
+    "stripe refunds": ["Refunds and reversals recorded this month."],
+};
+function categoryExplanation(category: string): string[] {
+    if (category === "revenue")
+        return [
+            "Sales minus fees, refunds and reversals, plus other revenue.",
+            "Recorded sales may still be held in Stripe.",
+        ];
+    if (category === "balance_sheet")
+        return [
+            "Cash movements outside revenue and expenses, such as returned deposits.",
+            "Future amounts are planned, not received yet.",
+        ];
+    return pnlSource(category) === "ledger"
+        ? [
+              "Provider costs for the month of usage.",
+              "Parentheses: credit-funded costs. Plan: expected cash payments.",
+          ]
+        : [
+              "Bank payments in this category, by payment month.",
+              "Plan: expected payments.",
+          ];
+}
+
+function rowExplanation(row: RunwayMatrixRow): string[] {
+    if (REVENUE_HELP[row.vendor]) return REVENUE_HELP[row.vendor];
+    if (row.vendor === "fx revaluation")
+        return [
+            "Change in the USD value of cash held in other currencies.",
+            "No payment took place.",
+        ];
+    if (row.vendor === "pre-window movements")
+        return [
+            "Earlier bank movements included in the first reporting month.",
+        ];
+    if (pnlSource(row.category) === "ledger")
+        return [
+            "Provider costs for this month; parentheses show credit-funded usage.",
+            "Plan: expected cash payments after available credits.",
+        ];
+    if (row.category === "balance_sheet")
+        return categoryExplanation(row.category);
+    return [
+        "Bank payments or receipts recorded this month.",
+        row.forecastMethod === "one_off"
+            ? "One-time amount; no automatic repeat."
+            : row.forecastMethod === "funded"
+              ? "No recurring cash payment planned."
+              : "Plan: expected payments or receipts.",
+    ];
+}
+
+function CalculationInfo({ label, lines }: { label: string; lines: string[] }) {
+    return (
+        <Tooltip
+            className="ml-2 font-normal normal-case tracking-normal"
+            ariaLabel={`${label} calculation info`}
+            tapEnabled
+            maxWidth={300}
+            content={
+                <ul className="list-disc space-y-1 pl-4 whitespace-normal text-left">
+                    {lines.map((line) => (
+                        <li key={line}>{line}</li>
+                    ))}
+                </ul>
+            }
+        >
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-theme-border text-[10px] text-theme-text-muted leading-none">
+                i
+            </span>
+        </Tooltip>
+    );
+}
+
 function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
     const methodLabel = forecastMethodLabel(row.forecastMethod);
     const timingLabel = paymentTimingLabel(row.forecastPaymentTiming);
     return (
         <span className="inline-flex items-center gap-1.5">
-            <span>{row.vendor}</span>
+            <span>
+                {row.vendor === "stripe sales"
+                    ? "Stripe sales after fees"
+                    : row.vendor === "stripe refunds"
+                      ? "Refunds and reversals"
+                      : row.vendor}
+            </span>
+            <CalculationInfo label={row.vendor} lines={rowExplanation(row)} />
             {methodLabel && <ForecastBadge label={methodLabel} />}
             {timingLabel && <ForecastBadge label={timingLabel} />}
         </span>
@@ -196,23 +308,12 @@ function showCash(cash: number | null, credit: number | null | undefined) {
     return hasAmount(cash) || !hasAmount(credit);
 }
 
-function monthColumnClass(column: RunwayColumn, first: boolean) {
-    return cn(
-        "min-w-28 whitespace-nowrap",
-        first && GROUP_BORDER,
-        column.kind === "current" && "bg-intent-warning-bg-light/40",
-        column.kind === "forecast" && "bg-theme-bg-subtle",
-    );
-}
+const MONTH_COLUMN_CLASS = "min-w-28 whitespace-nowrap";
 
 function monthKindLabel(kind: RunwayColumn["kind"]): string | null {
     if (kind === "actual") return null;
     if (kind === "current") return "To date";
     return "Plan";
-}
-
-function startsMonthGroup(columns: RunwayColumn[], index: number) {
-    return index === 0 || columns[index - 1]?.month !== columns[index].month;
 }
 
 type RunwayGroup = {
@@ -248,6 +349,12 @@ function groupRows(
         }
         groups.set(row.category, group);
     }
+    const revenue = groups.get("revenue");
+    revenue?.rows.sort(
+        (a, b) =>
+            Number(b.vendor === "stripe sales") -
+            Number(a.vendor === "stripe sales"),
+    );
     return [...groups.values()];
 }
 
@@ -256,27 +363,38 @@ function SummaryRow({
     columns,
     value,
     credit,
+    expanded,
+    onToggle,
 }: {
     label: string;
     columns: RunwayColumn[];
     value: (column: RunwayColumn) => number | null;
     credit?: (column: RunwayColumn) => number | null;
+    expanded?: boolean;
+    onToggle?: () => void;
 }) {
     return (
-        <TableRow className="font-semibold">
+        <TableRow className="runway-summary font-semibold">
             <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque">
-                {label}
+                {onToggle ? (
+                    <TableDisclosureButton
+                        expanded={expanded ?? false}
+                        onClick={onToggle}
+                    >
+                        {label}
+                    </TableDisclosureButton>
+                ) : (
+                    label
+                )}
+                <CalculationInfo label={label} lines={SUMMARY_HELP[label]} />
             </TableCell>
-            {columns.map((column, index) => (
+            {columns.map((column) => (
                 <TableCell
                     key={column.id}
                     align="right"
                     numeric
                     className={cn(
-                        monthColumnClass(
-                            column,
-                            startsMonthGroup(columns, index),
-                        ),
+                        MONTH_COLUMN_CLASS,
                         runwayValueClass(value(column)),
                     )}
                 >
@@ -290,7 +408,15 @@ function SummaryRow({
     );
 }
 
-export function RunwayTab({ data, year }: { data: Data; year: string }) {
+export function RunwayTab({
+    data,
+    year,
+    issueCounts = {},
+}: {
+    data: Data;
+    year: string;
+    issueCounts?: Record<string, number>;
+}) {
     const runway = useMemo(
         () =>
             buildRunway(
@@ -311,6 +437,15 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         () => runway.columns.filter((column) => column.month.startsWith(year)),
         [runway.columns, year],
     );
+    const [expensesExpanded, setExpensesExpanded] = useState(true);
+    const tableScrollRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+        const scroller = tableScrollRef.current;
+        if (scroller) {
+            scroller.scrollLeft =
+                `${year}-07` <= runway.currentMonth ? scroller.scrollWidth : 0;
+        }
+    }, [year, runway.currentMonth]);
     const groups = useMemo(
         () => groupRows(runway.rows, columns),
         [columns, runway.rows],
@@ -340,19 +475,21 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
 
     return (
         <div className="flex flex-col gap-4">
-            {runway.flags.length > 0 && (
-                <Alert intent="warning" title="Needs attention">
-                    <ul className="list-disc space-y-1 pl-5">
-                        {runway.flags.map((flag) => (
-                            <li key={flag}>{flag}</li>
-                        ))}
-                    </ul>
-                </Alert>
-            )}
             <StatCards
                 items={[
                     {
-                        label: "Cash now",
+                        label: (
+                            <span>
+                                Recorded bank cash
+                                <CalculationInfo
+                                    label="Recorded bank cash"
+                                    lines={[
+                                        "All bank currencies combined in USD.",
+                                        "Based on imported entries, not a live bank connection.",
+                                    ]}
+                                />
+                            </span>
+                        ),
                         value: fmtRunwayUsd(runway.currentCashUsd),
                         tone:
                             runway.currentCashUsd != null &&
@@ -363,11 +500,22 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             runway.openingBalanceDate == null
                                 ? "opening balance missing"
                                 : runway.latestTransactionDate
-                                  ? `bank movements through ${fmtPeriod(runway.latestTransactionDate)} · anchored ${fmtPeriod(runway.openingBalanceDate)}`
+                                  ? `Latest bank entry: ${fmtPeriod(runway.latestTransactionDate)}`
                                   : `anchored ${fmtPeriod(runway.openingBalanceDate)} · no bank movements`,
                     },
                     {
-                        label: `${monthName(runway.currentMonth)} month-end cash`,
+                        label: (
+                            <span>
+                                {monthName(runway.currentMonth)} month-end cash
+                                <CalculationInfo
+                                    label="Month-end cash"
+                                    lines={[
+                                        "Expected cash at the END of this month.",
+                                        "Recorded bank cash plus remaining planned movements.",
+                                    ]}
+                                />
+                            </span>
+                        ),
                         value: fmtRunwayUsd(runway.projectedMonthEndCashUsd),
                         tone:
                             runway.projectedMonthEndCashUsd != null &&
@@ -380,9 +528,20 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                 : `${fmtRunwayUsd(runway.remainingCurrentPlanUsd)} remaining plan`,
                     },
                     {
-                        label: next
-                            ? `${monthName(next.month)} cash change`
-                            : "Next cash change",
+                        label: (
+                            <span>
+                                {next
+                                    ? `${monthName(next.month)} cash change`
+                                    : "Next cash change"}
+                                <CalculationInfo
+                                    label="Next cash change"
+                                    lines={[
+                                        "Next month’s planned revenue minus expenses, plus cash adjustments.",
+                                        "Provider credits are not cash payments.",
+                                    ]}
+                                />
+                            </span>
+                        ),
                         value: fmtRunwayUsd(nextChange),
                         tone: valueTone(nextChange),
                         detail:
@@ -391,7 +550,18 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                 : "plan unavailable",
                     },
                     {
-                        label: "Cash runway",
+                        label: (
+                            <span>
+                                Cash runway
+                                <CalculationInfo
+                                    label="Cash runway"
+                                    lines={[
+                                        "First month cash is projected to run out.",
+                                        "“+” means cash lasts beyond the forecast shown.",
+                                    ]}
+                                />
+                            </span>
+                        ),
                         value: runwayPeriodText({
                             capped: runway.runwayCapped,
                             exhaustedMonth: runway.runwayExhaustedMonth,
@@ -414,14 +584,36 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     <StatCards
                         items={[
                             {
-                                label: "Paid Pollen",
+                                label: (
+                                    <span>
+                                        Paid Pollen
+                                        <CalculationInfo
+                                            label="Paid Pollen"
+                                            lines={[
+                                                "Purchased Pollen still available in user wallets for the full catalog.",
+                                                "This is an unused balance, not monthly revenue or consumption.",
+                                            ]}
+                                        />
+                                    </span>
+                                ),
                                 value: fmtRunwayTableValue(
                                     data.userBalances[0].paid_balance,
                                 ),
                                 detail: `${fmtRunwayTableValue(data.userBalances[0].paid_users)} users · full catalog`,
                             },
                             {
-                                label: "Quest Pollen",
+                                label: (
+                                    <span>
+                                        Quest Pollen
+                                        <CalculationInfo
+                                            label="Quest Pollen"
+                                            lines={[
+                                                "Earned or granted Pollen still available for the restricted catalog.",
+                                                "It is not revenue, although using it can incur provider costs.",
+                                            ]}
+                                        />
+                                    </span>
+                                ),
                                 value: fmtRunwayTableValue(
                                     data.userBalances[0].quest_balance,
                                 ),
@@ -431,24 +623,29 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     />
                 </section>
             ) : null}
-            <TableScroller>
-                <DataTable className="min-w-max">
+            <TableScroller scrollRef={tableScrollRef}>
+                <DataTable className="runway-table min-w-max">
                     <TableHead>
                         <TableRow>
                             <TableHeaderCell className="sticky left-0 z-20 min-w-48 bg-surface-opaque">
                                 <span className="sr-only">Line item</span>
                             </TableHeaderCell>
-                            {columns.map((column, index) => (
+                            {columns.map((column) => (
                                 <TableHeaderCell
                                     key={column.id}
                                     align="right"
-                                    className={monthColumnClass(
-                                        column,
-                                        startsMonthGroup(columns, index),
-                                    )}
+                                    className={MONTH_COLUMN_CLASS}
                                 >
                                     <span className="inline-flex flex-col items-end">
-                                        <span>{monthName(column.month)}</span>
+                                        <span>
+                                            {monthName(column.month)}
+                                            <MonthIssueCount
+                                                count={
+                                                    issueCounts[column.month] ??
+                                                    0
+                                                }
+                                            />
+                                        </span>
                                         {monthKindLabel(column.kind) && (
                                             <span className="text-micro font-medium uppercase tracking-wide opacity-70">
                                                 {monthKindLabel(column.kind)}
@@ -460,16 +657,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        <SummaryRow
-                            label="Expenses"
-                            columns={columns}
-                            value={(column) =>
-                                column.forecastComplete === false
-                                    ? null
-                                    : column.totalExpensesUsd
-                            }
-                            credit={(column) => column.totalCreditUsd}
-                        />
                         <SummaryRow
                             label="Cash change"
                             columns={columns}
@@ -484,13 +671,57 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             columns={columns}
                             value={(column) => column.runningCashUsd}
                         />
-                        {groups.map((group) => (
-                            <RunwayCategoryRows
-                                key={group.category}
-                                group={group}
-                                columns={columns}
-                            />
-                        ))}
+                    </TableBody>
+                    <TableBody className="runway-activity">
+                        {groups
+                            .filter((group) => group.category === "revenue")
+                            .map((group) => (
+                                <RunwayCategoryRows
+                                    key={group.category}
+                                    group={group}
+                                    columns={columns}
+                                />
+                            ))}
+                        <SummaryRow
+                            label="Expenses"
+                            columns={columns}
+                            value={(column) =>
+                                column.forecastComplete === false
+                                    ? null
+                                    : column.totalExpensesUsd
+                            }
+                            credit={(column) => column.totalCreditUsd}
+                            expanded={expensesExpanded}
+                            onToggle={() =>
+                                setExpensesExpanded((current) => !current)
+                            }
+                        />
+                        {expensesExpanded &&
+                            groups
+                                .filter(
+                                    (group) =>
+                                        group.category !== "revenue" &&
+                                        group.category !== "balance_sheet",
+                                )
+                                .map((group) => (
+                                    <RunwayCategoryRows
+                                        key={group.category}
+                                        group={group}
+                                        columns={columns}
+                                        nested
+                                    />
+                                ))}
+                        {groups
+                            .filter(
+                                (group) => group.category === "balance_sheet",
+                            )
+                            .map((group) => (
+                                <RunwayCategoryRows
+                                    key={group.category}
+                                    group={group}
+                                    columns={columns}
+                                />
+                            ))}
                     </TableBody>
                 </DataTable>
             </TableScroller>
@@ -501,20 +732,26 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
 function RunwayCategoryRows({
     group,
     columns,
+    nested = false,
 }: {
     group: RunwayGroup;
     columns: RunwayColumn[];
+    nested?: boolean;
 }) {
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(group.category === "revenue");
 
     return (
         <>
-            <TableRow className="bg-theme-bg-subtle font-semibold">
+            <TableRow
+                className={cn(
+                    "runway-category",
+                    nested ? "runway-subcategory" : "font-semibold",
+                )}
+            >
                 <TableCell
                     className={cn(
                         "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque",
-                        group.category === "revenue" &&
-                            "text-outcome-positive-text",
+                        nested && "pl-8",
                     )}
                 >
                     <TableDisclosureButton
@@ -523,28 +760,18 @@ function RunwayCategoryRows({
                     >
                         {categoryLabel(group.category)}
                     </TableDisclosureButton>
-                    {group.category !== "revenue" &&
-                        group.category !== "balance_sheet" && (
-                            <ForecastBadge
-                                icon={DatabaseIcon}
-                                label={
-                                    pnlSource(group.category) === "ledger"
-                                        ? "vendor"
-                                        : "bank"
-                                }
-                            />
-                        )}
+                    <CalculationInfo
+                        label={categoryLabel(group.category)}
+                        lines={categoryExplanation(group.category)}
+                    />
                 </TableCell>
-                {columns.map((column, index) => (
+                {columns.map((column) => (
                     <TableCell
                         key={column.id}
                         align="right"
                         numeric
                         className={cn(
-                            monthColumnClass(
-                                column,
-                                startsMonthGroup(columns, index),
-                            ),
+                            MONTH_COLUMN_CLASS,
                             runwayValueClass(group.values[column.id]),
                         )}
                     >
@@ -559,45 +786,64 @@ function RunwayCategoryRows({
                 ))}
             </TableRow>
             {expanded &&
-                group.rows.map((row) => (
-                    <TableRow key={`${row.category}|${row.vendor}`}>
-                        <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-surface-opaque pl-6 text-theme-text-soft">
-                            <ForecastVendor row={row} />
-                        </TableCell>
-                        {columns.map((column, index) => (
+                group.rows
+                    .flatMap((row) =>
+                        row.details?.length
+                            ? row.details.map((detail) => ({
+                                  ...row,
+                                  vendor: detail.label,
+                                  values: detail.values,
+                                  forecastMethod: null,
+                                  forecastPaymentTiming: null,
+                              }))
+                            : [row],
+                    )
+                    .map((row) => (
+                        <TableRow
+                            className="runway-detail"
+                            key={`${row.category}|${row.vendor}`}
+                        >
                             <TableCell
-                                key={column.id}
-                                align="right"
-                                numeric
                                 className={cn(
-                                    monthColumnClass(
-                                        column,
-                                        startsMonthGroup(columns, index),
-                                    ),
-                                    runwayValueClass(row.values[column.id]),
+                                    "sticky left-0 z-10 whitespace-nowrap bg-surface-opaque text-theme-text-soft",
+                                    nested ? "pl-12" : "pl-8",
                                 )}
                             >
-                                {showCash(
-                                    row.values[column.id],
-                                    row.creditValues?.[column.id],
-                                ) && (
-                                    <ForecastValue
-                                        assumptions={row.assumptions[column.id]}
-                                        value={row.values[column.id]}
-                                        issue={
-                                            column.kind === "forecast"
-                                                ? row.forecastIssue
-                                                : undefined
-                                        }
-                                    />
-                                )}
-                                <CreditAmount
-                                    value={row.creditValues?.[column.id]}
-                                />
+                                <ForecastVendor row={row} />
                             </TableCell>
-                        ))}
-                    </TableRow>
-                ))}
+                            {columns.map((column) => (
+                                <TableCell
+                                    key={column.id}
+                                    align="right"
+                                    numeric
+                                    className={cn(
+                                        MONTH_COLUMN_CLASS,
+                                        runwayValueClass(row.values[column.id]),
+                                    )}
+                                >
+                                    {showCash(
+                                        row.values[column.id],
+                                        row.creditValues?.[column.id],
+                                    ) && (
+                                        <ForecastValue
+                                            assumptions={
+                                                row.assumptions[column.id]
+                                            }
+                                            value={row.values[column.id]}
+                                            issue={
+                                                column.kind === "forecast"
+                                                    ? row.forecastIssue
+                                                    : undefined
+                                            }
+                                        />
+                                    )}
+                                    <CreditAmount
+                                        value={row.creditValues?.[column.id]}
+                                    />
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    ))}
         </>
     );
 }

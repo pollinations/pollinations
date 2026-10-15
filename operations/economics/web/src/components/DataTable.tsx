@@ -1,5 +1,5 @@
 import { cn, ScrollArea, Surface, Table, Tooltip } from "@pollinations/ui";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { useMemo, useState } from "react";
 
 type SortDirection = "asc" | "desc";
@@ -25,11 +25,18 @@ type ColumnHint = {
 // First cell of a column group gets a hairline left rule.
 export const GROUP_BORDER = "border-l border-theme-border/60";
 
-export function TableScroller({ children }: { children: ReactNode }) {
+export function TableScroller({
+    children,
+    scrollRef,
+}: {
+    children: ReactNode;
+    scrollRef?: Ref<HTMLDivElement>;
+}) {
     return (
         <section className="w-full max-w-full">
             <Surface className="overflow-hidden p-0">
                 <ScrollArea
+                    ref={scrollRef}
                     axis="both"
                     tabIndex={0}
                     role="region"

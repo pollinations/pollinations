@@ -40,6 +40,19 @@ export function YearFilter({
     );
 }
 
+export function MonthIssueCount({ count }: { count: number }) {
+    if (count === 0) return null;
+    return (
+        <span
+            className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-300 px-1.5 text-xs font-semibold leading-5 text-amber-950"
+            title={`${count} unresolved reconciliation items`}
+        >
+            {count}
+            <span className="sr-only"> unresolved items</span>
+        </span>
+    );
+}
+
 export function MonthFilter({
     months,
     onChange,

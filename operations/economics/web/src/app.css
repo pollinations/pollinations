@@ -1,1 +1,40 @@
 @import "@pollinations/ui/app.css";
+
+/* Runway emphasizes horizontal groups; month labels carry the time context. */
+.runway-table {
+    --polli-color-text-soft: var(--polli-color-text-base);
+}
+.runway-table tbody > tr {
+    border-color: color-mix(in srgb, var(--polli-color-text-strong) 8%, transparent);
+    background: transparent;
+}
+
+.runway-table tbody > tr > td {
+    background: var(--polli-color-surface-opaque);
+}
+
+.runway-table .runway-activity {
+    border-top: 12px solid var(--polli-color-app-bg);
+}
+
+.runway-table .runway-subcategory > td {
+    font-weight: 400;
+}
+
+.runway-table tbody > .runway-category {
+    border-top: 1px solid color-mix(in srgb, var(--polli-color-text-strong) 16%, transparent);
+}
+
+.runway-table .runway-category > td {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.runway-table .runway-detail > td,
+.runway-table .runway-detail > td > span {
+    color: var(--polli-color-text-soft);
+}
+
+.runway-table tbody > tr:hover > td {
+    background: color-mix(in srgb, var(--polli-color-text-strong) 3%, var(--polli-color-surface-opaque));
+}

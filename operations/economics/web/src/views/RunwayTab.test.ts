@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
-import type { Data } from "../types";
+import { buildRunway } from "../lib/runway";
+import type { Data, StripeSalesRow } from "../types";
 import {
     ForecastBadge,
     fmtRunwayTableValue,
@@ -21,6 +22,149 @@ afterEach(() => {
 });
 
 describe("RunwayTab labels", () => {
+    it("exposes calendar-month gross and deductions without double-counting cash or forecasts", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-10-14T12:00:00Z"));
+        const sales: StripeSalesRow[] = [
+            {
+                month: "2026-09",
+                revenue_stream: "pollen",
+                currency: "USD",
+                gross_sales: 1000,
+                refunds: 100,
+                reversals: 20,
+                stripe_fees: 80,
+                net_sales: 880,
+                net_after_fees: 800,
+                payments: 10,
+                refund_count: 1,
+                coverage_complete: 1,
+            },
+            {
+                month: "2026-09",
+                revenue_stream: "kofi",
+                currency: "EUR",
+                gross_sales: 100,
+                refunds: 10,
+                reversals: 5,
+                stripe_fees: 5,
+                net_sales: 85,
+                net_after_fees: 80,
+                payments: 2,
+                refund_count: 1,
+                coverage_complete: 1,
+            },
+        ];
+        const result = buildRunway([], new Date(), [], undefined, sales);
+        const actual = result.columns.find(
+            (c) => c.month === "2026-09" && c.kind === "actual",
+        );
+        const forecast = result.columns.find(
+            (c) => c.month === "2026-11" && c.kind === "forecast",
+        );
+        if (!actual || !forecast) throw new Error("Missing runway columns");
+        const revenue = result.rows.filter((r) => r.category === "revenue");
+        const details = revenue.flatMap((r) => r.details ?? []);
+        expect(
+            Object.fromEntries(
+                details.map((d) => [d.label, d.values[actual.id]]),
+            ),
+        ).toEqual({
+            "Gross customer payments": 1115.13,
+            "Stripe fees (including dispute fees)": -85.7565,
+            Refunds: -111.513,
+            "Chargebacks / other reversals": -25.7565,
+        });
+        for (const row of revenue) {
+            expect(
+                row.details?.reduce((sum, d) => sum + d.values[actual.id], 0),
+            ).toBeCloseTo(row.values[actual.id], 8);
+            expect(
+                row.details?.reduce((sum, d) => sum + d.values[forecast.id], 0),
+            ).toBeCloseTo(row.values[forecast.id], 8);
+        }
+        expect(
+            revenue.reduce((sum, r) => sum + r.values[actual.id], 0),
+        ).toBeCloseTo(892.104, 8);
+        expect(
+            revenue.reduce((sum, r) => sum + r.values[forecast.id], 0),
+        ).toBeCloseTo(892.104, 8);
+        expect(actual.netUsd).toBe(0); // No Wise movement, despite Stripe revenue.
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, {
+                data: { stripeSales: sales },
+                year: "2026",
+            }),
+        );
+        expect(html).toContain("Revenue calculation info");
+        expect(html).not.toContain("Revenue · net after deductions");
+        for (const detail of details) expect(html).toContain(detail.label);
+        expect(html).not.toContain("not transfers to Wise");
+        expect(html).not.toContain("Stripe sales after fees");
+        expect(html).not.toContain("Refunds and reversals");
+        const noRefunds = buildRunway(
+            [],
+            new Date(),
+            [],
+            {
+                "stripe refunds|revenue": {
+                    fixedAmounts: [{ amount: 0, currency: "USD" }],
+                },
+            },
+            sales,
+        );
+        const refundPlan = noRefunds.rows.find(
+            (r) => r.vendor === "stripe refunds",
+        );
+        expect(refundPlan?.values[forecast.id]).toBe(0);
+        expect(
+            refundPlan?.details?.every((d) => d.values[forecast.id] === 0),
+        ).toBe(true);
+        expect(refundPlan?.values[actual.id]).toBeCloseTo(-137.2695, 8);
+        const invalid = buildRunway([], new Date(), [], undefined, [
+            { ...sales[0], net_after_fees: 1 },
+        ]);
+        expect(invalid.rows.every((row) => !row.details?.length)).toBe(true);
+    });
+
+    it("keeps billing and reconciliation messages off the Runway page", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-25T12:00:00.000Z"));
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, {
+                year: "2026",
+                data: {
+                    vendorLedger: [
+                        {
+                            entry_id: "google-july-usage",
+                            source: "dashboard",
+                            vendor: "google",
+                            account_id: "default",
+                            account_name: "Myceli",
+                            type: "inference",
+                            start: "2026-07-01 00:00:00",
+                            end: "2026-08-01 00:00:00",
+                            model: "gemini",
+                            paid: -700,
+                            credit: 0,
+                            currency: "USD",
+                            resource_id: "gemini",
+                            resource_name: "Provider usage",
+                            resource_sku: "tokens",
+                            resource_count: 1,
+                            evidence: "Provider dashboard",
+                            recorded_at: "2026-08-01 00:00:00",
+                        },
+                    ],
+                },
+            }),
+        );
+        expect(html).not.toContain("Needs action");
+        expect(html).not.toContain("Expected billing");
+        expect(html).not.toContain("Checked balance missing for google");
+        expect(html).not.toContain("estimated $700");
+    });
+
     it("shows full rounded runway amounts without compact suffixes", () => {
         expect(fmtRunwayUsd(12_345.67)).toBe("$12,346");
         expect(fmtRunwayUsd(-1_234.56)).toBe("−$1,235");
@@ -215,14 +359,38 @@ describe("RunwayTab labels", () => {
         );
         expect(html).toContain("Revenue");
         expect(html).toContain("Compute");
+        expect(html).not.toContain("Revenue · net after deductions");
+        const balanceIndex = html.indexOf(
+            'aria-label="Cash balance calculation info"',
+        );
+        const revenueIndex = html.indexOf(
+            'aria-label="Revenue calculation info"',
+        );
+        const expensesIndex = html.indexOf(
+            'aria-label="Expenses calculation info"',
+        );
+        const computeIndex = html.indexOf(
+            'aria-label="Compute calculation info"',
+        );
+        expect(balanceIndex).toBeLessThan(revenueIndex);
+        expect(revenueIndex).toBeLessThan(expensesIndex);
+        expect(expensesIndex).toBeLessThan(computeIndex);
+        expect(html).toContain("runway-subcategory");
         expect(html).not.toContain("<span>mode</span>");
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
-        expect(html).toContain(">Expenses</td>");
-        expect(html.match(/>Cash change<\/td>/g)).toHaveLength(1);
+        expect(html).toContain('aria-label="Expenses calculation info"');
+        expect(
+            html.match(/aria-label="Cash change calculation info"/g),
+        ).toHaveLength(1);
         expect(html).not.toContain("Revenue less expenses");
-        expect(html).toContain("Cash balance");
+        expect(html).toContain('aria-label="Cash balance calculation info"');
+        expect(html).toContain('aria-label="Revenue calculation info"');
+        expect(html).toContain('aria-label="Compute calculation info"');
+        expect(html).toContain(
+            'aria-label="Gross customer payments calculation info"',
+        );
         expect(html).toContain('class="sr-only">Line item</span>');
         expect(html).not.toContain(">Actual</span>");
         expect(html).toContain(">Plan</span>");
@@ -255,7 +423,8 @@ describe("RunwayTab labels", () => {
             }),
         );
 
-        expect(html).toContain("Cash now");
+        expect(html).toContain("Recorded bank cash");
+        expect(html).not.toContain("Cash now");
         expect(html).toContain("August month-end cash");
         expect(html).toContain("September cash change");
         expect(html).toContain("forecast line");

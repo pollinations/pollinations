@@ -257,12 +257,14 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
 
         // An RPC failure may happen after the result was saved. Read once;
         // never restart the coordinator or execute another generation here.
+        // The delivery read serves entries the public lookup hides (e.g.
+        // non-streaming completions with no output) so waiters still get the
+        // body their run produced.
         let response: Response | null;
         try {
-            response = await cache.adapter.get(
-                c as unknown as Context<GenerationCacheEnv>,
-                cache.key,
-            );
+            response = await (
+                cache.adapter.getForDelivery ?? cache.adapter.get
+            )(c as unknown as Context<GenerationCacheEnv>, cache.key);
         } catch (error) {
             c.get("log").error(
                 "Error reading completed generation from cache: {error}",

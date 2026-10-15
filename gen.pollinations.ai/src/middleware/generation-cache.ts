@@ -55,6 +55,15 @@ export type GenerationCacheAdapter = {
         c: Context<GenerationCacheEnv>,
         key: string,
     ) => Promise<Response | null>;
+    /**
+     * Delivery read used by the generation coordinator after a run settles.
+     * It must serve entries `get` hides (e.g. no-output markers); defaults to
+     * `get` for adapters without hidden entries.
+     */
+    getForDelivery?: (
+        c: Context<GenerationCacheEnv>,
+        key: string,
+    ) => Promise<Response | null>;
     shouldCache: (response: Response) => boolean;
     capture: (
         c: Context<GenerationCacheEnv>,

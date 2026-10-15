@@ -692,3 +692,161 @@ describe("text cache", () => {
         expect(response.response.headers.get("X-Cache")).toBeNull();
     });
 });
+
+it("writes but never replays non-streaming completions without output", async () => {
+    // A reasoning model that spent max_tokens on reasoning: content is
+    // null and no other output field is set. The write must survive for
+    // the coordinator's delivery read, but the public lookup treats the
+    // entry as a miss (#16911's non-stream twin).
+    const body = JSON.stringify({
+        id: "chatcmpl-empty",
+        object: "chat.completion",
+        choices: [
+            {
+                index: 0,
+                message: {
+                    role: "assistant",
+                    content: null,
+                    reasoning_content: "thinking",
+                },
+                finish_reason: "length",
+            },
+        ],
+        usage: { prompt_tokens: 5, completion_tokens: 16, total_tokens: 21 },
+    });
+    let originHits = 0;
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            await next();
+        })
+        .get("/empty-completion", textCache, () => {
+            originHits += 1;
+            return new Response(body, {
+                headers: { "Content-Type": "application/json" },
+            });
+        });
+    const env = createTextCacheEnv();
+
+    const first = await dispatch(app, "/empty-completion", undefined, env);
+    expect(await consumeAndWait(first)).toBe(body);
+    const second = await dispatch(app, "/empty-completion", undefined, env);
+    expect(await consumeAndWait(second)).toBe(body);
+    expect(first.response.headers.get("X-Cache")).toBe("MISS");
+    expect(second.response.headers.get("X-Cache")).toBe("MISS");
+    expect(originHits).toBe(2);
+    // The entry exists (delivery read finds it) and carries the marker.
+    const bucket = env.TEXT_BUCKET as unknown as {
+        head(
+            key: string,
+        ): Promise<{ customMetadata?: Record<string, string> } | null>;
+    };
+    const key = await generateCacheKey(
+        new Request("https://gen.pollinations.ai/empty-completion"),
+    );
+    const head = await bucket.head(key);
+    expect(head?.customMetadata?.empty_output).toBe("true");
+});
+
+it("caches non-streaming completions whose output is text, tools or a refusal", async () => {
+    const bodies: Record<string, string> = {
+        content: JSON.stringify({
+            id: "a",
+            object: "chat.completion",
+            choices: [{ message: { role: "assistant", content: "hi" } }],
+        }),
+        tools: JSON.stringify({
+            id: "b",
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: null,
+                        tool_calls: [
+                            {
+                                id: "call_1",
+                                type: "function",
+                                function: { name: "lookup" },
+                            },
+                        ],
+                    },
+                },
+            ],
+        }),
+        refusal: JSON.stringify({
+            id: "c",
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: null,
+                        refusal: "I can't help with that.",
+                    },
+                },
+            ],
+        }),
+        // Embeddings and Responses-API shapes never match the predicate.
+        embedding: JSON.stringify({
+            object: "list",
+            data: [{ embedding: [0.1, 0.2] }],
+        }),
+        response: JSON.stringify({
+            id: "resp_1",
+            object: "response",
+            output: [{ type: "message" }],
+        }),
+    };
+    let originHits = 0;
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            await next();
+        })
+        .get("/full/:kind", textCache, (c) => {
+            originHits += 1;
+            return new Response(bodies[c.req.param("kind")], {
+                headers: { "Content-Type": "application/json" },
+            });
+        });
+    const env = createTextCacheEnv();
+
+    for (const kind of Object.keys(bodies)) {
+        const first = await dispatch(app, `/full/${kind}`, undefined, env);
+        await consumeAndWait(first);
+        const second = await dispatch(app, `/full/${kind}`, undefined, env);
+        expect(await consumeAndWait(second)).toBe(bodies[kind]);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+    }
+    expect(originHits).toBe(Object.keys(bodies).length);
+});
+
+it("writes but never replays the GET /text fallback for a content-less message", async () => {
+    const body = JSON.stringify({ role: "assistant", content: null });
+    let originHits = 0;
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            await next();
+        })
+        .get("/empty-message", textCache, () => {
+            originHits += 1;
+            return new Response(body, {
+                headers: { "Content-Type": "application/json" },
+            });
+        });
+    const env = createTextCacheEnv();
+
+    const first = await dispatch(app, "/empty-message", undefined, env);
+    expect(await consumeAndWait(first)).toBe(body);
+    const second = await dispatch(app, "/empty-message", undefined, env);
+    expect(await consumeAndWait(second)).toBe(body);
+    expect(first.response.headers.get("X-Cache")).toBe("MISS");
+    expect(second.response.headers.get("X-Cache")).toBe("MISS");
+    expect(originHits).toBe(2);
+});

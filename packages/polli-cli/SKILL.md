@@ -263,8 +263,8 @@ polli harness dsh off               # restore the config backed up before "on"
 polli harness hermes on             # login if needed, mint key "polli-harness-hermes", add provider + Polli skill
 polli harness hermes on --model deepseek/deepseek-v4-flash # use the model ID from `polli models`
 polli harness hermes off            # restore the config backed up before "on"
-polli harness opencode on           # enable the Pollinations OpenCode plugin
-polli harness opencode off          # remove the plugin setup and stored key
+polli harness opencode on           # native Pollinations provider for OpenCode 1.x/2.0
+polli harness opencode off          # restore the original OpenCode config
 polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
 polli harness pi on --model moonshotai/kimi-k2.6 # use the model ID from `polli models`
 polli harness pi off                # restore the Pi config backed up before "on"

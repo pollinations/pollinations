@@ -3,9 +3,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { getLogger } from "@logtape/logtape";
 
 // Account emails: facts about the user's own account, sent through the
-// Cloudflare Email Service binding. Running low goes out at most once per 30
-// days; auto top-up failed goes out each time it switches off. None after the
-// user unsubscribes.
+// Cloudflare Email Service binding. Running low goes out at most once per pack
+// bought (each credit re-arms it) and once per 30 days; auto top-up failed goes
+// out each time it switches off. None after the user unsubscribes.
 
 const log = getLogger(["enter", "account-notices"]);
 
@@ -49,7 +49,7 @@ export function autoTopUpOffNotice(balance: number): Notice {
     return {
         id: "auto_top_up_off",
         subject: "Auto top-up failed",
-        body: `We couldn't use your saved payment method, so auto top-up is now off. You have ${pollen(balance)} left.`,
+        body: `We couldn't use your saved payment method, so auto top-up is now off. You have ${pollen(balance)} left. When it runs out, requests that need paid Pollen will fail. Update your payment method, then turn auto top-up back on.`,
         button: { label: "Open wallet", path: "/pollen" },
     };
 }

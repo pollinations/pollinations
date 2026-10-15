@@ -73,6 +73,13 @@ describe("OAuth authorization server metadata", () => {
         expect(meta.device_authorization_endpoint).toBe(
             `${BASE}/api/device/code`,
         );
+        expect(meta.scopes_supported).toEqual([
+            "generate",
+            "profile",
+            "usage",
+            "keys",
+            "machines",
+        ]);
         expect(meta.response_types_supported).toEqual(["code"]);
         expect(meta.grant_types_supported).toEqual([
             "authorization_code",

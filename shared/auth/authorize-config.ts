@@ -74,6 +74,8 @@ export const CONSENT_PERMISSIONS = [
     "machines",
 ] as const;
 
+export const OAUTH_SCOPES = ["generate", ...CONSENT_PERMISSIONS] as const;
+
 export function sanitizeAuthorizeAccountPermissions(
     permissions: string[] | null | undefined,
 ): string[] | null {

@@ -23,13 +23,14 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain('aria-label="Cost scope"');
     expect(html).toContain("Company performance");
     expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(5);
-    expect(html).toContain("Monthly details");
+    expect(html).not.toContain("Monthly details");
+    expect(html).not.toContain("Provider credit dates &amp; limits");
     expect(html).toContain("Paid &amp; Quest activity");
     expect(html).toContain("Pollen consumed. Pollen by month");
     expect(html).toContain("Quest serving costs");
     expect(html).not.toContain('aria-label="Trends focus"');
     expect(html).toContain("No wallet snapshot");
-    expect(html).toContain("Not measured yet");
+    expect(html).not.toContain("Not measured yet");
     expect(html).not.toContain("NaN");
     expect(html).not.toContain("January");
     expect(html).toContain("April");

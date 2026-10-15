@@ -16,6 +16,8 @@ export type Sandbox = {
     sandboxID: string;
     templateID: string;
     alias?: string;
+    // The dashboard puts the sandbox's name here.
+    metadata?: Record<string, string>;
     state: string;
     cpuCount: number;
     memoryMB: number;

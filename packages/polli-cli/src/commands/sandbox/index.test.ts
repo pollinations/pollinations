@@ -374,3 +374,43 @@ describe("sandbox ssh", () => {
         });
     });
 });
+
+describe("sandbox list", () => {
+    it("shows a sandbox's name, and none for an unnamed one", async () => {
+        const { setKeyOverride } = await import("../../lib/config.js");
+        const { setOutputMode } = await import("../../lib/output.js");
+        setKeyOverride("sk_test");
+        setOutputMode("human");
+        let stdout = "";
+        vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+            stdout += String(value);
+            return true;
+        });
+        const sandbox = {
+            templateID: "pollinations",
+            state: "paused",
+            cpuCount: 2,
+            memoryMB: 2048,
+            endAt: "2026-10-14T00:00:00Z",
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json([
+                    {
+                        ...sandbox,
+                        sandboxID: "sbx1",
+                        metadata: { name: "brave-otter" },
+                    },
+                    { ...sandbox, sandboxID: "sbx2" },
+                ]),
+            ),
+        );
+        const { sandboxCommand } = await import("./index.js");
+
+        await sandboxCommand.parseAsync(["list"], { from: "user" });
+
+        expect(stdout).toMatch(/sbx1\s+brave-otter\s+pollinations/);
+        expect(stdout).toMatch(/sbx2\s+pollinations/);
+    });
+});

@@ -1,5 +1,7 @@
 import {
+    CardIcon,
     ScrollArea,
+    SproutIcon,
     TableBody,
     TableCell,
     TableDisclosureButton,
@@ -16,8 +18,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { GaugeSummary } from "../components/EconomicsGauge";
-import { StatCards } from "../components/StatCards";
+import { PairedStatCards } from "../components/StatCards";
 import { fmtMarginPct, fmtNumber, fmtUsd, fmtUsd4 } from "../lib/format";
 import {
     type GpuResourceRow,
@@ -31,13 +32,6 @@ import {
 import type { MonthFilterValue, ValueFilter } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import type { Data } from "../types";
-
-function marginTone(value: number | null) {
-    if (value == null) return "base";
-    if (value > 0) return "pos";
-    if (value < 0) return "neg";
-    return "base";
-}
 
 function fmtSignedUsd(value: number | null): string {
     if (value == null) return "–";
@@ -274,54 +268,99 @@ export function GpuTab({
 
     return (
         <div className="flex flex-col gap-4">
-            <StatCards
-                items={[
+            <PairedStatCards
+                cards={[
                     {
-                        label: "GPUs",
-                        value: fmtNumber(resourceStats.gpuCount),
-                        detail:
+                        label: "Pollen used",
+                        total: `${fmtUsd(stats.paidUsd + stats.questUsd)} total`,
+                        items: [
+                            {
+                                label: (
+                                    <span className="inline-flex items-center gap-1.5 text-paid-deep">
+                                        <CardIcon className="h-3.5 w-3.5" />
+                                        Paid
+                                    </span>
+                                ),
+                                value: fmtUsd(stats.paidUsd),
+                                valueClassName: "polli:text-paid-deep",
+                                detail: `Retained ${fmtUsd(stats.retainedUsd)}`,
+                            },
+                            {
+                                label: (
+                                    <span className="inline-flex items-center gap-1.5 text-tier-deep">
+                                        <SproutIcon className="h-3.5 w-3.5" />
+                                        Quest
+                                    </span>
+                                ),
+                                value: fmtUsd(stats.questUsd),
+                                valueClassName: "polli:text-tier-deep",
+                            },
+                        ],
+                    },
+                    {
+                        label: "GPU costs",
+                        total: `${fmtUsd(resourceStats.totalCostUsd)} total`,
+                        items: [
+                            { label: "Cash", value: fmtUsd(stats.paidCostUsd) },
+                            {
+                                label: "Credits",
+                                value: fmtUsd(stats.creditCostUsd),
+                            },
+                        ],
+                        detail: `${fmtNumber(resourceStats.gpuCount)} GPU${resourceStats.gpuCount === 1 ? "" : "s"}${
                             unassignedCostUsd > 0
-                                ? `${fmtUsd(unassignedCostUsd)} unassigned`
+                                ? ` · ${fmtUsd(unassignedCostUsd)} unassigned`
                                 : resourceStats.overheadCostUsd !== 0
-                                  ? `${fmtUsd(resourceStats.overheadCostUsd)} overhead & adjustments`
-                                  : "one row per GPU resource",
+                                  ? ` · ${fmtUsd(resourceStats.overheadCostUsd)} overhead & adjustments`
+                                  : ""
+                        }`,
                     },
                     {
-                        label: "Retained",
-                        value: fmtUsd(stats.retainedUsd),
-                        detail: (
-                            <GaugeSummary
-                                left={stats.paidUsd}
-                                leftLabel="Paid"
-                                right={stats.questUsd}
-                                rightLabel="Quest"
-                            />
-                        ),
-                    },
-                    {
-                        label: "GPU cost",
-                        value: fmtUsd(resourceStats.totalCostUsd),
-                        detail: (
-                            <GaugeSummary
-                                left={stats.paidCostUsd}
-                                leftLabel="cash"
-                                palette="neutral"
-                                right={stats.creditCostUsd}
-                                rightLabel="credit"
-                            />
-                        ),
-                    },
-                    {
-                        label: "Current result",
-                        value: fmtSignedUsd(stats.currentResultUsd),
-                        tone: marginTone(stats.currentResultUsd),
-                        detail: `with credits · ${fmtMarginPct(stats.currentPerformancePct)}`,
-                    },
-                    {
-                        label: "Full-cost result",
-                        value: fmtSignedUsd(stats.fullCostResultUsd),
-                        tone: marginTone(stats.fullCostResultUsd),
-                        detail: `without credits · ${fmtMarginPct(stats.fullCostPerformancePct)}`,
+                        label: "Result",
+                        total:
+                            stats.currentResultUsd == null
+                                ? "Actual Unknown"
+                                : `Actual ${fmtSignedUsd(stats.currentResultUsd)}`,
+                        items: [
+                            {
+                                label: "With credits",
+                                value:
+                                    stats.currentResultUsd == null
+                                        ? "Unknown"
+                                        : fmtSignedUsd(stats.currentResultUsd),
+                                valueClassName:
+                                    stats.currentResultUsd == null
+                                        ? undefined
+                                        : signedToneOrSoft(
+                                              stats.currentResultUsd,
+                                          ),
+                                detail:
+                                    stats.currentResultUsd == null
+                                        ? undefined
+                                        : fmtMarginPct(
+                                              stats.currentPerformancePct,
+                                          ),
+                            },
+                            {
+                                label: "Without credits",
+                                value:
+                                    stats.fullCostResultUsd == null
+                                        ? "Unknown"
+                                        : fmtSignedUsd(stats.fullCostResultUsd),
+                                valueClassName:
+                                    stats.fullCostResultUsd == null
+                                        ? undefined
+                                        : signedToneOrSoft(
+                                              stats.fullCostResultUsd,
+                                          ),
+                                detail:
+                                    stats.fullCostResultUsd == null
+                                        ? undefined
+                                        : fmtMarginPct(
+                                              stats.fullCostPerformancePct,
+                                          ),
+                            },
+                        ],
                     },
                 ]}
             />
@@ -383,13 +422,19 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("retainedUsd")}
                             >
-                                Retained
+                                <span className="inline-flex items-center gap-1.5 text-paid-deep">
+                                    <CardIcon className="h-3.5 w-3.5" />
+                                    Retained
+                                </span>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questUsd")}
                             >
-                                Quest
+                                <span className="inline-flex items-center gap-1.5 text-tier-deep">
+                                    <SproutIcon className="h-3.5 w-3.5" />
+                                    Quest
+                                </span>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"

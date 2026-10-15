@@ -6,8 +6,8 @@ import {
 import { describe, expect, it } from "vitest";
 
 // `polli agents create --config <file>` sends these files to the agents API,
-// which rejects what these schemas reject. Listing fields may come from flags
-// instead, so they are left to the API.
+// which rejects unknown keys. The listing fields each agent type accepts may
+// come from flags instead, so only their presence is allowed here.
 const apps = new URL("./", import.meta.url);
 const files = readdirSync(apps)
     .filter((app) => app.startsWith("agent-"))
@@ -18,18 +18,20 @@ describe("agent config files", () => {
     it.each(files)("%s is accepted by the agents API", (file) => {
         const {
             type,
-            name,
-            title,
             description,
             visibility,
             requiredSafetyFeatures,
             ...config
         } = JSON.parse(readFileSync(new URL(file, apps), "utf8"));
-        expect(type ?? "prompt_agent").toMatch(/^(code|prompt)_agent$/);
-        const schema =
-            type === "code_agent"
-                ? CodeAgentInputSchema
-                : PromptAgentInputSchema;
-        expect(schema.safeParse(config).error?.issues ?? []).toEqual([]);
+        expect([undefined, "prompt_agent", "code_agent"]).toContain(type);
+        if (type === "code_agent") {
+            // Code agents take their name and title from the repository.
+            const result = CodeAgentInputSchema.strict().safeParse(config);
+            expect(result.error?.issues ?? []).toEqual([]);
+            return;
+        }
+        const { name, title, ...prompt } = config;
+        const result = PromptAgentInputSchema.strict().safeParse(prompt);
+        expect(result.error?.issues ?? []).toEqual([]);
     });
 });

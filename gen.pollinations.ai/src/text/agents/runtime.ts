@@ -109,7 +109,8 @@ async function createAgent(
                     name: serverId,
                     error,
                 });
-                // Owners see which of their agent's servers broke the run.
+                // The caller sees which server broke the run; the text is that
+                // server's reply to the caller's own key.
                 throw new Error(
                     `MCP server ${serverId} failed: ${error instanceof Error ? error.message : String(error)}`,
                     { cause: error },

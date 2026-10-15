@@ -104,17 +104,19 @@ export default defineConfig(({ mode }) => ({
                         import("sharp").then((m) => m.default),
                     ],
                 );
-                const icons = {
-                    "email/card.png": ui.CardIcon,
-                    "email/website.png": ui.GlobeIcon,
-                    "email/dashboard.png": ui.AppIcon,
-                    "email/github.png": ui.GitHubIcon,
-                    "email/discord.png": ui.DiscordIcon,
-                };
-                for (const [fileName, Icon] of Object.entries(icons)) {
+                // Ink, and the wallet's --polli-color-paid-deep as hex for the
+                // paid card.
+                const icons = [
+                    ["email/card.png", ui.CardIcon, "#6c4800"],
+                    ["email/website.png", ui.GlobeIcon, "#1d1420"],
+                    ["email/dashboard.png", ui.AppIcon, "#1d1420"],
+                    ["email/github.png", ui.GitHubIcon, "#1d1420"],
+                    ["email/discord.png", ui.DiscordIcon, "#1d1420"],
+                ] as const;
+                for (const [fileName, Icon, color] of icons) {
                     const svg = renderToStaticMarkup(
                         createElement(Icon, {
-                            color: "#1d1420",
+                            color,
                             width: 64,
                             height: 64,
                             xmlns: "http://www.w3.org/2000/svg",

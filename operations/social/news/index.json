@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-15T03:15:37.318965+00:00",
+  "generated_at": "2026-10-15T03:22:37.478558+00:00",
   "models": [
     {
       "id": "pr-14895:fish-audio/s2.1-pro",
@@ -8951,6 +8951,28 @@
       "url": "https://github.com/pollinations/pollinations/pull/17507"
     },
     {
+      "id": "pr-17526:GET /v1/jobs/{id}",
+      "endpoint": "GET /v1/jobs/{id}",
+      "summary": "Get Media Job Status",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-15",
+      "pr": 17526,
+      "url": "https://github.com/pollinations/pollinations/pull/17526"
+    },
+    {
+      "id": "pr-17526:GET /v1/jobs/{id}/result",
+      "endpoint": "GET /v1/jobs/{id}/result",
+      "summary": "Download Media Job Result",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-15",
+      "pr": 17526,
+      "url": "https://github.com/pollinations/pollinations/pull/17526"
+    },
+    {
       "id": "pr-17443:POST /v1/images/edits",
       "endpoint": "POST /v1/images/edits",
       "summary": "Edit Image (OpenAI-compatible)",
@@ -8972,6 +8994,27 @@
       "url": "https://github.com/pollinations/pollinations/pull/17443"
     },
     {
+      "id": "pr-17526:POST /v1/images/edits",
+      "endpoint": "POST /v1/images/edits",
+      "summary": "Edit Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": {
+            "type": "integer|null",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-15",
+      "pr": 17526,
+      "url": "https://github.com/pollinations/pollinations/pull/17526"
+    },
+    {
       "id": "pr-17443:POST /v1/images/generations",
       "endpoint": "POST /v1/images/generations",
       "summary": "Generate Image (OpenAI-compatible)",
@@ -8991,6 +9034,27 @@
       "date": "2026-10-15",
       "pr": 17443,
       "url": "https://github.com/pollinations/pollinations/pull/17443"
+    },
+    {
+      "id": "pr-17526:POST /v1/images/generations",
+      "endpoint": "POST /v1/images/generations",
+      "summary": "Generate Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": true,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": {
+            "type": "integer|null",
+            "required": false
+          },
+          "after": null,
+          "breaking": true
+        }
+      ],
+      "date": "2026-10-15",
+      "pr": 17526,
+      "url": "https://github.com/pollinations/pollinations/pull/17526"
     }
   ],
   "highlights": [

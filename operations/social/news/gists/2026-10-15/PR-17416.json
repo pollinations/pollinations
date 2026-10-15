@@ -1,0 +1,34 @@
+{
+  "pr_number": 17416,
+  "title": "feat: name sandboxes, with a generated name by default",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17416",
+  "merged_at": "2026-10-15T04:18:46Z",
+  "labels": [
+    "INFRA"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "The Create sandbox dialog now suggests an editable name such as `brave-otter` and saves nonblank names as E2B `metadata.name`. Sandbox cards and the resume/time dialog show the name, falling back to the sandbox ID for unnamed sandboxes. `polli sandbox list` adds a name column. The sandbox docs explain how API callers can set `metadata.name` at creation and that E2B metadata cannot be changed afterward. The existing API-key name generator was moved to a shared helper; key naming behavior is unchanged.",
+    "keywords": [
+      "sandboxes",
+      "names",
+      "dashboard",
+      "polli CLI",
+      "E2B metadata"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17416.jpg",
+    "prompt": "In a cozy garden workspace, Polli gives a small sandbox planter a pixel name tag reading 'brave-otter' while a retro terminal shows a tidy sandbox list and code-plants grow nearby. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, small rounded light blue translucent wings, and a tiny gardener's hat; she is small within the scene, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874), warm cream, and dark purple (#110518) accents."
+  },
+  "generated_at": "2026-10-15T04:20:06.752825+00:00",
+  "area": "Agents & agent tools",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "33024ecc10e6e1254e7c496920db6565aa668ef5",
+  "announcements": []
+}

@@ -10,16 +10,9 @@
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/k9F7SyTgqn)
 
-[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [Guides](#guides) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
 
 </div>
-
-> [!IMPORTANT]
-> **Model IDs are now standardized**
->
-> Model IDs now follow `publisher/model`—for example, `flux` → `black-forest-labs/flux.1-schnell`. The model catalog uses the new IDs. Existing IDs remain supported as aliases in API requests.
->
-> [Browse models and their aliases →](https://enter.pollinations.ai/models)
 
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
@@ -74,6 +67,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
+<!-- Updated daily by .github/workflows/news-sync-readme.yml.
+     Regenerate locally with:
+     GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
+<a href="https://star-history.com/#pollinations/pollinations&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" width="600" />
+   <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="600" />
+ </picture>
+</a>
+
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
@@ -89,16 +93,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<!-- Updated daily by .github/workflows/news-sync-readme.yml.
-     Regenerate locally with:
-     GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
-<a href="https://star-history.com/#pollinations/pollinations&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" width="600" />
-   <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="600" />
- </picture>
-</a>
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
+| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
+| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
+| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
+| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
+| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
 
 ## 🤖 Managed Agents
 

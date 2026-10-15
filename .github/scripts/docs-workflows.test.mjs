@@ -41,6 +41,39 @@ function run(command, args, options = {}) {
     return result.stdout;
 }
 
+test("guide discovery tables and plain-text index stay in sync", async () => {
+    const guides = (text) => {
+        const section = text
+            .split("\n## Guides\n")[1]
+            ?.split("\n## ")[0]
+            .trim();
+        assert.ok(section, "Missing ## Guides section");
+        return section;
+    };
+    const [introduction, readme, index] = (
+        await Promise.all(
+            [
+                "gen.pollinations.ai/src/docs/introduction.md",
+                "README.md",
+                "gen.pollinations.ai/src/index.ts",
+            ].map(read),
+        )
+    ).map(guides);
+    assert.equal(
+        readme,
+        introduction,
+        "README guide table differs from introduction",
+    );
+    const names = (text) =>
+        [...text.matchAll(/\[([^\]]+)\]\(/g)].map((match) => match[1]);
+    assert.ok(names(introduction).length > 0, "Guide table has no links");
+    assert.deepEqual(
+        names(index),
+        names(introduction),
+        "Plain-text guide list differs from introduction",
+    );
+});
+
 test("raw imports select Gen CI and worker inputs select deployment", async () => {
     const inputs = { src: new Set(), test: new Set() };
     for (const source of ["src", "test"]) {

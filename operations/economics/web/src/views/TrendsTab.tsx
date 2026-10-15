@@ -73,7 +73,6 @@ const EXPENSE_SERIES: Series[] = EXPENSE_CATEGORY_ORDER.map((key, i) => ({
     label: categoryLabel(key),
     color: EXPENSE_COLORS[i],
 }));
-type ChartScope = Exclude<TrendScope, "company">;
 const RESULT_SERIES: Series[] = [
     {
         key: "result",
@@ -122,8 +121,8 @@ function TrendChart({
     unit?: "USD" | "Pollen";
     note?: string;
     creditKey?: "credits" | "questCredits";
-    scope?: ChartScope;
-    onScopeChange?: (scope: ChartScope) => void;
+    scope?: TrendScope;
+    onScopeChange?: (scope: TrendScope) => void;
 }) {
     const visibleSeries = series.filter((s) => !hiddenSeries.includes(s.key));
     const LegendItem = onToggleSeries ? "button" : "span";
@@ -193,7 +192,7 @@ function TrendChart({
                             className="ml-auto flex shrink-0 gap-1"
                             aria-label={`${title} scope`}
                         >
-                            {(["product", "overhead"] as const).map((value) => (
+                            {(["product", "company"] as const).map((value) => (
                                 <TabButton
                                     key={value}
                                     active={scope === value}
@@ -203,12 +202,12 @@ function TrendChart({
                                     aria-label={
                                         value === "product"
                                             ? "Product"
-                                            : "Company overhead"
+                                            : "Whole company"
                                     }
                                 >
                                     {value === "product"
                                         ? "Product"
-                                        : "Overhead"}
+                                        : "Whole company"}
                                 </TabButton>
                             ))}
                         </fieldset>
@@ -523,16 +522,15 @@ export function TrendsTab({
     period: 3 | 6 | 12;
     onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
-    const [resultScope, setResultScope] = useState<ChartScope>("product");
-    const [expenseScope, setExpenseScope] = useState<ChartScope>("product");
-    const [fundingScope, setFundingScope] = useState<ChartScope>("product");
+    const [resultScope, setResultScope] = useState<TrendScope>("company");
+    const [expenseScope, setExpenseScope] = useState<TrendScope>("company");
+    const [fundingScope, setFundingScope] = useState<TrendScope>("company");
     const [hiddenSeries, setHiddenSeries] = useState<Series["key"][]>([]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
     const months = useMemo(() => {
         const now = new Date();
         const company = monthlyTrends(data, "company", now).months;
         const product = monthlyTrends(data, "product", now).months;
-        const overhead = monthlyTrends(data, "overhead", now).months;
         const pollen = monthlyPollenTrends(
             data,
             company.map((row) => row.month),
@@ -542,14 +540,10 @@ export function TrendsTab({
         return {
             company: withPollen(company),
             product: withPollen(product),
-            overhead: withPollen(overhead),
         };
     }, [data]);
     const { start, end } = trendPeriod(period);
     const scopeRows = {
-        overhead: months.overhead.filter(
-            (row) => row.month >= start && row.month <= end,
-        ),
         company: months.company.filter(
             (row) => row.month >= start && row.month <= end,
         ),

@@ -746,9 +746,9 @@ function viewInfoContent(activeView: ActiveView) {
                     after deductions.
                 </li>
                 <li>
-                    Product: sales less Compute and Infrastructure. Overhead:
-                    all other company costs, with no sales counted again.
-                    Together they make the whole-company result.
+                    Product: sales less Compute and Infrastructure. Whole
+                    company: the same sales less every expense, including
+                    Compute and Infrastructure. Credits apply in both views.
                 </li>
                 <li>
                     Expense curves: full costs before credits. Click a legend

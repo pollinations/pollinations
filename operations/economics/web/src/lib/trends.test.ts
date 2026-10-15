@@ -73,7 +73,7 @@ const bank = (overrides: Partial<OpTransactionRow>): OpTransactionRow => ({
 });
 const find = (
     data: Data,
-    scope: "product" | "company" | "overhead" = "product",
+    scope: "product" | "company" = "product",
     month = "2026-09",
 ) => {
     const row = monthlyTrends(data, scope, now).months.find(
@@ -164,6 +164,9 @@ describe("monthly sales-based trends", () => {
                     amount: -40,
                 }),
                 bank({}),
+                bank({ vendor: "ops", category: "operations", amount: -30 }),
+                bank({ vendor: "workspace", category: "office", amount: -60 }),
+                bank({ vendor: "accounting", category: "admin", amount: -70 }),
                 bank({ category: "balance_sheet", amount: 1250 }),
             ],
         };
@@ -185,42 +188,20 @@ describe("monthly sales-based trends", () => {
             revenue_share: 25,
             development: 40,
             payroll: 400,
-            paidCost: 715,
+            compute: 500,
+            infrastructure: 150,
+            operations: 30,
+            office: 60,
+            admin: 70,
+            paidCost: 875,
             credits: 400,
-            fullCost: 1115,
-            result: 85,
-            fullResult: -315,
+            fullCost: 1275,
+            result: -75,
+            fullResult: -475,
         });
-        const overhead = find(data, "overhead");
-        expect(overhead).toMatchObject({
-            compute: null,
-            infrastructure: null,
-            revenue_share: 25,
-            development: 40,
-            payroll: 400,
-            revenue: 0,
-            gross: 0,
-            deductions: 0,
-            paidCost: 465,
-            credits: 0,
-            fullCost: 465,
-            result: -465,
-            fullResult: -465,
-            oneOffFraud: null,
-            adjustedResult: null,
-        });
-        for (const key of [
-            "paidCost",
-            "credits",
-            "fullCost",
-            "revenue",
-            "result",
-            "fullResult",
-        ] as const) {
-            expect((product[key] ?? 0) + (overhead[key] ?? 0)).toBe(
-                company[key],
-            );
-        }
+        expect((company.result ?? 0) - (company.fullResult ?? 0)).toBe(
+            company.credits,
+        );
         expect(product.gross).toBe(company.gross);
         expect(product.deductions).toBe(company.deductions);
         expect(product.revenue).toBe(company.revenue);
@@ -524,15 +505,4 @@ it("calculates signed month changes without reversing losses or inventing a zero
     expect(trendPercentChange(100, 0)).toBeNull();
     expect(trendPercentChange(100, null)).toBeNull();
     expect(trendPercentChange(undefined, 100)).toBeNull();
-});
-
-it("keeps overhead independent of missing provider costs and sales", () => {
-    expect(find({ opTransactions: [bank({})] }, "overhead")).toMatchObject({
-        revenue: 0,
-        paidCost: 400,
-        result: -400,
-        fullResult: -400,
-        costIncomplete: false,
-    });
-    expect(find({}, "overhead").paidCost).toBeNull();
 });

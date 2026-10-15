@@ -528,6 +528,8 @@ class PostsTest(unittest.TestCase):
         # A day without daily-tier PRs writes nothing and keeps only its notes.
         calls, images, saved = self.new("daily", "2026-10-07")
         self.assertEqual((calls, images, list(saved)), ([], [], [f"{NEWS_REL_DIR}/daily/2026-10-07/prs.json"]))
+        with self.assertRaisesRegex(SystemExit, "already saved"):  # its notes alone mark it saved
+            self.new("daily", "2026-10-07")
         # A post whose text is missing stops the run instead of being saved empty.
         with self.assertRaisesRegex(SystemExit, "missing tweet"):
             self.new("daily", "2026-10-06", overwrite=True, tweet=None)

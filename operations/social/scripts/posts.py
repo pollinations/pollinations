@@ -170,7 +170,10 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
         if (news / JOB_DIRS[job] / date / "discord.json").exists():
             post = "model" if job == "models" else job
             sys.exit(f"{job} {date} has a saved {post} post; it is never replaced")
-    elif (news / JOB_DIRS[job] / date / "summary.json").exists() and not overwrite:
+    elif not overwrite and any(
+        # A quiet day saves only its notes.
+        (news / JOB_DIRS[job] / date / name).exists() for name in ("summary.json", "prs.json")
+    ):
         sys.exit(f"{job} {date} is already saved; pass --overwrite to replace it")
 
 

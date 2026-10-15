@@ -55,10 +55,7 @@ export type GenerationCacheAdapter = {
         c: Context<GenerationCacheEnv>,
         key: string,
     ) => Promise<Response | null>;
-    shouldCache: (
-        c: Context<GenerationCacheEnv>,
-        response: Response,
-    ) => boolean;
+    shouldCache: (response: Response) => boolean;
     capture: (
         c: Context<GenerationCacheEnv>,
         key: string,
@@ -206,7 +203,7 @@ function capture(
     if (
         !c.res ||
         c.res.headers.get("X-Cache") === "HIT" ||
-        !adapter.shouldCache(c, c.res)
+        !adapter.shouldCache(c.res)
     ) {
         return;
     }

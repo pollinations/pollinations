@@ -71,7 +71,7 @@ function createAdapter(cache: Map<string, string>): GenerationCacheAdapter {
                 ? new Response(body, { headers: { "X-Cache": "HIT" } })
                 : null;
         },
-        shouldCache: (_c, response) => response.ok,
+        shouldCache: (response) => response.ok,
         capture: (_c, key, response) => ({
             response,
             write: Promise.resolve().then(() => {

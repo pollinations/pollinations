@@ -64,7 +64,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             response.headers.set("X-Cache", "HIT");
             return response;
         },
-        shouldCache(_c, response) {
+        shouldCache(response) {
             const contentType = response.headers.get("content-type");
             return (
                 response.ok &&

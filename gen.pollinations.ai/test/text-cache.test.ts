@@ -44,9 +44,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables &
-        RequestIdVariables &
-        Partial<ModelVariables>;
+    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
 };
 
 function createTextCacheApp() {
@@ -86,13 +84,16 @@ function createTextCacheApp() {
         .post(
             "/v1/chat/completions/agent",
             (c, next) => {
+                // resolveModel scopes agents; each request has its own id.
                 c.set("model", {
-                    communityEndpoint: { type: "prompt_agent" },
+                    definition: {},
+                    cacheScope: "agent:agent-id",
                 } as ModelVariables["model"]);
+                c.set("requestId", crypto.randomUUID());
                 return next();
             },
             textCache,
-            async (c) => {
+            async () => {
                 originHits += 1;
                 return new Response(`agent-hit:${originHits}`, {
                     headers: { "Content-Type": "text/plain" },
@@ -367,7 +368,7 @@ describe("text cache", () => {
         expect(originHits).toBe(2);
     });
 
-    it("does not cache final responses for MCP-backed agents", async () => {
+    it("runs an agent again when the same request repeats", async () => {
         const cache = createTextCacheApp();
         const { app } = cache;
         const env = createTextCacheEnv();

@@ -41,10 +41,12 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Caller-scoped models carry a scope; everything else stays shared.
+        // Agents carry a scope; everything else stays shared. An agent run gets
+        // its own entry, so a repeat runs its tools again; the coordinator still
+        // hands a non-streaming result to its caller through that entry.
         const cacheScope = variables.model?.cacheScope;
         const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
+            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}:run:${c.var.requestId}`
             : undefined;
         return generateCacheKey(
             c.req.raw,
@@ -54,15 +56,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
         );
     },
     get: getCachedResponse,
-    shouldCache(c, response) {
-        // Managed agents may execute MCP tools whose results change between
-        // identical prompts. Serving the final answer from the response cache
-        // would skip those tools and return stale state.
-        const model = (c.var as Partial<ModelVariables>).model;
-        const endpointType = model?.communityEndpoint?.type;
-        if (endpointType === "prompt_agent" || endpointType === "code_agent") {
-            return false;
-        }
+    shouldCache(response) {
         return response.status === 200 && response.body !== null;
     },
     capture(c, cacheKey, response) {

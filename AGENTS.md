@@ -10,11 +10,13 @@ Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and option
 
 The optional Quest field names an open POLLEN-QUEST issue. The catalog PR then closes that quest too, and the quest check pays the submitter as the co-author of the bot's commit. Approving such a submission also accepts the quest, so check that the app completes it.
 
-Catalog fields are defined in `operations/app-management/app.js`; categories and platform detection in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
+New submissions must credit Pollinations with the badge (`packages/ui/src/brand/badge-made-with.svg`) in the README, or on the app page when there is no repository, and upload a 16:9 screenshot (PNG/JPEG/WebP, ≤5 MB, ≥1280×720). Publishing converts it to WebP 1280×720 on `media.pollinations.ai` and sets `screenshotUrl`.
+
+Catalog fields are defined in `operations/app-management/app.js`; categories and platforms in `operations/app-management/ingestion/submission.js`. After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 ## Discord
 
-Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-885844321461485618) — use for Discord MCP tools.
+Guild ID `885844321461485618` (https://discord.gg/k9F7SyTgqn) — use for Discord MCP tools.
 
 ## Repository Structure
 
@@ -149,7 +151,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 ## Code Style & Workflow
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
-- Run `npx biome check --write <file>` after edits and before commits.
+- Run `npx @biomejs/biome check --write <file>` after edits and before commits. It runs the repo's own Biome once `npm ci` has installed it; a bare `npx biome` can run an unrelated npm package.
 - Before implementing or resuming work: read the latest accepted decision and current code, verify API assumptions on the web, and check related PRs/issues. Before reviving old work, check its discussion, close reason, and remaining user-visible gap; an absent feature alone is not evidence that it is needed.
 - Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
 - Use environment variables for credentials; validate input.
@@ -160,6 +162,10 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ### Commands & Files
 
+- Maintain project skills in `.claude/skills/`. Expose them to Codex through
+  relative directory links in `.agents/skills/`; keep command adapters as
+  pointers to their maintained instructions, never copied workflows.
+
 - Don't use `cd` in bash; use `cwd` parameter.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.
@@ -167,6 +173,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Search targeted paths.
 - Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
+- `packages/sdk`, `packages/ui` and `packages/polli-cli` publish to npm from `main` only when their `version` changes; CI skips a version already on npm. A PR that changes what one of them ships bumps that version (prereleases take the next number on the same tag, e.g. `5.1.0-alpha.8`), including the package's own `package-lock.json` where it has one. SDK changes also get a `CHANGELOG.md` entry.
 
 ## Testing
 
@@ -188,6 +195,12 @@ npx vitest run test/file.test.ts
 - Production API tests should hit `gen.pollinations.ai`.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
+## Data-processing documentation maintenance
+
+- Update the public provider inventory or Privacy Policy and its Last updated date when a change makes their statements inaccurate. Keep routing details, evidence and unresolved provider reviews in the relevant PR or issue. Update the internal DPA only when its proposed terms, annexes or publication blockers change; keep it outside website assets and navigation until approved.
+- Verify affected recipients, locations, data use, retention, processing terms and transfer safeguards from operational and contractual evidence. Record unknowns; do not present them as verified. A model name, hostname or provider headquarters does not establish where processing occurs.
+- Check applicable contract and notice requirements before recipient changes or other material processing changes take effect. Editing a provider list is not customer notice. Obtain operator/legal review before changing contractual commitments; escalate urgent exceptions to the maintainer.
+
 ## Models & API Changes
 
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
@@ -201,6 +214,7 @@ npx vitest run test/file.test.ts
 
 ## Workflow Orchestration
 
+- For support email, use `.claude/skills/pollinations-support-triage/SKILL.md`.
 - Plan non-trivial work and re-plan when assumptions change.
 - Delegate only large, independent work; handle small tasks and self-verification locally.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
@@ -249,7 +263,7 @@ Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
 ## GitHub Project Manager
 
-A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
+A bot sets the Dev project Area on every new issue and PR, plus the issue type and Priority on issues, following `operations/github/project-manager.md`. That file is the one definition of areas, types and priorities; read it before classifying work by hand. Labels are only for workflows (`APP-*`, `BEE-CENSUS`, `HONEY-CENSUS`, `POLLI`, `NEWS`, `POLLEN-QUEST`/`DRAFT-QUEST`, `VOTING`, `MERGE-HOLD`) and goals (`REVENUE`); don't repurpose them or create new labels ad hoc.
 
 ## Contributor Attribution
 

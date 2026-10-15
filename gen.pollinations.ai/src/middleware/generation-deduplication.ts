@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -46,9 +47,27 @@ export type GenerationJob = {
     apiKeyBudgetEstimate?: number;
 };
 
+/**
+ * Job metadata sent to the coordinator. The body travels separately as a
+ * stream because serialized RPC values are capped at 32 MiB.
+ */
+export type GenerationJobHead = Omit<GenerationJob, "request"> & {
+    request: Omit<GenerationRequestSnapshot, "body">;
+};
+
 export type GenerationOutcome =
     | { status: "cached" }
     | { status: "failed"; error: GenerationErrorSnapshot };
+
+export type AsyncJobRecord = {
+    /** All accounts that actually submitted this identical request. */
+    ownerIds: string[];
+    cache: GenerationCacheIdentity;
+    status: "pending" | "succeeded" | "failed";
+    createdAt: number;
+    completedAt?: number;
+    error?: { httpStatus: number; message: string };
+};
 
 type DeduplicationEnv = {
     Bindings: CloudflareBindings;
@@ -82,7 +101,7 @@ async function createJob(
     c: Context<DeduplicationEnv>,
     adapter: GenerationCacheAdapter,
     key: string,
-): Promise<GenerationJob> {
+): Promise<{ job: GenerationJobHead; body?: Uint8Array }> {
     const balanceCheckResult = c.var.balance.balanceCheckResult;
     if (!balanceCheckResult) {
         throw new Error("Generation balance snapshot is missing");
@@ -107,7 +126,7 @@ async function createJob(
         headers.set("content-type", c.var.generationRequestContentType);
     }
 
-    return {
+    const job: GenerationJobHead = {
         cache: { storage: adapter.storage, key },
         request: {
             url: c.var.generationRequestUrl?.href ?? c.req.url,
@@ -117,13 +136,13 @@ async function createJob(
                 originalModel: c.var.model?.requested,
             }),
             headers: [...headers.entries()],
-            ...(body !== undefined && { body }),
         },
         auth: createAuthSnapshot(c.var.auth),
         requestId: c.get("requestId"),
         balanceCheckResult,
         apiKeyBudgetEstimate: c.var.balance.apiKeyBudgetEstimate,
     };
+    return { job, ...(body !== undefined && { body }) };
 }
 
 /** Replays an error response already handled by the detached executor. */
@@ -162,11 +181,55 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             cache.key,
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
-        const job = await createJob(c, cache.adapter, cache.key);
+        const { job, body } = await createJob(c, cache.adapter, cache.key);
+        const asyncRequested =
+            cache.adapter.storage === "media" &&
+            !c.var.generationRequestUrl &&
+            c.req
+                .header("prefer")
+                ?.split(",")
+                .some((part) =>
+                    /^respond-async(?:\s*;.*)?$/i.test(part.trim()),
+                );
+        const bodyStream =
+            body &&
+            (new Response(body as Uint8Array<ArrayBuffer>).body ?? undefined);
+        if (asyncRequested) {
+            try {
+                const status = await stub.submit(job, bodyStream);
+                if (c.var.track) c.var.track.detachedExecutionTracked = true;
+                const url = `${getPublicOrigin(c)}/v1/jobs/${name}`;
+                return c.json({ id: name, status, status_url: url }, 202, {
+                    Location: url,
+                    "Retry-After": "5",
+                    "Preference-Applied": "respond-async",
+                    "Cache-Control": "private, no-store",
+                });
+            } catch (error) {
+                c.get("log").error(
+                    "Async generation submission failed: {error}",
+                    {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+        }
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {
-            outcome = (await stub.startAndWait(job)) as GenerationOutcome;
+            // A Response body is a byte stream, which RPC streams with flow
+            // control instead of serializing it into the 32 MiB-capped call.
+            outcome = (await stub.startAndWait(
+                job,
+                bodyStream,
+            )) as GenerationOutcome;
         } catch (error) {
             const rpcError = error as Error & {
                 durableObjectReset?: boolean;

@@ -3,7 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { apikey, user as userTable } from "@shared/db/better-auth.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import {
     createFetchMock,
@@ -26,15 +26,11 @@ afterEach(async () => {
     await teardownFetchMock();
 });
 
-test("old MAI ID with a stored restricted key uses 2.6 routing and billing", async () => {
-    const { key, id, userId } = await createTestApiKey({
-        allowedModels: [currentModel],
+test("old MAI ID with an image-restricted key uses 2.6 routing and billing", async () => {
+    const { key, userId } = await createTestApiKey({
+        allowedModels: ["image"],
         user: { packBalance: 100 },
     });
-    await drizzle(env.DB)
-        .update(apikey)
-        .set({ permissions: JSON.stringify({ models: [oldModel] }) })
-        .where(eq(apikey.id, id));
 
     syncImageEnv(
         { AZURE_MYCELI_PROD_API_KEY: "test-azure-key" } as CloudflareBindings,

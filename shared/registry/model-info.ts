@@ -17,6 +17,7 @@ import {
     MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
+    PRICE_UNITS,
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
@@ -170,10 +171,16 @@ export const ModelInfoSchema = z.object({
             "Maximum requested output tokens, including max_tokens, max_completion_tokens and max_output_tokens.",
         ),
     reasoning: z.boolean().optional(),
+    supports_streaming: z
+        .boolean()
+        .optional()
+        .describe(
+            "False when the upstream does not stream. `stream: true` still returns a valid event stream, but the whole answer arrives at once when generation finishes. Omitted when the model streams.",
+        ),
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     is_specialized: z.boolean().optional(),
-    paid_only: z.boolean().optional(),
+    paid_only: z.boolean(),
     pending_change: z
         .object({
             effective_at: z.string().datetime(),
@@ -185,6 +192,22 @@ export const ModelInfoSchema = z.object({
         .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
+    pricing_units: z
+        .record(
+            z.string(),
+            z.object({
+                unit: z.enum(PRICE_UNITS),
+                quantity: z
+                    .number()
+                    .positive()
+                    .optional()
+                    .describe("Usage units in one billed unit; defaults to 1."),
+            }),
+        )
+        .optional()
+        .describe(
+            "Billed unit for pricing fields whose name does not describe it, keyed by pricing field. Rate per unit = pricing[field] × quantity, with quantity defaulting to 1. Example: qwen/qwen-image-2.1 bills completionImageTokens in millionths of a megapixel, so pricing.completionImageTokens 0.00000002 with { unit: megapixel, quantity: 1000000 } is 0.02 Pollen per megapixel.",
+        ),
     added_date: z.number().optional(),
     health: ModelHealthSchema.optional(),
 });
@@ -293,6 +316,7 @@ export function modelInfoFromDefinition(
         supports_structured_output: service.supportsStructuredOutput,
         max_completion_tokens: service.maxCompletionTokens,
         reasoning: service.reasoning,
+        supports_streaming: service.supportsStreaming,
         context_length: service.contextLength,
         voices: service.voices,
         is_specialized: service.isSpecialized,
@@ -303,6 +327,7 @@ export function modelInfoFromDefinition(
             (service.category === "image"
                 ? service.cost.promptTextTokens === undefined
                 : undefined),
+        pricing_units: service.priceUnits,
         added_date: service.addedDate,
     };
 }

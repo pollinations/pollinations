@@ -7,6 +7,7 @@ import {
     DialogBody,
     DialogHeader,
     InlineLink,
+    RefreshIcon,
     Surface,
     TabButton,
     XIcon,
@@ -33,7 +34,8 @@ type AgentDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSubmit: (form: AgentFormState) => Promise<void>;
-    onSync?: () => Promise<void>;
+    /** Redeploys a code agent from GitHub and resolves to the deployed commit. */
+    onSync?: () => Promise<string>;
     trigger?: ReactNode;
 };
 
@@ -52,12 +54,14 @@ export function AgentDialog({
     const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced">(
         "idle",
     );
+    const [syncedCommitSha, setSyncedCommitSha] = useState<string | null>(null);
 
     useEffect(() => {
         setForm(agentToForm(open ? agent : undefined));
         setError(null);
         setIsSubmitting(false);
         setSyncStatus("idle");
+        setSyncedCommitSha(null);
     }, [open, agent]);
 
     function updateAgentForm(
@@ -86,7 +90,7 @@ export function AgentDialog({
         setSyncStatus("syncing");
         setError(null);
         try {
-            await onSync();
+            setSyncedCommitSha(await onSync());
             setSyncStatus("synced");
         } catch (thrown) {
             setSyncStatus("idle");
@@ -215,6 +219,38 @@ export function AgentDialog({
                             <CodeAgentFields
                                 form={form}
                                 disabled={isSubmitting || !!agent}
+                                deployment={
+                                    agent?.type === "code_agent" && onSync
+                                        ? {
+                                              commitSha:
+                                                  syncedCommitSha ??
+                                                  agent.deployedCommitSha,
+                                              synced: syncStatus === "synced",
+                                              sync: (
+                                                  <Button
+                                                      icon={<RefreshIcon />}
+                                                      type="button"
+                                                      intent="commit"
+                                                      aria-busy={
+                                                          syncStatus ===
+                                                          "syncing"
+                                                      }
+                                                      disabled={
+                                                          isSubmitting ||
+                                                          syncStatus ===
+                                                              "syncing"
+                                                      }
+                                                      title="Redeploy the latest commit from GitHub"
+                                                      onClick={() =>
+                                                          void handleSync()
+                                                      }
+                                                  >
+                                                      Sync
+                                                  </Button>
+                                              ),
+                                          }
+                                        : undefined
+                                }
                                 onChange={(field, value) =>
                                     setForm((current) => ({
                                         ...current,
@@ -238,38 +274,13 @@ export function AgentDialog({
                             }
                         />
                     </Surface>
-                    {(form.type === "prompt_agent" ||
-                        (agent?.type === "code_agent" && onSync)) && (
+                    {form.type === "prompt_agent" && (
                         <Surface>
-                            {form.type === "prompt_agent" && (
-                                <PromptAgentFields
-                                    form={form}
-                                    disabled={isSubmitting}
-                                    onChange={updateAgentForm}
-                                />
-                            )}
-                            {agent?.type === "code_agent" && onSync && (
-                                <div className="flex items-center gap-3">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        disabled={
-                                            isSubmitting ||
-                                            syncStatus === "syncing"
-                                        }
-                                        onClick={() => void handleSync()}
-                                    >
-                                        {syncStatus === "syncing"
-                                            ? "Syncing…"
-                                            : "Sync from GitHub"}
-                                    </Button>
-                                    {syncStatus === "synced" && (
-                                        <output className="font-body text-xs font-normal leading-normal text-theme-text-muted">
-                                            Synced from GitHub.
-                                        </output>
-                                    )}
-                                </div>
-                            )}
+                            <PromptAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={updateAgentForm}
+                            />
                         </Surface>
                     )}
                     <div

@@ -6,7 +6,21 @@
  * the publishable BYOP app key (see src/config.ts).
  */
 
-import { getJsonLd, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
+import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
+
+/**
+ * RFC 8288 Link headers for every page this worker rewrites, so an agent that
+ * fetches a page learns where the machine-readable surface lives. Registered
+ * relations only: service-desc and service-doc (RFC 8631), api-catalog
+ * (RFC 9727) and describedby. Same set as gen.pollinations.ai, with absolute
+ * URLs because the targets live on that host.
+ */
+const AGENT_LINKS = [
+    '<https://gen.pollinations.ai/openapi.json>; rel="service-desc"',
+    '<https://gen.pollinations.ai/docs/llm.txt>; rel="service-doc"',
+    '<https://gen.pollinations.ai/.well-known/api-catalog>; rel="api-catalog"',
+    '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
+].join(", ");
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
@@ -35,6 +49,10 @@ export default {
             return Response.redirect("https://pollinations.ai/", 301);
         }
 
+        if (url.hostname === "playground.pollinations.ai") {
+            return Response.redirect("https://pollinations.ai/play", 301);
+        }
+
         // www is routed only so it can redirect to the canonical apex host.
         if (url.hostname.startsWith("www.")) {
             url.hostname = url.hostname.slice(4);
@@ -48,6 +66,20 @@ export default {
             return Response.redirect("https://gen.pollinations.ai/docs", 301);
         }
 
+        // Old image links (pollinations.ai/p/<prompt>, /prompt/<prompt>) still
+        // arrive from sites that embed them. Netlify redirected them to the
+        // image API until the move to Workers; keep sending them there.
+        const legacyImage = url.pathname.match(/^\/(?:p|prompt)\/(.+)$/);
+        if (
+            legacyImage &&
+            (request.method === "GET" || request.method === "HEAD")
+        ) {
+            return Response.redirect(
+                `https://image.pollinations.ai/prompt/${legacyImage[1]}${url.search}`,
+                301,
+            );
+        }
+
         // Serve static assets with per-route meta tag rewriting for SEO
         const response = await env.ASSETS.fetch(request);
 
@@ -57,24 +89,17 @@ export default {
             return response;
         }
 
-        const path = url.pathname;
-        // Normalize: strip trailing slash (except root). The router matches
-        // paths case-insensitively, so the meta lookup must too.
-        const normalizedPath = (
-            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path
-        ).toLowerCase();
-        const knownRoute = normalizedPath in ROUTE_META;
-        const meta = knownRoute ? ROUTE_META[normalizedPath] : NOT_FOUND_META;
-        const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;
-        const jsonLd = getJsonLd(normalizedPath);
+        const page = knownPage(url.pathname);
+        const meta = page ? ROUTE_META[page] : NOT_FOUND_META;
+        const canonical = `https://pollinations.ai${page === "/" ? "" : page}`;
+        const jsonLd = page ? getJsonLd(page) : null;
 
-        const htmlResponse = knownRoute
-            ? response
-            : new Response(response.body, {
-                  status: 404,
-                  statusText: "Not Found",
-                  headers: response.headers,
-              });
+        // Asset responses have immutable headers; copy before adding page metadata.
+        const htmlResponse = new Response(response.body, {
+            status: page ? response.status : 404,
+            statusText: page ? response.statusText : "Not Found",
+            headers: response.headers,
+        });
 
         const rewriter = new HTMLRewriter().on("title", {
             element: (el) => el.setInnerContent(meta.title),
@@ -97,9 +122,7 @@ export default {
         ]) {
             rewriter.on(selector, {
                 element: (el) =>
-                    knownRoute
-                        ? el.setAttribute(attribute, canonical)
-                        : el.remove(),
+                    page ? el.setAttribute(attribute, canonical) : el.remove(),
             });
         }
         if (jsonLd) {
@@ -110,6 +133,9 @@ export default {
                         { html: true },
                     ),
             });
+        }
+        if (page) {
+            htmlResponse.headers.set("Link", AGENT_LINKS);
         }
         return rewriter.transform(htmlResponse);
     },

@@ -41,6 +41,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     onCreate,
     onUpdate,
     onDelete,
+    onRefresh,
 }) => {
     const [keyCreateOpen, setKeyCreateOpen] = useState(false);
     const [appCreateOpen, setAppCreateOpen] = useState(false);
@@ -48,6 +49,12 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const [editingKey, setEditingKey] = useState<ApiKey | null>(null);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    async function handleEdit(apiKey: ApiKey): Promise<void> {
+        // The list is as old as the page; API calls since then spent the budget.
+        const latest = await onRefresh?.().catch(() => undefined);
+        setEditingKey(latest?.find((key) => key.id === apiKey.id) ?? apiKey);
+    }
 
     async function handleDelete(): Promise<void> {
         if (!deletingKey || isDeleting) return;
@@ -127,7 +134,7 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 tooltipAlign="center"
                                 tooltipClampToViewport={false}
                                 aria-haspopup="dialog"
-                                onClick={() => setEditingKey(apiKey)}
+                                onClick={() => handleEdit(apiKey)}
                             >
                                 <PencilIcon className="h-4 w-4" />
                             </IconButton>
@@ -244,6 +251,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                                 }
                                 pollenBudget={apiKey.pollenBalance}
                             />
+                            {apiKey.questPollenOnly && (
+                                <span className="text-theme-text-muted">
+                                    Quest pollen only
+                                </span>
+                            )}
                             <span className="flex items-center gap-1">
                                 <span className="text-theme-text-muted">
                                     Models:
@@ -359,14 +371,14 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                         <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             For apps where users sign in with their own
-                            Pollinations account and spend their own Pollen.
+                            Pollinations account and spend their own pollen.
                             Connect your app with the Pollinations SDK.
                         </span>
                     </p>
                     <p className="flex items-start gap-1.5">
                         <TokensIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
-                            Turn on earnings to receive 20% of the Pollen users
+                            Turn on earnings to receive 20% of the pollen users
                             spend in your app.
                         </span>
                     </p>

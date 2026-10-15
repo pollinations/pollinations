@@ -1,14 +1,6 @@
 # Terms of Service
 
-**Updated: 2026-09-16**
-
-_2026-09-16 — Accounts may be suspended immediately where we reasonably believe there is payment fraud or abuse._
-
-_2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
-
-_2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
-
-_2026-05-11 — Wallet now expires after 12 months of account inactivity. Effective 2026-06-01; the inactivity clock starts on that date for all existing balances._
+**Last updated: 2026-10-10**
 
 ## About Pollinations
 
@@ -40,7 +32,7 @@ Third-party app developers are responsible for their own apps, claims, user inte
 
 ## 2) Beta Services
 
-Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time with in-product notice. This includes changes to:
+Features, plans, or pricing labeled "beta" or "preview" may be modified, suspended, or discontinued at any time. This includes changes to:
 
 - Wallet and reward structures and associated benefits (for example Quest Pollen grants, promotional credits, and usage limits)
 - Model availability, capabilities, and per-model pricing
@@ -59,7 +51,7 @@ Hosted access to model-powered APIs and tools per your plan, balance, and usage 
 
 **Managed agents.** Pollinations hosts these agents, and publishing one does not give its creator access to caller requests. Selected models and tools may still process those requests, and public agent instructions may be inferred or extracted. Creators must not include credentials or confidential data in agent instructions.
 
-We may make non-breaking changes and will notify you of material reductions where practical.
+We may change or discontinue models and features, for example when providers change or retire them. Where consumer law requires notice of a change, or lets you end the contract and get a refund of unused Paid Pollen, those rights apply.
 
 ## 4) Customer Data & Privacy
 
@@ -110,48 +102,38 @@ We and our licensors own the Service, models, and documentation. The Service may
 
 ## 9) Service Level & Support
 
-Commercially reasonable efforts to maintain availability (target 99.5% monthly). Support is provided through the channels on our site. We do not offer SLA credits.
+We do not guarantee availability or support response times, and we offer no SLA or SLA credits.
 
 ## 10) Warranties & Liability
 
-We warrant reasonable skill and care. Otherwise the Service is **"as is"**.
+To the extent permitted by law, the Service is provided **"as is"**.
 **Cap:** each party's aggregate liability is limited to **12 months of fees paid** by you.
 **Exclusions:** no indirect/special/incidental/consequential damages or lost profits/data.
-**Exceptions:** caps/exclusions do not apply to payment obligations, confidentiality breaches, IP indemnity, or wilful misconduct.
+**Exceptions:** caps/exclusions do not apply to payment obligations, wilful misconduct, or liability that cannot be limited by law.
 
-## 11) Confidentiality
+## 11) Term; Suspension; Termination
 
-Each party protects the other's confidential information and uses it only for this relationship.
+Term begins on first access and continues per plan. You may stop using the Service and delete your account at any time. We may suspend an account and its API keys immediately where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. We may terminate an account for serious or repeated breaches of these Terms. After termination, data is handled as described in the Privacy Policy. **Survival:** fees, IP, warranties & liability, and governing law survive.
 
-## 12) Term; Suspension; Termination
+## 12) Publicity; Export; Changes; Misc.
 
-Term begins on first access and continues per plan. Either party may terminate for uncured material breach after 30 days' notice. We may suspend an account and its API keys immediately, without that notice period, where we reasonably believe there is payment fraud or abuse, use of a payment method without the cardholder's authorization, or a security or legal risk to the Service or its users; suspension is protective and not a finding of wrongdoing. On termination we delete/return Customer Data per the DPA within 30 days unless legal retention applies. **Survival:** fees, confidentiality, IP, warranties & liability, and governing law survive.
+We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If a separately agreed DPA conflicts with these Terms, that DPA controls for personal-data processing.
 
-## 13) Publicity; Export; Changes; Misc.
-
-We may use your name/logo to identify you as a customer unless you opt out in writing. You will comply with export/sanctions controls. Assignment with consent (not unreasonably withheld); notices by email; severability; no waiver; force majeure. We may update these Terms; for material adverse changes we give reasonable prior notice. If these Terms and the DPA conflict, the DPA controls for personal-data processing.
-
-## 14) Governing Law & Venue
+## 13) Governing Law & Venue
 
 **Estonia** / **Harju County Court (Tallinn)**.
 
-## 15) DPA and Sub-Processors
+## 14) DPA and Sub-Processors
 
-When we process personal data on your behalf, you are the **controller** and we are the **processor** under our Data Processing Addendum (DPA). The DPA (including EU Standard Contractual Clauses for international transfers) is maintained at this location. Categories of **sub-processors** we may use are listed below. The full named list is available on request, and we provide at least **14 days'** prior notice of material changes to sub-processors.
+When we process personal data on your behalf through the API, you are controller (or an authorised processor), and Myceli.AI OÜ is processor (or sub-processor). These Terms do not incorporate a standard Data Processing Addendum (DPA). Contact **hello@pollinations.ai** before using the Service for processing that requires a DPA; the provider list below does not replace that agreement. Any separately agreed processing terms remain applicable.
 
-**Categories of sub-processors** we may use to deliver the Service:
+The [Service Providers](/subprocessors) page lists the providers we use.
 
-- **Payments / Merchant of Record** (also delivers purchase invoices by email on our behalf)
-- **CDN/WAF & edge routing**
-- **Cloud infrastructure & storage**
-- **Analytics / data pipeline**
-- **Model / inference compute providers** (for text/image/video generation)
-
-**Data residency.** Depending on the selected model, provider, and availability, Customer Data may be processed in the EEA, the United States, or other locations where our model and infrastructure providers operate. Where personal data leaves the EEA, we use approved safeguards such as EU Standard Contractual Clauses and appropriate supplementary measures.
+**Data residency and transfers.** Locations depend on the selected route and its fallbacks; the standard service does not promise EEA-only processing. Transfers of personal data outside the EEA require applicable legal safeguards. The provider list does not certify that those safeguards have been established for every route. Contact **hello@pollinations.ai** for information about the applicable arrangements and how to obtain a copy of any relevant safeguards before using a route with specific transfer requirements.
 
 ---
 
-## 16) Polli Discord Bot
+## 15) Polli Discord Bot
 
 **Effective date: 2026-09-04**
 

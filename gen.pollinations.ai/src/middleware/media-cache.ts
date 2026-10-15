@@ -54,6 +54,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 cacheUrl,
                 c.req.header(SAFETY_HEADER_NAME),
                 getRequiredSafetyFeatures(variables.model),
+                variables.model?.definition.cacheVersion,
             );
         },
         async get(c, cacheKey) {

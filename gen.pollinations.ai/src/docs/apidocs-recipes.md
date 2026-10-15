@@ -166,6 +166,21 @@ for chunk in stream:
 
 When `stream: true` is set, usage info still arrives on the final chunk (`stream_options: { include_usage: true }` if your SDK requires opting in).
 
+## ⏳ Asynchronous media jobs
+
+For long image, video, audio or 3D generations, add `Prefer: respond-async` to the normal generation request. An uncached request returns `202 Accepted` with `id`, `status: "pending"`, `status_url`, `Location`, and `Retry-After: 5` without waiting for the provider. For example:
+
+```bash
+job=$(curl -sS "https://gen.pollinations.ai/video/a%20paper%20boat%20on%20a%20river?model=google/veo-3.1-fast" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Prefer: respond-async" | jq -r '.id')
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job" -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" -o boat.mp4
+```
+
+Wait for `status: "succeeded"` before downloading; the result endpoint returns 409 while pending or failed. Another account sees 404, even if it knows the job id. Resubmitting the identical request joins one durable generation and one charge; an already cached result may return directly as HTTP 200 without an id. Job status records expire 24 hours after completion; media files keep their normal cache lifetime. Polling never charges again. The `Prefer` option is ignored for streaming and non-media routes.
+
 ## 🖼️ Vision: passing images into chat
 
 Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
@@ -200,12 +215,12 @@ Three endpoints accept `multipart/form-data` request bodies. Each has its own fi
 curl -X POST "https://gen.pollinations.ai/v1/audio/transcriptions" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "file=@./recording.mp3" \
-  -F "model=openai/gpt-audio-mini" \
+  -F "model=openai/whisper-large-v3" \
   -F "response_format=verbose_json" \
   -F "temperature=0"
 ```
 
-`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`. Max file size 25 MB.
+`response_format` accepts `json` (default), `verbose_json` (adds segment timings), `text`, `srt`, `vtt`, depending on the model. `srt` and `vtt` are only supported by the `assemblyai/*` and `whisper` models; an unsupported combination returns 400 naming the formats that model accepts. Transcription models are the `GET /v1/models` entries whose `supported_endpoints` include `/v1/audio/transcriptions`. Max file size 25 MB.
 
 **Edit an image with a prompt** — OpenAI Images Edits-compatible.
 
@@ -214,7 +229,7 @@ curl -X POST "https://gen.pollinations.ai/v1/images/edits" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -F "image=@./photo.png" \
   -F "prompt=replace the sky with a sunset" \
-  -F "model=kontext" \
+  -F "model=black-forest-labs/flux.1-kontext-pro" \
   -F "size=1024x1024"
 ```
 

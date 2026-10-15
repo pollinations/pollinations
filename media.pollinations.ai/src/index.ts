@@ -25,7 +25,11 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
-import { readMedia, uploadUnlistedMedia } from "./media-upload.ts";
+import {
+    rawUploadFileName,
+    readMedia,
+    uploadUnlistedMedia,
+} from "./media-upload.ts";
 import {
     putStagedMultipartUpload,
     type StagedMultipartUpload,
@@ -444,7 +448,7 @@ api.post(
                     c.req.raw.body,
                     {
                         contentType: requestContentType,
-                        fileName: c.req.header("x-file-name"),
+                        fileName: rawUploadFileName(c.req.raw.headers),
                         size,
                         uploadedBy: authResult.name || "unknown",
                         keyType: authResult.type,
@@ -972,7 +976,12 @@ app.use(
     cors({
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization", "X-File-Name"],
+        allowHeaders: [
+            "Content-Type",
+            "Authorization",
+            "X-File-Name",
+            "Content-Disposition",
+        ],
         exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
     }),
 );

@@ -376,7 +376,11 @@ export const configureCodex = async (
         await waitForKeyUsageIncrease(key, before, {
             afterMs: startedAt,
         });
-        return { ...status(ctx), smokeVerified: true };
+        return {
+            ...status(ctx),
+            model: `${PROVIDER}/${model}`,
+            smokeVerified: true,
+        };
     } catch (error) {
         try {
             if (!hadModel && provider(ctx)) removeModel(ctx, model);

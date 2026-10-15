@@ -83,14 +83,14 @@ function FullCostResult({ row }: { row: UnitEconomicsRow }) {
                 <span className="block max-w-72">
                     <strong>Full-cost result</strong>
                     <span className="block">
-                        Retained Paid: {fmtUsd(row.retainedPaidUsd)}
+                        Retained: {fmtUsd(row.retainedPaidUsd)}
                     </span>
                     <span className="block">
                         Vendor cash: {fmtUsd(row.providerCashUsd)} · credits:{" "}
                         {fmtUsd(row.providerCreditUsd)}
                     </span>
                     <span className="block">
-                        Result = retained Paid − cash − credits
+                        Result = retained − cash − credits
                     </span>
                     <span className="block">
                         Cash-only result:{" "}
@@ -114,14 +114,14 @@ function CurrentResult({ row }: { row: UnitEconomicsRow }) {
                 <span className="block max-w-72">
                     <strong>Current result · with credits</strong>
                     <span className="block">
-                        Retained Paid: {fmtUsd(row.retainedPaidUsd)}
+                        Retained: {fmtUsd(row.retainedPaidUsd)}
                     </span>
                     <span className="block">
                         Vendor cash: {fmtUsd(row.providerCashUsd)} · consumed
                         credits: {fmtUsd(row.providerCreditUsd)}
                     </span>
                     <span className="block">
-                        Result = retained Paid − vendor cash
+                        Result = retained − vendor cash
                     </span>
                     <span className="block">
                         Full-cost result:{" "}
@@ -243,6 +243,7 @@ function UnitEconomicsTable({
     const stats = [
         {
             label: "Pollen used",
+            total: `${fmtUsd(summary.paidPollenUsd + summary.questPollenUsd)} total`,
             items: [
                 {
                     label: (
@@ -253,7 +254,7 @@ function UnitEconomicsTable({
                     ),
                     value: fmtUsd(summary.paidPollenUsd),
                     valueClassName: "polli:text-paid-deep",
-                    detail: `Retained Paid ${fmtUsd(summary.retainedPaidUsd)}`,
+                    detail: `Retained ${fmtUsd(summary.retainedPaidUsd)}`,
                 },
                 {
                     label: (
@@ -264,7 +265,6 @@ function UnitEconomicsTable({
                     ),
                     value: fmtUsd(summary.questPollenUsd),
                     valueClassName: "polli:text-tier-deep",
-                    detail: "Free usage",
                 },
             ],
         },
@@ -280,6 +280,10 @@ function UnitEconomicsTable({
         },
         {
             label: provisional ? "Result · provisional" : "Result",
+            total:
+                currentResultUsd == null
+                    ? "Actual Unknown"
+                    : `Actual ${fmtSignedUsd(currentResultUsd)}`,
             items: [
                 {
                     label: "With credits",
@@ -375,7 +379,7 @@ function UnitEconomicsTable({
                                     hint={{
                                         meaning:
                                             "Actual cash outcome while consumed vendor credits cover part of usage.",
-                                        formula: "retained Paid − vendor cash",
+                                        formula: "retained − vendor cash",
                                     }}
                                 >
                                     Current · with credits
@@ -387,7 +391,7 @@ function UnitEconomicsTable({
                                         meaning:
                                             "Underlying outcome after valuing consumed vendor credits as costs that may later require cash.",
                                         formula:
-                                            "retained Paid − vendor cash − vendor credits",
+                                            "retained − vendor cash − vendor credits",
                                     }}
                                 >
                                     Full cost · without credits
@@ -409,7 +413,7 @@ function UnitEconomicsTable({
                                 >
                                     <span className="inline-flex items-center gap-1.5 text-paid-deep">
                                         <CardIcon className="h-3.5 w-3.5 shrink-0" />
-                                        Paid retained
+                                        Retained
                                     </span>
                                 </HeaderHint>
                             </TableHeaderCell>

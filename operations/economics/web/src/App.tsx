@@ -644,8 +644,8 @@ function viewInfoContent(activeView: ActiveView) {
                     Shared infrastructure is excluded.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
-                    Cards show consumed Paid and Quest value. Retained Paid is
-                    after creator shares; Quest is free usage.
+                    Cards show consumed Paid and Quest value. Retained is after
+                    creator shares; Quest is free usage.
                 </InfoItem>
                 <InfoItem lead="Mixed modes">
                     Vendor totals hold when a vendor serves both modes; the
@@ -667,17 +667,16 @@ function viewInfoContent(activeView: ActiveView) {
                     partial; mixed inference and GPU months stay unallocated.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
-                    Cards show consumed Paid and Quest value. Retained Paid is
-                    after creator shares; Quest is free usage.
+                    Cards show consumed Paid and Quest value. Retained is after
+                    creator shares; Quest is free usage.
                 </InfoItem>
                 <InfoItem lead="Model costs">
                     Vendor-month totals are authoritative. Models use exact
                     matched provider evidence; unmatched cost stays unallocated.
                 </InfoItem>
                 <InfoItem lead="Result">
-                    Retained Paid minus cash and consumed credits. Performance
-                    divides that by retained Paid; cost checks stay at vendor
-                    level.
+                    Retained minus cash and consumed credits. Performance
+                    divides that by retained; cost checks stay at vendor level.
                 </InfoItem>
             </ViewInfo>
         );
@@ -793,16 +792,16 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ViewInfo>
                 <InfoItem lead="Cards">
-                    The selected month at vendor-pool level: retained Paid,
-                    Quest usage, cash, consumed credits, full-cost result.
+                    The selected month at vendor-pool level: retained, Quest
+                    usage, cash, consumed credits, full-cost result.
                 </InfoItem>
                 <InfoItem lead="Table">
                     One row per verified workload. Expand one for every billed
                     GPU resource with its usage and cost.
                 </InfoItem>
                 <InfoItem lead="Result">
-                    Retained Paid minus the full mapped workload cost.
-                    Efficiency is that result divided by retained Paid.
+                    Retained minus the full mapped workload cost. Efficiency is
+                    that result divided by retained.
                 </InfoItem>
                 <InfoItem lead="Limits">
                     Pollen does not identify the serving replica, so efficiency

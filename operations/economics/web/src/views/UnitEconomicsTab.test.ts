@@ -49,7 +49,7 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     expect(html).not.toContain("Usage included; provider costs missing.");
     expect(html).toContain("$190");
     expect(html).toContain("aws");
-    expect(html).toContain("Retained Paid");
+    expect(html).toContain("Retained");
     expect(html).not.toContain("classified only");
     expect(html).not.toContain("Current result · subtotal");
     expect(html).not.toContain("awaiting complete evidence");
@@ -64,6 +64,7 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     // Both result headlines must remain unknown, not Google's matched subtotal.
     const cards = html.slice(0, html.indexOf("<table"));
     expect(cards.match(/>Unknown</g)).toHaveLength(2);
+    expect(cards).toContain("Actual Unknown");
 });
 
 it("pairs usage, funding and complete results in three cards without repeating Quest", () => {
@@ -90,12 +91,16 @@ it("pairs usage, funding and complete results in three cards without repeating Q
     expect(cards.match(/>Quest</g)).toHaveLength(1);
     expect(cards).not.toContain("Quest used");
     expect(cards).toContain("$200");
-    expect(cards).toContain("Retained Paid $190");
+    expect(cards).toContain("$260 total");
+    expect(cards).not.toContain("Free usage");
+    expect(cards).not.toContain("Retained Paid");
+    expect(cards).toContain("Retained $190");
     expect(cards).toContain(">$60<");
     expect(cards).toContain("$130 total");
     expect(cards).toContain(">$100<");
     expect(cards).toContain(">$30<");
     expect(cards).toContain("+$90");
+    expect(cards).toContain("Actual +$90");
     expect(cards).toContain("+$60");
     expect(html).not.toContain("awaiting complete evidence");
     expect(html).not.toContain("provider costs missing");

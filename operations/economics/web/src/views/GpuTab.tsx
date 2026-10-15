@@ -287,7 +287,7 @@ export function GpuTab({
                                   : "one row per GPU resource",
                     },
                     {
-                        label: "Retained Paid",
+                        label: "Retained",
                         value: fmtUsd(stats.retainedUsd),
                         detail: (
                             <GaugeSummary
@@ -359,7 +359,7 @@ export function GpuTab({
                                     hint={{
                                         meaning:
                                             "Actual cash outcome while consumed vendor credits cover part of GPU usage.",
-                                        formula: "retained Paid − cash",
+                                        formula: "retained − cash",
                                     }}
                                 >
                                     Current · with credits
@@ -371,7 +371,7 @@ export function GpuTab({
                                         meaning:
                                             "Underlying GPU outcome after valuing consumed vendor credits as costs that may later require cash.",
                                         formula:
-                                            "retained Paid − cash − consumed credit",
+                                            "retained − cash − consumed credit",
                                     }}
                                 >
                                     Full cost · without credits
@@ -383,7 +383,7 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("retainedUsd")}
                             >
-                                Retained Paid
+                                Retained
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"

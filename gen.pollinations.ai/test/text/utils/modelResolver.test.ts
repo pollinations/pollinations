@@ -649,6 +649,25 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Nemotron 3.5 Super VL to Together with a DeepInfra FP4 fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4",
+        });
+
+        expect(primary.options.model).toBe("nvidia/nemotron-3.5-super-vl");
+        expect(primary.options.provider).toEqual({
+            only: ["together"],
+            allow_fallbacks: false,
+        });
+        expect(fallback.options.provider).toEqual({
+            only: ["deepinfra/fp4"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 

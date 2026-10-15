@@ -69,6 +69,16 @@ const OPENROUTER_ROUTES = [
         "coreweave/bf16",
     ],
     [
+        "nvidia/nemotron-3.5-super-vl",
+        "nvidia/nemotron-3.5-super-vl",
+        "together",
+    ],
+    [
+        "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4",
+        "nvidia/nemotron-3.5-super-vl",
+        "deepinfra/fp4",
+    ],
+    [
         "google/gemini-3-flash-preview:openrouter:vertex-global",
         "google/gemini-3-flash-preview",
         "google-vertex/global",
@@ -1088,6 +1098,22 @@ describe("static provider fallbacks", () => {
             promptTextTokens: (0.07 / 1_000_000) * 1.055,
             promptCachedTokens: (0.04 / 1_000_000) * 1.055,
             completionTextTokens: (0.2 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES["nvidia/nemotron-3.5-super-vl"].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.15 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.02 / 1_000_000) * 1.055,
+            completionTextTokens: (0.5 / 1_000_000) * 1.055,
+        });
+        expect(
+            TEXT_SERVICES[
+                "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4"
+            ].cost,
+        ).toMatchObject({
+            promptTextTokens: (0.2 / 1_000_000) * 1.055,
+            promptCachedTokens: (0.1 / 1_000_000) * 1.055,
+            completionTextTokens: (1 / 1_000_000) * 1.055,
         });
         expect(
             TEXT_SERVICES["meta/llama-4-scout:openrouter:novita-bf16"].cost,

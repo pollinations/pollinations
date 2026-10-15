@@ -945,6 +945,16 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "nvidia/nemotron-3.5-super-vl",
+        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-together"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "nvidia/nemotron-3.5-super-vl:openrouter:deepinfra-fp4",
+        config: portkeyConfig["nemotron-3.5-super-vl-openrouter-deepinfra-fp4"],
+        transform: fireworksThinking,
+    },
+    {
         name: "xiaomi/mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
     },

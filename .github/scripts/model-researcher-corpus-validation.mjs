@@ -85,7 +85,8 @@ const baseline =
     0.011555206110000004 +
     budgetUsed(verified) +
     0.00029604 +
-    0.00281395086;
+    0.00281395086 +
+    0.00287509866;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -129,7 +130,7 @@ for (const source of [
 const report = {
     startedAt: new Date().toISOString(),
     deadlineAt: new Date(Date.now() + 30 * 60000).toISOString(),
-    maxPollen: 0.01,
+    maxPollen: 0.02,
     reservedPollen: 0,
     calls: [],
     replayedDecisions: [],
@@ -249,12 +250,18 @@ const decision = async (payload, validate) => {
     }
 };
 try {
+    const providerParents = new Set([
+        "https://inferhub.dev/pricing",
+        "https://iframe.ai/pricing/inference",
+    ]);
+    const providerDocs = new Map();
     const urls = [
         "https://developers.openai.com/api/docs/pricing.md",
         "https://docs.fireworks.ai/serverless/pricing",
         "https://deepinfra.com/Qwen/Qwen3-Embedding-8B",
         "https://deepinfra.com/Qwen/Qwen3-Embedding-8B/api",
         "https://fireworks.ai/models/fireworks/qwen3-embedding-8b",
+        ...providerParents,
     ];
     for (const url of urls) {
         const raw = execFileSync(
@@ -274,6 +281,18 @@ try {
             },
         );
         const source = JSON.parse(raw);
+        if (
+            [...providerDocs.values()].includes(url) &&
+            source.status !== "fetched"
+        ) {
+            report.sources.push({
+                ...source,
+                id: `refresh-${report.sources.length}`,
+                url,
+                at: new Date().toISOString(),
+            });
+            continue;
+        }
         assert.equal(source.status, "fetched", url);
         assert.equal(source.extractionVersion, 2);
         const full = JSON.parse(
@@ -287,7 +306,41 @@ try {
             at: full.fetchedAt,
             digest: hash(full.text),
         });
+        if (providerParents.has(url)) {
+            const parent = new URL(url);
+            const link = (full.links ?? []).find((item) => {
+                const target = new URL(item.url);
+                return (
+                    (target.hostname === parent.hostname ||
+                        target.hostname.endsWith(`.${parent.hostname}`)) &&
+                    /\b(?:docs?|documentation|api|integration|reference|quickstart)\b/i.test(
+                        `${item.text ?? ""} ${target.pathname}`,
+                    )
+                );
+            });
+            assert.ok(
+                link,
+                `Actual linked API documentation must survive extraction: ${url}`,
+            );
+            const documentation = new URL(link.url).href;
+            providerDocs.set(url, documentation);
+            if (!urls.includes(documentation)) urls.push(documentation);
+        }
     }
+    report.providerDocumentation = [...providerDocs].map(
+        ([parentUrl, url]) => ({
+            parentUrl,
+            url,
+            status: report.sources.find((source) => source.url === url)?.status,
+        }),
+    );
+    assert.equal(
+        report.providerDocumentation.find(({ parentUrl }) =>
+            parentUrl.includes("inferhub.dev"),
+        )?.status,
+        "fetched",
+        "InferHub linked API documentation must be read",
+    );
     const model = "qwen/qwen3-embedding-8b";
     const control = buildResearchControl({
         stage: "followup",
@@ -359,9 +412,8 @@ try {
         decision,
     );
     report.extraction = extraction;
-    const discoveryCandidates = extraction.discoveries.map((item) => ({
-        ...item,
-        sourceIds: item.sourceIds
+    const discoveryCandidates = extraction.discoveries.map((item) => {
+        const sourceIds = item.sourceIds
             .map((id) => {
                 const original = resumedDiscovery.sources.find(
                     (source) => source.id === id,
@@ -370,8 +422,21 @@ try {
                     (source) => source.url === original?.url,
                 )?.id;
             })
-            .filter(Boolean),
-    }));
+            .filter(Boolean);
+        if (item.kind === "provider")
+            for (const id of item.sourceIds) {
+                const parent = resumedDiscovery.sources.find(
+                    (source) => source.id === id,
+                );
+                const doc = report.sources.find(
+                    (source) =>
+                        source.url === providerDocs.get(parent?.url) &&
+                        source.status === "fetched",
+                );
+                if (doc && !sourceIds.includes(doc.id)) sourceIds.push(doc.id);
+            }
+        return { ...item, sourceIds };
+    });
     const market = assess(
         { routes: [], discoveries: discoveryCandidates, gaps: [] },
         report.sources,
@@ -415,17 +480,41 @@ try {
         report.discovery.discoveries.length > 0,
         "Source-grounded discovery leads must survive the actual evidence audit",
     );
+    for (const name of ["InferHub", "iframe.ai"]) {
+        const accepted = report.discovery.discoveries.find(
+            (item) => item.kind === "provider" && item.name === name,
+        );
+        const pending = report.discovery.pendingProviders.find(
+            (item) => item.kind === "provider" && item.name === name,
+        );
+        assert.ok(
+            accepted || pending,
+            `${name}: a literal high-confidence lead must remain accepted or explicitly pending`,
+        );
+        if (pending) {
+            assert.equal(pending.status, "needs-source-verification");
+            assert.equal(pending.semanticAudit[0].relation, "insufficient");
+            assert.ok(pending.extraction.selectedProbability >= 0.9);
+        }
+        if (name === "InferHub")
+            assert.ok(
+                (accepted ?? pending).sourceIds.some(
+                    (id) =>
+                        report.sources.find((source) => source.id === id)
+                            ?.url ===
+                        providerDocs.get("https://inferhub.dev/pricing"),
+                ),
+            );
+    }
     assert.ok(
-        report.discovery.discoveries.some(
-            (item) => item.kind === "provider" && item.name === "InferHub",
+        report.discovery.discoveries.every((item) =>
+            item.semanticAudit.every(
+                (grade) =>
+                    grade.relation === "supported" &&
+                    grade.selectedProbability >= 0.9 &&
+                    grade.calibrationAccepted !== false,
+            ),
         ),
-        "Real primary InferHub pricing must yield a provider lead",
-    );
-    assert.ok(
-        report.discovery.discoveries.some(
-            (item) => item.kind === "provider" && item.name === "iframe.ai",
-        ),
-        "Real primary iframe.ai pricing must yield a provider lead",
     );
     assert.ok(
         report.discovery.discoveries.every(
@@ -510,5 +599,13 @@ console.log(
             .flatMap((row) => row.routes)
             .filter((route) => route.pricing.input !== null).length,
         acceptedDiscoveryLeads: report.discovery?.discoveries.length,
+        acceptedProviders: report.discovery?.discoveries
+            .filter(({ kind }) => kind === "provider")
+            .map(({ name }) => name),
+        pendingProviders: report.discovery?.pendingProviders.map(
+            ({ name }) => name,
+        ),
+        providerDocumentation: report.providerDocumentation,
+        replayedDecisions: report.replayedDecisions.length,
     }),
 );

@@ -72,14 +72,14 @@ export function CommunityTab({
             <StatCards
                 items={[
                     {
-                        label: "Retained Paid",
+                        label: "Retained",
                         value: fmtUsd(summary.retainedPaidUsd),
                         detail: "after ecosystem payouts",
                     },
                     {
                         label: "Performance",
                         value: fmtMarginPct(summary.retainedPct),
-                        detail: "retained Paid ÷ gross Paid used",
+                        detail: "retained ÷ gross Paid used",
                     },
                     {
                         label: "Quest used",
@@ -118,8 +118,7 @@ export function CommunityTab({
                                     hint={{
                                         meaning:
                                             "Share of gross Paid usage retained by Pollinations after ecosystem payouts.",
-                                        formula:
-                                            "retained Paid ÷ gross Paid used",
+                                        formula: "retained ÷ gross Paid used",
                                     }}
                                 >
                                     Performance
@@ -146,7 +145,7 @@ export function CommunityTab({
                                             "Paid used − BYOP share − owner share",
                                     }}
                                 >
-                                    Paid retained
+                                    Retained
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell

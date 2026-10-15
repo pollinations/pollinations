@@ -230,17 +230,15 @@ describe("callKlingVideoAPI", () => {
         );
     });
 
-    it.each([
-        null,
-        "0",
-        "NaN",
-        "-1",
-    ])("rejects missing or invalid fal billable units: %s", async (units) => {
-        mockKlingFetch([], "COMPLETED", units);
-        await expect(
-            callKlingVideoAPI("scene", baseParams),
-        ).rejects.toMatchObject({ status: 502 });
-    });
+    it.each([null, "0", "NaN", "-1"])(
+        "rejects missing or invalid fal billable units: %s",
+        async (units) => {
+            mockKlingFetch([], "COMPLETED", units);
+            await expect(
+                callKlingVideoAPI("scene", baseParams),
+            ).rejects.toMatchObject({ status: 502 });
+        },
+    );
 
     it("recovers a dropped status connection without resubmitting the paid job", async () => {
         const requests: ProviderRequest[] = [];

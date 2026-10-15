@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 import {
     mkdirSync,
     mkdtempSync,
+    openSync,
     readFileSync,
     rmSync,
     writeFileSync,
@@ -15,10 +15,10 @@ vi.mock("node:os", async (original) => {
     return { ...os, homedir: vi.fn(os.homedir) };
 });
 
-vi.mock("node:child_process", async (original) => ({
-    ...(await original<typeof import("node:child_process")>()),
-    spawnSync: vi.fn(),
-}));
+vi.mock("node:fs", async (original) => {
+    const fs = await original<typeof import("node:fs")>();
+    return { ...fs, openSync: vi.fn(fs.openSync) };
+});
 
 let home: string;
 
@@ -216,16 +216,11 @@ describe("sandbox timeout and pause", () => {
     });
 });
 
-describe("sandbox ssh", () => {
+describe("ssh connections", () => {
     async function prepare(response: Response) {
         const { setKeyOverride } = await import("../../lib/config.js");
         setKeyOverride("sk_test");
-        let stdout = "";
         let stderr = "";
-        vi.spyOn(process.stdout, "write").mockImplementation((value) => {
-            stdout += String(value);
-            return true;
-        });
         vi.spyOn(process.stderr, "write").mockImplementation((value) => {
             stderr += String(value);
             return true;
@@ -234,36 +229,19 @@ describe("sandbox ssh", () => {
             "fetch",
             vi.fn(async () => response),
         );
-        vi.mocked(spawnSync)
-            .mockReset()
-            .mockReturnValue({
-                status: 0,
-            } as ReturnType<typeof spawnSync>);
         const { sandboxCommand } = await import("./index.js");
         return {
             run: (...args: string[]) =>
                 sandboxCommand.parseAsync(args, { from: "user" }),
-            output: () => ({ stdout, stderr }),
+            stderr: () => stderr,
         };
     }
 
-    const sandbox = (sandboxID: string) => ({
-        sandboxID,
-        templateID: "pollinations",
-        state: "paused",
-        cpuCount: 2,
-        memoryMB: 2048,
-        endAt: "2026-10-15T00:00:00Z",
-    });
+    it("shares one connection between ssh, scp and rsync", async () => {
+        const command = await prepare(Response.json([]));
 
-    it("opens the only sandbox and shares one connection", async () => {
-        const command = await prepare(Response.json([sandbox("only1")]));
+        await command.run("ssh-config");
 
-        await command.run("ssh");
-
-        expect(spawnSync).toHaveBeenCalledWith("ssh", ["only1.polli"], {
-            stdio: "inherit",
-        });
         const config = readFileSync(
             join(home, ".pollinations", "ssh", "config"),
             "utf8",
@@ -279,7 +257,7 @@ describe("sandbox ssh", () => {
         vi.mocked(homedir).mockReturnValue(long);
         const command = await prepare(Response.json([]));
 
-        await command.run("ssh", "only1");
+        await command.run("ssh-config");
 
         const config = readFileSync(
             join(long, ".pollinations", "ssh", "config"),
@@ -288,21 +266,12 @@ describe("sandbox ssh", () => {
         expect(config).not.toContain("ControlMaster");
     });
 
-    it("lists several sandboxes instead of guessing", async () => {
-        const command = await prepare(
-            Response.json([sandbox("first1"), sandbox("second2")]),
+    it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {
+        const tty = join(home, "tty");
+        const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
+        vi.mocked(openSync).mockImplementation((path, ...rest) =>
+            fs.openSync(path === "/dev/tty" ? tty : path, ...rest),
         );
-
-        await expect(command.run("ssh")).rejects.toMatchObject({ code: 1 });
-
-        expect(spawnSync).not.toHaveBeenCalled();
-        const { stdout, stderr } = command.output();
-        expect(stdout).toContain("first1");
-        expect(stdout).toContain("second2");
-        expect(stderr).toContain("Pick one: polli sandbox ssh <id>");
-    });
-
-    it("prints Gen's refusal as a sentence when ssh can't connect", async () => {
         const command = await prepare(
             Response.json(
                 {
@@ -318,60 +287,12 @@ describe("sandbox ssh", () => {
             command.run("proxy", "paused1.polli"),
         ).rejects.toMatchObject({ code: 1 });
 
-        expect(command.output().stderr).toContain(
+        const shown = readFileSync(tty, "utf8");
+        expect(shown).toContain(
             "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list",
         );
-        expect(command.output().stderr).not.toContain('"code"');
-        const { proxyError } = await import("./ssh.js");
-        expect(readFileSync(proxyError("paused1"), "utf8")).toContain(
-            "At most 3 sandboxes can run at once.",
-        );
-    });
-
-    it("shows the proxy's error that ssh hid, without asking Gen again", async () => {
-        const command = await prepare(Response.json([]));
-        const { proxyError } = await import("./ssh.js");
-        vi.mocked(spawnSync).mockImplementation(() => {
-            writeFileSync(proxyError("gone1"), "Sandbox gone1 not found");
-            return { status: 255 } as ReturnType<typeof spawnSync>;
-        });
-
-        await expect(command.run("ssh", "gone1")).rejects.toMatchObject({
-            code: 1,
-        });
-
-        expect(command.output().stderr).toContain(
-            "Could not reach sandbox gone1: Sandbox gone1 not found",
-        );
-        expect(fetch).not.toHaveBeenCalled();
-    });
-
-    it("passes on a dropped connection's exit code and ignores old errors", async () => {
-        const command = await prepare(Response.json([]));
-        const { proxyError } = await import("./ssh.js");
-        writeFileSync(proxyError("live1"), "Sandbox live1 not found");
-        vi.mocked(spawnSync).mockReturnValue({
-            status: 255,
-        } as ReturnType<typeof spawnSync>);
-
-        await expect(command.run("ssh", "live1")).rejects.toMatchObject({
-            code: 255,
-        });
-
-        expect(command.output().stderr).not.toContain("not found");
-        expect(fetch).not.toHaveBeenCalled();
-    });
-
-    it("fails when ssh is killed", async () => {
-        const command = await prepare(Response.json([]));
-        vi.mocked(spawnSync).mockReturnValue({
-            status: null,
-            signal: "SIGKILL",
-        } as ReturnType<typeof spawnSync>);
-
-        await expect(command.run("ssh", "live1")).rejects.toMatchObject({
-            code: 1,
-        });
+        expect(shown).not.toContain('"code"');
+        expect(command.stderr()).toBe("");
     });
 });
 

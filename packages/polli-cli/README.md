@@ -195,7 +195,6 @@ polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
 polli sandbox create pollinations-large  # 4 vCPU, 8 GB
 ssh <id>.polli                    # scp and rsync work too
-polli sandbox ssh [id]            # the same; no id needed with one sandbox
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
 polli sandbox pause <id>
 polli sandbox kill <id>

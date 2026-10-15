@@ -9,7 +9,6 @@ polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
 polli sandbox create pollinations-large  # 4 vCPU, 8 GB, 50 GB free disk
 ssh <id>.polli                    # scp, sftp and rsync work too
-polli sandbox ssh [id]            # the same; no id needed with one sandbox; sets up ssh
 ssh -L 3000:localhost:3000 <id>.polli  # the sandbox's port 3000 on your computer
 polli sandbox list
 polli sandbox timeout <id> 14400  # keep it running 4 hours without ssh
@@ -18,7 +17,7 @@ polli sandbox kill <id>
 ```
 
 - A sandbox pauses 15 to 20 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it. ssh keeps the connection 10 of those minutes, so the next `ssh`, `scp` or `rsync` starts in under a second; `ssh -O exit <id>.polli` closes it sooner. Where ssh can't share a connection, on Windows or with a home folder path over 34 characters, it pauses 5 to 10 minutes after.
-- If `ssh` only says `Connection closed by UNKNOWN port 65535`, run `polli sandbox ssh <id>`: it prints why, such as a sandbox that doesn't exist or too many running. ssh hides polli's own messages while it shares connections.
+- When ssh can't reach a sandbox, it prints why, such as a sandbox that doesn't exist or too many running. VS Code only says the connection closed; run `ssh <id>.polli` in a terminal to see why.
 - Port forwarding works (`-L`, `-R`, `-D`), and VS Code's Remote-SSH connects to `<id>.polli` like any host. While a connection is open, VS Code's included, the sandbox keeps running and is paid: about 0.8 Pollen a day for `pollinations`, 2 for `pollinations-large`.
 - To keep it running without ssh, give it a timeout: `polli sandbox create --timeout <seconds>`, or `polli sandbox timeout <id> <seconds>`, which also resumes a paused sandbox. A timeout of 0 never expires, as Daytona's `autoStopInterval: 0`: polli asks for E2B's largest timeout, about 68 years.
 - With a timeout longer than 10 minutes, gen keeps the sandbox running until then, 10 minutes at a time: every 5 minutes it pays to bring the paid time back up to 10 minutes, with the key that set the timeout, or from your account when you set it on the dashboard. The keep ends when that key is deleted, disabled or expires, or when its budget or the wallet runs out; the sandbox then pauses when its paid time ends. For a sandbox that should run for weeks, set its timeout with a key that has no expiry date or budget.

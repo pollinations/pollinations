@@ -14,8 +14,8 @@ function log(category, message, ...args) {
     console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
 }
 
-// /feed is a 404 since the public feed is gone: no R2 lookup for it either
-const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
+// /feed and /favicon.ico are 404s: no R2 lookup for them either
+const NON_CACHE_PATHS = ["/models", "/feed", "/favicon.ico", "/openai/models"];
 
 /**
  * Prepare metadata for caching

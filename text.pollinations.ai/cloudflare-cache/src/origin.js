@@ -276,8 +276,9 @@ async function answer(request, env, ctx) {
     if (method === "POST" && path === "/v1/chat/completions") {
         return generate(undefined, "openai", "POST /v1/chat/completions");
     }
-    // Changed: the public feed is gone, so /feed gets the 404 below
-    if (read && path !== "/feed") {
+    // Changed: the public feed is gone, so /feed gets the 404 below, as does
+    // the /favicon.ico browsers ask for
+    if (read && path !== "/feed" && path !== "/favicon.ico") {
         // Express sent HEAD through the OpenAI JSON branch
         const format = method === "GET" ? "text" : "openai";
         return generateFromPath(url.pathname.slice(1), format, `${method} /*`);

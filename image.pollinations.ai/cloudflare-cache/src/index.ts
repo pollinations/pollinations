@@ -44,12 +44,14 @@ app.all("*", async (c) => {
     const pathname = url.pathname;
 
     // Known utility paths keep their path. The public feed is gone: /feed
-    // keeps its path for the 404 instead of generating "feed".
+    // keeps its path for the 404 instead of generating "feed". So does the
+    // /favicon.ico browsers ask for, which took the visitor's free image.
     const utilityPaths = [
         "/models",
         "/about",
         "/register",
         "/feed",
+        "/favicon.ico",
         "/crossdomain.xml",
         "/.well-known",
     ];

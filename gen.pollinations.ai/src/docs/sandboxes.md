@@ -1,13 +1,15 @@
 ## Sandboxes
 
-Linux VMs from [E2B](https://e2b.dev), paid from your Pollinations wallet (alpha).
+A sandbox is a Linux computer in the cloud, run by [E2B](https://e2b.dev) (alpha).
+Open it with `ssh` or VS Code's Remote-SSH.
+Its files stay while it's paused, and you pay from your Pollinations wallet only while it runs.
 
 ### Use a sandbox
 
 ```bash
 polli sandbox create              # prints the id and sets up ssh
 polli sandbox create --timeout 0  # runs until you pause or kill it
-polli sandbox create pollinations-large  # 4 vCPU, 8 GB, 50 GB free disk
+polli sandbox create pollinations-large  # 4 vCPU, 8 GB memory, 50 GB free disk
 ssh <id>.polli                    # scp, sftp and rsync work too
 ssh -L 3000:localhost:3000 <id>.polli  # the sandbox's port 3000 on your computer
 polli sandbox list
@@ -24,7 +26,7 @@ polli sandbox kill <id>
 - E2B ends a run after 24 hours, so once a day gen pauses and resumes a kept sandbox. Its files, memory and processes stay; open connections drop. If a renewal is missed and the sandbox pauses, gen resumes it at the next renewal, within 5 minutes.
 - `polli sandbox pause <id>` pauses it with its files and memory, ending a keep, until `ssh` or `polli sandbox timeout` resumes it. `polli sandbox kill <id>` deletes it.
 - The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
-- The default template, `pollinations` (2 vCPU, 2 GB, 20 GB free disk), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi and OpenClaw. `pollinations-large` is the same with 4 vCPU, 8 GB and 50 GB free disk, for builds, test suites and media that need more.
+- The default template, `pollinations` (2 vCPU, 2 GB memory, 20 GB free disk), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi and OpenClaw. `pollinations-large` is the same with 4 vCPU, 8 GB memory and 50 GB free disk, for builds, test suites and media that need more.
 - Both come logged in when the key that creates it has the `keys` permission, as polli's own key does. polli inside uses a key of the sandbox's own, `polli-sandbox-<id>`, created like any other key, with polli's usual permissions except `keys`, so code in the sandbox can't create keys or change budgets. Killing the sandbox leaves the key. Your first interactive `ssh` connects each harness to Pollinations with that same key.
 - Both also run a [herdr](https://herdr.dev) server, started by `ssh`. Agents you start in `herdr` keep running after ssh disconnects, and a paused sandbox resumes them where they were. `ssh <id>.polli herdr agent list` shows them and their state; `herdr machine add <id>.polli` lets herdr on your own machine manage them.
 - Both include everyday tools: ffmpeg, ImageMagick, git-lfs, [uv](https://docs.astral.sh/uv/), ripgrep, fd, jq, sqlite3, tmux, pdftotext, `gh`, gcc and make.
@@ -37,7 +39,9 @@ polli sandbox kill <id>
 
 ### Cost and limits
 
-- Billed per second for the sandbox's CPU and memory, at a quarter of [E2B's rates](https://e2b.dev/pricing) during the launch: about 0.033 Pollen an hour for `pollinations`, 0.083 for `pollinations-large`. Paid 10 minutes ahead: at creation, while an ssh session is open, and while a timeout keeps it running.
+- Billed per second for the sandbox's CPU and memory while it runs, at a quarter of [E2B's rates](https://e2b.dev/pricing) during the launch: about 0.033 Pollen an hour for `pollinations` (about 24 a month if it runs all the time) and 0.083 for `pollinations-large` (about 60 a month). Paid 10 minutes ahead: at creation, while an ssh session is open, and while a timeout keeps it running.
+- A paused sandbox costs nothing and keeps its files.
+- The current rates, per vCPU-second and per GiB-second of memory, and each template's size: `GET https://gen.pollinations.ai/alpha/e2b/pricing`, no key needed.
 - Unused time is not refunded. Pausing or killing a sandbox, or shortening its timeout, gives up the rest of its paid 10 minutes; resuming pays again.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
 - At most 8 sandboxes run at once per account.
@@ -51,4 +55,4 @@ export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
 export E2B_API_KEY=sk_...
 ```
 
-Run `polli sandbox ssh-config` once to ssh into the sandboxes they create. A timeout longer than 10 minutes, set when you create, connect to or `setTimeout` a sandbox, keeps it running until then, past E2B's 24-hour run too: gen renews it 10 minutes at a time with that key and restarts its run once a day. Its `endAt` shows when the timeout ends, as on E2B. E2B has no timeout that never expires; use its largest, 2147483647 seconds. A later `setTimeout` of 10 minutes or less, or a pause, ends the keep. Set `lifecycle: { onTimeout: "pause" }` so a lease that goes unpaid pauses the sandbox instead of killing it. Auto-resume, snapshots, forks, IAM and volume mounts are not available.
+Run `polli sandbox ssh-config` once to ssh into the sandboxes they create. A timeout longer than 10 minutes, set when you create, connect to or `setTimeout` a sandbox, keeps it running until then, past E2B's 24-hour run too: gen renews it 10 minutes at a time with that key and restarts its run once a day. Its `endAt` shows when the timeout ends, as on E2B. E2B has no timeout that never expires; use its largest, 2147483647 seconds. A later `setTimeout` of 10 minutes or less, or a pause, ends the keep. A lease that runs out, or goes unpaid, pauses the sandbox; set `lifecycle: { onTimeout: "kill" }` to have it deleted instead. Auto-resume, snapshots, forks, IAM and volume mounts are not available.

@@ -25,7 +25,7 @@ The main implementation boundaries are:
   resolves proxy, prompt-agent, and endpoint-agent listings;
 - [agent gateway context](./gen.pollinations.ai/src/text/communityEndpoint.ts)
   — mints run tokens and selects the upstream agent;
-- [prompt-agent runtime](./enter.pollinations.ai/src/services/prompt-agent-runtime.ts)
+- [prompt-agent runtime](./gen.pollinations.ai/src/text/agents/runtime.ts)
   — runs the hosted model/tool loop;
 - [run-token authentication](./shared/auth/api-key.ts) — verifies `ag_` tokens
   and resolves their parent key;

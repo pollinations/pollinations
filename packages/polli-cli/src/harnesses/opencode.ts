@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import JSON5 from "json5";
+import { BASE_URL } from "../lib/config.js";
 import {
     commandExists,
     readTextIfExists,
@@ -10,31 +11,32 @@ import {
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
-import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
+import type {
+    HarnessAdapter,
+    HarnessContext,
+    HarnessModel,
+    HarnessResult,
+} from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
+const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "openai/gpt-6-sol";
+// The old setup: a 1.x-only plugin that 2.0 rejects.
 const PLUGIN_SPEC = "opencode-pollinations-plugin";
 
 /**
- * OpenCode's Pollinations plugin registers the `pollinations` provider itself
- * (models as `free/<id>` and `enter/<id>`), serves its media tools, usage,
- * and quest commands, and reads `apiKey` from its own config.json first. The
- * harness therefore only wires the plugin in, stores the dedicated key, and
- * points OpenCode's default model at the plugin's `enter/` catalog.
+ * `provider` is the one block OpenCode 1.x and 2.0 both read, so a single
+ * config serves both. The key lives in OpenCode's own auth.json (what
+ * `opencode auth login` writes), never in the config file.
  */
-const pollinationsConfigDir = (ctx: HarnessContext) => {
-    if (process.platform === "win32") {
-        return join(ctx.env.APPDATA ?? ctx.home, "pollinations");
-    }
-    if (process.platform === "darwin") {
-        return join(ctx.home, "Library", "Application Support", "pollinations");
-    }
-    const xdg = ctx.env.XDG_CONFIG_HOME?.trim();
+const dataDir = (ctx: HarnessContext) => {
+    const xdg = ctx.env.XDG_DATA_HOME?.trim();
     return join(
-        xdg ? resolveHomePath(ctx.home, xdg) : join(ctx.home, ".config"),
-        "pollinations",
+        xdg
+            ? resolveHomePath(ctx.home, xdg)
+            : join(ctx.home, ".local", "share"),
+        "opencode",
     );
 };
 
@@ -53,13 +55,9 @@ export const opencodeConfigFile = (ctx: HarnessContext) => {
     );
 };
 
-const pluginConfigFile = (ctx: HarnessContext) =>
-    join(pollinationsConfigDir(ctx), "config.json");
+const authFile = (ctx: HarnessContext) => join(dataDir(ctx), "auth.json");
 
-const files = (ctx: HarnessContext) => [
-    opencodeConfigFile(ctx),
-    pluginConfigFile(ctx),
-];
+const files = (ctx: HarnessContext) => [opencodeConfigFile(ctx), authFile(ctx)];
 
 const readJson = (path: string): Record<string, unknown> | null => {
     const text = readTextIfExists(path);
@@ -82,7 +80,7 @@ const writeJson = (path: string, data: unknown) =>
 
 const isPluginEntry = (entry: unknown) =>
     typeof entry === "string"
-        ? entry === PLUGIN_SPEC || entry.includes(PLUGIN_SPEC)
+        ? entry.includes(PLUGIN_SPEC)
         : entry !== null &&
           typeof entry === "object" &&
           Object.values(entry).some(
@@ -95,111 +93,119 @@ const pluginListKey = (config: Record<string, unknown>) =>
         ? "plugins"
         : "plugin";
 
-const hasPluginEntry = (config: Record<string, unknown>) => {
-    const entries = config[pluginListKey(config)];
-    return Array.isArray(entries) && entries.some(isPluginEntry);
-};
+const asRecord = (value: unknown): Record<string, unknown> =>
+    value !== null && typeof value === "object" && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : {};
 
 const readApiKey = (ctx: HarnessContext): string | null => {
-    const key = readJson(pluginConfigFile(ctx))?.apiKey;
+    const key = asRecord(readJson(authFile(ctx))?.[PROVIDER]).key;
     return typeof key === "string" && key.length > 5 ? key : null;
 };
 
-const writeApiKey = (ctx: HarnessContext, apiKey: string) => {
-    const config = readJson(pluginConfigFile(ctx)) ?? {};
-    config.apiKey = apiKey;
-    writeJson(pluginConfigFile(ctx), config);
-};
+const providerBlock = (models: HarnessModel[]) => ({
+    npm: "@ai-sdk/openai-compatible",
+    name: "Pollinations",
+    options: { baseURL: `${BASE_URL}/v1` },
+    models: Object.fromEntries(
+        models.map((model) => [
+            model.id,
+            {
+                name: model.id,
+                limit: { context: model.contextWindow, output: 0 },
+                modalities: { input: model.input, output: ["text"] },
+            },
+        ]),
+    ),
+});
 
-const deleteApiKey = (ctx: HarnessContext) => {
-    const path = pluginConfigFile(ctx);
-    const config = readJson(path);
-    if (config === null || config.apiKey === undefined) return false;
-    delete config.apiKey;
-    if (Object.keys(config).length === 0) removeIfExists(path);
-    else writeJson(path, config);
-    return true;
-};
+const modelRef = (model: string) => `${PROVIDER}/${model}`;
+
+const isOurModel = (model: unknown) =>
+    typeof model === "string" && model.startsWith(`${PROVIDER}/`);
+
+const hasOurProvider = (config: Record<string, unknown>) =>
+    asRecord(asRecord(asRecord(config.provider)[PROVIDER]).options).baseURL ===
+    `${BASE_URL}/v1`;
 
 const openCodeConfig = (ctx: HarnessContext): Record<string, unknown> =>
     readJson(opencodeConfigFile(ctx)) ?? {};
 
-// The plugin exposes paid tool-calling models as `enter/<id>` under its own
-// `pollinations` provider.
-const defaultModelRef = (model: string) => `pollinations/enter/${model}`;
+interface OpenCodeSettings {
+    apiKey: string;
+    model: string;
+    models: HarnessModel[];
+}
 
-const isOurDefaultModel = (model: unknown) =>
-    typeof model === "string" && model.startsWith("pollinations/enter/");
-
-const writeOpenCodeConfig = (ctx: HarnessContext, model: string) => {
+const writeConfig = (ctx: HarnessContext, settings: OpenCodeSettings) => {
     const config = openCodeConfig(ctx);
     if (typeof config.$schema !== "string") {
         config.$schema = "https://opencode.ai/config.json";
     }
-    if (!hasPluginEntry(config)) {
-        const key = pluginListKey(config);
-        const entries = Array.isArray(config[key]) ? config[key] : [];
-        config[key] = [...entries, PLUGIN_SPEC];
+    config.provider = {
+        ...asRecord(config.provider),
+        [PROVIDER]: providerBlock(settings.models),
+    };
+    config.model = modelRef(settings.model);
+    // A plugin setup from an earlier version of `on` cannot load in 2.0.
+    const listKey = pluginListKey(config);
+    const plugins = config[listKey];
+    if (Array.isArray(plugins) && plugins.some(isPluginEntry)) {
+        const kept = plugins.filter((entry) => !isPluginEntry(entry));
+        if (kept.length === 0) delete config[listKey];
+        else config[listKey] = kept;
     }
-    config.model = defaultModelRef(model);
     writeJson(opencodeConfigFile(ctx), config);
+
+    const auth = readJson(authFile(ctx)) ?? {};
+    auth[PROVIDER] = { type: "api", key: settings.apiKey };
+    writeJson(authFile(ctx), auth);
 };
 
-const stripOpenCodeConfig = (ctx: HarnessContext) => {
-    const path = opencodeConfigFile(ctx);
-    const config = readJson(path);
-    if (config === null) return false;
+const stripConfig = (ctx: HarnessContext) => {
     let changed = false;
 
-    const key = pluginListKey(config);
-    const entries = config[key];
-    if (Array.isArray(entries) && entries.some(isPluginEntry)) {
-        const filtered = entries.filter((entry) => !isPluginEntry(entry));
-        if (filtered.length === 0) delete config[key];
-        else config[key] = filtered;
-        changed = true;
+    const path = opencodeConfigFile(ctx);
+    const config = readJson(path);
+    if (config) {
+        if (hasOurProvider(config)) {
+            const { [PROVIDER]: _ours, ...others } = asRecord(config.provider);
+            if (Object.keys(others).length === 0) delete config.provider;
+            else config.provider = others;
+            changed = true;
+        }
+        if (isOurModel(config.model)) {
+            delete config.model;
+            changed = true;
+        }
+        if (changed) writeJson(path, config);
     }
 
-    if (isOurDefaultModel(config.model)) {
-        delete config.model;
+    const auth = readJson(authFile(ctx));
+    if (auth && PROVIDER in auth) {
+        delete auth[PROVIDER];
+        if (Object.keys(auth).length === 0) removeIfExists(authFile(ctx));
+        else writeJson(authFile(ctx), auth);
         changed = true;
     }
-
-    if (changed) writeJson(path, config);
     return changed;
 };
 
 const result = (ctx: HarnessContext): HarnessResult => {
     const config = openCodeConfig(ctx);
-    const model = isOurDefaultModel(config.model)
-        ? (config.model as string).slice("pollinations/enter/".length)
+    const model = isOurModel(config.model)
+        ? (config.model as string).slice(PROVIDER.length + 1)
         : undefined;
     return {
         harness: ID,
         label: LABEL,
         configured:
-            hasPluginEntry(config) &&
-            isOurDefaultModel(config.model) &&
+            hasOurProvider(config) &&
+            model !== undefined &&
             readApiKey(ctx) !== null,
         model,
         files: files(ctx),
     };
-};
-
-interface OpenCodeSettings {
-    apiKey: string;
-    model: string;
-}
-
-const writeConfig = (ctx: HarnessContext, settings: OpenCodeSettings) => {
-    writeOpenCodeConfig(ctx, settings.model);
-    writeApiKey(ctx, settings.apiKey);
-};
-
-const stripConfig = (ctx: HarnessContext) => {
-    let changed = stripOpenCodeConfig(ctx);
-    changed = deleteApiKey(ctx) || changed;
-    return changed;
 };
 
 export const configureOpenCode = (
@@ -225,7 +231,7 @@ export const opencode: HarnessAdapter = {
     label: LABEL,
     description: "Configure OpenCode to use Pollinations",
     restartHint:
-        "Restart OpenCode, then pick a Pollinations model with /models. Inside OpenCode: /poll quests shows claimable Pollen, /poll help lists the media tools.",
+        "Restart OpenCode, then pick a Pollinations model with /models. For image, video and audio tools run: polli mcp install opencode --all",
 
     async on(ctx, options) {
         if (!openCodeInstalled(ctx)) {
@@ -234,17 +240,16 @@ export const opencode: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        await fetchHarnessModels(model);
+        const models = await fetchHarnessModels(model);
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,
                 label: LABEL,
                 existingKey: readApiKey(ctx),
-                accountPermissions: ["profile", "usage"],
             },
             { browser: options.browser },
         );
-        return configureOpenCode(ctx, { apiKey, model });
+        return configureOpenCode(ctx, { apiKey, model, models });
     },
 
     off: disableOpenCode,

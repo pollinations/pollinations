@@ -7,7 +7,7 @@ Install [OpenCode](https://opencode.ai/docs/) if it is not installed yet. Then r
 ```bash
 npx @pollinations/cli@latest harness opencode on
 npx @pollinations/cli@latest harness opencode status
-opencode run --model pollinations/enter/openai/gpt-5.4-nano "Reply with POLLI_OK"
+opencode run --model pollinations/openai/gpt-5.4-nano "Reply with POLLI_OK"
 ```
 
 `on` opens Pollinations device login if needed and creates a dedicated key for OpenCode. The final command should print `POLLI_OK`; that reply is the first verified result through the OpenCode connection. If the reply does not appear, check the `status` output and your [Pollen balance](https://enter.pollinations.ai/pollen). See the [full harness guide](https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses) for configuration details and removal.

@@ -162,7 +162,7 @@ polli harness dsh on --model moonshotai/kimi-k2.6
 polli harness dsh on --no-mcp     # skip MCP tool configuration
 polli harness hermes on           # adds the Pollinations provider + Polli skill to Hermes Agent
 polli harness hermes on --model deepseek/deepseek-v4-flash
-polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
+polli harness opencode on         # adds a Pollinations provider + default model (OpenCode 1.x and 2.0)
 polli harness openclaw on         # adds the Pollinations provider + Polli skill to OpenClaw
 polli harness pi on               # native provider, key, startup model, and Polli skill
 polli harness prime on            # native Prime Agent provider support

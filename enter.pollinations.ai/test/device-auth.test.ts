@@ -215,6 +215,30 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("invalid_client");
     });
 
+    test("POST /api/device/token with a non-JSON body returns invalid_request, not a 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "not json",
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an object device_code returns invalid_request and no SQL leak", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: { a: 1 } }),
+        });
+        const text = await res.text();
+        expect(res.status).toBe(400);
+        const body = JSON.parse(text) as { error: string };
+        expect(body.error).toBe("invalid_request");
+        expect(text).not.toContain("Failed query");
+    });
+
     test("POST /api/device/token before approval returns authorization_pending", async () => {
         const device = await insertDeviceCode();
         const res = await SELF.fetch(`${BASE}/api/device/token`, {

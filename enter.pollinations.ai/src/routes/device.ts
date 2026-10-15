@@ -215,7 +215,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -239,7 +239,9 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
+        // parseFormOrJsonBody filters non-string fields and never throws, so a
+        // malformed body yields invalid_request instead of a 500 (RFC 6749 §5.2).
+        const body = await parseFormOrJsonBody(c);
         return await exchangeDeviceCode(c, body);
     })
     .get(

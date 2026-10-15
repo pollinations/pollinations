@@ -11,7 +11,10 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import type { GenerationJobHead } from "@/middleware/generation-deduplication.ts";
+import type {
+    GenerationJobHead,
+    GenerationOutcome,
+} from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 
 function testJob(key: string, method = "GET"): GenerationJobHead {
@@ -43,18 +46,46 @@ async function waitForAlarm(state: DurableObjectState): Promise<void> {
     throw new Error("Generation alarm was not scheduled");
 }
 
+/** Runs one job through a fresh coordinator's alarm and leaves no state. */
+async function runAlarmJob(): Promise<GenerationOutcome> {
+    const stub = env.GENERATION_COORDINATOR.getByName(
+        `test-${crypto.randomUUID()}`,
+    );
+    return runInDurableObject(stub, async (coordinator, state) => {
+        const result = coordinator.startAndWait(
+            testJob(`handoff-${crypto.randomUUID()}`),
+        );
+        await waitForAlarm(state);
+        await coordinator.alarm();
+        await state.storage.deleteAlarm();
+        expect([...(await state.storage.list()).keys()]).toEqual([]);
+        return result;
+    });
+}
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
 describe("GenerationCoordinator", () => {
-    it.each(["url", "b64_json"] as const)(
-        "completes large Seedream uploads once through the real coordinator (%s)",
-        async (responseFormat) => {
+    it.each([
+        ["url", "in the alarm"],
+        ["b64_json", "in the alarm"],
+        ["url", "behind the public origin"],
+    ] as const)(
+        "completes large Seedream uploads once through the real coordinator (%s, %s)",
+        async (responseFormat, execution) => {
             const { key, userId } = await createTestApiKey({
                 user: { packBalance: 100 },
             });
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
+            const handoffs: ExecutionContext[] = [];
+            if (execution === "behind the public origin") {
+                env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+                onTestFinished(() => {
+                    env.GENERATION_EXECUTION_ORIGIN = undefined;
+                });
+            }
             const tinybird = createMockTinybird();
             let executions = 0;
             let requestBytes = 0;
@@ -102,6 +133,18 @@ describe("GenerationCoordinator", () => {
                         return new Response(output, {
                             headers: { "content-type": "image/png" },
                         });
+                    }
+                    if (
+                        url.host === "gen.pollinations.ai" &&
+                        url.pathname.startsWith("/internal/generation/")
+                    ) {
+                        const context = createExecutionContext();
+                        handoffs.push(context);
+                        return worker.fetch(
+                            new Request(input, init),
+                            env,
+                            context,
+                        );
                     }
                     if (url.pathname === "/v0/pipes/public_model_stats.json") {
                         return Response.json({ data: [] });
@@ -213,7 +256,11 @@ describe("GenerationCoordinator", () => {
             await Promise.all([
                 firstSettled,
                 waitOnExecutionContext(secondContext),
+                ...handoffs.map(waitOnExecutionContext),
             ]);
+            expect(handoffs).toHaveLength(
+                execution === "behind the public origin" ? 1 : 0,
+            );
             const cacheContext = createExecutionContext();
             const cached = await worker.fetch(request(), env, cacheContext);
             expect(cached.status).toBe(200);
@@ -479,6 +526,81 @@ describe("GenerationCoordinator", () => {
         }
         expect(received).toBe(size);
     });
+
+    it("rejects a public handoff without the alarm's nonce", async () => {
+        const ids = [
+            env.GENERATION_COORDINATOR.idFromName(
+                `test-${crypto.randomUUID()}`,
+            ).toString(),
+            "a".repeat(64),
+        ];
+        for (const id of ids) {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai/internal/generation/${id}`,
+                {
+                    method: "POST",
+                    headers: { "x-generation-handoff": crypto.randomUUID() },
+                },
+            );
+            expect(response.status, id).toBe(404);
+            await response.text();
+        }
+    });
+
+    it("hands a failed job to the public origin with the alarm's outcome, once", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const inAlarm = await runAlarmJob();
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        const replays: number[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const response = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                // The nonce is single-use: a replay finds nothing to run.
+                const replay = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                replays.push(replay.status);
+                await replay.text();
+                return response;
+            },
+        );
+
+        const handedOff = await runAlarmJob();
+
+        expect(inAlarm.status).toBe("failed");
+        expect(handedOff).toEqual(inAlarm);
+        expect(replays).toEqual([404]);
+    });
+
+    it("fails waiters closed when the public origin refuses the handoff", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("blocked", { status: 403 }),
+        );
+
+        const result = await runAlarmJob();
+
+        expect(result.status).toBe("failed");
+        if (result.status !== "failed") return;
+        expect(result.error.httpStatus).toBe(503);
+        expect(new TextDecoder().decode(result.error.body)).toBe(
+            "Detached generation failed",
+        );
+    });
+
     it("returns an existing cached generation without scheduling work", async () => {
         const key = `cached-${crypto.randomUUID()}`;
         await env.TEXT_BUCKET.put(key, "cached");
@@ -544,6 +666,67 @@ describe("GenerationCoordinator", () => {
             "Detached generation was interrupted",
         );
         expect(await env.TEXT_BUCKET.head(key)).toBeNull();
+    });
+
+    it("settles a pending async record when a sync join cancels its alarm", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+        const cacheKey = crypto.randomUUID().replaceAll("-", "").repeat(2);
+        const job = {
+            ...testJob(cacheKey),
+            cache: {
+                storage: "media" as const,
+                key: cacheKey,
+            },
+        };
+
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                // Arrange the state an eviction leaves behind: the alarm
+                // claimed the job, the executor wrote the cache, and the
+                // handler died before finish(). The scheduled alarm retry is
+                // the only event that can still finalize the record.
+                await state.storage.put("job", {
+                    ...job,
+                    bodyChunks: 0,
+                    started: true,
+                });
+                await state.storage.put("async", {
+                    ownerIds: ["async-owner"],
+                    cache: { storage: "media", key: cacheKey },
+                    status: "pending",
+                    createdAt: Date.now(),
+                });
+                await state.storage.setAlarm(Date.now() + 60_000);
+                await env.MEDIA.put(
+                    cacheKey,
+                    new Response("late-result", {
+                        headers: { "content-type": "image/png" },
+                    }),
+                );
+
+                // A sync client now submits the identical request and joins
+                // on the freshly written cache.
+                const outcome = await coordinator.startAndWait(job);
+                return {
+                    outcome,
+                    record: await coordinator.status("async-owner"),
+                    alarm: await state.storage.getAlarm(),
+                };
+            },
+        );
+
+        // The sync client is served from the cache...
+        expect(result.outcome).toEqual({ status: "cached" });
+        // ...but the pending async record must not be left without a wake-up.
+        expect(result.alarm).not.toBeNull();
+        // The sync caller (user-1) doesn't become an owner of the job.
+        expect(result.record).toMatchObject({
+            status: "succeeded",
+            ownerIds: ["async-owner"],
+        });
     });
 
     it("streams request bodies above the 32 MiB RPC limit into storage", async () => {

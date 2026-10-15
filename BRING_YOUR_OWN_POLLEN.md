@@ -8,7 +8,7 @@ Users stay in control of their balance, budgets, and revocation; your app never 
 
 An **App Key** (`pk_...`) is the publishable key your app sends users to Pollinations with. Without one, the consent screen falls back to the redirect hostname and traffic isn't attributed to your account.
 
-To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create New App Key**:
+To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create app key**:
 
 <p align="left"><img src="https://media.pollinations.ai/28716f8fb8677eff" alt="Edit App Key" width="420"></p>
 
@@ -141,7 +141,7 @@ Use the returned `access_token` as the API key:
 ```javascript
 fetch('https://gen.pollinations.ai/v1/chat/completions', {
   method: 'POST',
-  headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+  headers: { 'Authorization': `Bearer ${access_token}`, 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: 'openai/gpt-5.4-nano', messages: [{ role: 'user', content: 'yo' }] })
 });
 ```

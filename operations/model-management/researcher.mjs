@@ -1348,7 +1348,7 @@ export async function research(
                 status: "submitted",
                 reason: "Jev selected finish without Sol",
             });
-            const output = assess(
+            const first = assess(
                 {
                     routes: [],
                     discoveries:
@@ -1364,6 +1364,7 @@ export async function research(
                 undefined,
                 inventory,
             );
+            const output = await services.auditClaims(first, null, sources);
             return {
                 ...output,
                 ...evidence(),
@@ -1862,7 +1863,9 @@ export async function research(
                                 const outputRows = task.models
                                     ? output.models
                                     : [output];
-                                if (!task.models && !task.model)
+                                if (!task.models && !task.model) {
+                                    output.pendingProviders =
+                                        verified.pendingProviders ?? [];
                                     for (const discovery of output.discoveries) {
                                         const auditedDiscovery =
                                             verified.discoveries.find(
@@ -1884,6 +1887,7 @@ export async function research(
                                             discovery.semanticAudit =
                                                 auditedDiscovery.semanticAudit;
                                     }
+                                }
                                 for (const [
                                     rowIndex,
                                     row,
@@ -2275,6 +2279,7 @@ export async function exaSource(raw) {
 
 export async function auditEvidence(proposal, models, sources, decision) {
     const next = structuredClone(proposal);
+    if (!models) next.pendingProviders = [];
     const rows = models ? next.models : [];
     const items = [],
         bindings = new Map();
@@ -2444,6 +2449,36 @@ export async function auditEvidence(proposal, models, sources, decision) {
                     grade.selectedProbability < 0.9
                 ) {
                     rejected.add(discovery);
+                    // Preserve literal provider leads for further research without accepting their claims.
+                    const extraction = discovery.extraction;
+                    if (
+                        discovery.kind === "provider" &&
+                        discovery.reason === discoveryLeadReason("provider") &&
+                        grade.relation === "insufficient" &&
+                        grade.calibrationPassed !== false &&
+                        grade.rejected !== true &&
+                        grade.rawRelation !== "contradicted" &&
+                        extraction?.selectedProbability >= 0.9 &&
+                        /^[a-f0-9]{64}$/.test(extraction.requestDigest) &&
+                        Number.isSafeInteger(extraction.start) &&
+                        extraction.start >= 0 &&
+                        Number.isSafeInteger(extraction.end) &&
+                        extraction.end > extraction.start &&
+                        sources.some(
+                            (source) =>
+                                discovery.sourceIds.includes(source.id) &&
+                                source.status === "fetched" &&
+                                source.text.slice(
+                                    extraction.start,
+                                    extraction.end,
+                                ) === extraction.quote &&
+                                mentions(extraction.quote, discovery.name),
+                        )
+                    )
+                        next.pendingProviders.push({
+                            ...discovery,
+                            status: "needs-source-verification",
+                        });
                     next.gaps.push(
                         `${discovery.name}: discovery evidence ${grade.relation}${grade.calibrationPassed === false ? "; known-answer calibration rejected this audit" : ""}`,
                     );
@@ -3501,6 +3536,7 @@ export async function main(env = process.env) {
             models,
             discoveryLeads: [
                 ...(report.discovery.discoveries ?? []),
+                ...(report.discovery.pendingProviders ?? []),
                 ...(report.providerIndex?.providers ?? []).filter(
                     ({ modelNames }) =>
                         models.some(({ name }) => modelNames.includes(name)),
@@ -3732,6 +3768,20 @@ export function parentIssue(report, artifactUrl) {
         ];
         if (names.length) lines.push(`- ${label}: ${list(names)}.`);
     }
+    if (report.discovery.pendingProviders?.length)
+        lines.push(
+            `- Provider leads (need evidence): ${list(
+                report.discovery.pendingProviders.map((item) => {
+                    const source = report.sources?.find(
+                        ({ id, status }) =>
+                            item.sourceIds.includes(id) && status === "fetched",
+                    );
+                    return source
+                        ? `[${clean(item.name)}](${source.url.replace(/[()\s<>]/g, encodeURIComponent)})`
+                        : clean(item.name);
+                }),
+            )}.`,
+        );
     if (
         report.providerIndex?.status === "fetched" &&
         report.providerIndex.providers.length

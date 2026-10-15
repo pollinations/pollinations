@@ -70,6 +70,102 @@ import {
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 
+test("uncertain literal provider leads remain pending without weakening the evidence audit", async () => {
+    const text =
+        "NicheCloud pricing for hosted models; API details require another source.";
+    const source = {
+        id: "s1",
+        url: "https://nichecloud.example/pricing",
+        status: "fetched",
+        text,
+    };
+    const lead = {
+        name: "NicheCloud",
+        kind: "provider",
+        reason: discoveryLeadReason("provider"),
+        sourceIds: [source.id],
+        extraction: {
+            quote: text,
+            start: 0,
+            end: text.length,
+            requestDigest: hash("extraction"),
+            selectedProbability: 0.95,
+        },
+    };
+    for (const scenario of [
+        "pending",
+        "uncertain-audit",
+        "supported",
+        "contradicted",
+        "contradicted-raw",
+        "invalid-audit",
+        "failed-control",
+        "low-extraction",
+        "invalid-span",
+        "custom-claim",
+        "model",
+    ]) {
+        const item = structuredClone(lead);
+        if (scenario === "low-extraction")
+            item.extraction.selectedProbability = 0.89;
+        if (scenario === "invalid-span")
+            item.extraction.quote = "Unsupported invented quote";
+        if (scenario === "custom-claim")
+            item.reason = "Cheapest provider on the internet";
+        if (scenario === "model") {
+            item.kind = "model";
+            item.reason = discoveryLeadReason("model");
+        }
+        const relation = ["supported", "contradicted"].includes(scenario)
+            ? scenario
+            : "insufficient";
+        const result = await auditEvidence(
+            {
+                routes: [],
+                discoveries: [item],
+                gaps: [],
+                pendingProviders: [lead],
+            },
+            null,
+            [source],
+            async (payload) => ({
+                requestDigest: hash("audit"),
+                grades: payload.state.items.map(({ id }) => ({
+                    id,
+                    relation,
+                    selectedProbability:
+                        scenario === "uncertain-audit" ? 0.74 : 0.95,
+                    calibrationAccepted: scenario !== "uncertain-audit",
+                    calibrationPassed: scenario !== "failed-control",
+                    rawRelation:
+                        scenario === "contradicted-raw"
+                            ? "contradicted"
+                            : relation,
+                    rejected: scenario === "invalid-audit",
+                })),
+            }),
+        );
+        assert.equal(
+            result.discoveries.length,
+            scenario === "supported" ? 1 : 0,
+            scenario,
+        );
+        assert.equal(
+            result.pendingProviders.length,
+            ["pending", "uncertain-audit"].includes(scenario) ? 1 : 0,
+            scenario,
+        );
+        if (["pending", "uncertain-audit"].includes(scenario)) {
+            const [pending] = result.pendingProviders;
+            assert.equal(pending.status, "needs-source-verification");
+            assert.deepEqual(pending.sourceIds, [source.id]);
+            assert.equal(pending.semanticAudit[0].relation, "insufficient");
+            assert.equal(pending.semanticAudit[0].requestDigest, hash("audit"));
+            assert.equal(pending.extraction.quote, text);
+        }
+    }
+});
+
 test("provider documentation is kept before lengthy marketing excerpts in a bounded audit", async () => {
     const api = "InferHub offers an OpenAI-compatible inference API.";
     let audited = 0;
@@ -1728,6 +1824,31 @@ test(
 );
 
 test(
+    "native discovery finish retains uncertain provider leads in the actual runner report",
+    { skip: !available && "Python with Scrapling unavailable" },
+    async (t) => {
+        const { env } = await fixture(t);
+        const calls = network(t, [sol, jev], {
+            marketFinish: true,
+            extractRelation: "provider",
+            marketRelation: "insufficient",
+        });
+        const report = await main({ ...env, MODELS: "" });
+        assert.equal(report.status, "complete", report.discovery.reason);
+        assert.equal(calls.sol.length, 0);
+        assert.deepEqual(report.discovery.discoveries, []);
+        assert.ok(report.discovery.pendingProviders.length > 0);
+        for (const lead of report.discovery.pendingProviders) {
+            assert.equal(lead.status, "needs-source-verification");
+            assert.equal(lead.semanticAudit[0].relation, "insufficient");
+            assert.ok(
+                report.sources.some(({ id }) => lead.sourceIds.includes(id)),
+            );
+        }
+    },
+);
+
+test(
     "native discovery extraction publishes literal model leads without Sol or invented facts",
     { skip: !available && "Python with Scrapling unavailable" },
     async (t) => {
@@ -1776,6 +1897,7 @@ test(
             discovery.extraction.quote,
         );
         assert.match(discovery.extraction.requestDigest, /^[a-f0-9]{64}$/);
+        assert.equal(discovery.semanticAudit[0].relation, "supported");
         assert.equal(discovery.pricing, undefined);
         assert.ok(
             report.quality.discoveryCoverage.every(({ searched }) => searched),

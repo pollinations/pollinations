@@ -327,8 +327,8 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install shared dependencies
-        run: npm install --workspace shared --include-workspace-root=false
+      - name: Install workspace dependencies
+        run: npm ci
 
       - name: Install media dependencies
         run: npm install

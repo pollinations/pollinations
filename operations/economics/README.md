@@ -41,6 +41,15 @@ vocabulary; the vendor ledger `type` still maps `inference`/`gpu` to compute
 and `infra` to infrastructure. A vendor registered as `uncategorized` has not
 been reviewed yet and keeps its canonical supplied category until it is.
 
+Trends uses the same sales and service-month costs as Runway. Its expense
+curves use the existing ledger categories, at full cost before credits. Reviewed
+`salesAdjustments` in private configuration classify deductions already in Sales:
+earlier-month fraudulent refunds/disputes and their dispute fees. Actuals remain
+unchanged; diamonds add back only those identified amounts. Sales exposes the
+native-currency breakdown and archived evidence. Missing review is not zero, and
+incomplete coverage or a classification exceeding its Sales component prevents
+an adjusted result.
+
 Runway is derived mathematically from `economics_bank_ledger_api`,
 `economics_vendor_ledger_api`,
 checked balances, and the reviewed calculation rules in

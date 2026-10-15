@@ -58,6 +58,15 @@ Collection steps:
 5. Use this skill when exported transaction
    evidence needs to become an entry.
 6. For reconciliation, compare against invoice entries and `economics_bank_ledger`.
+   For foreign-currency invoices, match the original `Exchange To` and
+   `Exchange To Amount` to the invoice currency and total; do not reconstruct
+   the charge with a monthly exchange rate. When fees are shown separately,
+   join the original payment and its `FEE-<TransferWise ID>` row by ID,
+   settlement date and currency. Verify that principal plus the separate fee
+   equals the existing Bank debit before qualifying the invoice. If the
+   statement amount already equals the debit, do not add the fee again.
+   Preserve both originals and their source file/member references. A matched
+   top-up invoice proves funding, not calendar-month usage.
 
 For a monthly pull, use the existing encrypted credentials in a task-scoped
 process and call the official Wise APIs directly. Do not add a permanent Wise

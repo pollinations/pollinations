@@ -342,7 +342,9 @@ verified or has an explicitly reviewed not-applicable reason. A missing source,
 unknown credit term, pending invoice or unresolved model mapping stays open.
 
 After writes, re-query effective rows and verify the rendered Close, Runway,
-model-reconciliation and Ledger views. Compare the remaining alerts and cost
+model-reconciliation and Ledger views. Refresh the user's existing local staging
+tab, preserving its view and filters, and verify its displayed counts; a new test
+tab does not refresh the user's in-memory snapshot. Compare the remaining alerts and cost
 residuals with the checklist; every one must have evidence and a next action or
 a concrete blocker. Archive the updated report and screenshots to Drive.
 

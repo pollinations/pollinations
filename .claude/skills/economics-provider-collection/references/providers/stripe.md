@@ -105,8 +105,14 @@ Economics use:
   `expected_accounts` to the required account count for that month. Record zero
   activity explicitly; a missing account/export is not a zero. Forecasts require
   complete coverage for every required account through the following month start.
-- Runway P&L separates Pollen/Ko-fi gross sales, refunds, and reversals. Fees
-  belong in Operations. Cash change and balance continue to use Wise payouts.
+- Runway revenue separates Pollen/Ko-fi gross sales, fees, refunds and reversals.
+  Cash change and balance continue to use Wise payouts.
+- For an underlying-performance comparison, classify only explicitly fraudulent
+  refunds/disputes of earlier-month charges and their dispute fees. Keep ordinary
+  fees, current-month fraud and unclassified reversals included. Archive the
+  transaction IDs, reasons and original charge dates; save reviewed native-currency
+  components as private `salesAdjustments` through the named-batch approval gate.
+  Sales shows this classification; Trends adds it back without changing actuals.
 - Do not write Stripe activity to `economics_vendor_ledger`.
 
 Official references:

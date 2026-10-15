@@ -78,6 +78,33 @@ For a precise folder listing with the business account, use:
 gog --account elliot@myceli.ai drive search "'<verified-folder-id>' in parents and trashed = false" --raw-query --max 100 --json
 ```
 
+Reuse the active collection's source register before reopening documents. Keep
+Drive file ID, original content hash, invoice/account/period facts, Bank entry
+IDs, reviewed differences and the last verified ledger state together. Reuse
+unchanged content and compare hash plus supplier/account/period context before
+treating copies as duplicates. Identical empty exports for different currencies
+or periods remain separate evidence. Before recoverable Trash, verify every
+active staging and production reference uses the retained copy; preserve an
+existing linked ID where possible. If both copies are referenced, prepare the
+URL redirects through the named batch/environment gate before removing either.
+Keep one stable Drive ID for the register and update it in place rather than
+publishing competing indexes.
+
+After an approved append is read back, update the same checkpoint and register
+to `applied — verified` before starting another item. A stale pending status
+must not trigger another collection, approval request or replay. Record user
+corrections to source locations without repeating a superseded access request.
+
+For a historical Bank backfill, index the existing ENTY document exports and
+original file hashes against settled Wise IDs in one pass, then prepare a
+consolidated evidence batch. Distinguish retained-but-unvalidated sources from
+absent invoices. An annual supplier invoice may explicitly schedule recurring
+advances or a refund; verify each actual payment against that schedule instead
+of requiring a new invoice for every installment. Preserve the original issue
+date and do not book the annual bill again.
+
+For fresh ENTY exports, use completed calendar quarters or individual months when a full-year export fails. Verify the exact range and both bank accounts, and include Bank statement, Documents and Report template. Validate the downloaded ZIP and every indexed filename, then archive the original ZIP outside Invoices. Recognition fields can be blank or zero for a valid original PDF; verify the printed invoice facts and original Wise merchant amounts before preparing ledger links.
+
 Compare the archive with the effective Economics rows and their evidence links:
 archived but unbooked, linked to the wrong account/period, pending approval, or
 verified in the ledger. Preserve unresolved source differences and partial

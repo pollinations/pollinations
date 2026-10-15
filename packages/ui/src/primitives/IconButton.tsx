@@ -98,9 +98,18 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             <a
                 {...(buttonProps as AnchorHTMLAttributes<HTMLAnchorElement>)}
                 {...shared}
-                href={href}
+                href={disabled ? undefined : href}
                 target={target}
                 rel={rel}
+                {...(disabled && {
+                    role: buttonProps.role ?? "link",
+                    "aria-disabled": true,
+                    tabIndex: -1,
+                    onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    },
+                })}
             >
                 {children}
             </a>

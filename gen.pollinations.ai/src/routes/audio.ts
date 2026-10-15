@@ -57,6 +57,7 @@ import {
 } from "../audio/communityEndpoint.ts";
 import { generateLyria35 } from "../audio/lyria.ts";
 import { transcribeMai } from "../audio/mai-transcription.ts";
+import { generateSoniloSfx, SONILO_MODEL } from "../audio/sonilo.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -94,7 +95,7 @@ const CreateSpeechRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, and elevenlabs/eleven-text-to-sound-v2 support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; MAI-Voice-2.1 and MAI-Voice-2.1 Flash support mp3 and 24 kHz pcm; Gemini TTS defaults to wav and supports wav or raw 24 kHz pcm; other explicit formats are rejected; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; google/lyria-3.5, google/lyria-3-clip-preview, elevenlabs/eleven-text-to-sound-v2, and sonilo/sonilo-1.1-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(380).optional().meta({
@@ -138,6 +139,12 @@ const CreateSpeechRequestSchema = z
         reference_audio: z.url().optional().meta({
             description:
                 "Public HTTP(S) URL for reference-audio conditioning or audio-to-audio generation.",
+            example:
+                "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
+        }),
+        reference_video: z.url().optional().meta({
+            description:
+                "Public HTTP(S) URL of the video to create sound effects for (`sonilo/sonilo-1.1-sfx` only).",
             example:
                 "https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b",
         }),
@@ -3426,6 +3433,7 @@ async function dispatchAudioGeneration(
         conditioningRef?: unknown;
         compositionPlan?: unknown;
         referenceAudio?: File;
+        referenceVideo?: string;
         instructions?: string;
         speed?: number;
         loop?: boolean;
@@ -3453,6 +3461,7 @@ async function dispatchAudioGeneration(
         conditioningRef,
         compositionPlan,
         referenceAudio,
+        referenceVideo,
         instructions,
         speed,
         loop,
@@ -3494,6 +3503,18 @@ async function dispatchAudioGeneration(
                 referenceAudio,
                 apiKey,
                 log,
+            }),
+        );
+    }
+
+    if (model === SONILO_MODEL) {
+        return withSafetyHeaders(
+            c,
+            await generateSoniloSfx({
+                prompt: text,
+                referenceVideo,
+                responseFormat,
+                falKey,
             }),
         );
     }
@@ -3773,6 +3794,7 @@ async function generateAudioFromSpeechRequest(
         conditioning_ref,
         composition_plan,
         reference_audio,
+        reference_video,
         seed,
         instructions,
         speed,
@@ -3799,6 +3821,11 @@ async function generateAudioFromSpeechRequest(
         conditioningRef: conditioning_ref,
         storeForInpainting: store_for_inpainting,
     });
+    if (reference_video && c.var.model.resolved !== SONILO_MODEL) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `reference_video is only supported with model=${SONILO_MODEL}.`,
+        });
+    }
 
     if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
         const inputs = parseDialogueInput(input);
@@ -3841,6 +3868,7 @@ async function generateAudioFromSpeechRequest(
             conditioningRef: conditioning_ref,
             compositionPlan: composition_plan,
             referenceAudio,
+            referenceVideo: reference_video,
             instructions,
             speed,
             loop,
@@ -3879,6 +3907,7 @@ export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
             instructions: query.instructions,
             loop: query.loop,
             prompt_influence: query.prompt_influence,
+            reference_video: query.reference_video,
         },
         log,
     );

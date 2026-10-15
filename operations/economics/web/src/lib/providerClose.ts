@@ -51,6 +51,7 @@ export type ProviderCloseEvidence = {
 };
 
 export type ProviderCloseRow = {
+    missingAccounts?: string[];
     coverageStatus:
         | "complete"
         | "partial"
@@ -360,20 +361,22 @@ export function providerCloseRows(
         const review = reviewByKey.get(planeKey);
         const provider = resolveProvider(plane.vendor);
         const accounts = review?.expectedAccounts ?? [];
+        const missingAccounts = accounts.filter(
+            (account) =>
+                !coversCalendarMonth(
+                    providerRows.filter(
+                        (row) =>
+                            canonicalProviderAccountId(
+                                provider,
+                                row.account_id,
+                            ) === account.id,
+                    ),
+                    plane.month,
+                ),
+        );
         const completeCoverage =
             accounts.length > 0
-                ? accounts.every((account) =>
-                      coversCalendarMonth(
-                          providerRows.filter(
-                              (row) =>
-                                  canonicalProviderAccountId(
-                                      provider,
-                                      row.account_id,
-                                  ) === account.id,
-                          ),
-                          plane.month,
-                      ),
-                  )
+                ? missingAccounts.length === 0
                 : coversCalendarMonth(providerRows, plane.month);
         const coverageStatus = !statementRequired
             ? ("not required" as const)
@@ -394,6 +397,7 @@ export function providerCloseRows(
             transactionDocumentMissing: transactionDocumentStatus === "missing",
         });
         return {
+            missingAccounts: missingAccounts.map((account) => account.label),
             coverageStatus,
             month: plane.month,
             vendor: plane.vendor,

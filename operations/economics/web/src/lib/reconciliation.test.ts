@@ -217,40 +217,37 @@ describe("shared reconciliation", () => {
     it.each([
         "https://drive.google.com/file/d/linked-original/view",
         "evidence_type=payment_statement https://drive.google.com/file/d/statement/view",
-    ])(
-        "distinguishes linked sources from a validated supplier invoice: %s",
-        (evidence) => {
-            const state = reconciliationState(
-                {
-                    opTransactions: [
-                        {
-                            entry_id: "linked-bank",
-                            kind: "transaction",
-                            source: "wise",
-                            date: "2026-09-08",
-                            vendor: "buffer",
-                            category: "operations",
-                            amount: -24,
-                            currency: "USD",
-                            description: "Buffer",
-                            evidence,
-                            recorded_at: "2026-10-14 00:00:00",
-                        },
-                    ],
-                },
-                now,
-            );
-            const issue = state.issues.find(
-                (row) => row.vendor === "buffer" && row.month === "2026-09",
-            );
-            expect(issue?.types).toEqual(["documents"]);
-            expect(issue?.messages).toEqual([
-                "A source is linked; validate the supplier invoice and its payment match.",
-            ]);
-            expect(issue?.evidence).toContain(evidence);
-            expect(issue?.invoices).toBeUndefined();
-        },
-    );
+    ])("distinguishes linked sources from a validated supplier invoice: %s", (evidence) => {
+        const state = reconciliationState(
+            {
+                opTransactions: [
+                    {
+                        entry_id: "linked-bank",
+                        kind: "transaction",
+                        source: "wise",
+                        date: "2026-09-08",
+                        vendor: "buffer",
+                        category: "operations",
+                        amount: -24,
+                        currency: "USD",
+                        description: "Buffer",
+                        evidence,
+                        recorded_at: "2026-10-14 00:00:00",
+                    },
+                ],
+            },
+            now,
+        );
+        const issue = state.issues.find(
+            (row) => row.vendor === "buffer" && row.month === "2026-09",
+        );
+        expect(issue?.types).toEqual(["documents"]);
+        expect(issue?.messages).toEqual([
+            "A source is linked; validate the supplier invoice and its payment match.",
+        ]);
+        expect(issue?.evidence).toContain(evidence);
+        expect(issue?.invoices).toBeUndefined();
+    });
     it("does not call the current month missing full-month usage", () => {
         const state = reconciliationState(
             { opPollen: [{ ...usage("aws"), month: "2026-10" }] },
@@ -684,4 +681,64 @@ it("keeps missing usage in reconciliation when recorded-figures results are prov
     expect(issue?.types).not.toContain("totals");
     expect(issue?.messages).toContain(report.blockers[0].message);
     expect(issue?.blockingMessages).toBeUndefined();
+});
+
+it("does not request current-month actuals while keeping closed-month financial gaps", () => {
+    const issues = reconciliationState(
+        { opPollen: [usage("aws"), { ...usage("aws"), month: "2026-10" }] },
+        now,
+    ).issues;
+    expect(issues.find((row) => row.id === "2026-09|aws")?.types).toContain(
+        "figures",
+    );
+    expect(
+        issues
+            .filter((row) => row.month === "2026-10")
+            .some(
+                (row) =>
+                    row.types.includes("totals") ||
+                    row.types.includes("provisional"),
+            ),
+    ).toBe(false);
+});
+
+it("distinguishes missing money from recorded usage and model validation", () => {
+    const missing = reconciliationState(
+        { opPollen: [usage("perplexity")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|perplexity");
+    expect(missing).toMatchObject({ group: "financial", amountUsd: 70 });
+    const recorded = reconciliationState(
+        { vendorLedger: [cost("openai")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|openai");
+    expect(recorded).toMatchObject({
+        group: "validation",
+        amountUsd: 50,
+        amountLabel: "Recorded cost · usage unknown",
+    });
+    const unmapped = reconciliationState(
+        { vendorLedger: [cost("azure")], opPollen: [usage("azure")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|azure");
+    expect(unmapped?.group).toBe("models");
+});
+
+it("keeps unknown financial exposure when a recorded-cost validation shares its row", () => {
+    const issue = reconciliationState(
+        {
+            vendorLedger: [
+                { ...cost("modal"), account_id: "myceli-ai", paid: -100 },
+            ],
+        },
+        now,
+    ).issues.find((row) => row.id === "2026-09|modal");
+    expect(issue).toMatchObject({
+        group: "financial",
+        amountUsd: null,
+        amountLabel: "Impact unknown",
+    });
+    expect(issue?.messages.some((message) => message.includes("$100"))).toBe(
+        true,
+    );
 });

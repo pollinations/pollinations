@@ -16,6 +16,7 @@ import {
     messagesToChatRequest,
     toolUseInput,
 } from "@/text/messages/translate.ts";
+import { responsesToChatCompletion } from "@/text/responses/chatResponse.ts";
 import worker from "../../src/index.ts";
 import { createMessagesRoutes } from "../../src/routes/messages.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
@@ -1407,6 +1408,58 @@ describe("POST /v1/messages", () => {
         expect(text).toContain("top up");
         expect(providerBodies).toEqual([]);
         expect(events.filter((event) => event.isBilledUsage)).toEqual([]);
+    });
+
+    it("preserves provider refusal text in the Messages response", async () => {
+        // Refusal-only Responses output is valid; Messages clients display it
+        // as assistant text rather than a separate refusal field.
+        const completion = responsesToChatCompletion(
+            {
+                id: "resp_refusal",
+                status: "completed",
+                output: [
+                    {
+                        type: "message",
+                        role: "assistant",
+                        content: [
+                            {
+                                type: "refusal",
+                                refusal: "I cannot fulfill this request.",
+                            },
+                        ],
+                    },
+                ],
+                usage: { input_tokens: 10, output_tokens: 7, total_tokens: 17 },
+            },
+            model,
+            new URL("https://api.openai.com/v1/responses"),
+        );
+        const routes = createMessagesRoutes(() => Response.json(completion));
+        const response = await routes.request(
+            "https://gen.pollinations.ai/v1/messages",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 32,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "A request the provider declines",
+                        },
+                    ],
+                }),
+            },
+            env,
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            role: "assistant",
+            content: [{ type: "text", text: "I cannot fulfill this request." }],
+            stop_reason: "end_turn",
+            usage: { input_tokens: 10, output_tokens: 7 },
+        });
     });
 
     it("preserves rate-limit status and Retry-After", async () => {

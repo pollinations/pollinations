@@ -59,6 +59,8 @@ Any signed-in user can register and call a private model. Private models are own
 
 Publishing a model requires account-level community publisher access while community model publishing is in alpha. Submit a [publisher access request](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml); the request enables public publishing for the account but does not register a model for you.
 
+Publishing a model or changing its public prices takes effect after 3 hours.
+
 Public models appear in the model catalog and can be called by other Pollinations users. Owners set public pricing:
 
 - Text models use the token categories reported by the upstream endpoint.
@@ -73,7 +75,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 ## Register in the Dashboard
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
-2. Choose **Add model**.
+2. Choose **Create model**.
 3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
 4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
 5. Save the model as private, then call its `community/owner/model` id through the normal Pollinations endpoint.

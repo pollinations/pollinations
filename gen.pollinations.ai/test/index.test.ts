@@ -849,10 +849,11 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
-        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
+        // Perplexity models, such as decision models, may use the prefix.
         expect(
             models
-                .filter((model) => model.name.startsWith("perplexity/"))
+                .filter((model) => model.name.startsWith("perplexity/sonar"))
                 .map((model) => model.name),
         ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(
@@ -983,14 +984,28 @@ describe("model status", () => {
         });
     });
 
+    it("rejects invalid minutes before contacting Tinybird", async () => {
+        const upstream = vi.spyOn(globalThis, "fetch");
+        for (const minutes of ["abc", "0", "-5", "1.5", "99999999"]) {
+            const response = await fetchWorker(
+                `/models/status?minutes=${minutes}`,
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: "minutes must be an integer between 1 and 10080",
+            });
+        }
+        expect(upstream).not.toHaveBeenCalled();
+    });
+
     it("passes upstream errors through unchanged", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: "bad minutes" }, { status: 400 }),
+            Response.json({ error: "upstream exploded" }, { status: 500 }),
         );
 
-        const response = await fetchWorker("/models/status?minutes=abc");
-        expect(response.status).toBe(400);
-        expect(await response.json()).toEqual({ error: "bad minutes" });
+        const response = await fetchWorker("/models/status?minutes=15");
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "upstream exploded" });
     });
 
     it("serves the 7-day model usage stats the dashboard prices models with", async () => {

@@ -101,8 +101,8 @@ Two kinds of keys:
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
 polli keys create --name myapp --type publishable              # API publishable
-polli keys create --name myapp --type publishable \            # 3rd-party app key
-  --redirect-uri https://myapp.com/callback --earnings
+polli keys create --name myapp --type publishable \
+  --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
 polli keys revoke <id>

@@ -523,7 +523,7 @@ function guessFileExtension(fieldName: string, mediaType: string): string {
 // Endpoint rendering
 // ────────────────────────────────────────────────────────────────────────────
 
-function renderEndpoint(
+export function renderEndpoint(
     spec: Spec,
     method: string,
     path: string,
@@ -567,17 +567,57 @@ function renderEndpoint(
     if (bodyContent && bodyMime) {
         out.push(`${CALLOUT.body} · \`${bodyMime}\``);
         out.push("");
-        const rows = collectRows(spec, asObj(bodyContent.schema));
+        const schema = deref(spec, asObj(bodyContent.schema));
+        const variants = asArr(schema.oneOf ?? schema.anyOf).map((variant) =>
+            deref(spec, asObj(variant)),
+        );
+        const tables = variants.map((variant) => collectRows(spec, variant));
+        const shared = (tables[0] ?? []).filter((row) =>
+            tables.every((table) =>
+                table.some(
+                    (other) => JSON.stringify(other) === JSON.stringify(row),
+                ),
+            ),
+        );
+        const sharedNames = new Set(shared.map((row) => row.name));
+        const rows = [...collectRows(spec, schema), ...shared];
         if (rows.length) {
             out.push(renderRowsTable(rows));
             out.push("");
         }
+        const discriminator = Object.keys(asObj(variants[0]?.properties)).find(
+            (name) => {
+                const values = variants.map((variant) => {
+                    const prop = asObj(asObj(variant.properties)[name]);
+                    return prop.const === undefined
+                        ? asArr(prop.enum)
+                        : [prop.const];
+                });
+                const all = values.flat().map((value) => JSON.stringify(value));
+                return (
+                    values.every((group) => group.length > 0) &&
+                    new Set(all).size === all.length
+                );
+            },
+        );
+        for (const [index, variant] of variants.entries()) {
+            const label = discriminator
+                ? ` · \`${discriminator}\`: ${formatType(asObj(asObj(variant.properties)[discriminator]))}`
+                : "";
+            out.push(`**Alternative ${index + 1}**${label}`, "");
+            out.push(
+                renderRowsTable(
+                    tables[index].filter((row) => !sharedNames.has(row.name)),
+                ),
+                "",
+            );
+        }
     }
 
-    // Responses — render 2xx only (errors are in dedicated section)
+    // Responses — render 2xx and protocol upgrades (errors have their own section)
     const responses = asObj(op.responses);
-    const successCodes = Object.keys(responses).filter((c) =>
-        /^2\d{2}$/.test(c),
+    const successCodes = Object.keys(responses).filter(
+        (c) => c === "101" || /^2\d{2}$/.test(c),
     );
     for (const code of successCodes) {
         const r = asObj(responses[code]);
@@ -624,7 +664,7 @@ function renderEndpoint(
 
     // Response example: prefer the media-type example injected by
     // injectSamples() (RESPONSE_EXAMPLES), fall back to schema synthesis.
-    const firstOk = successCodes[0];
+    const firstOk = successCodes.find((code) => code !== "101");
     if (firstOk) {
         const r = asObj(responses[firstOk]);
         const jsonResp = asObj(asObj(r.content)["application/json"]);

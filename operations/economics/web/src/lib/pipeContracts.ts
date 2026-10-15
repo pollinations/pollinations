@@ -2,6 +2,7 @@ import type {
     EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
 } from "../types";
+import { hasArchivedEvidence } from "./documents";
 import { canonicalProvider } from "./providerRegistry";
 
 export type RevenueShareSource = {
@@ -201,6 +202,60 @@ export function parsePrivateConfig(
     ) {
         throw new Error("economics_private_config_api.config: invalid shape");
     }
+    const archiveChecks = config.reconciliation.archiveChecks ?? [];
+    if (
+        !Array.isArray(archiveChecks) ||
+        archiveChecks.some(
+            (item) =>
+                item == null ||
+                !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) ||
+                [item.provider, item.account, item.note].some(
+                    (value) => typeof value !== "string" || !value.trim(),
+                ) ||
+                typeof item.checkedAt !== "string" ||
+                !/^\d{4}-\d{2}-\d{2}T/.test(item.checkedAt) ||
+                !Number.isFinite(Date.parse(item.checkedAt)) ||
+                !["found", "partial", "not_found", "blocked"].includes(
+                    item.status,
+                ) ||
+                !Array.isArray(item.evidence) ||
+                item.evidence.some(
+                    (link: unknown) =>
+                        typeof link !== "string" || !hasArchivedEvidence(link),
+                ) ||
+                (["found", "partial"].includes(item.status) &&
+                    !item.evidence.length),
+        )
+    ) {
+        throw new Error(
+            "economics_private_config_api.config: invalid archive checks",
+        );
+    }
+    const differences = config.reconciliation.costDifferences ?? [];
+    if (
+        !Array.isArray(differences) ||
+        differences.some(
+            (item) =>
+                item == null ||
+                !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) ||
+                typeof item.provider !== "string" ||
+                !item.provider.trim() ||
+                typeof item.amountUsd !== "number" ||
+                !Number.isFinite(item.amountUsd) ||
+                item.amountUsd < 0 ||
+                (item.amountLabel !== undefined &&
+                    (typeof item.amountLabel !== "string" ||
+                        !item.amountLabel.trim())) ||
+                typeof item.explanation !== "string" ||
+                !item.explanation.trim() ||
+                !Array.isArray(item.evidence) ||
+                item.evidence.some((link: unknown) => typeof link !== "string"),
+        )
+    ) {
+        throw new Error(
+            "economics_private_config_api.config: invalid cost differences",
+        );
+    }
     // Stored rules can predate a vendor rename, just like ledger rows.
     const forecastRules: EconomicsPrivateConfig["forecastRules"] = {};
     for (const [line, rule] of Object.entries(config.forecastRules)) {
@@ -214,7 +269,29 @@ export function parsePrivateConfig(
         }
         forecastRules[key] = rule;
     }
-    return { ...config, forecastRules } as EconomicsPrivateConfig;
+    return {
+        ...config,
+        forecastRules,
+        reconciliation: {
+            ...config.reconciliation,
+            ...(config.reconciliation.archiveChecks === undefined
+                ? {}
+                : {
+                      archiveChecks: archiveChecks.map((item) => ({
+                          ...item,
+                          provider: canonicalProvider(item.provider),
+                      })),
+                  }),
+            ...(config.reconciliation.costDifferences === undefined
+                ? {}
+                : {
+                      costDifferences: differences.map((item) => ({
+                          ...item,
+                          provider: canonicalProvider(item.provider),
+                      })),
+                  }),
+        },
+    } as EconomicsPrivateConfig;
 }
 
 export function parseRevenueShareSources(value: string): RevenueShareSource[] {

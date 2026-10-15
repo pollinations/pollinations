@@ -154,9 +154,28 @@ export type MeterDriftExplanation = {
     evidence: string[];
 };
 
+export type ArchiveCheck = {
+    month: string;
+    provider: string;
+    account: string;
+    checkedAt: string;
+    status: "found" | "partial" | "not_found" | "blocked";
+    note: string;
+    evidence: string[];
+};
+
 export type EconomicsPrivateConfig = {
     forecastRules: Record<string, PrivateForecastRule>;
     reconciliation: {
+        archiveChecks?: ArchiveCheck[];
+        costDifferences?: {
+            month: string;
+            provider: string;
+            amountUsd: number;
+            amountLabel?: string;
+            explanation: string;
+            evidence: string[];
+        }[];
         providerCheckExplanations: ProviderCheckExplanation[];
         meterDriftExplanations: MeterDriftExplanation[];
         pollenWitnessExplanations: PollenWitnessExplanation[];

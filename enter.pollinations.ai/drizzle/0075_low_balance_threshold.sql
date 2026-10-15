@@ -6,6 +6,8 @@ ALTER TABLE `user` ADD `low_balance_threshold` real;
 -- top-up. Gen emails only on the charge that takes the balance below it, so
 -- users already below get no email.
 -- Checkout created_at holds seconds on old rows and milliseconds on new ones.
+-- The + before status keeps SQLite on the user_id index; with the status index
+-- the backfill read 11M rows and took 8.6 s on production.
 UPDATE `user` SET `low_balance_threshold` = ROUND(0.2 * (
     SELECT `pollen` FROM (
         SELECT `pollen_credited` AS `pollen`,
@@ -15,7 +17,7 @@ UPDATE `user` SET `low_balance_threshold` = ROUND(0.2 * (
         UNION ALL
         SELECT `amount_usd`, `completed_at`
         FROM `stripe_auto_top_up_attempt`
-        WHERE `user_id` = `user`.`id` AND `status` = 'paid'
+        WHERE `user_id` = `user`.`id` AND +`status` = 'paid'
     )
     ORDER BY `at` DESC
     LIMIT 1

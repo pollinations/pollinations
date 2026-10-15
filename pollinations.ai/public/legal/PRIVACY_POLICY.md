@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: 2026-10-13**
+**Last updated: 2026-10-15**
 
 ## 1) Scope & Roles
 
@@ -61,6 +61,8 @@ We do not use third-party analytics or marketing cookies/SDKs.
 ## 8) Sharing & Recipients
 
 * **Service providers (sub-processors):** see [Service Providers](/subprocessors).
+
+Claude requests may be processed directly by Anthropic, through Amazon Bedrock, or through a configured gateway fallback. The selected route determines the recipients of request content, including messages, images, PDF documents, and tool definitions and results.
 
 **Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
 

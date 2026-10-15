@@ -85,15 +85,25 @@ export function createAzureResponsesModelConfig(
     });
 }
 
+export function createAnthropicConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "anthropic",
+        authKey: textEnvironmentValue("ANTHROPIC_API_KEY"),
+        ...overrides,
+    };
+}
+
 export function createBedrockNativeConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
     return {
         provider: "bedrock",
         requiresBase64ImageUrls: true,
-        "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
-        "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
-        "aws-region": process.env.AWS_REGION || "us-east-1",
+        "aws-access-key-id": textEnvironmentValue("AWS_ACCESS_KEY_ID"),
+        "aws-secret-access-key": textEnvironmentValue("AWS_SECRET_ACCESS_KEY"),
+        "aws-region": textEnvironmentValue("AWS_REGION") || "us-east-1",
         ...overrides,
     };
 }

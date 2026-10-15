@@ -7,6 +7,7 @@ import { parse as yamlParse } from "yaml";
 import {
     buildCurl,
     fetchOpenApiSpec,
+    renderEndpoint,
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
@@ -348,6 +349,14 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+        expect(
+            renderEndpoint(
+                schema as Spec,
+                "get",
+                "/v1/realtime",
+                realtimeGet ?? {},
+            ),
+        ).toContain("`101` — WebSocket connection established");
 
         const nativeRealtimeGet = (
             schema.paths["/realtime"] as Record<string, unknown>

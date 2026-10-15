@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-15T03:22:37.478558+00:00",
+  "generated_at": "2026-10-15T06:09:48.419823+00:00",
   "models": [
     {
       "id": "pr-14895:fish-audio/s2.1-pro",
@@ -9058,6 +9058,56 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-14",
+      "emoji": "🤖",
+      "title": "Lightning Text v2.1",
+      "text": "Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).",
+      "prs": [
+        16265
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "✨",
+      "title": "3D in the SDK",
+      "text": "Generate binary 3D output with `model3d()`, discover 3D models with `models(\"3d\")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17310
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "🔗",
+      "title": "React generation hooks",
+      "text": "The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).",
+      "prs": [
+        17331
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "🎯",
+      "title": "Guess the model",
+      "text": "Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).",
+      "prs": [
+        17388
+      ],
+      "kind": "app"
+    },
+    {
+      "date": "2026-10-14",
+      "emoji": "🎨",
+      "title": "Make a tiny fighter",
+      "text": "Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).",
+      "prs": [
+        17424
+      ],
+      "kind": "app"
+    },
     {
       "date": "2026-10-13",
       "emoji": "🎵",

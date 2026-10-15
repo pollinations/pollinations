@@ -121,8 +121,9 @@ Added after the run, from gen's records of the run's own calls:
 
 - It hit the hospital's 600 s stage limit, not a provider timeout. All 37 calls
   succeeded; the slowest took 43 s.
-- DeepSeek ran one shell command per call. gpt-6.1-sol batched several per
-  call.
+- DeepSeek made 1.9 tool calls per model call (69 in 37). gpt-6.1-sol made
+  3.2 (29 in 9). This line first said DeepSeek ran one command per call;
+  run 6 corrected it.
 - DeepSeek wrote 13 times as much output, mostly reasoning. Per token it was
   faster (about 110 tokens/s), so the time went to how much it thought.
 - The #17045 review needed the same: 29 calls, 55,051 reasoning tokens, and

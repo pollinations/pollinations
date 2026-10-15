@@ -126,10 +126,33 @@ with gpt-6.1-sol as reviewer. See `runs/5/REPORT.md`.
 - With gpt-6.1-sol as reviewer, Codex cost 0.63 for the whole run, against
   2.32 in run 4.
 
+## Run 6 (2026-10-15)
+
+Run 5's DeepSeek quick reviews again, at `--effort low` and `medium`, plus
+one `high` control. Same base and cached diffs as run 5. See
+`runs/6/REPORT.md`.
+
+| Case | Low | Medium | High |
+|---|---|---|---|
+| #16911 | no verdict, 600 s (0.044) | no verdict, 600 s (0.042) | no verdict, 600 s (0.044) |
+| #17045 vs #17057 | no verdict, 600 s (0.052) | no verdict, 600 s (0.033) | — |
+
+- Cost: about 0.35 Pollen. Model 0.21, box time about 0.1, effort probes
+  about 0.02.
+- Lower effort didn't change how much DeepSeek reasoned per agent step:
+  about 1k tokens at every level. On a single prompt, the same setting
+  changes reasoning about 4×.
+- #17227 moved v4.1-flash from Fireworks to DeepInfra. These calls ran at
+  49–61 output tokens/s, against about 111 in run 5. So each review got
+  through 23–29 model calls in 600 s, against 37 in run 5.
+
 ## Next questions
 
 - One gpt-6.1-sol review matched the hospital on both run 5 cases for a tenth
-  of the cost or less. Is the hospital's red/green evidence worth the
-  difference, or should it only run on PRs a quick review approves?
+  of the cost or less. Since P6, the hospital takes only PRs a quick review
+  approves.
+- DeepSeek has now run out of time on 6 of 7 quick reviews. Should quick
+  reviews use gpt-6.1-sol only, or should DeepSeek get one more try with
+  Fireworks, a longer limit, or a tighter prompt?
 - Is the #17082 review worth posting on the PR? The runs are dry runs, so
   nothing was posted.

@@ -195,15 +195,12 @@ function UnitEconomicsTable({
         modeIndex,
         vendorMonths,
         summary,
-        blockers,
-        provisional,
         currentResultUsd,
         fullCostResultUsd,
     } = useMemo(
         () => unitEconomicsReport(data, month, view),
         [data, month, view],
     );
-    const missingCosts = blockers.some((blocker) => blocker.kind === "costs");
     const rows = useMemo(
         () => unitEconomicsRows(vendorMonths, grain),
         [vendorMonths, grain],
@@ -269,9 +266,7 @@ function UnitEconomicsTable({
             ],
         },
         {
-            label: missingCosts
-                ? "Provider costs · recorded so far"
-                : "Provider costs",
+            label: "Provider costs",
             total: `${fmtUsd(summary.providerUsageUsd)} total`,
             items: [
                 { label: "Cash", value: fmtUsd(summary.providerCashUsd) },
@@ -279,7 +274,7 @@ function UnitEconomicsTable({
             ],
         },
         {
-            label: provisional ? "Result · provisional" : "Result",
+            label: "Result",
             total:
                 currentResultUsd == null
                     ? "Actual Unknown"

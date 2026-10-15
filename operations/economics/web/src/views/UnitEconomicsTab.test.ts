@@ -65,6 +65,8 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     const cards = html.slice(0, html.indexOf("<table"));
     expect(cards.match(/>Unknown</g)).toHaveLength(2);
     expect(cards).toContain("Actual Unknown");
+    expect(cards).not.toContain("recorded so far");
+    expect(cards).toContain('aria-label="Provider costs"');
 });
 
 it("pairs usage, funding and complete results in three cards without repeating Quest", () => {
@@ -121,7 +123,7 @@ it("keeps separately scoped infrastructure usage from invalidating complete infe
     expect(html).not.toContain("outside this inference view");
 });
 
-it("labels both recorded-figures results provisional and includes the unmatched provider cost", () => {
+it("includes unmatched provider costs while leaving status details to reconciliation", () => {
     const html = renderToStaticMarkup(
         createElement(ManagedInferenceTab, {
             data: {
@@ -135,7 +137,8 @@ it("labels both recorded-figures results provisional and includes the unmatched 
         }),
     );
     const cards = html.slice(0, html.indexOf("<table"));
-    expect(cards).toContain('aria-label="Result · provisional"');
+    expect(cards).toContain('aria-label="Result"');
+    expect(cards).not.toContain("provisional");
     expect(cards).toContain(">With credits<");
     expect(cards).toContain(">Without credits<");
     expect(cards).toContain("+$42");

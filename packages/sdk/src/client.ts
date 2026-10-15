@@ -353,7 +353,7 @@ export class Pollinations {
 
     private buildQueryParams(
         params: Record<string, unknown>,
-        includeKey: boolean = false,
+        includeKey: boolean = true,
     ): string {
         const searchParams = new URLSearchParams();
 

@@ -701,15 +701,11 @@ describe("Pollinations video reference media", () => {
             );
             expect([...url.searchParams.keys()].sort()).toEqual([
                 "image",
+                "key",
                 "reference_audios",
                 "reference_images",
                 "reference_videos",
             ]);
-            expect(
-                (fetchMock.mock.calls[0][1] as RequestInit).headers,
-            ).toMatchObject({
-                Authorization: "Bearer sk_test",
-            });
         },
     );
 

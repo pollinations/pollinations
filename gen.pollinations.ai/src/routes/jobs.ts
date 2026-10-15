@@ -8,8 +8,15 @@ import { z } from "zod";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import type { AsyncJobRecord } from "@/middleware/generation-deduplication.ts";
+import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 
-const idSchema = z.string().regex(/^[0-9a-f]{64}$/);
+const idSchema = z
+    .string()
+    .regex(/^[0-9a-f]{64}$/)
+    .meta({
+        example:
+            "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+    });
 const pathSchema = z.object({ id: idSchema });
 const parameters = [
     {
@@ -46,6 +53,7 @@ const description =
     "Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An uncached request returns 202 with a job id and Location. Poll this endpoint (Retry-After: 5), then download the result. Identical requests share one upstream generation and one charge. Only accounts that submitted that job can read it; the job record expires 24 hours after completion. A cached submit can return the media directly with HTTP 200.";
 
 export const jobRoutes = new Hono<Env>()
+    .use("/v1/jobs/*", edgeRateLimit)
     .use("/v1/jobs/*", auth())
     .get(
         "/v1/jobs/:id",

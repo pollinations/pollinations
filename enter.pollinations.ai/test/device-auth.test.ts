@@ -227,6 +227,28 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test("POST /api/device/token with a non-JSON body returns 400 invalid_request", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "not json",
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a non-string device_code returns 400 invalid_request", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: { nested: true } }),
+        });
+        const body = (await res.json()) as { error: string };
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("invalid_request");
+    });
+
     test("POST /api/device/approve without auth returns 401", async () => {
         const res = await SELF.fetch(`${BASE}/api/device/approve`, {
             method: "POST",
@@ -484,5 +506,101 @@ describe("Device Authorization Flow", () => {
         expect(body).toHaveProperty("email");
         expect(body).toHaveProperty("picture");
         expect(body).toHaveProperty("preferred_username");
+    }, 30000);
+});
+
+/**
+ * RFC 6749 §5.2 / RFC 8628 §3.5 — malformed request bodies on the device
+ * endpoints must answer a 400 OAuth error envelope, never a 500, and must
+ * never echo parser or SQL internals back to the client (#17384).
+ */
+const INTERNAL_DETAIL =
+    /Unexpected token|Failed query|params:|select .* from|TypeError|SQLITE|D1_ERROR|drizzle/i;
+
+async function bodyWithoutInternalDetails(res: Response) {
+    const text = await res.text();
+    expect(text).not.toMatch(INTERNAL_DETAIL);
+    try {
+        return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+        return {} as Record<string, unknown>;
+    }
+}
+
+describe("Device endpoints — malformed bodies never 500 / never leak (#17384)", () => {
+    const malformed: Array<[string, string]> = [
+        ["non-JSON body", "not json"],
+        ["JSON null", "null"],
+        ["JSON string", JSON.stringify("hello")],
+        ["JSON array", JSON.stringify([1, 2, 3])],
+        ["JSON number", "42"],
+        ["empty body", ""],
+        ["object-valued device_code", JSON.stringify({ device_code: { a: 1 } })],
+        ["numeric device_code", JSON.stringify({ device_code: 42 })],
+    ];
+
+    for (const [name, raw] of malformed) {
+        test(`POST /api/device/token: ${name} → 400 invalid_request`, async () => {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: raw,
+            });
+            expect(res.status).toBe(400);
+            const body = await bodyWithoutInternalDetails(res);
+            expect(body.error).toBe("invalid_request");
+        });
+    }
+
+    test("form-encoded body with a charset suffix is parsed, not dropped", async () => {
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: {
+                "Content-Type":
+                    "application/x-www-form-urlencoded; charset=UTF-8",
+            },
+            body: new URLSearchParams({
+                device_code: device.deviceCode,
+                grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            }).toString(),
+        });
+        expect(res.status).toBe(400);
+        const body = await bodyWithoutInternalDetails(res);
+        // Reached the DB lookup (pending code), i.e. the body was parsed.
+        expect(body.error).toBe("authorization_pending");
+    });
+
+    test("POST /api/device/code with a JSON null body still issues a code", async ({
+        mocks,
+    }) => {
+        await mocks.enable("tinybird");
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(200);
+        const body = await bodyWithoutInternalDetails(res);
+        expect(body.user_code).toHaveLength(8);
+        await mocks.clear();
+    });
+
+    test("POST /api/device/deny with a JSON null body → 400, not 500", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: "null",
+        });
+        expect(res.status).toBe(400);
+        await bodyWithoutInternalDetails(res);
+        await mocks.clear();
     }, 30000);
 });

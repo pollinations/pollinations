@@ -80,14 +80,27 @@ function generateUserCode(length: number): string {
  * OAuth-style requests are form-encoded on the wire (RFC 6749 §3.2,
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
+ *
+ * Malformed bodies degrade to an empty record instead of throwing: JSON
+ * `null`, scalars and arrays are not valid request bodies, and passing them
+ * to `Object.entries()` would either throw a 500 (`null`) or fabricate
+ * index-keyed garbage fields (arrays/strings) instead of the OAuth 400 the
+ * spec requires (RFC 6749 §5.2 / RFC 8628 §3.5).
+ *
+ * Generic in the env schema so contexts augmented by middleware (the auth
+ * variables on POST /deny) typecheck against it.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
+export async function parseFormOrJsonBody<E extends Env>(
+    c: Context<E>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
-    const body = contentType.includes("form")
-        ? await c.req.parseBody().catch(() => ({}))
-        : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    const raw = contentType.includes("form")
+        ? await c.req.parseBody().catch(() => null)
+        : await c.req.json<unknown>().catch(() => null);
+    const body: Record<string, unknown> =
+        raw !== null && typeof raw === "object" && !Array.isArray(raw)
+            ? (raw as Record<string, unknown>)
+            : {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -215,7 +228,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -239,8 +252,8 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
-        return await exchangeDeviceCode(c, body);
+        const body = await parseFormOrJsonBody(c);
+        return await exchangeDeviceCode(c, body as DeviceTokenRequest);
     })
     .get(
         "/userinfo",
@@ -263,7 +276,10 @@ export async function exchangeDeviceCode(
     c: Context<Env>,
     body: DeviceTokenRequest,
 ) {
-    if (!body.device_code) {
+    // Runtime guard, not just the type: this handler is exported and shared
+    // with POST /api/oauth/token, and a non-string `device_code` would reach
+    // Drizzle's `eq()` as a query param and surface the raw SQL in a 500.
+    if (typeof body.device_code !== "string" || !body.device_code) {
         return c.json(
             {
                 error: "invalid_request",

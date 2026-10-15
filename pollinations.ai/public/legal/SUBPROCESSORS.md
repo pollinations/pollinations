@@ -23,6 +23,4 @@ The model you choose, or its fallback, decides which of these receives your requ
 
 Alibaba Cloud, Amazon Bedrock, Anthropic, AssemblyAI, DeepInfra, ElevenLabs, fal.ai, Fireworks AI, Google, InferencePort, Microsoft Azure, Mistral AI, Novita AI, OpenAI, OpenRouter, OVHcloud, Perplexity, Replicate, Stability AI, Vast.ai, Vercel AI Gateway, xAI.
 
-OpenRouter routes can also include Friendli.
-
 Questions, including which host serves a specific model: **hello@pollinations.ai**

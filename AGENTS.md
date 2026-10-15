@@ -197,7 +197,7 @@ npx vitest run test/file.test.ts
 
 ## Data-processing documentation maintenance
 
-- Update the public provider inventory or Privacy Policy when a change makes their statements inaccurate. Keep routing details, evidence and unresolved provider reviews in the relevant PR or issue. Update the internal DPA only when its proposed terms, annexes or publication blockers change; keep it outside website assets and navigation until approved.
+- Update the public provider inventory or Privacy Policy and its Last updated date when a change makes their statements inaccurate. Keep routing details, evidence and unresolved provider reviews in the relevant PR or issue. Update the internal DPA only when its proposed terms, annexes or publication blockers change; keep it outside website assets and navigation until approved.
 - Verify affected recipients, locations, data use, retention, processing terms and transfer safeguards from operational and contractual evidence. Record unknowns; do not present them as verified. A model name, hostname or provider headquarters does not establish where processing occurs.
 - Check applicable contract and notice requirements before recipient changes or other material processing changes take effect. Editing a provider list is not customer notice. Obtain operator/legal review before changing contractual commitments; escalate urgent exceptions to the maintainer.
 

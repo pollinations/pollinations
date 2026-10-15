@@ -8,8 +8,6 @@ Before offering this agreement, establish applicable supplier processing terms a
 
 Before deploying the revised public Terms and Privacy Policy, prepare the material-change notice required by those documents and record its delivery and effective date. The Terms already promise termination deletion within 30 days; moving this draft does not resolve the existing untagged-upload deletion gap. This repository change is not a customer notice or a website deployment.
 
-**Pending production review:** [Claude routing (#17505)](https://github.com/pollinations/pollinations/pull/17505) and [GLM fallback (#17509)](https://github.com/pollinations/pollinations/pull/17509) still require operator review of account-specific processing terms, safeguards and applicable customer notices before production cutover. The PRs retain the routing details and outstanding checks.
-
 ## 1) Parties, acceptance, and scope
 
 This Data Processing Addendum ("DPA") forms part of the [Terms of Service](../../pollinations.ai/public/legal/TERMS_OF_SERVICE.md) between the customer identified by its Pollinations.ai account ("Customer") and **Myceli.AI OÜ**, registry code 17186693, Tornimäe tn 5, 10145 Tallinn, Estonia ("Pollinations"). Each party's contact is its account contact or **hello@pollinations.ai**, respectively. An individual accepting for an organisation must have authority to bind it.

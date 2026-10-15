@@ -171,72 +171,81 @@ function TrendChart({
     const barWidth = Math.min(18, slot * 0.28);
     return (
         <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <Heading as="h3">{title}</Heading>
-                <span className="text-xs text-theme-text-soft">
-                    {active ? `${monthName(active.month)} · ${unit}` : unit}
-                </span>
-            </div>
-            {note && (
-                <p className="mt-1 text-xs text-theme-text-soft">{note}</p>
-            )}
-            <div
-                className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs tabular-nums"
-                aria-live="polite"
-            >
-                {series.map((s) => (
-                    <LegendItem
-                        key={s.key}
-                        type={onToggleSeries ? "button" : undefined}
-                        aria-label={
-                            onToggleSeries ? `Toggle ${s.label}` : undefined
-                        }
-                        aria-pressed={
-                            onToggleSeries
-                                ? !hiddenSeries.includes(s.key)
-                                : undefined
-                        }
-                        onClick={
-                            onToggleSeries
-                                ? () => onToggleSeries(s.key)
-                                : undefined
-                        }
-                        className={`inline-flex items-center gap-1.5 ${onToggleSeries ? "cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current" : ""} ${hiddenSeries.includes(s.key) ? "opacity-40" : ""}`}
-                    >
-                        <svg width="18" height="10" aria-hidden="true">
-                            <line
-                                x1="0"
-                                x2="18"
-                                y1="5"
-                                y2="5"
-                                stroke={s.color}
-                                strokeWidth="3"
-                                strokeDasharray={s.dashed ? "4 2" : undefined}
-                            />
-                        </svg>
-                        <span className="text-theme-text-soft">{s.label}</span>
-                        <strong>{format(active?.[s.key])}</strong>
-                        {s.adjustedKey && active?.[s.adjustedKey] != null && (
-                            <span>◇ {usd(active[s.adjustedKey])}</span>
+            <div className="flex h-28 flex-col">
+                <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2">
+                    <Heading as="h4">{title}</Heading>
+                    <span className="text-xs text-theme-text-soft">
+                        {active ? `${monthName(active.month)} · ${unit}` : unit}
+                    </span>
+                </div>
+                {note && (
+                    <p className="mt-1 shrink-0 text-xs text-theme-text-soft">
+                        {note}
+                    </p>
+                )}
+                <div
+                    className="mt-3 flex min-h-0 flex-wrap content-start gap-x-5 gap-y-2 overflow-y-auto text-xs tabular-nums"
+                    aria-live="polite"
+                >
+                    {series.map((s) => (
+                        <LegendItem
+                            key={s.key}
+                            type={onToggleSeries ? "button" : undefined}
+                            aria-label={
+                                onToggleSeries ? `Toggle ${s.label}` : undefined
+                            }
+                            aria-pressed={
+                                onToggleSeries
+                                    ? !hiddenSeries.includes(s.key)
+                                    : undefined
+                            }
+                            onClick={
+                                onToggleSeries
+                                    ? () => onToggleSeries(s.key)
+                                    : undefined
+                            }
+                            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap ${onToggleSeries ? "cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current" : ""} ${hiddenSeries.includes(s.key) ? "opacity-40" : ""}`}
+                        >
+                            <svg width="18" height="10" aria-hidden="true">
+                                <line
+                                    x1="0"
+                                    x2="18"
+                                    y1="5"
+                                    y2="5"
+                                    stroke={s.color}
+                                    strokeWidth="3"
+                                    strokeDasharray={
+                                        s.dashed ? "4 2" : undefined
+                                    }
+                                />
+                            </svg>
+                            <span className="text-theme-text-soft">
+                                {s.label}
+                            </span>
+                            <strong>{format(active?.[s.key])}</strong>
+                            {s.adjustedKey &&
+                                active?.[s.adjustedKey] != null && (
+                                    <span>◇ {usd(active[s.adjustedKey])}</span>
+                                )}
+                        </LegendItem>
+                    ))}
+                    {kind === "bar" &&
+                        rows.some((row) => row.oneOffFraud != null) && (
+                            <span className="text-theme-text-soft">
+                                ◇ Excluding identified fraud costs
+                            </span>
                         )}
-                    </LegendItem>
-                ))}
-                {kind === "bar" &&
-                    rows.some((row) => row.oneOffFraud != null) && (
-                        <span className="text-theme-text-soft">
-                            ◇ Excluding identified fraud costs
-                        </span>
-                    )}
-                {funded != null &&
-                    total != null &&
-                    total > 0 &&
-                    funded >= 0 &&
-                    funded <= total && (
-                        <strong>
-                            {Math.round((100 * funded) / total)}% funded by
-                            credits
-                        </strong>
-                    )}
+                    {funded != null &&
+                        total != null &&
+                        total > 0 &&
+                        funded >= 0 &&
+                        funded <= total && (
+                            <strong>
+                                {Math.round((100 * funded) / total)}% funded by
+                                credits
+                            </strong>
+                        )}
+                </div>
             </div>
             <div className="mt-2 overflow-x-auto">
                 <svg
@@ -480,70 +489,94 @@ export function TrendsTab({
                         </TabButton>
                     ))}
                 </fieldset>
-                <fieldset className="flex gap-1.5" aria-label="Cost scope">
-                    {(["product", "company"] as const).map((value) => (
-                        <TabButton
-                            key={value}
-                            active={scope === value}
-                            onClick={() => setScope(value)}
-                            size="md"
-                            variant="soft"
-                        >
-                            {value === "product" ? "Product" : "Whole company"}
-                        </TabButton>
-                    ))}
-                </fieldset>
                 <span className="text-xs text-theme-text-soft">
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
             </div>
             <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-                <TrendChart
-                    title="Monthly result"
-                    series={RESULT_SERIES}
-                    kind="bar"
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Sales"
-                    series={SALES_SERIES}
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Expenses before credits"
-                    series={selectedExpenses}
-                    hiddenSeries={hiddenSeries}
-                    onToggleSeries={(key) =>
-                        setHiddenSeries((hidden) =>
-                            hidden.includes(key)
-                                ? hidden.filter((item) => item !== key)
-                                : [...hidden, key],
-                        )
-                    }
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Cost funding"
-                    series={FUNDING_SERIES}
-                    kind="stacked"
-                    creditKey="credits"
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Pollen consumed"
-                    note="Whole platform · usage, not sales"
-                    series={USAGE_SERIES}
-                    unit="Pollen"
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Quest serving costs"
-                    note="Allocated by usage · already included in Compute"
-                    series={QUEST_FUNDING_SERIES}
-                    kind="stacked"
-                    creditKey="questCredits"
-                    {...chartProps}
-                />
+                <section
+                    aria-label="Results and costs"
+                    className="flex min-w-0 flex-col gap-5"
+                >
+                    <div className="flex h-20 flex-col justify-between gap-2">
+                        <h3 className="font-semibold">Results and costs</h3>
+                        <fieldset
+                            className="flex gap-1.5"
+                            aria-label="Cost scope"
+                        >
+                            {(["product", "company"] as const).map((value) => (
+                                <TabButton
+                                    key={value}
+                                    active={scope === value}
+                                    onClick={() => setScope(value)}
+                                    size="md"
+                                    variant="soft"
+                                >
+                                    {value === "product"
+                                        ? "Product"
+                                        : "Whole company"}
+                                </TabButton>
+                            ))}
+                        </fieldset>
+                    </div>
+                    <TrendChart
+                        title="Monthly result"
+                        series={RESULT_SERIES}
+                        kind="bar"
+                        {...chartProps}
+                    />
+                    <TrendChart
+                        title="Expenses before credits"
+                        series={selectedExpenses}
+                        hiddenSeries={hiddenSeries}
+                        onToggleSeries={(key) =>
+                            setHiddenSeries((hidden) =>
+                                hidden.includes(key)
+                                    ? hidden.filter((item) => item !== key)
+                                    : [...hidden, key],
+                            )
+                        }
+                        {...chartProps}
+                    />
+                    <TrendChart
+                        title="Cost funding"
+                        series={FUNDING_SERIES}
+                        kind="stacked"
+                        creditKey="credits"
+                        {...chartProps}
+                    />
+                </section>
+                <section
+                    aria-label="Sales and usage"
+                    className="flex min-w-0 flex-col gap-5"
+                >
+                    <div className="flex h-20 flex-col justify-between gap-2">
+                        <h3 className="font-semibold">Sales and usage</h3>
+                        <p className="flex h-10 items-center text-xs text-theme-text-soft">
+                            Whole platform
+                        </p>
+                    </div>
+                    <TrendChart
+                        title="Sales"
+                        series={SALES_SERIES}
+                        {...chartProps}
+                    />
+                    <TrendChart
+                        title="Pollen consumed"
+                        note="Usage, not sales"
+                        series={USAGE_SERIES}
+                        unit="Pollen"
+                        {...chartProps}
+                    />
+                    <TrendChart
+                        title="Quest serving costs"
+                        note="Allocated by usage · already included in Compute"
+                        series={QUEST_FUNDING_SERIES}
+                        kind="stacked"
+                        creditKey="questCredits"
+                        {...chartProps}
+                    />
+                </section>
             </div>
         </section>
     );

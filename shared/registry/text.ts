@@ -1615,16 +1615,15 @@ const TEXT_BASE_SERVICES = {
     "perplexity/pplx-decider-v1.1-27b": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
-        provider: "openrouter",
+        provider: "vercel",
         publisher: "Perplexity",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         priceMultiplier: 1, // Billed at cost, no margin.
         paidOnly: true,
         cost: {
-            // OpenRouter list price plus its 5.5% credit fee, as every
-            // OpenRouter route records.
-            promptTextTokens: perMillion(0.02) * 1.055,
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.02),
             completionTextTokens: perMillion(0),
         },
         title: "Decider V1.1 27B",

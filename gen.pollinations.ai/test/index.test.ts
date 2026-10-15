@@ -311,6 +311,24 @@ describe("gen worker routing", () => {
         );
     });
 
+    it("serves llms-full.txt with the full guide and CLI skill in one file", async () => {
+        const response = await fetchWorker("/llms-full.txt");
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/plain");
+        expect(response.headers.get("X-Robots-Tag")).toBeNull();
+        const body = await response.text();
+        expect(body.startsWith("# Pollinations\n")).toBe(true);
+        expect(body).toContain(
+            await (await fetchWorker("/docs/llm.txt")).text(),
+        );
+        expect(body).toContain("\n## Polli CLI Skill\n");
+        expect(body).toContain("\n## Polli CLI Tasks\n");
+        expect(body).not.toContain("allowed-tools:");
+
+        const llms = await fetchWorker("/llms.txt");
+        expect(await llms.text()).toContain("/llms-full.txt");
+    });
+
     it("serves an agent index with reachable plain-text CLI and API guides", async () => {
         const index = await fetchWorker("/llms.txt");
         expect(index.status).toBe(200);
@@ -358,11 +376,13 @@ describe("gen worker routing", () => {
         expect(body.skills.map((s) => s.name)).toEqual([
             "polli",
             "pollinations-api",
+            "bring-your-own-pollen",
             "quest-contributor",
         ]);
-        const [polli, apiSkill] = body.skills;
+        const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
+        expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");
@@ -398,6 +418,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {
             expect(llms).toContain(`/.well-known/agent-skills/${path}`);

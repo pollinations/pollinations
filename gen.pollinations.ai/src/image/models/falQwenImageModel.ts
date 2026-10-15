@@ -9,21 +9,7 @@ import { toDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:fal-qwen-image:ops");
 
-// Fal serves both Qwen generations with the same request and response shape.
-
 const FAL_QWEN_MODELS = {
-    "qwen/qwen-image-3:fal": {
-        label: "Qwen Image 3",
-        endpoint: "alibaba/qwen-image-3",
-        promptExpansion: { enable_prompt_expansion: false },
-        editOptions: {},
-        resolveSize: resolveQwenImage3Size,
-        // Fal bills Qwen Image 3 per image and per reference image.
-        usage: (_response: Response, references: number) => ({
-            ...(references ? { promptImageTokens: references } : {}),
-            completionImageTokens: 1,
-        }),
-    },
     "qwen/qwen-image-2.1": {
         label: "Qwen Image 2.1",
         endpoint: "alibaba/qwen-image-2.1",
@@ -131,7 +117,7 @@ export async function callFalQwenImageAPI(
             requestUrl: new URL(upstreamUrl),
         });
     }
-    const usage = config.usage(response, references.length);
+    const usage = config.usage(response);
 
     const imageResponse = await fetchUpstream(imageUrl, {
         errorLabel: `Failed to download ${config.label} result`,

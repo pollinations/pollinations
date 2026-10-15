@@ -11,7 +11,10 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import type { GenerationJobHead } from "@/middleware/generation-deduplication.ts";
+import type {
+    GenerationJobHead,
+    GenerationOutcome,
+} from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 
 function testJob(key: string, method = "GET"): GenerationJobHead {
@@ -41,6 +44,23 @@ async function waitForAlarm(state: DurableObjectState): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, 0));
     }
     throw new Error("Generation alarm was not scheduled");
+}
+
+/** Runs one job through a fresh coordinator's alarm and leaves no state. */
+async function runAlarmJob(): Promise<GenerationOutcome> {
+    const stub = env.GENERATION_COORDINATOR.getByName(
+        `test-${crypto.randomUUID()}`,
+    );
+    return runInDurableObject(stub, async (coordinator, state) => {
+        const result = coordinator.startAndWait(
+            testJob(`handoff-${crypto.randomUUID()}`),
+        );
+        await waitForAlarm(state);
+        await coordinator.alarm();
+        await state.storage.deleteAlarm();
+        expect([...(await state.storage.list()).keys()]).toEqual([]);
+        return result;
+    });
 }
 
 afterEach(() => {
@@ -525,6 +545,60 @@ describe("GenerationCoordinator", () => {
             expect(response.status, id).toBe(404);
             await response.text();
         }
+    });
+
+    it("hands a failed job to the public origin with the alarm's outcome, once", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const inAlarm = await runAlarmJob();
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        const replays: number[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const response = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                // The nonce is single-use: a replay finds nothing to run.
+                const replay = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                replays.push(replay.status);
+                await replay.text();
+                return response;
+            },
+        );
+
+        const handedOff = await runAlarmJob();
+
+        expect(inAlarm.status).toBe("failed");
+        expect(handedOff).toEqual(inAlarm);
+        expect(replays).toEqual([404]);
+    });
+
+    it("fails waiters closed when the public origin refuses the handoff", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("blocked", { status: 403 }),
+        );
+
+        const result = await runAlarmJob();
+
+        expect(result.status).toBe("failed");
+        if (result.status !== "failed") return;
+        expect(result.error.httpStatus).toBe(503);
+        expect(new TextDecoder().decode(result.error.body)).toBe(
+            "Detached generation failed",
+        );
     });
 
     it("returns an existing cached generation without scheduling work", async () => {

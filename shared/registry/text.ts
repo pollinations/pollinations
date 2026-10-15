@@ -1181,19 +1181,19 @@ const TEXT_BASE_SERVICES = {
     "deepseek/deepseek-v4.1-flash": {
         supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
         aliases: [],
-        provider: "deepinfra",
+        provider: "azure",
         publisher: "DeepSeek",
         category: "text",
         addedDate: new Date("2026-09-11").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
+        paidOnly: false,
         perUserRpm: 60,
         cost: {
-            // DeepInfra list rates (2026-10-12); its open-ended 30% discount
-            // is not passed on.
-            promptTextTokens: perMillion(0.2),
+            // Azure Global Standard rates (Microsoft Foundry, 2026-09-25);
+            // not in the Azure retail API. Maintainer to confirm.
+            promptTextTokens: perMillion(0.3),
             promptCachedTokens: perMillion(0.006),
-            completionTextTokens: perMillion(0.6),
+            completionTextTokens: perMillion(1.2),
         },
         title: "DeepSeek V4.1 Flash",
         description:

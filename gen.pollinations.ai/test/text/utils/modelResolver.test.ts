@@ -823,25 +823,34 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to DeepInfra with a Fireworks fallback", () => {
+    it("routes DeepSeek V4.1 Flash to Azure with Fireworks and DeepInfra fallbacks", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
-        const fallback = resolveModelConfig(messages, {
+        const fireworks = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash:fireworks",
         });
-
-        expect(primary.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
-        expect(primary.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
+        const deepinfra = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4.1-flash:deepinfra",
         });
-        expect(fallback.options.model).toBe(
+
+        expect(primary.options.model).toBe("DeepSeek-V4.1-Flash");
+        expect(primary.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-resource-name": "myceli-prod-swedencentral",
+            "azure-deployment-id": "DeepSeek-V4.1-Flash",
+        });
+        expect(fireworks.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4p1-flash",
         );
-        expect(fallback.options.modelConfig).toMatchObject({
+        expect(fireworks.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(deepinfra.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
+        expect(deepinfra.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 

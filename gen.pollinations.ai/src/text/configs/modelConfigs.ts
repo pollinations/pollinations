@@ -351,6 +351,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4-Flash-0731/chat/completions?api-version=2024-12-01-preview",
             { defaultOptions: { reasoning_effort: "high" } },
         ),
+    "DeepSeek-V4.1-Flash": () =>
+        createAzureModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/DeepSeek-V4.1-Flash/chat/completions?api-version=2024-12-01-preview",
+            { defaultOptions: { reasoning_effort: "high" } },
+        ),
     // Azure Kimi rejects remote image URLs.
     "Kimi-K2.6": () =>
         createAzureModelConfig(

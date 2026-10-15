@@ -903,10 +903,11 @@ describe("static provider fallbacks", () => {
     });
 
     it.each([
-        ["deepseek/deepseek-v4.1-flash", 0.000326],
+        ["deepseek/deepseek-v4.1-flash", 0.000546],
         ["deepseek/deepseek-v4.1-flash:fireworks", 0.000546],
+        ["deepseek/deepseek-v4.1-flash:deepinfra", 0.000326],
     ] as const)(
-        "bills DeepSeek V4.1 Flash at the current quote when %s serves",
+        "bills DeepSeek V4.1 Flash at the Azure quote when %s serves",
         (route, cost) => {
             const billing = calculateUsageBilling({
                 model: "deepseek/deepseek-v4.1-flash",
@@ -920,7 +921,7 @@ describe("static provider fallbacks", () => {
                 },
             });
             expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(0.000326, 8);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000546, 8);
         },
     );
 

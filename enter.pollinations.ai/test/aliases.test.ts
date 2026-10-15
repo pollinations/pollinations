@@ -184,6 +184,8 @@ test("Azure models use the approved public-price multipliers", () => {
         // the cash-paid DeepInfra fallback.
         ["moonshotai/kimi-k2.6", 1],
         ["moonshotai/kimi-k2.6:azure:sweden", 1],
+        // Priced at provider cost, as approved for this route.
+        ["deepseek/deepseek-v4.1-flash", 1],
     ]);
 
     for (const model of getModels()) {
@@ -247,12 +249,12 @@ test("DeepSeek V4 models are billed at their route's multiplier", () => {
 
     const expectedProviders = {
         "deepseek/deepseek-v4-flash": "azure",
-        "deepseek/deepseek-v4.1-flash": "deepinfra",
+        "deepseek/deepseek-v4.1-flash": "azure",
         "deepseek/deepseek-v4-pro": "openrouter",
     } as const;
     const expectedPaidOnly = {
         "deepseek/deepseek-v4-flash": false,
-        "deepseek/deepseek-v4.1-flash": true,
+        "deepseek/deepseek-v4.1-flash": false,
         "deepseek/deepseek-v4-pro": true,
     } as const;
     const expectedMultipliers = {

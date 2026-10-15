@@ -1,0 +1,32 @@
+{
+  "pr_number": 17595,
+  "title": "fix: settle the bee logo so every app can use one file",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17595",
+  "merged_at": "2026-10-15T13:14:27Z",
+  "labels": [],
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Updated the horizontal Polli lockup in @pollinations/ui: the gap between the bee and wordmark grows from 8% to 19% of the bee’s height, and the wordmark sits near her feet instead of vertically centered. Regenerated the black and white PNGs at 1024 px wide and bumped the package from 0.1.0-alpha.17 to 0.1.0-alpha.18. Apps using the package asset can use the revised spacing without making their own copy.",
+    "keywords": [
+      "Polli",
+      "brand",
+      "logo",
+      "wordmark",
+      "UI package"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17595.jpg",
+    "prompt": "In a cozy pixel art garden studio, Polli adjusts the spacing between herself and a small 'pollinations.ai' wordmark with a tiny ruler, beside lime green (#ecf874) code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny designer glasses and is small-to-medium in the scene, with no second bee. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream background, dark purple (#110518) outlines, chunky sprites and a soft CRT glow."
+  },
+  "generated_at": "2026-10-15T13:15:35.114355+00:00",
+  "area": "Brand & news",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "83d53129964fb9c1cea7ddc526958db9f8101a3b",
+  "announcements": []
+}

@@ -138,15 +138,12 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
             const previous = await this.readRecord();
             const sameRun = stored && previous?.status === "pending";
-            const ownerIds =
-                sameRun || cachePresent
-                    ? [
-                          ...new Set([
-                              ...(previous?.ownerIds ?? []),
-                              job.auth.user.id,
-                          ]),
-                      ]
-                    : [job.auth.user.id];
+            // Every account that submitted this identical request keeps
+            // reading the shared record, including when a new run replaces
+            // a terminal one.
+            const ownerIds = [
+                ...new Set([...(previous?.ownerIds ?? []), job.auth.user.id]),
+            ];
             status = cachePresent ? "succeeded" : "pending";
             if (cachePresent) {
                 await body?.cancel();

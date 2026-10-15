@@ -24,9 +24,9 @@ export const CODE_SAMPLES: Record<
         {
             label: "Create endpoint agent",
             lang: "Shell",
-            source: `curl https://gen.pollinations.ai/account/my-models/endpoint-agents \
-  -H "Authorization: Bearer YOUR_SECRET_KEY" \
-  -H "Content-Type: application/json" \
+            source: `curl https://gen.pollinations.ai/account/my-models/endpoint-agents \\
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \\
+  -H "Content-Type: application/json" \\
   -d '{
     "name": "my-agent",
     "title": "My Agent",

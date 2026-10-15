@@ -13,6 +13,17 @@ import { CHAT_PARAMETERS } from "./text-parameters";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "perplexity/pplx-decider-v1.1-27b": {
+        // Same Perplexity backend; covers gateway failures, not Perplexity outages.
+        "perplexity/pplx-decider-v1.1-27b:openrouter": {
+            provider: "openrouter",
+            // OpenRouter list price plus its 5.5% credit fee.
+            cost: {
+                promptTextTokens: perMillion(0.02) * 1.055,
+                completionTextTokens: perMillion(0),
+            },
+        },
+    },
     "liquid/d1": {
         // Same Liquid backend; this covers gateway failures, not Liquid outages.
         "liquid/d1:vercel": {

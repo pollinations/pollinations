@@ -5,6 +5,7 @@ import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callFalFallbackImage,
     callFalFallbackVideo,
+    callMireloSfxAPI,
 } from "../../src/image/models/falFallbackMediaModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
@@ -394,6 +395,73 @@ describe("Fal fallback media models", () => {
                 units: 1,
                 unitCost: 0.17,
             });
+        },
+    );
+
+    it.each([
+        [undefined, 120],
+        [8, 8],
+    ] as const)(
+        "adds Mirelo SFX 2.0 sound to the source video (duration %s) at fal's live price",
+        async (duration, sentDuration) => {
+            const requests = mockFal({
+                video: [
+                    {
+                        url: MEDIA_URL,
+                        content_type: "application/octet-stream",
+                    },
+                ],
+            });
+            const resultPromise = createAndReturnVideo("whoosh", {
+                ...baseParams,
+                model: "mirelo/sfx-2.0",
+                duration,
+                reference_videos: ["https://example.com/source.mp4"],
+            });
+            await vi.advanceTimersByTimeAsync(5_000);
+            const result = await resultPromise;
+
+            expect(requests[0].url).toBe(
+                "https://api.fal.ai/v1/models/pricing?endpoint_id=mirelo-ai%2Fsfx2.0%2Fvideo-to-video",
+            );
+            expect(requests[1]).toEqual({
+                url: "https://queue.fal.run/mirelo-ai/sfx2.0/video-to-video",
+                body: {
+                    video_url: "https://example.com/source.mp4",
+                    text_prompt: "whoosh",
+                    num_samples: 1,
+                    duration: sentDuration,
+                    seed: 42,
+                },
+            });
+            expect(result.mimeType).toBe("video/mp4");
+            expect(result.trackingData.usage).toEqual({
+                completionVideoSeconds: 1,
+            });
+            expect(result.trackingData.providerBilling).toEqual({
+                units: 1,
+                unitCost: 0.17,
+            });
+        },
+    );
+
+    it.each([
+        [[], []],
+        [["https://example.com/a.mp4", "https://example.com/b.mp4"], []],
+        [["https://example.com/a.mp4"], ["https://example.com/a.png"]],
+    ])(
+        "refuses Mirelo SFX 2.0 videos %j with images %j instead of dropping inputs",
+        async (reference_videos, image) => {
+            const fetch = vi.spyOn(globalThis, "fetch");
+            await expect(
+                callMireloSfxAPI("whoosh", {
+                    ...baseParams,
+                    model: "mirelo/sfx-2.0",
+                    reference_videos,
+                    image,
+                }),
+            ).rejects.toMatchObject({ status: 400 });
+            expect(fetch).not.toHaveBeenCalled();
         },
     );
 

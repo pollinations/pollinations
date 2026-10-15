@@ -31,6 +31,7 @@ gh workflow run news-posts.yml -f job=daily -f date=2026-10-12 -f run=preview
 |---|---|
 | What a 06:00 run does on day T (T−1's daily, Sunday's week, the 1st's month, their Buffer posts) | `job=morning date=T` |
 | What the Sunday 18:00 run does (the week's Discord post) | `job=afternoon date=SUNDAY` |
+| What the Wednesday 14:00 run does (the model post, then the community post) | `job=wednesday date=WEDNESDAY` |
 | One post | `job=daily date=DAY`, `job=weekly date=SUNDAY`, `job=monthly date=YYYY-MM`, `job=models date=WEDNESDAY`, `job=community date=WEDNESDAY`, `job=catalog date=TODAY` (record `/models` now; another day or a recorded day needs `overwrite=true`) |
 | Write and save only | `run="write + save"` (for `models` and `community` this only writes: nothing is saved before Discord has the post) |
 | Deliver only | `run=deliver`. With `job=daily` or `weekly` it schedules Buffer only; the week's Discord post goes with `job=afternoon`. Not for `models` or `community` (below) |
@@ -45,7 +46,7 @@ gh workflow run news-posts.yml -f job=daily -f date=2026-10-12 -f run=preview
 
 ## Recover a model or community post
 
-Each is written, sent to Discord and saved in one run; the run saves only if its text is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `models` or `community` artifact, so the same text is saved. A new run writes a new text, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
+Each is written, sent to Discord and saved in one run; the run saves only if its text is the one recorded as sent. After settling its send, or when the send worked but the save failed, re-run **the original run's failed job** (`gh run rerun <id> --failed`): it keeps that run's `posts` artifact, so the same texts are saved, and a post already sent is not sent again. A new run writes a new text, which the record rejects. Neither post saves snapshots: the 06:00 `catalog` run records `/models`, and a day missed is not recorded later: `/models` can only be captured as it is now.
 
 ## A missing or wrong gist
 

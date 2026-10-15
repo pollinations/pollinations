@@ -23,7 +23,7 @@ SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sen
   18:00 Sunday       Discord for the week
   14:00 Wednesday    model post: official models in the recorded catalog against a
                      week earlier, sent to Discord, then saved
-  14:05 Wednesday    community post: the same for community models
+                     then the community post: the same for community models
 
 AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
   news_index.py → index.json (Enter /news, README)     readme.py → README Latest News PR at 07:00
@@ -36,8 +36,7 @@ AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
 | Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
 | Daily 06:00 | `models/snapshots/<today>.json` when `/models` changed | — |
-| Wednesday 14:00 | `models/` | Discord with the models role ping, then saved |
-| Wednesday 14:05 | `community/` | Discord in the same channel without a ping, then saved |
+| Wednesday 14:00 | `models/`, then `community/` | Discord: the model post with the models role ping, then the community post without one; each saved once sent |
 | 1st 06:00 | also `monthly/<last month>/` | — |
 
 The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when.
@@ -202,7 +201,7 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 
 ### Community post: `operations/social/news/community/`
 
-`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text.
+`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text. Models and agents are two groups; an agent shows its base model instead of a price or access change, which follow that model.
 
 ### Platform Envelope
 
@@ -229,7 +228,7 @@ Daily and weekly platform JSON now share one persisted shape:
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `news-create-pr-gist.yml` | `pull_request_target` closed + merged, into `main` or `master` | `gist.py`, then `discord_pr.py` |
-| `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 and 14:05 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
+| `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-build-index.yml` | after the two above, and 06:30 daily | `news_index.py` → `index.json` |
 | `news-sync-readme.yml` | 07:00 daily | `readme.py` → README Latest News PR to `main` |
 
@@ -237,7 +236,7 @@ Daily and weekly platform JSON now share one persisted shape:
 
 | Input | Values |
 |---|---|
-| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `daily`, `weekly`, `monthly`, `models`, `community`, `catalog` (record `/models`) |
+| `job` | `morning` (what the 06:00 run does on that day), `afternoon` (its 15:00 or Sunday 18:00 run), `wednesday` (the 14:00 model and community posts), `daily`, `weekly`, `monthly`, `models`, `community`, `catalog` (record `/models`) |
 | `date` | the day, the Sunday, the month (`YYYY-MM`) or the Wednesday |
 | `run` | `preview` (default): writes and saves into a throwaway checkout, shows the diff and keeps the texts and pictures with the run; sends nothing. `all`, `write + save`, `deliver` |
 | `overwrite` | write and save a date that is already saved again; `delivery.json` is kept, and a saved model or community post is never replaced |

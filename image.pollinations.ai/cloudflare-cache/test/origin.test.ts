@@ -1,22 +1,13 @@
-import {
-    createExecutionContext,
-    env,
-    fetchMock,
-    runInDurableObject,
-    waitOnExecutionContext,
-} from "cloudflare:test";
+import { env, fetchMock, runInDurableObject } from "cloudflare:test";
 import { PhotonImage } from "@cf-wasm/photon";
 import { beforeAll, describe, expect, test } from "vitest";
-import worker from "../src/index.ts";
 import { ImageParamsSchema } from "../src/params.ts";
-import feedHeaders from "./fixtures/image.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/image.pollinations.ai-prime.headers?raw";
 // The Exif APP1 segments of VM images, marker included
 import vmExifControl from "./fixtures/vm-exif-control.bin";
 import vmExifLive from "./fixtures/vm-exif-live.bin";
 import vmExifRedFox from "./fixtures/vm-exif-red-fox.bin";
 import vmExifUnicode from "./fixtures/vm-exif-unicode.bin";
-import vmFeedEvent from "./fixtures/vm-feed-event.body?raw";
 import {
     alarmOf,
     call,
@@ -35,15 +26,6 @@ beforeAll(() => {
 });
 
 // The fixed gen responses are in vitest.config.ts
-const TIMING_STEPS = [
-    "Request received and queued.",
-    "Start generating job",
-    "Start processing",
-    "Start prompt normalization and translation",
-    "End prompt normalization and translation",
-    "Generation completed.",
-    "Image returned",
-];
 // The live free request whose headers prime.headers holds
 const PRIME =
     "/prompt/weftbaseline-1791750449-a%20a%20small%20yellow%20flower?width=256&height=256&nologo=true";
@@ -405,6 +387,8 @@ test("the VM's other routes: models, about, crossdomain, register, .well-known a
             "/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G",
         ],
         ["/models/", "GET", "/models/"],
+        // Changed: the public feed is gone
+        ["/feed?past_results=20", "GET", "/feed"],
         ["/delete/prompt/it's^", "GET", "/delete/prompt/it%27s%5E"],
     ]) {
         const { response, text } = await call(path, { method });
@@ -420,17 +404,22 @@ test("the VM's other routes: models, about, crossdomain, register, .well-known a
     }
 });
 
-test("DELETE /delete/prompt/:prompt still removes a stored image", async () => {
-    await call("/prompt/to%20delete");
-    expect(await storedAt("/prompt/to%20delete")).not.toBeNull();
+// Changed: anyone could delete any stored image, so the route is gone
+test("DELETE /delete/prompt/:prompt answers the 404 and keeps the stored image", async () => {
+    await call("/prompt/to%20keep");
+    expect(await storedAt("/prompt/to%20keep")).not.toBeNull();
 
-    const { response, text } = await call("/delete/prompt/to%20delete", {
+    const { response, text } = await call("/delete/prompt/to%20keep", {
         method: "DELETE",
     });
 
-    expect(response.status).toBe(200);
-    expect(JSON.parse(text)).toMatchObject({ success: true, r2Deleted: true });
-    expect(await storedAt("/prompt/to%20delete")).toBeNull();
+    expect(response.status).toBe(404);
+    expect(JSON.parse(text)).toEqual({
+        error: "Not Found",
+        message: "The requested endpoint was not found",
+        path: "/delete/prompt/to%20keep",
+    });
+    expect(await storedAt("/prompt/to%20keep")).not.toBeNull();
 });
 
 test("other paths generate as /prompt{path}, uncached and without X-Cache", async () => {
@@ -569,172 +558,6 @@ test("a limiter failure is answered as a free request, booking and releasing not
     );
     expect(gen.requests).toHaveLength(1);
     expect(calls).toEqual(["take"]);
-});
-
-describe("feed", () => {
-    /**
-     * A listener on the Worker's /feed: next() reads one server-sent event,
-     * leave() disconnects and waits until the hub has dropped it
-     */
-    const listen = async (path: string) => {
-        const ctx = createExecutionContext();
-        const response = await worker.fetch(
-            new Request(`https://image.pollinations.ai${path}`),
-            env,
-            ctx,
-        );
-        const events = response.body.getReader();
-        let pending = "";
-        const next = async () => {
-            while (!pending.includes("\n\n")) {
-                pending += new TextDecoder().decode(
-                    (await events.read()).value,
-                );
-            }
-            const at = pending.indexOf("\n\n");
-            const line = pending.slice(0, at);
-            pending = pending.slice(at + 2);
-            expect(line).toMatch(/^data: /);
-            return JSON.parse(line.slice("data: ".length));
-        };
-        const leave = async () => {
-            await events.cancel();
-            await waitOnExecutionContext(ctx);
-            // The hub notices at its next event (one that is not kept)
-            await env.FEED_HUB.getByName("image").publish("data: {}\n\n");
-            await expect
-                .poll(() =>
-                    runInDurableObject(
-                        env.FEED_HUB.getByName("image"),
-                        (hub) => hub.writers.size,
-                    ),
-                )
-                .toBe(0);
-        };
-        return { response, next, leave };
-    };
-
-    test("each public generation reaches listeners as the VM sent it; private and mature ones do not", async () => {
-        // A password is ignored. A negative count replays only kept events
-        // past the 50th, so none of this file's earlier ones.
-        const { response, next, leave } = await listen(
-            "/feed?password=x&past_results=-50",
-        );
-        // Every header of the live feed
-        expect(Object.fromEntries(response.headers)).toEqual(
-            Object.fromEntries(capturedHeaders(feedHeaders)),
-        );
-
-        await call("/prompt/private%201?nofeed=true");
-        await call("/prompt/private%202?private=true");
-        // "ass" is a mature word, matched anywhere in the prompt
-        await call("/prompt/a%20grassy%20field");
-
-        // The live event of 2026-10-11, generated again
-        const vm = JSON.parse(vmFeedEvent.slice("data: ".length));
-        await call(vm.imageURL.slice("https://image.pollinations.ai".length));
-        const event = await next();
-        expect(Object.keys(event)).toEqual(Object.keys(vm));
-        expect(event.timingInfo.map(({ step }) => step)).toEqual(TIMING_STEPS);
-        expect(event.timingInfo[0].timestamp).toBe(0);
-        expect({ ...event, timingInfo: vm.timingInfo }).toEqual(vm);
-
-        // Referrer and the start of a token
-        await call("/feed%20me?token=sk_secret&seed=3", {
-            headers: { referer: "https://app.example" },
-        });
-        expect(await next()).toMatchObject({
-            prompt: "feed me",
-            seed: 3,
-            imageURL: "https://image.pollinations.ai/prompt/feed%20me?seed=3",
-            referrer: "https://app.example",
-            token: "sk...",
-        });
-        await call("/prompt/bearer", {
-            headers: { authorization: "Bearer pk_abc" },
-        });
-        expect((await next()).token).toBe("pk...");
-
-        // Changed: imageURL leaves out the parameters that carry a credential
-        await call("/prompt/feed%20keys?key=sk_x&token=pk_y&width=512");
-        expect((await next()).imageURL).toBe(
-            "https://image.pollinations.ai/prompt/feed%20keys?width=512",
-        );
-        await call(
-            "/prompt/feed%20more?b=%C3%A9+x&API_KEY=a&ref=sk_live&Auth=1&seed=8&n=pk_test&a=1",
-        );
-        expect((await next()).imageURL).toBe(
-            "https://image.pollinations.ai/prompt/feed%20more?b=%C3%A9+x&seed=8&a=1",
-        );
-        await call("/prompt/feed%20only%20keys?access_token=abc");
-        expect((await next()).imageURL).toBe(
-            "https://image.pollinations.ai/prompt/feed%20only%20keys",
-        );
-        await leave();
-
-        // The VM never answered a HEAD
-        const head = await call("/feed", { method: "HEAD" });
-        expect(head.response.status).toBe(200);
-        expect(head.text).toBe("");
-    });
-
-    test("a new listener gets the last past_results kept events (default 20), private ones skipped", async () => {
-        const hub = env.FEED_HUB.getByName("replay");
-        const line = (n: number) => `data: {"n":${n}}\n\n`;
-        for (let n = 1; n <= 60; n++) {
-            await hub.publish(n % 10 === 0 ? null : line(n), true);
-        }
-        // The text feed publishes without keeping: nothing to replay
-        await hub.publish(line(61));
-
-        const replayed = async (search: string) => {
-            const stream = (
-                await hub.fetch(`https://feed-hub.invalid/${search}`)
-            ).body.getReader();
-            let text = "";
-            for (;;) {
-                const pending = stream.read();
-                // The runtime rejects a read still pending at the cancel
-                pending.catch(() => {});
-                const read = await Promise.race([
-                    pending,
-                    new Promise<null>((resolve) =>
-                        setTimeout(resolve, 50, null),
-                    ),
-                ]);
-                if (!read || read.done) break;
-                text += new TextDecoder().decode(read.value);
-            }
-            await stream.cancel();
-            return [...text.matchAll(/"n":(\d+)/g)].map(([, n]) => Number(n));
-        };
-        // 50 kept: 11..60, of which 20, 30, 40, 50, 60 reached no listener
-        expect(await replayed("")).toEqual([
-            41, 42, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 54, 55, 56, 57, 58,
-            59,
-        ]);
-        expect(await replayed("?past_results=3")).toEqual([58, 59]);
-        expect(await replayed("?past_results=0")).toHaveLength(18);
-        expect((await replayed("?past_results=100"))[0]).toBe(11);
-        expect(await replayed("?past_results=-45")).toEqual([56, 57, 58, 59]);
-        expect(
-            await runInDurableObject(hub, (feedHub) => feedHub.history.length),
-        ).toBe(50);
-    });
-
-    test("a generation is in the replay of a later listener", async () => {
-        await call("/prompt/for%20the%20replay");
-        const { next, leave } = await listen("/feed?past_results=50");
-        const prompts = [];
-        // The last 50 events of this file, read until this one
-        for (let i = 0; i < 50; i++) {
-            const { prompt } = await next();
-            prompts.push(prompt);
-            if (prompt === "for the replay") break;
-        }
-        expect(prompts.at(-1)).toBe("for the replay");
-        await leave();
-    });
 });
 
 test("an exception on a miss path is Hono's 500", async () => {

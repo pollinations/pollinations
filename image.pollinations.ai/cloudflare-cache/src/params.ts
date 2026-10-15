@@ -3,7 +3,7 @@ import { z } from "zod";
 // The VM's query schema (image.pollinations.ai/src/params.ts) and model table
 // (src/models.ts with the registry tiers), unchanged: zod is pinned to the
 // VM's 4.4.3, whose output (key order, "undefined" negative_prompt) shows in
-// EXIF, the feed and error JSON
+// EXIF and error JSON. nofeed and private do nothing since the feed is gone.
 
 export const MODELS = {
     sana: { enhance: true, maxSideLength: 768, tier: "seed" },

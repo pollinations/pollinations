@@ -8,18 +8,15 @@ import {
     REFUSED,
 } from "../../../shared/messages.js";
 import type { CardKind } from "./cards.ts";
-import { words } from "./mature-words.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
 // The legacy image API that ran on the OVH VM (image.pollinations.ai/src on
 // master: index.ts, createAndReturnImages.ts, feedListeners.ts, weftX402.ts
-// and the shared ipQueue.js), answered in the Worker: same routes,
-// parameters, gen request and responses. Generation goes to gen through the
-// GEN service binding, billed to the GEN_API_KEY bridge key.
+// and the shared ipQueue.js), answered in the Worker: same routes but the
+// public feed, parameters, gen request and responses. Generation goes to gen
+// through the GEN service binding, billed to the GEN_API_KEY bridge key.
 
 const GEN_ORIGIN = "https://gen.pollinations.ai";
-// Any URL: the feed hub answers every fetch with the event stream
-const FEED_URL = "https://feed-hub.invalid/";
 const FREE_INTERVAL_MS = 45_000;
 // Gen is asked for at least one megapixel, then resized to the asked size
 const TARGET_PIXEL_COUNT = 1024 * 1024;
@@ -47,10 +44,6 @@ const TRACKING_DATA = {
     actualModel: "sana",
     usage: { completionImageTokens: 1, totalTokenCount: 1 },
 };
-// Query parameters the public feed leaves out of imageURL, by name; values
-// starting with sk_ or pk_ are left out too
-const CREDENTIAL_NAMES =
-    /^(token|key|api_key|apikey|access_token|auth|authorization)$/i;
 
 type Env = Cloudflare.Env & Record<string, any>;
 type Step = { step: string; timestamp: number };
@@ -127,7 +120,7 @@ const encodeUrl = (url: string) =>
         encodeURI,
     );
 
-/** preMiddleware's 404 for paths outside /prompt and /feed */
+/** preMiddleware's 404 for paths outside /prompt, and now /feed */
 function notFound(pathname: string) {
     // Node's url.parse escaped these, which a Worker's URL keeps
     const path = pathname.replace(/'/g, "%27").replace(/\|/g, "%7C");
@@ -184,25 +177,6 @@ export function utility(method: string, pathname: string) {
     return notFound(pathname);
 }
 
-/** registerFeedListener, public listeners only: a password is ignored */
-export async function feed(env: Env, method: string, search: string) {
-    // The VM never answered a HEAD; here it gets the headers alone
-    const events =
-        method === "HEAD"
-            ? null
-            : (await env.FEED_HUB.getByName("image").fetch(FEED_URL + search))
-                  .body;
-    return new Response(events, {
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-        },
-    });
-}
-
 /** urldecode 1.0.1: decodeURIComponent, or the number -1 for a malformed % */
 function urldecode(text: string): string | number {
     try {
@@ -224,32 +198,6 @@ function queryOf(url: URL) {
         query[key] = key in query ? [].concat(query[key], value) : value;
     }
     return query;
-}
-
-/** The VM's isMature: a mature word, as a word or anywhere in the prompt */
-const matureWords = new Set([...words, ...words.map((word) => `${word}s`)]);
-function isMature(prompt: string) {
-    const input = prompt.toLowerCase();
-    const inputWords = input.replaceAll("_", " ").split(/\b/);
-    if (inputWords.some((word) => matureWords.has(word))) return true;
-    return words.some((word) => input.includes(word.toLowerCase()));
-}
-
-/** extractToken: the query, then Authorization or x-pollinations-token */
-function tokenOf(url: URL, headers: Headers) {
-    const query = url.searchParams.get("token");
-    if (query) return query;
-    for (const name of ["authorization", "x-pollinations-token"]) {
-        const value = headers.get(name);
-        if (value) {
-            return (
-                (name === "authorization"
-                    ? value.replace(/^Bearer\s+/i, "")
-                    : value) || null
-            );
-        }
-    }
-    return null;
 }
 
 const weftEnabled = (env: Env) =>
@@ -496,8 +444,7 @@ async function callGenSana(
 
 /**
  * The queue job (imageGen and createAndReturnImageCached): gen, the branded
- * JPEG, the feed event, then the response. Never throws; calls ended() once
- * the job is done.
+ * JPEG, then the response. Never throws; calls ended() once the job is done.
  */
 async function generateImage(job: Job, ended: () => void) {
     const { env, safeParams, timing } = job;
@@ -528,9 +475,6 @@ async function generateImage(job: Job, ended: () => void) {
             isChild: false,
             trackingData: TRACKING_DATA,
         });
-        timing.push(step("Generation completed."));
-        timing.push(step("Image returned"));
-        publish(job, prompt);
         return imageResponse(job.originalPrompt as string, jpeg);
     } catch (error) {
         logFailure(
@@ -573,63 +517,4 @@ function imageResponse(originalPrompt: string, jpeg: Uint8Array) {
         "x-usage-completion-image-tokens": "1",
         "x-usage-total-tokens": "1",
     });
-}
-
-/**
- * req.url as the VM got it, without the query parameters that carry a
- * credential (the VM published them): the rest keeps its order and encoding
- */
-function publicPath(url: URL) {
-    const path = url.href.slice(url.origin.length);
-    const at = path.indexOf("?");
-    if (at === -1) return path;
-    const kept = path
-        .slice(at + 1)
-        .split("&")
-        .filter((part) => {
-            const [name = "", value = ""] =
-                new URLSearchParams(part).entries().next().value ?? [];
-            return !CREDENTIAL_NAMES.test(name) && !/^(sk|pk)_/.test(value);
-        });
-    return kept.length
-        ? `${path.slice(0, at)}?${kept.join("&")}`
-        : path.slice(0, at);
-}
-
-/**
- * sendToFeedListeners for one generation with saveAsLastState: the VM's feed
- * event, kept for the replay; private and mature events reach no listener
- */
-function publish(job: Job, prompt: string) {
-    const { request, url, safeParams } = job;
-    const token = tokenOf(url, request.headers);
-    const event = {
-        ...safeParams,
-        concurrentRequests: 0,
-        imageURL: `https://image.pollinations.ai${publicPath(url)}`,
-        prompt,
-        isChild: false,
-        // sendToFeedListeners flagged a prompt with a mature word
-        isMature: isMature(prompt),
-        // isMature was undefined in it, so JSON leaves it out
-        maturity: { isChild: false, trackingData: TRACKING_DATA },
-        timingInfo: relative(job.timing),
-        status: "end_generating",
-        referrer: job.referrer,
-        wasPimped: safeParams.enhance,
-        nsfw: false,
-        private: !!safeParams.nofeed,
-        token: token && `${token.slice(0, 2)}...`,
-    };
-    const line =
-        event.private || event.isMature
-            ? null
-            : `data: ${JSON.stringify(event)}\n\n`;
-    job.ctx.waitUntil(
-        job.env.FEED_HUB.getByName("image")
-            .publish(line, true)
-            .catch((error) =>
-                logFailure(job.route, { error: "feed", type: error.name }),
-            ),
-    );
 }

@@ -16,13 +16,12 @@ import { BLOCKED_PREFIXES } from "./blocked-prefixes.js";
 import { prepareForwardedHeaders } from "./index.js";
 
 // The legacy text API that ran on the OVH VM (text.pollinations.ai/server.js and
-// the modules it imports, on master), answered in the Worker: same routes,
-// parameters, gen request and response formats. Generation goes to gen through
-// the GEN service binding, billed to the GEN_API_KEY bridge key.
+// the modules it imports, on master), answered in the Worker: same routes but
+// the public feed, parameters, gen request and response formats. Generation
+// goes to gen through the GEN service binding, billed to the GEN_API_KEY
+// bridge key.
 
 const GEN_URL = "https://gen.pollinations.ai/v1/chat/completions";
-// Any URL: the feed hub answers every fetch with the event stream
-const FEED_URL = "https://feed-hub.invalid/";
 const FREE_INTERVAL_MS = 30_000;
 const MAX_BODY_BYTES = 20 * 1024 * 1024; // body-parser's "20mb"
 const MAX_TOKENS = 1500;
@@ -254,7 +253,6 @@ async function answer(request, env, ctx) {
     if (read && path === "/models") {
         return send(MODELS_BODY, 200, { "Content-Type": JSON_TYPE });
     }
-    if (read && path === "/feed") return feed(env, method);
     if (read && path === "/openai/models") {
         const model = {
             id: "openai-fast",
@@ -278,7 +276,8 @@ async function answer(request, env, ctx) {
     if (method === "POST" && path === "/v1/chat/completions") {
         return generate(undefined, "openai", "POST /v1/chat/completions");
     }
-    if (read) {
+    // Changed: the public feed is gone, so /feed gets the 404 below
+    if (read && path !== "/feed") {
         // Express sent HEAD through the OpenAI JSON branch
         const format = method === "GET" ? "text" : "openai";
         return generateFromPath(url.pathname.slice(1), format, `${method} /*`);
@@ -605,7 +604,6 @@ async function generation(
             request,
             referrerOf(request, new URL(request.url), body),
         ),
-        publish: publisher(request, env, ctx, data, body, params, route),
     };
     const canWait = params.stream || !weftEnabled(env);
     let slot;
@@ -661,76 +659,6 @@ async function generation(
     })();
     ctx.waitUntil(response);
     return response;
-}
-
-/** setupFeedEndpoint, public listeners only: a password is ignored */
-async function feed(env, method) {
-    // The VM never answered a HEAD; here it gets the headers alone
-    const events =
-        method === "GET"
-            ? (await env.FEED_HUB.getByName("text").fetch(FEED_URL)).body
-            : null;
-    return new Response(events, {
-        headers: {
-            ...CORS,
-            "X-Powered-By": "Express",
-            "Content-Type": "text/event-stream; charset=utf-8",
-            "Cache-Control": "no-cache",
-        },
-    });
-}
-
-/**
- * sendToFeedListeners for one generation: publish(response, usage) sends
- * {response, parameters} to the public feed, where parameters are
- * getRequestData's values (validated, not clamped) and gen's usage. Private
- * requests, the /openai paths included, send nothing.
- */
-function publisher(request, env, ctx, data, body, { messages }, route) {
-    const url = new URL(request.url);
-    // The two POST routes set it whatever the path's case; getRequestData
-    // checked the raw path, so GET /OpenAI… stayed public
-    const isPrivate =
-        route === "POST /openai*" ||
-        route === "POST /v1/chat/completions" ||
-        url.pathname.startsWith("/openai") ||
-        toBool(data.private) === true;
-    if (isPrivate) return () => {};
-    const parameters = {
-        messages,
-        jsonMode: jsonModeOf(data),
-        seed: toInt(data.seed),
-        model: data.model == null ? "openai-fast" : String(data.model),
-        temperature: toFloat(data.temperature),
-        top_p: toFloat(data.top_p),
-        presence_penalty: toFloat(data.presence_penalty),
-        frequency_penalty: toFloat(data.frequency_penalty),
-        referrer: referrerOf(request, url, body),
-        stream: toBool(data.stream),
-        isPrivate,
-        voice: data.voice == null ? "alloy" : String(data.voice),
-        tools: data.tools || undefined,
-        tool_choice: data.tool_choice || undefined,
-        modalities: data.modalities,
-        audio: data.audio,
-        reasoning_effort:
-            data.reasoning_effort == null
-                ? undefined
-                : String(data.reasoning_effort),
-        response_format: data.response_format || undefined,
-    };
-    return (response, usage) => {
-        const event = { response, parameters: { ...parameters, ...usage } };
-        // JSON.stringify leaves no line breaks for the VM's escaping to replace
-        const line = `data: ${JSON.stringify(event)}\n\n`;
-        ctx.waitUntil(
-            env.FEED_HUB.getByName("text")
-                .publish(line)
-                .catch((error) =>
-                    logFailure(route, { error: "feed", type: error.name }),
-                ),
-        );
-    };
 }
 
 /** extractReferrer: the query, then the body, then the headers */
@@ -799,7 +727,6 @@ async function generate(env, job, cacheControl, ended) {
             return await send(await response.text(), response.status, headers);
         }
         if (job.stream) {
-            job.publish("Streaming response");
             return sse(response.body);
         }
         const completion = completionOf(await response.json());
@@ -815,10 +742,6 @@ async function generate(env, job, cacheControl, ended) {
                 cacheControl,
             );
         }
-        job.publish(
-            completion.choices[0].message?.content || "",
-            completion.usage,
-        );
         return await (job.format === "openai"
             ? openAiResponse(completion, cacheControl)
             : textResponse(completion));

@@ -8,7 +8,6 @@ import { Buffer } from "node:buffer";
 import { deflateSync, gzipSync } from "node:zlib";
 import { expect, test } from "vitest";
 import worker from "../src/index.js";
-import feedHeaders from "./fixtures/text.pollinations.ai-feed.headers?raw";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
@@ -289,7 +288,7 @@ test("a busy or rate-limited gen gets gen's 503 with a retry time; a request the
     expect(await storedAt("/gen:400?stream=true")).toBeNull();
 });
 
-test("the VM's other routes: redirect, models, crossdomain and feed", async () => {
+test("the VM's other routes: redirect, models and crossdomain", async () => {
     const root = await call("/");
     expect(root.response.status).toBe(301);
     // Every header of the live redirect, X-Powered-By: Express included
@@ -356,126 +355,6 @@ test("the VM's other routes: redirect, models, crossdomain and feed", async () =
     );
 });
 
-test("the public feed gets each public generation as the VM sent it, and nothing private", async () => {
-    const ctx = createExecutionContext();
-    const listener = await worker.fetch(
-        new Request("https://text.pollinations.ai/feed?password=x"),
-        env,
-        ctx,
-    );
-    // Every header of the live feed
-    expect(Object.fromEntries(listener.headers)).toEqual(
-        Object.fromEntries(capturedHeaders(feedHeaders)),
-    );
-    const events = listener.body.getReader();
-    const next = async () => {
-        const value = new TextDecoder().decode((await events.read()).value);
-        expect(value).toMatch(/^data: .*\n\n$/s);
-        return JSON.parse(value.slice("data: ".length));
-    };
-
-    // Private requests reach no public listener
-    await call("/v1/chat/completions", {
-        method: "POST",
-        headers: JSON_BODY,
-        body: JSON.stringify({ messages: [{ role: "user", content: "p1" }] }),
-    });
-    await call("/openai/p2", { method: "POST" });
-    await call("/OpenAI/p2b", { method: "POST" });
-    await call("/openai-p3");
-    await call("/p4?private=true");
-
-    await call("/feed%20me?seed=7&temperature=9&referrer=app");
-    expect(await next()).toEqual({
-        response: "ok",
-        parameters: {
-            messages: [{ role: "user", content: "feed me" }],
-            jsonMode: false,
-            seed: 7,
-            model: "openai-fast",
-            // getRequestData's value, before the clamp
-            temperature: 9,
-            referrer: "app",
-            isPrivate: false,
-            voice: "alloy",
-            prompt_tokens: 322,
-            completion_tokens: 46,
-            total_tokens: 368,
-            completion_tokens_details: { reasoning_tokens: 10 },
-        },
-    });
-
-    // A stream is announced when gen starts answering, without usage
-    await call("/", {
-        method: "POST",
-        headers: { ...JSON_BODY, origin: "https://app.example" },
-        body: JSON.stringify({
-            messages: [{ role: "user", content: "s" }],
-            stream: true,
-            json: "true",
-        }),
-    });
-    expect(await next()).toEqual({
-        response: "Streaming response",
-        parameters: {
-            messages: [{ role: "user", content: "s" }],
-            jsonMode: true,
-            model: "openai-fast",
-            referrer: "https://app.example",
-            stream: true,
-            isPrivate: false,
-            voice: "alloy",
-        },
-    });
-
-    // A listener that leaves is dropped at the next event
-    await events.cancel();
-    await waitOnExecutionContext(ctx);
-    await call("/after%20leaving");
-    await expect
-        .poll(() =>
-            runInDurableObject(
-                env.FEED_HUB.getByName("text"),
-                (hub) => hub.writers.size,
-            ),
-        )
-        .toBe(0);
-
-    // The VM never answered a HEAD
-    const head = await call("/feed", { method: "HEAD" });
-    expect(head.response.status).toBe(200);
-    expect(head.text).toBe("");
-});
-
-test("a feed listener with over 1 MB unsent is cut off; one that reads keeps its events", async () => {
-    const hub = env.FEED_HUB.getByName("backlog");
-    const stalled = (await hub.fetch("https://feed-hub.invalid/")).body;
-    const reading = (
-        await hub.fetch("https://feed-hub.invalid/")
-    ).body.getReader();
-    const event = `data: ${"x".repeat(400_000)}\n\n`;
-    const readEvent = async () => {
-        let bytes = 0;
-        while (bytes < event.length)
-            bytes += (await reading.read()).value.byteLength;
-        return bytes;
-    };
-    // The fifth event finds more than 1 MB still waiting for the stalled one
-    for (let i = 0; i < 5; i++) {
-        await hub.publish(event);
-        expect(await readEvent()).toBe(event.length);
-    }
-    // The stalled listener's stream ends after the four events queued for it
-    let stalledBytes = 0;
-    for await (const chunk of stalled) stalledBytes += chunk.byteLength;
-    expect(stalledBytes).toBe(4 * event.length);
-    const count = () =>
-        runInDurableObject(hub, (feedHub) => feedHub.writers.size);
-    expect(await count()).toBe(1);
-    await reading.cancel();
-    await hub.publish("data: after\n\n");
-    await expect.poll(count).toBe(0);
-});
 test("a matching If-None-Match gets Express's empty 304, after the generation has run", async () => {
     const etag = 'W/"11e-Fd6JEDDMrK3a9OtoxYkMHKWn4Ng"';
     // The live 304 of 2026-10-12, without the edge's headers
@@ -698,6 +577,9 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
             true,
         ],
         [{ method: "PUT" }, "/nothing", 404, "Cannot PUT /nothing", true],
+        // Changed: the public feed is gone, and "feed" is not generated
+        [{}, "/feed?password=x", 404, "Cannot GET /feed", true],
+        [{}, "/Feed/", 404, "Cannot GET /Feed/", true],
         [
             { method: "DELETE" },
             "/it's%",

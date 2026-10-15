@@ -106,8 +106,8 @@ export default defineConfig(({ mode }) => ({
                 const svg = renderToStaticMarkup(
                     createElement(CardIcon, {
                         stroke: "#1d1420",
-                        width: 48,
-                        height: 48,
+                        width: 64,
+                        height: 64,
                         xmlns: "http://www.w3.org/2000/svg",
                     }),
                 );

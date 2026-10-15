@@ -22,23 +22,25 @@ type Link = { label: string; path: string };
 type Notice = {
     id: "running_low" | "auto_top_up_off";
     subject: string;
+    // Paid balance, shown large under the heading.
+    balance: number;
     body: string;
     button: Link;
 };
 
 // Rounds down, so a balance just under the threshold never reads as the
 // threshold itself (9.999 shows 9.99, not 10.00). The epsilon absorbs float
-// error such as 3.42 * 100 = 341.99999999999994. The 💳 marks the paid
-// balance; the HTML swaps it for the UI kit's card icon.
-const paid = (amount: number) =>
-    `💳 ${(Math.floor(Math.max(0, amount) * 100 + 1e-9) / 100).toFixed(2)}`;
+// error such as 3.42 * 100 = 341.99999999999994.
+const amount = (balance: number) =>
+    (Math.floor(Math.max(0, balance) * 100 + 1e-9) / 100).toFixed(2);
 
-// Bodies separate paragraphs with a blank line and mark bold as **text**.
+// Bodies separate paragraphs with a blank line.
 export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
         subject: "Your paid balance is running low",
-        body: `Your paid balance is **${paid(balance)}**, less than ${LOW_BALANCE_SHARE * 100}% of your last pack. When it runs out, requests that need your paid balance will fail.\n\nTop up now, or turn on auto top-up so it refills by itself.`,
+        balance,
+        body: "When it runs out, requests that need it will fail.\n\nTop up now, or turn on auto top-up so it refills by itself.",
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -47,7 +49,8 @@ export function autoTopUpOffNotice(balance: number): Notice {
     return {
         id: "auto_top_up_off",
         subject: "Auto top-up failed",
-        body: `We couldn’t use your saved payment method, so auto top-up is now off. Your paid balance is **${paid(balance)}**. When it runs out, requests that need your paid balance will fail.\n\nUpdate your payment method, then turn auto top-up back on.`,
+        balance,
+        body: "We couldn’t use your saved payment method, so auto top-up is now off. When your paid balance runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.",
         button: { label: "Open wallet", path: "/pollen" },
     };
 }
@@ -113,16 +116,12 @@ export function renderNotice(
 <img src="${image("polli-lockup")}" width="220" height="48" alt="pollinations.ai" style="display:block;margin:0 0 8px">
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
+<p style="margin:0 0 20px;font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">${amount(notice.balance)} <span style="font-size:18px;font-weight:600">pollen</span></p>
 ${notice.body
     .split("\n\n")
     .map(
         (paragraph) =>
-            `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${paragraph
-                .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-                .replace(
-                    "💳",
-                    `<img src="${image("card")}" width="16" height="16" alt="" style="vertical-align:-3px">`,
-                )}</p>`,
+            `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${paragraph}</p>`,
     )
     .join("\n")}
 <a href="${url(notice.button.path)}" style="display:inline-block;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
@@ -139,7 +138,9 @@ ${icons}
     const text = [
         notice.subject,
         "",
-        notice.body.replaceAll("**", ""),
+        `💳 ${amount(notice.balance)} pollen`,
+        "",
+        notice.body,
         "",
         `${notice.button.label}: ${url(notice.button.path)}`,
         "",

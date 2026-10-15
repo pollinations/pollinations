@@ -10,6 +10,30 @@ const FLUX3_LAUNCH_DISCOUNT_END = Date.parse("2026-10-08T15:00:00Z");
 export type ImageModelName = keyof typeof IMAGE_SERVICES;
 
 const IMAGE_BASE_SERVICES = {
+    "sony/mmaudio-v2": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Sony AI",
+        category: "video",
+        title: "MMAudio V2",
+        description:
+            "Adds synchronized sound effects and ambience to an existing video",
+        addedDate: new Date("2026-10-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        inputModalities: ["text", "video"],
+        outputModalities: ["video"],
+        // The single reference video is the source that gets a soundtrack.
+        videoCapabilities: ["audio_output", "reference_videos"],
+        maxReferenceVideos: 1,
+        // Output keeps source dimensions. Fal supports 1-30 seconds.
+        minDuration: 1,
+        maxDuration: 30,
+        // Read up to the supported limit; the provider stops at the source length.
+        defaultDuration: 30,
+        // https://fal.ai/models/fal-ai/mmaudio-v2: $0.001 per billed second.
+        cost: { completionVideoSeconds: 0.001 },
+    },
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],
         provider: "fal",

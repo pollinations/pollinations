@@ -7,6 +7,7 @@ import { expect, test } from "vitest";
 import { z } from "zod";
 import {
     buildCurl,
+    renderEndpoint,
     type Spec,
 } from "../../gen.pollinations.ai/scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../../gen.pollinations.ai/scripts/validate-request-examples.ts";
@@ -55,6 +56,27 @@ test("enter docs schema remains available for gen service binding", async () => 
         ),
     };
     expect(requestExampleErrors(publicSchema)).toEqual([]);
+
+    for (const [path, firstField, secondField] of [
+        ["/account/agents", "repository", "systemPrompt"],
+        ["/account/my-models", "url", "baseUrl"],
+        ["/account/my-models/test", "url", "baseUrl"],
+    ]) {
+        const markdown = renderEndpoint(
+            publicSchema,
+            "post",
+            path,
+            publicSchema.paths[path].post,
+        );
+        const body = markdown
+            .split("📥 **Request body**")[1]
+            .split("📤 **Response**")[0];
+        const [, first, second] = body.split(/\*\*Alternative \d+\*\*/);
+        expect(first).toContain(`| \`${firstField}\` * |`);
+        expect(first).not.toContain(`| \`${secondField}\``);
+        expect(second).toContain(`| \`${secondField}\` * |`);
+        expect(second).not.toContain(`| \`${firstField}\``);
+    }
 });
 
 test.each([

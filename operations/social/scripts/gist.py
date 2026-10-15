@@ -60,6 +60,9 @@ def api_surface(markdown: str) -> Dict:
             section = "parameters"
         elif endpoint and "**Request body**" in line:
             section = "body"
+        elif endpoint and section == "body" and line.startswith("**Alternative "):
+            # Alternative requirements cannot be flattened into one body contract.
+            section = None
         elif endpoint and line.startswith(("📤", "💻", "🔎")):
             section = None
         elif endpoint and section and line.startswith("| `"):

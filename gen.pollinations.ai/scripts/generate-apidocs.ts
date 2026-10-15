@@ -523,7 +523,7 @@ function guessFileExtension(fieldName: string, mediaType: string): string {
 // Endpoint rendering
 // ────────────────────────────────────────────────────────────────────────────
 
-function renderEndpoint(
+export function renderEndpoint(
     spec: Spec,
     method: string,
     path: string,
@@ -567,10 +567,16 @@ function renderEndpoint(
     if (bodyContent && bodyMime) {
         out.push(`${CALLOUT.body} · \`${bodyMime}\``);
         out.push("");
-        const rows = collectRows(spec, asObj(bodyContent.schema));
+        const schema = deref(spec, asObj(bodyContent.schema));
+        const rows = collectRows(spec, schema);
         if (rows.length) {
             out.push(renderRowsTable(rows));
             out.push("");
+        }
+        const variants = asArr(schema.oneOf ?? schema.anyOf);
+        for (const [index, variant] of variants.entries()) {
+            out.push(`**Alternative ${index + 1}**`, "");
+            out.push(renderRowsTable(collectRows(spec, asObj(variant))), "");
         }
     }
 

@@ -263,6 +263,24 @@ class GistEnrichmentTest(unittest.TestCase):
             {"number": 8})
         self.assertEqual(gap, [])
 
+    def test_api_surface_does_not_flatten_alternative_body_requirements(self):
+        docs = """#### `POST` `/models` — Create a model
+⚙️ **Parameters**
+| `debug` | `query` | `boolean` | Debug |
+📥 **Request body** · `application/json`
+**Alternative 1**
+| `url` * | `string` | Text endpoint |
+**Alternative 2**
+| `baseUrl` * | `string` | Media endpoint |
+📤 **Response**
+"""
+        surface = api_surface(docs)
+        self.assertEqual(surface["POST /models"], {
+            "summary": "Create a model",
+            "parameters": {"query:debug": {"type": "boolean", "required": False}},
+            "body": {},
+        })
+
     def test_docs_pr_reports_api_changes_from_apidocs(self):
         docs = """## 🛠️ Endpoints
 

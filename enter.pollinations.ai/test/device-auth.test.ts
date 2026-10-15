@@ -227,6 +227,49 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test("malformed token bodies answer invalid_request, not a 500", async () => {
+        const device = await insertDeviceCode();
+        const bodies = [
+            "not json",
+            "",
+            "null",
+            "42",
+            '["a"]',
+            '{"device_code":{"a":1}}',
+            '{"device_code":123}',
+            JSON.stringify({ device_code: device.deviceCode.length }),
+        ];
+        for (const body of bodies) {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status, body).toBe(400);
+            expect(JSON.parse(text), body).toMatchObject({
+                error: "invalid_request",
+            });
+            expect(text).not.toMatch(/select|params|JSON/i);
+        }
+    });
+
+    test("deny with a malformed body answers 400, not a 500", async ({
+        sessionToken,
+    }) => {
+        for (const body of ["not json", "null", '{"userCode":{"a":1}}']) {
+            const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body,
+            });
+            expect(res.status, body).toBe(400);
+        }
+    });
+
     test("POST /api/device/approve without auth returns 401", async () => {
         const res = await SELF.fetch(`${BASE}/api/device/approve`, {
             method: "POST",

@@ -85,9 +85,14 @@ export async function parseFormOrJsonBody(
     c: Context<Env>,
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
-    const body = contentType.includes("form")
-        ? await c.req.parseBody().catch(() => ({}))
-        : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+    const parsed: unknown = contentType.includes("form")
+        ? await c.req.parseBody().catch(() => null)
+        : await c.req.json().catch(() => null);
+    // Valid JSON can still be null, a number or an array.
+    const body =
+        typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+            ? parsed
+            : {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -215,7 +220,7 @@ export const deviceRoutes = new Hono<Env>()
         "/deny",
         auth({ allowApiKey: false, allowSessionCookie: true }),
         async (c) => {
-            const body = await c.req.json<{ userCode: string }>();
+            const body = await parseFormOrJsonBody(c);
 
             if (!body.userCode) {
                 throw new HTTPException(400, {
@@ -239,7 +244,7 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
+        const body = await parseFormOrJsonBody(c);
         return await exchangeDeviceCode(c, body);
     })
     .get(

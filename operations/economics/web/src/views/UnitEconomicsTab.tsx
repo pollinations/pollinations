@@ -32,6 +32,7 @@ import {
     computeModeIndex,
     directDeliveryData,
     managedInferenceData,
+    pollenComputeMode,
     providerMonthComputeMode,
 } from "../lib/computeModes";
 import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
@@ -43,7 +44,8 @@ import {
     modelReconcileSummary,
     visibleModelReconcileRows,
 } from "../lib/modelReconcile";
-import type { MonthFilterValue } from "../lib/months";
+import { type MonthFilterValue, matchesMonth } from "../lib/months";
+import { resolveProvider } from "../lib/providerRegistry";
 import { signedToneOrSoft } from "../lib/tone";
 import {
     matchesSituation,
@@ -429,6 +431,33 @@ function UnitEconomicsTable({
             }).filter(hasEconomicActivity),
         [allVendorMonths, month],
     );
+    const excludedPollen =
+        view === "inference"
+            ? (data.opPollen ?? []).filter(
+                  (row) =>
+                      row.vendor !== "community" &&
+                      matchesMonth(row.month, month) &&
+                      ["unclassified", "mixed"].includes(
+                          pollenComputeMode(
+                              modeIndex,
+                              row.month,
+                              row.vendor,
+                              row.model,
+                          ),
+                      ) &&
+                      (row.price_paid !== 0 || row.price_quests !== 0),
+              )
+            : [];
+    const missingCostProviders = [
+        ...new Set(
+            vendorMonths
+                .filter((row) => row.status === "pollen only")
+                .map((row) => row.vendor),
+        ),
+    ].sort();
+    const inferenceIncomplete = excludedPollen.some(
+        (row) => resolveProvider(row.vendor)?.category !== "infrastructure",
+    );
     const [situation, setSituation] = useState<Situation>("all");
     const allRows = useMemo(
         () => unitEconomicsRows(vendorMonths, grain),
@@ -494,7 +523,7 @@ function UnitEconomicsTable({
     const unknownCurrentVendorMonths =
         vendorEconomics.length - knownCurrentRows.length;
     const currentPerformancePct =
-        unknownCurrentVendorMonths === 0
+        unknownCurrentVendorMonths === 0 && !inferenceIncomplete
             ? unitPerformancePct(currentResultUsd, summary.retainedPaidUsd)
             : null;
     const knownFullCostRows = vendorEconomics.filter(
@@ -507,16 +536,9 @@ function UnitEconomicsTable({
     const unknownFullCostVendorMonths =
         vendorEconomics.length - knownFullCostRows.length;
     const fullCostPerformancePct =
-        unknownFullCostVendorMonths === 0
+        unknownFullCostVendorMonths === 0 && !inferenceIncomplete
             ? unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd)
             : null;
-    const mixedVendorMonths = vendorMonths.filter(
-        (row) =>
-            view === "inference" &&
-            providerMonthComputeMode(modeIndex, row.month, row.vendor) ===
-                "mixed",
-    ).length;
-
     const assignedPct =
         view === "inference" ? assignedSharePct(summary.buckets) : null;
     const stats = useMemo<StatItem[]>(
@@ -558,7 +580,10 @@ function UnitEconomicsTable({
                 detail: "free usage · never fiat revenue",
             },
             {
-                label: "Vendor cost",
+                label:
+                    missingCostProviders.length > 0
+                        ? "Vendor cost · recorded so far"
+                        : "Vendor cost",
                 value: fmtUsd(summary.providerUsageUsd),
                 detail: (
                     <GaugeSummary
@@ -573,11 +598,15 @@ function UnitEconomicsTable({
             {
                 label: "Current result",
                 value:
-                    knownCurrentRows.length === 0
+                    knownCurrentRows.length === 0 ||
+                    unknownCurrentVendorMonths > 0 ||
+                    inferenceIncomplete
                         ? "Unknown"
                         : fmtSignedUsd(currentResultUsd),
                 tone:
-                    knownCurrentRows.length === 0
+                    knownCurrentRows.length === 0 ||
+                    unknownCurrentVendorMonths > 0 ||
+                    inferenceIncomplete
                         ? "base"
                         : currentResultUsd > 0
                           ? "pos"
@@ -585,18 +614,22 @@ function UnitEconomicsTable({
                             ? "neg"
                             : "base",
                 detail:
-                    unknownCurrentVendorMonths > 0
-                        ? "with credits"
+                    unknownCurrentVendorMonths > 0 || inferenceIncomplete
+                        ? "with credits · awaiting complete evidence"
                         : `with credits · ${fmtMarginPct(currentPerformancePct)}`,
             },
             {
                 label: "Full-cost result",
                 value:
-                    knownFullCostRows.length === 0
+                    knownFullCostRows.length === 0 ||
+                    unknownFullCostVendorMonths > 0 ||
+                    inferenceIncomplete
                         ? "Unknown"
                         : fmtSignedUsd(fullCostResultUsd),
                 tone:
-                    knownFullCostRows.length === 0
+                    knownFullCostRows.length === 0 ||
+                    unknownFullCostVendorMonths > 0 ||
+                    inferenceIncomplete
                         ? "base"
                         : fullCostResultUsd > 0
                           ? "pos"
@@ -604,12 +637,13 @@ function UnitEconomicsTable({
                             ? "neg"
                             : "base",
                 detail:
-                    unknownFullCostVendorMonths > 0
-                        ? "without credits"
+                    unknownFullCostVendorMonths > 0 || inferenceIncomplete
+                        ? "without credits · awaiting complete evidence"
                         : `without credits · ${fmtMarginPct(fullCostPerformancePct)}`,
             },
         ],
         [
+            inferenceIncomplete,
             currentPerformancePct,
             currentResultUsd,
             fullCostPerformancePct,
@@ -618,6 +652,7 @@ function UnitEconomicsTable({
             knownCurrentRows.length,
             knownFullCostRows.length,
             summary,
+            missingCostProviders.length,
             unknownCurrentVendorMonths,
             unknownFullCostVendorMonths,
             view,
@@ -638,8 +673,7 @@ function UnitEconomicsTable({
             )}
 
             {(includesPartialMonth ||
-                summary.missingSideProviderMonths > 0 ||
-                mixedVendorMonths > 0) && (
+                summary.missingSideProviderMonths > 0) && (
                 <div className="flex flex-wrap items-center gap-2">
                     {includesPartialMonth && (
                         <Chip intent="warning" size="sm">
@@ -650,12 +684,6 @@ function UnitEconomicsTable({
                         <Chip intent="warning" size="sm">
                             {summary.missingSideProviderMonths} source gap
                             {summary.missingSideProviderMonths === 1 ? "" : "s"}
-                        </Chip>
-                    )}
-                    {mixedVendorMonths > 0 && (
-                        <Chip intent="neutral" size="sm">
-                            {mixedVendorMonths} mixed month
-                            {mixedVendorMonths === 1 ? "" : "s"} unallocated
                         </Chip>
                     )}
                 </div>

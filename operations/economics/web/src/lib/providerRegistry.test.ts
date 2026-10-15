@@ -14,6 +14,7 @@ import { CATEGORY_IDS } from "./categories";
 import { isDatedRules } from "./modelIdentity";
 import {
     activeProviderAccounts,
+    CANONICAL_MODEL_RENAMES,
     canonicalProvider,
     canonicalProviderAccountId,
     cashOnlyTransaction,
@@ -403,12 +404,12 @@ describe("provider registry", () => {
             ),
         ).toBe("myceli-ai");
 
-        const pausedAfterAugust = [
-            "digitalocean",
-            "mistral",
-            "pruna",
-            "runpod",
-        ];
+        const mistral = resolveProvider("mistral");
+        expect(mistral).toBeDefined();
+        if (!mistral) throw new Error("mistral is not registered");
+        expect(activeProviderAccounts(mistral, "2026-09")).toHaveLength(1);
+
+        const pausedAfterAugust = ["digitalocean", "pruna", "runpod"];
         for (const providerId of pausedAfterAugust) {
             const provider = resolveProvider(providerId);
             expect(provider).toBeDefined();
@@ -833,5 +834,45 @@ describe("providerReviewRows", () => {
             cloudflare?.expectedAccounts.map((account) => account.id),
         ).toEqual(["pollinations", "myceli"]);
         expect(resolveProvider("myceli")).toBeUndefined();
+    });
+});
+
+describe("historical canonical mapping contracts", () => {
+    it("uses canonical provider keys, dated evidence and non-overlapping rules", () => {
+        for (const [alias, target] of Object.entries(CANONICAL_MODEL_RENAMES)) {
+            if (typeof target === "string") {
+                expect(target, alias).toContain("/");
+                continue;
+            }
+            for (const rule of target) {
+                expect(rule.model, alias).toContain("/");
+                expect(rule.evidence.length, alias).toBeGreaterThan(0);
+                expect(rule.from, alias).toMatch(/^\d{4}-\d{2}$/);
+                expect(rule.from <= (rule.until ?? "9999-12"), alias).toBe(
+                    true,
+                );
+                if (rule.provider) {
+                    expect(resolveProvider(rule.provider)?.id, alias).toBe(
+                        rule.provider,
+                    );
+                }
+            }
+            for (let i = 0; i < target.length; i++) {
+                for (const other of target.slice(i + 1)) {
+                    const rule = target[i];
+                    if (
+                        rule.provider &&
+                        other.provider &&
+                        rule.provider !== other.provider
+                    )
+                        continue;
+                    expect(
+                        rule.from > (other.until ?? "9999-12") ||
+                            other.from > (rule.until ?? "9999-12"),
+                        alias,
+                    ).toBe(true);
+                }
+            }
+        }
     });
 });

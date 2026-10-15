@@ -1,7 +1,7 @@
 import type { Data, VendorLedgerRow } from "../types";
 import { cloudCategory } from "./categories";
 import { toUsd } from "./fx";
-import { resolveLedgerLabel } from "./modelIdentity";
+import { ledgerModelResolver } from "./modelIdentity";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -9,7 +9,6 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "./months";
-import { CANONICAL_MODEL_RENAMES } from "./providerRegistry";
 import { canonicalVendor } from "./tb";
 import {
     vendorLedgerCreditBurnUsd,
@@ -488,30 +487,15 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
 // never redistribute another model's costs.
 export function modelReconcileRows(data: Data): ModelReconcileRow[] {
     const entries = new Map<string, ProviderMonth>();
-    const recordedIds = new Map<ProviderMonth, Set<string>>();
-    for (const row of data.opPollen ?? []) {
-        if (!MONTH_KEY.test(row.month) || row.month < WINDOW_START) continue;
-        const entry = providerMonth(entries, row.month, row.vendor);
-        getOrInit(recordedIds, entry, () => new Set<string>()).add(
-            row.model.trim(),
-        );
-    }
-    // Bridge only reviewed promotions actually observed in this provider-month.
-    // A mixed rollout month joins both spellings; historical-only months and
-    // unrelated/repointed aliases retain their original accounting identities.
-    const accountingId = (entry: ProviderMonth, id: string): string => {
-        const promoted = CANONICAL_MODEL_RENAMES[id];
-        return promoted && recordedIds.get(entry)?.has(promoted)
-            ? promoted
-            : id;
-    };
+    const identity = ledgerModelResolver(data);
 
     for (const row of data.opPollen ?? []) {
         if (!MONTH_KEY.test(row.month) || row.month < WINDOW_START) continue;
         const entry = providerMonth(entries, row.month, row.vendor);
         entry.hasPollen = true;
         const modelName =
-            accountingId(entry, row.model.trim()) || "Unassigned Pollen model";
+            identity.model(row.month, row.vendor, row.model) ||
+            "Unassigned Pollen model";
         const model = getOrInit(entry.pollenModels, modelName, () => ({
             model: modelName,
             paidPollenUsd: 0,
@@ -550,45 +534,8 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         const creditUsd = vendorLedgerCreditBurnUsd(row);
         entry.cashUsd += cashUsd;
         entry.creditUsd += creditUsd;
-        // A label that is exactly a Pollen model id metered this month is an
-        // exact join, whether or not today's registry still lists it.
         const label = row.model.trim();
-        const modelId = accountingId(entry, label);
-        let resolution = entry.pollenModels.has(modelId)
-            ? ({ kind: "model", model: modelId } as const)
-            : resolveLedgerLabel(entry.vendor, label, {
-                  sku: row.resource_sku,
-                  name: row.resource_name,
-                  month,
-              });
-        if (resolution.kind === "model") {
-            resolution = {
-                kind: "model",
-                model: accountingId(entry, resolution.model),
-            };
-        } else if (resolution.kind === "shared") {
-            const models = [
-                ...new Set(
-                    resolution.models.map((id) => accountingId(entry, id)),
-                ),
-            ];
-            resolution =
-                models.length === 1
-                    ? { kind: "model", model: models[0] }
-                    : { kind: "shared", models };
-        }
-        // A label listed for several models is shared only in a month where
-        // more than one of them was actually metered on this vendor.
-        if (resolution.kind === "shared") {
-            const metered = resolution.models.filter((model) =>
-                entry.pollenModels.has(model),
-            );
-            if (metered.length === 1) {
-                resolution = { kind: "model", model: metered[0] };
-            } else if (metered.length > 1) {
-                resolution = { kind: "shared", models: metered };
-            }
-        }
+        const resolution = identity.ledger(row);
         switch (resolution.kind) {
             case "model":
                 addFunding(

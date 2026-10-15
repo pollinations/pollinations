@@ -46,6 +46,8 @@ export type ProviderDefinition = {
     // adjustment line (a reimbursement of pre-window costs, for example).
     cashOnly?: boolean;
     meteringBasis: MeteringBasis;
+    // Pollen routing scope for cloud vendors that also sell infrastructure.
+    pollenComputeMode?: "managed-inference";
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
@@ -107,9 +109,18 @@ export type PollenVendorOverride = {
     evidence: string;
 };
 
+export type CanonicalModelRule = {
+    provider?: string;
+    from: string;
+    until?: string;
+    model: string;
+    evidence: string;
+};
+export type CanonicalModelTarget = string | CanonicalModelRule[];
+
 type ProviderRegistryFile = {
     version: number;
-    canonicalModelRenames: Record<string, string>;
+    canonicalModelRenames: Record<string, CanonicalModelTarget>;
     pollenVendorOverrides: PollenVendorOverride[];
     // Pollen model ids that no longer exist in the shared registry but still
     // identify historical costs. Removing a model from the product does not
@@ -124,9 +135,10 @@ export type ProviderReconciliationExplanation =
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
-// Frozen public-ID promotions from #13076, not today's mutable alias table.
-export const CANONICAL_MODEL_RENAMES: Readonly<Record<string, string>> =
-    registryJson.canonicalModelRenames;
+// Exact historical identities, with dated rules for aliases that changed model.
+export const CANONICAL_MODEL_RENAMES: Readonly<
+    Record<string, CanonicalModelTarget>
+> = registryJson.canonicalModelRenames;
 export const RETIRED_MODELS: readonly string[] = (
     registryJson as ProviderRegistryFile
 ).retiredModels;

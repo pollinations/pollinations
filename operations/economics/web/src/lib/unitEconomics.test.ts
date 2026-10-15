@@ -119,7 +119,7 @@ describe("unitEconomicsRows", () => {
             true,
         );
         expect(modelRows.map((row) => row.model)).toEqual([
-            "claude",
+            "anthropic/claude-sonnet-4.6",
             "llama",
             "Needs model mapping",
         ]);

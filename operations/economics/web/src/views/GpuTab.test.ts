@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import {
     gpuResourceRows,
     gpuResourceSummary,
     gpuWorkloadRows,
     gpuWorkloadSummary,
     visibleGpuResourceRows,
-} from "./GpuTab";
+} from "../lib/gpu";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 
 const baseData: Data = {
     opTransactions: [],
@@ -325,7 +325,7 @@ describe("gpuWorkloadRows", () => {
         expect(rows).toHaveLength(1);
         expect(rows[0]).toMatchObject({
             kind: "workload",
-            workload: "zimage",
+            workload: "tongyi-mai/z-image-turbo",
             vendors: "runpod, vast",
             gpuCount: 2,
             paidUsd: 200,
@@ -341,6 +341,62 @@ describe("gpuWorkloadRows", () => {
             flags: [],
         });
         expect(rows[0].resources).toHaveLength(2);
+    });
+
+    it.each([
+        ["flux", "black-forest-labs/flux.1-schnell"],
+        ["klein", "black-forest-labs/flux.2-klein-4b"],
+        ["dreamshaper", "lykon/dreamshaper-8-lcm"],
+        ["zimage", "tongyi-mai/z-image-turbo"],
+    ])("joins reviewed %s promotions without duplicating costs or usage", (legacy, canonical) => {
+        const rows = gpuWorkloadRows(
+            {
+                vendorLedger: [cloud({ vendor: "vast", model: legacy })],
+                opPollen: [
+                    pollen({ vendor: "vast", model: legacy }),
+                    pollen({ vendor: "vast", model: canonical }),
+                ],
+            },
+            "2026-06",
+        );
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            workload: canonical,
+            gpuCount: 1,
+            retainedUsd: 260,
+            paidUsd: 320,
+            questUsd: 80,
+            totalCostUsd: 100,
+            currentResultUsd: 160,
+            flags: [],
+        });
+    });
+
+    it("does not borrow GPU coverage from a different vendor or month", () => {
+        for (const usage of [
+            pollen({ vendor: "vast" }),
+            pollen({ month: "2026-07" }),
+        ]) {
+            const rows = gpuWorkloadRows(
+                {
+                    vendorLedger: [
+                        cloud({}),
+                        cloud({
+                            vendor: usage.vendor,
+                            start: `${usage.month}-01 00:00:00`,
+                            model: "other-workload",
+                            resource_id: "other",
+                        }),
+                    ],
+                    opPollen: [usage],
+                },
+                "2026",
+            );
+            expect(
+                rows.some((row) => row.flags.includes("missing GPU cost")),
+            ).toBe(true);
+            expect(gpuWorkloadSummary(rows).currentResultUsd).toBeNull();
+        }
     });
 
     it("keeps shared-model GPU pools as one workload", () => {

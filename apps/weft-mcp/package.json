@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.0.0",
-    "@weftlabs/sdk": "^0.31.0",
+    "@weftlabs/sdk": "^0.32.0",
     "@x402/core": "^2.28.0",
     "zod": "^4.4.3"
   },

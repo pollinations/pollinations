@@ -27,7 +27,8 @@ function paymentCost(body) {
         throw new WeftFailure(502, "Weft returned no payment status", held);
     }
     // Prototype: pending holds are charged provisionally. Reconcile reversals
-    // before this worker is deployed with a real buyer key.
+    // before this worker is deployed with a real buyer key: the fetch
+    // response's purchaseId reads the final status from Weft's purchases API.
     return ["pending", "declined-pending"].includes(body.paymentStatus)
         ? Math.max(paid, held)
         : paid;
@@ -82,7 +83,8 @@ function formatFetch(body) {
     }
     const contentType =
         body.headers?.["content-type"] || body.headers?.["Content-Type"] || "";
-    const metadata = `HTTP ${body.status}; payment ${body.paymentStatus}; cost ${body.paidUsd} USD; held ${body.heldUsd ?? "0"} USD`;
+    const purchase = body.purchaseId ? `; purchase ${body.purchaseId}` : "";
+    const metadata = `HTTP ${body.status}; payment ${body.paymentStatus}; cost ${body.paidUsd} USD; held ${body.heldUsd ?? "0"} USD${purchase}`;
     if (!/^(text\/|application\/(json|[^;]+\+json))/.test(contentType)) {
         return textResult(
             `${metadata}\nContent-Type: ${contentType || "unknown"}\nBase64: ${body.bodyBase64}`,
@@ -129,6 +131,9 @@ function buildServer(env, fetchImpl, reportUsage) {
                         // List only APIs that weft_fetch's hard cap can buy.
                         price: { lte: String(WEFT_MCP_MAX_COST_USD) },
                     },
+                    // The agent view: request, price and next call per
+                    // result, about half the size of the full results.
+                    view: "compact",
                 });
                 return textResult(JSON.stringify(body));
             } catch (error) {

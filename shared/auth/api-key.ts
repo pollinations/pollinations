@@ -128,6 +128,22 @@ export type VerifyApiKeyClient = {
     };
 };
 
+/** Characters of a key stored in plain text as `start`, to recognise it. */
+export const API_KEY_START_LENGTH = 10;
+
+/** A new raw key: `pk_` + 16 or `sk_` + 32 random alphanumerics. */
+export function generateApiKey(prefix: string | undefined): string {
+    const keyLength = prefix === PUBLISHABLE_KEY_PREFIX ? 16 : 32;
+    const chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const randomBytes = crypto.getRandomValues(new Uint8Array(keyLength));
+    const key = Array.from(
+        randomBytes,
+        (byte) => chars[byte % chars.length],
+    ).join("");
+    return prefix ? `${prefix}_${key}` : key;
+}
+
 export function createApiKeyPlugin() {
     return apiKey({
         enableMetadata: true,
@@ -137,25 +153,10 @@ export function createApiKeyPlugin() {
         minimumNameLength: 1,
         maximumNameLength: 253,
         startingCharactersConfig: {
-            charactersLength: 10,
+            charactersLength: API_KEY_START_LENGTH,
         },
-        customKeyGenerator: (options: {
-            length: number;
-            prefix: string | undefined;
-        }) => {
-            const isPublishable = options.prefix === PUBLISHABLE_KEY_PREFIX;
-            const keyLength = isPublishable ? 16 : 32;
-            const chars =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            const randomBytes = crypto.getRandomValues(
-                new Uint8Array(keyLength),
-            );
-            const key = Array.from(
-                randomBytes,
-                (byte) => chars[byte % chars.length],
-            ).join("");
-            return options.prefix ? `${options.prefix}_${key}` : key;
-        },
+        customKeyGenerator: (options: { prefix: string | undefined }) =>
+            generateApiKey(options.prefix),
         keyExpiration: {
             minExpiresIn: 0,
             // Override Better Auth's 365-day default with JavaScript Date's range.

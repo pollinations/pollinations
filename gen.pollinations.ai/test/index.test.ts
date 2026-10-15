@@ -849,10 +849,11 @@ describe("gen worker routing", () => {
             description:
                 "Quick web searches with cited answers; keeps it brief",
         });
-        // Sonar Pro and Reasoning Pro retired into aliases of Sonar.
+        // Sonar Pro and Reasoning Pro retired into aliases of Sonar. Other
+        // Perplexity models, such as decision models, may use the prefix.
         expect(
             models
-                .filter((model) => model.name.startsWith("perplexity/"))
+                .filter((model) => model.name.startsWith("perplexity/sonar"))
                 .map((model) => model.name),
         ).toEqual(["perplexity/sonar"]);
         expect(models.some((model) => model.name === "perplexity-deep")).toBe(

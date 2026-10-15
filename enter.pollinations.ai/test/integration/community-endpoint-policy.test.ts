@@ -307,6 +307,9 @@ describe("community endpoint configuration policy", () => {
         expect(created.status, await created.clone().text()).toBe(200);
         expect(await created.json<{ description: string }>()).toMatchObject({
             description: maxDescription,
+            modelId: expect.stringMatching(
+                /^community\/[^/]+\/long-description-agent$/,
+            ),
         });
 
         const rejected = await request(`${maxDescription}d`);
@@ -314,6 +317,39 @@ describe("community endpoint configuration policy", () => {
         expect(await rejected.text()).toContain(
             `Description must be at most ${COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH} characters`,
         );
+    });
+
+    test("an account without GitHub has no agents and can't create one", async ({
+        accountToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: null })
+            .where(eq(schema.user.githubUsername, "testuser"));
+        const agents = (init?: RequestInit) =>
+            SELF.fetch("http://localhost:3000/api/account/agents", {
+                ...init,
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${accountToken}`,
+                },
+            });
+
+        const listed = await agents();
+        expect(listed.status, await listed.clone().text()).toBe(200);
+        expect(await listed.json()).toEqual({ data: [] });
+
+        const created = await agents({
+            method: "POST",
+            body: JSON.stringify({
+                name: "no-github-agent",
+                title: "No GitHub",
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai",
+            }),
+        });
+        expect(created.status).toBe(400);
+        expect(await created.text()).toContain("A GitHub username is required");
     });
 
     test("preserves validation error precedence", () => {

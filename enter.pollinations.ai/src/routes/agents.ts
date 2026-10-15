@@ -105,9 +105,8 @@ const AgentResponseBaseSchema = z.object({
     id: z.string(),
     name: z.string(),
     // The exact string to pass as `model` when calling this agent, e.g.
-    // "community/octocat/my-agent". Null only for pre-migration agents whose
-    // owner has not linked a GitHub account; new agents always have one.
-    model: z.string().nullable(),
+    // "community/octocat/my-agent".
+    modelId: z.string(),
     title: z.string(),
     description: z.string().nullable(),
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
@@ -139,7 +138,7 @@ const CodeAgentSyncResponseSchema = z.object({
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
-function toResponse(row: AgentRow, ownerGithubUsername: string | null) {
+function toResponse(row: AgentRow, ownerGithubUsername: string) {
     if (row.type !== "prompt_agent" && row.type !== "code_agent") {
         throw new Error(`Listing ${row.id} is not a managed agent`);
     }
@@ -148,9 +147,7 @@ function toResponse(row: AgentRow, ownerGithubUsername: string | null) {
     return {
         id: row.id,
         name: row.name,
-        model: ownerGithubUsername
-            ? communityModelId(ownerGithubUsername, row.name)
-            : null,
+        modelId: communityModelId(ownerGithubUsername, row.name),
         title: row.title,
         description: row.description,
         visibility: row.visibility,
@@ -272,15 +269,13 @@ async function requireAgentWriteAccess(
     name: string,
     visibility: "private" | "public",
     currentId?: string,
-): Promise<string | null> {
+): Promise<string> {
     const owner = await db.query.user.findFirst({
         columns: { githubId: true, githubUsername: true },
         where: eq(schema.user.id, ownerUserId),
     });
-    // Old standalone agents could exist before an owner linked GitHub. Keep
-    // those preserved private rows editable after migration; creating a new
-    // callable listing or publishing still requires a stable owner slug.
-    if (!owner?.githubUsername && (!currentId || visibility === "public")) {
+    // The owner's GitHub username is the agent's model name prefix.
+    if (!owner?.githubUsername) {
         throw new HTTPException(400, {
             message:
                 "A GitHub username is required to create or publish an agent",
@@ -304,7 +299,7 @@ async function requireAgentWriteAccess(
             message: "Community model name is already registered",
         });
     }
-    return owner?.githubUsername ?? null;
+    return owner.githubUsername;
 }
 
 export const agentsRoutes = new Hono<Env>()
@@ -333,6 +328,12 @@ export const agentsRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });
+            const ownerGithubUsername = await lookupOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            // Creating an agent requires GitHub, so an account without it has none.
+            if (!ownerGithubUsername) return c.json({ data: [] });
             const rows = await db.query.communityEndpoint.findMany({
                 where: and(
                     eq(schema.communityEndpoint.ownerUserId, user.id),
@@ -343,10 +344,6 @@ export const agentsRoutes = new Hono<Env>()
                 ),
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
-            const ownerGithubUsername = await lookupOwnerGithubUsername(
-                db,
-                user.id,
-            );
             return c.json({
                 data: rows.map((row) => toResponse(row, ownerGithubUsername)),
             });
@@ -382,6 +379,9 @@ export const agentsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
+            if (!ownerGithubUsername) {
+                throw new HTTPException(404, { message: "Agent not found" });
+            }
             return c.json(toResponse(row, ownerGithubUsername));
         },
     )
@@ -419,7 +419,7 @@ export const agentsRoutes = new Hono<Env>()
                 title: string;
                 description: string | null;
             };
-            let ownerGithubUsername: string | null;
+            let ownerGithubUsername: string;
             if (input.type === "code_agent") {
                 const repository = await resolveCodeAgentRepository(
                     c.env,

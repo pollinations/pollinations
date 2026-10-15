@@ -58,6 +58,7 @@ describe("API provider identities", () => {
 // These are routing expectations, not another provider catalog. Compare the
 // actual text connection configuration with the vendor attributed by the registry.
 const PROTOCOL_VENDORS: Record<string, string> = {
+    anthropic: "anthropic",
     "azure-openai": "azure",
     bedrock: "aws",
     "vertex-ai": "google",
@@ -67,6 +68,7 @@ const HOST_VENDORS: Record<string, string> = {
     "api.openai.com": "openai",
     "api.fireworks.ai": "fireworks",
     "api.deepinfra.com": "deepinfra",
+    "api.inferenceport.ai": "inferenceport",
     "api.mistral.ai": "mistral",
     "api.novita.ai": "novita",
     "api.perplexity.ai": "perplexity",

@@ -229,6 +229,140 @@ inside a `"use client"` component:
   }
   ```
 
+### React generation hooks
+
+`useImageGeneration`, `useTextGeneration`, `useAudioGeneration`,
+`useVideoGeneration`, and `useTranscription` run one request with the signed-in
+user's key and render nothing. Each returns `{ data, isLoading, error, run, rerun, cancel }`.
+Nothing is sent until `run(...)`; calling `run` again cancels the request in
+flight. A logout, a key change, or unmounting cancels it too, so a late response
+never reaches the next user. `cancel()` keeps the last result.
+
+Call `run` from an event handler, not during render.
+
+```tsx
+import { useMemo } from 'react';
+import { useImageGeneration } from '@pollinations/sdk/react';
+
+function ImageButton() {
+  const { data, isLoading, error, run } = useImageGeneration();
+  // Call URL.revokeObjectURL(src) when the result changes to free the blob.
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('a red fox', { model: 'black-forest-labs/flux.1-schnell' })}>Generate</button>
+      {error && <p>{error.message}</p>}
+      {src && <img src={src} alt="" />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTextGeneration } from '@pollinations/sdk/react';
+
+function Haiku() {
+  const { data, isLoading, run } = useTextGeneration();
+  return (
+    <>
+      <button disabled={isLoading} onClick={() => run('Write a haiku about rain', { model: 'openai/gpt-5.4-nano' })}>Write</button>
+      <p>{data}</p>
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useAudioGeneration } from '@pollinations/sdk/react';
+
+function Speak() {
+  const { data, run } = useAudioGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('Hello from Pollinations', { voice: 'nova' })}>Speak</button>
+      {src && <audio src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from 'react';
+import { useVideoGeneration } from '@pollinations/sdk/react';
+
+function Clip() {
+  const { data, run } = useVideoGeneration();
+  const src = useMemo(
+    () => data && URL.createObjectURL(new Blob([data.buffer], { type: data.contentType })),
+    [data],
+  );
+  return (
+    <>
+      <button onClick={() => run('a paper boat drifting on a pond', { duration: 4 })}>Render</button>
+      {src && <video src={src} controls />}
+    </>
+  );
+}
+```
+
+```tsx
+import { useTranscription } from '@pollinations/sdk/react';
+
+function Transcribe() {
+  const { data, isLoading, run } = useTranscription();
+  return (
+    <>
+      <input type="file" accept="audio/*" disabled={isLoading} onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) void run(file, { model: 'whisper-large-v3' });
+      }} />
+      <p>{data?.text}</p>
+    </>
+  );
+}
+```
+
+### React chat transport (`useChat`)
+
+`usePollinationsChatTransport` returns a transport for the Vercel AI SDK
+`useChat`. It streams `/v1/responses` from the browser with the signed-in
+user's key. Text arrives as text parts, server-run MCP tool calls arrive as tool
+parts with their results, and `message.metadata.usage` holds the usage of the
+reply. Assistant output is kept in `message.metadata.output` and sent back on
+later turns, preserving server tool results. Stream failures become `error`
+chunks. A rejected request makes the send
+fail, which `useChat` reports as an error. Caller-run function tools are not
+supported.
+
+`ai` is an optional peer dependency; install it, and `@ai-sdk/react`, to use
+`useChat`.
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { usePollinationsChatTransport } from '@pollinations/sdk/react';
+
+function Chat() {
+  const transport = usePollinationsChatTransport({ model: 'openai/gpt-5.4-nano' });
+  const { messages, sendMessage, status } = useChat({ transport });
+  return (
+    <>
+      {messages.map((m) => (
+        <p key={m.id}>{m.role}: {m.parts.map((p) => (p.type === 'text' ? p.text : '')).join('')}</p>
+      ))}
+      <button disabled={status !== 'ready'} onClick={() => sendMessage({ text: 'Hi' })}>Send</button>
+    </>
+  );
+}
+```
+
 ### Managing API keys
 
 Programmatically create, list, and revoke keys for your account. Useful for BYOP ("bring your own pollen") flows, multi-tenant apps, and automation:
@@ -439,6 +573,42 @@ include `model`, `referenceImage` (one URL or an array), `resolution`, `seed`,
 without an API key. The server's MIME type is preserved for GLB and PLY files.
 3D shares video's 20-minute timeout; override it with `videoTimeout` on the client.
 Check each model's `paid_only` flag before using it with Quest Pollen.
+
+## Async media jobs
+
+Leave a slow generation running after disconnecting, then check and download it
+with the same account. Supported by `imageAsync`, `videoAsync`, `audioAsync`,
+and `model3dAsync` on the client.
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+import { writeFile } from 'node:fs/promises';
+
+const client = new Pollinations(); // reads POLLINATIONS_API_KEY from the environment
+const submitted = await client.videoAsync('a paper boat on a river', {
+  model: 'google/veo-3.1-fast',
+});
+let file;
+if ('result' in submitted) {
+  file = submitted.result; // already cached; no job id needed
+} else {
+  let job;
+  do {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    job = await client.job(submitted.id);
+  } while (job.status === 'pending');
+  if (job.status === 'failed') throw new Error(job.error?.message || 'Generation failed');
+  file = await client.jobResult(submitted.id);
+}
+await writeFile('boat.mp4', new Uint8Array(file.buffer));
+```
+
+Submission returns a job id and 202 response immediately unless a cached file
+is returned directly. Only accounts that submitted the job may poll or download
+it; polling does not charge again. Status records last 24 hours after completion.
+Pass an `AbortSignal` to cancel the HTTP request; this does not cancel a job
+already running in the durable coordinator. The SDK authenticates with a
+header and does not put the credential in a media URL.
 
 ## Audio (Text-to-Speech & Music)
 

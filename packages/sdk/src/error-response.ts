@@ -52,7 +52,9 @@ export async function pollinationsErrorFromResponse(
     const message =
         typeof nested.message === "string"
             ? nested.message
-            : `Request failed with status ${response.status}`;
+            : typeof record.error === "string"
+              ? record.error
+              : `Request failed with status ${response.status}`;
     const code =
         typeof nested.code === "string"
             ? nested.code

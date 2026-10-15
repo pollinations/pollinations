@@ -12,9 +12,13 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to regenerate; reruns images and Discord posting, which may duplicate a successful post'
+        description: 'PR number to regenerate; reruns the image, and the Discord post unless turned off below'
         required: true
         type: number
+      discord:
+        description: 'Post to Discord (turn off to only save the gist, e.g. for an older PR)'
+        type: boolean
+        default: true
 
 jobs:
   generate-gist:
@@ -64,6 +68,7 @@ jobs:
         run: python operations/social/scripts/gist.py
 
       - name: Post to Discord
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.discord }}
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}

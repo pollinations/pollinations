@@ -30,6 +30,10 @@ test("provider discovery audits include literal API evidence after long pricing 
         async (payload) => {
             const [item] = payload.state.items;
             assert.ok(item.excerpt.includes(api));
+            assert.match(
+                item.claim,
+                /potential hosted-inference provider or API marketplace research lead/,
+            );
             assert.ok(
                 item.excerpt.includes(
                     "Source URL: https://inferhub.dev/pricing",

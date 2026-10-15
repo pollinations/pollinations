@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ Pollinations Blocks](https://github.com/Saauf/pollinations-blocks) | Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u | [@Saauf](https://github.com/Saauf) |
 | [🛠️ Pollinations for MIT App Inventor](https://github.com/Drjacky/pollinations-appinventor) | One non-visible App Inventor extension (.aix) plus a ready sample project (.aia) that adds Pollinations to App Inventor apps (Kodular, Niotron and Android Builder take .aix files too). Everything is a | [@Drjacky](https://github.com/Drjacky) |
 | [✍️ Summering text](https://fedaasawalmeh753-cmyk.github.io/Mhcj) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@fedaasawalmeh753-cmyk](https://github.com/fedaasawalmeh753-cmyk) |
 | [🖼️ Image-Captioning-](https://zeros372.github.io/Image-Captioning-) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@zeros372](https://github.com/zeros372) |
@@ -37,7 +38,6 @@
 | [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
 | [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
 | [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
-| [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

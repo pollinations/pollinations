@@ -464,6 +464,34 @@ describe("image dimensions", () => {
         }
     });
 
+    it("refuses image sides under 16 px", () => {
+        for (const side of ["width", "height"] as const) {
+            const result = ImageParamsSchema.safeParse({
+                model: "black-forest-labs/flux.1-schnell",
+                [side]: 8,
+            });
+            expect(result.success, side).toBe(false);
+            expect(result.error?.issues[0]?.path).toEqual([side]);
+        }
+    });
+
+    it("keeps small positive aspect-ratio sides for video models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 16,
+                height: 9,
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                width: 0,
+                height: 9,
+            }).success,
+        ).toBe(false);
+    });
+
     it("still accepts the 16px floor and ordinary sizes", () => {
         expect(
             ImageParamsSchema.safeParse({

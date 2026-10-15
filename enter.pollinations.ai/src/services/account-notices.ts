@@ -40,7 +40,7 @@ export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
         subject: "Your paid balance is running low",
-        body: `You have ${pollen(balance)} left, less than ${LOW_BALANCE_SHARE * 100}% of your last pack.`,
+        body: `You have ${pollen(balance)} left, less than ${LOW_BALANCE_SHARE * 100}% of your last pack. When it runs out, requests that need paid Pollen will fail. Top up now, or turn on auto top-up so it refills by itself.`,
         button: { label: "Top up", path: "/top-up" },
     };
 }

@@ -34,8 +34,9 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/gists/**/*.json
             operations/social/news/daily/*/summary.json
+            operations/social/news/daily/*/prs.json
+            /operations/social/news/models/snapshots/
             /operations/social/news/index.json
 
       - name: Set up Python

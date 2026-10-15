@@ -28,7 +28,7 @@ from pathlib import Path
 
 from common import (
     DAILY_REL_DIR,
-    GISTS_BRANCH,
+    NEWS_BRANCH,
     IMAGE_SIZE,
     MODELS_NEWS_DIR,
     MONTHLY_REL_DIR,
@@ -47,7 +47,6 @@ from common import (
     diff_models,
     discord_payload,
     fetch_all_snapshots,
-    filter_daily_gists,
     generate_image,
     get_env,
     get_week_dates,
@@ -61,11 +60,11 @@ from common import (
     post_recap,
     prompt_text,
     read_daily_summaries,
-    read_gists_for_date,
-    read_gists_for_week,
+    read_notes,
     weekly_digest_input,
 )
 from contributors import month_counts
+from prs import day_notes
 
 POSTS_DIR = PROMPTS_DIR / "posts"
 JOB_DIRS = {
@@ -296,6 +295,11 @@ def covered(job: str, snapshot: dict | None) -> dict | None:
     }
 
 
+def daily_notes(notes: list[dict]) -> list[dict]:
+    """The PRs the writer chose for the daily and weekly posts."""
+    return [note for note in notes if note["publish_tier"] == "daily"]
+
+
 def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
     """The summary call's user message (None when there is nothing to write) and what save needs."""
     if job in CATALOG_JOBS:
@@ -326,13 +330,25 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
             "counts": counts,
         }
     if job == "weekly":
+        # The PRs each day's daily selected, from the notes it saved.
         start, end = period(job, date)
-        gists = filter_daily_gists(read_gists_for_week(start, end, news))
-        return (weekly_digest_input(gists, start, end) if gists else None), {
-            "inputs": gists
+        notes = daily_notes(read_notes(start, end, news))
+        return (weekly_digest_input(notes, start, end) if notes else None), {
+            "inputs": notes
         }
-    gists = filter_daily_gists(read_gists_for_date(date, news))
-    return (daily_summary_input(gists, date) if gists else None), {"inputs": gists}
+    # The day's merged PRs from GitHub; announced retirements are checked against
+    # the models recorded that day.
+    repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
+    snapshot = read_snapshot(news, snapshot_date(news, date)) or {}
+    catalog = [model for models in snapshot.values() for model in models]
+    notes = day_notes(
+        date, get_env("POLLINATIONS_TOKEN"), get_env("GITHUB_TOKEN"), repository, catalog
+    )
+    selected = daily_notes(notes)
+    return (daily_summary_input(selected, date) if selected else None), {
+        "inputs": selected,
+        "notes": notes,
+    }
 
 
 def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -> None:
@@ -409,7 +425,7 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
         for index, (name, prompt) in enumerate(pictures(post, output)):
             path = f"{base}/images/{name}"
             files[path] = (work / "images" / name).read_bytes()
-            url = f"https://raw.githubusercontent.com/{repo}/{GISTS_BRANCH}/{path}"
+            url = f"https://raw.githubusercontent.com/{repo}/{NEWS_BRANCH}/{path}"
             if len(post["pictures"]) == 1:
                 output["image"] = {"url": url, "prompt": prompt}
             else:
@@ -497,6 +513,8 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
         files = post_files(raw, work)
     if job == "monthly":  # every month has its counts, even one with nothing to write
         files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
+    if job == "daily":  # every day keeps its notes, for the weekly to read
+        files[f"{DAILY_REL_DIR}/{date}/prs.json"] = json_file(raw["notes"])
     for path, content in files.items():
         (news / path).parent.mkdir(parents=True, exist_ok=True)
         (news / path).write_bytes(content)

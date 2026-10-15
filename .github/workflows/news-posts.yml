@@ -114,8 +114,10 @@ jobs:
           print("posts=" + " ".join(f"{job} {day}" for job, day in posts))
           print("folders<<FOLDERS")
           for job, day in posts:
-              # The catalog record and the posts compared from it read models/snapshots.
-              folders = {"catalog": ["models"], "models": ["models"], "community": ["models", "community"]}
+              # The catalog record, the posts compared from it and the daily (for the
+              # retirements a PR announces) read models/snapshots.
+              folders = {"catalog": ["models"], "models": ["models"], "community": ["models", "community"],
+                         "daily": ["models", f"daily/{day}"]}
               for folder in folders.get(job, [f"{job}/{day}"]):
                   print(f"/operations/social/news/{folder}/")
           print("FOLDERS")
@@ -129,14 +131,23 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/gists/**/*.json
+            operations/social/news/daily/*/prs.json
             operations/social/news/*/*/summary.json
             ${{ steps.posts.outputs.folders }}
+
+      - name: Pollinations bot token
+        # Reads each PR's Area, Work type and Source from the Dev project.
+        id: bot
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.POLLY_BOT_APP_ID }}
+          private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
+          owner: pollinations
 
       - name: Write and save
         env:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
-          GITHUB_TOKEN: ${{ github.token }}  # the monthly job counts the month's merged PRs
+          GITHUB_TOKEN: ${{ steps.bot.outputs.token }}  # the day's PRs and the month's merged PRs
           POSTS: ${{ steps.posts.outputs.posts }}
           OVERWRITE: ${{ inputs.overwrite || env.RUN == 'preview' }}
         # Each post is saved and pushed before the next is written. A preview

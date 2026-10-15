@@ -35,7 +35,7 @@ LINKEDIN_MAX_CHARS = 1248
 # Repository constants
 OWNER = "pollinations"
 REPO = "pollinations"
-GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
+NEWS_BRANCH = "news"  # Unprotected branch for news data (avoids main branch protection)
 NEWS_REL_DIR = "operations/social/news"
 DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
 WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
@@ -470,236 +470,52 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     return ""
 
 
-# ── Gist I/O helpers ─────────────────────────────────────────────────
+# ── Merged PR notes (daily/<day>/prs.json) ───────────────────────────
 
-# Directory where gist JSONs live, relative to repo root
-GISTS_REL_DIR = f"{NEWS_REL_DIR}/gists"
-
-# Required top-level keys for a valid gist
-_GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}
-
-# Required keys inside gist.gist (the AI-generated analysis)
-_GIST_AI_KEYS = {"category", "user_facing", "publish_tier", "importance",
-                 "summary", "keywords"}
-
-VALID_CATEGORIES = {"feature", "bug_fix", "improvement", "docs", "infrastructure", "community"}
-VALID_PUBLISH_TIERS = {"none", "discord_only", "daily"}
-VALID_IMPORTANCE = {"major", "minor"}
+def pr_context(note: Dict) -> Dict:
+    """The facts the daily and weekly read about one merged PR."""
+    return {key: note.get(key) for key in (
+        "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url",
+        "summary", "category", "importance", "user_facing", "keywords",
+    )}
 
 
-def validate_gist(gist: Dict) -> List[str]:
-    """Validate a gist dict against the schema. Returns list of error strings (empty = valid)."""
-    errors = []
-
-    for key in _GIST_REQUIRED_KEYS:
-        if key not in gist:
-            errors.append(f"missing top-level key: {key}")
-
-    ai = gist.get("gist")
-    if ai is None:
-        errors.append("missing 'gist' object")
-        return errors
-
-    for key in _GIST_AI_KEYS:
-        if key not in ai:
-            errors.append(f"missing gist.{key}")
-
-    if ai.get("category") and ai["category"] not in VALID_CATEGORIES:
-        errors.append(f"invalid category: {ai['category']}")
-    if ai.get("publish_tier") and ai["publish_tier"] not in VALID_PUBLISH_TIERS:
-        errors.append(f"invalid publish_tier: {ai['publish_tier']}")
-    if ai.get("importance") and ai["importance"] not in VALID_IMPORTANCE:
-        errors.append(f"invalid importance: {ai['importance']}")
-    if "user_facing" in ai and not isinstance(ai["user_facing"], bool):
-        errors.append("user_facing must be boolean")
-    if "keywords" in ai and not isinstance(ai["keywords"], list):
-        errors.append("keywords must be a list")
-
-    if not isinstance(ai.get("summary"), str) or not ai["summary"].strip():
-        errors.append("gist.summary must be non-empty text")
-    if not gist.get("image", {}).get("prompt"):
-        errors.append("missing image.prompt")
-
-    if "merge_commit_sha" in gist:  # enriched at merge: classified, with its model changes
-        sys.path.insert(0, get_repo_root())
-        from operations.github.project_manager import area_names, read_brief, PR_TYPES, SOURCES
-        if gist.get("area") not in [None, *area_names(read_brief())]:
-            errors.append("invalid area")
-        if gist.get("type") not in ([None] if gist.get("area") is None else PR_TYPES):
-            errors.append("invalid type")
-        if gist.get("source") not in SOURCES:
-            errors.append("invalid source")
-        for event in gist.get("announcements", []):
-            if event.get("action") not in {"NEW", "UPDATE", "RETIRE"}:
-                errors.append("invalid announcement action")
-            if not event.get("model_id") or not isinstance(event.get("changes"), dict):
-                errors.append("announcement requires model_id and changes")
-            if event.get("effective_status") not in {"unconfirmed", "scheduled"}:
-                errors.append("invalid announcement effective_status")
-
-    return errors
+def read_notes(start: str, end: str, news_root: Path) -> List[Dict]:
+    """The notes the daily saved for each day from start to end, in date then PR order."""
+    notes = []
+    day = datetime.strptime(start, "%Y-%m-%d")
+    while day <= datetime.strptime(end, "%Y-%m-%d"):
+        path = news_root / DAILY_REL_DIR / day.strftime("%Y-%m-%d") / "prs.json"
+        if path.exists():
+            notes.extend(json.loads(path.read_text(encoding="utf-8")))
+        day += timedelta(days=1)
+    return notes
 
 
-def gist_context(gist: Dict) -> Dict:
-    """The shared factual input for realtime, daily, weekly and highlights."""
-    ai = gist.get("gist", {})
-    return {
-        **{key: gist.get(key) for key in (
-            "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url"
-        )},
-        **{key: ai.get(key) for key in (
-            "summary", "category", "importance", "user_facing", "keywords"
-        )},
-    }
-
-
-def apply_publish_tier_rules(gist: Dict) -> str:
-    """Apply hard rules for publish_tier. Returns the corrected tier."""
-    ai = gist.get("gist", {})
-    labels = [l.lower() for l in gist.get("labels", [])]
-    ai_tier = ai.get("publish_tier", "daily")
-
-    # Rule 1: deps/chore + not user-facing → discord_only
-    if ("deps" in labels or "chore" in labels) and not ai.get("user_facing", False):
-        return "discord_only"
-
-    # Rule 2: feature label → at least daily
-    if "feature" in labels:
-        return "daily"
-
-    return ai_tier
-
-def gist_path_for_pr(pr_number: int, merged_at: str) -> str:
-    """Return the repo-relative path for a gist file: operations/social/news/gists/YYYY-MM-DD/PR-{n}.json"""
-    date_str = merged_at[:10]  # YYYY-MM-DD from ISO timestamp
-    return f"{GISTS_REL_DIR}/{date_str}/PR-{pr_number}.json"
-
-
-def commit_gist(gist: Dict, github_token: str, owner: str, repo: str) -> bool:
-    """Commit a gist JSON file to the news branch via the GitHub Contents API.
-    Returns True on success, False on failure."""
-    file_path = gist_path_for_pr(gist["pr_number"], gist["merged_at"])
-    content = json.dumps(gist, indent=2, ensure_ascii=False)
-
-    import base64 as _b64
-    encoded = _b64.b64encode(content.encode()).decode()
-
-    headers = _github_headers(github_token)
-
-    # Check if file already exists (re-run / retry scenario)
-    sha = get_file_sha(github_token, owner, repo, file_path, GISTS_BRANCH)
-
-    payload = {
-        "message": f"chore(news): add gist for PR #{gist['pr_number']}",
-        "content": encoded,
-        "branch": GISTS_BRANCH,
-    }
-    if sha:
-        payload["sha"] = sha
-
-    resp = github_api_request(
-        "PUT",
-        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
-        headers=headers,
-        json=payload,
-    )
-
-    if resp.status_code in [200, 201]:
-        print(f"  Committed gist to {file_path} on {GISTS_BRANCH}")
-        return True
-
-    print(f"  Failed to commit gist: {resp.status_code} {resp.text[:200]}")
-    return False
-
-
-def read_gists_for_date(date_str: str, repo_root: str = None) -> List[Dict]:
-    """Read all gist JSON files for a given date from the local repo.
-
-    Args:
-        date_str: YYYY-MM-DD
-        repo_root: path to repo root (auto-detected if None)
-
-    Returns:
-        List of gist dicts sorted by pr_number
-    """
-    if repo_root is None:
-        repo_root = get_repo_root()
-
-    gist_dir = Path(repo_root) / GISTS_REL_DIR / date_str
-
-    if not gist_dir.exists():
-        return []
-
-    gists = []
-    for f in sorted(gist_dir.glob("PR-*.json")):
-        try:
-            with open(f, "r", encoding="utf-8") as fh:
-                gists.append(json.load(fh))
-        except (json.JSONDecodeError, OSError) as e:
-            print(f"  Warning: skipping malformed gist {f}: {e}")
-
-    return sorted(gists, key=lambda g: g.get("pr_number", 0))
-
-
-def filter_daily_gists(gists: List[Dict]) -> List[Dict]:
-    """Filter gists to only those with publish_tier == 'daily'."""
-    return [g for g in gists if g.get("gist", {}).get("publish_tier") == "daily"]
-
-
-def read_gists_for_week(week_start: str, week_end: str, repo_root: Optional[str] = None) -> List[Dict]:
-    """Read all gist JSON files for each day in the week range.
-    Reads directly from local repo gists (no daily summary dependency)."""
-    all_gists = []
-
-    start = datetime.strptime(week_start, "%Y-%m-%d")
-    end = datetime.strptime(week_end, "%Y-%m-%d")
-    current = start
-
-    while current <= end:
-        date_str = current.strftime("%Y-%m-%d")
-        day_gists = read_gists_for_date(date_str, repo_root)
-        if day_gists:
-            print(f"    {date_str}: {len(day_gists)} gists")
-        all_gists.extend(day_gists)
-        current += timedelta(days=1)
-
-    return all_gists
-
-
-def daily_summary_input(gists: List[Dict], date_str: str) -> str:
-    """The daily summary call's user message: the day's gists."""
-    gist_lines = []
-    for g in gists:
-        gist_lines.append(json.dumps(gist_context(g), indent=2))
-
+def daily_summary_input(notes: List[Dict], date_str: str) -> str:
+    """The daily summary call's user message: the day's selected PRs."""
     return f"""Date: {date_str}
-Number of PRs: {len(gists)}
+Number of PRs: {len(notes)}
 
-PR Gists:
-{chr(10).join(gist_lines)}"""
+PRs:
+{chr(10).join(json.dumps(pr_context(note), indent=2) for note in notes)}"""
 
 
-def weekly_digest_input(gists: List[Dict], week_start: str, week_end: str) -> str:
-    """The weekly digest call's user message: the week's gists, grouped by date."""
+def weekly_digest_input(notes: List[Dict], week_start: str, week_end: str) -> str:
+    """The weekly digest call's user message: the week's selected PRs, grouped by date."""
     by_date = defaultdict(list)
-    for g in gists:
-        date = g.get("merged_at", "")[:10] or "unknown"
-        by_date[date].append(gist_context(g))
-
-    gist_sections = []
-    for date in sorted(by_date.keys()):
-        gist_sections.append(json.dumps({
-            "date": date,
-            "pr_count": len(by_date[date]),
-            "prs": by_date[date],
-        }, indent=2))
-
+    for note in notes:
+        by_date[note["merged_at"][:10]].append(pr_context(note))
+    sections = [
+        json.dumps({"date": date, "pr_count": len(prs), "prs": prs}, indent=2)
+        for date, prs in sorted(by_date.items())
+    ]
     return f"""Week: {week_start} to {week_end}
-Total PRs: {len(gists)}
+Total PRs: {len(notes)}
 Days with PRs: {len(by_date)}
 
-PR gists by date:
-{chr(10).join(gist_sections)}"""
+PRs by date:
+{chr(10).join(sections)}"""
 
 
 def post_recap(summary: Dict) -> str:
@@ -1098,7 +914,7 @@ def commit_files_to_branch(
         encoded = _b64.b64encode(content.encode()).decode()
 
         sha = get_file_sha(github_token, owner, repo, file_path, branch)
-        if not sha and branch != GISTS_BRANCH:
+        if not sha and branch != NEWS_BRANCH:
             sha = get_file_sha(github_token, owner, repo, file_path, "main")
 
         msg = f"news: add {file_path.split('/')[-1]}"

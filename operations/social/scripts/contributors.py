@@ -44,15 +44,16 @@ NOREPLY_COAUTHOR = re.compile(
 )
 
 
-def search_prs(query: str, token: str) -> List[Dict]:
-    """All PRs a GitHub search matches; fails over the search cap rather than miss some."""
+def search_prs(query: str, token: str, document: str = SEARCH_QUERY) -> List[Dict]:
+    """All PRs a GitHub search matches, with the fields `document` asks for; fails over the
+    search cap rather than miss some."""
     nodes, after = [], None
     while True:
         response = github_api_request(
             "POST",
             f"{GITHUB_API_BASE}/graphql",
             headers=_github_headers(token),
-            json={"query": SEARCH_QUERY, "variables": {"q": query, "after": after}},
+            json={"query": document, "variables": {"q": query, "after": after}},
         )
         payload = response.json()
         if response.status_code != 200 or payload.get("errors"):

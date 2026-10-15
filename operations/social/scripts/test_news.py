@@ -3,8 +3,6 @@ import copy
 import hashlib
 import json
 import os
-import re
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -19,17 +17,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 import deliver
 import posts
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
-                    filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
+                    monthly_digest_input, post_recap, weekly_digest_input)
 from contributors import github_account, rank_contributors
-from discord_pr import generate_snippet
-from gist import (analyze_pr, announced_retirements, api_changes, api_changes_for_pr, api_surface, build_full_gist,
-                  changes_text,
-                  enrich_gist, generate_gist_image, model_changes, pr_comparison_refs)
-from news_index import api_entries, build_index, highlight_entries, model_entries
-from readme import get_top_highlights
+from news_index import api_entries, build_index, highlight_entries, model_changes, model_entries
+from prs import announced_retirements, api_changes, api_changes_for_pr, api_surface, changes_text
+import prs
 
 
-class GistEnrichmentTest(unittest.TestCase):
+class NotesAndIndexTest(unittest.TestCase):
     def test_the_writer_reads_each_diff_except_lockfiles_and_snapshots_within_a_cap(self):
         def file(name, patch, additions=1):
             return {"filename": name, "status": "modified", "additions": additions, "deletions": 0, "patch": patch}
@@ -41,7 +36,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertIn("+fix the bug", text)
         self.assertNotIn("noise", text)
         self.assertIn("… (cut)", text)  # one file's diff is capped
-        with patch("gist.DIFF_CHARS", len("+first")):
+        with patch("prs.DIFF_CHARS", len("+first")):
             text = changes_text([file("a.py", "+first"), file("b.py", "+second")])
         self.assertIn("b.py", text)
         self.assertNotIn("+second", text)
@@ -54,27 +49,27 @@ class GistEnrichmentTest(unittest.TestCase):
                "capabilities": ["tool_calling"], "health": {"status": "healthy"}}
         new = {**old, "paid_only": True, "capabilities": [],
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000002"}}
-        event = model_changes([old], [new], {"number": 1})[0]
+        event = model_changes([old], [new], "day-1")[0]
         self.assertEqual(event["action"], "UPDATE")
         self.assertEqual(set(event["changes"]), {"paid_only", "pricing", "capabilities"})
         self.assertEqual(event["changes"]["pricing"], {"before": old["pricing"], "after": new["pricing"]})
         self.assertIsNone(event["effective_at"])
-        self.assertEqual(model_changes([old], [{**old, "health": {}}], {"number": 1}), [])
-        self.assertEqual(model_changes([], [{**new, "community": True}], {"number": 1}), [])
+        self.assertEqual(model_changes([old], [{**old, "health": {}}], "day-1"), [])
+        self.assertEqual(model_changes([], [{**new, "community": True}], "day-1"), [])
 
     def test_new_and_retired_are_distinct(self):
         model = {"name": "example/model", "paid_only": False, "capabilities": []}
-        new = model_changes([], [model], {"number": 1})[0]
+        new = model_changes([], [model], "day-1")[0]
         self.assertEqual(new["action"], "NEW")
         self.assertEqual(new["changes"]["paid_only"], {"before": None, "after": False})
-        removed = model_changes([model], [], {"number": 2})[0]
+        removed = model_changes([model], [], "day-2")[0]
         self.assertEqual(removed["action"], "RETIRE")
 
     def test_rename_keeps_old_id_available_and_preserves_other_changes(self):
         old = {"name": "kimi", "title": "Kimi", "aliases": [], "paid_only": False,
                "pricing": {"currency": "pollen", "promptTextTokens": "0.000001"}}
         new = {**old, "name": "moonshot/kimi-k3", "aliases": ["kimi"], "paid_only": True}
-        events = model_changes([old], [new], {"number": 1})
+        events = model_changes([old], [new], "day-1")
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0]["action"], "UPDATE")
         self.assertEqual(events[0]["model_id"], "moonshot/kimi-k3")
@@ -84,117 +79,60 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(events[0]["previous_title"], "Kimi")
         # Moving an ID onto an existing canonical model also preserves access.
         existing = {**new, "aliases": []}
-        events = model_changes([old, existing], [new], {"number": 2})
+        events = model_changes([old, existing], [new], "day-2")
         self.assertEqual([(e["model_id"], e["action"]) for e in events], [(new["name"], "UPDATE")])
-        self.assertEqual(model_changes([old], [], {"number": 3})[0]["action"], "RETIRE")
+        self.assertEqual(model_changes([old], [], "day-3")[0]["action"], "RETIRE")
 
-    def test_catalog_install_runs_only_for_model_comparison_when_missing(self):
-        pr = {"number": 1, "merge_commit_sha": "abc", "base": {"ref": "main"}}
-        def run(args, **kwargs):
-            if args[0] == sys.executable:
-                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
-                    {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("gist.subprocess.run", side_effect=run) as commands, \
-             patch.object(Path, "is_dir", return_value=False), \
-             patch("gist.pr_comparison_refs", return_value=("before", "after")), \
-             patch("gist.announcements_for_pr", return_value=[]) as announcements, \
-             patch("gist.api_changes_for_pr", return_value=[]) as api:
-            enrich_gist({}, pr, ["README.md"], "test")
-            self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
-            commands.reset_mock()
-            enrich_gist({}, pr, ["shared/registry/text.ts"], "test")
-            self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
-                             [["npm", "ci", "--ignore-scripts"]])
-            # master holds the legacy APIs: its shared/ and APIDOCS.md carry no model or API changes.
-            commands.reset_mock()
-            announcements.reset_mock()
-            gist = {}
-            enrich_gist(gist, {**pr, "base": {"ref": "master"}}, ["shared/ipQueue.js", "APIDOCS.md"], "test")
-            self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
-            announcements.assert_not_called()
-            api.assert_not_called()
-            self.assertEqual(gist["announcements"], [])
+    def test_a_note_is_read_from_the_pr_its_diff_and_the_dev_board(self):
+        def item(project, area):
+            return {"project": {"id": project}, "area": {"name": area}, "type": {"name": "Feature"},
+                    "source": {"name": "Team"}}
+        node = {"number": 7, "title": "Add a model", "url": "https://github.com/example/repo/pull/7",
+                "body": "| `old/model` | RETIRE | Availability | Available | Retired | 2026-12-01 |",
+                "mergedAt": "2026-10-14T10:00:00Z", "baseRefName": "main", "headRefName": "auto/app-42-thing",
+                "author": {"login": "someone"}, "labels": {"nodes": [{"name": "chore"}]},
+                "mergeCommit": {"oid": "after", "parents": {"nodes": [{"oid": "before"}]}},
+                "projectItems": {"nodes": [item("PVT_other", "Wrong"), item(prs.DEV_PROJECT_ID, "Models")]}}
+        reply = {"summary": "Adds a model.", "category": "feature", "importance": "major",
+                 "user_facing": False, "keywords": ["models"], "publish_tier": "daily", "image_prompt": "Bee"}
+        files = ("  modified: APIDOCS.md (+1/-1)", ["APIDOCS.md", "operations/app-management/app.json"])
+        docs = {"before": "#### `GET` `/a` — A\n", "after": "#### `GET` `/b` — B\n"}
+        catalog = [{"name": "old/model", "title": "Old model", "category": "text"}]
+        with tempfile.TemporaryDirectory() as directory:
+            apps = Path(directory) / "operations/app-management"
+            apps.mkdir(parents=True)
+            (apps / "app.json").write_text(json.dumps([
+                {"name": "Thing", "url": "https://thing.example", "issueUrl": "https://github.com/x/y/issues/42"},
+                {"name": "Newer", "url": "https://newer.example", "issueUrl": "https://github.com/x/y/issues/43"}]))
+            with patch("prs.fetch_pr_files", return_value=files), \
+                 patch("prs.call_pollinations_api", return_value=json.dumps(reply)) as writer, \
+                 patch("prs.file_at", side_effect=lambda repository, ref, path: docs[ref]), \
+                 patch("prs.get_repo_root", return_value=directory):
+                note = prs.note(node, "test", "test", "example/repo", catalog)
+                self.assertIn("Area: Models · Type: Feature · Source: Team", writer.call_args.args[1])
+                with patch("prs.call_pollinations_api", return_value="{}"), \
+                     self.assertRaisesRegex(SystemExit, "no summary"):
+                    prs.note(node, "test", "test", "example/repo", catalog)
+        self.assertEqual({k: note[k] for k in ("pr_number", "author", "area", "type", "source", "summary")},
+                         {"pr_number": 7, "author": "someone", "area": "Models", "type": "Feature",
+                          "source": "Team", "summary": "Adds a model."})
+        self.assertEqual(note["publish_tier"], "discord_only")  # a chore no user sees
+        self.assertEqual((note["app_name"], note["app_url"]), ("Thing", "https://thing.example"))
+        self.assertEqual([(e["action"], e["endpoint"]) for e in note["api_changes"]],
+                         [("REMOVE", "GET /a"), ("ADD", "GET /b")])
+        self.assertEqual([(e["model_id"], e["effective_status"]) for e in note["announcements"]],
+                         [("old/model", "scheduled")])
+        self.assertNotIn("image_prompt", note)
 
-    def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
-        pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
-              "body": "Existing description", "merge_commit_sha": "abc", "labels": [], "base": {"ref": "main"}}
-        ai = dict(category="feature", user_facing=True, publish_tier="daily", importance="minor",
-                  summary="Summary", keywords=[], image_prompt="Image")
-        gist = build_full_gist(pr, ai, [])
-        original = copy.deepcopy(gist)
-        def classification(args, **kwargs):
-            if args[0] == sys.executable:  # not `npm ci`, which runs when tsx isn't installed
-                Path(kwargs["env"]["CLASSIFICATION_OUTPUT"]).write_text(json.dumps(
-                    {"area": "Models", "type": "Feature", "source": "Team"}))
-        with patch("gist.subprocess.run", side_effect=classification):
-            enrich_gist(gist, pr, [], "test")
-        self.assertEqual(gist["gist"], original["gist"])
-        self.assertEqual(gist["image"], original["image"])
-        self.assertEqual(validate_gist(gist), [])
-        # A failed classification or model-change lookup stops the gist: nothing is saved or posted.
-        with patch("gist.subprocess.run", side_effect=OSError()), self.assertRaises(OSError):
-            enrich_gist(copy.deepcopy(original), pr, [], "test")
-        with patch("gist.subprocess.run", side_effect=classification), \
-             patch("gist.pr_comparison_refs", side_effect=ValueError()), self.assertRaises(ValueError):
-            enrich_gist(copy.deepcopy(original), pr, ["shared/registry/text.ts"], "test")
-        gist.update(area="Models", type="Question", source="Team")
-        self.assertIn("invalid type", validate_gist(gist))
-
-    def test_same_facts_reach_social_readers_without_duplicate_text(self):
-        pr = {"number": 1, "title": "Model price and account fix",
-              "html_url": "https://github.com/example/repo/pull/1", "labels": [],
-              "merged_at": "2026-10-07T00:00:00Z", "body": "PR description"}
-        ai = dict(category="improvement", user_facing=True, publish_tier="daily", importance="major",
-                  summary="Example model pricing changes. Account balance deduction is fixed.",
-                  keywords=["models", "billing"], image_prompt="Bee fixing a honey jar")
-        gist = build_full_gist(pr, ai, [])
-        gist.update(area="Models", type="Task", source="Team", announcements=model_changes(
-            [{"name": "example/model", "pricing": {"currency": "pollen", "image": "1"}}],
-            [{"name": "example/model", "pricing": {"currency": "pollen", "image": "2"}}], pr))
-        self.assertEqual(validate_gist(gist), [])
-        with patch("gist.call_pollinations_api", return_value=json.dumps(ai)) as analysis:
-            context = {**gist, "merge_commit_sha": "unused-commit"}
-            self.assertEqual(analyze_pr(pr, "shared/registry/image.ts", "test", context), ai)
-            self.assertIn('"image": "2"', analysis.call_args.args[1])
-            self.assertNotIn("unused-commit", analysis.call_args.args[1])
-        self.assertEqual(gist["image"]["prompt"], ai["image_prompt"])
-        self.assertNotIn("image_prompt", gist["gist"])
-        self.assertNotIn("pr_body_excerpt", gist)
-        with patch("gist.generate_image", return_value=(b"image", None)) as image, \
-             patch("gist.commit_image_to_branch", return_value="https://example.com/image.jpg"):
-            self.assertEqual(generate_gist_image(gist, "test", "test", "example", "repo"),
-                             "https://example.com/image.jpg")
-            image.assert_called_once_with(ai["image_prompt"], "test")
-        old = copy.deepcopy(gist)
-        old["gist"].update(headline="Old headline", blurb="Old blurb", impact="Old impact")
-        old["pr_body_excerpt"] = "Old excerpt"
-        self.assertEqual(filter_daily_gists([gist, old]), [gist, old])
-        def realtime(g):
-            with patch("discord_pr.call_pollinations_api", return_value='{"arcs": []}') as api:
-                generate_snippet(g, "test")
-            return api.call_args.args[1]
-        for module, prompt in (
-            ("daily", lambda g: daily_summary_input([g], "2026-10-07")),
-            ("weekly", lambda g: weekly_digest_input([g], "2026-10-01", "2026-10-07")),
-            ("discord_pr", realtime),
-        ):
-            new_prompt = prompt(gist)
-            self.assertEqual(prompt(old), new_prompt)
-            for fact in ("Account balance deduction is fixed.", '"area": "Models"',
-                         '"type": "Task"', '"source": "Team"'):
-                self.assertIn(fact, new_prompt)
-            self.assertNotIn("Old excerpt", new_prompt)
-            # Only Discord states model prices; recaps feeding X, LinkedIn and Instagram never see them.
-            check = self.assertIn if module == "discord_pr" else self.assertNotIn
-            for value in ('"announcements"', '"image": "2"'):
-                check(value, new_prompt)
-        broken = copy.deepcopy(gist)
-        broken["image"]["prompt"] = None
-        self.assertIn("missing image.prompt", validate_gist(broken))
-        broken["gist"]["summary"] = ""
-        self.assertIn("gist.summary must be non-empty text", validate_gist(broken))
-        gist.update(app_name="Example app", app_url="https://example.com/app")
-        self.assertEqual(daily_summary_input([gist], "2026-10-07").count("https://example.com/app"), 1)
+    def test_the_daily_and_weekly_read_the_same_facts_about_a_pr(self):
+        pr = {**note(1, "2026-10-07T00:00:00Z"), "app_name": "Example app", "app_url": "https://example.com/app",
+              "api_changes": [{"endpoint": "GET /secret-detail"}]}
+        for prompt in (daily_summary_input([pr], "2026-10-07"),
+                       weekly_digest_input([pr], "2026-10-01", "2026-10-07")):
+            for fact in ("Change 1 ships.", '"area": "Models"', '"type": "Feature"', '"source": "Team"'):
+                self.assertIn(fact, prompt)
+            self.assertEqual(prompt.count("https://example.com/app"), 1)
+            self.assertNotIn("secret-detail", prompt)  # API changes reach Enter, not the posts
 
     def test_daily_summary_stores_its_highlights_for_the_index(self):
         summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
@@ -205,32 +143,28 @@ class GistEnrichmentTest(unittest.TestCase):
         quiet = build_daily_summary_artifact({"arcs": []}, [{"pr_number": 2}], "2026-10-07", "now")
         self.assertEqual(quiet["highlights"], [])
 
-    def test_index_keeps_card_changes_and_skips_old_scheduled_retirements(self):
-        def gist(number, merged_at, *announcements):
-            return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
-                    "url": f"https://github.com/example/repo/pull/{number}"}
-        def event(model, action, changes, status="unconfirmed"):
-            return {"id": f"{model}:{action}", "model_id": model, "title": model, "action": action,
-                    "changes": changes, "effective_at": None, "effective_status": status}
-        retire = {"availability": {"before": "Available", "after": "Retired"}}
-        gists = [
-            gist(1, "2026-08-01T00:00:00Z", event("old", "NEW", {"paid_only": {"before": None, "after": True}})),
-            gist(2, "2026-10-01T00:00:00Z",
-                 event("dated", "RETIRE", retire, "scheduled"),
-                 event("removed", "RETIRE", retire),
-                 event("routed", "UPDATE", {"supported_endpoints": {"before": [], "after": ["/v1"]}}),
-                 event("priced", "UPDATE", {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}},
-                                            "supported_endpoints": {"before": [], "after": ["/v1"]}}),
-                 {**event("replaced", "UPDATE", {"model_id": {"before": "old/id", "after": "replaced"},
-                                                 "voices": {"before": ["a"], "after": ["b"]}}),
-                  "previous_title": "Old"}),
+    def test_index_model_news_comes_from_the_record_dated_when_seen(self):
+        def snapshot(*models, **categories):
+            return {"text": list(models), "image": [], **categories}
+        priced = {"name": "priced", "title": "Priced", "pricing": {"a": "1"}, "supported_endpoints": []}
+        routed = {"name": "routed", "title": "Routed", "supported_endpoints": []}
+        gone = {"name": "gone", "title": "Gone"}
+        snapshots = [
+            ("2026-08-01", snapshot(priced, routed, gone)),  # before the window: the baseline
+            ("2026-10-01", snapshot({**priced, "pricing": {"a": "2"}, "supported_endpoints": ["/v1"]},
+                                    {**routed, "supported_endpoints": ["/v1"]}, gone)),
+            # A category recorded for the first time announces nothing.
+            ("2026-10-02", snapshot({**priced, "pricing": {"a": "2"}, "supported_endpoints": ["/v1"]},
+                                    {**routed, "supported_endpoints": ["/v1"]}, **{"3d": [{"name": "trellis"}]})),
+            ("2026-10-03", snapshot({**priced, "pricing": {"a": "2"}, "supported_endpoints": ["/v1"]},
+                                    {**routed, "supported_endpoints": ["/v1"]}, {"name": "community/x/y", "community": True},
+                                    **{"3d": [{"name": "trellis"}]})),
         ]
-        entries = model_entries(gists, "2026-09-08", "2026-10-08")
-        self.assertEqual([e["model_id"] for e in entries], ["priced", "removed", "replaced"])
-        self.assertEqual(set(entries[2]["changes"]), {"model_id", "voices"})
-        self.assertEqual(entries[2]["previous_title"], "Old")
+        entries = model_entries(snapshots, [], "2026-09-08", "2026-10-08")
+        self.assertEqual([(e["model_id"], e["action"], e["date"]) for e in entries],
+                         [("priced", "UPDATE", "2026-10-01"), ("gone", "RETIRE", "2026-10-02")])
         self.assertEqual(entries[0]["changes"], {"pricing": {"before": {"a": "1"}, "after": {"a": "2"}}})
-        self.assertEqual(entries[0]["url"], "https://github.com/example/repo/pull/2")
+        self.assertNotIn("pr", entries[0])  # a record change has no PR
 
     def test_api_changes_mark_what_breaks_existing_clients(self):
         field = lambda type_, required=False: {"type": type_, "required": required}
@@ -312,26 +246,16 @@ class GistEnrichmentTest(unittest.TestCase):
             "parameters": {"path:prompt": {"type": "string", "required": True},
                            "query:seed": {"type": "integer|null", "required": False}},
             "body": {"audio": {"type": "string", "required": True}}}})
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            def git(*args):
-                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
-            git("init", "-b", "main")
-            git("config", "user.name", "Test")
-            git("config", "user.email", "test@example.com")
-            (root / "APIDOCS.md").write_text(docs)
-            git("add", "APIDOCS.md")
-            git("commit", "-m", "docs: regenerate")
-            (root / "APIDOCS.md").write_text(docs.replace("`audio` *", "`file` *").replace("`/a`", "`/b`", 1))
-            git("commit", "-am", "docs: regenerate")
-            second = {"number": 2, "merge_commit_sha": git("rev-parse", "HEAD"), "commits": 1}
-            changes = api_changes_for_pr(second, root)
+        versions = {"before": docs, "after": docs.replace("`audio` *", "`file` *").replace("`/a`", "`/b`", 1)}
+        second = {"number": 2, "mergeCommit": {"oid": "after", "parents": {"nodes": [{"oid": "before"}]}}}
+        with patch("prs.file_at", side_effect=lambda repository, ref, path: versions[ref]):
+            changes = api_changes_for_pr(second, "example/repo")
         self.assertEqual([(e["action"], e["endpoint"], e["summary"]) for e in changes],
                          [("REMOVE", "GET /a", "A"), ("ADD", "GET /b", "A")])
-        gist = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
-                "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
-        old_gist = {**gist, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}
-        entries = api_entries([old_gist, gist], "2026-09-08")
+        docs_note = {"pr_number": 2, "merged_at": "2026-10-08T00:00:00Z",
+                     "url": "https://github.com/example/repo/pull/2", "api_changes": changes}
+        old_note = {**docs_note, "pr_number": 1, "merged_at": "2026-08-01T00:00:00Z"}
+        entries = api_entries([old_note, docs_note], "2026-09-08")
         self.assertEqual([(e["endpoint"], e["pr"], e["date"]) for e in entries],
                          [("GET /a", 2, "2026-10-08"), ("GET /b", 2, "2026-10-08")])
 
@@ -358,26 +282,24 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertEqual(announced_retirements(cancel, catalog)[0]["effective_status"], "cancelled")
 
     def test_index_keeps_the_latest_announcement_until_the_model_is_removed(self):
-        def gist(number, merged_at, *announcements):
+        def announcing(number, merged_at, *announcements):
             return {"pr_number": number, "merged_at": merged_at, "announcements": list(announcements),
                     "url": f"https://github.com/example/repo/pull/{number}"}
         def announced(model, status, effective_at=None):
             return {"id": f"{model}:retirement", "model_id": model, "title": model, "action": "RETIRE",
                     "changes": {}, "effective_at": effective_at, "effective_status": status,
                     "source": "pr_description"}
-        removal = {"id": "gone:remove", "model_id": "gone", "title": "gone", "action": "RETIRE",
-                   "changes": {}, "effective_at": None, "effective_status": "unconfirmed"}
-        gists = [
-            gist(1, "2026-09-20T00:00:00Z", announced("moved", "scheduled", "2026-10-20T00:00:00Z"),
-                 announced("kept", "scheduled", "2026-10-25T00:00:00Z"),
-                 announced("gone", "scheduled", "2026-10-02T00:00:00Z"),
-                 announced("overdue", "scheduled", "2026-10-05T00:00:00Z"),
-                 announced("withdrawn", "scheduled", "2026-10-30T00:00:00Z")),
-            gist(2, "2026-10-01T00:00:00Z", announced("moved", "scheduled", "2026-12-01T00:00:00Z"),
-                 announced("withdrawn", "cancelled")),
-            gist(3, "2026-10-02T00:00:00Z", removal),
+        notes = [
+            announcing(1, "2026-09-20T00:00:00Z", announced("moved", "scheduled", "2026-10-20T00:00:00Z"),
+                       announced("kept", "scheduled", "2026-10-25T00:00:00Z"),
+                       announced("gone", "scheduled", "2026-10-02T00:00:00Z"),
+                       announced("overdue", "scheduled", "2026-10-05T00:00:00Z"),
+                       announced("withdrawn", "scheduled", "2026-10-30T00:00:00Z")),
+            announcing(2, "2026-10-01T00:00:00Z", announced("moved", "scheduled", "2026-12-01T00:00:00Z"),
+                       announced("withdrawn", "cancelled")),
         ]
-        entries = {e["model_id"]: e for e in model_entries(gists, "2026-09-08", "2026-10-08")}
+        snapshots = [("2026-10-01", {"text": [{"name": "gone", "title": "gone"}]}), ("2026-10-02", {"text": []})]
+        entries = {e["model_id"]: e for e in model_entries(snapshots, notes, "2026-09-08", "2026-10-08")}
         self.assertEqual(entries["moved"]["date"], "2026-12-01")
         self.assertEqual(entries["moved"]["previous_date"], "2026-10-20")
         self.assertEqual(entries["kept"]["status"], "scheduled")
@@ -386,7 +308,7 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertNotIn("overdue", entries)
         self.assertNotIn("status", entries["gone"])  # the removal itself, not the announcement
 
-    def test_index_highlights_cover_the_readme_and_feed_it(self):
+    def test_index_highlights_keep_a_full_page(self):
         summaries = [{"date": f"2026-09-{day:02d}", "highlights": [
             {"emoji": "🎨", "title": f"Item {day}", "text": "Try it.", **({"kind": "app"} if day == 3 else {})}]}
             for day in range(1, 13)]
@@ -399,7 +321,7 @@ class GistEnrichmentTest(unittest.TestCase):
             (news / "daily/2026-09-12/summary.json").write_text(json.dumps(summaries[-1]))
             index = build_index(news, "2026-09-13")
         self.assertEqual(index["models"], [])
-        self.assertEqual(get_top_highlights(index), ["- **2026-09-12** – **🎨 Item 12** Try it."])
+        self.assertEqual(index["highlights"][0]["title"], "Item 12")
 
     def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
         digest = {
@@ -419,68 +341,6 @@ class GistEnrichmentTest(unittest.TestCase):
         self.assertIn("PRs selected for daily recaps: 1", month)
         self.assertNotIn("Merged PRs:", month)
 
-    def test_squash_after_syncing_main_excludes_unrelated_changes(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            def git(*args):
-                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
-            git("init", "-b", "main")
-            git("config", "user.name", "Test")
-            git("config", "user.email", "test@example.com")
-            (root / "model").write_text("0")
-            git("add", "model")
-            git("commit", "-m", "base")
-            git("checkout", "-b", "feature")
-            (root / "model").write_text("1")
-            git("commit", "-am", "first model change")
-            first = git("rev-parse", "HEAD")
-            git("checkout", "main")
-            (root / "unrelated").write_text("main change")
-            git("add", "unrelated")
-            git("commit", "-m", "unrelated main change")
-            git("checkout", "feature")
-            git("merge", "main", "--no-edit")
-            sync = git("rev-parse", "HEAD")
-            (root / "model").write_text("2")
-            git("commit", "-am", "second model change")
-            head = git("rev-parse", "HEAD")
-            git("checkout", "main")
-            (root / "model").write_text("2")
-            git("commit", "-am", "squashed model changes")
-            sha = git("rev-parse", "HEAD")
-            self.assertEqual(pr_comparison_refs({"merge_commit_sha": sha, "commits": 3,
-                                                "_commit_shas": [first, sync, head]}, root)[0], f"{sha}^1")
-
-    def test_multi_commit_rebase_and_squash_compare_correct_parent(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            def git(*args):
-                return subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
-            git("init", "-b", "main")
-            git("config", "user.name", "Test")
-            git("config", "user.email", "test@example.com")
-            for n in range(3):
-                (root / "model").write_text(str(n))
-                git("add", "model")
-                git("commit", "-m", f"change {n}")
-            commits = git("rev-list", "--reverse", "HEAD~2..HEAD").splitlines()
-            pr = {"merge_commit_sha": commits[-1], "commits": 2, "_commit_shas": commits}
-            self.assertEqual(pr_comparison_refs(pr, root)[0], f"{commits[-1]}~2")
-            git("checkout", "-b", "squash", "HEAD~2")
-            (root / "model").write_text("2")
-            git("add", "model")
-            git("commit", "-m", "squashed changes")
-            pr["merge_commit_sha"] = git("rev-parse", "HEAD")
-            self.assertEqual(pr_comparison_refs(pr, root)[0], f"{pr['merge_commit_sha']}^1")
-            git("checkout", "-b", "conflicted-rebase", "HEAD^1")
-            for value in ("1-resolved", "2-resolved"):
-                (root / "model").write_text(value)
-                git("add", "model")
-                git("commit", "-m", "rebased with resolution")
-            pr["merge_commit_sha"] = git("rev-parse", "HEAD")
-            with self.assertRaisesRegex(ValueError, "Cannot verify the full PR range"):
-                pr_comparison_refs(pr, root)
-
 
 EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": []}
 
@@ -497,12 +357,12 @@ REPLY = {
 }
 
 
-def gist(number, merged_at, tier="daily"):
+def note(number, merged_at, tier="daily"):
     return {"pr_number": number, "title": f"PR {number}", "author": "someone", "merged_at": merged_at,
             "url": f"https://github.com/pollinations/pollinations/pull/{number}", "labels": [],
-            "area": "Models", "type": "Feature", "source": "Team", "image": {"prompt": "Bee"},
-            "gist": {"category": "feature", "user_facing": True, "publish_tier": tier, "importance": "major",
-                     "summary": f"Change {number} ships. Ünïcode ✓", "keywords": ["models"]}}
+            "area": "Models", "type": "Feature", "source": "Team", "category": "feature", "user_facing": True,
+            "publish_tier": tier, "importance": "major", "summary": f"Change {number} ships. Ünïcode ✓",
+            "keywords": ["models"]}
 
 
 class TextCallTest(unittest.TestCase):
@@ -587,12 +447,14 @@ class PostsTest(unittest.TestCase):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.root = Path(directory.name)
+        self.notes = {}  # the PRs merged each day, as GitHub would return them
         self.checkout("news")
         for patcher in (patch.dict(os.environ, {"POLLINATIONS_TOKEN": "test", "GITHUB_TOKEN": "test",
                                                 "GITHUB_REPOSITORY": "pollinations/pollinations",
                                                 "DISCORD_MODELS_ROLE_ID": "42"}),
                         patch("posts.month_counts", side_effect=lambda month, token, repository: {
                             "month": month, "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]}),
+                        patch("posts.day_notes", side_effect=lambda day, *args: copy.deepcopy(self.notes.get(day, []))),
                         patch("time.sleep")):
             patcher.start()
             self.addCleanup(patcher.stop)
@@ -641,16 +503,17 @@ class PostsTest(unittest.TestCase):
                 self.assertIn(url.split("/news/", 1)[1], saved)
 
     def test_daily(self):
-        for number in (1, 2):
-            self.put(f"gists/2026-10-06/PR-{number}.json", gist(number, "2026-10-06T10:00:00Z"))
-        self.put("gists/2026-10-06/PR-3.json", gist(3, "2026-10-06T11:00:00Z", tier="discord_only"))
-        self.put("gists/2026-10-07/PR-4.json", gist(4, "2026-10-07T11:00:00Z", tier="discord_only"))
+        self.notes["2026-10-06"] = [note(1, "2026-10-06T10:00:00Z"), note(2, "2026-10-06T10:00:00Z"),
+                                    note(3, "2026-10-06T11:00:00Z", tier="discord_only")]
+        self.notes["2026-10-07"] = [note(4, "2026-10-07T11:00:00Z", tier="discord_only")]
         calls, images, saved = self.new("daily", "2026-10-06")
         base = f"{NEWS_REL_DIR}/daily/2026-10-06"
         self.assertEqual(sorted(saved), [f"{base}/{name}" for name in (
-            "images/twitter.jpg", "summary.json", "twitter.json")])
+            "images/twitter.jpg", "prs.json", "summary.json", "twitter.json")])
+        # Every merged PR's note is kept for the weekly, the daily-tier ones and the rest.
+        self.assertEqual([n["pr_number"] for n in json.loads(saved[f"{base}/prs.json"])], [1, 2, 3])
         self.assertDeliverable("daily", base, saved)
-        # The summary, then the X post, from the day's daily-tier gists only.
+        # The summary, then the X post, from the day's daily-tier PRs only.
         self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.8])
         self.assertIn("PR 2", calls[0][1])
         self.assertNotIn("PR 3", calls[0][1])
@@ -660,8 +523,9 @@ class PostsTest(unittest.TestCase):
             "Uploads now take 100 MiB.",
             f"https://raw.githubusercontent.com/pollinations/pollinations/news/{base}/images/twitter.jpg"))
         self.assertEqual(json.loads(saved[f"{base}/summary.json"])["pr_count"], 2)
-        # A day without daily-tier gists writes and saves nothing.
-        self.assertEqual(self.new("daily", "2026-10-07"), ([], [], {}))
+        # A day without daily-tier PRs writes nothing and keeps only its notes.
+        calls, images, saved = self.new("daily", "2026-10-07")
+        self.assertEqual((calls, images, list(saved)), ([], [], [f"{NEWS_REL_DIR}/daily/2026-10-07/prs.json"]))
         # A post whose text is missing stops the run instead of being saved empty.
         with self.assertRaisesRegex(SystemExit, "missing tweet"):
             self.new("daily", "2026-10-06", overwrite=True, tweet=None)
@@ -672,7 +536,8 @@ class PostsTest(unittest.TestCase):
             with self.subTest(long_linkedin=long_linkedin):
                 self.checkout(f"news-{long_linkedin}")
                 for number, day in ((1, "2026-09-27"), (2, "2026-09-30"), (3, "2026-10-03"), (4, "2026-10-04")):
-                    self.put(f"gists/{day}/PR-{number}.json", gist(number, f"{day}T10:00:00Z"))
+                    self.put(f"daily/{day}/prs.json", [note(number, f"{day}T10:00:00Z"),
+                                                       note(number + 10, f"{day}T11:00:00Z", tier="discord_only")])
                 calls, images, saved = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
                 base = f"{NEWS_REL_DIR}/weekly/2026-10-04"
                 self.assertEqual(len(saved), 11)
@@ -681,8 +546,9 @@ class PostsTest(unittest.TestCase):
                 self.assertEqual([temperature for _, _, temperature in calls], temperatures)
                 summary = json.loads(saved[f"{base}/summary.json"])
                 self.assertEqual((summary["period_start"], summary["period_end"]), ("2026-09-27", "2026-10-03"))
-                # The Sunday's own gist belongs to the next week.
+                # The week reads the notes each daily kept; the Sunday's own PRs belong to the next week.
                 self.assertIn("PR 3", calls[0][1])
+                self.assertNotIn("PR 11", calls[0][1])  # not picked for the daily
                 self.assertNotIn("PR 4", "".join(user for _, user, _ in calls))
                 self.assertEqual([image for image in images if image[0].startswith("Bee scene")],
                                  [(f"Bee scene {n}", 2048, 2048, n - 1) for n in (1, 2, 3)])
@@ -824,7 +690,7 @@ class PostsTest(unittest.TestCase):
         self.assertEqual(list(new[2]), [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
 
     def test_a_saved_date_is_replaced_only_when_asked_and_keeps_its_delivery_record(self):
-        self.put("gists/2026-10-06/PR-1.json", gist(1, "2026-10-06T10:00:00Z"))
+        self.notes["2026-10-06"] = [note(1, "2026-10-06T10:00:00Z")]
         self.new("daily", "2026-10-06")
         delivery = self.news / NEWS_REL_DIR / "daily/2026-10-06/delivery.json"
         delivery.write_text('{"daily-x": "done"}')

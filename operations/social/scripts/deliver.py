@@ -25,7 +25,7 @@ from pathlib import Path
 import requests
 from common import (
     DISCORD_CHUNK_SIZE,
-    GISTS_BRANCH,
+    NEWS_BRANCH,
     GITHUB_API_BASE,
     LINKEDIN_MAX_CHARS,
     NEWS_REL_DIR,
@@ -115,11 +115,11 @@ def github(method: str, path: str, **kwargs) -> requests.Response:
 
 def read_news(path: str) -> tuple[bytes | None, str | None]:
     """A file on the news branch and its sha, or (None, None) when there is none."""
-    resp = github("GET", path, params={"ref": GISTS_BRANCH})
+    resp = github("GET", path, params={"ref": NEWS_BRANCH})
     if resp.status_code == 404:
         return None, None
     if resp.status_code != 200:
-        sys.exit(f"Reading {path} from {GISTS_BRANCH}: HTTP {resp.status_code}")
+        sys.exit(f"Reading {path} from {NEWS_BRANCH}: HTTP {resp.status_code}")
     body = resp.json()
     return base64.b64decode(body["content"]), body["sha"]
 
@@ -150,7 +150,7 @@ def write_record(
             "content": base64.b64encode(
                 json.dumps({**record, post: entry}, indent=2).encode()
             ).decode(),
-            "branch": GISTS_BRANCH,
+            "branch": NEWS_BRANCH,
             **({"sha": sha} if sha else {}),
         }
         try:

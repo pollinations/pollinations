@@ -337,6 +337,7 @@ it("adds reviewed fraud markers without changing actuals, and rejects stale or i
 });
 
 it("uses completed rolling periods and never requests pre-2026 history", () => {
+    expect(trendPeriod(3, now)).toEqual({ start: "2026-07", end: "2026-09" });
     expect(trendPeriod(6, now)).toEqual({ start: "2026-04", end: "2026-09" });
     expect(trendPeriod(12, now)).toEqual({ start: "2026-01", end: "2026-09" });
     expect(trendPeriod(12, new Date("2027-04-01T12:00:00Z"))).toEqual({

@@ -5,7 +5,7 @@ import { FilterMultiSelect } from "../components/Filters";
 import { StatCards } from "../components/StatCards";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber, fmtPeriod } from "../lib/format";
-import { monthLabel, monthName, monthShift } from "../lib/months";
+import { monthLabel, monthName } from "../lib/months";
 import { providerAccountBalanceRows } from "../lib/providerBalances";
 import {
     monthlyPollenTrends,
@@ -409,8 +409,8 @@ export function TrendsTab({
     onPeriodChange,
 }: {
     data: Data;
-    period: 6 | 12;
-    onPeriodChange: (period: 6 | 12) => void;
+    period: 3 | 6 | 12;
+    onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
     const [categories, setCategories] = useState<string[]>([
         "compute",
@@ -443,9 +443,19 @@ export function TrendsTab({
     const rows = months.filter((row) => row.month >= start && row.month <= end);
     const selected =
         rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
-    const previous = months.find(
-        (row) => row.month === monthShift(selected?.month ?? end, -1),
-    );
+    const total = (
+        key: "result" | "fullResult" | "apiResult" | "apiFullResult",
+    ) =>
+        rows.length && rows.every((row) => row[key] != null)
+            ? rows.reduce((sum, row) => sum + (row[key] ?? 0), 0)
+            : null;
+    const result = total("result");
+    const fullResult = total("fullResult");
+    const oneOffFraud = rows.some((row) => row.oneOffFraud != null)
+        ? rows.reduce((sum, row) => sum + (row.oneOffFraud ?? 0), 0)
+        : null;
+    const adjustedResult =
+        result != null && oneOffFraud != null ? result + oneOffFraud : null;
     const chartProps = {
         rows,
         activeMonth: selected?.month ?? null,
@@ -454,10 +464,6 @@ export function TrendsTab({
     const selectedExpenses = EXPENSE_SERIES.filter(
         (s) => !categories.length || categories.includes(s.key),
     );
-    const previousValue = (key: "result" | "adjustedResult" | "fullResult") =>
-        previous
-            ? `${monthName(previous.month)}: ${usd(previous[key])}`
-            : "No earlier month";
     const wallet = data.userBalances?.[0];
     const positiveBalances = balances.filter(
         (row) => (row.creditBalanceUsd ?? 0) > 0,
@@ -502,7 +508,7 @@ export function TrendsTab({
         <section className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
                 <fieldset className="flex gap-1.5" aria-label="Chart period">
-                    {([6, 12] as const).map((value) => (
+                    {([3, 6, 12] as const).map((value) => (
                         <TabButton
                             key={value}
                             active={period === value}
@@ -524,45 +530,43 @@ export function TrendsTab({
             <div className="flex items-baseline justify-between gap-3">
                 <Heading as="h2">Company performance</Heading>
                 <span className="text-xs text-theme-text-soft">
-                    {monthName(selected?.month ?? end)} · recorded results
+                    Period totals · {monthLabel(start)} – {monthLabel(end)}
                 </span>
             </div>
             <StatCards
                 items={[
                     {
                         label: "Actual · with credits",
-                        value: usd(selected?.result),
-                        detail: previousValue("result"),
+                        value: usd(result),
                         tone:
-                            selected?.result == null
+                            result == null
                                 ? "base"
-                                : selected.result < 0
+                                : result < 0
                                   ? "neg"
                                   : "pos",
                     },
                     {
                         label: "Excluding identified fraud",
-                        value: usd(selected?.adjustedResult),
+                        value: usd(adjustedResult),
                         detail:
-                            selected?.oneOffFraud == null
+                            oneOffFraud == null
                                 ? "No reviewed adjustment"
-                                : `${usd(selected.oneOffFraud)} excluded · with credits`,
+                                : `${usd(oneOffFraud)} excluded · with credits`,
                     },
                     {
                         label: "Actual · without credits",
-                        value: usd(selected?.fullResult),
-                        detail: previousValue("fullResult"),
+                        value: usd(fullResult),
                         tone:
-                            selected?.fullResult == null
+                            fullResult == null
                                 ? "base"
-                                : selected.fullResult < 0
+                                : fullResult < 0
                                   ? "neg"
                                   : "pos",
                     },
                     {
                         label: "API + GPU margin",
-                        value: usd(selected?.apiResult),
-                        detail: `With credits · ${usd(selected?.apiFullResult)} without`,
+                        value: usd(total("apiResult")),
+                        detail: `With credits · ${usd(total("apiFullResult"))} without`,
                     },
                 ]}
             />

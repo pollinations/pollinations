@@ -5,9 +5,11 @@ by Economics Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
 The app has three operating views:
 
 - **Insights:** Trends, Runway, Reconciliation, and Balances. Trends defaults to
-  the full reporting year (starting January 2026), with API + GPU / Whole company
-  and Recent 6 months / Full year controls. Its four charts share month inspection
-  and use the same revenue, cost and credit calculations as Runway.
+  the latest six completed months, with 3 / 6 / 12 month controls and no history
+  before January 2026. Summary cards total the selected period; chart month
+  selection changes only the monthly details. The page combines company and API
+  results, expense categories, credit funding, and Paid/Quest usage using the
+  same revenue, cost and credit calculations as Runway.
 - **Unit economics:** Vendors, Inference, GPUs, and Revenue Share.
 - **Ledgers:** Sales, Bank, Vendor, Pollen, and Revenue Share. Sales shows existing monthly Stripe facts by stream and settlement currency; closed-month coverage gaps link to Sales from Reconciliation.
 
@@ -76,8 +78,9 @@ materialization so the economic view and its compact source ledger share one
 calculation path. Creator usernames and current Paid/Quest balances come from
 the daily D1 user snapshot; only aggregate balances reach the Runway API.
 Stripe P&L revenue comes from reviewed account balance
-activity: separate Pollen/Ko-fi gross sales, refunds, and reversals. Processing
-fees are an Operations expense; Wise payouts remain cash movements only.
+activity: separate Pollen/Ko-fi gross sales, fees, refunds, and reversals.
+Fees and refunds reduce revenue in the month recorded; Wise payouts remain
+cash movements only.
 Production reads live
 materializations; local development reads their verified staging copies.
 Inference model costs join provider ledger labels to Pollen models only by

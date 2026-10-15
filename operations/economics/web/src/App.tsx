@@ -830,7 +830,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
         return isMonthKey(month) ? month : "";
     });
     const [runwayYear, setRunwayYear] = useState("2026");
-    const [trendMonths, setTrendMonths] = useState<6 | 12>(6);
+    const [trendMonths, setTrendMonths] = useState<3 | 6 | 12>(6);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);

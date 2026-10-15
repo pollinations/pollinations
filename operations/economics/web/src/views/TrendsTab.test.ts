@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
+import type { Data } from "../types";
 import { TrendsTab } from "./TrendsTab";
 
 afterEach(() => vi.useRealTimers());
@@ -98,4 +99,91 @@ it("keeps wallet snapshots separate from monthly flows and does not invent a pro
         .split("Separate provider pools")[0];
     expect(creditCard).toContain("–");
     expect(creditCard).not.toContain("$0");
+});
+
+it("summarizes the full selected period and keeps missing months unknown", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
+    const months = ["2026-07", "2026-08", "2026-09"];
+    const data: Data = {
+        stripeSales: months.map((month, i) => ({
+            month,
+            revenue_stream: "pollen",
+            currency: "USD",
+            coverage_complete: 1,
+            gross_sales: (i + 1) * 1000,
+            refunds: 100,
+            reversals: 0,
+            stripe_fees: 0,
+            net_sales: (i + 1) * 1000 - 100,
+            net_after_fees: (i + 1) * 1000 - 100,
+            payments: 10,
+            refund_count: 1,
+        })),
+        vendorLedger: months.map((month) => ({
+            entry_id: `cost-${month}`,
+            source: "dashboard",
+            vendor: "google",
+            type: "inference",
+            start: `${month}-01`,
+            end: `${month}-30`,
+            paid: -100,
+            credit: -50,
+            currency: "USD",
+            resource_id: "usage",
+            resource_name: "Usage",
+            resource_sku: "tokens",
+            resource_count: 1,
+            model: "gemini",
+            evidence: "Statement",
+            recorded_at: "2026-10-15 00:00:00",
+        })),
+        privateConfig: {
+            forecastRules: {},
+            reconciliation: {
+                providerCheckExplanations: [],
+                meterDriftExplanations: [],
+                pollenWitnessExplanations: [],
+            },
+            salesAdjustments: [
+                {
+                    month: "2026-09",
+                    revenue_stream: "pollen",
+                    currency: "USD",
+                    refunds: 80,
+                    reversals: 0,
+                    stripe_fees: 0,
+                    evidence: ["https://drive.google.com/file/d/review/view"],
+                },
+            ],
+        },
+    };
+    const render = (period: 3 | 6) =>
+        renderToStaticMarkup(
+            createElement(TrendsTab, {
+                data,
+                period,
+                onPeriodChange: () => {},
+            }),
+        );
+    const html = render(3);
+    const cards = html
+        .split("Company performance")[1]
+        .split("Monthly result")[0];
+    expect(cards).toContain("Period totals · July 26 – September 26");
+    expect(cards.match(/>\$5,400</g)).toHaveLength(2);
+    expect(cards).toContain("$5,250");
+    expect(cards).toContain("$5,480");
+    expect(cards).toContain("$80 excluded");
+    expect(cards).not.toContain("August:");
+    expect(html).not.toContain("April");
+    expect(
+        /<button[^>]*aria-pressed="true"[^>]*>3 months<\/button>/.test(html),
+    ).toBe(true);
+    const incomplete = render(6)
+        .split("Company performance")[1]
+        .split("Monthly result")[0];
+    expect(incomplete).toContain("–");
+    expect(incomplete).not.toContain("$5,400");
+    expect(incomplete).not.toContain("$5,480");
 });

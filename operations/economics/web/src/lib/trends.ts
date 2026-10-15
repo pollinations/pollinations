@@ -8,7 +8,7 @@ import { missingUsageCosts } from "./reconciliation";
 import { buildRunway } from "./runway";
 import { salesFraudAdjustment } from "./salesAdjustments";
 
-export function trendPeriod(count: 6 | 12, now = new Date()) {
+export function trendPeriod(count: 3 | 6 | 12, now = new Date()) {
     const end = monthShift(now.toISOString().slice(0, 7), -1);
     const start = monthShift(end, 1 - count);
     return { start: start < WINDOW_START ? WINDOW_START : start, end };

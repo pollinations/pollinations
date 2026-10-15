@@ -1,0 +1,31 @@
+{
+  "pr_number": 17439,
+  "title": "fix: show a key's current budget when editing it",
+  "author": "ale-rls",
+  "url": "https://github.com/pollinations/pollinations/pull/17439",
+  "merged_at": "2026-10-15T03:37:15Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Editing an API key now refreshes the key list and opens the editor with that key’s current Pollen budget, rather than the balance loaded when the page opened. If the refresh fails or the key is absent from the refreshed list, the editor falls back to the previously loaded key. A regression test checks the dialog’s budget input after a balance changes from 5 to 2 Pollen.",
+    "keywords": [
+      "API keys",
+      "Pollen budget",
+      "key editor",
+      "balance refresh"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17439.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. Small beside a retro terminal, she wears tiny accountant glasses and checks an API key budget card as its displayed balance updates from 5 to 2; code-plants grow nearby against a prominent soft lime green (#ecf874) and pastel gradient background. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-10-15T03:38:24.158332+00:00",
+  "area": "Accounts & keys",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "f9fd620141f0500d2c9c126e0de68949fbd9b32c",
+  "announcements": []
+}

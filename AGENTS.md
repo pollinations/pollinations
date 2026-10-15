@@ -197,10 +197,9 @@ npx vitest run test/file.test.ts
 
 ## Data-processing documentation maintenance
 
-- Maintain `pollinations.ai/public/legal/SUBPROCESSORS.md`, the Privacy Policy, and the internal draft `operations/legal/DATA_PROCESSING_ADDENDUM.md` when model, fallback, GPU host, region, infrastructure, hosted-tool, logging, caching, retention, training-use, or supplier changes affect personal-data processing. Update them in the same change; an unchanged public model name does not exempt a provider or location change. Keep the draft outside website assets and navigation until its commitments can be supported and an effective agreement is approved.
-- Verify the live route and all intermediaries/fallbacks, contracted legal entity, processing countries, data categories, retention/training settings, written processing terms, and transfer safeguards from operational and contractual evidence. Model publishers, supplier headquarters, and endpoint hostnames are not sufficient evidence. Mark unknowns explicitly; do not invent compliance or publish draft entries as approved.
-- Check the Terms, Privacy Policy, and any applicable customer agreement's notice and objection requirements before a sub-processor addition/replacement or material processing change takes effect. A provider-list edit alone is not customer notice. If an incident requires an urgent change, record and escalate the notice/contract impact to the maintainer; do not silently certify the new arrangement.
-- Keep legal documents as the single source of truth, update their version dates and links when applicable, and obtain legal/operator review before introducing or changing contractual commitments. Pricing-only edits and read-only health checks need no legal edit when processing is unchanged.
+- Update the public provider inventory or Privacy Policy and its Last updated date when a change makes their statements inaccurate. Keep routing details, evidence and unresolved provider reviews in the relevant PR or issue. Update the internal DPA only when its proposed terms, annexes or publication blockers change; keep it outside website assets and navigation until approved.
+- Verify affected recipients, locations, data use, retention, processing terms and transfer safeguards from operational and contractual evidence. Record unknowns; do not present them as verified. A model name, hostname or provider headquarters does not establish where processing occurs.
+- Check applicable contract and notice requirements before recipient changes or other material processing changes take effect. Editing a provider list is not customer notice. Obtain operator/legal review before changing contractual commitments; escalate urgent exceptions to the maintainer.
 
 ## Models & API Changes
 

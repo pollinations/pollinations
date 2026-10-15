@@ -195,6 +195,15 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use("*", async (c, next) => {
+        await next();
+        if (c.res.status === 401) {
+            c.header(
+                "WWW-Authenticate",
+                `Bearer resource_metadata="${getPublicOrigin(c)}/.well-known/oauth-protected-resource"`,
+            );
+        }
+    })
     .use("*", agentDiscoveryLinks())
     .get("/robots.txt", (c) => robotsTxt(c))
     .get("/sitemap.xml", (c) => sitemapXml(c))

@@ -80,6 +80,9 @@ describe("gen worker routing", () => {
         );
 
         expect(response.status).toBe(401);
+        expect(response.headers.get("WWW-Authenticate")).toBe(
+            'Bearer resource_metadata="https://staging.gen.pollinations.ai/.well-known/oauth-protected-resource"',
+        );
         await expect(response.json()).resolves.toMatchObject({
             error: {
                 code: "UNAUTHORIZED",

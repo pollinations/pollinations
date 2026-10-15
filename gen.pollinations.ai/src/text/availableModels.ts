@@ -822,8 +822,8 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
-        name: "microsoft/microsoft-decision-1:vercel",
-        config: portkeyConfig["microsoft/microsoft-decision-1:vercel"],
+        name: "microsoft/microsoft-decision-1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1:openrouter"],
         useSystemOneApi: true,
     },
     {

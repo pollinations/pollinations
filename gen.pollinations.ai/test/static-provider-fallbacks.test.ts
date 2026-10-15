@@ -628,26 +628,35 @@ describe("static provider fallbacks", () => {
         expect(billing.price.totalPrice).toBeCloseTo(0.0000422, 8);
     });
 
-    it("charges Microsoft Decision-1's OpenRouter quote on its Vercel fallback", () => {
+    it("charges Microsoft Decision-1's Vercel price on its OpenRouter fallback", () => {
         const primary = TEXT_SERVICES["microsoft/microsoft-decision-1"];
-        const fallback = TEXT_SERVICES["microsoft/microsoft-decision-1:vercel"];
+        const fallback =
+            TEXT_SERVICES["microsoft/microsoft-decision-1:openrouter"];
         expect(primary.fallbacks).toEqual([
-            "microsoft/microsoft-decision-1:vercel",
+            "microsoft/microsoft-decision-1:openrouter",
         ]);
         expect(fallback).toMatchObject({
-            provider: "vercel",
+            provider: "openrouter",
             paidOnly: true,
             hidden: true,
             fallbackOnly: true,
             aliases: [],
         });
         expect(
-            findModelByName("microsoft/microsoft-decision-1:vercel")?.config(),
+            findModelByName("microsoft/microsoft-decision-1")?.config(),
         ).toMatchObject({
             model: "microsoft/microsoft-decision-1",
-            provider: "openai",
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
+        });
+        expect(
+            findModelByName(
+                "microsoft/microsoft-decision-1:openrouter",
+            )?.config(),
+        ).toMatchObject({
+            model: "microsoft/microsoft-decision-1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/alpha/decisions",
         });
         const billing = calculateUsageBilling({
             model: "microsoft/microsoft-decision-1",
@@ -655,8 +664,8 @@ describe("static provider fallbacks", () => {
             servedBy: fallback,
             quotedBy: primary,
         });
-        expect(billing.cost.totalCost).toBeCloseTo(0.00004, 12);
-        expect(billing.price.totalPrice).toBeCloseTo(0.00004431, 12);
+        expect(billing.cost.totalCost).toBeCloseTo(0.00004431, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.000042, 12);
     });
 
     it("quotes OpenAI's context tiers while accounting for OpenRouter's flat fallback cost", () => {

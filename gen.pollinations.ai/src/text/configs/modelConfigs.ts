@@ -123,18 +123,18 @@ export const portkeyConfig: PortkeyConfigMap = {
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         model: "openai/gpt-6-luna-decisions",
     }),
-    "microsoft-decision-1": () => ({
-        provider: "openrouter",
-        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
-        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
-        model: "microsoft/microsoft-decision-1",
-    }),
-    "microsoft/microsoft-decision-1:vercel": () =>
+    "microsoft-decision-1": () =>
         createVercelAIGatewayModelConfig({
             directEndpoint:
                 "https://ai-gateway.vercel.sh/typesafe/v1/systemone",
             model: "microsoft/microsoft-decision-1",
         }),
+    "microsoft/microsoft-decision-1:openrouter": () => ({
+        provider: "openrouter",
+        directEndpoint: "https://openrouter.ai/api/alpha/decisions",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        model: "microsoft/microsoft-decision-1",
+    }),
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(

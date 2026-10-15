@@ -4,7 +4,11 @@ import {
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parse as yamlParse } from "yaml";
-import { buildCurl, type Spec } from "../scripts/generate-apidocs.ts";
+import {
+    buildCurl,
+    fetchOpenApiSpec,
+    type Spec,
+} from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
 import worker from "../src/index.ts";
 
@@ -51,12 +55,19 @@ describe("docs routes", () => {
             new Request(
                 "https://gen.pollinations.ai/docs/open-api/generate-schema",
             ),
-            envWithEnterSchema({ paths: {} }),
+            envWithEnterSchema({
+                paths: { "/api/customer/portal": { get: {} } },
+            }),
             ctx,
         );
         await waitOnExecutionContext(ctx);
         expect(response.status).toBe(200);
         const schema = (await response.json()) as Spec;
+        expect(schema["x-schema-sources"]).toEqual({
+            gen: true,
+            enter: false,
+            media: false,
+        });
         const text = schema.paths["/text/{prompt}"]?.get;
         expect(text).toBeDefined();
         expect(buildCurl(schema, "get", "/text/{prompt}", text)).not.toContain(
@@ -183,7 +194,14 @@ describe("docs routes", () => {
             "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
             components: { schemas: Record<string, unknown> };
+            "x-schema-sources": Record<string, boolean>;
         };
+
+        expect(schema["x-schema-sources"]).toEqual({
+            gen: true,
+            enter: true,
+            media: true,
+        });
 
         expect(schema.servers).toEqual([
             { url: "https://gen.pollinations.ai" },
@@ -191,6 +209,14 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        const jobStatusGet = (
+            schema.paths["/v1/jobs/{id}"] as Record<string, unknown>
+        )?.get as { tags?: string[] } | undefined;
+        expect(jobStatusGet?.tags).toEqual(["Jobs"]);
+        expect(
+            schema["x-tagGroups"].find((group) => group.name === "Generation")
+                ?.tags,
+        ).toContain("Jobs");
         expect(
             schema.paths["/v1/audio/transcriptions/realtime"],
         ).toBeUndefined();
@@ -392,7 +418,71 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+
+        vi.mocked(fetch).mockResolvedValue(Response.json(schema));
+        await expect(
+            fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
+        ).resolves.toEqual(schema);
     });
+
+    it.each(["http failure", "network failure", "no operations"])(
+        "keeps live docs available but blocks publication after Media %s",
+        async (failure) => {
+            const mediaFetch = vi.spyOn(globalThis, "fetch");
+            if (failure === "network failure") {
+                mediaFetch.mockRejectedValue(new Error("connection refused"));
+            } else {
+                mediaFetch.mockResolvedValue(
+                    failure === "http failure"
+                        ? new Response("unavailable", { status: 503 })
+                        : Response.json({
+                              paths: { "/media": { servers: [{ url: "/" }] } },
+                          }),
+                );
+            }
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                new Request("https://gen.pollinations.ai/openapi.json"),
+                envWithEnterSchema({
+                    paths: { "/account/profile": { get: {} } },
+                }),
+                ctx,
+            );
+            await waitOnExecutionContext(ctx);
+            expect(response.status).toBe(200);
+            mediaFetch.mockResolvedValue(response);
+            await expect(
+                fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
+            ).rejects.toThrow("from: media");
+        },
+    );
+
+    it("rejects a failed schema fetch before trying to parse its body", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("not JSON", { status: 503 }),
+        );
+        await expect(
+            fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
+        ).rejects.toThrow("HTTP 503");
+    });
+
+    it.each(["gen", "enter", "media"])(
+        "requires positive completeness metadata for %s",
+        async (source) => {
+            const sources: Record<string, boolean> = {
+                gen: true,
+                enter: true,
+                media: true,
+            };
+            delete sources[source];
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                Response.json({ "x-schema-sources": sources }),
+            );
+            await expect(
+                fetchOpenApiSpec("https://gen.pollinations.ai/openapi.json"),
+            ).rejects.toThrow(`from: ${source}`);
+        },
+    );
 
     it("does not publish a partial schema when the account schema fails", async () => {
         const ctx = createExecutionContext();

@@ -647,4 +647,58 @@ describe("GenerationCoordinator", () => {
             alarm: null,
         });
     });
+
+    // Ported from #17353 (tomdacatto).
+    it("remembers a failed async job for a day, then forgets it", async () => {
+        const now = Date.now() + 60_000;
+        const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `async-${crypto.randomUUID()}`,
+        );
+        const seen = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                await coordinator.submit(
+                    testJob(`async-${crypto.randomUUID()}`),
+                );
+                const queued = await coordinator.status("user-1");
+                const notTheirs = await coordinator.status("user-2");
+                // A job the alarm finds already started fails closed.
+                await state.storage.put("job", {
+                    ...(await state.storage.get<object>("job")),
+                    started: true,
+                });
+                await coordinator.alarm();
+                const failed = await coordinator.status("user-1");
+                const expiresAt = await state.storage.getAlarm();
+                clock.mockReturnValue(now + 24 * 60 * 60 * 1_000);
+                await coordinator.alarm();
+                const forgotten = await coordinator.status("user-1");
+                await state.storage.deleteAlarm();
+                return {
+                    queued,
+                    notTheirs,
+                    failed,
+                    expiresAt,
+                    forgotten,
+                    left: [...(await state.storage.list()).keys()],
+                };
+            },
+        );
+        expect(seen.queued).toMatchObject({
+            status: "pending",
+            ownerIds: ["user-1"],
+        });
+        expect(seen.notTheirs).toBeNull();
+        expect(seen.failed).toMatchObject({
+            status: "failed",
+            error: {
+                httpStatus: 503,
+                message: "Detached generation was interrupted",
+            },
+        });
+        expect(seen.expiresAt).toBe(now + 24 * 60 * 60 * 1_000);
+        expect(seen.forgotten).toBeNull();
+        expect(seen.left).toEqual([]);
+    });
 });

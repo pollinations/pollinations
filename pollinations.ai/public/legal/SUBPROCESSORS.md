@@ -23,4 +23,6 @@ The model you choose, or its fallback, decides which of these receives your requ
 
 Alibaba Cloud, Amazon Bedrock, Anthropic, AssemblyAI, DeepInfra, ElevenLabs, fal.ai, Fireworks AI, Google, InferencePort, Microsoft Azure, Mistral AI, Novita AI, OpenAI, OpenRouter, OVHcloud, Perplexity, Replicate, Stability AI, Vast.ai, Vercel AI Gateway, xAI.
 
+GLM 5.3 uses Fireworks AI first, direct DeepInfra next, and OpenRouter with Friendli as its final fallback. A fallback receives the messages, tool definitions and results, and generation settings needed to retry the request.
+
 Questions, including which host serves a specific model: **hello@pollinations.ai**

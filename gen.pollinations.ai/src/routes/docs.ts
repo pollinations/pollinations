@@ -81,6 +81,7 @@ const DOC_TAGS = {
     text: "Text",
     image: "Image",
     video: "Video",
+    jobs: "Jobs",
     realtime: "Realtime",
     model3d: "3D",
     audio: "Audio",
@@ -103,6 +104,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "✍️ Text": DOC_TAGS.text,
     "🖼️ Image": DOC_TAGS.image,
     "🎬 Video": DOC_TAGS.video,
+    "🧰 Jobs": DOC_TAGS.jobs,
     "🎙️ Realtime": DOC_TAGS.realtime,
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
@@ -160,6 +162,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.video]: docsIcon(
         '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
+    ),
+    [DOC_TAGS.jobs]: docsIcon(
+        '<path d="M3 6h18v15H3z" /><path d="M8 6V3h8v3" /><path d="M3 12h18" />',
     ),
     [DOC_TAGS.realtime]: docsIcon(
         '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
@@ -365,6 +370,17 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     sandboxes: SANDBOXES_SECTION,
 };
 
+// llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
+// inlines the docs so an agent gets them in one request instead of following
+// the index. The llms.txt spec itself doesn't define it.
+export const LLMS_FULL_TEXT = [
+    "# Pollinations",
+    "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
+    LLM_DOC_TEXT,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
+].join("\n\n");
+
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "connect-user-wallets",
@@ -495,6 +511,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.text,
                     DOC_TAGS.image,
                     DOC_TAGS.video,
+                    DOC_TAGS.jobs,
                     DOC_TAGS.realtime,
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
@@ -582,6 +599,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.video,
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.jobs,
+                description:
+                    "Submit, poll and download asynchronous image, video, audio and 3D jobs.",
             },
             {
                 name: DOC_TAGS.realtime,
@@ -900,6 +922,20 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
+    );
+}
+
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -914,9 +950,18 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {

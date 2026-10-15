@@ -268,9 +268,10 @@ class GistEnrichmentTest(unittest.TestCase):
 ⚙️ **Parameters**
 | `debug` | `query` | `boolean` | Debug |
 📥 **Request body** · `application/json`
-**Alternative 1**
+| `name` * | `string` | Shared field |
+**Alternative 1** · `modality`: `"text"`
 | `url` * | `string` | Text endpoint |
-**Alternative 2**
+**Alternative 2** · `modality`: `"image"`
 | `baseUrl` * | `string` | Media endpoint |
 📤 **Response**
 """

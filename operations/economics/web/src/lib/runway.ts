@@ -637,7 +637,7 @@ function accountBalanceForecasts(
                 `Estimated ${lastMonth} postpaid bill from recorded cash-funded usage; expected in ${currentMonth}. Current-month vendor payments offset this estimate once. Invoice adjustments and payment matching remain unverified.`,
             );
             notices.push(
-                `${vendor} (${rate.category}): ${currentMonth} includes an estimated $${Math.round(bill).toLocaleString("en-US")} bill for ${lastMonth} usage, less payments recorded this month. Invoice reconciliation pending.`,
+                `${vendor} (${rate.category}): ${currentMonth} includes $${bill.toLocaleString("en-US", { maximumFractionDigits: 2 })} planned settlement for ${lastMonth} cash-funded usage, reduced by payments recorded this month.`,
             );
         }
         const balance = balances.get(vendor);

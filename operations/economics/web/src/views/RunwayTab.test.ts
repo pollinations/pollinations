@@ -127,7 +127,7 @@ describe("RunwayTab labels", () => {
         expect(invalid.rows.every((row) => !row.details?.length)).toBe(true);
     });
 
-    it("keeps billing and reconciliation messages off the Runway page", () => {
+    it("keeps planning notices off the Runway page", () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-08-25T12:00:00.000Z"));
         const html = renderToStaticMarkup(
@@ -161,8 +161,11 @@ describe("RunwayTab labels", () => {
         );
         expect(html).not.toContain("Needs action");
         expect(html).not.toContain("Expected billing");
+        expect(html).not.toContain("planning estimates");
+        expect(html).not.toContain("$700 planned settlement");
         expect(html).not.toContain("Checked balance missing for google");
-        expect(html).not.toContain("estimated $700");
+        expect(html).not.toContain("awaiting supplier invoices");
+        expect(html).not.toContain("<details open");
     });
 
     it("shows full rounded runway amounts without compact suffixes", () => {
@@ -231,16 +234,17 @@ describe("RunwayTab labels", () => {
         expect(html).not.toContain("polli:bg-ink-100/80");
     });
 
-    it.each(["MIXED", "bank", "vendor"])(
-        "keeps %s metadata neutral",
-        (label) => {
-            const html = renderToStaticMarkup(
-                createElement(ForecastBadge, { label }),
-            );
-            expect(html).toContain("polli:bg-ink-100/80");
-            expect(html).toContain(`>${label}</span>`);
-        },
-    );
+    it.each([
+        "MIXED",
+        "bank",
+        "vendor",
+    ])("keeps %s metadata neutral", (label) => {
+        const html = renderToStaticMarkup(
+            createElement(ForecastBadge, { label }),
+        );
+        expect(html).toContain("polli:bg-ink-100/80");
+        expect(html).toContain(`>${label}</span>`);
+    });
 
     it("uses the same projection rules for labels and calculations", () => {
         for (const vendor of ["fal", "fireworks", "vast"]) {

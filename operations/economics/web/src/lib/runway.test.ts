@@ -1143,7 +1143,7 @@ describe("buildRunway", () => {
             "Estimated 2026-07 postpaid bill from recorded cash-funded usage",
         );
         expect(result.billingNotices).toContain(
-            "google (compute): 2026-08 includes an estimated $700 bill for 2026-07 usage, less payments recorded this month. Invoice reconciliation pending.",
+            "google (compute): 2026-08 includes $700 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
         );
         expect(
             result.flags.some((flag) => flag.includes("estimated $700")),
@@ -1157,6 +1157,24 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(20000);
         expect(result.projectedMonthEndCashUsd).toBe(19395);
         expect(result.runwayMonths).not.toBeNull();
+    });
+
+    it("shows cents in settlement estimates without claiming the supplier invoice is missing", () => {
+        const result = buildRunway([opening()], NOW, [
+            cloud({
+                start: "2026-07-01 00:00:00",
+                end: "2026-08-01 00:00:00",
+                paid: -0.02,
+                source: "invoice",
+                evidence: "Supplier invoice retained; paid in August",
+            }),
+        ]);
+        expect(result.billingNotices).toEqual([
+            "google (compute): 2026-08 includes $0.02 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
+        ]);
+        expect(result.billingNotices.join(" ")).not.toMatch(
+            /awaiting|pending|missing/i,
+        );
     });
 
     it.each(

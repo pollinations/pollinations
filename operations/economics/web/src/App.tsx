@@ -21,6 +21,7 @@ import {
     Tooltip,
     UsageIcon,
     WalletIcon,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import { DashboardAccountMenu } from "@pollinations/ui/auth";
@@ -1175,7 +1176,32 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                 <main className="flex w-full flex-col gap-6 px-4 py-14 pb-32 sm:px-6 sm:py-10 sm:pb-32 md:py-8 lg:px-8">
                     <section className="flex flex-col gap-5">
                         <header className="flex shrink-0 justify-end px-1">
-                            <div className="flex min-w-0 items-center gap-2">
+                            <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
+                                {viewData &&
+                                    Object.hasOwn(
+                                        RECONCILIATION_PAGES,
+                                        activeView,
+                                    ) && (
+                                        <button
+                                            type="button"
+                                            className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-theme-text-muted underline-offset-4 hover:text-theme-text-strong hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                                            title={`${confidencePeriod} · ${confidence.detail}`}
+                                            aria-label={`${relevantIssues.length} reconciliation items. ${confidencePeriod}. Data confidence: ${confidence.status}. Open reconciliation`}
+                                            onClick={() => {
+                                                setReconciliationFrom(
+                                                    activeView as ReconciliationPage,
+                                                );
+                                                setActiveView("close");
+                                            }}
+                                        >
+                                            {relevantIssues.length > 0 && (
+                                                <WarningIcon className="h-3.5 w-3.5" />
+                                            )}
+                                            {relevantIssues.length
+                                                ? `${relevantIssues.length} ${relevantIssues.length === 1 ? "item" : "items"} to reconcile`
+                                                : confidence.status}
+                                        </button>
+                                    )}
                                 <Heading
                                     as="h2"
                                     size="section"
@@ -1192,27 +1218,6 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                             </div>
                         </header>
                         {filters}
-                        {viewData &&
-                            Object.hasOwn(RECONCILIATION_PAGES, activeView) && (
-                                <button
-                                    type="button"
-                                    className="self-start cursor-pointer rounded-xl bg-surface-block px-4 py-3 text-left transition-colors hover:bg-surface-opaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-                                    aria-label={`Data confidence: ${confidence.status}. Open reconciliation`}
-                                    onClick={() => {
-                                        setReconciliationFrom(
-                                            activeView as ReconciliationPage,
-                                        );
-                                        setActiveView("close");
-                                    }}
-                                >
-                                    <span className="block text-sm font-semibold">
-                                        Data confidence · {confidence.status}
-                                    </span>
-                                    <span className="mt-1 block text-xs text-theme-text-muted">
-                                        {confidencePeriod} · {confidence.detail}
-                                    </span>
-                                </button>
-                            )}
                         <div className="flex flex-col gap-5">{content}</div>
                     </section>
                 </main>

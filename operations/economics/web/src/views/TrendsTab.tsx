@@ -4,7 +4,6 @@ import { FilterMultiSelect } from "../components/Filters";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName } from "../lib/months";
-import { signedToneOrSoft } from "../lib/tone";
 import {
     monthlyPollenTrends,
     monthlyTrends,
@@ -16,11 +15,7 @@ import type { Data } from "../types";
 import { fmtRunwayUsd as usd } from "./RunwayTab";
 
 type ExpenseCategory = (typeof EXPENSE_CATEGORY_ORDER)[number];
-type TrendRow = TrendMonth &
-    PollenTrendMonth & {
-        apiResult: number | null;
-        apiFullResult: number | null;
-    };
+type TrendRow = TrendMonth & PollenTrendMonth;
 type Series = {
     key:
         | "revenue"
@@ -418,7 +413,6 @@ export function TrendsTab({
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
     const months = useMemo(() => {
         const company = monthlyTrends(data, "company").months;
-        const api = monthlyTrends(data, "compute").months;
         const pollen = monthlyPollenTrends(
             data,
             company.map((row) => row.month),
@@ -427,8 +421,6 @@ export function TrendsTab({
             (row, i): TrendRow => ({
                 ...row,
                 ...pollen[i],
-                apiResult: api[i].result,
-                apiFullResult: api[i].fullResult,
             }),
         );
     }, [data]);
@@ -436,23 +428,6 @@ export function TrendsTab({
     const rows = months.filter((row) => row.month >= start && row.month <= end);
     const selected =
         rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
-    const total = (
-        key: "result" | "fullResult" | "apiResult" | "apiFullResult",
-    ) =>
-        rows.length && rows.every((row) => row[key] != null)
-            ? rows.reduce((sum, row) => sum + (row[key] ?? 0), 0)
-            : null;
-    const result = total("result");
-    const fullResult = total("fullResult");
-    const oneOffFraud = rows.some((row) => row.oneOffFraud != null)
-        ? rows.reduce((sum, row) => sum + (row.oneOffFraud ?? 0), 0)
-        : null;
-    const adjustedResult =
-        result != null && oneOffFraud != null ? result + oneOffFraud : null;
-    const adjustedFullResult =
-        fullResult != null && oneOffFraud != null
-            ? fullResult + oneOffFraud
-            : null;
     const chartProps = {
         rows,
         activeMonth: selected?.month ?? null,
@@ -484,98 +459,13 @@ export function TrendsTab({
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
             </div>
-            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
-                <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
-                    <Heading as="h2">Company performance</Heading>
-                    <p className="mt-1 text-xs text-theme-text-soft">
-                        Period totals · {monthLabel(start)} – {monthLabel(end)}
-                    </p>
-                    <table
-                        aria-label="Period results comparison"
-                        className="mt-5 w-full text-sm"
-                    >
-                        <thead>
-                            <tr className="text-theme-text-soft">
-                                <th
-                                    scope="col"
-                                    className="pb-3 text-left font-normal"
-                                >
-                                    Result
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="pb-3 pl-3 text-right font-normal"
-                                >
-                                    With credits
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="pb-3 pl-3 text-right font-normal"
-                                >
-                                    Without credits
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {[
-                                {
-                                    label: "Actual company result",
-                                    withCredits: result,
-                                    withoutCredits: fullResult,
-                                },
-                                {
-                                    label: "Excluding identified fraud",
-                                    withCredits: adjustedResult,
-                                    withoutCredits: adjustedFullResult,
-                                    note:
-                                        oneOffFraud == null
-                                            ? "No reviewed adjustment"
-                                            : `${usd(oneOffFraud)} excluded`,
-                                },
-                                {
-                                    label: "API + GPU margin",
-                                    withCredits: total("apiResult"),
-                                    withoutCredits: total("apiFullResult"),
-                                },
-                            ].map((row) => (
-                                <tr
-                                    key={row.label}
-                                    className="border-t border-theme-border"
-                                >
-                                    <th
-                                        scope="row"
-                                        className="py-4 text-left font-medium text-theme-text-strong"
-                                    >
-                                        {row.label}
-                                        {row.note && (
-                                            <span className="mt-1 block text-xs font-normal text-theme-text-soft">
-                                                {row.note}
-                                            </span>
-                                        )}
-                                    </th>
-                                    {[row.withCredits, row.withoutCredits].map(
-                                        (value, index) => (
-                                            <td
-                                                key={index}
-                                                className={`whitespace-nowrap py-4 pl-3 text-right font-semibold tabular-nums sm:text-xl ${signedToneOrSoft(value)}`}
-                                            >
-                                                {usd(value)}
-                                            </td>
-                                        ),
-                                    )}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </Surface>
+            <div className="grid min-w-0 gap-5 lg:grid-cols-2">
                 <TrendChart
                     title="Monthly result"
                     series={RESULT_SERIES}
                     kind="bar"
                     {...chartProps}
                 />
-            </div>
-            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                 <TrendChart
                     title="Expenses before credits"
                     series={selectedExpenses}
@@ -599,9 +489,6 @@ export function TrendsTab({
                     creditKey="credits"
                     {...chartProps}
                 />
-            </div>
-            <Heading as="h2">Paid & Quest activity</Heading>
-            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                 <TrendChart
                     title="Pollen consumed"
                     note="Whole platform · usage, not sales"

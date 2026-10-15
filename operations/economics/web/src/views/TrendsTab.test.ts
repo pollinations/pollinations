@@ -21,11 +21,10 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("gaps mean missing data");
     expect(html).not.toContain("September*");
     expect(html).not.toContain('aria-label="Cost scope"');
-    expect(html).toContain("Company performance");
+    expect(html).not.toContain("Company performance");
     expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(5);
     expect(html).not.toContain("Monthly details");
     expect(html).not.toContain("Provider credit dates &amp; limits");
-    expect(html).toContain("Paid &amp; Quest activity");
     expect(html).toContain("Pollen consumed. Pollen by month");
     expect(html).toContain("Quest serving costs");
     expect(html).not.toContain('aria-label="Trends focus"');
@@ -46,7 +45,7 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("Recent 6 months");
     expect(html).not.toContain("Full year");
     expect(html).not.toContain("<select");
-    expect(html).toContain("API + GPU margin");
+    expect(html).not.toContain("API + GPU margin");
     expect(html).toContain("Expenses before credits");
     expect(html).toContain("Infrastructure");
     expect(html).toContain("Development");
@@ -100,7 +99,7 @@ it("omits current balances while retaining monthly Pollen activity", () => {
     expect(html).toContain("Quest serving costs");
 });
 
-it("summarizes the full selected period and keeps missing months unknown", () => {
+it("keeps monthly actual and fraud-adjusted results within the selected period", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
     const months = ["2026-07", "2026-08", "2026-09"];
@@ -166,30 +165,22 @@ it("summarizes the full selected period and keeps missing months unknown", () =>
             }),
         );
     const html = render(3);
-    const cards = html
-        .split("Company performance")[1]
-        .split("Monthly result")[0];
-    expect(cards).toContain("Period totals · July 26 – September 26");
-    expect(cards.match(/>\$5,400</g)).toHaveLength(2);
-    expect(cards).toContain("$5,250");
-    expect(cards).toContain("$5,480");
-    expect(cards).toContain("$5,330");
-    expect(cards).toContain('aria-label="Period results comparison"');
-    expect(cards).toContain("With credits");
-    expect(cards).toContain("Without credits");
-    expect(cards).not.toContain("Actual · with credits");
-    expect(cards).not.toContain("Actual · without credits");
-    expect(cards).toContain("$80 excluded");
-    expect(cards).not.toContain("August:");
+    expect(html).toContain("July 26 – September 26");
+    expect(html).not.toContain("Period results comparison");
+    expect(html).toContain("With credits");
+    expect(html).toContain("Without credits");
+    expect(html).toContain("$2,800");
+    expect(html).toContain("$2,750");
+    expect(html).toContain("$2,880");
+    expect(html).toContain("$2,830");
+    expect(html).toContain("Excluding identified fraud costs");
     expect(html).not.toContain("April");
     expect(
         /<button[^>]*aria-pressed="true"[^>]*>3 months<\/button>/.test(html),
     ).toBe(true);
-    const incomplete = render(6)
-        .split("Company performance")[1]
-        .split("Monthly result")[0];
-    expect(incomplete).toContain("–");
-    expect(incomplete).not.toContain("$5,400");
-    expect(incomplete).not.toContain("$5,480");
-    expect(incomplete).not.toContain("$5,330");
+    const longer = render(6);
+    expect(longer).toContain("April 26 – September 26");
+    expect(longer).toContain("$2,800");
+    expect(longer).toContain("$2,880");
+    expect(longer).not.toContain("NaN");
 });

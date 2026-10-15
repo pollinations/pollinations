@@ -10,7 +10,7 @@ and gets back a scoped user key (`sk_...`) for generation calls. The app
 owner never pays for user usage, and users keep control of budget, expiry and
 revocation.
 
-Full reference: `BRING_YOUR_OWN_POLLEN.md` at the repo root and
+Full reference: `https://gen.pollinations.ai/docs/llm.txt?section=byop` and
 `https://enter.pollinations.ai/.well-known/oauth-authorization-server`.
 
 ## Pick the flow first

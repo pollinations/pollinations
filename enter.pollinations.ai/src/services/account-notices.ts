@@ -16,9 +16,8 @@ const FROM = {
 };
 const REPLY_TO = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
-// The wallet's paid chip (--polli-color-paid-pale and -deep in
-// @pollinations/ui) as hex, because email clients can't read oklch.
-const PAID_BACKGROUND = "#fff0c1";
+// The wallet's paid colour (--polli-color-paid-deep in @pollinations/ui) as
+// hex, because email clients can't read oklch.
 const PAID_COLOR = "#6c4800";
 
 type Link = { label: string; path: string };
@@ -129,7 +128,7 @@ export function renderNotice(
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
 ${notice.intro ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${notice.intro}</p>` : ""}
-<p style="margin:0 0 20px;padding:14px 18px;background:${PAID_BACKGROUND};border-radius:12px;color:${PAID_COLOR};font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">${amount(notice.balance)} <span style="font-size:18px;font-weight:600">pollen left</span></p>
+<p style="margin:0 0 20px;padding:14px 18px;background:#f4efe6;border-radius:12px;color:${PAID_COLOR};font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">${amount(notice.balance)} <span style="font-size:18px;font-weight:600">pollen left</span></p>
 ${notice.body
     .split("\n\n")
     .map(

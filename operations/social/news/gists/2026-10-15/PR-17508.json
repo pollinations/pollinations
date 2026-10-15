@@ -1,0 +1,33 @@
+{
+  "pr_number": 17508,
+  "title": "fix(docs): prevent publishing incomplete API references",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17508",
+  "merged_at": "2026-10-15T01:20:35Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "The merged OpenAPI schema now records whether Gen, Enter and Media each contributed public operations. API reference regeneration rejects failed schema fetches or a schema missing any of those three sources, preventing a partial reference from being published while leaving the docs endpoint available. Before updating the reference PR, the workflow compares method-and-path pairs against the published reference; if operations disappeared, it disables auto-merge before pushing, lists the removals in the PR, and fails the run with a link for manual review.",
+    "keywords": [
+      "API reference",
+      "OpenAPI",
+      "documentation",
+      "schema",
+      "Media",
+      "auto-merge"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17508.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli checks three glowing API-reference pages labeled Gen, Enter and Media while a small code-plant grows beside them; a lime green (#ecf874) bookmark marks a missing page for review. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene and wears tiny librarian glasses. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T01:22:28.844384+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "c60d655674a530b4fed714a8313d61ae15cc0262",
+  "announcements": []
+}

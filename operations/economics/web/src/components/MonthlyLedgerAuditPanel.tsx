@@ -19,7 +19,6 @@ import { type MonthFilterValue, monthName } from "../lib/months";
 import type { Data } from "../types";
 import {
     DataTable,
-    GROUP_BORDER,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -69,7 +68,7 @@ function NumberCell({ value }: { value: number }) {
 
 function BankRowsCell({ row }: { row: MonthlyLedgerAuditRow }) {
     return (
-        <TableCell align="right" className={GROUP_BORDER}>
+        <TableCell align="right">
             {row.missingBankData ? (
                 <span className="text-intent-warning-text">0</span>
             ) : (
@@ -151,32 +150,19 @@ export function MonthlyLedgerAuditPanel({
                         <TableHeaderCell rowSpan={2} {...headerProps("month")}>
                             Month
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={3} align="center">
                             Ledger rows
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Evidence
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={4}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={4} align="center">
                             Data checks
                         </TableHeaderCell>
                     </TableRow>
                     <TableRow>
                         <TableHeaderCell
                             {...headerProps("transactionRows")}
-                            className={GROUP_BORDER}
                             align="right"
                         >
                             Bank
@@ -198,7 +184,6 @@ export function MonthlyLedgerAuditPanel({
                                 "actionableTransactionEvidenceGaps",
                             )}
                             align="right"
-                            className={GROUP_BORDER}
                         >
                             Missing
                         </TableHeaderCell>
@@ -213,7 +198,6 @@ export function MonthlyLedgerAuditPanel({
                         <TableHeaderCell
                             {...headerProps("missingMappings")}
                             align="right"
-                            className={GROUP_BORDER}
                         >
                             Unmapped vendors
                         </TableHeaderCell>
@@ -261,7 +245,6 @@ export function MonthlyLedgerAuditPanel({
                                 vendorCounts={
                                     row.actionableTransactionEvidenceProviderCounts
                                 }
-                                className={GROUP_BORDER}
                             />
                             <IssueCountCell
                                 value={row.acknowledgedTransactionEvidenceGaps}
@@ -273,9 +256,8 @@ export function MonthlyLedgerAuditPanel({
                             <IssueCountCell
                                 value={row.missingMappings}
                                 vendors={row.missingMappingProviders}
-                                className={GROUP_BORDER}
                             />
-                            <TableCell className={GROUP_BORDER}>
+                            <TableCell>
                                 <Chip
                                     intent={
                                         row.estimatedFx ? "warning" : "neutral"

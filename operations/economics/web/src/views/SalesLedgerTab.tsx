@@ -11,13 +11,17 @@ import {
     TableScroller,
     useSortableRows,
 } from "../components/DataTable";
+import { EvidenceAction } from "../components/Evidence";
 import {
     type MonthFilterValue,
     matchesMonth,
     monthLabel,
     WINDOW_START,
 } from "../lib/months";
-import { salesCoverage } from "../lib/sales";
+import {
+    FRAUD_COMPONENTS,
+    salesFraudAdjustment,
+} from "../lib/salesAdjustments";
 import type { Data, StripeSalesRow } from "../types";
 
 const amounts = [
@@ -72,6 +76,9 @@ export function SalesLedgerTab({
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
                         </TableHeaderCell>
+                        <TableHeaderCell align="right">
+                            Identified fraud costs
+                        </TableHeaderCell>
                         {amounts.map(([key, label]) => (
                             <TableHeaderCell
                                 key={key}
@@ -81,7 +88,6 @@ export function SalesLedgerTab({
                                 {label}
                             </TableHeaderCell>
                         ))}
-                        <TableHeaderCell>Month coverage</TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -96,21 +102,14 @@ export function SalesLedgerTab({
                             </TableCell>
                             <TableCell>{monthLabel(row.month)}</TableCell>
                             <TableCell>{row.currency}</TableCell>
+                            <TableCell align="right" numeric>
+                                <FraudDetail data={data} sale={row} />
+                            </TableCell>
                             {amounts.map(([key]) => (
                                 <TableCell key={key} align="right" numeric>
                                     {money.format(row[key])}
                                 </TableCell>
                             ))}
-                            <TableCell>
-                                {row.month >= currentMonth
-                                    ? "In progress"
-                                    : salesCoverage(
-                                          baseRows.filter(
-                                              (other) =>
-                                                  other.month === row.month,
-                                          ),
-                                      )}
-                            </TableCell>
                         </TableRow>
                     ))}
                     {!rows.length && (
@@ -130,5 +129,35 @@ export function SalesLedgerTab({
                 </TableBody>
             </DataTable>
         </TableScroller>
+    );
+}
+
+function FraudDetail({ data, sale }: { data: Data; sale: StripeSalesRow }) {
+    const adjustment = salesFraudAdjustment(data, sale);
+    if (!adjustment) return <span>–</span>;
+    const labels = {
+        refunds: "Refunds",
+        reversals: "Reversals",
+        stripe_fees: "Dispute fees",
+    };
+    return (
+        <details className="min-w-36">
+            <summary className="cursor-pointer">
+                {money.format(adjustment.total)}
+            </summary>
+            <ul className="mt-2 space-y-1 text-left text-xs">
+                {FRAUD_COMPONENTS.map((key) => (
+                    <li key={key}>
+                        {labels[key]}: {money.format(adjustment[key])}
+                    </li>
+                ))}
+                <li>Earlier sales · actual deductions unchanged</li>
+                <li className="flex gap-2">
+                    {adjustment.evidence.map((link) => (
+                        <EvidenceAction key={link} evidence={link} />
+                    ))}
+                </li>
+            </ul>
+        </details>
     );
 }

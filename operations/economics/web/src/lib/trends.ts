@@ -1,9 +1,18 @@
 import type { Data } from "../types";
+import { EXPENSE_CATEGORY_ORDER } from "./categories";
 import { toUsd } from "./fx";
-import { monthShift, reportingMonths } from "./months";
+import { modelReconcileRows } from "./modelReconcile";
+import { monthShift, reportingMonths, WINDOW_START } from "./months";
 import { ledgerCategory, resolveProvider } from "./providerRegistry";
 import { missingUsageCosts } from "./reconciliation";
 import { buildRunway } from "./runway";
+import { salesFraudAdjustment } from "./salesAdjustments";
+
+export function trendPeriod(count: 6 | 12, now = new Date()) {
+    const end = monthShift(now.toISOString().slice(0, 7), -1);
+    const start = monthShift(end, 1 - count);
+    return { start: start < WINDOW_START ? WINDOW_START : start, end };
+}
 
 export type TrendScope = "compute" | "company";
 export type TrendMonth = {
@@ -19,10 +28,10 @@ export type TrendMonth = {
     fullCost: number | null;
     result: number | null;
     fullResult: number | null;
-    computeCost: number | null;
-    infrastructureCost: number | null;
-    operationsCost: number | null;
-};
+    oneOffFraud: number | null;
+    adjustedResult: number | null;
+    adjustedFullResult: number | null;
+} & Record<(typeof EXPENSE_CATEGORY_ORDER)[number], number | null>;
 
 // Reuse Runway's sales, service-month costs and cash-only exclusions. These
 // are sales-based operating results, not consumed-Pollen unit economics.
@@ -121,13 +130,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         const categoryCost = (category: string) =>
             column && hasCosts
                 ? -costs
-                      .filter((r) =>
-                          category === "other"
-                              ? !["compute", "infrastructure"].includes(
-                                    r.category,
-                                )
-                              : r.category === category,
-                      )
+                      .filter((r) => r.category === category)
                       .reduce(
                           (sum, r) =>
                               sum +
@@ -136,6 +139,36 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
                           0,
                       )
                 : null;
+        const adjustments = sales
+            .map((sale) => {
+                const adjustment = salesFraudAdjustment(data, sale);
+                return adjustment == null
+                    ? null
+                    : toUsd(adjustment.total, sale.currency, month);
+            })
+            .filter((amount): amount is number => amount != null);
+        const oneOffFraud =
+            revenue != null &&
+            sales.every((sale) => sale.coverage_complete === 1) &&
+            adjustments.length > 0 &&
+            adjustments.length ===
+                (data.privateConfig?.salesAdjustments ?? []).filter(
+                    (item) => item.month === month,
+                ).length
+                ? adjustments.reduce((sum, amount) => sum + amount, 0)
+                : null;
+        const result =
+            revenue != null && paidCost != null ? revenue - paidCost : null;
+        const fullResult =
+            revenue != null && fullCost != null ? revenue - fullCost : null;
+        const expenseCosts = Object.fromEntries(
+            EXPENSE_CATEGORY_ORDER.map((category) => [
+                category,
+                scope === "company" || category === "compute"
+                    ? categoryCost(category)
+                    : null,
+            ]),
+        ) as Pick<TrendMonth, (typeof EXPENSE_CATEGORY_ORDER)[number]>;
         return {
             month,
             issues,
@@ -150,14 +183,18 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
             paidCost,
             credits,
             fullCost,
-            computeCost: categoryCost("compute"),
-            infrastructureCost:
-                scope === "company" ? categoryCost("infrastructure") : null,
-            operationsCost: scope === "company" ? categoryCost("other") : null,
-            result:
-                revenue != null && paidCost != null ? revenue - paidCost : null,
-            fullResult:
-                revenue != null && fullCost != null ? revenue - fullCost : null,
+            ...expenseCosts,
+            result,
+            fullResult,
+            oneOffFraud,
+            adjustedResult:
+                result != null && oneOffFraud != null
+                    ? result + oneOffFraud
+                    : null,
+            adjustedFullResult:
+                fullResult != null && oneOffFraud != null
+                    ? fullResult + oneOffFraud
+                    : null,
         };
     });
     return { months, warnings };
@@ -194,4 +231,69 @@ export function trendComparison(months: TrendMonth[], month: string) {
         result: current.result - previous.result,
         fullResult: current.fullResult - previous.fullResult,
     };
+}
+
+export type PollenTrendMonth = {
+    month: string;
+    paidPollen: number | null;
+    questPollen: number | null;
+    questCash: number | null;
+    questCredits: number | null;
+    unallocatedCost: number | null;
+};
+
+// Pollen consumption spans the whole platform. Quest funding is only the
+// known allocation of recorded Compute costs, never an additional expense.
+export function monthlyPollenTrends(
+    data: Data,
+    months: string[],
+): PollenTrendMonth[] {
+    const allocations = modelReconcileRows(data);
+    const knownSum = (values: (number | null)[]) => {
+        const known = values.filter((n): n is number => n != null);
+        return known.length ? known.reduce((sum, n) => sum + n, 0) : null;
+    };
+    return months.map((month) => {
+        const usage = (data.opPollen ?? []).filter(
+            (row) => row.month === month,
+        );
+        const models = allocations
+            .filter((row) => row.month === month)
+            .flatMap((row) => row.models);
+        return {
+            month,
+            paidPollen: usage.length
+                ? usage.reduce(
+                      (sum, row) =>
+                          sum + toUsd(row.price_paid, row.currency, month),
+                      0,
+                  )
+                : null,
+            questPollen: usage.length
+                ? usage.reduce(
+                      (sum, row) =>
+                          sum + toUsd(row.price_quests, row.currency, month),
+                      0,
+                  )
+                : null,
+            questCash: knownSum(models.map((row) => row.questProviderCashUsd)),
+            questCredits: knownSum(
+                models.map((row) => row.questProviderCreditUsd),
+            ),
+            unallocatedCost: knownSum(
+                models.map((row) =>
+                    row.providerUsageUsd == null
+                        ? null
+                        : Math.max(
+                              0,
+                              row.providerUsageUsd -
+                                  (row.paidProviderCashUsd ?? 0) -
+                                  (row.questProviderCashUsd ?? 0) -
+                                  (row.paidProviderCreditUsd ?? 0) -
+                                  (row.questProviderCreditUsd ?? 0),
+                          ),
+                ),
+            ),
+        };
+    });
 }

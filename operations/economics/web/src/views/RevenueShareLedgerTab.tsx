@@ -11,7 +11,6 @@ import { useMemo } from "react";
 import { CreatorIdentity } from "../components/CreatorIdentity";
 import {
     DataTable,
-    GROUP_BORDER,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -99,24 +98,15 @@ export function RevenueShareLedgerTab({
                         >
                             Product
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Paid Pollen
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Quest Pollen
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("requests")}
                         >
                             Requests
@@ -125,7 +115,6 @@ export function RevenueShareLedgerTab({
                     <TableRow>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("paidUsage")}
                         >
                             Used
@@ -138,7 +127,6 @@ export function RevenueShareLedgerTab({
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("questUsage")}
                         >
                             Used
@@ -182,31 +170,19 @@ export function RevenueShareLedgerTab({
                                     </span>
                                 </Tooltip>
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtNumber(row.paidUsageUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
                                 {fmtNumber(row.paidCreatorEarningsUsd)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtNumber(row.questUsageUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
                                 {fmtNumber(row.questCreatorEarningsUsd)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 <Tooltip
                                     triggerAs="span"
                                     content={`Paid ${fmtNumber(row.paidRequests)} · Quest ${fmtNumber(row.questRequests)}`}

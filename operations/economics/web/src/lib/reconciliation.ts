@@ -2,10 +2,15 @@ import type { ArchiveCheck, Data } from "../types";
 import { cloudCategory } from "./categories";
 import {
     computeModeIndex,
+    directDeliveryData,
     managedInferenceData,
     pollenComputeMode,
 } from "./computeModes";
-import { supplierInvoiceLinks } from "./documents";
+import {
+    hasArchivedEvidence,
+    hasReconciledTransactionEvidence,
+    supplierInvoiceLinks,
+} from "./documents";
 import { forecastRuleEntries } from "./forecastTerms";
 import { toUsd } from "./fx";
 import { gpuWorkloadRows } from "./gpu";
@@ -13,10 +18,16 @@ import { monthlyLedgerAuditRows } from "./ledgerAudit";
 import { ledgerModelResolver } from "./modelIdentity";
 import { modelReconcileRows } from "./modelReconcile";
 import { collectMonths, reportingMonths } from "./months";
+import { providerAccountBalanceRows } from "./providerBalances";
 import { providerCloseRows } from "./providerClose";
 import { resolveProvider } from "./providerRegistry";
 import { buildRunway } from "./runway";
 import { salesCoverage } from "./sales";
+import {
+    providerCostCheck,
+    unitEconomicsReport,
+    unitEconomicsRows,
+} from "./unitEconomics";
 
 export const RECONCILIATION_PAGES = {
     inference: "Inference",
@@ -32,6 +43,8 @@ export const RECONCILIATION_PAGES = {
 } as const;
 export type ReconciliationPage = keyof typeof RECONCILIATION_PAGES;
 export const RECONCILIATION_TYPES = {
+    totals: "Blocks results",
+    provisional: "Provisional results",
     figures: "Missing figures",
     forecast: "Payment / forecast",
     coverage: "Account coverage",
@@ -45,6 +58,7 @@ export type ReconciliationIssue = {
     month: string;
     vendor: string;
     messages: string[];
+    blockingMessages?: string[];
     types: ReconciliationType[];
     affects: ReconciliationPage[];
     priority: number;
@@ -171,7 +185,7 @@ export function reconciliationState(data: Data, now = new Date()) {
             gap.month,
             gap.vendor,
             "figures",
-            "Monthly usage costs and cash/credit split are missing.",
+            "Provider costs and cash/credit split are missing for recorded Pollen usage.",
             costPages(gap.vendor, gap.month),
             0,
             gap.meterUsd,
@@ -246,6 +260,56 @@ export function reconciliationState(data: Data, now = new Date()) {
             }
         }
     }
+    for (const row of providerAccountBalanceRows(data, now)) {
+        if (!row.active || !row.balanceTracking) continue;
+        if (
+            row.balanceStatus === "not_checked" ||
+            row.balanceStatus === "stale"
+        ) {
+            add(
+                currentMonth,
+                row.vendor,
+                "coverage",
+                `${row.accountLabel}: ${row.balanceStatus === "stale" ? "refresh the outdated balance snapshot" : "record a checked balance snapshot"}.`,
+                ["balances", "runway"],
+                1,
+            );
+        }
+        if (
+            (row.creditBalanceUsd ?? 0) > 0 &&
+            !row.creditTermsKnown &&
+            !row.expiryAssumed
+        ) {
+            add(
+                currentMonth,
+                row.vendor,
+                "forecast",
+                `${row.accountLabel}: confirm the credit expiry or record an approved planning assumption.`,
+                ["balances", "runway"],
+                1,
+            );
+        }
+    }
+    for (const row of unitEconomicsRows(
+        modelReconcileRows(directDeliveryData(data)),
+        "provider",
+    )) {
+        if (
+            row.month >= currentMonth ||
+            providerCostCheck(row).kind !== "review"
+        )
+            continue;
+        add(
+            row.month,
+            row.vendor,
+            "quality",
+            "Provider cost and the Pollen cost meter differ by more than the review threshold (25% and $100). Check the usage and invoice records.",
+            ["vendors", "inference", "vendor-ledger", "op-pollen"],
+            1,
+            Math.abs(row.meterGapUsd ?? 0),
+            "Provider / usage-meter difference",
+        );
+    }
     // Reviewed source differences stay open without changing booked costs.
     for (const difference of data.privateConfig?.reconciliation
         .costDifferences ?? []) {
@@ -268,16 +332,38 @@ export function reconciliationState(data: Data, now = new Date()) {
         const key = `${row.month}|${row.vendor}`;
         const existing = byKey.get(key);
         if (row.closeStatus === "missing document") {
+            const pending = (data.opTransactions ?? []).filter(
+                (transaction) =>
+                    transaction.kind === "transaction" &&
+                    transaction.vendor === row.vendor &&
+                    transaction.date.slice(0, 7) === row.month &&
+                    !hasReconciledTransactionEvidence(transaction),
+            );
+            const invoiceRetained =
+                pending.length > 0 &&
+                pending.every(
+                    (transaction) =>
+                        supplierInvoiceLinks(transaction.evidence).length > 0,
+                );
             add(
                 row.month,
                 row.vendor,
-                "documents",
-                "Bank transaction document is missing or not linked.",
+                invoiceRetained ? "quality" : "documents",
+                invoiceRetained
+                    ? "Invoice retained; payment or balance still needs reconciliation."
+                    : pending.some((transaction) =>
+                            hasArchivedEvidence(transaction.evidence),
+                        )
+                      ? "A source is linked; validate the supplier invoice and its payment match."
+                      : "Bank transaction document is missing or not linked.",
                 ["op-transactions"],
                 2,
                 null,
                 "Document check · no new amount inferred",
-                evidence,
+                [
+                    ...evidence,
+                    ...pending.map((transaction) => transaction.evidence),
+                ],
             );
         } else if (existing) {
             const issue = existing;
@@ -344,21 +430,6 @@ export function reconciliationState(data: Data, now = new Date()) {
         )
             continue;
         addHistoricalName(row.month, row.vendor, row.model);
-        if (
-            pollenComputeMode(modes, row.month, row.vendor, row.model) ===
-            "mixed"
-        ) {
-            add(
-                row.month,
-                row.vendor,
-                "models",
-                `Pollen usage cannot yet be assigned to inference or GPU: ${row.model}.`,
-                ["inference", "gpu", "vendors", "vendor-ledger", "op-pollen"],
-                2,
-                null,
-                "Delivery allocation · provider totals unchanged",
-            );
-        }
     }
     for (const row of modelReconcileRows(managedInferenceData(data, modes))) {
         if (row.month >= currentMonth) continue;
@@ -369,7 +440,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                 row.month,
                 row.vendor,
                 "models",
-                "Some recorded costs need a model breakdown or model mapping; provider totals are unchanged.",
+                "Add the missing model breakdown or map the unmatched invoice labels; provider totals are unchanged.",
                 ["inference", "vendor-ledger"],
                 2,
                 amount,
@@ -480,6 +551,42 @@ export function reconciliationState(data: Data, now = new Date()) {
                 ["sales", "trends", "runway"],
                 0,
             );
+    }
+    for (const month of reportingMonths(now)) {
+        for (const view of ["inference", "vendors"] as const) {
+            const report = unitEconomicsReport(data, month, view);
+            for (const blocker of report.blockers) {
+                add(
+                    month,
+                    blocker.vendor,
+                    report.provisional ? "provisional" : "totals",
+                    blocker.message,
+                    [view, "vendor-ledger", "op-pollen"],
+                    0,
+                    blocker.amountUsd,
+                    blocker.kind === "costs"
+                        ? "Usage meter estimate · bill and impact unknown"
+                        : "Recorded cost · usage unknown",
+                );
+                const issue = byKey.get(`${month}|${blocker.vendor}`);
+                if (!issue) continue;
+                if (issue.amountUsd == null && blocker.amountUsd != null) {
+                    issue.amountUsd = blocker.amountUsd;
+                    issue.amountLabel =
+                        blocker.kind === "costs"
+                            ? "Usage meter estimate · bill and impact unknown"
+                            : "Recorded cost · usage unknown";
+                }
+                if (!report.provisional) {
+                    issue.blockingMessages = [
+                        ...new Set([
+                            ...(issue.blockingMessages ?? []),
+                            blocker.message,
+                        ]),
+                    ];
+                }
+            }
+        }
     }
     for (const issue of byKey.values()) {
         // Collection method "invoice" can link to an extracted JSON report.

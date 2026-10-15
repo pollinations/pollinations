@@ -21,7 +21,6 @@ import {
     Tooltip,
     UsageIcon,
     WalletIcon,
-    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import { DashboardAccountMenu } from "@pollinations/ui/auth";
@@ -42,6 +41,7 @@ import {
     MonthFilter,
     YearFilter,
 } from "./components/Filters";
+import { dataConfidence } from "./lib/dataConfidence";
 import {
     type FacetOption,
     type LedgerTab,
@@ -62,6 +62,8 @@ import {
     reconciliationState,
 } from "./lib/reconciliation";
 import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
+import { trendPeriod } from "./lib/trends";
+import { unitEconomicsReport } from "./lib/unitEconomics";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
@@ -102,7 +104,13 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     "revenue-share-ledger": ["revenueShare"],
     "revenue-share": ["revenueShare", "opTransactions"],
     balances: ["vendorLedger", "opTransactions"],
-    trends: ["opTransactions", "vendorLedger", "stripeSales", "opPollen"],
+    trends: [
+        "opTransactions",
+        "vendorLedger",
+        "stripeSales",
+        "opPollen",
+        "userBalances",
+    ],
     runway: [
         "opTransactions",
         "vendorLedger",
@@ -740,17 +748,25 @@ function viewInfoContent(activeView: ActiveView) {
         return (
             <ul className="list-disc space-y-1 pl-4 text-left">
                 <li>
-                    Revenue: customer sales after fees, refunds and reversals.
-                    All amounts in USD.
+                    Completed months · USD unless marked Pollen. Revenue is
+                    after deductions.
                 </li>
+                <li>Company: all expenses. API + GPU: Compute only.</li>
                 <li>Expense curves: full costs before credits.</li>
+                <li>Pollen consumed is usage, not sales or provider cost.</li>
                 <li>
-                    Other operations: development, operations, revenue share,
-                    office, admin and payroll.
+                    Quest costs: known allocation by metered usage; part of
+                    Compute, not an extra expense. Unallocated and missing costs
+                    are excluded.
                 </li>
                 <li>
-                    * and faded marks: provisional. Gaps: missing figures.
-                    Details are in Reconciliation.
+                    Bars: actual results. Diamonds: results excluding identified
+                    fraud losses and dispute fees from earlier sales; breakdown
+                    in Sales.
+                </li>
+                <li>
+                    Gaps represent unavailable figures. Details are in
+                    Reconciliation.
                 </li>
             </ul>
         );
@@ -814,6 +830,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
         return isMonthKey(month) ? month : "";
     });
     const [runwayYear, setRunwayYear] = useState("2026");
+    const [trendMonths, setTrendMonths] = useState<6 | 12>(6);
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
@@ -904,13 +921,6 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
         () => (viewData ? reconciliationState(viewData) : null),
         [viewData],
     );
-    const issueCounts = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const issue of reconciliation?.issues ?? []) {
-            counts[issue.month] = (counts[issue.month] ?? 0) + 1;
-        }
-        return counts;
-    }, [reconciliation]);
     const months = reportingMonths();
     const reportingYears = useMemo(() => yearsOf(months), [months]);
     const monthFilter = months.includes(selectedMonth)
@@ -1029,14 +1039,36 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
             </div>
         </FilterBar>
     ) : null;
+    const trendWindow = trendPeriod(trendMonths);
     const relevantIssues =
         reconciliation?.issues.filter(
             (row) =>
                 row.affects.includes(activeView as ReconciliationPage) &&
-                (activeView === "trends"
-                    ? row.month.startsWith(selectedYear)
-                    : row.month === monthFilter),
+                (activeView === "balances"
+                    ? true
+                    : activeView === "runway"
+                      ? row.month.startsWith(runwayYear)
+                      : activeView === "trends"
+                        ? row.month >= trendWindow.start &&
+                          row.month <= trendWindow.end
+                        : row.month === monthFilter),
         ) ?? [];
+    const confidenceReport = useMemo(
+        () =>
+            viewData && (activeView === "inference" || activeView === "vendors")
+                ? unitEconomicsReport(viewData, monthFilter, activeView)
+                : null,
+        [viewData, activeView, monthFilter],
+    );
+    const confidence = dataConfidence(relevantIssues, confidenceReport);
+    const confidencePeriod =
+        activeView === "balances"
+            ? "Latest balances"
+            : activeView === "runway"
+              ? runwayYear
+              : activeView === "trends"
+                ? `${trendWindow.start} – ${trendWindow.end}`
+                : monthFilter;
     const content = (
         <>
             {error && (
@@ -1105,25 +1137,12 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                 {viewData && activeView === "trends" && (
                     <TrendsTab
                         data={viewData}
-                        year={selectedYear}
-                        onYearChange={(year) => {
-                            const yearMonths = months.filter((month) =>
-                                month.startsWith(year),
-                            );
-                            setSelectedMonth(
-                                latestClosedMonth(yearMonths) ??
-                                    yearMonths.at(-1) ??
-                                    "",
-                            );
-                        }}
+                        period={trendMonths}
+                        onPeriodChange={setTrendMonths}
                     />
                 )}
                 {viewData && activeView === "runway" && (
-                    <RunwayTab
-                        data={viewData}
-                        year={runwayYear}
-                        issueCounts={issueCounts}
-                    />
+                    <RunwayTab data={viewData} year={runwayYear} />
                 )}
                 {viewData && activeView === "vendors" && (
                     <VendorsTab data={viewData} month={monthFilter} />
@@ -1163,34 +1182,6 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <section className="flex flex-col gap-5">
                         <header className="flex shrink-0 justify-end px-1">
                             <div className="flex min-w-0 items-center gap-2">
-                                {viewData &&
-                                    activeView !== "close" &&
-                                    relevantIssues.length > 0 && (
-                                        <Button
-                                            size="sm"
-                                            intent="neutral"
-                                            className="text-intent-warning-text"
-                                            aria-label={`${relevantIssues.length} reconciliation items`}
-                                            title="Open reconciliation"
-                                            onClick={() => {
-                                                setReconciliationFrom(
-                                                    Object.hasOwn(
-                                                        RECONCILIATION_PAGES,
-                                                        activeView,
-                                                    )
-                                                        ? (activeView as ReconciliationPage)
-                                                        : null,
-                                                );
-                                                setActiveView("close");
-                                            }}
-                                        >
-                                            <WarningIcon
-                                                className="h-4 w-4"
-                                                aria-hidden="true"
-                                            />
-                                            {relevantIssues.length}
-                                        </Button>
-                                    )}
                                 <Heading
                                     as="h2"
                                     size="section"
@@ -1207,6 +1198,27 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                             </div>
                         </header>
                         {filters}
+                        {viewData &&
+                            Object.hasOwn(RECONCILIATION_PAGES, activeView) && (
+                                <button
+                                    type="button"
+                                    className="self-start cursor-pointer rounded-xl bg-surface-block px-4 py-3 text-left transition-colors hover:bg-surface-opaque focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                                    aria-label={`Data confidence: ${confidence.status}. Open reconciliation`}
+                                    onClick={() => {
+                                        setReconciliationFrom(
+                                            activeView as ReconciliationPage,
+                                        );
+                                        setActiveView("close");
+                                    }}
+                                >
+                                    <span className="block text-sm font-semibold">
+                                        Data confidence · {confidence.status}
+                                    </span>
+                                    <span className="mt-1 block text-xs text-theme-text-muted">
+                                        {confidencePeriod} · {confidence.detail}
+                                    </span>
+                                </button>
+                            )}
                         <div className="flex flex-col gap-5">{content}</div>
                     </section>
                 </main>

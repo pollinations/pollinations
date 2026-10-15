@@ -9,7 +9,6 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -96,25 +95,13 @@ export function OpPollenTab({
                         <TableHeaderCell rowSpan={2} {...headerProps("model")}>
                             Model
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Pollen used
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Metered cost
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Requests
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2}>Payouts</TableHeaderCell>
@@ -122,7 +109,6 @@ export function OpPollenTab({
                     <TableRow>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("price_paid")}
                         >
                             Paid
@@ -135,7 +121,6 @@ export function OpPollenTab({
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("cost_paid")}
                         >
                             Paid
@@ -148,7 +133,6 @@ export function OpPollenTab({
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("requests_paid")}
                         >
                             Paid
@@ -175,28 +159,19 @@ export function OpPollenTab({
                                 <TableRow>
                                     <TableCell>{row.vendor}</TableCell>
                                     <TableCell>{row.model}</TableCell>
-                                    <TableCell
-                                        align="right"
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right">
                                         {fmtNumber(row.price_paid)}
                                     </TableCell>
                                     <TableCell align="right">
                                         {fmtNumber(row.price_quests)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right">
                                         {fmtNumber(row.cost_paid)}
                                     </TableCell>
                                     <TableCell align="right">
                                         {fmtNumber(row.cost_quests)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right">
                                         {fmtNumber(row.requests_paid)}
                                     </TableCell>
                                     <TableCell align="right">
@@ -213,10 +188,7 @@ export function OpPollenTab({
                                 </TableRow>
                                 {isExpanded ? (
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={9}
-                                            className="bg-theme-bg-active/40"
-                                        >
+                                        <TableCell colSpan={9} className="pl-6">
                                             <dl className="grid gap-4 p-2 sm:grid-cols-3 lg:grid-cols-5">
                                                 <PayoutValue
                                                     label="BYOP · Paid"

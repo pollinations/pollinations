@@ -9,7 +9,6 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -152,28 +151,16 @@ export function VendorLedgerTab({
                         >
                             Model / resource
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={3} align="center">
                             Vendor funding
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Evidence
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2}>Details</TableHeaderCell>
                     </TableRow>
                     <TableRow>
-                        <TableHeaderCell
-                            align="right"
-                            className={GROUP_BORDER}
-                            {...headerProps("paid")}
-                        >
+                        <TableHeaderCell align="right" {...headerProps("paid")}>
                             Paid
                         </TableHeaderCell>
                         <TableHeaderCell
@@ -185,10 +172,7 @@ export function VendorLedgerTab({
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            className={GROUP_BORDER}
-                            {...headerProps("source")}
-                        >
+                        <TableHeaderCell {...headerProps("source")}>
                             Source
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
@@ -224,17 +208,14 @@ export function VendorLedgerTab({
                                         <TableCell>
                                             {resourceLabel(row)}
                                         </TableCell>
-                                        <TableCell
-                                            align="right"
-                                            className={GROUP_BORDER}
-                                        >
+                                        <TableCell align="right">
                                             {fmtNumber(row.paid)}
                                         </TableCell>
                                         <TableCell align="right">
                                             {fmtNumber(row.credit)}
                                         </TableCell>
                                         <TableCell>{row.currency}</TableCell>
-                                        <TableCell className={GROUP_BORDER}>
+                                        <TableCell>
                                             <SourceCell
                                                 sources={[row.source]}
                                             />
@@ -258,7 +239,7 @@ export function VendorLedgerTab({
                                         <TableRow>
                                             <TableCell
                                                 colSpan={11}
-                                                className="bg-theme-bg-active/40"
+                                                className="pl-6"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">
                                                     <DetailItem

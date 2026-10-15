@@ -25,7 +25,8 @@ describe("SourceCell", () => {
             <SourceCell sources={["mystery-source"]} />,
         );
 
-        expect(html).toContain("? mystery-source");
-        expect(html).toContain("Unknown source");
+        expect(html).toContain(">mystery-source<");
+        expect(html).not.toContain("Unknown source");
+        expect(html).not.toContain('data-intent="danger"');
     });
 });

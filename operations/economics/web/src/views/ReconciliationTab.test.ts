@@ -167,3 +167,32 @@ it("shows deduplicated preview and download icons while keeping collection notes
     expect(html).toContain("Monthly costs missing.");
     expect(html).toContain("1 items");
 });
+
+it("separates exact result blockers from other checks in the same provider month", () => {
+    const html = renderToStaticMarkup(
+        createElement(ReconciliationTab, {
+            issues: [
+                {
+                    ...issue,
+                    types: ["totals", "models"],
+                    blockingMessages: ["Pollen usage is missing."],
+                    messages: [
+                        "Pollen usage is missing.",
+                        "Invoice labels need mapping.",
+                    ],
+                },
+            ],
+            year: "2026",
+            onOpen: () => {},
+        }),
+    );
+    expect(html).toContain("Blocks results");
+    expect(html).toContain("Other checks");
+    expect(html.match(/Pollen usage is missing\./g)).toHaveLength(1);
+    expect(html.indexOf("Pollen usage is missing.")).toBeLessThan(
+        html.indexOf("Other checks"),
+    );
+    expect(html.indexOf("Other checks")).toBeLessThan(
+        html.indexOf("Invoice labels need mapping."),
+    );
+});

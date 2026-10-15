@@ -5,7 +5,7 @@ import { EvidenceAction } from "./Evidence";
 describe("EvidenceAction", () => {
     it("distinguishes missing, reference, file, and folder evidence", () => {
         expect(renderToStaticMarkup(<EvidenceAction evidence="" />)).toContain(
-            "Missing",
+            "–",
         );
         expect(
             renderToStaticMarkup(

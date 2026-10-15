@@ -134,7 +134,7 @@ export function ReconciliationTab({
                                     Provider
                                 </TableHeaderCell>
                                 <TableHeaderCell {...headerProps("messages")}>
-                                    To reconcile
+                                    What to fix
                                 </TableHeaderCell>
                                 <TableHeaderCell {...headerProps("month")}>
                                     Month
@@ -185,9 +185,36 @@ export function ReconciliationTab({
                                                         }
                                                     </span>
                                                 ))}
-                                            {issue.messages.map((message) => (
-                                                <p key={message}>{message}</p>
-                                            ))}
+                                            {issue.blockingMessages?.map(
+                                                (message) => (
+                                                    <p key={message}>
+                                                        {message}
+                                                    </p>
+                                                ),
+                                            )}
+                                            {issue.blockingMessages?.length &&
+                                            issue.messages.some(
+                                                (message) =>
+                                                    !issue.blockingMessages?.includes(
+                                                        message,
+                                                    ),
+                                            ) ? (
+                                                <p className="mt-2 text-xs text-theme-text-soft">
+                                                    Other checks
+                                                </p>
+                                            ) : null}
+                                            {issue.messages
+                                                .filter(
+                                                    (message) =>
+                                                        !issue.blockingMessages?.includes(
+                                                            message,
+                                                        ),
+                                                )
+                                                .map((message) => (
+                                                    <p key={message}>
+                                                        {message}
+                                                    </p>
+                                                ))}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
                                             {monthName(issue.month)}

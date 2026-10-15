@@ -1,5 +1,4 @@
 import {
-    Chip,
     TableBody,
     TableCell,
     TableHead,
@@ -7,10 +6,9 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -22,37 +20,18 @@ import {
     type GaugePalette,
     GaugeSummary,
 } from "../components/EconomicsGauge";
-import {
-    StatCards,
-    type StatItem,
-    type StatTone,
-} from "../components/StatCards";
+import { StatCards, type StatItem } from "../components/StatCards";
 import {
     type ComputeMode,
-    computeModeIndex,
-    directDeliveryData,
-    managedInferenceData,
-    pollenComputeMode,
     providerMonthComputeMode,
 } from "../lib/computeModes";
-import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
-import {
-    assignedSharePct,
-    type ModelReconcileRow,
-    type ModelReconcileSummary,
-    modelReconcileRows,
-    modelReconcileSummary,
-    visibleModelReconcileRows,
-} from "../lib/modelReconcile";
-import { type MonthFilterValue, matchesMonth } from "../lib/months";
-import { resolveProvider } from "../lib/providerRegistry";
+import { fmtMarginPct, fmtUsd } from "../lib/format";
 import { signedToneOrSoft } from "../lib/tone";
 import {
-    matchesSituation,
-    providerCostCheck,
-    type Situation,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
+    type UnitEconomicsView,
+    unitEconomicsReport,
     unitEconomicsRows,
     unitPerformancePct,
 } from "../lib/unitEconomics";
@@ -94,187 +73,6 @@ function MixGauge({
             right={right}
             rightLabel={rightLabel}
         />
-    );
-}
-
-// One chip per situation. A grouped row is one model the provider bills on a
-// single line under several Pollen ids; the hint lists its billing lines.
-function allocationChip(row: UnitEconomicsRow) {
-    const status = row.allocationStatus;
-    if (status == null) return null;
-    if (status === "allocated") {
-        if (!row.members?.length) return null;
-        const lines = (row.lines ?? [])
-            .map((line) => `${line.label}: ${fmtUsd(line.usd)}`)
-            .join("\n");
-        return (
-            <span title={lines || undefined}>
-                <Chip intent="neutral" size="sm">
-                    grouped · {row.members.length} Pollen ids
-                </Chip>
-            </span>
-        );
-    }
-    const intent =
-        status === "missing breakdown"
-            ? "danger"
-            : status === "provider only"
-              ? "neutral"
-              : "warning";
-    return (
-        <Chip intent={intent} size="sm">
-            {status === "missing provider"
-                ? "missing vendor"
-                : status === "provider only"
-                  ? "no Pollen model"
-                  : status}
-        </Chip>
-    );
-}
-
-// Each chip summarises one situation and, when clicked, filters the table to
-// the rows behind it; clicking the active chip clears the filter.
-function ResidualBucketChips({
-    buckets,
-    groupedUsd,
-    active,
-    onSelect,
-}: {
-    buckets: ModelReconcileSummary["buckets"];
-    groupedUsd: number;
-    active: Situation;
-    onSelect: (situation: Situation) => void;
-}) {
-    const items: {
-        situation: Situation;
-        label: string;
-        usd: number;
-        intent: "success" | "neutral" | "danger" | "warning";
-    }[] = [
-        {
-            situation: "assigned",
-            label: "assigned to models",
-            usd: buckets.allocatedUsd,
-            intent: "success",
-        },
-        {
-            situation: "grouped",
-            label: "grouped",
-            usd: groupedUsd,
-            intent: "neutral",
-        },
-        {
-            situation: "missing breakdown",
-            label: "missing breakdown",
-            usd: buckets.missingBreakdownUsd,
-            intent: "danger",
-        },
-        {
-            situation: "needs mapping",
-            label: "needs mapping",
-            usd: buckets.needsMappingUsd,
-            intent: "warning",
-        },
-        {
-            situation: "no Pollen model",
-            label: "no Pollen model",
-            usd: buckets.providerOnlyUsd,
-            intent: "neutral",
-        },
-    ];
-    return (
-        <div className="flex flex-wrap items-center gap-2">
-            {items
-                .filter((item) => item.usd > 0.005)
-                .map((item) => {
-                    const selected = active === item.situation;
-                    return (
-                        <button
-                            type="button"
-                            key={item.situation}
-                            aria-pressed={selected}
-                            onClick={() =>
-                                onSelect(selected ? "all" : item.situation)
-                            }
-                            className={
-                                selected
-                                    ? "rounded-lg ring-2 ring-theme-text-strong"
-                                    : "rounded-lg opacity-90 hover:opacity-100"
-                            }
-                        >
-                            <Chip intent={item.intent} size="sm">
-                                {fmtUsd(item.usd)} {item.label}
-                            </Chip>
-                        </button>
-                    );
-                })}
-        </div>
-    );
-}
-
-function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
-    const check = providerCostCheck(row);
-    const label =
-        check.kind === "provider-level"
-            ? "Vendor-level"
-            : check.kind === "missing-mapping"
-              ? "Unmapped vendor"
-              : check.kind === "missing-source"
-                ? row.sourceStatus === "pollen only"
-                    ? "Missing vendor"
-                    : "Missing meter"
-                : check.kind === "not-applicable"
-                  ? "Not applicable"
-                  : check.kind === "utilization"
-                    ? `Utilization · ${fmtUnsignedPct(check.value)}`
-                    : check.kind === "calibration"
-                      ? `Calibration · ${check.value == null ? "–" : `${check.value.toFixed(2)}×`}`
-                      : `${check.kind === "review" ? "Review" : "Healthy"} · ${fmtUnsignedPct(check.value)}`;
-    const className =
-        check.kind === "review" ||
-        check.kind === "missing-source" ||
-        check.kind === "missing-mapping"
-            ? "text-outcome-negative-text"
-            : check.kind === "provider-level" || check.kind === "not-applicable"
-              ? "text-theme-text-soft"
-              : "text-theme-text-strong";
-    const explanation =
-        check.kind === "provider-level"
-            ? "Model costs join by exact Pollen id or through reviewed provider labels. Pollen ids billed on one provider line form one grouped row. Unjoined cost stays visible as needs mapping or missing breakdown; check totals on the vendor row."
-            : check.kind === "missing-mapping"
-              ? "Add this vendor to the canonical registry before interpreting its economics."
-              : check.kind === "missing-source"
-                ? "One side of the vendor-month comparison is missing."
-                : check.kind === "not-applicable"
-                  ? "This row has no external vendor cost to reconcile."
-                  : check.kind === "utilization"
-                    ? "Capacity vendors compare metered demand with reserved capacity cost."
-                    : check.kind === "calibration"
-                      ? "Mixed vendors use this ratio for calibration, not pass/fail reconciliation."
-                      : check.kind === "review"
-                        ? "Direct vendor drift exceeds both 25% and $100."
-                        : "Direct vendor drift is within the materiality threshold.";
-
-    return (
-        <Tooltip
-            triggerAs="span"
-            content={
-                <span className="block max-w-72">
-                    <strong>Vendor cost check</strong>
-                    <span className="block">
-                        Basis: {check.basis.replace("_", " ")}
-                    </span>
-                    <span className="block">
-                        Logged: {fmtUsd(row.pollenMeterUsd)} · Vendor:{" "}
-                        {fmtUsd(row.providerUsageUsd)} · Gap:{" "}
-                        {fmtSignedUsd(row.meterGapUsd)}
-                    </span>
-                    <span className="block">{explanation}</span>
-                </span>
-            }
-        >
-            <span className={className}>{label}</span>
-        </Tooltip>
     );
 }
 
@@ -370,28 +168,12 @@ const SORT_COLUMNS: readonly SortColumn<UnitEconomicsRow>[] = [
                 row.retainedPaidUsd,
             ),
     },
-    {
-        key: "providerCostCheck",
-        value: (row) => providerCostCheck(row).value,
-    },
 ];
 
 const DEFAULT_SORT = {
     key: "fullCostResultUsd",
     direction: "asc",
 } as const;
-
-type UnitEconomicsView = "vendors" | "inference";
-const ACTIVE_ECONOMICS_USD = 0.0001;
-
-function hasEconomicActivity(row: ModelReconcileRow): boolean {
-    return [
-        row.paidPollenUsd,
-        row.questPollenUsd,
-        row.pollenMeterUsd,
-        row.providerUsageUsd,
-    ].some((value) => value != null && Math.abs(value) > ACTIVE_ECONOMICS_USD);
-}
 
 function computeModeLabel(mode: ComputeMode): string {
     if (mode === "managed-inference") return "Inference";
@@ -402,84 +184,30 @@ function computeModeLabel(mode: ComputeMode): string {
 
 function UnitEconomicsTable({
     data,
-    month = "",
+    month,
     view,
 }: {
     data: Data;
-    month?: MonthFilterValue;
+    month: string;
     view: UnitEconomicsView;
 }) {
     const grain: UnitEconomicsGrain = view === "vendors" ? "provider" : "model";
-    const modeIndex = useMemo(() => computeModeIndex(data), [data]);
-    const economicsData = useMemo(
-        () =>
-            view === "vendors"
-                ? directDeliveryData(data)
-                : managedInferenceData(data, modeIndex),
-        [data, modeIndex, view],
+    const {
+        modeIndex,
+        vendorMonths,
+        summary,
+        blockers,
+        provisional,
+        currentResultUsd,
+        fullCostResultUsd,
+    } = useMemo(
+        () => unitEconomicsReport(data, month, view),
+        [data, month, view],
     );
-    const allVendorMonths = useMemo(
-        () => modelReconcileRows(economicsData),
-        [economicsData],
-    );
-    const vendorMonths = useMemo(
-        () =>
-            visibleModelReconcileRows({
-                rows: allVendorMonths,
-                month,
-                vendor: "all",
-            }).filter(hasEconomicActivity),
-        [allVendorMonths, month],
-    );
-    const excludedPollen =
-        view === "inference"
-            ? (data.opPollen ?? []).filter(
-                  (row) =>
-                      row.vendor !== "community" &&
-                      matchesMonth(row.month, month) &&
-                      ["unclassified", "mixed"].includes(
-                          pollenComputeMode(
-                              modeIndex,
-                              row.month,
-                              row.vendor,
-                              row.model,
-                          ),
-                      ) &&
-                      (row.price_paid !== 0 || row.price_quests !== 0),
-              )
-            : [];
-    const missingCostProviders = [
-        ...new Set(
-            vendorMonths
-                .filter((row) => row.status === "pollen only")
-                .map((row) => row.vendor),
-        ),
-    ].sort();
-    const inferenceIncomplete = excludedPollen.some(
-        (row) => resolveProvider(row.vendor)?.category !== "infrastructure",
-    );
-    const [situation, setSituation] = useState<Situation>("all");
-    const allRows = useMemo(
-        () => unitEconomicsRows(vendorMonths, grain),
-        [grain, vendorMonths],
-    );
+    const missingCosts = blockers.some((blocker) => blocker.kind === "costs");
     const rows = useMemo(
-        () =>
-            grain === "model"
-                ? allRows.filter((row) => matchesSituation(row, situation))
-                : allRows,
-        [allRows, grain, situation],
-    );
-    const groupedUsd = useMemo(
-        () =>
-            allRows
-                .filter((row) => matchesSituation(row, "grouped"))
-                .reduce((sum, row) => sum + (row.providerUsageUsd ?? 0), 0),
-        [allRows],
-    );
-    const vendorEconomics = useMemo(
-        () => unitEconomicsRows(vendorMonths, "provider"),
-        [vendorMonths],
+        () => unitEconomicsRows(vendorMonths, grain),
+        [vendorMonths, grain],
     );
     const sortColumns = useMemo<readonly SortColumn<UnitEconomicsRow>[]>(
         () =>
@@ -505,63 +233,16 @@ function UnitEconomicsTable({
         sortColumns,
         DEFAULT_SORT,
     );
-    const summary = useMemo(
-        () => modelReconcileSummary(vendorMonths),
-        [vendorMonths],
-    );
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    const includesPartialMonth = vendorMonths.some(
-        (row) => row.month >= currentMonth,
-    );
-    const knownCurrentRows = vendorEconomics.filter(
-        (row) => row.netCashContributionUsd != null,
-    );
-    const currentResultUsd = knownCurrentRows.reduce(
-        (sum, row) => sum + (row.netCashContributionUsd ?? 0),
-        0,
-    );
-    const unknownCurrentVendorMonths =
-        vendorEconomics.length - knownCurrentRows.length;
     const currentPerformancePct =
-        unknownCurrentVendorMonths === 0 && !inferenceIncomplete
-            ? unitPerformancePct(currentResultUsd, summary.retainedPaidUsd)
-            : null;
-    const knownFullCostRows = vendorEconomics.filter(
-        (row) => row.economicContributionUsd != null,
-    );
-    const fullCostResultUsd = knownFullCostRows.reduce(
-        (sum, row) => sum + (row.economicContributionUsd ?? 0),
-        0,
-    );
-    const unknownFullCostVendorMonths =
-        vendorEconomics.length - knownFullCostRows.length;
+        currentResultUsd == null
+            ? null
+            : unitPerformancePct(currentResultUsd, summary.retainedPaidUsd);
     const fullCostPerformancePct =
-        unknownFullCostVendorMonths === 0 && !inferenceIncomplete
-            ? unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd)
-            : null;
-    const assignedPct =
-        view === "inference" ? assignedSharePct(summary.buckets) : null;
+        fullCostResultUsd == null
+            ? null
+            : unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd);
     const stats = useMemo<StatItem[]>(
         () => [
-            ...(view === "inference"
-                ? [
-                      {
-                          label: "Assigned to models",
-                          value:
-                              assignedPct == null
-                                  ? "Unknown"
-                                  : fmtUnsignedPct(assignedPct),
-                          tone: (assignedPct == null
-                              ? "base"
-                              : assignedPct >= 99
-                                ? "success"
-                                : assignedPct < 95
-                                  ? "warn"
-                                  : "base") as StatTone,
-                          detail: `${fmtUsd(summary.buckets.allocatedUsd)} of ${fmtUsd(summary.providerUsageUsd)} vendor cost · grouped rows included`,
-                      },
-                  ]
-                : []),
             {
                 label: "Retained Paid",
                 value: fmtUsd(summary.retainedPaidUsd),
@@ -580,10 +261,9 @@ function UnitEconomicsTable({
                 detail: "free usage · never fiat revenue",
             },
             {
-                label:
-                    missingCostProviders.length > 0
-                        ? "Vendor cost · recorded so far"
-                        : "Vendor cost",
+                label: missingCosts
+                    ? "Vendor cost · recorded so far"
+                    : "Vendor cost",
                 value: fmtUsd(summary.providerUsageUsd),
                 detail: (
                     <GaugeSummary
@@ -596,17 +276,15 @@ function UnitEconomicsTable({
                 ),
             },
             {
-                label: "Current result",
+                label: provisional
+                    ? "Current result · provisional"
+                    : "Current result",
                 value:
-                    knownCurrentRows.length === 0 ||
-                    unknownCurrentVendorMonths > 0 ||
-                    inferenceIncomplete
+                    currentResultUsd == null
                         ? "Unknown"
                         : fmtSignedUsd(currentResultUsd),
                 tone:
-                    knownCurrentRows.length === 0 ||
-                    unknownCurrentVendorMonths > 0 ||
-                    inferenceIncomplete
+                    currentResultUsd == null
                         ? "base"
                         : currentResultUsd > 0
                           ? "pos"
@@ -614,22 +292,20 @@ function UnitEconomicsTable({
                             ? "neg"
                             : "base",
                 detail:
-                    unknownCurrentVendorMonths > 0 || inferenceIncomplete
-                        ? "with credits · awaiting complete evidence"
+                    currentResultUsd == null
+                        ? "with credits"
                         : `with credits · ${fmtMarginPct(currentPerformancePct)}`,
             },
             {
-                label: "Full-cost result",
+                label: provisional
+                    ? "Full-cost result · provisional"
+                    : "Full-cost result",
                 value:
-                    knownFullCostRows.length === 0 ||
-                    unknownFullCostVendorMonths > 0 ||
-                    inferenceIncomplete
+                    fullCostResultUsd == null
                         ? "Unknown"
                         : fmtSignedUsd(fullCostResultUsd),
                 tone:
-                    knownFullCostRows.length === 0 ||
-                    unknownFullCostVendorMonths > 0 ||
-                    inferenceIncomplete
+                    fullCostResultUsd == null
                         ? "base"
                         : fullCostResultUsd > 0
                           ? "pos"
@@ -637,57 +313,25 @@ function UnitEconomicsTable({
                             ? "neg"
                             : "base",
                 detail:
-                    unknownFullCostVendorMonths > 0 || inferenceIncomplete
-                        ? "without credits · awaiting complete evidence"
+                    fullCostResultUsd == null
+                        ? "without credits"
                         : `without credits · ${fmtMarginPct(fullCostPerformancePct)}`,
             },
         ],
         [
-            inferenceIncomplete,
             currentPerformancePct,
             currentResultUsd,
             fullCostPerformancePct,
             fullCostResultUsd,
-            assignedPct,
-            knownCurrentRows.length,
-            knownFullCostRows.length,
             summary,
-            missingCostProviders.length,
-            unknownCurrentVendorMonths,
-            unknownFullCostVendorMonths,
-            view,
+            missingCosts,
+            provisional,
         ],
     );
 
     return (
         <div className="flex flex-col gap-4">
             <StatCards items={stats} />
-
-            {view === "inference" && (
-                <ResidualBucketChips
-                    buckets={summary.buckets}
-                    groupedUsd={groupedUsd}
-                    active={situation}
-                    onSelect={setSituation}
-                />
-            )}
-
-            {(includesPartialMonth ||
-                summary.missingSideProviderMonths > 0) && (
-                <div className="flex flex-wrap items-center gap-2">
-                    {includesPartialMonth && (
-                        <Chip intent="warning" size="sm">
-                            partial month
-                        </Chip>
-                    )}
-                    {summary.missingSideProviderMonths > 0 && (
-                        <Chip intent="warning" size="sm">
-                            {summary.missingSideProviderMonths} source gap
-                            {summary.missingSideProviderMonths === 1 ? "" : "s"}
-                        </Chip>
-                    )}
-                </div>
-            )}
 
             <TableScroller>
                 <DataTable className="min-w-[1420px]">
@@ -705,25 +349,13 @@ function UnitEconomicsTable({
                             >
                                 {view === "vendors" ? "Mode" : "Model"}
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={3} align="center">
                                 Pollen
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={3} align="center">
                                 Vendor cost
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={2} align="center">
                                 <HeaderHint
                                     hint={{
                                         meaning:
@@ -734,11 +366,7 @@ function UnitEconomicsTable({
                                     Current · with credits
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={2} align="center">
                                 <HeaderHint
                                     hint={{
                                         meaning:
@@ -750,21 +378,10 @@ function UnitEconomicsTable({
                                     Full cost · without credits
                                 </HeaderHint>
                             </TableHeaderCell>
-                            {view === "vendors" && (
-                                <TableHeaderCell
-                                    rowSpan={2}
-                                    align="right"
-                                    className={GROUP_BORDER}
-                                    {...headerProps("providerCostCheck")}
-                                >
-                                    Cost check
-                                </TableHeaderCell>
-                            )}
                         </TableRow>
                         <TableRow>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("retainedPaidUsd")}
                             >
                                 <HeaderHint
@@ -792,7 +409,6 @@ function UnitEconomicsTable({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
                                 Cash
@@ -811,7 +427,6 @@ function UnitEconomicsTable({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("currentResultUsd")}
                             >
                                 Result
@@ -824,7 +439,6 @@ function UnitEconomicsTable({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("fullCostResultUsd")}
                             >
                                 Result
@@ -866,16 +480,19 @@ function UnitEconomicsTable({
                                                           row.vendor,
                                                       ),
                                                   )
-                                                : row.model}
+                                                : [
+                                                        "missing breakdown",
+                                                        "needs mapping",
+                                                        "provider only",
+                                                    ].includes(
+                                                        row.allocationStatus ??
+                                                            "",
+                                                    )
+                                                  ? "Other provider costs"
+                                                  : row.model}
                                         </span>
-                                        {view === "inference" &&
-                                            allocationChip(row)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right" numeric>
                                         {fmtUsd(row.retainedPaidUsd)}
                                     </TableCell>
                                     <TableCell>
@@ -891,11 +508,7 @@ function UnitEconomicsTable({
                                     <TableCell align="right" numeric>
                                         {fmtUsd(row.questPollenUsd)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right" numeric>
                                         {fmtUsd(row.providerCashUsd)}
                                     </TableCell>
                                     <TableCell>
@@ -912,11 +525,7 @@ function UnitEconomicsTable({
                                     <TableCell align="right" numeric>
                                         {fmtUsd(row.providerCreditUsd)}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right" numeric>
                                         <CurrentResult row={row} />
                                     </TableCell>
                                     <TableCell
@@ -936,11 +545,7 @@ function UnitEconomicsTable({
                                             ),
                                         )}
                                     </TableCell>
-                                    <TableCell
-                                        align="right"
-                                        numeric
-                                        className={GROUP_BORDER}
-                                    >
+                                    <TableCell align="right" numeric>
                                         <FullCostResult row={row} />
                                     </TableCell>
                                     <TableCell
@@ -960,21 +565,13 @@ function UnitEconomicsTable({
                                             ),
                                         )}
                                     </TableCell>
-                                    {view === "vendors" && (
-                                        <TableCell
-                                            align="right"
-                                            className={GROUP_BORDER}
-                                        >
-                                            <VendorCostStatus row={row} />
-                                        </TableCell>
-                                    )}
                                 </TableRow>
                             );
                         })}
                         {sortedRows.length === 0 && (
                             <TableRow>
                                 <TableCell
-                                    colSpan={view === "vendors" ? 13 : 12}
+                                    colSpan={12}
                                     className="py-8 text-center text-theme-text-soft"
                                 >
                                     No unit economics for this selection.
@@ -988,22 +585,16 @@ function UnitEconomicsTable({
     );
 }
 
-export function VendorsTab({
-    data,
-    month = "",
-}: {
-    data: Data;
-    month?: MonthFilterValue;
-}) {
+export function VendorsTab({ data, month }: { data: Data; month: string }) {
     return <UnitEconomicsTable data={data} month={month} view="vendors" />;
 }
 
 export function ManagedInferenceTab({
     data,
-    month = "",
+    month,
 }: {
     data: Data;
-    month?: MonthFilterValue;
+    month: string;
 }) {
     return <UnitEconomicsTable data={data} month={month} view="inference" />;
 }

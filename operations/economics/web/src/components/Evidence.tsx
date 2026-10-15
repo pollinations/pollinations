@@ -1,6 +1,5 @@
 import {
     Button,
-    Chip,
     Dialog,
     DialogTitle,
     DownloadIcon,
@@ -28,13 +27,7 @@ export function EvidenceAction({
     openDocumentLabel?: string;
 }) {
     const value = evidence.trim();
-    if (!value) {
-        return (
-            <Chip intent="warning" size="sm">
-                Missing
-            </Chip>
-        );
-    }
+    if (!value) return <span>–</span>;
 
     const invoiceLinks = supplierInvoiceLinks(value);
     if (invoiceLinks.length > 1) {

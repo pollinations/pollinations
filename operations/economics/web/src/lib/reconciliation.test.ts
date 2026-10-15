@@ -8,6 +8,7 @@ import type {
 import { parsePrivateConfig } from "./pipeContracts";
 import { missingUsageCosts, reconciliationState } from "./reconciliation";
 import { monthlyTrends } from "./trends";
+import { unitEconomicsReport } from "./unitEconomics";
 
 const now = new Date("2026-10-14T12:00:00Z");
 const usage = (vendor: string): OpPollenRow => ({
@@ -176,6 +177,76 @@ describe("shared reconciliation", () => {
                 "Bank transaction document is missing or not linked.",
             ]),
         );
+    });
+    it("keeps a retained invoice's unpaid balance open without claiming the document is missing", () => {
+        const state = reconciliationState(
+            {
+                opTransactions: [
+                    {
+                        entry_id: "rent-bank",
+                        kind: "transaction",
+                        source: "wise",
+                        date: "2026-07-08",
+                        vendor: "gaswerksiedlung",
+                        category: "office",
+                        amount: -1166.83,
+                        currency: "EUR",
+                        description: "Studio rent",
+                        evidence:
+                            "evidence_type=supplier_document invoice=GWS-JUNE https://drive.google.com/file/d/invoice/view; EUR47.78 underpayment unresolved",
+                        recorded_at: "2026-10-14 00:00:00",
+                    },
+                ],
+            },
+            now,
+        );
+        const issue = state.issues.find(
+            (r) => r.vendor === "gaswerksiedlung" && r.month === "2026-07",
+        );
+        expect(issue?.types).toEqual(["quality"]);
+        expect(issue?.messages).toContain(
+            "Invoice retained; payment or balance still needs reconciliation.",
+        );
+        expect(issue?.messages).not.toContain(
+            "Bank transaction document is missing or not linked.",
+        );
+        expect(issue?.invoices).toContain(
+            "https://drive.google.com/file/d/invoice/view",
+        );
+    });
+    it.each([
+        "https://drive.google.com/file/d/linked-original/view",
+        "evidence_type=payment_statement https://drive.google.com/file/d/statement/view",
+    ])("distinguishes linked sources from a validated supplier invoice: %s", (evidence) => {
+        const state = reconciliationState(
+            {
+                opTransactions: [
+                    {
+                        entry_id: "linked-bank",
+                        kind: "transaction",
+                        source: "wise",
+                        date: "2026-09-08",
+                        vendor: "buffer",
+                        category: "operations",
+                        amount: -24,
+                        currency: "USD",
+                        description: "Buffer",
+                        evidence,
+                        recorded_at: "2026-10-14 00:00:00",
+                    },
+                ],
+            },
+            now,
+        );
+        const issue = state.issues.find(
+            (row) => row.vendor === "buffer" && row.month === "2026-09",
+        );
+        expect(issue?.types).toEqual(["documents"]);
+        expect(issue?.messages).toEqual([
+            "A source is linked; validate the supplier invoice and its payment match.",
+        ]);
+        expect(issue?.evidence).toContain(evidence);
+        expect(issue?.invoices).toBeUndefined();
     });
     it("does not call the current month missing full-month usage", () => {
         const state = reconciliationState(
@@ -494,4 +565,120 @@ it("shows an explicitly verified archived invoice while retaining the cost gap",
     );
     expect(issue?.invoices).toEqual([invoice]);
     expect(missingUsageCosts(data).some((r) => r.vendor === "aws")).toBe(true);
+});
+
+describe("centralized account and cost checks", () => {
+    it("clears stale balance and unknown expiry messages after recording a current approved snapshot", () => {
+        const snapshot = {
+            ...cost("aws", "balance"),
+            paid: 0,
+            credit: 100,
+            end: "",
+            resource_sku: "current-balance",
+        };
+        const messages = (row: VendorLedgerRow) =>
+            reconciliationState({ vendorLedger: [row] }, now)
+                .issues.filter(
+                    (issue) =>
+                        issue.vendor === "aws" && issue.month === "2026-10",
+                )
+                .flatMap((issue) => issue.messages)
+                .join(" ");
+        expect(messages(snapshot)).toContain(
+            "refresh the outdated balance snapshot",
+        );
+        expect(messages(snapshot)).toContain("confirm the credit expiry");
+        const resolved = messages({
+            ...snapshot,
+            start: "2026-10-14",
+            resource_sku: "current-balance-expiry-assumed",
+        });
+        expect(resolved).not.toContain("refresh the outdated balance snapshot");
+        expect(resolved).not.toContain("confirm the credit expiry");
+    });
+
+    it("moves material provider/meter differences to reconciliation and clears them when matched", () => {
+        const issues = (paid: number) =>
+            reconciliationState(
+                {
+                    opPollen: [usage("replicate")],
+                    vendorLedger: [{ ...cost("replicate"), paid }],
+                },
+                now,
+            ).issues.filter(
+                (issue) =>
+                    issue.vendor === "replicate" && issue.month === "2026-09",
+            );
+        const mismatch = issues(-500).find((issue) =>
+            issue.messages.some((message) =>
+                message.includes("Pollen cost meter differ"),
+            ),
+        );
+        expect(mismatch?.affects).toContain("inference");
+        expect(mismatch?.amountUsd).toBe(430);
+        expect(
+            issues(-70)
+                .flatMap((issue) => issue.messages)
+                .join(" "),
+        ).not.toContain("Pollen cost meter differ");
+    });
+});
+
+it("exposes the exact result blockers once, separately from model and document cleanup", () => {
+    const data: Data = {
+        vendorLedger: [
+            { ...cost("openai"), paid: -0.66, model: "unknown-name" },
+        ],
+    };
+    const check = unitEconomicsReport(data, "2026-09", "inference");
+    const issue = reconciliationState(data, now).issues.find(
+        (row) => row.vendor === "openai" && row.month === "2026-09",
+    );
+    expect(issue?.types).toContain("totals");
+    expect(issue?.blockingMessages).toEqual(
+        check.blockers.map((b) => b.message),
+    );
+    expect(issue?.affects).toEqual(
+        expect.arrayContaining(["inference", "vendors"]),
+    );
+    expect(
+        issue?.messages.filter(
+            (message) => message === check.blockers[0].message,
+        ),
+    ).toHaveLength(1);
+    const resolved = {
+        ...data,
+        opPollen: [
+            {
+                ...usage("openai"),
+                price_paid: 0,
+                cost_paid: 0,
+                requests_paid: 0,
+            },
+        ],
+    };
+    expect(
+        unitEconomicsReport(resolved, "2026-09", "inference").fullCostResultUsd,
+    ).toBe(-0.66);
+    const remaining = reconciliationState(resolved, now).issues.find(
+        (row) => row.vendor === "openai" && row.month === "2026-09",
+    );
+    expect(remaining?.types).not.toContain("totals");
+    expect(remaining?.types).toContain("models");
+});
+
+it("keeps missing usage in reconciliation when recorded-figures results are provisional", () => {
+    const data: Data = {
+        vendorLedger: [cost("google"), { ...cost("openai"), paid: -0.19 }],
+        opPollen: [usage("google")],
+    };
+    const report = unitEconomicsReport(data, "2026-09", "inference");
+    expect(report.provisional).toBe(true);
+    const issue = reconciliationState(data, now).issues.find(
+        (row) => row.vendor === "openai" && row.month === "2026-09",
+    );
+    expect(issue?.types).toContain("provisional");
+    expect(issue?.types).not.toContain("totals");
+    expect(issue?.messages).toContain(report.blockers[0].message);
+    expect(issue?.blockingMessages).toBeUndefined();
 });

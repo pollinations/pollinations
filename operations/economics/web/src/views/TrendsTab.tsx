@@ -1,50 +1,83 @@
-import { Button, Heading, Surface } from "@pollinations/ui";
-import { useMemo, useState } from "react";
-import { fmtUsd as axisUsd } from "../lib/format";
+import { Heading, Surface, TabButton } from "@pollinations/ui";
+import { type ReactNode, useMemo, useState } from "react";
+import { DataTable } from "../components/DataTable";
+import { FilterMultiSelect } from "../components/Filters";
+import { StatCards } from "../components/StatCards";
+import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
+import { fmtUsd as axisUsd, fmtNumber, fmtPeriod } from "../lib/format";
+import { monthLabel, monthName, monthShift } from "../lib/months";
+import { providerAccountBalanceRows } from "../lib/providerBalances";
 import {
-    latestClosedMonth,
-    monthName,
-    monthShift,
-    yearsOf,
-} from "../lib/months";
-import { monthlyTrends, type TrendMonth, type TrendScope } from "../lib/trends";
+    monthlyPollenTrends,
+    monthlyTrends,
+    type PollenTrendMonth,
+    type TrendMonth,
+    trendPeriod,
+} from "../lib/trends";
 import type { Data } from "../types";
 import { fmtRunwayUsd as usd } from "./RunwayTab";
 
+type ExpenseCategory = (typeof EXPENSE_CATEGORY_ORDER)[number];
+type TrendRow = TrendMonth &
+    PollenTrendMonth & {
+        apiResult: number | null;
+        apiFullResult: number | null;
+    };
 type Series = {
     key:
         | "revenue"
         | "paidCost"
-        | "fullCost"
         | "result"
         | "fullResult"
         | "credits"
-        | "computeCost"
-        | "infrastructureCost"
-        | "operationsCost";
+        | "paidPollen"
+        | "questPollen"
+        | "questCash"
+        | "questCredits"
+        | ExpenseCategory;
     label: string;
     color: string;
     dashed?: boolean;
+    adjustedKey?: "adjustedResult" | "adjustedFullResult";
 };
-const COST_SERIES: Series[] = [
-    { key: "revenue", label: "Revenue after deductions", color: "#60a5fa" },
-    { key: "fullCost", label: "Full costs", color: "#fbbf24", dashed: true },
-    { key: "paidCost", label: "Costs after credits", color: "#f472b6" },
+const USAGE_SERIES: Series[] = [
+    { key: "paidPollen", label: "Paid used", color: "#60a5fa" },
+    { key: "questPollen", label: "Quest used", color: "#2dd4bf", dashed: true },
 ];
-const EXPENSE_SERIES: Series[] = [
-    { key: "computeCost", label: "Compute", color: "#fbbf24" },
+const QUEST_FUNDING_SERIES: Series[] = [
+    { key: "questCash", label: "Cash-funded", color: "#f472b6" },
     {
-        key: "infrastructureCost",
-        label: "Infrastructure",
-        color: "#2dd4bf",
+        key: "questCredits",
+        label: "Credit-funded",
+        color: "#c084fc",
         dashed: true,
     },
-    { key: "operationsCost", label: "Other operations", color: "#c084fc" },
 ];
+const EXPENSE_COLORS = [
+    "#fbbf24",
+    "#2dd4bf",
+    "#c084fc",
+    "#fb7185",
+    "#60a5fa",
+    "#fb923c",
+    "#a3e635",
+    "#e879f9",
+];
+const EXPENSE_SERIES: Series[] = EXPENSE_CATEGORY_ORDER.map((key, i) => ({
+    key,
+    label: categoryLabel(key),
+    color: EXPENSE_COLORS[i],
+}));
 const RESULT_SERIES: Series[] = [
-    { key: "result", label: "With credits", color: "#60a5fa" },
+    {
+        key: "result",
+        label: "With credits",
+        color: "#60a5fa",
+        adjustedKey: "adjustedResult",
+    },
     {
         key: "fullResult",
+        adjustedKey: "adjustedFullResult",
         label: "Without credits",
         color: "#fbbf24",
         dashed: true,
@@ -62,21 +95,39 @@ function TrendChart({
     kind = "line",
     activeMonth,
     onInspect,
+    controls,
+    unit = "USD",
+    note,
+    creditKey,
 }: {
     title: string;
-    rows: TrendMonth[];
+    rows: TrendRow[];
     series: Series[];
     kind?: "line" | "bar" | "stacked";
     activeMonth: string | null;
     onInspect: (month: string | null) => void;
+    controls?: ReactNode;
+    unit?: "USD" | "Pollen";
+    note?: string;
+    creditKey?: "credits" | "questCredits";
 }) {
     const active =
         rows.find((row) => row.month === activeMonth) ??
         [...rows]
             .reverse()
             .find((row) => series.some((s) => row[s.key] != null));
+    const format = unit === "Pollen" ? fmtNumber : usd;
+    const funded = active && creditKey ? active[creditKey] : null;
+    const total =
+        active && series.every((s) => active[s.key] != null)
+            ? series.reduce((sum, s) => sum + (active[s.key] ?? 0), 0)
+            : null;
     const values = series.flatMap((s) =>
-        rows.flatMap((r) => (r[s.key] == null ? [] : [r[s.key] as number])),
+        rows.flatMap((r) =>
+            [r[s.key], s.adjustedKey ? r[s.adjustedKey] : null].filter(
+                (value): value is number => value != null,
+            ),
+        ),
     );
     if (kind === "stacked") {
         for (const row of rows) {
@@ -114,12 +165,14 @@ function TrendChart({
         <Surface className="min-w-0 p-4 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <Heading as="h3">{title}</Heading>
+                {controls}
                 <span className="text-xs text-theme-text-soft">
-                    {active
-                        ? `${monthName(active.month)}${active.provisional ? "*" : ""}`
-                        : "USD"}
+                    {active ? `${monthName(active.month)} · ${unit}` : unit}
                 </span>
             </div>
+            {note && (
+                <p className="mt-1 text-xs text-theme-text-soft">{note}</p>
+            )}
             <div
                 className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs tabular-nums"
                 aria-live="polite"
@@ -141,15 +194,34 @@ function TrendChart({
                             />
                         </svg>
                         <span className="text-theme-text-soft">{s.label}</span>
-                        <strong>{usd(active?.[s.key])}</strong>
+                        <strong>{format(active?.[s.key])}</strong>
+                        {s.adjustedKey && active?.[s.adjustedKey] != null && (
+                            <span>◇ {usd(active[s.adjustedKey])}</span>
+                        )}
                     </span>
                 ))}
+                {kind === "bar" &&
+                    rows.some((row) => row.oneOffFraud != null) && (
+                        <span className="text-theme-text-soft">
+                            ◇ Excluding identified fraud costs
+                        </span>
+                    )}
+                {funded != null &&
+                    total != null &&
+                    total > 0 &&
+                    funded >= 0 &&
+                    funded <= total && (
+                        <strong>
+                            {Math.round((100 * funded) / total)}% funded by
+                            credits
+                        </strong>
+                    )}
             </div>
             <div className="mt-2 overflow-x-auto">
                 <svg
                     viewBox="0 0 620 246"
-                    className="w-full min-w-[520px]"
-                    aria-label={`${title}. USD by month; exact values in Monthly details.`}
+                    className="w-full"
+                    aria-label={`${title}. ${unit} by month; exact values in Monthly details.`}
                 >
                     <title>{title}</title>
                     {ticks.map((value) => (
@@ -169,7 +241,9 @@ function TrendChart({
                                 fill="currentColor"
                                 fontSize="12"
                             >
-                                {axisUsd(value)}
+                                {unit === "Pollen"
+                                    ? fmtNumber(value)
+                                    : axisUsd(value)}
                             </text>
                         </g>
                     ))}
@@ -193,7 +267,6 @@ function TrendChart({
                                 fontSize="12"
                             >
                                 {monthName(row.month).slice(0, 3)}
-                                {row.provisional ? "*" : ""}
                             </text>
                         </g>
                     ))}
@@ -203,7 +276,6 @@ function TrendChart({
                                 const value = row[s.key],
                                     previous = rows[i - 1];
                                 if (value == null) return null;
-                                const muted = row.provisional ? 0.65 : 1;
                                 if (kind === "line")
                                     return (
                                         <g key={row.month}>
@@ -219,12 +291,6 @@ function TrendChart({
                                                     y2={y(value)}
                                                     stroke={s.color}
                                                     strokeWidth="2.5"
-                                                    opacity={
-                                                        row.provisional ||
-                                                        previous.provisional
-                                                            ? 0.65
-                                                            : 1
-                                                    }
                                                     strokeDasharray={
                                                         s.dashed
                                                             ? "6 4"
@@ -241,7 +307,7 @@ function TrendChart({
                                                         : 3
                                                 }
                                                 fill={s.color}
-                                                opacity={muted}
+                                                opacity={1}
                                             />
                                         </g>
                                     );
@@ -265,32 +331,50 @@ function TrendChart({
                                         : x(i) +
                                           (j - series.length / 2) *
                                               (barWidth + 2);
+                                const adjusted = s.adjustedKey
+                                    ? row[s.adjustedKey]
+                                    : null;
                                 return (
-                                    <rect
-                                        key={row.month}
-                                        x={left}
-                                        y={Math.min(y(base), y(base + value))}
-                                        width={
-                                            kind === "stacked"
-                                                ? barWidth * 2
-                                                : barWidth
-                                        }
-                                        height={Math.max(
-                                            1,
-                                            Math.abs(y(base + value) - y(base)),
+                                    <g key={row.month}>
+                                        <rect
+                                            x={left}
+                                            y={Math.min(
+                                                y(base),
+                                                y(base + value),
+                                            )}
+                                            width={
+                                                kind === "stacked"
+                                                    ? barWidth * 2
+                                                    : barWidth
+                                            }
+                                            height={Math.max(
+                                                1,
+                                                Math.abs(
+                                                    y(base + value) - y(base),
+                                                ),
+                                            )}
+                                            fill={
+                                                s.dashed && kind === "bar"
+                                                    ? "none"
+                                                    : s.color
+                                            }
+                                            stroke={s.color}
+                                            strokeWidth="1.5"
+                                            strokeDasharray={
+                                                s.dashed ? "4 2" : undefined
+                                            }
+                                            opacity={1}
+                                        />
+                                        {kind === "bar" && adjusted != null && (
+                                            <path
+                                                d={`M ${left + barWidth / 2} ${y(adjusted) - 5} l 5 5 l -5 5 l -5 -5 Z`}
+                                                fill={s.color}
+                                                stroke="var(--color-surface-opaque, #242321)"
+                                                strokeWidth="1.5"
+                                                aria-label={`${monthName(row.month)} ${s.label}, excluding identified fraud costs: ${usd(adjusted)}`}
+                                            />
                                         )}
-                                        fill={
-                                            s.dashed && kind === "bar"
-                                                ? "none"
-                                                : s.color
-                                        }
-                                        stroke={s.color}
-                                        strokeWidth="1.5"
-                                        strokeDasharray={
-                                            s.dashed ? "4 2" : undefined
-                                        }
-                                        opacity={muted}
-                                    />
+                                    </g>
                                 );
                             })}
                         </g>
@@ -308,9 +392,7 @@ function TrendChart({
                                 aria-label={`Inspect ${monthName(row.month)} ${row.month.slice(0, 4)}`}
                                 className="block h-full w-full cursor-crosshair border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-1 focus-visible:outline-current"
                                 onMouseEnter={() => onInspect(row.month)}
-                                onMouseLeave={() => onInspect(null)}
                                 onFocus={() => onInspect(row.month)}
-                                onBlur={() => onInspect(null)}
                                 onClick={() => onInspect(row.month)}
                             />
                         </foreignObject>
@@ -323,183 +405,353 @@ function TrendChart({
 
 export function TrendsTab({
     data,
-    year = "2026",
-    onYearChange,
+    period,
+    onPeriodChange,
 }: {
     data: Data;
-    year?: string;
-    onYearChange?: (year: string) => void;
+    period: 6 | 12;
+    onPeriodChange: (period: 6 | 12) => void;
 }) {
-    const [scope, setScope] = useState<TrendScope>("company");
-    const [fullYear, setFullYear] = useState(true);
+    const [categories, setCategories] = useState<string[]>([
+        "compute",
+        "infrastructure",
+        "development",
+    ]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
-    const { months } = useMemo(() => monthlyTrends(data, scope), [data, scope]);
-    const yearRows = months.filter((row) => row.month.startsWith(year));
-    const end = latestClosedMonth(yearRows.map((row) => row.month));
-    const rows = fullYear
-        ? yearRows
-        : yearRows.filter(
-              (row) =>
-                  end && row.month >= monthShift(end, -5) && row.month <= end,
-          );
-    const label = scope === "compute" ? "API + GPU" : "Whole company";
-    const chartProps = { rows, activeMonth, onInspect: setActiveMonth };
-    const details = [
+    const { months, balances } = useMemo(() => {
+        const company = monthlyTrends(data, "company").months;
+        const api = monthlyTrends(data, "compute").months;
+        const pollen = monthlyPollenTrends(
+            data,
+            company.map((row) => row.month),
+        );
+        return {
+            months: company.map(
+                (row, i): TrendRow => ({
+                    ...row,
+                    ...pollen[i],
+                    apiResult: api[i].result,
+                    apiFullResult: api[i].fullResult,
+                }),
+            ),
+            balances: providerAccountBalanceRows(data, new Date()).filter(
+                (row) => row.active && row.creditBalanceUsd != null,
+            ),
+        };
+    }, [data]);
+    const { start, end } = trendPeriod(period);
+    const rows = months.filter((row) => row.month >= start && row.month <= end);
+    const selected =
+        rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
+    const previous = months.find(
+        (row) => row.month === monthShift(selected?.month ?? end, -1),
+    );
+    const chartProps = {
+        rows,
+        activeMonth: selected?.month ?? null,
+        onInspect: setActiveMonth,
+    };
+    const selectedExpenses = EXPENSE_SERIES.filter(
+        (s) => !categories.length || categories.includes(s.key),
+    );
+    const previousValue = (key: "result" | "adjustedResult" | "fullResult") =>
+        previous
+            ? `${monthName(previous.month)}: ${usd(previous[key])}`
+            : "No earlier month";
+    const wallet = data.userBalances?.[0];
+    const positiveBalances = balances.filter(
+        (row) => (row.creditBalanceUsd ?? 0) > 0,
+    );
+    const creditTotal = balances.length
+        ? positiveBalances.reduce(
+              (sum, row) => sum + (row.creditBalanceUsd ?? 0),
+              0,
+          )
+        : null;
+    const details: [
+        keyof Omit<
+            TrendRow,
+            "month" | "issues" | "provisional" | "costIncomplete"
+        >,
+        string,
+    ][] = [
         ["gross", "Gross sales"],
         ["deductions", "Deductions"],
         ["revenue", "Revenue after deductions"],
-        ["computeCost", "Compute"],
-        ["infrastructureCost", "Infrastructure"],
-        ["operationsCost", "Other operations"],
-        ["paidCost", "Cash-funded costs"],
+        ...selectedExpenses.map((s): [ExpenseCategory, string] => [
+            s.key as ExpenseCategory,
+            s.label,
+        ]),
+        ["paidCost", "Costs after credits"],
         ["credits", "Credits used"],
         ["fullCost", "Full costs"],
-        ["result", "Result with credits"],
-        ["fullResult", "Result without credits"],
-    ] as const;
+        ["result", "Actual result with credits"],
+        ["fullResult", "Actual result without credits"],
+        ["oneOffFraud", "Identified fraud costs excluded"],
+        ["adjustedResult", "Excluding fraud · with credits"],
+        ["adjustedFullResult", "Excluding fraud · without credits"],
+        ["apiResult", "API + GPU margin with credits"],
+        ["apiFullResult", "API + GPU margin without credits"],
+        ["paidPollen", "Paid used · Pollen"],
+        ["questPollen", "Quest used · Pollen"],
+        ["questCash", "Quest cost · cash"],
+        ["questCredits", "Quest cost · credits"],
+        ["unallocatedCost", "Compute cost not allocated to Paid / Quest"],
+    ];
     return (
         <section className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
-                <select
-                    aria-label="Year"
-                    value={year}
-                    onChange={(event) => onYearChange?.(event.target.value)}
-                    className="rounded-full border border-theme-border bg-surface-opaque px-3 py-2 text-sm font-semibold text-theme-text-strong"
-                >
-                    {yearsOf(months.map((row) => row.month)).map((value) => (
-                        <option key={value} value={value}>
-                            {value}
-                        </option>
-                    ))}
-                </select>
-                <fieldset className="flex gap-2" aria-label="Cost scope">
-                    {(
-                        [
-                            ["compute", "API + GPU"],
-                            ["company", "Whole company"],
-                        ] as const
-                    ).map(([value, name]) => (
-                        <Button
+                <fieldset className="flex gap-1.5" aria-label="Chart period">
+                    {([6, 12] as const).map((value) => (
+                        <TabButton
                             key={value}
-                            size="sm"
-                            intent={scope === value ? "brand" : "neutral"}
-                            aria-pressed={scope === value}
-                            onClick={() => setScope(value)}
+                            active={period === value}
+                            onClick={() => {
+                                setActiveMonth(null);
+                                onPeriodChange(value);
+                            }}
+                            size="md"
+                            variant="soft"
                         >
-                            {name}
-                        </Button>
+                            {value} months
+                        </TabButton>
                     ))}
                 </fieldset>
-                <fieldset className="flex gap-2" aria-label="Chart range">
-                    <Button
-                        size="sm"
-                        intent={fullYear ? "neutral" : "brand"}
-                        aria-pressed={!fullYear}
-                        onClick={() => setFullYear(false)}
-                    >
-                        Recent 6 months
-                    </Button>
-                    <Button
-                        size="sm"
-                        intent={fullYear ? "brand" : "neutral"}
-                        aria-pressed={fullYear}
-                        onClick={() => setFullYear(true)}
-                    >
-                        Full year
-                    </Button>
-                </fieldset>
+                <span className="text-xs text-theme-text-soft">
+                    {monthLabel(start)} – {monthLabel(end)}
+                </span>
             </div>
-            <div className="grid min-w-0 gap-5 2xl:grid-cols-2">
-                <TrendChart
-                    title="Revenue versus costs"
-                    series={COST_SERIES}
-                    {...chartProps}
-                />
+            <div className="flex items-baseline justify-between gap-3">
+                <Heading as="h2">Company performance</Heading>
+                <span className="text-xs text-theme-text-soft">
+                    {monthName(selected?.month ?? end)} · recorded results
+                </span>
+            </div>
+            <StatCards
+                items={[
+                    {
+                        label: "Actual · with credits",
+                        value: usd(selected?.result),
+                        detail: previousValue("result"),
+                        tone:
+                            selected?.result == null
+                                ? "base"
+                                : selected.result < 0
+                                  ? "neg"
+                                  : "pos",
+                    },
+                    {
+                        label: "Excluding identified fraud",
+                        value: usd(selected?.adjustedResult),
+                        detail:
+                            selected?.oneOffFraud == null
+                                ? "No reviewed adjustment"
+                                : `${usd(selected.oneOffFraud)} excluded · with credits`,
+                    },
+                    {
+                        label: "Actual · without credits",
+                        value: usd(selected?.fullResult),
+                        detail: previousValue("fullResult"),
+                        tone:
+                            selected?.fullResult == null
+                                ? "base"
+                                : selected.fullResult < 0
+                                  ? "neg"
+                                  : "pos",
+                    },
+                    {
+                        label: "API + GPU margin",
+                        value: usd(selected?.apiResult),
+                        detail: `With credits · ${usd(selected?.apiFullResult)} without`,
+                    },
+                ]}
+            />
+            <TrendChart
+                title="Monthly result"
+                series={RESULT_SERIES}
+                kind="bar"
+                {...chartProps}
+            />
+            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                 <TrendChart
                     title="Expenses before credits"
-                    series={
-                        scope === "compute"
-                            ? EXPENSE_SERIES.slice(0, 1)
-                            : EXPENSE_SERIES
+                    series={selectedExpenses}
+                    controls={
+                        <FilterMultiSelect
+                            placeholder="Expense categories"
+                            options={EXPENSE_CATEGORY_ORDER.map((value) => ({
+                                value,
+                                label: categoryLabel(value),
+                            }))}
+                            value={categories}
+                            onChange={setCategories}
+                        />
                     }
-                    {...chartProps}
-                />
-                <TrendChart
-                    title="Monthly result"
-                    series={RESULT_SERIES}
-                    kind="bar"
                     {...chartProps}
                 />
                 <TrendChart
                     title="Cost funding"
                     series={FUNDING_SERIES}
                     kind="stacked"
+                    creditKey="credits"
                     {...chartProps}
                 />
+            </div>
+            <Heading as="h2">Paid & Quest activity</Heading>
+            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+                <TrendChart
+                    title="Pollen consumed"
+                    note="Whole platform · usage, not sales"
+                    series={USAGE_SERIES}
+                    unit="Pollen"
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Quest serving costs"
+                    note="Allocated by usage · already included in Compute"
+                    series={QUEST_FUNDING_SERIES}
+                    kind="stacked"
+                    creditKey="questCredits"
+                    {...chartProps}
+                />
+            </div>
+            <Heading as="h2">Latest recorded balances</Heading>
+            <StatCards
+                items={[
+                    {
+                        label: "Recorded provider credits",
+                        value: usd(creditTotal),
+                        detail: "Separate provider pools · dates and limits below",
+                    },
+                    {
+                        label: "Unspent Paid Pollen",
+                        value: fmtNumber(wallet?.paid_balance),
+                        detail: wallet
+                            ? `Pollen · snapshot ${fmtPeriod(wallet.synced_at.slice(0, 10))}`
+                            : "No wallet snapshot",
+                    },
+                    {
+                        label: "Unspent Quest Pollen",
+                        value: fmtNumber(wallet?.quest_balance),
+                        detail: wallet
+                            ? `Pollen · snapshot ${fmtPeriod(wallet.synced_at.slice(0, 10))}`
+                            : "No wallet snapshot",
+                    },
+                ]}
+            />
+            <details className="text-sm">
+                <summary className="cursor-pointer font-semibold">
+                    Provider credit dates & limits
+                </summary>
+                <div className="mt-3 overflow-x-auto">
+                    <DataTable>
+                        <caption className="mb-2 text-left text-xs text-theme-text-soft">
+                            Recorded balances, not a single spendable budget.
+                            Expiry and provider restrictions apply.
+                        </caption>
+                        <thead>
+                            <tr>
+                                {[
+                                    "Provider / account",
+                                    "Recorded credit",
+                                    "Checked",
+                                    "Expiry",
+                                ].map((label) => (
+                                    <th
+                                        key={label}
+                                        className="px-3 py-2 text-left"
+                                    >
+                                        {label}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {positiveBalances.map((row) => (
+                                <tr
+                                    key={`${row.vendor}:${row.accountId}`}
+                                    className="border-t"
+                                >
+                                    <th
+                                        scope="row"
+                                        className="px-3 py-2 text-left"
+                                    >
+                                        {row.label} · {row.accountLabel}
+                                    </th>
+                                    <td className="whitespace-nowrap px-3 py-2">
+                                        {usd(row.creditBalanceUsd)}
+                                    </td>
+                                    <td className="whitespace-nowrap px-3 py-2">
+                                        {fmtPeriod(row.balanceAsOf)}
+                                        {row.balanceStatus === "stale"
+                                            ? " · stale"
+                                            : ""}
+                                    </td>
+                                    <td className="px-3 py-2">
+                                        {row.expiryAssumed
+                                            ? "Ignored for planning"
+                                            : row.creditExpiry
+                                              ? fmtPeriod(row.creditExpiry)
+                                              : row.creditTermsKnown
+                                                ? "No expiry recorded"
+                                                : "Unverified"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </DataTable>
+                </div>
+            </details>
+            <div className="flex flex-wrap justify-between gap-2 border-t pt-4 text-sm text-theme-text-soft">
+                <span>
+                    Return from Quest rewards · contributions, returning users,
+                    first purchases
+                </span>
+                <span>Not measured yet</span>
             </div>
             <details className="text-sm">
                 <summary className="cursor-pointer font-semibold">
                     Monthly details
                 </summary>
                 <div className="mt-3 overflow-x-auto">
-                    <table className="w-full text-right tabular-nums">
+                    <DataTable className="text-right tabular-nums">
                         <caption className="mb-2 text-left">
-                            {label} · USD · * provisional; gaps mean missing
-                            data
+                            Company · USD, except Pollen usage
                         </caption>
                         <thead>
                             <tr>
                                 <th className="px-3 py-2 text-left">Month</th>
-                                {details
-                                    .filter(
-                                        ([key]) =>
-                                            scope === "company" ||
-                                            ![
-                                                "infrastructureCost",
-                                                "operationsCost",
-                                            ].includes(key),
-                                    )
-                                    .map(([key, heading]) => (
-                                        <th key={key} className="px-3 py-2">
-                                            {heading}
-                                        </th>
-                                    ))}
+                                {details.map(([key, heading]) => (
+                                    <th key={key} className="px-3 py-2">
+                                        {heading}
+                                    </th>
+                                ))}
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map((row) => (
-                                <tr
-                                    key={row.month}
-                                    className="border-t border-theme-border"
-                                >
+                                <tr key={row.month} className="border-t">
                                     <th
                                         scope="row"
                                         className="whitespace-nowrap px-3 py-2 text-left"
                                     >
                                         {monthName(row.month)}
-                                        {row.provisional ? "*" : ""}
                                     </th>
-                                    {details
-                                        .filter(
-                                            ([key]) =>
-                                                scope === "company" ||
-                                                ![
-                                                    "infrastructureCost",
-                                                    "operationsCost",
-                                                ].includes(key),
-                                        )
-                                        .map(([key]) => (
-                                            <td
-                                                key={key}
-                                                className="whitespace-nowrap px-3 py-2"
-                                            >
-                                                {usd(row[key])}
-                                            </td>
-                                        ))}
+                                    {details.map(([key]) => (
+                                        <td
+                                            key={key}
+                                            className="whitespace-nowrap px-3 py-2"
+                                        >
+                                            {key === "paidPollen" ||
+                                            key === "questPollen"
+                                                ? fmtNumber(row[key])
+                                                : usd(row[key])}
+                                        </td>
+                                    ))}
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
+                    </DataTable>
                 </div>
             </details>
         </section>

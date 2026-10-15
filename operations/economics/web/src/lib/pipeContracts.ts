@@ -202,6 +202,38 @@ export function parsePrivateConfig(
     ) {
         throw new Error("economics_private_config_api.config: invalid shape");
     }
+    const adjustments = config.salesAdjustments ?? [];
+    const adjustmentKeys = new Set<string>();
+    if (
+        !Array.isArray(adjustments) ||
+        adjustments.some((item) => {
+            if (item == null) return true;
+            const key = `${item.month}|${item.revenue_stream}|${item.currency}`;
+            const duplicate = adjustmentKeys.has(key);
+            adjustmentKeys.add(key);
+            return (
+                duplicate ||
+                !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) ||
+                !["pollen", "kofi"].includes(item.revenue_stream) ||
+                !["USD", "EUR"].includes(item.currency) ||
+                [item.refunds, item.reversals, item.stripe_fees].some(
+                    (amount) =>
+                        typeof amount !== "number" ||
+                        !Number.isFinite(amount) ||
+                        amount < 0,
+                ) ||
+                !Array.isArray(item.evidence) ||
+                !item.evidence.length ||
+                item.evidence.some(
+                    (link: unknown) =>
+                        typeof link !== "string" || !hasArchivedEvidence(link),
+                )
+            );
+        })
+    )
+        throw new Error(
+            "economics_private_config_api.config: invalid sales adjustments",
+        );
     const archiveChecks = config.reconciliation.archiveChecks ?? [];
     if (
         !Array.isArray(archiveChecks) ||

@@ -1,5 +1,4 @@
 import {
-    cn,
     ScrollArea,
     TableBody,
     TableCell,
@@ -11,7 +10,6 @@ import {
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -80,24 +78,15 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Vendor
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={3} align="center">
                             Usage
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={3} align="center">
                             Cost
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("costPerGpuHour")}
                         >
                             <HeaderHint
@@ -115,7 +104,6 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                     <TableRow>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("gpuHours")}
                         >
                             GPU h
@@ -134,7 +122,6 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("paidCostUsd")}
                         >
                             Cash
@@ -187,11 +174,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                                 )}
                             </TableCell>
                             <TableCell>{row.vendor}</TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtNumber(row.gpuHours)}
                             </TableCell>
                             <TableCell align="right" numeric>
@@ -200,11 +183,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                             <TableCell align="right" numeric>
                                 {fmtNumber(row.networkGb)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtUsd(row.paidCostUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
@@ -213,11 +192,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                             <TableCell align="right" numeric>
                                 {fmtUsd(row.totalCostUsd)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtUsd4(row.costPerGpuHour)}
                             </TableCell>
                         </TableRow>
@@ -373,25 +348,13 @@ export function GpuTab({
                             >
                                 GPUs
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={2} align="center">
                                 Pollen
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={3} align="center">
                                 Cost
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={2} align="center">
                                 <HeaderHint
                                     hint={{
                                         meaning:
@@ -402,11 +365,7 @@ export function GpuTab({
                                     Current · with credits
                                 </HeaderHint>
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={2}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={2} align="center">
                                 <HeaderHint
                                     hint={{
                                         meaning:
@@ -422,7 +381,6 @@ export function GpuTab({
                         <TableRow>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("retainedUsd")}
                             >
                                 Retained Paid
@@ -435,7 +393,6 @@ export function GpuTab({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("paidCostUsd")}
                             >
                                 Cash
@@ -462,7 +419,6 @@ export function GpuTab({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("currentResultUsd")}
                             >
                                 Result
@@ -475,7 +431,6 @@ export function GpuTab({
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("fullCostResultUsd")}
                             >
                                 Result
@@ -494,7 +449,7 @@ export function GpuTab({
                                 const isExpanded = expanded.has(row.key);
                                 return (
                                     <Fragment key={key}>
-                                        <TableRow className="bg-theme-bg-subtle font-semibold">
+                                        <TableRow className="font-semibold">
                                             <TableCell>
                                                 <TableDisclosureButton
                                                     expanded={isExpanded}
@@ -513,21 +468,13 @@ export function GpuTab({
                                             <TableCell align="right" numeric>
                                                 {fmtNumber(row.gpuCount)}
                                             </TableCell>
-                                            <TableCell
-                                                align="right"
-                                                numeric
-                                                className={GROUP_BORDER}
-                                            >
+                                            <TableCell align="right" numeric>
                                                 {fmtUsd(row.retainedUsd)}
                                             </TableCell>
                                             <TableCell align="right" numeric>
                                                 {fmtUsd(row.questUsd)}
                                             </TableCell>
-                                            <TableCell
-                                                align="right"
-                                                numeric
-                                                className={GROUP_BORDER}
-                                            >
+                                            <TableCell align="right" numeric>
                                                 {fmtUsd(
                                                     row.flags.includes(
                                                         "missing GPU cost",
@@ -557,11 +504,8 @@ export function GpuTab({
                                             <TableCell
                                                 align="right"
                                                 numeric
-                                                className={cn(
-                                                    GROUP_BORDER,
-                                                    signedToneOrSoft(
-                                                        row.currentResultUsd,
-                                                    ),
+                                                className={signedToneOrSoft(
+                                                    row.currentResultUsd,
                                                 )}
                                             >
                                                 {fmtSignedUsd(
@@ -582,11 +526,8 @@ export function GpuTab({
                                             <TableCell
                                                 align="right"
                                                 numeric
-                                                className={cn(
-                                                    GROUP_BORDER,
-                                                    signedToneOrSoft(
-                                                        row.fullCostResultUsd,
-                                                    ),
+                                                className={signedToneOrSoft(
+                                                    row.fullCostResultUsd,
                                                 )}
                                             >
                                                 {fmtSignedUsd(
@@ -610,7 +551,7 @@ export function GpuTab({
                                                 <TableRow>
                                                     <TableCell
                                                         colSpan={12}
-                                                        className="bg-theme-bg-active/40"
+                                                        className="pl-6"
                                                     >
                                                         <GpuInstanceTable
                                                             rows={row.resources}

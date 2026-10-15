@@ -12,7 +12,6 @@ import { useMemo, useState } from "react";
 import { CreatorIdentity } from "../components/CreatorIdentity";
 import {
     DataTable,
-    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -100,24 +99,15 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                         >
                             Sources
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={4}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={4} align="center">
                             Paid Pollen
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={2}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
+                        <TableHeaderCell colSpan={2} align="center">
                             Quest Pollen
                         </TableHeaderCell>
                         <TableHeaderCell
                             rowSpan={2}
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("requests")}
                         >
                             Requests
@@ -126,7 +116,6 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                     <TableRow>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("paidUsage")}
                         >
                             Used
@@ -168,7 +157,6 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
-                            className={GROUP_BORDER}
                             {...headerProps("questUsage")}
                         >
                             Used
@@ -195,11 +183,7 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                                 />
                             </TableCell>
                             <TableCell>{revenueSources(row)}</TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtUsd(row.paidUsageUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
@@ -211,21 +195,13 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                             <TableCell align="right" numeric>
                                 {fmtMarginPct(row.paidPerformancePct)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 {fmtUsd(row.questUsageUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
                                 {fmtUsd(row.questCreatorEarningsUsd)}
                             </TableCell>
-                            <TableCell
-                                align="right"
-                                numeric
-                                className={GROUP_BORDER}
-                            >
+                            <TableCell align="right" numeric>
                                 <Tooltip
                                     triggerAs="span"
                                     content={`Paid ${fmtNumber(row.paidRequests)} · Quest ${fmtNumber(row.questRequests)}`}

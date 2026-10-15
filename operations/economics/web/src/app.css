@@ -1,15 +1,15 @@
 @import "@pollinations/ui/app.css";
 
-/* Runway emphasizes horizontal groups; month labels carry the time context. */
-.runway-table {
+/* Shared quiet table surface; hierarchy comes from horizontal groups. */
+.economics-table {
     --polli-color-text-soft: var(--polli-color-text-base);
 }
-.runway-table tbody > tr {
+.economics-table tbody > tr {
     border-color: color-mix(in srgb, var(--polli-color-text-strong) 8%, transparent);
     background: transparent;
 }
 
-.runway-table tbody > tr > td {
+.economics-table tbody > tr > :is(td, th) {
     background: var(--polli-color-surface-opaque);
 }
 
@@ -35,6 +35,6 @@
     color: var(--polli-color-text-soft);
 }
 
-.runway-table tbody > tr:hover > td {
+.economics-table tbody > tr:hover > :is(td, th) {
     background: color-mix(in srgb, var(--polli-color-text-strong) 3%, var(--polli-color-surface-opaque));
 }

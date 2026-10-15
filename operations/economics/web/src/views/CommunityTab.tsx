@@ -9,7 +9,6 @@ import {
 import { useMemo } from "react";
 import {
     DataTable,
-    GROUP_BORDER,
     HeaderHint,
     type SortColumn,
     TableScroller,
@@ -107,17 +106,12 @@ export function CommunityTab({
                             >
                                 Community model
                             </TableHeaderCell>
-                            <TableHeaderCell
-                                colSpan={3}
-                                align="center"
-                                className={GROUP_BORDER}
-                            >
+                            <TableHeaderCell colSpan={3} align="center">
                                 Pollen
                             </TableHeaderCell>
                             <TableHeaderCell
                                 rowSpan={2}
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("retainedPct")}
                             >
                                 <HeaderHint
@@ -134,7 +128,6 @@ export function CommunityTab({
                             <TableHeaderCell
                                 rowSpan={2}
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("requests")}
                             >
                                 Requests
@@ -143,7 +136,6 @@ export function CommunityTab({
                         <TableRow>
                             <TableHeaderCell
                                 align="right"
-                                className={GROUP_BORDER}
                                 {...headerProps("retainedPaidUsd")}
                             >
                                 <HeaderHint
@@ -180,11 +172,7 @@ export function CommunityTab({
                                 <TableCell className="font-semibold">
                                     {row.model}
                                 </TableCell>
-                                <TableCell
-                                    align="right"
-                                    numeric
-                                    className={GROUP_BORDER}
-                                >
+                                <TableCell align="right" numeric>
                                     <Tooltip
                                         triggerAs="span"
                                         content={
@@ -224,18 +212,10 @@ export function CommunityTab({
                                 <TableCell align="right" numeric>
                                     {fmtUsd(row.questPollenUsd)}
                                 </TableCell>
-                                <TableCell
-                                    align="right"
-                                    numeric
-                                    className={GROUP_BORDER}
-                                >
+                                <TableCell align="right" numeric>
                                     {fmtMarginPct(row.retainedPct)}
                                 </TableCell>
-                                <TableCell
-                                    align="right"
-                                    numeric
-                                    className={GROUP_BORDER}
-                                >
+                                <TableCell align="right" numeric>
                                     <Tooltip
                                         triggerAs="span"
                                         content={

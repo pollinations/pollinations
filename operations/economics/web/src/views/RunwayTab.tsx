@@ -19,7 +19,6 @@ import {
     useState,
 } from "react";
 import { DataTable, TableScroller } from "../components/DataTable";
-import { MonthIssueCount } from "../components/Filters";
 import { StatCards, type StatTone } from "../components/StatCards";
 import { categoryLabel, pnlSource } from "../lib/categories";
 import type { ForecastPaymentTiming } from "../lib/forecastTerms";
@@ -408,15 +407,7 @@ function SummaryRow({
     );
 }
 
-export function RunwayTab({
-    data,
-    year,
-    issueCounts = {},
-}: {
-    data: Data;
-    year: string;
-    issueCounts?: Record<string, number>;
-}) {
+export function RunwayTab({ data, year }: { data: Data; year: string }) {
     const runway = useMemo(
         () =>
             buildRunway(
@@ -498,7 +489,7 @@ export function RunwayTab({
                                 : "base",
                         detail:
                             runway.openingBalanceDate == null
-                                ? "opening balance missing"
+                                ? ""
                                 : runway.latestTransactionDate
                                   ? `Latest bank entry: ${fmtPeriod(runway.latestTransactionDate)}`
                                   : `anchored ${fmtPeriod(runway.openingBalanceDate)} · no bank movements`,
@@ -637,15 +628,7 @@ export function RunwayTab({
                                     className={MONTH_COLUMN_CLASS}
                                 >
                                     <span className="inline-flex flex-col items-end">
-                                        <span>
-                                            {monthName(column.month)}
-                                            <MonthIssueCount
-                                                count={
-                                                    issueCounts[column.month] ??
-                                                    0
-                                                }
-                                            />
-                                        </span>
+                                        <span>{monthName(column.month)}</span>
                                         {monthKindLabel(column.kind) && (
                                             <span className="text-micro font-medium uppercase tracking-wide opacity-70">
                                                 {monthKindLabel(column.kind)}

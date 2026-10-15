@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import type { StripeSalesRow } from "../types";
+import type { Data, StripeSalesRow } from "../types";
 import { SalesLedgerTab } from "./SalesLedgerTab";
 
 const row: StripeSalesRow = {
@@ -43,22 +43,23 @@ it("shows exact native-currency Stripe facts, streams and deductions for the sel
         "282.12",
         "3,341.43",
         "7,860.25",
-        "Complete",
     ])
         expect(html).toContain(value);
     expect(html).not.toContain("99,999");
     expect(html).toContain('aria-sort="none"');
 });
-it("shows unverified month coverage consistently across currencies and keeps the current month open", () => {
+it("keeps coverage diagnostics in reconciliation while retaining sales facts", () => {
     const html = render([
         row,
         { ...row, currency: "EUR", coverage_complete: undefined },
     ]);
-    expect(html.match(/>Unverified</g)).toHaveLength(2);
+    expect(html).not.toContain("Unverified");
+    expect(html).not.toContain("Month coverage");
+    expect(html).toContain("13,232.82");
     expect(html).not.toContain(">Complete<");
     expect(
         render([{ ...row, month: "2026-10", coverage_complete: 0 }], "2026-10"),
-    ).toContain("In progress");
+    ).not.toContain("In progress");
 });
 it("keeps missing data distinct from confirmed zero sales", () => {
     const html = render([]);
@@ -66,4 +67,38 @@ it("keeps missing data distinct from confirmed zero sales", () => {
     expect(html).not.toContain("0.00");
     expect(html).not.toContain(">Complete<");
     expect(render([], "2026-10")).toContain("month in progress");
+});
+
+it("shows the reviewed fraud breakdown alongside unchanged sales facts", () => {
+    const data: Data = {
+        stripeSales: [row],
+        privateConfig: {
+            forecastRules: {},
+            reconciliation: {
+                providerCheckExplanations: [],
+                meterDriftExplanations: [],
+                pollenWitnessExplanations: [],
+            },
+            salesAdjustments: [
+                {
+                    month: row.month,
+                    revenue_stream: row.revenue_stream,
+                    currency: row.currency,
+                    refunds: 10,
+                    reversals: 5,
+                    stripe_fees: 20,
+                    evidence: ["https://drive.google.com/file/d/source/view"],
+                },
+            ],
+        },
+    };
+    const html = renderToStaticMarkup(
+        createElement(SalesLedgerTab, { data, now }),
+    );
+    expect(html).toContain("Identified fraud costs");
+    expect(html).toContain("35.00");
+    expect(html).toContain("Dispute fees: ");
+    expect(html).toContain("20.00");
+    expect(html).toContain("7,860.25");
+    expect(html).toContain("https://drive.google.com/file/d/source/preview");
 });

@@ -52,9 +52,17 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     expect(html).toContain("Retained Paid");
     expect(html).not.toContain("classified only");
     expect(html).not.toContain("Current result · subtotal");
-    expect(html).toContain("awaiting complete evidence");
+    expect(html).not.toContain("awaiting complete evidence");
+    for (const diagnostic of [
+        "source gap",
+        "Assigned to models",
+        "needs mapping",
+        "missing breakdown",
+        "Cost check",
+    ])
+        expect(html).not.toContain(diagnostic);
     // Both result headlines must remain unknown, not Google's matched subtotal.
-    const cards = html.slice(0, html.indexOf("source gap"));
+    const cards = html.slice(0, html.indexOf("<table"));
     expect(cards.match(/>Unknown</g)).toHaveLength(2);
 });
 
@@ -90,4 +98,25 @@ it("keeps separately scoped infrastructure usage from invalidating complete infe
     expect(html).toContain("+$45");
     expect(html).not.toContain("awaiting complete evidence");
     expect(html).not.toContain("outside this inference view");
+});
+
+it("labels both recorded-figures results provisional and includes the unmatched provider cost", () => {
+    const html = renderToStaticMarkup(
+        createElement(ManagedInferenceTab, {
+            data: {
+                opPollen: [usage("google")],
+                vendorLedger: [
+                    cost("google", "2026-09"),
+                    { ...cost("openai", "2026-09"), paid: -3, credit: -7 },
+                ],
+            },
+            month: "2026-09",
+        }),
+    );
+    const cards = html.slice(0, html.indexOf("<table"));
+    expect(cards).toContain("Current result · provisional");
+    expect(cards).toContain("Full-cost result · provisional");
+    expect(cards).toContain("+$42");
+    expect(cards).toContain("+$35");
+    expect(cards).not.toContain(">Unknown<");
 });

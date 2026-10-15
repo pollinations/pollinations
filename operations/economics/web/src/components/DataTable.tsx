@@ -22,9 +22,6 @@ type ColumnHint = {
     formula?: string;
 };
 
-// First cell of a column group gets a hairline left rule.
-export const GROUP_BORDER = "border-l border-theme-border/60";
-
 export function TableScroller({
     children,
     scrollRef,
@@ -57,7 +54,11 @@ export function DataTable({
     children: ReactNode;
     className?: string;
 }) {
-    return <Table className={cn("min-w-full", className)}>{children}</Table>;
+    return (
+        <Table className={cn("economics-table min-w-full", className)}>
+            {children}
+        </Table>
+    );
 }
 
 // Column-header label with a how-is-this-computed hover. Only calculated

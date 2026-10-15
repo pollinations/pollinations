@@ -164,7 +164,19 @@ export type ArchiveCheck = {
     evidence: string[];
 };
 
+// Reviewed classifications of deductions already present in the Sales ledger.
+export type StripeFraudAdjustment = {
+    month: string;
+    revenue_stream: StripeSalesRow["revenue_stream"];
+    currency: string;
+    refunds: number;
+    reversals: number;
+    stripe_fees: number;
+    evidence: string[];
+};
+
 export type EconomicsPrivateConfig = {
+    salesAdjustments?: StripeFraudAdjustment[];
     forecastRules: Record<string, PrivateForecastRule>;
     reconciliation: {
         archiveChecks?: ArchiveCheck[];

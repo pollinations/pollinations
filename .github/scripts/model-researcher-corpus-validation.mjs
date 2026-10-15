@@ -82,7 +82,8 @@ const baseline =
     budgetUsed(prior) +
     budgetUsed(resumedDiscovery) +
     0.011555206110000004 +
-    budgetUsed(verified);
+    budgetUsed(verified) +
+    0.00029604;
 const sources = [];
 const seen = new Set();
 for (const source of [

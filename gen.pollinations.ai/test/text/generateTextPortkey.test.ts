@@ -25,6 +25,67 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it.each([0, 1, 2, 3])(
+        "uses the GLM 5.3 chain with %i failed providers",
+        async (failures) => {
+            const primary = "z-ai/glm-5.3" as const;
+            const ids = [primary, ...TEXT_SERVICES[primary].fallbacks];
+            const upstreams = [
+                "accounts/fireworks/models/glm-5p3",
+                "zai-org/GLM-5.3",
+                "z-ai/glm-5.3",
+            ];
+            const attempts: string[] = [];
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (_input, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    attempts.push(body.model);
+                    if (attempts.length <= failures) {
+                        return Response.json(
+                            { error: { message: "Capacity exhausted" } },
+                            { status: 503 },
+                        );
+                    }
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "Hello",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 1,
+                            total_tokens: 11,
+                        },
+                    });
+                },
+            );
+            const run = withModelFallback(
+                ids.map((id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                })),
+                ({ id }) =>
+                    generateTextPortkey([{ role: "user", content: "Hello" }], {
+                        model: id,
+                        max_tokens: 128,
+                    }),
+            );
+            if (failures === ids.length) {
+                await expect(run).rejects.toThrow();
+            } else {
+                expect((await run).candidate.id).toBe(ids[failures]);
+            }
+            expect(attempts).toEqual(
+                upstreams.slice(0, Math.min(failures + 1, ids.length)),
+            );
+        },
+    );
+
     it.each([429, 503])(
         "rescues Scout upstream %i at the primary price",
         async (status) => {

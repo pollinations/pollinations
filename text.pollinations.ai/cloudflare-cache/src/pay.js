@@ -1,12 +1,10 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
-import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import art from "../../../shared/assets/weft-paywall.webp";
-import { createWeftPaywall } from "../../../shared/weft-paywall.js";
+import { PRICE_USD } from "../../../shared/messages.js";
 import { CORS, etag } from "./origin.js";
 
-// The $0.01 x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
+// The x402 paywall of the VM's text.pollinations.ai/weftX402.js, for
 // requests outside the free limit. origin.js loads this module only then.
 
 // The VM's payment challenges name its origin host and the path, without the
@@ -26,7 +24,7 @@ function paywallApp(env) {
             scheme: "exact",
             network: env.WEFT_NETWORK,
             payTo: env.WEFT_PAY_TO,
-            price: "$0.01",
+            price: `$${PRICE_USD}`,
         },
         description: "Generate one text response with Pollinations",
     });
@@ -45,11 +43,9 @@ function paywallApp(env) {
             name: "Pollinations legacy text",
             type: "api",
             tags: ["text"],
-            paywall: createWeftPaywall(
-                "response",
-                findDefaultAsset,
-                Buffer.from(art).toString("base64"),
-            ),
+            // An empty page: shared/messages.js answers browsers with the
+            // free limit's page
+            paywall: { generateHtml: () => "" },
             schemes: [
                 { network: env.WEFT_NETWORK, server: new ExactEvmScheme() },
             ],
@@ -95,9 +91,6 @@ async function expressHeaders(response) {
     const headers = new Headers(response.headers);
     const body = await response.arrayBuffer();
     const type = headers.get("content-type") ?? "";
-    if (/^text\/html/i.test(type)) {
-        headers.set("Content-Type", "text/html; charset=utf-8");
-    }
     if (/^application\/json/i.test(type)) {
         headers.set("Content-Type", "application/json; charset=utf-8");
         headers.set("ETag", await etag(body));

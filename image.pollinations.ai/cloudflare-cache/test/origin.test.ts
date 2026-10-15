@@ -3,8 +3,6 @@ import { PhotonImage } from "@cf-wasm/photon";
 import { beforeAll, describe, expect, test } from "vitest";
 import { ImageParamsSchema } from "../src/params.ts";
 import primeHeaders from "./fixtures/image.pollinations.ai-prime.headers?raw";
-import blockedBody from "./fixtures/vm-blocked-model-500.body?raw";
-import blockedHeaders from "./fixtures/vm-blocked-model-500.headers?raw";
 // The Exif APP1 segments of VM images, marker included
 import vmExifControl from "./fixtures/vm-exif-control.bin";
 import vmExifLive from "./fixtures/vm-exif-live.bin";
@@ -28,13 +26,6 @@ beforeAll(() => {
 });
 
 // The fixed gen responses are in vitest.config.ts
-const TIMING_STEPS = [
-    "Request received and queued.",
-    "Start generating job",
-    "Start processing",
-    "Start prompt normalization and translation",
-    "End prompt normalization and translation",
-];
 // The live free request whose headers prime.headers holds
 const PRIME =
     "/prompt/weftbaseline-1791750449-a%20a%20small%20yellow%20flower?width=256&height=256&nologo=true";
@@ -219,34 +210,24 @@ test("gen gets the caller's IP and referrer: the query, then the headers", async
     expect(odd.headers.get("authorization")).toBe("Bearer test-gen-key");
 });
 
-test("a blocked model gets the VM's 500 JSON before the free limit, with no gen call", async () => {
+test("a model that only runs on enter gets gen's 403 before the free limit, with no gen call", async () => {
     const gen = recordingGen();
     const ip = nextIp();
-    const { response, text } = await call(
-        "/prompt/migration-probe-blocked?model=kontext",
-        { ip, testEnv: gen.testEnv },
-    );
+    for (const model of ["kontext", "seedream", "nanobanana"]) {
+        const { response, text } = await call(
+            `/prompt/migration-probe-blocked?model=${model}`,
+            { ip, testEnv: gen.testEnv },
+        );
 
-    expect(response.status).toBe(500);
-    const vm = JSON.parse(blockedBody);
-    const body = JSON.parse(text);
-    expect(body.requestId).toMatch(/^[0-9a-z]+$/);
-    expect(JSON.stringify({ ...body, requestId: vm.requestId })).toBe(
-        blockedBody.trim(),
-    );
-    const headers = Object.fromEntries(response.headers);
-    expect(headers).toEqual(
-        Object.fromEntries(capturedHeaders(blockedHeaders)),
-    );
-    expect(gen.requests).toHaveLength(0);
-    expect(await alarmOf(ip)).toBeNull();
-
-    for (const model of ["seedream", "nanobanana"]) {
-        const blocked = await call(`/prompt/x?model=${model}`);
-        expect(JSON.parse(blocked.text).message).toBe(
-            `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
+        expect(response.status, model).toBe(403);
+        const body = JSON.parse(text);
+        expect(body.error.code, model).toBe("FORBIDDEN");
+        expect(body.error.message, model).toBe(
+            `${model} isn't part of the Classic API. Use it with a pollen key at https://enter.pollinations.ai/?ref=classic`,
         );
     }
+    expect(gen.requests).toHaveLength(0);
+    expect(await alarmOf(ip)).toBeNull();
 });
 
 test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", async () => {
@@ -267,42 +248,82 @@ test("a malformed % gets the VM's 500: urldecode's -1 failed its cache key", asy
     expect(gen.requests).toHaveLength(0);
 });
 
-test("gen failures and bodies that are not images get the VM's 500 JSON and are not stored", async () => {
-    for (const [prompt, message] of [
-        [
-            "gen:503",
-            'Gen Sana request failed with 503: {"error":"gen answered 503"}',
-        ],
-        [
-            "gen:429",
-            'Gen Sana request failed with 429: {"error":"gen answered 429"}',
-        ],
-        [
-            "gen:400",
-            'Gen Sana request failed with 400: {"error":"gen answered 400"}',
-        ],
-        ["gen:html", "Input buffer contains unsupported image format"],
-        ["gen:empty", "Gen Sana returned an empty image"],
-    ]) {
+const AT_CAPACITY =
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+const OUR_FAULT =
+    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+
+test("gen's failures get gen's error body and are not stored: 503 when gen is busy, 500 when the fault is ours", async () => {
+    for (const [prompt, status, code, message] of [
+        ["gen:503", 503, "SERVICE_UNAVAILABLE", AT_CAPACITY],
+        ["gen:429", 503, "SERVICE_UNAVAILABLE", AT_CAPACITY],
+        ["gen:html", 500, "INTERNAL_ERROR", OUR_FAULT],
+        ["gen:empty", 500, "INTERNAL_ERROR", OUR_FAULT],
+    ] as const) {
         const { response, text } = await call(`/prompt/${prompt}?seed=1`);
 
-        expect(response.status, prompt).toBe(500);
-        expect(response.headers.get("x-error-type"), prompt).toBe(
-            "Internal Server Error",
-        );
-        expect(response.headers.get("content-type"), prompt).toBe(
-            "application/json",
+        expect(response.status, prompt).toBe(status);
+        expect(response.headers.get("retry-after"), prompt).toBe(
+            status === 503 ? "10" : null,
         );
         const body = JSON.parse(text);
-        expect(body.message, prompt).toBe(message);
-        expect(body.requestParameters).toMatchObject({ prompt, seed: 1 });
-        // The steps the VM had reached when gen's answer failed
-        expect(
-            body.timingInfo.map(({ step }) => step),
-            prompt,
-        ).toEqual(TIMING_STEPS);
+        expect(body, prompt).toEqual({
+            status,
+            success: false,
+            error: {
+                code,
+                message,
+                timestamp: body.error.timestamp,
+                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+            },
+        });
         expect(await storedAt(`/prompt/${prompt}?seed=1`), prompt).toBeNull();
     }
+});
+
+test("an <img> gets the card for each failure and refusal, at its size, with the answer's status", async () => {
+    const img = {
+        accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    };
+    for (const [path, status] of [
+        ["/prompt/gen:503?width=640&height=360", 503],
+        ["/prompt/gen:empty?width=640&height=360", 500],
+        ["/prompt/gen:400?width=640&height=360", 400],
+        ["/prompt/x?model=kontext&width=640&height=360", 403],
+    ] as const) {
+        const { response, bytes } = await call(path, { headers: img });
+
+        expect(response.status, path).toBe(status);
+        expect(response.headers.get("content-type"), path).toBe("image/jpeg");
+        const card = PhotonImage.new_from_byteslice(bytes);
+        expect([card.get_width(), card.get_height()], path).toEqual([640, 360]);
+        card.free();
+        expect(await storedAt(path), path).toBeNull();
+    }
+});
+
+test("a card stays within 2048 px a side, whatever size the URL asks for", async () => {
+    const img = { accept: "image/*" };
+    for (const [query, size] of [
+        ["width=-1000000000&height=1000000000", [1024, 2048]],
+        ["width=0&height=0", [1024, 1024]],
+        ["width=5000&height=100", [2048, 100]],
+    ] as const) {
+        const { bytes } = await call(`/prompt/gen:503?${query}`, {
+            headers: img,
+        });
+        const card = PhotonImage.new_from_byteslice(bytes);
+        expect([card.get_width(), card.get_height()], query).toEqual(size);
+        card.free();
+    }
+});
+
+test("a gen refusal the caller can fix gets gen's own answer, and is not stored", async () => {
+    const { response, text } = await call("/prompt/gen:400?seed=1");
+
+    expect(response.status).toBe(400);
+    expect(JSON.parse(text)).toEqual({ error: "gen answered 400" });
+    expect(await storedAt("/prompt/gen:400?seed=1")).toBeNull();
 });
 
 test("the VM's other routes: models, about, crossdomain, register, .well-known and 404s", async () => {
@@ -467,7 +488,7 @@ test("the IP is released when the generation succeeds, fails or throws", async (
 
     const failed = nextIp();
     const failure = await call("/prompt/gen:503", { ip: failed });
-    expect(failure.response.status).toBe(500);
+    expect(failure.response.status).toBe(503);
     expect(await released(failed)).toBe(true);
 
     const threw = nextIp();
@@ -484,34 +505,22 @@ test("the IP is released when the generation succeeds, fails or throws", async (
         testEnv: throwing,
     });
     expect(thrown.response.status).toBe(500);
-    expect(JSON.parse(thrown.text).message).toBe("gen unreachable");
+    expect(JSON.parse(thrown.text).error.code).toBe("INTERNAL_ERROR");
     expect(await released(threw)).toBe(true);
 });
 
-test("without every WEFT_* value the paywall is off: a running generation gives the VM's 429, spacing waits", async () => {
+test("without every WEFT_* value the paywall is off: a running generation gives a 429, spacing waits", async () => {
     const off = { ...env, WEFT_SELLER_API_KEY: undefined };
     const ip = await limitedIp();
 
     const held = await call("/prompt/weft%20off", { ip, testEnv: off });
 
     expect(held.response.status).toBe(429);
-    expect(held.response.headers.get("x-error-type")).toBe("Too Many Requests");
-    expect(JSON.parse(held.text)).toMatchObject({
-        error: "Too Many Requests",
-        message: `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-        debug: null,
-        timingInfo: [{ step: "Request received and queued.", timestamp: 0 }],
-        queueInfo: {
-            ip,
-            currentSize: 0,
-            pending: 1,
-            total: 1,
-            maxAllowed: 1,
-            username: null,
-            userId: null,
-            tier: "anonymous",
-        },
-    });
+    const body = JSON.parse(held.text);
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(body.error.message).toBe(
+        "Your previous image is still being made. The Classic API makes 1 image at a time per IP. Wait for it to finish, or make images in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+    );
 
     // The last free generation started 44.8 s ago and has ended
     const spaced = nextIp();

@@ -53,12 +53,6 @@ new_sqlite_classes = ["FeedHub"]
 tag = "v3"
 deleted_classes = ["FeedHub"]
 
-# The paywall art (shared/assets/weft-paywall.webp) is imported as bytes
-[[rules]]
-type = "Data"
-globs = ["**/*.webp"]
-fallthrough = true
-
 [vars]
 # x402 paywall, as on the VM; WEFT_SELLER_API_KEY is a secret. Without all
 # four values the paywall is off and rate-limited requests wait instead

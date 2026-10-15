@@ -49,11 +49,10 @@ new_sqlite_classes = ["IpSlot", "FeedHub"]
 tag = "v2"
 deleted_classes = ["FeedHub"]
 
-# The paywall art (shared/assets/weft-paywall.webp) and the logo lockups
-# (assets/*.png) are imported as bytes
+# The logo lockups (assets/*.png) are imported as bytes
 [[rules]]
 type = "Data"
-globs = ["**/*.webp", "**/*.png"]
+globs = ["**/*.png"]
 fallthrough = true
 
 # Environment variables

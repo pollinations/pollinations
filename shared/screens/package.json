@@ -1,0 +1,14 @@
+{
+    "name": "free-limit-page",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "render": "node render.js"
+    },
+    "devDependencies": {
+        "@pollinations/ui": "0.1.0-alpha.12",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
+        "tailwindcss": "4.3.0"
+    }
+}

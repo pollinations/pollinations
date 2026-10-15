@@ -1,12 +1,10 @@
 import { weftPaymentMiddlewareHono } from "@weftlabs/sdk/facilitator/middleware";
-import { findDefaultAsset } from "@x402/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { Hono } from "hono";
-import art from "../../../shared/assets/weft-paywall.webp";
-import { createWeftPaywall } from "../../../shared/weft-paywall.js";
-import { chunked, expressPage, VM_CORS } from "./origin.ts";
+import { PRICE_USD } from "../../../shared/messages.js";
+import { expressPage, VM_CORS } from "./origin.ts";
 
-// The $0.01 x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
+// The x402 paywall of the VM's image.pollinations.ai/src/weftX402.ts,
 // for GET requests outside the free limit. origin.ts loads this module only
 // then.
 
@@ -39,7 +37,7 @@ function paywallApp(env: Record<string, any>) {
                     scheme: "exact",
                     network: env.WEFT_NETWORK,
                     payTo: env.WEFT_PAY_TO,
-                    price: "$0.01",
+                    price: `$${PRICE_USD}`,
                 },
                 description: "Generate one image with Pollinations",
             },
@@ -57,11 +55,9 @@ function paywallApp(env: Record<string, any>) {
             name: "Pollinations legacy image",
             type: "api",
             tags: ["image"],
-            paywall: createWeftPaywall(
-                "image",
-                findDefaultAsset,
-                Buffer.from(art).toString("base64"),
-            ),
+            // An empty page: shared/messages.js answers browsers with the
+            // free limit's page
+            paywall: { generateHtml: () => "" },
             schemes: [
                 { network: env.WEFT_NETWORK, server: new ExactEvmScheme() },
             ],
@@ -133,19 +129,13 @@ async function etag(bytes: ArrayBuffer) {
 /**
  * Express wrote the payment middleware's own responses: its Content-Type
  * strings, weak ETag on JSON and X-Powered-By, after the VM's CORS headers.
- * The paywall page reached clients without Content-Length. Generated
- * responses and error pages already have them.
+ * Generated responses and error pages already have them.
  */
 async function expressHeaders(response: Response) {
     if (!PAYWALL_STATUSES.includes(response.status)) return response;
     const headers = new Headers(response.headers);
     const body = await response.arrayBuffer();
     const type = headers.get("content-type") ?? "";
-    const html = /^text\/html/i.test(type);
-    if (html) {
-        headers.set("Content-Type", "text/html; charset=utf-8");
-        headers.delete("Content-Length");
-    }
     if (/^application\/json/i.test(type)) {
         headers.set("Content-Type", "application/json; charset=utf-8");
         headers.set("ETag", await etag(body));
@@ -154,8 +144,5 @@ async function expressHeaders(response: Response) {
     headers.set("X-Powered-By", "Express");
     for (const [name, value] of Object.entries(VM_CORS))
         headers.set(name, value);
-    return new Response(html ? chunked(new Uint8Array(body)) : body, {
-        status: response.status,
-        headers,
-    });
+    return new Response(body, { status: response.status, headers });
 }

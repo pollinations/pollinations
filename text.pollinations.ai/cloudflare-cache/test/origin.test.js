@@ -11,11 +11,9 @@ import worker from "../src/index.js";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
-import vm404 from "./fixtures/vm-unknown-model-404.body?raw";
 import { alarmOf, call, capturedHeaders, nextIp, storedAt } from "./helpers.js";
 
 // The fixed gen responses are in vitest.config.js
-const NOTICE = JSON.parse(vm404).deprecation_notice;
 const JSON_BODY = { "content-type": "application/json" };
 const SSE_UNTIL_DONE =
     'data: {"choices":[{"delta":{"content":"o"}}],"model":"gpt-oss-20b"}\n\n' +
@@ -233,45 +231,59 @@ test("a stream ends after data: [DONE] and is stored once complete", async () =>
     expect(hit.text).toBe(SSE_UNTIL_DONE);
 });
 
-test("gen errors keep the VM's JSON: the status passes through, a failed stream is a 500", async () => {
-    const failed = await call("/gen:503");
-    expect(failed.response.status).toBe(503);
-    expect(JSON.parse(failed.text)).toEqual({
-        error: "503 Service Unavailable",
-        status: 503,
-        deprecation_notice: NOTICE,
-        details: { error: { message: "gen answered 503" } },
-    });
+const AT_CAPACITY =
+    "The Classic API is at its limit right now. Retry after 10s, or get full access to every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
+const OUR_FAULT =
+    "Something went wrong on our side. Please try again, or use every model with a pollen key at https://enter.pollinations.ai/?ref=classic";
 
-    // node-fetch's statusText: the reason phrase of any status gen passes on
+/** gen's error body, as shared/messages.js sends it */
+function expectGenError(text, status, code, message) {
+    const body = JSON.parse(text);
+    expect(body).toEqual({
+        status,
+        success: false,
+        error: {
+            code,
+            message,
+            timestamp: body.error.timestamp,
+            fixUrl: "https://enter.pollinations.ai/?ref=classic",
+        },
+    });
+}
+
+test("a busy or rate-limited gen gets gen's 503 with a retry time; a request the caller can fix gets gen's own refusal", async () => {
+    for (const path of ["/gen:503", "/gen:429", "/gen:503?stream=true"]) {
+        const failed = await call(path);
+        expect(failed.response.status, path).toBe(503);
+        expect(failed.response.headers.get("retry-after"), path).toBe("10");
+        expectGenError(failed.text, 503, "SERVICE_UNAVAILABLE", AT_CAPACITY);
+        expect(await storedAt(path), path).toBeNull();
+    }
+
+    // gen's refusal of a request the caller can fix, as gen sent it
     const unprocessable = await call("/gen:422");
-    expect(JSON.parse(unprocessable.text).error).toBe(
-        "422 Unprocessable Entity",
-    );
+    expect(unprocessable.response.status).toBe(422);
+    expect(JSON.parse(unprocessable.text)).toEqual({
+        error: { message: "gen answered 422" },
+    });
 
     // The VM's cache stored a gen 400 like any status below 401
     const rejected = await call("/gen:400");
     expect(rejected.response.status).toBe(400);
     expect(await storedAt("/gen:400")).not.toBeNull();
 
-    // An error object in gen's 200 answers its status, else 500
+    // An error object in gen's 200: a 5xx is busy, no status is our fault
     const inOk = await call("/gen:200-error");
     expect(inOk.response.status).toBe(503);
-    expect(JSON.parse(inOk.text)).toEqual({
-        error: "boom",
-        status: 503,
-        deprecation_notice: NOTICE,
-    });
+    expectGenError(inOk.text, 503, "SERVICE_UNAVAILABLE", AT_CAPACITY);
     const textError = await call("/gen:200-error-text");
     expect(textError.response.status).toBe(500);
-    expect(JSON.parse(textError.text).error).toBe("oops");
+    expectGenError(textError.text, 500, "INTERNAL_ERROR", OUR_FAULT);
 
     const stream = await call("/gen:400?stream=true");
-    expect(stream.response.status).toBe(500);
+    expect(stream.response.status).toBe(400);
     expect(JSON.parse(stream.text)).toEqual({
-        error: "400 Bad Request",
-        status: 500,
-        deprecation_notice: NOTICE,
+        error: { message: "gen answered 400" },
     });
     expect(await storedAt("/gen:400?stream=true")).toBeNull();
 });
@@ -348,7 +360,8 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     // The live 304 of 2026-10-12, without the edge's headers
     const live = {
         "access-control-allow-origin": "*",
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
         etag,
         "x-powered-by": "Express",
     };
@@ -391,7 +404,8 @@ test("a matching If-None-Match gets Express's empty 304, after the generation ha
     // without Content-Length (its ETag is that of "ok")
     expect(Object.fromEntries(response.headers)).toEqual({
         ...CACHE_MISS,
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
         "cache-control": "public, max-age=31536000, immutable",
         etag: 'W/"2-eoX0dku9ba8cNUXvu/DyeabcC+s"',
         "x-model-used": "gpt-oss-20b",
@@ -428,7 +442,7 @@ test("a preflight gets the live 204: cors() headers plus the cache code's, and n
         "access-control-allow-origin": "*",
         "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
         "access-control-expose-headers":
-            "Payment-Required, Payment-Response, Link, X-Pollinations-Logo, X-Powered-By",
+            "Payment-Required, Payment-Response, Retry-After, Link, X-Pollinations-Logo, X-Powered-By",
         link: '<https://pollinations.ai>; rel="service"',
         vary: "Access-Control-Request-Headers",
         "x-cache": "MISS",
@@ -474,7 +488,8 @@ const errorPage = (message) =>
 const pageHeaders = (cors) => ({
     ...(cors && {
         "access-control-allow-origin": "*",
-        "access-control-expose-headers": "Payment-Required,Payment-Response",
+        "access-control-expose-headers":
+            "Payment-Required,Payment-Response,Retry-After",
     }),
     "content-security-policy": "default-src 'none'",
     "content-type": "text/html; charset=utf-8",
@@ -491,14 +506,17 @@ const CACHE_MISS = {
     "x-cache-key": expect.stringMatching(/^[0-9a-f]{64}$/),
 };
 
-test("an invalid messages array gets the route's JSON 400", async () => {
+const BAD_MESSAGES =
+    "messages must be a list of {role, content} objects. See https://github.com/pollinations/pollinations/blob/master/APIDOCS.md";
+
+test("an invalid messages array gets gen's 400", async () => {
     const { response, text } = await call("/", {
         method: "POST",
         headers: JSON_BODY,
         body: JSON.stringify({ messages: "hi" }),
     });
     expect(response.status).toBe(400);
-    expect(text).toBe('{"error":"Invalid messages array"}');
+    expectGenError(text, 400, "BAD_REQUEST", BAD_MESSAGES);
 });
 
 test("bad bodies, malformed % and unknown routes get Express's HTML error page with the error line", async () => {
@@ -736,7 +754,7 @@ test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media typ
             expect(gen.bodies[0].messages.at(-1).content, label).toBe(expected);
         } else if (expected === 400) {
             expect(response.status, label).toBe(400);
-            expect(text, label).toBe('{"error":"Invalid messages array"}');
+            expect(JSON.parse(text).error.message, label).toBe(BAD_MESSAGES);
         } else {
             expect(response.status, label).toBe(expected[0]);
             expect(text, label).toBe(errorPage(expected[1]));
@@ -745,12 +763,7 @@ test("bodies are decoded as body-parser 1.20.3 did: encoding, charset, media typ
     }
 });
 
-test("non-array messages get the VM's 500, whose error log failed on messages.map", async () => {
-    const vm = JSON.stringify({
-        error: "messages.map is not a function",
-        status: 500,
-        deprecation_notice: NOTICE,
-    });
+test("non-array messages get gen's 400, on every route", async () => {
     for (const [path, options] of [
         [
             "/v1/chat/completions",
@@ -773,12 +786,8 @@ test("non-array messages get the VM's 500, whose error log failed on messages.ma
     ]) {
         const { response, text } = await call(path, options);
 
-        expect(response.status, path).toBe(500);
-        expect(text, path).toBe(vm);
-        // The ETag of the live capture of 2026-10-12
-        expect(response.headers.get("etag"), path).toBe(
-            'W/"14b-2vuwa+PS53/bu4pTjJqib/XYw+M"',
-        );
+        expect(response.status, path).toBe(400);
+        expectGenError(text, 400, "BAD_REQUEST", BAD_MESSAGES);
     }
 });
 
@@ -874,7 +883,7 @@ test("the 431 starts where it did for the production measurement of GET /models"
     expect(at.response.status).toBe(431);
 });
 
-test("while a free generation runs, a stream from the same IP gets the VM's 429", async () => {
+test("while a free generation runs, a stream from the same IP gets a 429", async () => {
     const ip = nextIp();
     const running = call("/gen:slow", { ip });
     await expect.poll(() => alarmOf(ip)).toBeGreaterThan(Date.now() + 30_000);
@@ -882,11 +891,12 @@ test("while a free generation runs, a stream from the same IP gets the VM's 429"
     const stream = await call("/meanwhile?stream=true", { ip });
 
     expect(stream.response.status).toBe(429);
-    expect(JSON.parse(stream.text)).toEqual({
-        error: `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-        status: 429,
-        deprecation_notice: NOTICE,
-    });
+    expectGenError(
+        stream.text,
+        429,
+        "RATE_LIMITED",
+        "Your previous request is still running. The Classic API answers 1 request at a time per IP. Wait for it to finish, or run requests in parallel with a pollen key at https://enter.pollinations.ai/?ref=classic",
+    );
     expect((await running).text).toBe("ok");
 });
 
@@ -913,7 +923,7 @@ test("the IP is released when the response completes, fails or is cancelled", as
     expect(await released(completed)).toBe(true);
 
     const failed = nextIp();
-    expect((await call("/gen:500", { ip: failed })).response.status).toBe(500);
+    expect((await call("/gen:500", { ip: failed })).response.status).toBe(503);
     expect(await released(failed)).toBe(true);
 
     const cancelled = nextIp();

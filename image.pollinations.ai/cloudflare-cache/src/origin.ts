@@ -1,6 +1,13 @@
 import type { Context } from "hono";
 import { callerHeaders } from "../../../shared/gen-caller.js";
 import { takeSlot } from "../../../shared/ip-slot.js";
+import {
+    explainFreeLimit,
+    failure,
+    genAnswer,
+    REFUSED,
+} from "../../../shared/messages.js";
+import type { CardKind } from "./cards.ts";
 import { type ImageParams, ImageParamsSchema, MODELS } from "./params.ts";
 
 // The legacy image API that ran on the OVH VM (image.pollinations.ai/src on
@@ -61,7 +68,7 @@ export const logFailure = (route: string, details: object) =>
  * A body without Content-Length, as clients got every response node:http
  * wrote with writeHead() first, and the VM's HTML pages
  */
-export const chunked = (body: string | Uint8Array) =>
+const chunked = (body: string | Uint8Array) =>
     new ReadableStream({
         start(controller) {
             controller.enqueue(
@@ -208,12 +215,32 @@ const relative = (timing: Step[]) =>
         timestamp: info.timestamp - timing[0].timestamp,
     }));
 
+/** An <img> asks for an image; a browser opening the link asks for a page */
+const wantsImage = (request: Request) => {
+    const accept = request.headers.get("accept") ?? "";
+    return accept.includes("image/") && !accept.includes("text/html");
+};
+
+/**
+ * The answer for an <img>: its status and headers, with the image card at the
+ * requested size in place of the JSON
+ */
+async function withCard(answer: Response, kind: CardKind, job: Job) {
+    if (!wantsImage(job.request)) return answer;
+    const { card } = await import("./cards.ts");
+    const headers = new Headers(answer.headers);
+    headers.set("Content-Type", "image/jpeg");
+    headers.set("Cache-Control", "no-store");
+    headers.delete("Content-Length");
+    const { width, height } = job.safeParams;
+    return new Response(card(kind, width, height), {
+        status: answer.status,
+        headers,
+    });
+}
+
 /** The VM's error JSON; timingInfo holds the steps this request reached */
-function errorJson(
-    job: Job,
-    error: Error & { status?: number },
-    queueInfo = null,
-) {
+function errorJson(job: Job, error: Error & { status?: number }) {
     const status = error.status || 500;
     const errorType =
         status === 429 ? "Too Many Requests" : "Internal Server Error";
@@ -228,7 +255,7 @@ function errorJson(
             ...job.safeParams,
             referrer: job.referrer,
         },
-        queueInfo,
+        queueInfo: null,
     };
     return vmResponse(JSON.stringify(body), status, {
         "Content-Type": "application/json",
@@ -274,12 +301,11 @@ export async function generate(c: Context, url: URL, route: string) {
     job.timing.push(step("Request received and queued."));
     const { model } = job.safeParams;
     if (BLOCKED_MODELS.includes(model)) {
-        return errorJson(
-            job,
-            new Error(
-                `${model} model is only available on enter.pollinations.ai. Visit https://enter.pollinations.ai/?ref=image to get started.`,
-            ),
+        const { status, body, headers } = genAnswer(
+            403,
+            REFUSED.enterOnly(model),
         );
+        return withCard(vmResponse(body, status, headers), "enter", job);
     }
 
     const { env, ctx } = job;
@@ -302,27 +328,12 @@ export async function generate(c: Context, url: URL, route: string) {
         // The VM's in-memory queue could not fail: answer as a free request
         // that books and releases nothing
         logFailure(route, { error: "ip_slot", type: error.name });
-        return background(generateImage(job, false, () => {}));
+        return background(generateImage(job, () => {}));
     }
 
     if (slot.action === "full") {
-        const error = Object.assign(
-            new Error(
-                `Queue full for IP: ${ip}: 1 requests already queued (max: 1). Get unlimited access at https://enter.pollinations.ai`,
-            ),
-            { status: 429 },
-        );
-        const queueInfo = {
-            ip,
-            currentSize: 0,
-            pending: 1,
-            total: 1,
-            maxAllowed: 1,
-            username: null,
-            userId: null,
-            tier: "anonymous",
-        };
-        return errorJson(job, error, queueInfo);
+        const { status, body, headers } = genAnswer(429, REFUSED.imageBusy);
+        return vmResponse(body, status, headers);
     }
     if (slot.action === "pay") {
         // requireImagePayment ran checkCacheAndGenerate again for a paid or
@@ -331,7 +342,6 @@ export async function generate(c: Context, url: URL, route: string) {
             background(
                 generateImage(
                     { ...job, timing: [step("Request received and queued.")] },
-                    true,
                     () => {},
                 ),
             );
@@ -345,7 +355,21 @@ export async function generate(c: Context, url: URL, route: string) {
             );
         }
         const { pay } = await import("./pay.ts");
-        return pay(request, pathname, env, ctx, unpaid);
+        const answer = explainFreeLimit(
+            request,
+            await pay(request, pathname, env, ctx, unpaid),
+            "image",
+            FREE_INTERVAL_MS,
+            slot.until,
+        );
+        // The free limit's 402 with its message: a paying client's 402 is the
+        // payment's own answer
+        const paying =
+            request.headers.has("payment-signature") ||
+            request.headers.has("x-payment");
+        return answer.status === 402 && !paying
+            ? withCard(answer, "limit", job)
+            : answer;
     }
 
     // go or wait: free the IP when the generation ends, even if the client
@@ -366,7 +390,7 @@ export async function generate(c: Context, url: URL, route: string) {
                     setTimeout(resolve, slot.waitMs),
                 );
             }
-            return generateImage(job, false, ended);
+            return generateImage(job, ended);
         })(),
     );
 }
@@ -403,12 +427,12 @@ async function callGenSana(
         },
     });
     if (!response.ok) {
-        const errorBody = (await response.text()).slice(0, 500);
+        const genBody = await response.text();
         throw Object.assign(
             new Error(
-                `Gen Sana request failed with ${response.status}: ${errorBody}`,
+                `Gen Sana request failed with ${response.status}: ${genBody.slice(0, 500)}`,
             ),
-            { genStatus: response.status },
+            { genStatus: response.status, genBody },
         );
     }
     const image = new Uint8Array(await response.arrayBuffer());
@@ -420,11 +444,9 @@ async function callGenSana(
 
 /**
  * The queue job (imageGen and createAndReturnImageCached): gen, the branded
- * JPEG, then the response. Never throws; calls ended() once
- * the job is done. A paid or HEAD job (`paid`) answered errors as
- * requireImagePayment's Express app did.
+ * JPEG, then the response. Never throws; calls ended() once the job is done.
  */
-async function generateImage(job: Job, paid: boolean, ended: () => void) {
+async function generateImage(job: Job, ended: () => void) {
     const { env, safeParams, timing } = job;
     try {
         timing.push(step("Start generating job"));
@@ -461,13 +483,16 @@ async function generateImage(job: Job, paid: boolean, ended: () => void) {
                 ? { error: "gen", status: error.genStatus }
                 : { error: "exception", type: error.name },
         );
-        if (!paid) return errorJson(job, error);
-        // requireImagePayment's handler, written with res.writeHead
-        const body = { error: error.message || "Image generation failed" };
-        return vmResponse(JSON.stringify(body), error.status || 500, {
-            "Content-Type": "application/json",
-            "X-Powered-By": "Express",
-        });
+        // Answered as gen answers its own failures, or with gen's own
+        // refusal of a request the caller can fix
+        const { status, body, headers } = failure(error.genStatus) ?? {
+            status: error.genStatus,
+            body: error.genBody,
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+        };
+        const kind =
+            status === 503 ? "busy" : status >= 500 ? "error" : "refused";
+        return await withCard(vmResponse(body, status, headers), kind, job);
     } finally {
         ended();
     }

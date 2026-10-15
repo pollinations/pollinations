@@ -1,6 +1,6 @@
 {
     "name": "pollinations-shared",
     "private": true,
-    "description": "Code shared by the Free API Classic Workers",
+    "description": "Code shared by the Classic API Workers",
     "type": "module"
 }

@@ -156,6 +156,11 @@ const worker = {
 
                 return originResp;
             }
+            // Nor answers that ask not to be stored, such as gen's refusal of
+            // a stream
+            if (/no-store/i.test(originResp.headers.get("cache-control"))) {
+                return originResp;
+            }
 
             // Determine if this is a streaming response
             const contentLength = originResp.headers.get("content-length");

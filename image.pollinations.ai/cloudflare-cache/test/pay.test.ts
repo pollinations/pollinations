@@ -1,10 +1,9 @@
 import { env, fetchMock } from "cloudflare:test";
+import { PhotonImage } from "@cf-wasm/photon";
 import { afterEach, beforeAll, expect, test, vi } from "vitest";
 import myceliHeadHeaders from "./fixtures/image.myceli.ai-head-browser.headers?raw";
-import browserBody from "./fixtures/image.pollinations.ai-get-browser.body?raw";
 import browserHeaders from "./fixtures/image.pollinations.ai-get-browser.headers?raw";
 import jsonHeaders from "./fixtures/image.pollinations.ai-get-json.headers?raw";
-import headFailureHeaders from "./fixtures/image.pollinations.ai-head-json.headers?raw";
 import postBody from "./fixtures/image.pollinations.ai-post-json.body?raw";
 import postHeaders from "./fixtures/image.pollinations.ai-post-json.headers?raw";
 import {
@@ -146,8 +145,15 @@ async function payFor(
     });
 }
 
-test("the JSON 402 matches the VM's capture byte for byte, on both hosts and with any query", async () => {
-    const vm = Object.fromEntries(capturedHeaders(jsonHeaders));
+// The headers the free limit's message replaces on the paywall's JSON 402
+const MESSAGE_HEADERS = ["content-length", "etag", "retry-after"];
+const without = (headers: Headers) =>
+    Object.fromEntries(
+        [...headers].filter(([name]) => !MESSAGE_HEADERS.includes(name)),
+    );
+
+test("a script past the free limit gets gen's error body, a Retry-After and the VM's challenge, on both hosts and with any query", async () => {
+    const vm = without(capturedHeaders(jsonHeaders));
 
     for (const host of ["image.pollinations.ai", "image.myceli.ai"]) {
         const { response, text } = await call(
@@ -156,9 +162,50 @@ test("the JSON 402 matches the VM's capture byte for byte, on both hosts and wit
         );
 
         expect(response.status).toBe(402);
-        expect(text).toBe("{}");
-        expect(Object.fromEntries(response.headers)).toEqual(vm);
+        const wait = Number(response.headers.get("retry-after"));
+        expect(wait).toBeGreaterThan(0);
+        expect(wait).toBeLessThanOrEqual(45);
+        const body = JSON.parse(text);
+        expect(body).toEqual({
+            status: 402,
+            success: false,
+            error: {
+                code: "FREE_LIMIT",
+                message: `Free limit reached: 1 image every 45 seconds per IP. Retry after ${wait}s, or get unlimited images with a pollen key at https://enter.pollinations.ai/?ref=classic`,
+                timestamp: body.error.timestamp,
+                fixUrl: "https://enter.pollinations.ai/?ref=classic",
+            },
+        });
+        expect(without(response.headers)).toEqual(vm);
     }
+});
+
+// What Chrome sends for an <img>
+const IMG = {
+    accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+    "user-agent": "Mozilla/5.0",
+};
+
+test("an <img> past the free limit gets the card at its size, with the 402, its Retry-After and the VM's challenge", async () => {
+    const { response, bytes } = await call(
+        "/prompt/a%20fox?width=300&height=500",
+        { ip: await limitedIp(), headers: IMG },
+    );
+
+    expect(response.status).toBe(402);
+    expect(response.headers.get("content-type")).toBe("image/jpeg");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    // The x402 challenge for this request, as a script gets it
+    const challenge = JSON.parse(
+        atob(response.headers.get("payment-required") ?? ""),
+    );
+    expect(challenge.resource.url).toBe(
+        "https://image-origin.pollinations.ai/prompt/a%20fox",
+    );
+    const card = PhotonImage.new_from_byteslice(bytes);
+    expect([card.get_width(), card.get_height()]).toEqual([300, 500]);
+    card.free();
 });
 
 test("a rewritten path's challenge names /prompt on the origin host, without X-Cache", async () => {
@@ -197,16 +244,32 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
     );
 });
 
-test("browsers get the VM's paywall page byte for byte", async () => {
+test("browsers get the free limit's page with the time left and the VM's headers", async () => {
     const { response, text } = await call(`${CAPTURED_BROWSER}${QUERY}`, {
         ip: await limitedIp(),
         headers: BROWSER,
     });
 
     expect(response.status).toBe(402);
-    expect(text).toBe(browserBody);
-    // Every header of the live page, which had no Content-Length or ETag
-    expect(Object.fromEntries(response.headers)).toEqual(
+    const wait = response.headers.get("retry-after") ?? "";
+    expect(text).toContain("Your next free image is ready in");
+    // The page names the price the challenge asks, in USDC's 6 decimals
+    const { accepts } = JSON.parse(
+        atob(response.headers.get("payment-required") ?? ""),
+    );
+    const [, price] =
+        text.match(/([\d.]+) USD per image, paid over x402 with Weft/) ?? [];
+    expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
+    expect(text).toContain("1 free image every 45 seconds");
+    expect(text).not.toContain("undefined");
+    expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');
+    expect(text).toContain(`let wait = ${wait};`);
+    expect(text).not.toContain("{{");
+    // The live page's headers, plus the Retry-After and the page's length
+    const headers = Object.fromEntries(response.headers);
+    delete headers["content-length"];
+    delete headers["retry-after"];
+    expect(headers).toEqual(
         Object.fromEntries(capturedHeaders(browserHeaders)),
     );
 });
@@ -231,18 +294,29 @@ test("a rate-limited HEAD generates unpaid without booking the slot, as on the V
     expect(await storedAt(`${CAPTURED_HEAD}${QUERY}`)).toBeNull();
 });
 
-test("a rate-limited HEAD whose generation fails gets the paid handler's JSON", async () => {
+test("a browser sending a broken payment header still gets the page, not the paywall's empty one", async () => {
+    for (const header of ["payment-signature", "x-payment"]) {
+        const { response, text } = await call("/prompt/broken%20payment", {
+            ip: await limitedIp(),
+            headers: { ...BROWSER, [header]: "not a payment" },
+        });
+
+        expect(response.status, header).toBe(402);
+        expect(text, header).toContain("Your next free image is ready in");
+    }
+});
+
+test("a rate-limited HEAD whose generation fails gets gen's 503", async () => {
     const { response } = await call("/prompt/gen:429", {
         ip: await limitedIp(),
         method: "HEAD",
         headers: CURL,
     });
 
-    // As the live 500 for a HEAD (gen failed then too): no X-Error-Type,
-    // Express's X-Powered-By
-    expect(response.status).toBe(500);
-    expect(Object.fromEntries(response.headers)).toEqual(
-        Object.fromEntries(capturedHeaders(headFailureHeaders)),
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("10");
+    expect(response.headers.get("content-type")).toBe(
+        "application/json; charset=utf-8",
     );
 });
 
@@ -419,19 +493,11 @@ test("an unavailable facilitator at settlement answers 503", async () => {
     );
 });
 
-test("a generation that fails after verify is not settled and gets the paid handler's JSON", async () => {
+test("a generation that fails after verify is not settled and gets gen's 503", async () => {
     const failed = await payFor("/prompt/gen:503", { headers: CURL });
 
-    expect(failed.response.status).toBe(500);
-    expect(JSON.parse(failed.text)).toEqual({
-        error: 'Gen Sana request failed with 503: {"error":"gen answered 503"}',
-    });
-    expect(failed.response.headers.get("content-type")).toBe(
-        "application/json",
-    );
-    expect(failed.response.headers.get("cache-control")).toBeNull();
-    expect(failed.response.headers.get("x-powered-by")).toBe("Express");
-    expect(failed.response.headers.get("x-error-type")).toBeNull();
+    expect(failed.response.status).toBe(503);
+    expect(JSON.parse(failed.text).error.code).toBe("SERVICE_UNAVAILABLE");
     expect(events).toEqual(["/verify", "gen"]);
 });
 

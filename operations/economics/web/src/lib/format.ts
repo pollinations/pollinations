@@ -119,7 +119,8 @@ function truncateDecimals(value: number, decimals: number): number {
 // negatives read cleanly next to the $.
 export function fmtUsd(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
-    const magnitude = fmtSmartNumber(Math.abs(value));
+    // Monetary sums can land just below a decimal boundary in binary arithmetic.
+    const magnitude = fmtSmartNumber(Number(Math.abs(value).toPrecision(12)));
     if (magnitude.startsWith("<")) {
         return value < 0
             ? `−<${"$"}${magnitude.slice(1)}`

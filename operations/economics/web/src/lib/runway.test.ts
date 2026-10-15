@@ -136,6 +136,71 @@ const stripeSales = (
 });
 
 describe("buildRunway", () => {
+    it("forecasts bank fees without repeating a one-time API advance", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({
+                    entry_id: "api-advance",
+                    vendor: "pollinations",
+                    category: "revenue",
+                    date: "2026-07-22",
+                    amount: 7000,
+                }),
+                transaction({
+                    entry_id: "bank-fee",
+                    vendor: "wise",
+                    category: "admin",
+                    date: "2026-07-22",
+                    amount: -4.49,
+                }),
+            ],
+            NOW,
+        );
+        const advance = result.rows.find(
+            (row) => row.vendor === "pollinations",
+        );
+        const fees = result.rows.find(
+            (row) => row.vendor === "wise" && row.category === "admin",
+        );
+        expect(advance?.values["2026-07:actual"]).toBe(7000);
+        expect(advance?.values["2026-09:forecast"]).toBe(0);
+        expect(fees?.values["2026-09:forecast"]).toBe(-4.49);
+        expect(result.flags.join(" ")).not.toContain(
+            "Calculation mode missing",
+        );
+    });
+
+    it("requires credit expiry before forecasting E2B cash", () => {
+        const result = buildRunway(
+            [opening()],
+            new Date("2026-10-06T12:00:00Z"),
+            [
+                cloud({
+                    vendor: "e2b",
+                    account_id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+                    type: "infra",
+                    start: "2026-09-01 00:00:00",
+                    end: "2026-10-01 00:00:00",
+                    paid: 0,
+                    credit: -0.08,
+                }),
+                {
+                    ...balance("e2b", 0, 25099.9),
+                    account_id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+                    start: "2026-10-02 00:00:00",
+                    recorded_at: "2026-10-02 00:00:00.000",
+                },
+            ],
+        );
+        expect(result.flags.join(" ")).toContain(
+            "Credit expiry not verified for e2b",
+        );
+        expect(result.flags.join(" ")).not.toContain(
+            "Calculation mode missing",
+        );
+    });
+
     it("keeps a one-month rent amount separate from later fixed rent and electricity", () => {
         const now = new Date("2026-09-05T12:00:00Z");
         const bank = [
@@ -454,6 +519,38 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(1080);
     });
 
+    it("accepts refunded Stripe fees without changing cash or later forecasts", () => {
+        const baseline = buildRunway([opening(1000)], NOW, [], undefined, [
+            stripeSales(),
+        ]);
+        const result = buildRunway([opening(1000)], NOW, [], undefined, [
+            stripeSales(),
+            stripeSales({
+                month: "2026-06",
+                gross_sales: 0,
+                refunds: 0,
+                net_sales: 0,
+                stripe_fees: -5,
+                net_after_fees: 5,
+                payments: 0,
+                refund_count: 0,
+            }),
+        ]);
+        expect(
+            result.rows.find((row) => row.vendor === "stripe sales")?.values[
+                "2026-06:actual"
+            ],
+        ).toBe(5);
+        expect(result.flags.some((flag) => flag.includes("invalid"))).toBe(
+            false,
+        );
+        expect(result.currentCashUsd).toBe(baseline.currentCashUsd);
+        expect(result.projectedMonthEndCashUsd).toBe(
+            baseline.projectedMonthEndCashUsd,
+        );
+        expect(result.assumptions).toEqual(baseline.assumptions);
+    });
+
     it("never falls back from missing Stripe sales to Wise payouts", () => {
         const result = buildRunway(
             [
@@ -686,7 +783,7 @@ describe("buildRunway", () => {
         );
 
         expect(github?.values["2026-09:forecast"]).toBeCloseTo(
-            -100 * 1.1593 - 50,
+            -100 * 1.1513 - 50,
             6,
         );
         expect(github?.assumptions["2026-09:forecast"]).toHaveLength(2);
@@ -708,7 +805,7 @@ describe("buildRunway", () => {
         );
 
         expect(refund?.values["2026-08:forecast"]).toBeCloseTo(100 * 1.1593, 2);
-        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1593, 2);
+        expect(refund?.values["2026-12:forecast"]).toBeCloseTo(200 * 1.1513, 2);
         expect(payroll?.values["2026-11:forecast"]).toBeLessThan(0);
         expect(payroll?.values["2026-12:forecast"]).toBe(0);
         expect(accounting?.values["2026-12:forecast"]).toBeLessThan(0);
@@ -933,6 +1030,49 @@ describe("buildRunway", () => {
         ).toBe(true);
     });
 
+    it("keeps discounted GitHub infrastructure funded but flags new paid usage", () => {
+        const usage = cloud({
+            vendor: "github",
+            type: "infra",
+            start: "2026-07-01 00:00:00",
+            end: "2026-08-01 00:00:00",
+            paid: 0,
+            credit: -500,
+        });
+        const funded = buildRunway([opening()], NOW, [usage], undefined, [
+            stripeSales(),
+        ]);
+        const row = funded.rows.find((r) => r.vendor === "github");
+        expect(row?.forecastMethod).toBe("funded");
+        expect(row?.forecastIssue).toBeUndefined();
+        expect(row?.creditValues?.["2026-07:actual"]).toBe(-500);
+        expect(row?.values["2026-08:forecast"]).toBe(0);
+        expect(funded.flags.some((flag) => flag.includes("github"))).toBe(
+            false,
+        );
+
+        expect(funded.projectedMonthEndCashUsd).not.toBeNull();
+        const paid = buildRunway(
+            [opening()],
+            NOW,
+            [{ ...usage, paid: -10, credit: -490 }],
+            undefined,
+            [stripeSales()],
+        );
+        expect(paid.projectedMonthEndCashUsd).toBeNull();
+        expect(
+            paid.columns
+                .filter((c) => c.kind === "forecast")
+                .every((c) => c.forecastComplete === false),
+        ).toBe(true);
+        expect(paid.flags).toContain(
+            "github (infrastructure) has recent cash-funded usage; review its funded forecast before relying on zero future cash cost.",
+        );
+        expect(
+            paid.rows.find((r) => r.vendor === "github")?.forecastIssue,
+        ).toBe("Paid usage conflicts with the funded forecast");
+    });
+
     it("includes a pending postpaid bill as an explicit estimate without blocking later months", () => {
         const result = buildRunway(
             [opening()],
@@ -956,9 +1096,12 @@ describe("buildRunway", () => {
         expect(google?.assumptions["2026-08:forecast"][0].evidence).toContain(
             "Estimated 2026-07 postpaid bill from recorded cash-funded usage",
         );
-        expect(result.flags).toContain(
+        expect(result.billingNotices).toContain(
             "google (compute): 2026-08 includes an estimated $700 bill for 2026-07 usage, less payments recorded this month. Invoice reconciliation pending.",
         );
+        expect(
+            result.flags.some((flag) => flag.includes("estimated $700")),
+        ).toBe(false);
         for (const month of ["2026-08", "2026-09"]) {
             expect(
                 result.columns.find((c) => c.id === `${month}:forecast`)

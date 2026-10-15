@@ -85,6 +85,8 @@ export type RunwayAssumption = DerivedForecastFact & {
 
 export type RunwayMatrixRow = {
     forecastIssue?: string;
+    // Components of the parent value; never add to totals again.
+    details?: { label: string; values: Record<string, number> }[];
     category: string;
     vendor: string;
     // "mixed" describes grouped rows, not a calculation method for a fact.
@@ -126,6 +128,7 @@ export type RunwayResult = {
     runwayExhaustedMonth: string | null;
     runwayCapped: boolean;
     flags: string[];
+    billingNotices: string[];
 };
 
 function monthRange(start: string, end: string): string[] {
@@ -888,6 +891,7 @@ export function buildRunway(
     const relevantStripeSales = stripeSales.filter(
         (row) => row.month >= WINDOW_START,
     );
+    // Refunded fees can make a month's net Stripe fees negative.
     const invalidStripeSales = relevantStripeSales.filter(
         (row) =>
             !MONTH_RE.test(row.month) ||
@@ -904,7 +908,6 @@ export function buildRunway(
             row.gross_sales < 0 ||
             row.refunds < 0 ||
             row.reversals < 0 ||
-            row.stripe_fees < 0 ||
             row.payments < 0 ||
             row.refund_count < 0 ||
             Math.abs(
@@ -1117,11 +1120,7 @@ export function buildRunway(
         stripeForecastUsable ? latestStripeSales : [],
     );
     const balanceAware = balanceAwareForecasts(bankRows, cloudRows, now);
-    flags.push(
-        ...ruleBased.flags,
-        ...balanceAware.flags,
-        ...(balanceAware.notices ?? []),
-    );
+    flags.push(...ruleBased.flags, ...balanceAware.flags);
     const effectiveForecastFacts = [...ruleBased.facts, ...balanceAware.facts];
 
     const invalidForecastVendors = new Set<string>();
@@ -1193,10 +1192,27 @@ export function buildRunway(
         observedMonths.add(month);
     }
 
+    const fundedCashLines = new Set(
+        cloudRows
+            .filter(
+                (row) =>
+                    !isVendorLedgerBalanceRow(row) &&
+                    [monthShift(currentMonth, -1), currentMonth].includes(
+                        row.start.slice(0, 7),
+                    ) &&
+                    forecastLineRule(row.vendor, ledgerCategory(row))
+                        ?.method === "funded" &&
+                    vendorLedgerPaidBurnUsd(row) > 0.005,
+            )
+            .map((row) =>
+                matrixKey(ledgerCategory(row), normalizedVendor(row.vendor)),
+            ),
+    );
     const forecastUsable =
         invalidForecastFacts === 0 &&
         stripeForecastUsable &&
-        balanceAware.flags.length === 0;
+        balanceAware.flags.length === 0 &&
+        fundedCashLines.size === 0;
     if (invalidForecastFacts > 0) {
         flags.push(
             `${invalidForecastFacts} forecast ${invalidForecastFacts === 1 ? "fact needs" : "facts need"} correction (${[...invalidForecastReasons].sort().join(", ")}) for ${[...invalidForecastVendors].sort().join(", ")}; month-end cash and runway are unavailable.`,
@@ -1373,8 +1389,72 @@ export function buildRunway(
                     creditValues[column.id] = credit;
                 }
             }
+            const detailFields =
+                identity.category !== "revenue"
+                    ? []
+                    : identity.vendor === "stripe sales"
+                      ? ([
+                            ["Gross customer payments", "gross_sales", 1],
+                            [
+                                "Stripe fees (including dispute fees)",
+                                "stripe_fees",
+                                -1,
+                            ],
+                        ] as const)
+                      : identity.vendor === "stripe refunds"
+                        ? ([
+                              ["Refunds", "refunds", -1],
+                              [
+                                  "Chargebacks / other reversals",
+                                  "reversals",
+                                  -1,
+                              ],
+                          ] as const)
+                        : [];
+            const details = stripeSalesUsable
+                ? detailFields.map(([label]) => ({
+                      label,
+                      values: {} as Record<string, number>,
+                  }))
+                : [];
+            for (const column of columnSpecs) {
+                const source =
+                    column.kind === "forecast"
+                        ? latestStripeSales
+                        : relevantStripeSales.filter(
+                              (row) => row.month === column.month,
+                          );
+                if (!source.length || !details.length) continue;
+                const amounts = detailFields.map(([, field, sign]) =>
+                    source.reduce(
+                        (sum, row) =>
+                            sum +
+                            toUsd(
+                                sign * row[field],
+                                row.currency,
+                                column.month,
+                            ),
+                        0,
+                    ),
+                );
+                // A reviewed zero forecast needs no breakdown. Other overrides
+                // must reconcile exactly before showing inferred components.
+                if (column.kind === "forecast" && values[column.id] === 0)
+                    amounts.fill(0);
+                if (
+                    Math.abs(
+                        amounts.reduce((sum, amount) => sum + amount, 0) -
+                            values[column.id],
+                    ) > 0.005
+                )
+                    continue;
+                details.forEach((detail, index) => {
+                    detail.values[column.id] = amounts[index];
+                });
+            }
             return {
                 ...identity,
+                ...(details.length ? { details } : {}),
                 ...(Object.keys(creditValues).length > 0
                     ? { creditValues }
                     : {}),
@@ -1522,6 +1602,13 @@ export function buildRunway(
     );
     const unmodeledRows = rows.filter((row) => row.forecastMethod == null);
     for (const row of rows) {
+        if (fundedCashLines.has(matrixKey(row.category, row.vendor))) {
+            row.forecastIssue = "Paid usage conflicts with the funded forecast";
+            flags.push(
+                `${row.vendor} (${row.category}) has recent cash-funded usage; review its funded forecast before relying on zero future cash cost.`,
+            );
+            continue;
+        }
         row.forecastIssue =
             ledgerIssues.get(row.vendor) ??
             balanceAware.issues.get(row.vendor) ??
@@ -1666,5 +1753,6 @@ export function buildRunway(
         runwayExhaustedMonth,
         runwayCapped,
         flags,
+        billingNotices: [...new Set(balanceAware.notices ?? [])],
     };
 }

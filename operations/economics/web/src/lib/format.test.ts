@@ -93,6 +93,12 @@ describe("fmtUsd", () => {
         expect(fmtUsd(1234.567)).toBe("$1,234");
     });
 
+    it("does not truncate floating-point noise into a false monetary gap", () => {
+        expect(fmtUsd(64.8 + 41.6)).toBe("$106.4");
+        expect(fmtUsd(105.4 - (64.8 + 41.6))).toBe("−$1");
+        expect(fmtUsd(106.39)).toBe("$106.3");
+    });
+
     it("renders negatives with a minus sign", () => {
         expect(fmtUsd(-13921.4)).toBe("−$13.92k");
     });

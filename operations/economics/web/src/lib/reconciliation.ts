@@ -20,7 +20,7 @@ import { modelReconcileRows } from "./modelReconcile";
 import { collectMonths, reportingMonths } from "./months";
 import { providerAccountBalanceRows } from "./providerBalances";
 import { providerCloseRows } from "./providerClose";
-import { resolveProvider } from "./providerRegistry";
+import { meterDriftExplanation, resolveProvider } from "./providerRegistry";
 import { buildRunway } from "./runway";
 import { salesCoverage } from "./sales";
 import {
@@ -332,15 +332,23 @@ export function reconciliationState(data: Data, now = new Date()) {
             providerCostCheck(row).kind !== "review"
         )
             continue;
+        const reviewed = meterDriftExplanation(
+            row.month,
+            row.vendor,
+            data.privateConfig,
+        );
         add(
             row.month,
             row.vendor,
             "quality",
-            "Provider cost and the Pollen cost meter differ by more than the review threshold (25% and $100). Check the usage and invoice records.",
+            reviewed
+                ? `Known historical meter gap: ${reviewed.explanation}`
+                : "Provider cost and the Pollen cost meter differ by more than the review threshold (25% and $100). Check the usage and invoice records.",
             ["vendors", "inference", "vendor-ledger", "op-pollen"],
             1,
             Math.abs(row.meterGapUsd ?? 0),
             "Provider / usage-meter difference",
+            reviewed?.evidence ?? [],
         );
     }
     // Reviewed source differences stay open without changing booked costs.

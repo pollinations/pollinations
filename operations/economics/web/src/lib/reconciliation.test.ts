@@ -251,6 +251,57 @@ describe("shared reconciliation", () => {
             expect(issue?.invoices).toBeUndefined();
         },
     );
+    it("shows the reviewed historical meter limitation instead of requesting the same invoice again", () => {
+        const explanation =
+            "Search fees were absent from the historical internal meter. Provider invoices remain the cost source.";
+        const source =
+            "https://drive.google.com/file/d/reviewed-meter-audit/view";
+        const data: Data = {
+            opPollen: [usage("perplexity")],
+            vendorLedger: [{ ...cost("perplexity"), paid: -500 }],
+            privateConfig: parsePrivateConfig({
+                config: JSON.stringify({
+                    forecastRules: {},
+                    reconciliation: {
+                        providerCheckExplanations: [],
+                        pollenWitnessExplanations: [],
+                        meterDriftExplanations: [
+                            {
+                                month: "2026-09",
+                                provider: "perplexity",
+                                reason: "historical_tracking_gap",
+                                explanation,
+                                evidence: [source],
+                            },
+                        ],
+                    },
+                }),
+                recorded_at: "2026-10-15 00:00:00",
+            }),
+        };
+        const issue = reconciliationState(data, now).issues.find(
+            (row) => row.vendor === "perplexity" && row.month === "2026-09",
+        );
+        expect(issue?.messages).toContain(
+            `Known historical meter gap: ${explanation}`,
+        );
+        expect(issue?.evidence).toContain(source);
+        expect(
+            issue?.messages.some((message) =>
+                message.includes("Check the usage and invoice records"),
+            ),
+        ).toBe(false);
+        expect(issue?.amountUsd).toBe(430);
+        expect(issue?.group).toBe("validation");
+        expect(monthlyTrends(data, "company", now)).toEqual(
+            monthlyTrends(
+                { ...data, privateConfig: undefined },
+                "company",
+                now,
+            ),
+        );
+    });
+
     it("does not call the current month missing full-month usage", () => {
         const state = reconciliationState(
             { opPollen: [{ ...usage("aws"), month: "2026-10" }] },

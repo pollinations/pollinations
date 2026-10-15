@@ -31,9 +31,12 @@ Collection steps:
    otherwise use the Economics meter and show its source.
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
    status matters. Save evidence to `<collection-dir>/evidence/`.
-4. For a closed month, open **Invoice history** and download the original PDF.
-   Inspect its line items before classifying it: this history and the
-   `RC9JSEWU-` series contain both credit purchases and model/SKU usage invoices.
+4. For closed-month service invoices, open **Payment method → Manage** and
+   use the linked Stripe portal's invoice history. The console's own
+   **Invoice history** lists credit purchases and can omit service invoices.
+   Download each missing original PDF once, after checking the Drive register.
+   Inspect its line items before classifying it: the `RC9JSEWU-` series
+   contains both credit purchases and model/SKU usage invoices.
    Only a usage invoice's subtotal and SKU lines establish provider usage;
    a manual credit purchase is wallet funding, including any separate tax.
 5. Use this skill to extract or reconcile it.
@@ -59,7 +62,13 @@ Collection steps:
   the raw JSON to `<collection-dir>/evidence/perplexity/` and Drive.
 - Days that have already left the trailing-month window cannot be recovered
   at daily grain; a weekly bucket that straddles a month boundary cannot be
-  split. Record what is exact and flag the rest; do not fill it from Pollen.
+  split. Reuse archived daily exports when available: an exact month can be
+  assembled from daily edge days and complete non-overlapping weekly buckets.
+  Check every source epoch boundary in UTC, retain all meter dimensions, and
+  match each invoice line's quantity and rounded cost before using its billed
+  amount. Preserve the provider's unrounded API total separately; do not rebuild
+  prices or allocate a rounding residual. Record what is exact and flag the
+  rest; do not fill it from Pollen.
 - No public usage or billing API exists; the console routes are limited to
   `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
 

@@ -54,6 +54,10 @@ Collection steps:
    response also contains unrelated account details, so archive a focused
    extract with the checked time, account identity, balance fields, and a hash
    of the private raw response. Keep expiry blank until its terms are verified.
+   Historical team ID `396700` is the registry's `myceli` account (verified
+   through `show user` on 2026-10-15). Preserve source account IDs and resolve
+   only explicitly verified aliases; do not request the same usage again
+   because an export uses the numeric team ID.
 5. Use this skill for saved raw evidence.
 
 Known traps:

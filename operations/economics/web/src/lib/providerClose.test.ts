@@ -464,6 +464,27 @@ describe("providerCloseRows", () => {
         expect(row.closeStatus).toBe("ready");
     });
 
+    it("recognizes historical Vast team IDs as the same checked account", () => {
+        const rows = providerCloseRows(
+            data({
+                vendorLedger: [
+                    cloud({
+                        vendor: "vast",
+                        account_id: "396700",
+                        type: "gpu",
+                        paid: -120,
+                    }),
+                ],
+            }),
+            "2026-07",
+        );
+        expect(rows.find((row) => row.vendor === "vast")).toMatchObject({
+            coverageStatus: "complete",
+            missingAccounts: [],
+            billedUsd: 120,
+        });
+    });
+
     it("flags incomplete active-account coverage", () => {
         const [row] = providerCloseRows(
             data({

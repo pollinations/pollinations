@@ -5640,7 +5640,8 @@
           "id": "myceli",
           "label": "Myceli.AI",
           "aliases": [
-            "default"
+            "default",
+            "396700"
           ],
           "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",

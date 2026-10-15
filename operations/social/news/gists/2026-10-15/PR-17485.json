@@ -1,0 +1,122 @@
+{
+  "pr_number": 17485,
+  "title": "feat: add Microsoft-Decision-1 for typed decisions",
+  "author": "tomdacatto",
+  "url": "https://github.com/pollinations/pollinations/pull/17485",
+  "merged_at": "2026-10-15T11:11:36Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added Microsoft-Decision-1 for paid-balance requests to /alpha/decisions and /v1/chat/completions. It returns calibrated probabilities for fixed choices rather than generated text; the chat endpoint accepts the decision JSON in the last user message. Pricing is based on input tokens per 1M tokens. Requests use Vercel AI Gateway, with a hidden OpenRouter route as fallback for gateway failures; both routes use the same Azure backend, so the fallback does not cover an Azure outage.",
+    "keywords": [
+      "Microsoft-Decision-1",
+      "typed decisions",
+      "probabilities",
+      "alpha/decisions",
+      "chat completions",
+      "fallback"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17485.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears a tiny clipboard strap and watches a retro terminal sort fixed choices into little flower pots labeled with probability bars, its screen glowing lime green (#ecf874). Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art and never realistic, surrounded by soft pastel gradients and warm lighting: cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-15T11:13:36.819604+00:00",
+  "area": "Models",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "5a0333cc54778d10d67cb5414541d9af014807a2",
+  "announcements": [
+    {
+      "id": "pr-17485:microsoft/microsoft-decision-1",
+      "model_id": "microsoft/microsoft-decision-1",
+      "title": "Microsoft-Decision-1",
+      "action": "NEW",
+      "category": "text",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "aliases": {
+          "before": null,
+          "after": []
+        },
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "category": {
+          "before": null,
+          "after": "text"
+        },
+        "context_length": {
+          "before": null,
+          "after": 32768
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "is_specialized": {
+          "before": null,
+          "after": true
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000042"
+          }
+        },
+        "reasoning": {
+          "before": null,
+          "after": false
+        },
+        "supported_endpoints": {
+          "before": null,
+          "after": [
+            "/alpha/decisions",
+            "/v1/chat/completions"
+          ]
+        },
+        "supported_parameters": {
+          "before": null,
+          "after": [
+            "stream"
+          ]
+        },
+        "tools": {
+          "before": null,
+          "after": false
+        },
+        "availability": {
+          "before": "Unavailable",
+          "after": "Available"
+        }
+      },
+      "effective_at": null,
+      "effective_status": "unconfirmed",
+      "official": true
+    }
+  ],
+  "announcement_evidence": {
+    "before_ref": "5a0333cc54778d10d67cb5414541d9af014807a2^1",
+    "after_ref": "5a0333cc54778d10d67cb5414541d9af014807a2"
+  }
+}

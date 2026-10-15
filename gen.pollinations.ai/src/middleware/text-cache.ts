@@ -41,11 +41,17 @@ const textCacheAdapter: GenerationCacheAdapter = {
 
         const variables = c.var as typeof c.var &
             Partial<AuthVariables & ModelVariables>;
-        // Caller-scoped models carry a scope; everything else stays shared.
+        // Partition every entry by caller. The cache is read before auth, so
+        // caller identity has to be part of the key: a response produced for a
+        // paying API key must never be served to a keyless caller (#17407).
+        // Keyless callers still share one public entry with each other, so
+        // public cache hits stay public - they just stop including answers
+        // that were generated for someone who authenticated.
         const cacheScope = variables.model?.cacheScope;
+        const caller = variables.auth?.apiKey?.id ?? "anonymous";
         const partition = cacheScope
-            ? `${cacheScope}:key:${variables.auth?.apiKey?.id ?? "anonymous"}`
-            : undefined;
+            ? `${cacheScope}:key:${caller}`
+            : `key:${caller}`;
         return generateCacheKey(
             c.req.raw,
             bodyText,

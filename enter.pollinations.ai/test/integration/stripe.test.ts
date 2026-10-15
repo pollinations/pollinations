@@ -998,7 +998,7 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
-test("GET /api/stripe/billing returns the pack of the last checkout purchase", async ({
+test("GET /api/stripe/billing returns the last pack bought", async ({
     sessionToken,
     mocks,
 }) => {
@@ -1017,22 +1017,16 @@ test("GET /api/stripe/billing returns the pack of the last checkout purchase", a
         });
         expect(response.status).toBe(200);
         const data = (await response.json()) as {
-            lastPackAmountUsd: number | null;
+            lastPackPollen: number | null;
         };
-        return data.lastPackAmountUsd;
+        return data.lastPackPollen;
     };
 
     expect(await lastPack()).toBeNull();
 
-    const credit = env.DB.prepare(
-        `INSERT INTO stripe_checkout_credits
-            (session_id, event_id, event_type, user_id, pollen_credited, created_at)
-            VALUES (?, ?, 'checkout.session.completed', ?, ?, ?)`,
-    );
-    await env.DB.batch([
-        credit.bind("cs_last_pack_new", "evt_new", user.id, 10, 2_000),
-        credit.bind("cs_last_pack_old", "evt_old", user.id, 5, 1_000),
-    ]);
+    await env.DB.prepare("UPDATE user SET last_pack_pollen = 10 WHERE id = ?")
+        .bind(user.id)
+        .run();
 
     expect(await lastPack()).toBe(10);
 });

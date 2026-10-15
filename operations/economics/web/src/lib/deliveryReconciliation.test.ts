@@ -248,9 +248,14 @@ describe("historical canonical names", () => {
         ["2026-07", "aws", "claude", "anthropic/claude-sonnet-4.6"],
         ["2026-01", "vast", "flux", "black-forest-labs/flux.1-schnell"],
         ["2026-01", "azure", "gptimage", "openai/gpt-image-1-mini"],
-    ])("resolves %s / %s / %s only to its reviewed identity", (month, vendor, id, expected) => {
-        expect(ledgerModelResolver({}).model(month, vendor, id)).toBe(expected);
-    });
+    ])(
+        "resolves %s / %s / %s only to its reviewed identity",
+        (month, vendor, id, expected) => {
+            expect(ledgerModelResolver({}).model(month, vendor, id)).toBe(
+                expected,
+            );
+        },
+    );
 
     it("keeps an ambiguous month in reconciliation even when a newer canonical model is present", () => {
         const data: Data = {

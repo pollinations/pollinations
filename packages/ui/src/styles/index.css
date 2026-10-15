@@ -15,6 +15,11 @@
 @import "../modules/wallet/styles.css";
 @import "./theme.css";
 
+/* Ark keeps closed parts mounted; host apps need not import preflight. */
+[data-scope][hidden]:not([hidden="until-found" i]) {
+    display: none !important;
+}
+
 .polli-scrollbar-subtle {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
@@ -62,13 +67,17 @@
     --polli-dialog-gutter: 1.5rem;
 }
 
-/* On phones a full-screen modal fills the screen in its own block colour with
-   a 20px gutter; its top-level cards run edge to edge like page sections.
-   Nested cards and compact dialogs are untouched. */
-@media (width < 40rem) {
+/* Phone dialogs keep their rounded outline and a small vertical gap, while
+   their top-level cards run edge to edge with a 20px content gutter.
+   Nested cards keep their own spacing. */
+@media (width < 30rem) {
+    .polli-dialog-mobile-positioner {
+        padding: 0.5rem 0;
+    }
+
     .polli-dialog-mobile-page {
         --polli-dialog-gutter: 1.25rem;
-        border-radius: 0;
+        max-width: none;
     }
 
     .polli-dialog-mobile-page
@@ -102,8 +111,8 @@
 .polli-textarea:focus,
 .polli-textarea:focus-visible {
     border-color: var(--polli-color-border);
-    outline: none;
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell {
@@ -115,7 +124,8 @@
 
 .polli-input-shell:focus-within {
     border-color: var(--polli-color-border);
-    box-shadow: 0 0 0 1px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: -1px;
 }
 
 .polli-input-shell > .polli-input,
@@ -123,6 +133,7 @@
 .polli-input-shell > .polli-input:focus-visible {
     background-color: transparent;
     border-color: transparent;
+    outline: none;
     box-shadow: none;
 }
 
@@ -131,10 +142,7 @@
 .polli-input[data-error="true"],
 .polli-input[data-invalid],
 .polli-textarea[data-error="true"],
-.polli-textarea[data-invalid] {
-    border-color: var(--polli-color-danger-border);
-}
-
+.polli-textarea[data-invalid],
 .polli-input[data-error="true"]:focus,
 .polli-input[data-error="true"]:focus-visible,
 .polli-input[data-invalid]:focus,
@@ -144,7 +152,7 @@
 .polli-textarea[data-invalid]:focus,
 .polli-textarea[data-invalid]:focus-visible {
     border-color: var(--polli-color-danger-border);
-    box-shadow: 0 0 0 1px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
 }
 
 .polli-textarea {
@@ -183,13 +191,36 @@
     outline: none;
 }
 
+/* A ring outside the shape, so a focused filled button never reads as an
+   outlined one. */
 .polli-control:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-focus);
+    outline-offset: 2px;
 }
 
 .polli-control[data-intent="danger"]:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-color-danger-border);
+    outline-color: var(--polli-color-danger-text);
+}
+
+/* Touch screens: every control gets at least a 44px tap area, without
+   changing how it looks or lays out. Layered, so a control placed with a
+   utility (polli:absolute) keeps that position. */
+@layer components {
+    @media (pointer: coarse) {
+        .polli-control {
+            position: relative;
+        }
+
+        .polli-control::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: max(100%, 44px);
+            height: max(100%, 44px);
+            translate: -50% -50%;
+        }
+    }
 }
 
 .polli-slider {
@@ -198,9 +229,10 @@
         --polli-slider-fill,
         var(--polli-color-bg-active)
     );
+    /* A neutral track, so the amber fill alone shows the value. */
     --polli-slider-track-value: var(
         --polli-slider-track,
-        var(--polli-color-bg-pale)
+        var(--polli-color-divider)
     );
     --polli-slider-thumb-border-value: var(
         --polli-slider-thumb-border,
@@ -230,11 +262,6 @@
 .polli-slider:disabled {
     cursor: not-allowed;
     opacity: 0.6;
-}
-
-.polli-slider:focus-visible {
-    box-shadow: 0 0 0 2px var(--polli-slider-fill-value),
-        0 0 0 4px var(--polli-color-surface-white);
 }
 
 .polli-slider::-webkit-slider-runnable-track {
@@ -267,6 +294,27 @@
     border-radius: 9999px;
     background: var(--polli-color-surface-opaque);
     transition: transform 150ms ease;
+}
+
+/* Focus rings the thumb, not the track. */
+.polli-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+.polli-slider:focus-visible::-moz-range-thumb {
+    box-shadow:
+        0 0 0 2px var(--polli-color-surface-block),
+        0 0 0 4px var(--polli-color-focus);
+}
+
+/* Forced colors drop box-shadow, so outline the slider instead. */
+@media (forced-colors: active) {
+    .polli-slider:focus-visible {
+        outline: 2px solid;
+        outline-offset: 2px;
+    }
 }
 
 .polli-slider:hover::-webkit-slider-thumb {

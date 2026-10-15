@@ -217,37 +217,40 @@ describe("shared reconciliation", () => {
     it.each([
         "https://drive.google.com/file/d/linked-original/view",
         "evidence_type=payment_statement https://drive.google.com/file/d/statement/view",
-    ])("distinguishes linked sources from a validated supplier invoice: %s", (evidence) => {
-        const state = reconciliationState(
-            {
-                opTransactions: [
-                    {
-                        entry_id: "linked-bank",
-                        kind: "transaction",
-                        source: "wise",
-                        date: "2026-09-08",
-                        vendor: "buffer",
-                        category: "operations",
-                        amount: -24,
-                        currency: "USD",
-                        description: "Buffer",
-                        evidence,
-                        recorded_at: "2026-10-14 00:00:00",
-                    },
-                ],
-            },
-            now,
-        );
-        const issue = state.issues.find(
-            (row) => row.vendor === "buffer" && row.month === "2026-09",
-        );
-        expect(issue?.types).toEqual(["documents"]);
-        expect(issue?.messages).toEqual([
-            "A source is linked; validate the supplier invoice and its payment match.",
-        ]);
-        expect(issue?.evidence).toContain(evidence);
-        expect(issue?.invoices).toBeUndefined();
-    });
+    ])(
+        "distinguishes linked sources from a validated supplier invoice: %s",
+        (evidence) => {
+            const state = reconciliationState(
+                {
+                    opTransactions: [
+                        {
+                            entry_id: "linked-bank",
+                            kind: "transaction",
+                            source: "wise",
+                            date: "2026-09-08",
+                            vendor: "buffer",
+                            category: "operations",
+                            amount: -24,
+                            currency: "USD",
+                            description: "Buffer",
+                            evidence,
+                            recorded_at: "2026-10-14 00:00:00",
+                        },
+                    ],
+                },
+                now,
+            );
+            const issue = state.issues.find(
+                (row) => row.vendor === "buffer" && row.month === "2026-09",
+            );
+            expect(issue?.types).toEqual(["documents"]);
+            expect(issue?.messages).toEqual([
+                "A source is linked; validate the supplier invoice and its payment match.",
+            ]);
+            expect(issue?.evidence).toContain(evidence);
+            expect(issue?.invoices).toBeUndefined();
+        },
+    );
     it("does not call the current month missing full-month usage", () => {
         const state = reconciliationState(
             { opPollen: [{ ...usage("aws"), month: "2026-10" }] },

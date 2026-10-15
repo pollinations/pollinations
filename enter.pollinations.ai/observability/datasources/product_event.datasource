@@ -22,6 +22,8 @@ SCHEMA >
     `pack_key` LowCardinality(String) `json:$.pack_key` DEFAULT '',
     `flow_id` String `json:$.flow_id` DEFAULT '',
     `client_id` String `json:$.client_id` DEFAULT '',
+    `key_id` String `json:$.key_id` DEFAULT '',
+    `harness` LowCardinality(String) `json:$.harness` DEFAULT '',
     `referrer_host` String `json:$.referrer_host` DEFAULT '',
     `utm_source` String `json:$.utm_source` DEFAULT '',
     `utm_medium` String `json:$.utm_medium` DEFAULT '',

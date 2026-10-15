@@ -348,29 +348,32 @@ describe("gpuWorkloadRows", () => {
         ["klein", "black-forest-labs/flux.2-klein-4b"],
         ["dreamshaper", "lykon/dreamshaper-8-lcm"],
         ["zimage", "tongyi-mai/z-image-turbo"],
-    ])("joins reviewed %s promotions without duplicating costs or usage", (legacy, canonical) => {
-        const rows = gpuWorkloadRows(
-            {
-                vendorLedger: [cloud({ vendor: "vast", model: legacy })],
-                opPollen: [
-                    pollen({ vendor: "vast", model: legacy }),
-                    pollen({ vendor: "vast", model: canonical }),
-                ],
-            },
-            "2026-06",
-        );
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
-            workload: canonical,
-            gpuCount: 1,
-            retainedUsd: 260,
-            paidUsd: 320,
-            questUsd: 80,
-            totalCostUsd: 100,
-            currentResultUsd: 160,
-            flags: [],
-        });
-    });
+    ])(
+        "joins reviewed %s promotions without duplicating costs or usage",
+        (legacy, canonical) => {
+            const rows = gpuWorkloadRows(
+                {
+                    vendorLedger: [cloud({ vendor: "vast", model: legacy })],
+                    opPollen: [
+                        pollen({ vendor: "vast", model: legacy }),
+                        pollen({ vendor: "vast", model: canonical }),
+                    ],
+                },
+                "2026-06",
+            );
+            expect(rows).toHaveLength(1);
+            expect(rows[0]).toMatchObject({
+                workload: canonical,
+                gpuCount: 1,
+                retainedUsd: 260,
+                paidUsd: 320,
+                questUsd: 80,
+                totalCostUsd: 100,
+                currentResultUsd: 160,
+                flags: [],
+            });
+        },
+    );
 
     it("does not borrow GPU coverage from a different vendor or month", () => {
         for (const usage of [

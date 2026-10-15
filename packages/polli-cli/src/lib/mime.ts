@@ -11,10 +11,12 @@ const MIME_BY_EXT: Record<string, string> = {
     ".mp3": "audio/mpeg",
     ".wav": "audio/wav",
     ".ogg": "audio/ogg",
+    ".opus": "audio/ogg",
     ".m4a": "audio/mp4",
     ".flac": "audio/flac",
     ".aac": "audio/aac",
     ".mp4": "video/mp4",
+    ".mkv": "video/x-matroska",
     ".webm": "video/webm",
     ".mov": "video/quicktime",
 };

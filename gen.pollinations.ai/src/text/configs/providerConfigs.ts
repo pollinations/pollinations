@@ -80,8 +80,19 @@ export function createAzureResponsesModelConfig(
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
         ...overrides,
     });
+}
+
+export function createAnthropicConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "anthropic",
+        authKey: textEnvironmentValue("ANTHROPIC_API_KEY"),
+        ...overrides,
+    };
 }
 
 export function createBedrockNativeConfig(
@@ -90,9 +101,9 @@ export function createBedrockNativeConfig(
     return {
         provider: "bedrock",
         requiresBase64ImageUrls: true,
-        "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
-        "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
-        "aws-region": process.env.AWS_REGION || "us-east-1",
+        "aws-access-key-id": textEnvironmentValue("AWS_ACCESS_KEY_ID"),
+        "aws-secret-access-key": textEnvironmentValue("AWS_SECRET_ACCESS_KEY"),
+        "aws-region": textEnvironmentValue("AWS_REGION") || "us-east-1",
         ...overrides,
     };
 }
@@ -116,7 +127,17 @@ export function createDeepInfraModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.deepinfra.com/v1/openai",
-        process.env.DEEPINFRA_API_KEY,
+        textEnvironmentValue("DEEPINFRA_API_KEY"),
+        overrides,
+    );
+}
+
+export function createInferencePortModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inferenceport.ai/v1",
+        textEnvironmentValue("INFERENCEPORT_API_KEY"),
         overrides,
     );
 }
@@ -139,6 +160,17 @@ export function createOpenRouterModelConfig(
         directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         responsesEndpoint: "https://openrouter.ai/api/v1/responses",
         authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        ...overrides,
+    };
+}
+
+export function createNovitaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        authKey: textEnvironmentValue("NOVITA_API_KEY"),
         ...overrides,
     };
 }
@@ -196,16 +228,6 @@ export function createPerplexityAgentConfig(
                 tool_choice: "required",
             },
         },
-    );
-}
-
-export function createOVHcloudModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return createOpenAICompatibleConfig(
-        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        textEnvironmentValue("OVHCLOUD_API_KEY"),
-        overrides,
     );
 }
 

@@ -23,7 +23,6 @@ import {
 
 const QUEST_LABEL = "POLLEN-QUEST";
 const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
-    QUEST_LABEL,
     "DRAFT-QUEST",
     "APP-SUBMISSION",
     "AUTOMATED",
@@ -31,7 +30,7 @@ const ISSUE_REPORT_EXCLUDED_LABELS = new Set([
 // Fixed 90-day lookback from launch; later visits must not move the cutoff.
 const ISSUE_REPORT_START = Date.parse("2026-06-25T19:45:46Z");
 const ISSUE_REPORT_EXCLUDED_TITLE =
-    /\[(?:App|Project) Submission\]|^\[(?:Community(?: Model)? Publisher Access|QUEST)\]/i;
+    /\[(?:App|Project) Submission\]|^\[Community(?: Model)? Publisher Access\]/i;
 const REPO_OWNER = "pollinations";
 const REPO_NAME = "pollinations";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
@@ -88,7 +87,7 @@ const firstMergedPrQuest: QuestDefinition = {
 const reportedIssueQuest: QuestDefinition = {
     id: "reported_merged_issue",
     title: "Report an issue that gets fixed",
-    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions and quest issues do not count.`,
+    description: `[Report a bug or suggest an improvement](https://github.com/${REPO}/issues/new/choose) in the Pollinations repository. Earn 3 Quest Pollen for each issue closed by a merged PR. App submissions do not count.`,
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 3,

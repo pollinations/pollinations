@@ -10,6 +10,7 @@ type MediaStorageEnv = {
 };
 
 export type UnlistedMediaUpload = {
+    id?: string;
     contentType: string;
     fileName?: string;
     size: number;
@@ -24,6 +25,27 @@ export type UnlistedMediaUploadResult = {
     size: number;
 };
 
+const FILENAME_EXT_PARAM = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;\s]+)/i;
+
+/**
+ * Original filename of a raw upload. Header values cannot carry CJK or emoji
+ * as-is, so clients send the UTF-8 name as an RFC 8187 `filename*` parameter
+ * of `Content-Disposition`. Plain `X-File-Name` stays the fallback.
+ */
+export function rawUploadFileName(headers: Headers): string | undefined {
+    const encoded = headers
+        .get("content-disposition")
+        ?.match(FILENAME_EXT_PARAM)?.[1];
+    if (encoded) {
+        try {
+            return decodeURIComponent(encoded);
+        } catch {
+            // Malformed percent-encoding: use X-File-Name instead.
+        }
+    }
+    return headers.get("x-file-name") ?? undefined;
+}
+
 export async function uploadUnlistedMedia(
     env: MediaStorageEnv,
     body: ReadableStream<Uint8Array>,
@@ -37,8 +59,19 @@ export async function uploadUnlistedMedia(
         throw new Error(`Media exceeds ${maxSize} bytes`);
     }
 
-    const id = crypto.randomUUID();
+    if (input.id !== undefined && !/^[a-f0-9]{64}$/.test(input.id)) {
+        throw new Error("Invalid media ID");
+    }
+    const id = input.id ?? crypto.randomUUID();
     const contentType = input.contentType || "application/octet-stream";
+    if (input.id && (await env.MEDIA_BUCKET.head(id))) {
+        return {
+            id,
+            url: `https://media.pollinations.ai/${id}`,
+            contentType,
+            size: input.size,
+        };
+    }
     const upload = new FixedLengthStream(input.size);
     const pipe = body.pipeTo(upload.writable);
     try {

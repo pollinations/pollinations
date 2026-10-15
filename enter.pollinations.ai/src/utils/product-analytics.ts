@@ -4,6 +4,8 @@ import type { Context } from "hono";
 
 export type ProductEvent =
     | "page_viewed"
+    // A pollinations.ai website page, so its "/" never counts as Enter's.
+    | "website_page_viewed"
     | "checkout_started"
     | "auto_top_up_enabled"
     | "auto_top_up_disabled"
@@ -25,6 +27,7 @@ export type ProductEvent =
     | "device_approved"
     | "device_denied"
     | "device_token_issued"
+    | "polli_harness_on"
     | "link_started"
     | "link_completed";
 
@@ -43,6 +46,8 @@ export async function captureProductEvent(
         pack_key?: string;
         flow_id?: string;
         client_id?: string;
+        key_id?: string;
+        harness?: string;
         referrer_host?: string;
         utm_source?: string;
         utm_medium?: string;

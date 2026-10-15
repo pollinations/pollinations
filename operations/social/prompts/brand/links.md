@@ -3,6 +3,8 @@
 ## Core Websites
 - **Main Website:** https://pollinations.ai
 - **Dashboard & API Keys:** https://enter.pollinations.ai/keys
+- **Browse Models (prices, capabilities):** https://enter.pollinations.ai/models
+- **One Model:** https://enter.pollinations.ai/models?q={model_id}
 - **Interactive Playground:** https://pollinations.ai/play
 
 ## API
@@ -11,12 +13,10 @@
 - **Text Generation (OpenAI-compatible):** https://gen.pollinations.ai/v1/chat/completions
 - **Simple Text:** https://gen.pollinations.ai/text/{prompt}
 - **Audio / TTS:** https://gen.pollinations.ai/audio/{text}
-- **Available Image Models:** https://gen.pollinations.ai/image/models
-- **Available Text Models:** https://gen.pollinations.ai/v1/models
 - **Media Store (uploads):** https://media.pollinations.ai
 
 ## Official Documentation
-- **API Docs (Swagger):** https://gen.pollinations.ai/docs
+- **API Docs:** https://gen.pollinations.ai/docs
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK & UI:** https://react.pollinations.ai
 - **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
@@ -39,7 +39,7 @@
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials
-- **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+- **Discord:** https://discord.gg/k9F7SyTgqn
 - **Twitter/X:** https://x.com/pollinations_ai
 - **Reddit:** https://www.reddit.com/r/pollinations_ai/
 - **YouTube:** https://www.youtube.com/channel/UCk4yKnLnYfdOstmxYE_tmHFw

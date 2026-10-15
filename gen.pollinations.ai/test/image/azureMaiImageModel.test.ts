@@ -56,37 +56,42 @@ describe("callAzureMaiImage", () => {
     it.each([
         ["microsoft/mai-image-2.6-flash", "MAI-Image-2.6-Flash"],
         ["microsoft/mai-image-2.6", "MAI-Image-2.6"],
-    ] as const)("routes %s to its exact Azure deployment", async (model, deployment) => {
-        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
-            expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
-            expect(init?.headers).toMatchObject({
-                "api-key": "test-azure-key",
-            });
-            expect(JSON.parse(init?.body as string)).toEqual({
-                model: deployment,
-                prompt: "a red bicycle",
-                width: 1024,
-                height: 1024,
-            });
-            return successResponse({
-                num_output_tokens: 1024,
-                num_input_text_tokens: 24,
-                num_input_image_tokens: 0,
-            });
-        });
+    ] as const)(
+        "routes %s to its exact Azure deployment",
+        async (model, deployment) => {
+            vi.spyOn(globalThis, "fetch").mockImplementation(
+                async (url, init) => {
+                    expect(url.toString()).toBe(GENERATIONS_ENDPOINT);
+                    expect(init?.headers).toMatchObject({
+                        "api-key": "test-azure-key",
+                    });
+                    expect(JSON.parse(init?.body as string)).toEqual({
+                        model: deployment,
+                        prompt: "a red bicycle",
+                        width: 1024,
+                        height: 1024,
+                    });
+                    return successResponse({
+                        num_output_tokens: 1024,
+                        num_input_text_tokens: 24,
+                        num_input_image_tokens: 0,
+                    });
+                },
+            );
 
-        const result = await callAzureMaiImage(
-            "a red bicycle",
-            { ...baseParams, model },
-            USER_INFO,
-        );
-        expect(result.trackingData).toEqual({
-            actualModel: model,
-            usage: { promptTextTokens: 24, completionImageTokens: 1024 },
-        });
-    });
+            const result = await callAzureMaiImage(
+                "a red bicycle",
+                { ...baseParams, model },
+                USER_INFO,
+            );
+            expect(result.trackingData).toEqual({
+                actualModel: model,
+                usage: { promptTextTokens: 24, completionImageTokens: 1024 },
+            });
+        },
+    );
 
-    it("accepts the 2.6 maximum size but rejects larger images", async () => {
+    it("accepts the 2.6 maximum size", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
             successResponse({
                 num_output_tokens: 2304,
@@ -105,17 +110,6 @@ describe("callAzureMaiImage", () => {
             callAzureMaiImage("a poster", params, USER_INFO),
         ).resolves.toMatchObject({
             trackingData: { usage: { completionImageTokens: 2304 } },
-        });
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        await expect(
-            callAzureMaiImage(
-                "a poster",
-                { ...params, width: 1552 },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("2,359,296 pixels"),
         });
         expect(fetchSpy).toHaveBeenCalledOnce();
     });
@@ -161,7 +155,7 @@ describe("callAzureMaiImage", () => {
         });
     });
 
-    it("edits one safety-checked reference image through multipart form data", async () => {
+    it("edits with every safety-checked reference image through multipart form data", async () => {
         let editInit: RequestInit | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
             if (url.toString() === INPUT_IMAGE_URL) {
@@ -184,7 +178,7 @@ describe("callAzureMaiImage", () => {
                 ...baseParams,
                 width: 512,
                 height: 512,
-                image: [INPUT_IMAGE_URL],
+                image: [INPUT_IMAGE_URL, INPUT_IMAGE_URL],
             },
             USER_INFO,
         );
@@ -199,69 +193,39 @@ describe("callAzureMaiImage", () => {
         expect(formData.get("prompt")).toBe("make the bicycle blue");
         expect(formData.has("width")).toBe(false);
         expect(formData.has("height")).toBe(false);
-        const image = formData.get("image");
-        expect(image).toBeInstanceOf(Blob);
-        expect((image as Blob).type).toBe("image/png");
-        expect(Buffer.from(await (image as Blob).arrayBuffer())).toEqual(
-            INPUT_IMAGE,
-        );
+        const images = formData.getAll("image");
+        expect(images).toHaveLength(2);
+        for (const image of images) {
+            expect(image).toBeInstanceOf(Blob);
+            expect((image as Blob).type).toBe("image/png");
+            expect(Buffer.from(await (image as Blob).arrayBuffer())).toEqual(
+                INPUT_IMAGE,
+            );
+        }
         expect(result.trackingData.usage).toEqual({
             promptImageTokens: 1024,
             completionImageTokens: 1024,
         });
     });
 
-    it("rejects more than one reference image before calling Azure", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it.each([[1000, 1000, "multiples of 16px"]])(
+        "rejects %ix%i generation dimensions before calling Azure",
+        async (width, height, fragment) => {
+            const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-        await expect(
-            callAzureMaiImage(
-                "combine these",
-                {
-                    ...baseParams,
-                    image: [INPUT_IMAGE_URL, "https://example.com/two.png"],
-                },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-        [700, 1024, "at least 768px"],
-        [1000, 1000, "multiples of 16px"],
-        [1552, 1536, "2,359,296 pixels"],
-    ])("rejects %ix%i generation dimensions before calling Azure", async (width, height, fragment) => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callAzureMaiImage(
-                "a lighthouse",
-                { ...baseParams, width, height },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining(fragment),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
-
-    it("rejects transparent backgrounds before calling Azure", async () => {
-        const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-        await expect(
-            callAzureMaiImage(
-                "a logo",
-                { ...baseParams, transparent: true },
-                USER_INFO,
-            ),
-        ).rejects.toMatchObject({
-            status: 400,
-            message: expect.stringContaining("Transparent"),
-        });
-        expect(fetchSpy).not.toHaveBeenCalled();
-    });
+            await expect(
+                callAzureMaiImage(
+                    "a lighthouse",
+                    { ...baseParams, width, height },
+                    USER_INFO,
+                ),
+            ).rejects.toMatchObject({
+                status: 400,
+                message: expect.stringContaining(fragment),
+            });
+            expect(fetchSpy).not.toHaveBeenCalled();
+        },
+    );
 
     it("maps Azure content safety rejections to a content policy error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(

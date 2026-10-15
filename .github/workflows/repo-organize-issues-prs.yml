@@ -2,7 +2,7 @@ name: Repo / Organize issues and PRs
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
   pull_request_target:
     types: [opened]
   # Re-classify existing items: overwrites Area, Source and type; fills Priority only when empty (defaults to every open PR).
@@ -25,6 +25,8 @@ concurrency:
 
 jobs:
   organize:
+    # Labels only matter when they change the Source: APP-SUBMISSION and POLLEN-QUEST.
+    if: github.event.action != 'labeled' || github.event.label.name == 'APP-SUBMISSION' || github.event.label.name == 'POLLEN-QUEST'
     runs-on: ubuntu-latest
     permissions:
       issues: write

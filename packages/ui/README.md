@@ -46,7 +46,8 @@ The root `@pollinations/ui` entry also ships a browser IIFE bundle for
 no-build pages. It exposes SDK-free primitives and compositions on
 `window.PollinationsUI`. Non-root subpaths such as `@pollinations/ui/auth`,
 `@pollinations/ui/wallet`, `@pollinations/ui/gen`, and
-`@pollinations/ui/app-user-menu/sdk` remain ESM/CJS-only.
+`@pollinations/ui/app-user-menu/sdk` are ESM-only. The alpha package ships
+ES modules with shared chunks; it does not include a CommonJS build.
 
 React 19 no longer ships UMD builds, so load React from an ESM CDN first, set
 the globals expected by the IIFE bundle, then load `@pollinations/ui`:
@@ -82,8 +83,9 @@ the globals expected by the IIFE bundle, then load `@pollinations/ui`:
 ```
 
 The browser bundle keeps React and ReactDOM external via those globals, but it
-does bundle the root entry's package dependencies, including Ark UI,
-react-markdown, remark, and rehype.
+does bundle the root entry's package dependencies, including Ark UI. Markdown
+and its react-markdown/remark/rehype dependencies are available only through
+the ESM `@pollinations/ui/markdown` subpath.
 
 React's guidance on loading React 19 without UMD builds:
 https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed
@@ -130,16 +132,27 @@ Wallet colors and utilities are bundled into the main stylesheet
 
 ## Dialog layout
 
-`Dialog` uses one responsive frame for forms, confirmations, and results:
-full viewport without a border below 640px, contained with rounded corners on
-larger screens. `size` controls desktop width only. Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter`
-for consistent spacing and actions; avoid overriding viewport dimensions
-in consumers. The frame uses Enter’s themed panel color; inset cards use the
-neutral `Surface` default. `AuthModal` uses the same frame for standalone pages.
+`Dialog` keeps rounded corners at every width. Below 480px it spans the phone
+width with an 8px vertical gap; larger viewports have a 16px outer inset and use
+the `size` width limit. Height follows the content, capped by the available
+viewport. Confirmations and completed results follow the same phone-width rule.
 
-Enter's `ResourceDialog` keeps dashboard forms and confirmations contained on
-mobile too, with viewport margins and scrollable content. Keep that exception
-in the shared dashboard wrapper rather than repeating dimensions in consumers.
+Use `DialogHeader`, `DialogBody` (scrolling content), and `DialogFooter` for
+consistent spacing and actions. The frame uses Enter's themed panel color;
+inner cards use the neutral `Surface` default. `AuthModal` uses the same frame
+for standalone pages. Content such as document previews can request a height,
+which remains capped by the shared frame.
+
+Enter's `ResourceDialog` keeps expandable forms top-aligned at every width;
+completed results use the centered `Dialog`. Both inherit the same viewport sizing.
+
+Actions that write server data use a bordered button (`intent="commit"`).
+Navigation and export actions, including device Continue and Copy and close,
+use the default filled style. Sign-in uses `intent="brand"`; destructive
+confirmations use `intent="danger"`. Cancel/Decline/Close actions use the muted,
+borderless `intent="neutral"` style.
+Saved-card checkout preserves its dedicated footer: full-width Confirm with
+Cancel and the alternative payment-method link on the line below.
 
 ## What's exported
 

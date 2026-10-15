@@ -20,11 +20,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 - User wants to inspect **quests** or manage invite-only **my-models**
 - User wants to create or update a hosted prompt **agent**
 
+For agent-assisted login, use `polli --json auth login --no-browser`. Read stderr while the command runs and show the user the verification URL and user code so they can review access. On approval, stdout contains one JSON result: `{"authenticated":true}`. Tokens are stored locally and never included in that result.
+
 ## Quick reference
 
 | Intent | Command |
 |---|---|
 | Log in once | `polli auth login` |
+| Agent-assisted login | `polli --json auth login --no-browser` |
 | Store an existing key | `printf '%s' "$POLLINATIONS_API_KEY" \| polli auth login --with-token` |
 | Generate image | `polli gen image "<prompt>" --output out.png` |
 | Generate text | `polli gen text "<prompt>"` |
@@ -44,12 +47,14 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | Filter models by type | `polli models --type image` (text, image, audio, video, 3d, embedding) |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
-| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
+| Developer earnings | `polli earnings` (`--days <n>`) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
+| Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -66,7 +71,7 @@ Prefix any command with `POLLINATIONS_ENV=staging` to use staging; it keeps its 
 ```bash
 polli gen image "a fox reading a book, studio ghibli style" --output fox.png
 ```
-Defaults: `zimage`, 1024x1024. Pick a different model with `--model flux` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `flux` and `zimage` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `nanobanana`, `kontext`, `p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
+Defaults: `tongyi-mai/z-image-turbo`, 1024x1024. Without `--output` the file is `image.<ext>`, with the extension inferred from the response's `Content-Type` (`tongyi-mai/z-image-turbo` and `black-forest-labs/flux.1-schnell` return JPEG, so `image.jpg`); an explicit `--output` is used as given. Pick a different model with `--model black-forest-labs/flux.1-schnell` (see `polli models --type image`). For edits / img2img, pass one or more `--image <url>` flags — **must be public http(s) URLs**, local paths are rejected client-side. **Only models that list `"image"` in `input_modalities` actually consume the flag** — `black-forest-labs/flux.1-schnell` and `tongyi-mai/z-image-turbo` are text-only and will silently ignore `--image`. Find i2i-capable models with `polli models --type image --json | jq -r '.[] | select(.input_modalities | contains(["image"])) | .name'` (common choices: `google/gemini-2.5-flash-image`, `black-forest-labs/flux.1-kontext-pro`, `prunaai/p-image-edit`). To use a local file, upload it first with `polli upload` (see next recipe). **Img2img models may treat `--width`/`--height` as a hint** and keep the source aspect — check the output with `file`/`ffprobe`; if the aspect matters, pre-crop the source or crop afterwards.
 
 ### Upload a local file to get a public URL
 ```bash
@@ -96,7 +101,7 @@ stdin becomes context; the positional argument is the question.
 
 ### Interactive chat session
 ```bash
-polli gen chat --model openai --system "you are a terse assistant"
+polli gen chat --model openai/gpt-5.4-nano --system "you are a terse assistant"
 ```
 Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 
@@ -105,30 +110,30 @@ Slash commands inside the session: `/exit`, `/clear`, `/save <path>`.
 polli gen audio "hello world" --voice nova --output hello.mp3
 echo "long script" | polli gen audio --voice nova --output out.mp3
 ```
-Default voice is `sage`. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
+Without `--voice`, the API uses the model's default voice. To discover the full live voice list, use the model registry: `polli models --type audio --json | jq -r '.[].voices[]?'` — each audio model entry includes its `voices[]` array. Format defaults to mp3; `--format opus|aac|flac|wav` to change. Accepts stdin (same as `gen text`). Add `--play` to save and then play the audio back (handy for narration/demos). Playback starts after the file is fully written, and the command blocks until playback finishes — if you want fire-and-forget, wrap in a subshell: `( polli gen audio "..." --play & )`. Player on macOS: `afplay`; on Linux it tries `ffplay`, then `mpv`, then `mpg123` in that order.
 
-### Generate music (elevenmusic)
+### Generate music (elevenlabs/music-v2)
 ```bash
-polli gen audio "lofi hip-hop beat" --model elevenmusic --duration 30 --instrumental --output track.mp3
+polli gen audio "lofi hip-hop beat" --model elevenlabs/music-v2 --duration 30 --instrumental --output track.mp3
 ```
 
-### Generate sound effects (eleven-sfx)
+### Generate sound effects (elevenlabs/eleven-text-to-sound-v2)
 ```bash
-polli gen audio "thunderclap with heavy rain" --model eleven-sfx --duration 5 --output thunder.mp3
+polli gen audio "thunderclap with heavy rain" --model elevenlabs/eleven-text-to-sound-v2 --duration 5 --output thunder.mp3
 ```
 Text-to-sound-effect via ElevenLabs (aliases: `sfx`, `sound-effects`). `--duration` 0.5–30s (omit to let the model pick). Billed per second of output (~$0.004/s, capped at $0.12 for a full 30s).
 
-### Multilingual TTS (eleven-multilingual-v2)
+### Multilingual TTS (elevenlabs/eleven-multilingual-v2)
 ```bash
-polli gen audio "Bonjour, ceci est un test" --model multilingual-v2 --voice rachel --output fr.mp3
+polli gen audio "Bonjour, ceci est un test" --model elevenlabs/eleven-multilingual-v2 --voice rachel --output fr.mp3
 ```
 Stable, lifelike TTS across 29 languages (aliases: `multilingual-v2`, `eleven-v2`) — a non-alpha alternative to the default v3.
 
 ### Generate video
 ```bash
-polli gen video "a spacecraft landing on mars" --model wan-fast --duration 5 --output mars.mp4
+polli gen video "a spacecraft landing on mars" --model alibaba/wan-2.2-fast --duration 5 --output mars.mp4
 ```
-Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any `--duration` value is ignored — you always pay for and receive 5 sec). For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
+Cheapest path: `--model alibaba/wan-2.2-fast` at ~$0.01/sec, **fixed 5-second output** (any `--duration` value is ignored — you always pay for and receive 5 sec). For image-to-video, pass `--image <url>` with a **public HTTPS URL** (local file paths and 404/rate-limited hosts will fail with a server error).
 
 **Flag support varies per model and is not enforced client-side.** `--duration`, `--aspect-ratio`, and `--audio` are forwarded to the server but may be silently ignored — verified on `wan-fast` where duration is locked to 5s, `--aspect-ratio 9:16` still returns 16:9, and `--audio` produces no audio track. Always inspect the output (`file`, `ffprobe`) before trusting a flag worked. Check `polli models --type video --json` for per-model capabilities.
 
@@ -165,7 +170,7 @@ Saves the audio as usual (`speech.mp3` by default) and appends `.json` to its pa
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`, `universal-2`, `universal-3.5-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
+Models: `openai/whisper-large-v3` (default), `elevenlabs/scribe-v2`, `assemblyai/universal-2`, `assemblyai/universal-3.5-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
 
 ### Discover models
 ```bash
@@ -176,7 +181,7 @@ polli models --stats --window 5       # last 5 minutes only
 ```
 Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5xx only** — a model can show `0.0%` while having massive 4xx rates (auth, validation, etc.). For the full picture use `--stats --json` and read `errors_4xx`, `errors_5xx`, `latency_p95_ms`.
 
-**Pricing fields are per-token, not per-request.** `completionImageTokens: 0.000008` means each output image-token costs that much — a single 1024x1024 image from `gptimage` lands at ~$0.008, not $0.000008. Flat-priced image models (`flux`, `zimage`) expose `completionImageTokens` as the whole-image price because they emit exactly one "token" per image. When in doubt, make one call and read the true cost from `polli usage --history --limit 5 --json`.
+**Pricing fields are per-token, not per-request.** `completionImageTokens: 0.000008` means each output image-token costs that much — a single 1024x1024 image from `openai/gpt-image-1-mini` lands at ~$0.008, not $0.000008. Flat-priced image models (`black-forest-labs/flux.1-schnell`, `tongyi-mai/z-image-turbo`) expose `completionImageTokens` as the whole-image price because they emit exactly one "token" per image. When in doubt, make one call and read the true cost from `polli usage --history --limit 5 --json`.
 
 ### Check usage and balance
 ```bash
@@ -185,11 +190,11 @@ polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
 polli usage --daily --key polli-harness-claude --days 1   # cost of one harness key for the last day (`--model`, `--csv` filter/export both views; `--key` is repeatable)
 polli earnings           # developer earnings total + per-entity breakdown (default 30d)
-polli earnings --days 7  # rolling window, max 90
-polli quests             # your quests + claim state (open/claimable/claimed/coming)
+polli earnings --days 7  # rolling window
+polli quests             # your quests + claim state (open/claimable/claimed/closed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
-**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns.
+**History is eventually consistent** — a request you just made may not appear for 30–60s. When matching costs to freshly-generated media, use `--limit 50` and filter by timestamp, and retry if the expected entry is missing. `polli usage --json` returns `{"pollen": <number>}` — the current balance only; use `--history --json` or `--daily --json` for cost breakdowns. Those print a JSON array of the API usage records (numeric `cost_usd`, `api_key_id`, available per-modality token fields), not the table columns.
 
 ### Manage my-models
 ```bash
@@ -225,9 +230,10 @@ polli agents get <id>
 polli agents create --config agent.json --name my-agent --title "My Agent"
 polli agents create --config code-agent.json
 polli agents update <id> --config agent.json
+polli agents sync <id>
 polli agents delete <id>
 ```
-Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Prompt-agent updates replace the complete runtime configuration.
+Prompt-agent config contains `systemPrompt`, `baseModel`, and optional `mcpServers` (add `composio` to act in the caller's own accounts, such as a GitHub commit; callers connect apps at https://enter.pollinations.ai/account#connectors); create also requires `--name` and `--title`. Code-agent config contains `type: "code_agent"` and a public GitHub `repository` with `agent.ts` at its root; its model ID, title, and description come from GitHub. Use server IDs from the MCP catalog. Updates are partial: send only the fields to change; the rest keep their values. `sync` deploys the latest GitHub revision of a code agent.
 
 Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
@@ -237,8 +243,11 @@ polli keys list                                                    # list all ke
 polli keys info                                                    # details about the CURRENTLY AUTHENTICATED key only (takes no id)
 polli keys create --name "my-bot" --type secret --budget 1000 --permissions profile usage   # scoped key
 polli keys create --name "my-app" --type publishable --redirect-uri https://app.example/callback --earnings
+polli keys create --name "server" --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these two models
+polli keys update <id> --models text black-forest-labs/flux.1-schnell  # every text model plus FLUX.1 Schnell
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
+`--models` takes categories (`text`, `image`, `video`, `audio`, `3d`, `embedding`, `realtime`) and model IDs from `polli models`. A category includes models added later; a model ID allows only that model.
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. Include `keys` to let the new key create, list, and revoke keys itself. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
 
 ### Connect a coding harness

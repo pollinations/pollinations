@@ -307,7 +307,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                     tax at payment
                 </span>
             </p>
-            <PaymentTrustBadge className="mt-0 pt-0" />
+            <PaymentTrustBadge
+                className="mt-0 pt-0"
+                country={initialBilling?.ipCountry}
+            />
         </Footnotes>
     </>
 );

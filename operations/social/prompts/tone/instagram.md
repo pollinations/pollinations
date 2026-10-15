@@ -32,6 +32,7 @@ Don't:
 - Stuff hashtags — 5-8 relevant ones max
 - Use corporate language or startup speak
 - Over-emoji. 2-3 natural ones. or zero
+- Discuss pricing, Pollen balance or Quest/Paid eligibility changes — Discord and Enter's model news cover them
 
 ## Instagram Formats
 

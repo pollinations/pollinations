@@ -20,7 +20,7 @@ SQL >
             startsWith(request_path, '/3d/'), '3d',
             token_count_completion_video_seconds > 0 OR token_count_completion_video_tokens > 0, 'video',
             event_type = 'generate.audio' OR token_count_completion_audio > 0 OR token_count_completion_audio_seconds > 0, 'audio',
-            event_type = 'generate.image' OR token_count_completion_image > 0, 'image',
+            event_type = 'generate.image' OR usage_completion_image_units > 0, 'image',
             event_type = 'generate.text', 'text',
             'other'
         ) AS spend_category,

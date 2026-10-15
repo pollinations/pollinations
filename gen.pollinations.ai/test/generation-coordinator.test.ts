@@ -48,13 +48,24 @@ afterEach(() => {
 });
 
 describe("GenerationCoordinator", () => {
-    it.each(["url", "b64_json"] as const)(
-        "completes large Seedream uploads once through the real coordinator (%s)",
-        async (responseFormat) => {
+    it.each([
+        ["url", "in the alarm"],
+        ["b64_json", "in the alarm"],
+        ["url", "behind the public origin"],
+    ] as const)(
+        "completes large Seedream uploads once through the real coordinator (%s, %s)",
+        async (responseFormat, execution) => {
             const { key, userId } = await createTestApiKey({
                 user: { packBalance: 100 },
             });
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
+            const handoffs: ExecutionContext[] = [];
+            if (execution === "behind the public origin") {
+                env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+                onTestFinished(() => {
+                    env.GENERATION_EXECUTION_ORIGIN = undefined;
+                });
+            }
             const tinybird = createMockTinybird();
             let executions = 0;
             let requestBytes = 0;
@@ -102,6 +113,18 @@ describe("GenerationCoordinator", () => {
                         return new Response(output, {
                             headers: { "content-type": "image/png" },
                         });
+                    }
+                    if (
+                        url.host === "gen.pollinations.ai" &&
+                        url.pathname.startsWith("/internal/generation/")
+                    ) {
+                        const context = createExecutionContext();
+                        handoffs.push(context);
+                        return worker.fetch(
+                            new Request(input, init),
+                            env,
+                            context,
+                        );
                     }
                     if (url.pathname === "/v0/pipes/public_model_stats.json") {
                         return Response.json({ data: [] });
@@ -213,7 +236,11 @@ describe("GenerationCoordinator", () => {
             await Promise.all([
                 firstSettled,
                 waitOnExecutionContext(secondContext),
+                ...handoffs.map(waitOnExecutionContext),
             ]);
+            expect(handoffs).toHaveLength(
+                execution === "behind the public origin" ? 1 : 0,
+            );
             const cacheContext = createExecutionContext();
             const cached = await worker.fetch(request(), env, cacheContext);
             expect(cached.status).toBe(200);
@@ -479,6 +506,21 @@ describe("GenerationCoordinator", () => {
         }
         expect(received).toBe(size);
     });
+    it("rejects a public handoff without the alarm's nonce", async () => {
+        const id = env.GENERATION_COORDINATOR.idFromName(
+            `test-${crypto.randomUUID()}`,
+        );
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/internal/generation/${id}`,
+            {
+                method: "POST",
+                headers: { "x-generation-handoff": crypto.randomUUID() },
+            },
+        );
+        expect(response.status).toBe(404);
+        await response.text();
+    });
+
     it("returns an existing cached generation without scheduling work", async () => {
         const key = `cached-${crypto.randomUUID()}`;
         await env.TEXT_BUCKET.put(key, "cached");

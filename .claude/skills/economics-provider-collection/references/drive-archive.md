@@ -1,13 +1,42 @@
 # Accounting Drive archive
 
-Verified — 2026-09-06.
+Verified — 2026-10-15 (business Finance root and filing locations).
 
 ## Layout
 
-Shared accounting Drive: `<YYYY>/<MM Month>/Invoices` holds original vendor
-invoices and their separate payment receipts; `<YYYY>/<MM Month>/Supporting
-Evidence` holds exports, bank statements, payment summaries, and JSON evidence
-that are not supplier invoices. When a billing email has no PDF attachment,
+Use the existing business `02 Finance` root
+(`1lPh_J4aSJ2v1nFswlBWt9MnyYutsOJu5`) through `elliot@myceli.ai`.
+These are folders in one Finance archive, not separate Drives. Verify the root
+and current parents before moving files; do not create a parallel Finance tree.
+
+| Folder under `02 Finance` | Purpose |
+|---|---|
+| `00 Inbox` | Unsorted new material, pending validation and filing |
+| `01 Corporate` | Company registration and corporate records |
+| `02 Banking` | Original bank statements and settlement exports |
+| `03 Revenue` | Sales, payout and revenue-source records |
+| `04 Expenses/<YYYY>/<MM Month>/Invoices` | Original supplier invoices, credit notes and separate payment receipts, preserving each document's purpose |
+| `04 Expenses/<YYYY>/<MM Month>/Supporting Evidence` | Usage exports, billing observations and other supporting evidence |
+| `05 Payroll & Contractors` | Employment, payroll and contractor records |
+| `06 Tax & Filings` | Official tax records and filed returns |
+| `07 Contracts` | Original contracts and recurring payment schedules |
+| `08 Credits & Grants` | Credit awards, grant terms and expiry evidence |
+| `09 Accounting` | Accounting ledgers, statements, backups and management planning |
+| `09 Accounting/Monthly Close` | The stable Economics source register, close reviews, exact batches and verified results |
+| `10 Enty Handover/Original Exports` | Original ENTY ZIP exports, preserving their period and components |
+| `98 Reconciliation` | Existing reconciliation working material; reuse its retained sources, not new copies |
+| `99 Restricted Raw Imports` | Existing restricted raw imports; preserve access restrictions |
+
+`09 Accounting/Monthly Close` is `1oO7nzUUiTgc_kD2hPoSqDSBgxhZXc1HL`;
+`10 Enty Handover/Original Exports` is `1s9rpzzo3M2UNu6_rwkjvzCvt1cWuFwoQ`.
+Keep reports, exports, close-review files and source registers out of `Invoices`.
+An existing standalone invoice has one canonical file ID; link to it from
+Economics and working papers instead of uploading another copy. Original ZIPs
+remain distinct source containers even when they include a retained invoice.
+
+In the monthly expense folders, `Invoices` holds original supplier documents;
+`Supporting Evidence` holds exports, bank statements, payment summaries, and
+JSON evidence that are not supplier invoices. When a billing email has no PDF attachment,
 save its original RFC822 `.eml`; if it links to a provider-hosted receipt,
 save that original HTML response too. File these in Supporting Evidence and
 keep a missing-invoice entry until the supplier's invoice is obtained or its
@@ -15,8 +44,8 @@ absence is verified. Never render an email or receipt into a replacement
 invoice PDF, or relabel a payment summary or top-up receipt as a usage invoice.
 
 File name: `YYYY-MM-DD__Vendor__Number.pdf`, where the date is the invoice
-date (not the email or payment date) and the month folder is the invoice
-date's month. Add a fourth segment for the account or a qualifier when the
+date (not the email, service, export or payment date) and the month folder
+is the invoice date's month. Preserve service coverage separately in the ledger. Add a fourth segment for the account or a qualifier when the
 vendor has several accounts (`2026-09-01__Fireworks__ETIXZH-00008__Myceli.pdf`).
 Vendor spellings in use: `Anthropic`, `Automat-it`, `BytePlus`, `Cloudflare`,
 `DigitalOcean`, `ElevenLabs`, `Fireworks`, `Google-Cloud`, `Lambda`,

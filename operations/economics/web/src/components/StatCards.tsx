@@ -42,3 +42,54 @@ export function StatCards({ items }: { items: StatItem[] }) {
         </div>
     );
 }
+
+export type StatPair = {
+    label: string;
+    total?: ReactNode;
+    detail?: ReactNode;
+    items: (StatItem & { valueClassName?: string })[];
+};
+
+export function PairedStatCards({ cards }: { cards: StatPair[] }) {
+    return (
+        <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
+            {cards.map((card) => (
+                <Surface as="section" key={card.label} aria-label={card.label}>
+                    <div className="mb-3 flex min-h-6 flex-wrap content-start items-baseline justify-between gap-x-3 gap-y-1">
+                        <h3 className="text-sm font-semibold">{card.label}</h3>
+                        {card.total && (
+                            <span className="text-xs text-theme-text-soft">
+                                {card.total}
+                            </span>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-2 divide-x divide-theme-text-muted/20">
+                        {card.items.map((item, index) => (
+                            <StatCard
+                                key={
+                                    typeof item.label === "string"
+                                        ? item.label
+                                        : index
+                                }
+                                label={item.label}
+                                value={item.value}
+                                detail={item.detail}
+                                valueClassName={
+                                    item.valueClassName ??
+                                    TONE_CLASS[item.tone ?? "base"]
+                                }
+                                className="min-w-0 first:pr-3 last:pl-3"
+                                labelClassName="polli:normal-case polli:tracking-normal polli:min-h-10"
+                            />
+                        ))}
+                    </div>
+                    {card.detail && (
+                        <div className="mt-2 text-xs text-theme-text-soft">
+                            {card.detail}
+                        </div>
+                    )}
+                </Surface>
+            ))}
+        </div>
+    );
+}

@@ -1,8 +1,6 @@
 import {
     CardIcon,
     SproutIcon,
-    StatCard,
-    Surface,
     TableBody,
     TableCell,
     TableHead,
@@ -20,6 +18,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { Gauge, type GaugePalette } from "../components/EconomicsGauge";
+import { PairedStatCards } from "../components/StatCards";
 import {
     type ComputeMode,
     providerMonthComputeMode,
@@ -316,36 +315,7 @@ function UnitEconomicsTable({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
-                {stats.map((card) => (
-                    <Surface
-                        as="section"
-                        key={card.label}
-                        aria-label={card.label}
-                    >
-                        <div className="mb-3 flex min-h-10 flex-wrap content-start items-baseline justify-between gap-x-3 gap-y-1">
-                            <h3 className="text-sm font-semibold">
-                                {card.label}
-                            </h3>
-                            {card.total && (
-                                <span className="text-xs text-theme-text-soft">
-                                    {card.total}
-                                </span>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-2 divide-x divide-theme-text-muted/20">
-                            {card.items.map((item, index) => (
-                                <StatCard
-                                    key={index}
-                                    {...item}
-                                    className="min-w-0 first:pr-3 last:pl-3"
-                                    labelClassName="polli:normal-case polli:tracking-normal polli:whitespace-nowrap"
-                                />
-                            ))}
-                        </div>
-                    </Surface>
-                ))}
-            </div>
+            <PairedStatCards cards={stats} />
 
             <TableScroller>
                 <DataTable className="min-w-[1420px]">

@@ -276,7 +276,14 @@ describe("RunwayTab labels", () => {
             }),
         );
 
-        expect(html).toContain("Unspent Pollen");
+        const cards = html.slice(0, html.indexOf("<table"));
+        expect(cards.match(/<\/section>/g)).toHaveLength(3);
+        expect(cards).toContain('aria-label="Cash"');
+        expect(cards).toContain('aria-label="Outlook"');
+        expect(cards).toContain('aria-label="Pollen balance"');
+        expect(html).not.toContain("Unspent Pollen");
+        expect(cards).toContain("polli:text-paid-deep");
+        expect(cards).toContain("polli:text-tier-deep");
         expect(html).toContain("Paid Pollen");
         expect(html).toContain("Quest Pollen");
         expect(html).toContain("1,234");

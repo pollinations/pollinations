@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
     gpuResourceRows,
@@ -7,6 +9,7 @@ import {
     visibleGpuResourceRows,
 } from "../lib/gpu";
 import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
+import { GpuTab } from "./GpuTab";
 
 const baseData: Data = {
     opTransactions: [],
@@ -524,4 +527,31 @@ describe("gpuWorkloadSummary", () => {
             fullCostResultUsd: -20,
         });
     });
+});
+
+it("pairs GPU usage, funding and results while preserving the GPU count", () => {
+    const html = renderToStaticMarkup(
+        createElement(GpuTab, {
+            month: "2026-06",
+            data: {
+                ...baseData,
+                vendorLedger: [cloud({ credit: -30 })],
+                opPollen: [pollen({})],
+            },
+        }),
+    );
+    const cards = html.slice(0, html.indexOf("<table"));
+    expect(cards.match(/<\/section>/g)).toHaveLength(3);
+    expect(cards).toContain('aria-label="Pollen used"');
+    expect(cards).toContain('aria-label="GPU costs"');
+    expect(cards).toContain('aria-label="Result"');
+    expect(cards).toContain("$200 total");
+    expect(cards).toContain("Retained $130");
+    expect(cards).toContain("$130 total");
+    expect(cards).toContain("1 GPU");
+    expect(cards).toContain("Actual +$30");
+    expect(cards).toContain(">$0<");
+    expect(cards.match(/>Quest</g)).toHaveLength(1);
+    expect(cards).toContain("polli:text-paid-deep");
+    expect(cards).toContain("polli:text-tier-deep");
 });

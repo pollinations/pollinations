@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-15T11:23:12.010753+00:00",
+  "generated_at": "2026-10-15T13:31:16.812980+00:00",
   "models": [
     {
       "id": "pr-14895:fish-audio/s2.1-pro",
@@ -7183,6 +7183,52 @@
           "after": {
             "currency": "pollen",
             "promptTextTokens": "0.000000042"
+          }
+        }
+      }
+    },
+    {
+      "id": "pr-17590:mirelo/sfx-2.0",
+      "model_id": "mirelo/sfx-2.0",
+      "title": "Mirelo SFX 2.0",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "video",
+      "date": "2026-10-15",
+      "pr": 17590,
+      "url": "https://github.com/pollinations/pollinations/pull/17590",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text",
+            "video"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "video",
+            "audio"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "completionVideoSeconds": "0.01"
           }
         }
       }

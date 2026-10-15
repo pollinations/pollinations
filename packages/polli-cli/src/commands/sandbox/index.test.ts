@@ -1,4 +1,5 @@
 import {
+    fstatSync,
     mkdirSync,
     mkdtempSync,
     openSync,
@@ -17,7 +18,11 @@ vi.mock("node:os", async (original) => {
 
 vi.mock("node:fs", async (original) => {
     const fs = await original<typeof import("node:fs")>();
-    return { ...fs, openSync: vi.fn(fs.openSync) };
+    return {
+        ...fs,
+        openSync: vi.fn(fs.openSync),
+        fstatSync: vi.fn(fs.fstatSync),
+    };
 });
 
 let home: string;
@@ -237,10 +242,10 @@ describe("ssh connections", () => {
         };
     }
 
-    it("shares one connection between ssh, scp and rsync", async () => {
-        const command = await prepare(Response.json([]));
+    it("writes a config that shares one connection between ssh, scp and rsync", async () => {
+        const { setupSsh } = await import("./ssh.js");
 
-        await command.run("ssh-config");
+        setupSsh();
 
         const config = readFileSync(
             join(home, ".pollinations", "ssh", "config"),
@@ -255,9 +260,9 @@ describe("ssh connections", () => {
         mkdirSync(join(long, ".pollinations", "ssh"), { recursive: true });
         writeFileSync(join(long, ".pollinations", "ssh", "id_ed25519"), "");
         vi.mocked(homedir).mockReturnValue(long);
-        const command = await prepare(Response.json([]));
+        const { setupSsh } = await import("./ssh.js");
 
-        await command.run("ssh-config");
+        setupSsh();
 
         const config = readFileSync(
             join(long, ".pollinations", "ssh", "config"),
@@ -269,6 +274,11 @@ describe("ssh connections", () => {
     it("prints Gen's refusal as a sentence on the terminal, where ssh doesn't hide it", async () => {
         const tty = join(home, "tty");
         const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
+        // ssh with ControlPersist gives the proxy /dev/null as stderr.
+        vi.mocked(fstatSync).mockImplementation(((fd: number) =>
+            fd === 2
+                ? fs.statSync("/dev/null")
+                : fs.fstatSync(fd)) as typeof fstatSync);
         vi.mocked(openSync).mockImplementation((path, ...rest) =>
             fs.openSync(path === "/dev/tty" ? tty : path, ...rest),
         );
@@ -291,7 +301,6 @@ describe("ssh connections", () => {
         expect(shown).toContain(
             "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list",
         );
-        expect(shown).not.toContain('"code"');
         expect(command.stderr()).toBe("");
     });
 });

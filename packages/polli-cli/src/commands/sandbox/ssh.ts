@@ -2,10 +2,12 @@ import { execFileSync } from "node:child_process";
 import {
     chmodSync,
     existsSync,
+    fstatSync,
     mkdirSync,
     openSync,
     readFileSync,
     realpathSync,
+    statSync,
     writeFileSync,
     writeSync,
 } from "node:fs";
@@ -30,13 +32,13 @@ const SHARES_CONNECTIONS =
     process.platform !== "win32" &&
     Buffer.byteLength(join(homedir(), ".ssh", "polli-")) + 57 < 104;
 
-// While ssh shares connections it sends the proxy's stderr to /dev/null
-// (OpenSSH's sshconnect.c), so the proxy writes to the terminal instead. VS
-// Code runs ssh without one and only says the connection closed.
+// With ControlPersist, ssh sends the proxy's stderr to /dev/null (OpenSSH's
+// sshconnect.c), so the proxy writes to the terminal instead. VS Code runs ssh
+// without one and only says the connection closed.
 export function stderrToTerminal() {
-    if (!SHARES_CONNECTIONS) return;
     let tty: number;
     try {
+        if (fstatSync(2).rdev !== statSync("/dev/null").rdev) return;
         tty = openSync("/dev/tty", "w");
     } catch {
         return;

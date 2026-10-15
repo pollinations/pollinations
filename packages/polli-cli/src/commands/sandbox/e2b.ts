@@ -58,14 +58,15 @@ export const connectSandbox = (id: string, timeout = LEASE_SECONDS) =>
         method: "POST",
         body: { timeout },
     }).catch((err) => {
-        let message = err.message;
+        let refusal: string | undefined;
         try {
             // Gen refuses with E2B's {code, message}.
-            message = JSON.parse(err.body).message ?? message;
+            refusal = JSON.parse(err.body).message;
         } catch {
-            // Not Gen's JSON, such as a network error: keep it as it is.
+            // Not a refusal, such as a network error: keep it as it is.
         }
-        throw new Error(`${message}\nSee your sandboxes: polli sandbox list`);
+        if (!refusal) throw err;
+        throw new Error(`${refusal}\nSee your sandboxes: polli sandbox list`);
     });
 
 // Paused sandboxes keep their files and memory and cost nothing. A pause ends

@@ -229,6 +229,17 @@ describe("POST /api/oauth/token (authorization_code + PKCE)", () => {
         expect(body.error).toBe("invalid_request");
     });
 
+    test("a JSON null body returns unsupported_grant_type, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/oauth/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("unsupported_grant_type");
+    });
+
     test("device_code grant works through the standard token endpoint", async () => {
         const db = drizzle(env.DB, { schema });
         const deviceCode = crypto.randomUUID();

@@ -36,7 +36,7 @@ polli sandbox kill <id>
 - Billed per second for the sandbox's CPU and memory, at a quarter of [E2B's rates](https://e2b.dev/pricing) during the launch: about 0.033 Pollen an hour for `pollinations`, 0.083 for `pollinations-large`. Paid 10 minutes ahead: at creation, while an ssh session is open, and while a timeout keeps it running.
 - Unused time is not refunded. Pausing or killing a sandbox, or shortening its timeout, gives up the rest of its paid 10 minutes; resuming pays again.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
-- At most 3 sandboxes run at once per account.
+- At most 8 sandboxes run at once per account.
 
 ### E2B SDKs
 

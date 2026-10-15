@@ -3,11 +3,13 @@ import { textEnvironmentValue } from "../environment.js";
 import type { TransformOptions } from "../types.js";
 import {
     createAlibabaModelConfig,
+    createAnthropicConfig,
     createAzureModelConfig,
     createAzureResponsesModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
+    createInferencePortModelConfig,
     createMistralModelConfig,
     createNovitaModelConfig,
     createOpenRouterModelConfig,
@@ -623,6 +625,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "zai-org/GLM-5.2": () =>
         createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
+    "zai-org/GLM-5.3": () =>
+        createDeepInfraModelConfig({
+            model: "zai-org/GLM-5.3",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>
@@ -674,10 +683,6 @@ export const portkeyConfig: PortkeyConfigMap = {
     "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
-    ),
-    "claude-opus-5.5-openrouter-anthropic": createPinnedOpenRouterConfig(
-        "anthropic/claude-opus-5.5",
-        "anthropic",
     ),
     "claude-opus-5.5-fast-openrouter-anthropic-fast":
         createPinnedOpenRouterConfig(
@@ -882,26 +887,30 @@ export const portkeyConfig: PortkeyConfigMap = {
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
         ),
 
-    // -- Claude via AWS Bedrock -----------------------------------------------
+    // -- Claude via Anthropic and AWS Bedrock ---------------------------------
     "claude-sonnet-4-6": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-4-6",
             defaultOptions: { max_tokens: 64000 },
         }),
     "anthropic/claude-sonnet-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-sonnet-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-sonnet-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-sonnet-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-haiku-5.5": () =>
-        createBedrockNativeConfig({
-            model: "global.anthropic.claude-haiku-5-5",
+        createAnthropicConfig({
+            model: "claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
-    "anthropic/claude-haiku-5.5:vercel": () =>
-        createVercelAIGatewayModelConfig({
-            model: "anthropic/claude-haiku-5.5",
-            directEndpoint: "https://ai-gateway.vercel.sh/v1/chat/completions",
+    "anthropic/claude-haiku-5.5:aws": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-haiku-5-5",
             defaultOptions: { max_tokens: 128000 },
         }),
     "claude-sonnet-5": () =>
@@ -927,6 +936,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-opus-5.5": () =>
+        createAnthropicConfig({
+            model: "claude-opus-5-5",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-opus-5.5:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-opus-5-5",
             defaultOptions: { max_tokens: 128000 },
@@ -937,6 +951,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             defaultOptions: { max_tokens: 128000 },
         }),
     "anthropic/claude-fable-5.1": () =>
+        createAnthropicConfig({
+            model: "claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
+    "anthropic/claude-fable-5.1:aws": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-fable-5-1",
             defaultOptions: { max_tokens: 128000 },
@@ -1107,6 +1126,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({
             model: "stepfun-ai/Step-3.7-Flash",
         }),
+
+    // -- InferencePort (Lightning routers) ------------------------------------
+    // "lightning" is the router id that `lightning-text-v2` aliases.
+    "inferenceport-lightning-text-v2": () =>
+        createInferencePortModelConfig({ model: "lightning" }),
+    "inferenceport-lightning-text-v2.1": () =>
+        createInferencePortModelConfig({ model: "lightning-text-v2.1" }),
 
     // -- OVHcloud -------------------------------------------------------------
     "gpt-oss-20b": () =>

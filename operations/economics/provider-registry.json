@@ -1,5 +1,5 @@
 {
-  "version": 31,
+  "version": 32,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -2587,6 +2587,18 @@
       "collectionMethod": "internal"
     },
     {
+      "id": "composio",
+      "label": "Composio MCP tools",
+      "category": "infrastructure",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": true,
+      "activeFrom": "2026-09",
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "cursor",
       "label": "Cursor",
       "category": "uncategorized",
@@ -2644,6 +2656,7 @@
       "aliases": [],
       "connector": "deepinfra",
       "monthlyReview": true,
+      "activeFrom": "2026-04",
       "accounts": [
         {
           "id": "runtime",
@@ -2997,6 +3010,7 @@
       "aliases": [],
       "connector": "fal",
       "monthlyReview": true,
+      "activeFrom": "2026-06",
       "accounts": [
         {
           "id": "myceli",
@@ -4045,6 +4059,7 @@
       "aliases": [],
       "connector": "inferenceport",
       "monthlyReview": true,
+      "activeFrom": "2026-07",
       "accounts": [
         {
           "id": "account",
@@ -4223,6 +4238,7 @@
       "aliases": [],
       "connector": "mistral",
       "monthlyReview": true,
+      "activeFrom": "2026-07",
       "accounts": [
         {
           "id": "myceli",
@@ -5072,6 +5088,7 @@
       "aliases": [],
       "connector": "pruna",
       "monthlyReview": true,
+      "activeFrom": "2026-02",
       "activeTo": "2026-08",
       "accounts": [
         {
@@ -5353,6 +5370,7 @@
       "aliases": [],
       "connector": "runpod",
       "monthlyReview": true,
+      "activeFrom": "2026-03",
       "activeTo": "2026-08",
       "accounts": [
         {
@@ -5667,6 +5685,7 @@
       "aliases": [],
       "connector": "vercel",
       "monthlyReview": true,
+      "activeFrom": "2026-07",
       "accounts": [
         {
           "id": "pollinations",

@@ -86,8 +86,10 @@ export async function parseFormOrJsonBody(
 ): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const body = contentType.includes("form")
-        ? await c.req.parseBody().catch(() => ({}))
-        : await c.req.json<Record<string, unknown>>().catch(() => ({}));
+        ? await c.req.parseBody().catch(() => null)
+        : await c.req.json<unknown>().catch(() => null);
+    // A body that failed to parse, or that is not an object, has no parameters.
+    if (body === null || typeof body !== "object") return {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -239,7 +241,9 @@ export const deviceRoutes = new Hono<Env>()
         },
     )
     .post("/token", async (c) => {
-        const body = await c.req.json<DeviceTokenRequest>();
+        // RFC 8628 §3.4 sends this as form data; the pre-discovery clients send
+        // JSON. A malformed body is a request error, never a server error.
+        const body = await parseFormOrJsonBody(c);
         return await exchangeDeviceCode(c, body);
     })
     .get(

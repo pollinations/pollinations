@@ -227,6 +227,62 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test("POST /api/device/token rejects a malformed body with invalid_request", async () => {
+        // RFC 8628 §3.5: a malformed token request is an OAuth error, not a
+        // server error. These bodies used to answer 500 and leak internals:
+        // a JSON SyntaxError, or the raw SQL for a non-string device_code.
+        const malformed = [
+            { label: "invalid JSON", body: "not json" },
+            { label: "empty body", body: "" },
+            { label: "JSON null", body: "null" },
+            {
+                label: "device_code object",
+                body: JSON.stringify({ device_code: { a: 1 } }),
+            },
+            {
+                label: "device_code number",
+                body: JSON.stringify({ device_code: 123 }),
+            },
+        ];
+
+        for (const { label, body } of malformed) {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+            });
+            const text = await res.text();
+
+            expect(res.status, label).toBe(400);
+            expect((JSON.parse(text) as { error: string }).error, label).toBe(
+                "invalid_request",
+            );
+            expect(text, label).not.toContain("INTERNAL_ERROR");
+            expect(text, label).not.toContain("Failed query");
+            expect(text, label).not.toContain("select ");
+        }
+    });
+
+    test("POST /api/device/token accepts form encoding (RFC 8628 §3.4)", async () => {
+        // The token request is form-encoded on the wire; JSON stays supported
+        // for the pre-discovery clients. This used to answer 500 because the
+        // handler parsed every body as JSON.
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                device_code: device.deviceCode,
+            }).toString(),
+        });
+        const body = (await res.json()) as { error: string };
+
+        expect(res.status).toBe(400);
+        expect(body.error).toBe("authorization_pending");
+    });
+
     test("POST /api/device/approve without auth returns 401", async () => {
         const res = await SELF.fetch(`${BASE}/api/device/approve`, {
             method: "POST",

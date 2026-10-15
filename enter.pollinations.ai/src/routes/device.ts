@@ -88,8 +88,8 @@ export async function parseFormOrJsonBody<TEnv extends Env>(
     const body = contentType.includes("form")
         ? await c.req.parseBody().catch(() => ({}))
         : await c.req.json<Record<string, unknown>>().catch(() => ({}));
-    // A JSON body can be null, an array, or a primitive (e.g. `null`, `"x"`, `42`) — none of those have string fields, and Object.entries(null) throws. Treat them as an empty body so callers get a 400 invalid_request instead of a 500.
-    if (!body || typeof body !== "object" || Array.isArray(body)) { return {}; }
+    // Valid JSON can still be null, a primitive or an array: no fields.
+    if (!body || typeof body !== "object" || Array.isArray(body)) return {};
     return Object.fromEntries(
         Object.entries(body).filter(
             (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -265,8 +265,7 @@ export async function exchangeDeviceCode(
     c: Context<Env>,
     body: DeviceTokenRequest,
 ) {
-    // Non-string device_code (object, number, ...) must never reach the DB query: Drizzle throws and the error envelope leaks the SQL.
-    if (typeof body.device_code !== "string" || !body.device_code) {
+    if (!body.device_code) {
         return c.json(
             {
                 error: "invalid_request",

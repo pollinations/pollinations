@@ -3,7 +3,6 @@ import { checkTurnstile } from "../../../shared/turnstile.js";
 import { origin } from "./origin.js";
 
 // Durable Object classes must be exported by the Worker's main module
-export { FeedHub } from "../../../shared/feed-hub.js";
 export { IpSlot } from "../../../shared/ip-slot.js";
 
 // Worker version to track which deployment is running
@@ -15,6 +14,7 @@ function log(category, message, ...args) {
     console.log(`[${WORKER_VERSION}]${prefix} ${message}`, ...args);
 }
 
+// /feed is a 404 since the public feed is gone: no R2 lookup for it either
 const NON_CACHE_PATHS = ["/models", "/feed", "/openai/models"];
 
 /**

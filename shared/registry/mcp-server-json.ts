@@ -12,7 +12,7 @@ const DESCRIPTION_OVERRIDES: Partial<
     Record<McpServerDefinition["id"], string>
 > = {
     composio:
-        "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio.",
+        "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio.",
 };
 
 export function buildServerEntry(

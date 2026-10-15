@@ -83,6 +83,26 @@ export interface ImageResponse {
     url: string;
 }
 
+/** A finished async media job's binary file (image, video, audio, or 3D). */
+export interface MediaJobResult {
+    buffer: ArrayBuffer;
+    contentType: string;
+}
+
+/** A cached request may complete immediately instead of returning an id. */
+export type MediaJobSubmission =
+    | { id: string; status: "pending" | "succeeded"; status_url: string }
+    | { status: "succeeded"; result: MediaJobResult };
+
+export interface MediaJobStatus {
+    id: string;
+    status: "pending" | "succeeded" | "failed";
+    created_at: number;
+    completed_at?: number;
+    result_url?: string;
+    error?: { httpStatus: number; message: string };
+}
+
 // ============================================================================
 // Video Generation
 // ============================================================================

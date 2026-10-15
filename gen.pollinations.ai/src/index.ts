@@ -26,6 +26,10 @@ import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
 import { agentDiscoveryLinks } from "@/middleware/agent-discovery.ts";
 import { logger } from "@/middleware/logger.ts";
+import {
+    GENERATION_HANDOFF_PATH,
+    generationHandoffRoutes,
+} from "@/utils/execute-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import {
     buildMergedOpenApiSpec,
@@ -215,6 +219,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     )
     .get("/manifest.webmanifest", () => manifestResponse())
     .route("/.well-known", wellKnownRoutes)
+    // Coordinator alarms run generations here, under the zone's timeout.
+    .route(GENERATION_HANDOFF_PATH, generationHandoffRoutes)
     .get("/", async (c) => {
         c.header("Vary", "Accept", { append: true });
         if (c.req.header("accept")?.includes("text/markdown")) {

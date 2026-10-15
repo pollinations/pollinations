@@ -7,6 +7,7 @@ import { expect, test } from "vitest";
 import { z } from "zod";
 import {
     buildCurl,
+    renderEndpoint,
     type Spec,
 } from "../../gen.pollinations.ai/scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../../gen.pollinations.ai/scripts/validate-request-examples.ts";
@@ -55,6 +56,55 @@ test("enter docs schema remains available for gen service binding", async () => 
         ),
     };
     expect(requestExampleErrors(publicSchema)).toEqual([]);
+
+    for (const [path, firstField, secondField, sharedField, firstLabel] of [
+        [
+            "/account/agents",
+            "repository",
+            "systemPrompt",
+            "visibility",
+            '`type`: `"code_agent"`',
+        ],
+        [
+            "/account/my-models",
+            "url",
+            "baseUrl",
+            "bearerToken",
+            '`modality`: `"text"`',
+        ],
+        [
+            "/account/my-models/test",
+            "url",
+            "baseUrl",
+            "bearerToken",
+            '`modality`: `"text"`',
+        ],
+    ]) {
+        const markdown = renderEndpoint(
+            publicSchema,
+            "post",
+            path,
+            publicSchema.paths[path].post,
+        );
+        const body = markdown
+            .split("📥 **Request body**")[1]
+            .split("📤 **Response**")[0];
+        const [, first, second] = body.split(/\*\*Alternative \d+\*\*/);
+        expect(
+            body
+                .split("\n")
+                .filter((line) => line.startsWith(`| \`${sharedField}\``)),
+        ).toHaveLength(1);
+        expect(first).toContain(firstLabel);
+        expect(first).toContain(`| \`${firstField}\` * |`);
+        expect(first).not.toContain(`| \`${secondField}\``);
+        expect(second).toContain(`| \`${secondField}\` * |`);
+        expect(second).not.toContain(`| \`${firstField}\``);
+        if (path.endsWith("/test")) {
+            expect(first).toContain("| `model` * |");
+            expect(second).toContain("| `model` |");
+        }
+    }
 });
 
 test.each([

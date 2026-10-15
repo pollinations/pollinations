@@ -72,7 +72,7 @@ remain available. Authentication, key permissions, paid access and manual
 hiding still apply. Owners can manage all their models in My Models.
 
 Time-windowed traffic, latency and fallback breakdowns are served separately by
-`/models/status`, described in [Public Stats](/docs#tag/public-stats).
+`/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -118,7 +118,7 @@ API key model permissions list model categories and model IDs. A category (`text
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.
 
-For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
+For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](https://gen.pollinations.ai/docs#tag/community-models) under Resources.
 
 ## Pollinations-imposed limits
 

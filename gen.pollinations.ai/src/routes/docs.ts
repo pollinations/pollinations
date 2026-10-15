@@ -900,6 +900,20 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
+    );
+}
+
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -914,9 +928,18 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {

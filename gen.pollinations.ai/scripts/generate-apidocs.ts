@@ -28,6 +28,7 @@ export type Spec = {
     tags?: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { schemas: Record<string, Schema> };
+    "x-schema-sources"?: Record<string, boolean>;
 };
 
 const BASE_URL = "https://gen.pollinations.ai";
@@ -1124,19 +1125,22 @@ const TAG_ORDER = [
     "Account",
 ];
 
-const REQUIRED_PATHS = [
-    "/account/profile",
-    "/account/my-models",
-    "/account/agents",
-];
-
-function requireMergedPaths(spec: Spec): void {
-    const missing = REQUIRED_PATHS.filter((path) => !spec.paths[path]);
+export async function fetchOpenApiSpec(url: string): Promise<Spec> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`OpenAPI schema fetch failed: HTTP ${response.status}`);
+    }
+    const spec = (await response.json()) as Spec;
+    const sources = asObj(spec?.["x-schema-sources"]);
+    const missing = ["gen", "enter", "media"].filter(
+        (source) => sources[source] !== true,
+    );
     if (missing.length > 0) {
         throw new Error(
-            `OpenAPI schema is incomplete; missing required paths: ${missing.join(", ")}`,
+            `OpenAPI schema is incomplete; missing public operations or completeness metadata from: ${missing.join(", ")}`,
         );
     }
+    return spec;
 }
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */
@@ -1188,8 +1192,7 @@ function groupByTag(
 
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
-    const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
-    requireMergedPaths(spec);
+    const spec = await fetchOpenApiSpec(OPENAPI_URL);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);

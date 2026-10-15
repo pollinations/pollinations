@@ -1013,6 +1013,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Seedance 2.0, Seedance 2.5, Wan 3.0, and MiniMax H3 Max also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
                 "",
+                "`mirelo/sfx-2.0` adds sound effects to an existing video: pass exactly one `reference_videos` URL and describe the sound in the prompt. The output keeps the source dimensions. It covers the first 120 seconds, or the whole video if shorter; set `duration` to cover less. Billing is per returned second.",
+                "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {

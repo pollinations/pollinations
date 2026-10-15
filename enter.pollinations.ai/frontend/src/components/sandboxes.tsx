@@ -15,6 +15,7 @@ import {
     Field,
     InlineLink,
     Input,
+    LoadingStatus,
     PauseIcon,
     PlayIcon,
     PlusIcon,
@@ -497,7 +498,7 @@ export function Sandboxes() {
     const createAction = (
         <Button
             type="button"
-            icon={<PlusIcon />}
+            className="dashboard-add-button"
             aria-busy={busyId === "new"}
             aria-haspopup="dialog"
             disabled={full || busyId === "new"}
@@ -509,7 +510,15 @@ export function Sandboxes() {
                 })
             }
         >
-            {busyId === "new" ? "Creating…" : "Create sandbox"}
+            {busyId === "new" ? (
+                <LoadingStatus>Creating sandbox…</LoadingStatus>
+            ) : (
+                <>
+                    <PlusIcon className="h-4 w-4" />
+                    <TerminalIcon className="h-5 w-5" />
+                    <span className="ml-1">Create sandbox</span>
+                </>
+            )}
         </Button>
     );
 

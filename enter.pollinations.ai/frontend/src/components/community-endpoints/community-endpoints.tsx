@@ -1,6 +1,8 @@
 import {
     AccountIcon,
     Alert,
+    BeakerIcon,
+    BotIcon,
     Button,
     Field,
     GlobeIcon,
@@ -405,21 +407,25 @@ export function CommunityEndpoints({
     const agentAction = (
         <Button
             type="button"
-            icon={<PlusIcon />}
+            className="dashboard-add-button"
             aria-haspopup="dialog"
             onClick={() => setAgentCreateOpen(true)}
         >
-            Create agent
+            <PlusIcon className="h-4 w-4" />
+            <BotIcon className="h-5 w-5" />
+            <span className="ml-1">Create agent</span>
         </Button>
     );
     const modelAction = (
         <Button
             type="button"
-            icon={<PlusIcon />}
+            className="dashboard-add-button"
             aria-haspopup="dialog"
             onClick={() => setCreateOpen(true)}
         >
-            Create model
+            <PlusIcon className="h-4 w-4" />
+            <BeakerIcon className="h-5 w-5" />
+            <span className="ml-1">Create model</span>
         </Button>
     );
 

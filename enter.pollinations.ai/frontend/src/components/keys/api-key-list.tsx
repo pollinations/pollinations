@@ -303,21 +303,25 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const keyAction = (
         <Button
             type="button"
-            icon={<PlusIcon />}
+            className="dashboard-add-button"
             aria-haspopup="dialog"
             onClick={() => setKeyCreateOpen(true)}
         >
-            Create secret key
+            <PlusIcon className="h-4 w-4" />
+            <KeyIcon className="h-5 w-5" />
+            <span className="ml-1">Create secret key</span>
         </Button>
     );
     const appAction = (
         <Button
             type="button"
-            icon={<PlusIcon />}
+            className="dashboard-add-button"
             aria-haspopup="dialog"
             onClick={() => setAppCreateOpen(true)}
         >
-            Create app key
+            <PlusIcon className="h-4 w-4" />
+            <AppIcon className="h-5 w-5" />
+            <span className="ml-1">Create app key</span>
         </Button>
     );
 

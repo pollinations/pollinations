@@ -24,7 +24,7 @@ from common import NEWS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit_files_to_branc
 
 INDEX_PATH = f"{NEWS_REL_DIR}/index.json"
 RECENT_DAYS = 30
-README_ITEMS = 10
+MIN_HIGHLIGHTS = 10
 # Changes the model cards show; everything else stays in the record.
 CARD_FIELDS = ("pricing", "paid_only", "capabilities", "input_modalities", "output_modalities",
                "context_length", "per_user_rpm", "max_reference_images", "model_id", "voices")
@@ -151,7 +151,7 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
         for item in summary.get("highlights") or []
     ]
     recent = [item for item in items if item["date"] >= since]
-    return items[:README_ITEMS] if len(recent) < README_ITEMS else recent
+    return items[:MIN_HIGHLIGHTS] if len(recent) < MIN_HIGHLIGHTS else recent
 
 
 def build_index(news_dir: Path, today: str) -> Dict:

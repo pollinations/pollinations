@@ -727,7 +727,7 @@ def build_daily_summary_artifact(
         prs=prs,
         generated_at=generated_at,
     )
-    # Shown directly on Enter's News page and in the README via index.json.
+    # Shown directly on Enter's News page via index.json.
     artifact["highlights"] = [
         item for item in summary.get("highlights") or []
         if isinstance(item, dict) and item.get("title") and item.get("text")

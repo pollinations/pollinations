@@ -1,14 +1,15 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
-import { type ReactNode, useMemo, useState } from "react";
-import { FilterMultiSelect } from "../components/Filters";
+import { useMemo, useState } from "react";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName } from "../lib/months";
 import {
+    isTrendExpense,
     monthlyPollenTrends,
     monthlyTrends,
     type PollenTrendMonth,
     type TrendMonth,
+    type TrendScope,
     trendPeriod,
 } from "../lib/trends";
 import type { Data } from "../types";
@@ -18,6 +19,7 @@ type ExpenseCategory = (typeof EXPENSE_CATEGORY_ORDER)[number];
 type TrendRow = TrendMonth & PollenTrendMonth;
 type Series = {
     key:
+        | "gross"
         | "revenue"
         | "paidCost"
         | "result"
@@ -33,6 +35,15 @@ type Series = {
     dashed?: boolean;
     adjustedKey?: "adjustedResult" | "adjustedFullResult";
 };
+const SALES_SERIES: Series[] = [
+    { key: "gross", label: "Customer payments", color: "#60a5fa" },
+    {
+        key: "revenue",
+        label: "After deductions",
+        color: "#2dd4bf",
+        dashed: true,
+    },
+];
 const USAGE_SERIES: Series[] = [
     { key: "paidPollen", label: "Paid used", color: "#60a5fa" },
     { key: "questPollen", label: "Quest used", color: "#2dd4bf", dashed: true },
@@ -88,7 +99,8 @@ function TrendChart({
     kind = "line",
     activeMonth,
     onInspect,
-    controls,
+    hiddenSeries = [],
+    onToggleSeries,
     unit = "USD",
     note,
     creditKey,
@@ -99,23 +111,26 @@ function TrendChart({
     kind?: "line" | "bar" | "stacked";
     activeMonth: string | null;
     onInspect: (month: string | null) => void;
-    controls?: ReactNode;
+    hiddenSeries?: Series["key"][];
+    onToggleSeries?: (key: Series["key"]) => void;
     unit?: "USD" | "Pollen";
     note?: string;
     creditKey?: "credits" | "questCredits";
 }) {
+    const visibleSeries = series.filter((s) => !hiddenSeries.includes(s.key));
+    const LegendItem = onToggleSeries ? "button" : "span";
     const active =
         rows.find((row) => row.month === activeMonth) ??
         [...rows]
             .reverse()
-            .find((row) => series.some((s) => row[s.key] != null));
+            .find((row) => visibleSeries.some((s) => row[s.key] != null));
     const format = unit === "Pollen" ? fmtNumber : usd;
     const funded = active && creditKey ? active[creditKey] : null;
     const total =
-        active && series.every((s) => active[s.key] != null)
-            ? series.reduce((sum, s) => sum + (active[s.key] ?? 0), 0)
+        active && visibleSeries.every((s) => active[s.key] != null)
+            ? visibleSeries.reduce((sum, s) => sum + (active[s.key] ?? 0), 0)
             : null;
-    const values = series.flatMap((s) =>
+    const values = visibleSeries.flatMap((s) =>
         rows.flatMap((r) =>
             [r[s.key], s.adjustedKey ? r[s.adjustedKey] : null].filter(
                 (value): value is number => value != null,
@@ -124,7 +139,7 @@ function TrendChart({
     );
     if (kind === "stacked") {
         for (const row of rows) {
-            const known = series
+            const known = visibleSeries
                 .map((s) => row[s.key])
                 .filter((n): n is number => n != null);
             if (known.length) {
@@ -158,7 +173,6 @@ function TrendChart({
         <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <Heading as="h3">{title}</Heading>
-                {controls}
                 <span className="text-xs text-theme-text-soft">
                     {active ? `${monthName(active.month)} · ${unit}` : unit}
                 </span>
@@ -171,9 +185,23 @@ function TrendChart({
                 aria-live="polite"
             >
                 {series.map((s) => (
-                    <span
+                    <LegendItem
                         key={s.key}
-                        className="inline-flex items-center gap-1.5"
+                        type={onToggleSeries ? "button" : undefined}
+                        aria-label={
+                            onToggleSeries ? `Toggle ${s.label}` : undefined
+                        }
+                        aria-pressed={
+                            onToggleSeries
+                                ? !hiddenSeries.includes(s.key)
+                                : undefined
+                        }
+                        onClick={
+                            onToggleSeries
+                                ? () => onToggleSeries(s.key)
+                                : undefined
+                        }
+                        className={`inline-flex items-center gap-1.5 ${onToggleSeries ? "cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current" : ""} ${hiddenSeries.includes(s.key) ? "opacity-40" : ""}`}
                     >
                         <svg width="18" height="10" aria-hidden="true">
                             <line
@@ -191,7 +219,7 @@ function TrendChart({
                         {s.adjustedKey && active?.[s.adjustedKey] != null && (
                             <span>◇ {usd(active[s.adjustedKey])}</span>
                         )}
-                    </span>
+                    </LegendItem>
                 ))}
                 {kind === "bar" &&
                     rows.some((row) => row.oneOffFraud != null) && (
@@ -263,7 +291,7 @@ function TrendChart({
                             </text>
                         </g>
                     ))}
-                    {series.map((s, j) => (
+                    {visibleSeries.map((s, j) => (
                         <g key={s.key}>
                             {rows.map((row, i) => {
                                 const value = row[s.key],
@@ -306,7 +334,7 @@ function TrendChart({
                                     );
                                 const base =
                                     kind === "stacked"
-                                        ? series
+                                        ? visibleSeries
                                               .slice(0, j)
                                               .reduce((sum, prior) => {
                                                   const n = row[prior.key] ?? 0;
@@ -322,7 +350,7 @@ function TrendChart({
                                     kind === "stacked"
                                         ? x(i) - barWidth
                                         : x(i) +
-                                          (j - series.length / 2) *
+                                          (j - visibleSeries.length / 2) *
                                               (barWidth + 2);
                                 const adjusted = s.adjustedKey
                                     ? row[s.adjustedKey]
@@ -405,25 +433,22 @@ export function TrendsTab({
     period: 3 | 6 | 12;
     onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
-    const [categories, setCategories] = useState<string[]>([
-        "compute",
-        "infrastructure",
-        "development",
-    ]);
+    const [scope, setScope] = useState<TrendScope>("company");
+    const [hiddenSeries, setHiddenSeries] = useState<Series["key"][]>([]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
     const months = useMemo(() => {
-        const company = monthlyTrends(data, "company").months;
+        const scopedMonths = monthlyTrends(data, scope).months;
         const pollen = monthlyPollenTrends(
             data,
-            company.map((row) => row.month),
+            scopedMonths.map((row) => row.month),
         );
-        return company.map(
+        return scopedMonths.map(
             (row, i): TrendRow => ({
                 ...row,
                 ...pollen[i],
             }),
         );
-    }, [data]);
+    }, [data, scope]);
     const { start, end } = trendPeriod(period);
     const rows = months.filter((row) => row.month >= start && row.month <= end);
     const selected =
@@ -433,8 +458,8 @@ export function TrendsTab({
         activeMonth: selected?.month ?? null,
         onInspect: setActiveMonth,
     };
-    const selectedExpenses = EXPENSE_SERIES.filter(
-        (s) => !categories.length || categories.includes(s.key),
+    const selectedExpenses = EXPENSE_SERIES.filter((s) =>
+        isTrendExpense(s.key, scope),
     );
     return (
         <section className="flex flex-col gap-5">
@@ -455,6 +480,19 @@ export function TrendsTab({
                         </TabButton>
                     ))}
                 </fieldset>
+                <fieldset className="flex gap-1.5" aria-label="Cost scope">
+                    {(["product", "company"] as const).map((value) => (
+                        <TabButton
+                            key={value}
+                            active={scope === value}
+                            onClick={() => setScope(value)}
+                            size="md"
+                            variant="soft"
+                        >
+                            {value === "product" ? "Product" : "Whole company"}
+                        </TabButton>
+                    ))}
+                </fieldset>
                 <span className="text-xs text-theme-text-soft">
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
@@ -467,18 +505,20 @@ export function TrendsTab({
                     {...chartProps}
                 />
                 <TrendChart
+                    title="Sales"
+                    series={SALES_SERIES}
+                    {...chartProps}
+                />
+                <TrendChart
                     title="Expenses before credits"
                     series={selectedExpenses}
-                    controls={
-                        <FilterMultiSelect
-                            placeholder="Expense categories"
-                            options={EXPENSE_CATEGORY_ORDER.map((value) => ({
-                                value,
-                                label: categoryLabel(value),
-                            }))}
-                            value={categories}
-                            onChange={setCategories}
-                        />
+                    hiddenSeries={hiddenSeries}
+                    onToggleSeries={(key) =>
+                        setHiddenSeries((hidden) =>
+                            hidden.includes(key)
+                                ? hidden.filter((item) => item !== key)
+                                : [...hidden, key],
+                        )
                     }
                     {...chartProps}
                 />

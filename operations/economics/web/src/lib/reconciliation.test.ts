@@ -105,7 +105,7 @@ describe("shared reconciliation", () => {
             "aws",
             "azure",
         ]);
-        for (const scope of ["compute", "company"] as const) {
+        for (const scope of ["product", "company"] as const) {
             const month = monthlyTrends(data, scope, now).months.find(
                 (r) => r.month === "2026-09",
             );
@@ -113,18 +113,18 @@ describe("shared reconciliation", () => {
             expect(month?.issues.join(" ")).toContain("aws");
         }
     });
-    it("keeps infrastructure gaps out of API-only trends", () => {
+    it("keeps missing infrastructure costs visible in Product and company trends", () => {
         const data: Data = {
             opPollen: [usage("cloudflare")],
             vendorLedger: [cost("google")],
         };
-        const api = monthlyTrends(data, "compute", now).months.find(
+        const product = monthlyTrends(data, "product", now).months.find(
             (r) => r.month === "2026-09",
         );
         const company = monthlyTrends(data, "company", now).months.find(
             (r) => r.month === "2026-09",
         );
-        expect(api?.costIncomplete).toBe(false);
+        expect(product?.costIncomplete).toBe(true);
         expect(company?.costIncomplete).toBe(true);
     });
     it("deduplicates provider gaps, preserves unknown impact and identifies affected pages", () => {

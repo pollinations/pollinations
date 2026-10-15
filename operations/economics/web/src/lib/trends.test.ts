@@ -72,7 +72,7 @@ const bank = (overrides: Partial<OpTransactionRow>): OpTransactionRow => ({
 });
 const find = (
     data: Data,
-    scope: "compute" | "company" = "compute",
+    scope: "product" | "company" = "product",
     month = "2026-09",
 ) => {
     const row = monthlyTrends(data, scope, now).months.find(
@@ -98,16 +98,16 @@ describe("monthly sales-based trends", () => {
                 bank({ category: "balance_sheet", amount: 1250 }),
             ],
         };
-        const api = find(data);
-        expect(api).toMatchObject({
+        const product = find(data);
+        expect(product).toMatchObject({
             gross: 1000,
             deductions: 200,
             revenue: 800,
-            paidCost: 200,
-            credits: 300,
-            fullCost: 500,
-            result: 600,
-            fullResult: 300,
+            paidCost: 250,
+            credits: 400,
+            fullCost: 650,
+            result: 550,
+            fullResult: 150,
         });
         const company = find(data, "company");
         expect(company).toMatchObject({
@@ -121,8 +121,8 @@ describe("monthly sales-based trends", () => {
                 (company.infrastructure ?? 0) +
                 (company.payroll ?? 0),
         ).toBe(company.fullCost);
-        expect(api.infrastructure).toBeNull();
-        expect(api.payroll).toBeNull();
+        expect(product.infrastructure).toBe(150);
+        expect(product.payroll).toBeNull();
         expect(company).toMatchObject({
             paidCost: 650,
             credits: 400,
@@ -143,6 +143,58 @@ describe("monthly sales-based trends", () => {
         if (company.result == null || company.fullResult == null)
             throw new Error("Missing results");
         expect(company.result - company.fullResult).toBe(company.credits);
+    });
+    it("includes infrastructure and creator payouts in Product while excluding company overhead", () => {
+        const data: Data = {
+            stripeSales: [sale("2026-09")],
+            vendorLedger: [
+                cost("2026-09"),
+                cost("2026-09", { type: "infra", paid: -50, credit: -100 }),
+            ],
+            opTransactions: [
+                bank({
+                    vendor: "creator",
+                    category: "creator_payout",
+                    amount: -25,
+                }),
+                bank({
+                    vendor: "dev-tools",
+                    category: "development",
+                    amount: -40,
+                }),
+                bank({}),
+                bank({ category: "balance_sheet", amount: 1250 }),
+            ],
+        };
+        const product = find(data, "product");
+        const company = find(data, "company");
+        expect(product).toMatchObject({
+            compute: 500,
+            infrastructure: 150,
+            revenue_share: 25,
+            development: null,
+            payroll: null,
+            paidCost: 275,
+            credits: 400,
+            fullCost: 675,
+            result: 525,
+            fullResult: 125,
+        });
+        expect(company).toMatchObject({
+            development: 40,
+            payroll: 400,
+            paidCost: 715,
+            credits: 400,
+            fullCost: 1115,
+            result: 85,
+            fullResult: -315,
+        });
+        expect(product.gross).toBe(company.gross);
+        expect(product.deductions).toBe(company.deductions);
+        expect(product.revenue).toBe(company.revenue);
+        expect((product.result ?? 0) - (product.fullResult ?? 0)).toBe(
+            product.credits,
+        );
     });
     it("does not turn absent sales, absent usage, or a credit grant into zero-cost profit", () => {
         expect(find({ vendorLedger: [cost("2026-09")] })).toMatchObject({
@@ -176,7 +228,7 @@ describe("monthly sales-based trends", () => {
                 cost("2026-09"),
             ],
         };
-        const { months } = monthlyTrends(data, "compute", now);
+        const { months } = monthlyTrends(data, "product", now);
         expect(trendComparison(months, "2026-09")).toMatchObject({
             fullResult: 200,
             credits: -300,
@@ -198,7 +250,7 @@ describe("monthly sales-based trends", () => {
             ],
             vendorLedger: [cost("2026-08"), cost("2026-09"), cost("2026-10")],
         };
-        const { months } = monthlyTrends(data, "compute", now);
+        const { months } = monthlyTrends(data, "product", now);
         expect(months.find((r) => r.month === "2026-09")).toMatchObject({
             revenue: 800,
             provisional: true,
@@ -220,7 +272,7 @@ describe("monthly sales-based trends", () => {
                 stripeSales: [sale("2026-09")],
                 vendorLedger: [cost("2026-09")],
             },
-            "compute",
+            "product",
             now,
         );
         expect(result.warnings.some((w) => w.includes("retell"))).toBe(true);
@@ -250,7 +302,7 @@ it("does not claim improving results when usage exists but its provider costs ar
             },
         ],
     };
-    const { months } = monthlyTrends(data, "compute", now);
+    const { months } = monthlyTrends(data, "product", now);
     expect(months.find((r) => r.month === "2026-09")).toMatchObject({
         provisional: true,
         costIncomplete: true,

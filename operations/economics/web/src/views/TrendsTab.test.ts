@@ -20,7 +20,15 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).toContain("September");
     expect(html).not.toContain("gaps mean missing data");
     expect(html).not.toContain("September*");
-    expect(html).toContain('aria-label="Cost scope"');
+    expect(html).not.toContain('aria-label="Cost scope"');
+    for (const chart of [
+        "Monthly result",
+        "Expenses before credits",
+        "Cost funding",
+    ]) {
+        expect(html).toContain(`aria-label="${chart} scope"`);
+    }
+    expect(html.match(/aria-label="[^"]+ scope"/g)).toHaveLength(3);
     expect(html).not.toContain("Company performance");
     expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(6);
     expect(html).not.toContain("Monthly details");
@@ -47,7 +55,9 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("<select");
     expect(html).not.toContain("Expense categories");
     expect(html).toContain('aria-label="Toggle Compute"');
-    expect(html).toContain('aria-label="Toggle Revenue Share"');
+    expect(html).not.toContain('aria-label="Toggle Revenue Share"');
+    expect(html).not.toContain('aria-label="Toggle Payroll"');
+    expect(html.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(3);
     expect(html).toContain("Product");
     expect(
         /<button[^>]*aria-pressed="true"[^>]*>Whole company<\/button>/.test(

@@ -144,7 +144,7 @@ describe("monthly sales-based trends", () => {
             throw new Error("Missing results");
         expect(company.result - company.fullResult).toBe(company.credits);
     });
-    it("includes infrastructure and creator payouts in Product while excluding company overhead", () => {
+    it("limits Product to compute and infrastructure, leaving all other costs in Whole company", () => {
         const data: Data = {
             stripeSales: [sale("2026-09")],
             vendorLedger: [
@@ -171,16 +171,17 @@ describe("monthly sales-based trends", () => {
         expect(product).toMatchObject({
             compute: 500,
             infrastructure: 150,
-            revenue_share: 25,
+            revenue_share: null,
             development: null,
             payroll: null,
-            paidCost: 275,
+            paidCost: 250,
             credits: 400,
-            fullCost: 675,
-            result: 525,
-            fullResult: 125,
+            fullCost: 650,
+            result: 550,
+            fullResult: 150,
         });
         expect(company).toMatchObject({
+            revenue_share: 25,
             development: 40,
             payroll: 400,
             paidCost: 715,

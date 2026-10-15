@@ -1,6 +1,6 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { useMemo, useState } from "react";
-import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
+import { categoryLabel, type EXPENSE_CATEGORY_ORDER } from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName } from "../lib/months";
 import {
@@ -57,21 +57,19 @@ const QUEST_FUNDING_SERIES: Series[] = [
         dashed: true,
     },
 ];
-const EXPENSE_COLORS = [
-    "#fbbf24",
-    "#2dd4bf",
-    "#c084fc",
-    "#fb7185",
-    "#60a5fa",
-    "#fb923c",
-    "#a3e635",
-    "#e879f9",
+const EXPENSE_SERIES: Series[] = [
+    { key: "compute", label: categoryLabel("compute"), color: "#fbbf24" },
+    {
+        key: "infrastructure",
+        label: categoryLabel("infrastructure"),
+        color: "#2dd4bf",
+    },
+    {
+        key: "development",
+        label: categoryLabel("development"),
+        color: "#c084fc",
+    },
 ];
-const EXPENSE_SERIES: Series[] = EXPENSE_CATEGORY_ORDER.map((key, i) => ({
-    key,
-    label: categoryLabel(key),
-    color: EXPENSE_COLORS[i],
-}));
 const RESULT_SERIES: Series[] = [
     {
         key: "result",
@@ -104,6 +102,8 @@ function TrendChart({
     unit = "USD",
     note,
     creditKey,
+    scope,
+    onScopeChange,
 }: {
     title: string;
     rows: TrendRow[];
@@ -116,6 +116,8 @@ function TrendChart({
     unit?: "USD" | "Pollen";
     note?: string;
     creditKey?: "credits" | "questCredits";
+    scope?: TrendScope;
+    onScopeChange?: (scope: TrendScope) => void;
 }) {
     const visibleSeries = series.filter((s) => !hiddenSeries.includes(s.key));
     const LegendItem = onToggleSeries ? "button" : "span";
@@ -170,8 +172,12 @@ function TrendChart({
     const y = (value: number) => 208 - ((value - min) / (max - min)) * 184;
     const barWidth = Math.min(18, slot * 0.28);
     return (
-        <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
-            <div className="flex h-32 flex-col">
+        <Surface
+            as="section"
+            aria-label={title}
+            className="w-full min-w-0 max-w-4xl p-4 sm:p-5"
+        >
+            <div className={`flex flex-col ${scope ? "h-40" : "h-32"}`}>
                 <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2">
                     <Heading as="h3" size="card">
                         {title}
@@ -180,6 +186,26 @@ function TrendChart({
                         {active ? `${monthName(active.month)} · ${unit}` : unit}
                     </span>
                 </div>
+                {scope && onScopeChange && (
+                    <fieldset
+                        className="mt-2 flex shrink-0 gap-1"
+                        aria-label={`${title} scope`}
+                    >
+                        {(["product", "company"] as const).map((value) => (
+                            <TabButton
+                                key={value}
+                                active={scope === value}
+                                onClick={() => onScopeChange(value)}
+                                size="xs"
+                                variant="soft"
+                            >
+                                {value === "product"
+                                    ? "Product"
+                                    : "Whole company"}
+                            </TabButton>
+                        ))}
+                    </fieldset>
+                )}
                 {note && (
                     <p className="mt-1 shrink-0 text-xs text-theme-text-soft">
                         {note}
@@ -444,24 +470,33 @@ export function TrendsTab({
     period: 3 | 6 | 12;
     onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
-    const [scope, setScope] = useState<TrendScope>("company");
+    const [resultScope, setResultScope] = useState<TrendScope>("company");
+    const [expenseScope, setExpenseScope] = useState<TrendScope>("company");
+    const [fundingScope, setFundingScope] = useState<TrendScope>("company");
     const [hiddenSeries, setHiddenSeries] = useState<Series["key"][]>([]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
     const months = useMemo(() => {
-        const scopedMonths = monthlyTrends(data, scope).months;
+        const now = new Date();
+        const company = monthlyTrends(data, "company", now).months;
+        const product = monthlyTrends(data, "product", now).months;
         const pollen = monthlyPollenTrends(
             data,
-            scopedMonths.map((row) => row.month),
+            company.map((row) => row.month),
         );
-        return scopedMonths.map(
-            (row, i): TrendRow => ({
-                ...row,
-                ...pollen[i],
-            }),
-        );
-    }, [data, scope]);
+        const withPollen = (rows: TrendMonth[]): TrendRow[] =>
+            rows.map((row, i) => ({ ...row, ...pollen[i] }));
+        return { company: withPollen(company), product: withPollen(product) };
+    }, [data]);
     const { start, end } = trendPeriod(period);
-    const rows = months.filter((row) => row.month >= start && row.month <= end);
+    const scopeRows = {
+        company: months.company.filter(
+            (row) => row.month >= start && row.month <= end,
+        ),
+        product: months.product.filter(
+            (row) => row.month >= start && row.month <= end,
+        ),
+    };
+    const rows = scopeRows.company;
     const selected =
         rows.find((row) => row.month === activeMonth) ?? rows.at(-1);
     const chartProps = {
@@ -470,7 +505,7 @@ export function TrendsTab({
         onInspect: setActiveMonth,
     };
     const selectedExpenses = EXPENSE_SERIES.filter((s) =>
-        isTrendExpense(s.key, scope),
+        isTrendExpense(s.key, expenseScope),
     );
     return (
         <section className="@container flex flex-col gap-5">
@@ -494,25 +529,6 @@ export function TrendsTab({
                 <span className="text-xs text-theme-text-soft">
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
-                <fieldset
-                    className="flex items-center gap-1.5 sm:ml-auto"
-                    aria-label="Cost scope"
-                >
-                    <span className="mr-1 text-xs text-theme-text-soft">
-                        Costs
-                    </span>
-                    {(["product", "company"] as const).map((value) => (
-                        <TabButton
-                            key={value}
-                            active={scope === value}
-                            onClick={() => setScope(value)}
-                            size="md"
-                            variant="soft"
-                        >
-                            {value === "product" ? "Product" : "Whole company"}
-                        </TabButton>
-                    ))}
-                </fieldset>
             </div>
             <div className="grid min-w-0 grid-cols-1 gap-5 @3xl:grid-cols-2 @6xl:grid-cols-3">
                 <TrendChart
@@ -520,6 +536,9 @@ export function TrendsTab({
                     series={RESULT_SERIES}
                     kind="bar"
                     {...chartProps}
+                    rows={scopeRows[resultScope]}
+                    scope={resultScope}
+                    onScopeChange={setResultScope}
                 />
                 <TrendChart
                     title="Expenses before credits"
@@ -533,6 +552,9 @@ export function TrendsTab({
                         )
                     }
                     {...chartProps}
+                    rows={scopeRows[expenseScope]}
+                    scope={expenseScope}
+                    onScopeChange={setExpenseScope}
                 />
                 <TrendChart
                     title="Cost funding"
@@ -540,6 +562,9 @@ export function TrendsTab({
                     kind="stacked"
                     creditKey="credits"
                     {...chartProps}
+                    rows={scopeRows[fundingScope]}
+                    scope={fundingScope}
+                    onScopeChange={setFundingScope}
                 />
                 <TrendChart
                     title="Sales"

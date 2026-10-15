@@ -21,7 +21,7 @@ export function isTrendExpense(category: string, scope: TrendScope) {
         category !== "revenue" &&
         category !== "balance_sheet" &&
         (scope === "company" ||
-            ["compute", "infrastructure", "revenue_share"].includes(category))
+            ["compute", "infrastructure"].includes(category))
     );
 }
 export type TrendMonth = {

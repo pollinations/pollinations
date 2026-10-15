@@ -37,6 +37,7 @@ curl https://gen.pollinations.ai/v1/models \
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
 - [▲ Vercel AI SDK](#-vercel-ai-sdk)
 - [🌊 Streaming chat completions](#-streaming-chat-completions)
+- [⏳ Asynchronous media jobs](#-asynchronous-media-jobs)
 - [🖼️ Vision: passing images into chat](#-vision-passing-images-into-chat)
 - [📤 Multipart uploads in depth](#-multipart-uploads-in-depth)
 - [💡 Tips](#-tips)
@@ -53,6 +54,7 @@ curl https://gen.pollinations.ai/v1/models \
   - [Media Storage](#media-storage)
   - [Account](#account)
   - [Quests](#quests)
+  - [Jobs](#jobs)
   - [3D](#3d)
 - [⚠️ Error Responses](#-error-responses)
 - [🧩 Schemas](#-schemas)
@@ -224,6 +226,21 @@ for chunk in stream:
 ```
 
 When `stream: true` is set, usage info still arrives on the final chunk (`stream_options: { include_usage: true }` if your SDK requires opting in).
+
+## ⏳ Asynchronous media jobs
+
+For long image, video, audio or 3D generations, add `Prefer: respond-async` to the normal generation request. An uncached request returns `202 Accepted` with `id`, `status: "pending"`, `status_url`, `Location`, and `Retry-After: 5` without waiting for the provider. For example:
+
+```bash
+job=$(curl -sS "https://gen.pollinations.ai/video/a%20paper%20boat%20on%20a%20river?model=google/veo-3.1-fast" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Prefer: respond-async" | jq -r '.id')
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job" -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" -o boat.mp4
+```
+
+Wait for `status: "succeeded"` before downloading; the result endpoint returns 409 while pending or failed. Another account sees 404, even if it knows the job id. Resubmitting the identical request joins one durable generation and one charge; an already cached result may return directly as HTTP 200 without an id. Job status records expire 24 hours after completion; media files keep their normal cache lifetime. Polling never charges again. The `Prefer` option is ignored for streaming and non-media routes.
 
 ## 🖼️ Vision: passing images into chat
 
@@ -3780,6 +3797,54 @@ Returns product quests and GitHub issue quest instances in one list.
 
 ```bash
 curl "https://gen.pollinations.ai/quests/catalog"
+```
+
+### Jobs
+
+Submit, poll and download asynchronous image, video, audio and 3D jobs.
+
+#### `GET` `/v1/jobs/{id}` — Get Media Job Status
+
+Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An uncached request returns 202 with a job id and Location. Poll this endpoint (Retry-After: 5), then download the result. Identical requests share one upstream generation and one charge. Only accounts that submitted that job can read it; the job record expires 24 hours after completion. A cached submit can return the media directly with HTTP 200.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` — pending, succeeded or failed job status
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/v1/jobs/9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
+```
+
+---
+
+#### `GET` `/v1/jobs/{id}/result` — Download Media Job Result
+
+Submit an image, video, audio or 3D generation with `Prefer: respond-async`. An uncached request returns 202 with a job id and Location. Poll this endpoint (Retry-After: 5), then download the result. Identical requests share one upstream generation and one charge. Only accounts that submitted that job can read it; the job record expires 24 hours after completion. A cached submit can return the media directly with HTTP 200.
+
+⚙️ **Parameters**
+
+| Param | In | Type | Description |
+|---|---|---|---|
+| `id` * | `path` | `string` | — |
+
+<sub>`*` = required parameter</sub>
+
+📤 **Response** · `200` — Generated image, video, audio or 3D file
+
+💻 **Example**
+
+```bash
+curl "https://gen.pollinations.ai/v1/jobs/9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
 ### 3D

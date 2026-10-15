@@ -1,9 +1,11 @@
+import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
+import { createElement } from "react";
 import { defineConfig } from "vite";
 import { codeAgentSdk } from "./scripts/code-agent-sdk.mjs";
 
@@ -83,7 +85,7 @@ export default defineConfig(({ mode }) => ({
         {
             name: "enter-email-brand",
             applyToEnvironment: (environment) => environment.name === "client",
-            generateBundle() {
+            async generateBundle() {
                 for (const [fileName, asset] of Object.entries(EMAIL_BRAND)) {
                     this.emitFile({
                         type: "asset",
@@ -93,6 +95,27 @@ export default defineConfig(({ mode }) => ({
                         ),
                     });
                 }
+                // The UI kit's paid-balance card icon, in the emails' text
+                // colour, as a PNG because email clients drop SVG.
+                const [{ CardIcon }, { renderToStaticMarkup }, sharp] =
+                    await Promise.all([
+                        import("@pollinations/ui"),
+                        import("react-dom/server"),
+                        import("sharp").then((m) => m.default),
+                    ]);
+                const svg = renderToStaticMarkup(
+                    createElement(CardIcon, {
+                        stroke: "#1d1420",
+                        width: 48,
+                        height: 48,
+                        xmlns: "http://www.w3.org/2000/svg",
+                    }),
+                );
+                this.emitFile({
+                    type: "asset",
+                    fileName: "email/card.png",
+                    source: await sharp(Buffer.from(svg)).png().toBuffer(),
+                });
             },
         },
     ],

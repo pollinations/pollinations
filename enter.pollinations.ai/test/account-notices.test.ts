@@ -88,9 +88,11 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
     expect(sent[0].text).toContain(
-        "You have 🪷 3.99 Pollen left, less than 20% of your last pack.",
+        "Your paid balance is 💳 3.99, less than 20% of your last pack.",
     );
-    expect(sent[0].html).toContain("<strong>🪷 3.99 Pollen</strong>");
+    expect(sent[0].html).toMatch(
+        /<strong><img src="[^"]+\/email\/card\.png"[^>]*> 3\.99<\/strong>/,
+    );
 
     // Crediting the next pack clears the marker, which re-arms the email.
     await env.DB.prepare(
@@ -126,7 +128,7 @@ test("auto top-up failed emails once per failure", async () => {
         reason: "auto top-up disabled",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
-    expect(sent[0].text).toContain("You have 🪷 2.00 Pollen left.");
+    expect(sent[0].text).toContain("Your paid balance is 💳 2.00.");
 
     // The user turns it back on, and it fails again the same day.
     await env.DB.prepare(

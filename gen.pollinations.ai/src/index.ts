@@ -33,6 +33,7 @@ import {
     LLMS_FULL_TEXT,
 } from "./routes/docs.ts";
 import { E2B_PATH, e2bRoutes, keepSandboxes } from "./routes/e2b.ts";
+import { jobRoutes } from "./routes/jobs.ts";
 import { mcpRoutes } from "./routes/mcp.ts";
 import { mcpCardRoutes } from "./routes/mcp-card.ts";
 import { createMessagesRoutes } from "./routes/messages.ts";
@@ -262,6 +263,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         const merged = await buildMergedOpenApiSpec(c, app);
         return c.json(merged);
     })
+    .route("/", jobRoutes)
     .route("/", modelStatusRoutes)
     .route("/", modelStatsRoutes)
     .route(

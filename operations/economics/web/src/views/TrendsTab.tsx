@@ -171,9 +171,11 @@ function TrendChart({
     const barWidth = Math.min(18, slot * 0.28);
     return (
         <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
-            <div className="flex h-28 flex-col">
+            <div className="flex h-32 flex-col">
                 <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2">
-                    <Heading as="h4">{title}</Heading>
+                    <Heading as="h3" size="card">
+                        {title}
+                    </Heading>
                     <span className="text-xs text-theme-text-soft">
                         {active ? `${monthName(active.month)} · ${unit}` : unit}
                     </span>
@@ -269,7 +271,7 @@ function TrendChart({
                                 y={y(value) + 4}
                                 textAnchor="end"
                                 fill="currentColor"
-                                fontSize="12"
+                                fontSize="16"
                             >
                                 {unit === "Pollen"
                                     ? fmtNumber(value)
@@ -294,7 +296,7 @@ function TrendChart({
                                 y="235"
                                 textAnchor="middle"
                                 fill="currentColor"
-                                fontSize="12"
+                                fontSize="16"
                             >
                                 {monthName(row.month).slice(0, 3)}
                             </text>
@@ -471,7 +473,7 @@ export function TrendsTab({
         isTrendExpense(s.key, scope),
     );
     return (
-        <section className="flex flex-col gap-5">
+        <section className="@container flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
                 <fieldset className="flex gap-1.5" aria-label="Chart period">
                     {([3, 6, 12] as const).map((value) => (
@@ -492,91 +494,73 @@ export function TrendsTab({
                 <span className="text-xs text-theme-text-soft">
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
-            </div>
-            <div className="grid min-w-0 gap-5 lg:grid-cols-2">
-                <section
-                    aria-label="Results and costs"
-                    className="flex min-w-0 flex-col gap-5"
+                <fieldset
+                    className="flex items-center gap-1.5 sm:ml-auto"
+                    aria-label="Cost scope"
                 >
-                    <div className="flex h-20 flex-col justify-between gap-2">
-                        <h3 className="font-semibold">Results and costs</h3>
-                        <fieldset
-                            className="flex gap-1.5"
-                            aria-label="Cost scope"
+                    <span className="mr-1 text-xs text-theme-text-soft">
+                        Costs
+                    </span>
+                    {(["product", "company"] as const).map((value) => (
+                        <TabButton
+                            key={value}
+                            active={scope === value}
+                            onClick={() => setScope(value)}
+                            size="md"
+                            variant="soft"
                         >
-                            {(["product", "company"] as const).map((value) => (
-                                <TabButton
-                                    key={value}
-                                    active={scope === value}
-                                    onClick={() => setScope(value)}
-                                    size="md"
-                                    variant="soft"
-                                >
-                                    {value === "product"
-                                        ? "Product"
-                                        : "Whole company"}
-                                </TabButton>
-                            ))}
-                        </fieldset>
-                    </div>
-                    <TrendChart
-                        title="Monthly result"
-                        series={RESULT_SERIES}
-                        kind="bar"
-                        {...chartProps}
-                    />
-                    <TrendChart
-                        title="Expenses before credits"
-                        series={selectedExpenses}
-                        hiddenSeries={hiddenSeries}
-                        onToggleSeries={(key) =>
-                            setHiddenSeries((hidden) =>
-                                hidden.includes(key)
-                                    ? hidden.filter((item) => item !== key)
-                                    : [...hidden, key],
-                            )
-                        }
-                        {...chartProps}
-                    />
-                    <TrendChart
-                        title="Cost funding"
-                        series={FUNDING_SERIES}
-                        kind="stacked"
-                        creditKey="credits"
-                        {...chartProps}
-                    />
-                </section>
-                <section
-                    aria-label="Sales and usage"
-                    className="flex min-w-0 flex-col gap-5"
-                >
-                    <div className="flex h-20 flex-col justify-between gap-2">
-                        <h3 className="font-semibold">Sales and usage</h3>
-                        <p className="flex h-10 items-center text-xs text-theme-text-soft">
-                            Whole platform
-                        </p>
-                    </div>
-                    <TrendChart
-                        title="Sales"
-                        series={SALES_SERIES}
-                        {...chartProps}
-                    />
-                    <TrendChart
-                        title="Pollen consumed"
-                        note="Usage, not sales"
-                        series={USAGE_SERIES}
-                        unit="Pollen"
-                        {...chartProps}
-                    />
-                    <TrendChart
-                        title="Quest serving costs"
-                        note="Allocated by usage · already included in Compute"
-                        series={QUEST_FUNDING_SERIES}
-                        kind="stacked"
-                        creditKey="questCredits"
-                        {...chartProps}
-                    />
-                </section>
+                            {value === "product" ? "Product" : "Whole company"}
+                        </TabButton>
+                    ))}
+                </fieldset>
+            </div>
+            <div className="grid min-w-0 grid-cols-1 gap-5 @3xl:grid-cols-2 @6xl:grid-cols-3">
+                <TrendChart
+                    title="Monthly result"
+                    series={RESULT_SERIES}
+                    kind="bar"
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Expenses before credits"
+                    series={selectedExpenses}
+                    hiddenSeries={hiddenSeries}
+                    onToggleSeries={(key) =>
+                        setHiddenSeries((hidden) =>
+                            hidden.includes(key)
+                                ? hidden.filter((item) => item !== key)
+                                : [...hidden, key],
+                        )
+                    }
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Cost funding"
+                    series={FUNDING_SERIES}
+                    kind="stacked"
+                    creditKey="credits"
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Sales"
+                    series={SALES_SERIES}
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Pollen consumed"
+                    note="Usage, not sales"
+                    series={USAGE_SERIES}
+                    unit="Pollen"
+                    {...chartProps}
+                />
+                <TrendChart
+                    title="Quest serving costs"
+                    note="Allocated by usage · already included in Compute"
+                    series={QUEST_FUNDING_SERIES}
+                    kind="stacked"
+                    creditKey="questCredits"
+                    {...chartProps}
+                />
             </div>
         </section>
     );

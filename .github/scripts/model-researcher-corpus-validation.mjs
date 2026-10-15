@@ -164,8 +164,6 @@ const decision = async (payload, validate) => {
         calibration = calibratedAudit(payload, report.calibration);
         payload = calibration.payload;
     }
-    const billed = await readBilledUsage(key, report.startedAt);
-    report.billing = { ...billed, callCount: report.calls.length };
     const quote = jevQuote(jev, payload);
     const cached = verified.calls.find(
         (call) =>
@@ -192,6 +190,8 @@ const decision = async (payload, validate) => {
         await save();
         return result;
     }
+    const billed = await readBilledUsage(key, report.startedAt);
+    report.billing = { ...billed, callCount: report.calls.length };
     assert.ok(
         !prior.calls.some(
             (call) =>

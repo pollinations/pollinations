@@ -188,14 +188,9 @@ describe("docs routes", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        const schema = (await response.json()) as {
-            info: { description: string };
-            paths: Record<string, unknown>;
-            servers: { url: string }[];
+        const schema = (await response.json()) as Spec & {
             "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
-            components: { schemas: Record<string, unknown> };
-            "x-schema-sources": Record<string, boolean>;
         };
 
         expect(schema["x-schema-sources"]).toEqual({
@@ -350,12 +345,7 @@ describe("docs routes", () => {
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
         expect(
-            renderEndpoint(
-                schema as Spec,
-                "get",
-                "/v1/realtime",
-                realtimeGet ?? {},
-            ),
+            renderEndpoint(schema, "get", "/v1/realtime", realtimeGet ?? {}),
         ).toContain("`101` — WebSocket connection established");
 
         const nativeRealtimeGet = (

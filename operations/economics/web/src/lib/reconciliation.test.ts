@@ -515,14 +515,11 @@ it("never infers an original invoice from the ledger collection method", () => {
             },
         ],
     };
-    expect(
-        reconciliationState(data, now).issues.every(
-            (issue) =>
-                !issue.invoices?.includes(
-                    "https://drive.google.com/file/d/extracted-json-report/view",
-                ),
-        ),
-    ).toBe(true);
+    for (const issue of reconciliationState(data, now).issues) {
+        expect(issue.invoices ?? []).not.toContain(
+            "https://drive.google.com/file/d/extracted-json-report/view",
+        );
+    }
 });
 
 describe("Sales ledger reconciliation", () => {

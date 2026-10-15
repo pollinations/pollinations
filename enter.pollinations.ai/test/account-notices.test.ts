@@ -127,6 +127,7 @@ test("auto top-up failed emails once per failure", async () => {
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
     expect(sent[0].text).toContain("💳 2.00 pollen left");
+    expect(sent[0].text).toContain("for your 10 pollen auto top-up");
 
     // The user turns it back on, and it fails again the same day.
     await env.DB.prepare(

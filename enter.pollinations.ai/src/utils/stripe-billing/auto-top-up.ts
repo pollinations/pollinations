@@ -802,19 +802,21 @@ async function disableAutoTopUp(
             SET auto_top_up_enabled = 0
             WHERE id = ? AND auto_top_up_enabled = 1
             RETURNING email, COALESCE(pack_balance, 0) AS balance,
+                auto_top_up_amount_usd AS topUp,
                 email_unsubscribed_at AS unsubscribedAt`,
     )
         .bind(userId)
         .first<{
             email: string;
             balance: number;
+            topUp: number;
             unsubscribedAt: number | null;
         }>();
     if (user && !user.unsubscribedAt) {
         await sendNotice(
             env,
             { id: userId, email: user.email },
-            autoTopUpOffNotice(user.balance),
+            autoTopUpOffNotice(user.balance, user.topUp),
         );
     }
 }

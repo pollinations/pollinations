@@ -45,12 +45,13 @@ export function runningLowNotice(balance: number): Notice {
     };
 }
 
-export function autoTopUpOffNotice(balance: number): Notice {
+// topUp is the auto top-up pack in pollen (one pollen per dollar of pack).
+export function autoTopUpOffNotice(balance: number, topUp: number): Notice {
     return {
         id: "auto_top_up_off",
         subject: "Auto top-up failed",
         balance,
-        body: "We couldn’t use your saved payment method, so auto top-up is now off. When your paid balance runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.",
+        body: `We couldn’t charge your saved payment method for your ${topUp} pollen auto top-up, so auto top-up is now off. When your paid balance runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.`,
         button: { label: "Open wallet", path: "/pollen" },
     };
 }

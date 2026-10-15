@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
@@ -23,6 +24,14 @@ const publicOrigin = (mode: string) =>
     mode === "staging"
         ? "https://staging.enter.myceli.ai"
         : "https://enter.pollinations.ai";
+
+// Account emails load these from fixed URLs, so the build copies them from the
+// brand kit unhashed. ponytail: build only, `vite dev` serves no email images.
+const EMAIL_BRAND = {
+    "email/polli-lockup.png":
+        "@pollinations/ui/brand/polli/polli-lockup-horizontal-black.png",
+    "email/mark.png": "@pollinations/ui/brand/mark-black.png",
+};
 
 export default defineConfig(({ mode }) => ({
     root: "frontend",
@@ -70,6 +79,21 @@ export default defineConfig(({ mode }) => ({
             name: "enter-public-origin",
             transformIndexHtml: (html) =>
                 html.replaceAll("%PUBLIC_ORIGIN%", publicOrigin(mode)),
+        },
+        {
+            name: "enter-email-brand",
+            applyToEnvironment: (environment) => environment.name === "client",
+            generateBundle() {
+                for (const [fileName, asset] of Object.entries(EMAIL_BRAND)) {
+                    this.emitFile({
+                        type: "asset",
+                        fileName,
+                        source: readFileSync(
+                            fileURLToPath(import.meta.resolve(asset)),
+                        ),
+                    });
+                }
+            },
         },
     ],
     optimizeDeps: {

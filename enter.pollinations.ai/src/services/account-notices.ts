@@ -112,7 +112,7 @@ export function renderNotice(
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:24px 16px;background:#f4efe6;color:#1d1420;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
 <div style="max-width:520px;margin:0 auto">
-<img src="${image("polli-lockup")}" width="200" height="32" alt="pollinations.ai" style="display:block;margin:0 0 16px 4px">
+<img src="${image("polli-lockup")}" width="220" height="48" alt="pollinations.ai" style="display:block;margin:0 0 8px">
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
 <p style="margin:0 0 20px;font-size:16px;line-height:24px">${notice.body}</p>

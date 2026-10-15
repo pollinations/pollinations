@@ -62,10 +62,6 @@ We do not use third-party analytics or marketing cookies/SDKs.
 
 * **Service providers (sub-processors):** see [Service Providers](/subprocessors).
 
-Claude requests may be processed directly by Anthropic, through Amazon Bedrock, or through a configured gateway fallback. The selected route determines the recipients of request content, including messages, images, PDF documents, and tool definitions and results.
-
-GLM 5.3 requests may be retried from Fireworks AI to direct DeepInfra, then to Friendli through OpenRouter, as listed in [Service Providers](/subprocessors).
-
 **Depending on your selected model, tool, and fallback route, request content and outputs may be sent to inference, search, connector, or sandbox services (see [Service Providers](/subprocessors)).** Provider retention and any abuse review depend on the service and account settings; transmission is not necessarily transient. Hosted connectors may also process the content and credentials of accounts you connect.
 
 * **Community providers:** when you use an externally hosted community model, your request is sent to its provider and any configured community fallback providers. These independent providers are responsible for their own endpoints and data practices.

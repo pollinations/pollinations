@@ -493,15 +493,15 @@ function generationDocumentation(): OpenApiSchema {
                 tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
-                name: "Integrations",
+                name: "Guides",
                 tags: [
                     DOC_TAGS.userWallets,
-                    DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
+                    DOC_TAGS.publishModel,
+                    DOC_TAGS.sandboxes,
+                    DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
-                    DOC_TAGS.codingHarnesses,
-                    DOC_TAGS.sandboxes,
                 ],
             },
             {

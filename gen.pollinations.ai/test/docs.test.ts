@@ -266,19 +266,19 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        const integrations = schema["x-tagGroups"].find(
-            (group) => group.name === "Integrations",
+        const guides = schema["x-tagGroups"].find(
+            (group) => group.name === "Guides",
         );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Publish a Model");
-        expect(integrations?.tags).not.toContain("Community Models");
+        expect(guides?.tags).toContain("Publish a Model");
+        expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
-        expect(integrations?.tags).toContain("Publish an Agent");
-        expect(integrations?.tags).toContain("Coding Harnesses");
-        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(guides?.tags).toContain("Publish an Agent");
+        expect(guides?.tags).toContain("Coding Harnesses");
+        expect(guides?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(

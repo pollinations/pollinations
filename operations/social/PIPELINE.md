@@ -1,6 +1,6 @@
 # Social Media News Pipeline
 
-> **Assumption:** GitHub is the single source of truth. "Merge to main" (or `master`, for the legacy APIs) is the authoritative event for shipping news.
+> **Assumption:** GitHub is the single source of truth. "Merge to main" is the authoritative event for the gist and the saved per-PR post; "the production deploys that carry the merge have passed" is the authoritative event for sending it to Discord.
 
 ## Context
 
@@ -13,7 +13,13 @@ Each PR is analyzed once at merge time (its **gist**), and every post is written
 ```
 EACH MERGED PR (news-create-pr-gist.yml)
   gist.py: classification + exact model/API changes → AI gist → pixel-art image → news branch
-  discord_pr.py: the gist → Discord post (with the image)
+  pr_post.py: the gist → Discord post saved as pr-posts/PR-{number}.json (nothing is sent yet)
+
+WHEN THE MERGE REACHES PRODUCTION (news-deploy-posts.yml)
+  deploy_posts.py: once every deploy workflow that actually ran for the production
+                   commit has passed (plus a 15-minute discovery barrier), each
+                   saved post the commit carries goes to Discord, then its record
+                   is marked done. A cron every 30 minutes reconciles.
 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
   06:00 daily        /models recorded when it changed; yesterday's daily (X); Sunday
@@ -31,7 +37,7 @@ AFTER THOSE (news-build-index.yml, news-sync-readme.yml)
 
 | Time (UTC) | Posts | Delivery |
 |---|---|---|
-| Each merged PR | gist + image | Discord, right away |
+| Each merged PR | gist + image + saved Discord post | Discord when its production deploy gate passes |
 | Daily 06:00 | `daily/<yesterday>/` | X in Buffer for the next Mon–Sat 15:00 |
 | Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
@@ -192,6 +198,14 @@ This means: deps/chore PRs can't sneak into daily summaries, features always mak
 - `images/cover.jpg` — the month's cover
 - `contributors.json` — every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it
 
+### Per-PR Discord posts: `operations/social/news/pr-posts/PR-{number}.json`
+
+One file per merged PR with a Discord-worthy gist (`publish_tier` other than `none`), written by `pr_post.py` at merge time: the final message text and image URL, plus `merged_at` and `merge_commit_sha`. `deploy_posts.py` adds `delivery` (`state`: `attempt` → `done`/`failed`, the Discord message id, `sent_at`) and `deployed_at`/`deploy_sha` from the gate that carried it. A record in `done` is never rewritten or resent.
+
+### Deploy gate state: `operations/social/news/deploy-posts/state.json`
+
+`last_gated_sha` — the newest production commit whose gate passed while the runner watched; the cursor that bounds which saved posts are due. `last_deployed` — the retained evidence of the latest passed gate, so a cron run can reconcile even when its own run just started.
+
 ### Model post: `operations/social/news/models/`
 
 - `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
@@ -227,9 +241,10 @@ Daily and weekly platform JSON now share one persisted shape:
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `news-create-pr-gist.yml` | `pull_request_target` closed + merged, into `main` or `master` | `gist.py`, then `discord_pr.py` |
+| `news-create-pr-gist.yml` | `pull_request_target` closed + merged, into `main` | `gist.py`, then `pr_post.py` saves the Discord post |
+| `news-deploy-posts.yml` | after each production deploy workflow completes (and every 30 min) | `deploy_posts.py run` sends the saved posts the deployed commit carries; `mark` settles a stuck send |
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
-| `news-build-index.yml` | after the two above, and 06:30 daily | `news_index.py` → `index.json` |
+| `news-build-index.yml` | after the three above, and 06:30 daily | `news_index.py` → `index.json` (deployed posts show their deployed time) |
 | `news-sync-readme.yml` | 07:00 daily | `readme.py` → README Latest News PR to `main` |
 
 ### Manual runs of `news-posts.yml`
@@ -248,11 +263,13 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | Script | Purpose |
 |---|---|
 | `gist.py` | Per PR: classification, exact model changes (registry revisions, `model_catalog.ts`) and API changes (the docs PR's `APIDOCS.md`) → AI gist → image → news branch |
-| `discord_pr.py` | Per PR: the gist → `prompts/posts/discord-pr.md` → Discord webhook |
+| `discord_pr.py` | Per PR message building: the gist → `prompts/posts/discord-pr.md` → text + image (no sending) |
+| `pr_post.py` | `write PR_NUMBER MERGED_AT`: builds the message and saves `pr-posts/PR-{number}.json` on `news`; skips `publish_tier: none`; never rewrites a delivered record |
+| `deploy_posts.py` | `run`: the production deploy gate, then sends due saved posts; `mark PR done\|failed`: a person settles a stuck send |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
-| `news_index.py` | `index.json`: model announcements, API changes and daily highlights for Enter `/news` and the README |
+| `news_index.py` | `index.json`: model announcements, API changes and daily highlights for Enter `/news` and the README; deployed PR posts carry `effective_at` from their delivery record |
 | `readme.py` | README Latest News from `index.json` |
 | `model_catalog.ts` | The model list at a commit, for the gist's model changes |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, gist helpers |
@@ -269,12 +286,13 @@ A preview is the before/after check for any change to a prompt or a script: run 
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
 7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); older folders went out with the previous senders.
+8. **Per-PR posts wait for production.** A saved `pr-posts/PR-N.json` is sent only when the deploy gate passes for a production commit that carries the PR: every deploy workflow that actually ran for that commit completed successfully, and at least 15 minutes passed since the first evidence appeared (so a late-starting workflow isn't missed). The cursor only moves forward, and only on a gate that passed now. A gate failure never resends what already went out; it only holds back what hasn't.
 
 ## Error handling
 
 - **No automatic retries.** Model, picture, GitHub and Discord calls are tried once; a failure (an empty model answer included) turns the run red and a person reruns it with the repair skill (`.claude/skills/news-pipeline/SKILL.md`). The one exception is the push to `news`, which fetches, rebases and pushes again up to three times because other writers land on `news` every few minutes.
 - **Gist (`gist.py`) fails loud.** If classification, the model or API change lookup, the AI analysis, validation or the image fails, the run fails: no partial gist, no Discord post.
-- **Per-PR Discord (`discord_pr.py`)** fails the run if the message, the image or the webhook fails; the post is never degraded.
+- **Per-PR Discord post (`pr_post.py`)** fails the run if the message, the image or the save fails; the post is never degraded. **Sending (`deploy_posts.py`)** writes `delivery: {state: attempt}` before the webhook and the result after, so an unclear send fails the run until a person checks the channel and runs `deploy_posts.py mark PR-N done|failed`. Nothing is sent twice.
 - **Scheduled posts:** a post whose reply misses a required field, or whose picture fails, stops before anything is saved. A day or week without daily-tier gists writes nothing. Each job's failure opens its own issue ("Workflow failing: News / Posts — writing" or "— delivery"), so a delivery failure can't hide a writing failure.
 
 ## Concurrency

@@ -1,0 +1,64 @@
+name: News / Deploy posts
+
+# Sends each merged PR's saved Discord post once the production deploy that
+# carries it has passed (#17406). Runs on every completed production deploy;
+# the 30-minute cron reconciles late-saved posts, missed events and deploys a
+# promotion did not start. deploy_posts.py decides per run whether anything is
+# due: all deploys GitHub started for the commit must have passed, and a post
+# already recorded as sent is never sent again.
+on:
+  workflow_run:
+    workflows:
+      - "Deploy / Cloudflare production"
+      - "Deploy / pollinations.ai"
+      - "Deploy / Applications"
+    types: [completed]
+    branches: [production]
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: news-deploy-posts
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  send:
+    # Runs on EVERY completed deploy event: the script declines to send
+    # against a failed deploy itself, and it must still turn the run red
+    # when an unresolved attempt is waiting for a person.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+      checks: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Send the due posts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISCORD_REALTIME_WEBHOOK_URL: ${{ secrets.DISCORD_REALTIME_WEBHOOK_URL }}
+          EVENT_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: python operations/social/scripts/deploy_posts.py run
+
+      - name: Report failure as an issue
+        if: failure()
+        uses: ./.github/actions/failure-issue
+        with:
+          token: ${{ github.token }}
+          title: News / Deploy posts

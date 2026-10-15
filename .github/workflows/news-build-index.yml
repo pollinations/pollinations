@@ -4,7 +4,7 @@ name: News / Build index
 # /news page and the README read. Runs after every PR gist and every daily summary.
 on:
   workflow_run:
-    workflows: ['News / Create PR gist', 'News / Posts']
+    workflows: ['News / Create PR gist', 'News / Posts', 'News / Deploy posts']
     types: [completed]
   schedule:
     - cron: '30 6 * * *' # Daily rebuild so dated entries roll out of the window
@@ -36,6 +36,7 @@ jobs:
           sparse-checkout: |
             operations/social/news/gists/**/*.json
             operations/social/news/daily/*/summary.json
+            operations/social/news/pr-posts/*.json
             /operations/social/news/index.json
 
       - name: Set up Python

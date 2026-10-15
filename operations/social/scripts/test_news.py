@@ -105,15 +105,6 @@ class GistEnrichmentTest(unittest.TestCase):
             enrich_gist({}, pr, ["shared/registry/text.ts"], "test")
             self.assertEqual([c.args[0] for c in commands.call_args_list if c.args[0][0] == "npm"],
                              [["npm", "ci", "--ignore-scripts"]])
-            # master holds the legacy APIs: its shared/ and APIDOCS.md carry no model or API changes.
-            commands.reset_mock()
-            announcements.reset_mock()
-            gist = {}
-            enrich_gist(gist, {**pr, "base": {"ref": "master"}}, ["shared/ipQueue.js", "APIDOCS.md"], "test")
-            self.assertFalse(any(c.args[0][0] == "npm" for c in commands.call_args_list))
-            announcements.assert_not_called()
-            api.assert_not_called()
-            self.assertEqual(gist["announcements"], [])
 
     def test_enrichment_keeps_the_social_payload_and_a_failure_stops_the_gist(self):
         pr = {"number": 1, "title": "Example", "html_url": "https://github.com/example/repo/pull/1",
@@ -1087,6 +1078,803 @@ class DeliverTest(unittest.TestCase):
         (_, payload, _), = self.sent("https://discord.test/models?wait=true")
         self.assertEqual(payload["allowed_mentions"], {"parse": []})
         self.assertEqual(self.record("community", "2026-10-16"), {"discord.json": "done"})
+
+
+import deploy_posts
+import pr_post
+
+
+class PrPostTest(unittest.TestCase):
+    """pr_post.py write against the news branch as GitHub's contents API keeps it."""
+
+    def setUp(self):
+        self.store, self.faults = {}, []
+        env = {"GITHUB_TOKEN": "test", "POLLINATIONS_TOKEN": "test", "PR_NUMBER": "7",
+               "REPO_FULL_NAME": "pollinations/pollinations"}
+        gist = {"title": "A fix", "url": "https://github.com/pollinations/pollinations/pull/7",
+                "author": "someone", "merge_commit_sha": "abc123", "image": {"url": "https://img.test/7.jpg"},
+                "gist": {"publish_tier": "daily"}}
+        for patcher in (
+            patch.dict(os.environ, env),
+            patch("common.requests.request", self.request),
+            patch("pr_post.fetch_pr_merged_at", return_value="2026-10-15T10:00:00Z"),
+            patch("pr_post.fetch_gist", return_value=gist),
+            patch("pr_post.build_message", return_value=("### Shipped\n\nbody", "https://img.test/7.jpg", b"jpeg")),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.gist = gist
+
+    def request(self, method, url, headers=None, params=None, json=None, timeout=None):
+        path = url.split("/contents/")[-1]
+        current = self.store.get(path)
+        if method == "GET":
+            if current is None:
+                return reply(404)
+            return reply(200, {"content": base64.b64encode(current).decode(),
+                               "sha": hashlib.sha1(current).hexdigest()})
+        fault = self.faults.pop(0) if self.faults else None
+        if fault == "409":
+            return reply(409)
+        if current is not None and json.get("sha") != hashlib.sha1(current).hexdigest():
+            return reply(409 if "sha" in json else 422)
+        self.store[path] = base64.b64decode(json["content"])
+        return reply(201)
+
+    def saved(self):
+        content = self.store.get(f"{NEWS_REL_DIR}/pr-posts/PR-7.json")
+        return json.loads(content) if content else None
+
+    def test_none_tier_saves_nothing(self):
+        self.gist["gist"]["publish_tier"] = "none"
+        pr_post.write()
+        self.assertIsNone(self.saved())
+
+    def test_daily_tier_saves_the_post(self):
+        pr_post.write()
+        doc = self.saved()
+        self.assertEqual(doc["pr_number"], 7)
+        self.assertEqual(doc["message"], "### Shipped\n\nbody")
+        self.assertEqual(doc["merge_commit_sha"], "abc123")
+        self.assertEqual(doc["publish_tier"], "daily")
+        self.assertNotIn("delivery", doc)
+
+    def test_regeneration_keeps_delivery_and_never_rewrites_a_sent_post(self):
+        pr_post.write()
+        doc = self.saved()
+        doc["delivery"] = {"state": "attempt", "run": "r", "at": "t"}
+        doc["message"] = "what the sender claimed"
+        self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"] = json.dumps(doc).encode()
+        pr_post.write()
+        # A claimed record is frozen whole: the sender is about to post it.
+        self.assertEqual(self.saved()["delivery"]["state"], "attempt")
+        self.assertEqual(self.saved()["message"], "what the sender claimed")
+        doc["delivery"] = {"state": "done", "run": "r", "at": "t"}
+        doc["message"] = "what went out"
+        self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"] = json.dumps(doc).encode()
+        pr_post.write()
+        self.assertEqual(self.saved()["message"], "what went out")
+
+    def test_a_conflict_retries_with_a_fresh_read(self):
+        self.faults = ["409"]
+        pr_post.write()
+        self.assertEqual(self.saved()["pr_number"], 7)
+
+    def test_a_none_tier_regeneration_drops_an_unsent_saved_post(self):
+        pr_post.write()
+        self.gist["gist"]["publish_tier"] = "none"
+        with patch("pr_post.requests.delete", self.delete):
+            pr_post.write()
+        self.assertIsNone(self.saved())
+
+    def test_a_none_tier_regeneration_keeps_attempt_and_done_records(self):
+        for state in ("attempt", "done"):
+            pr_post.write()
+            doc = self.saved()
+            doc["delivery"] = {"state": state, "run": "r", "at": "t"}
+            self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"] = json.dumps(doc).encode()
+            self.gist["gist"]["publish_tier"] = "none"
+            with patch("pr_post.requests.delete", self.delete):
+                pr_post.write()
+            self.assertEqual(self.saved()["delivery"]["state"], state)
+            self.gist["gist"]["publish_tier"] = "daily"
+            del self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"]
+
+    def delete(self, url, headers=None, json=None, timeout=None):
+        path = url.split("/contents/")[-1]
+        current = self.store.get(path)
+        if current is None or json.get("sha") != hashlib.sha1(current).hexdigest():
+            return reply(409)
+        del self.store[path]
+        return reply(200)
+
+
+class DeployPostsGateTest(unittest.TestCase):
+    """The deploy gate: applicability from actual runs/suites, every one passed, barrier."""
+
+    def gate(self, evidence, at):
+        with patch.object(deploy_posts, "deploy_evidence", return_value=evidence):
+            return deploy_posts.evaluate_gate(None, "sha", at)
+
+    def mkrun(self, wf, conclusion, created, updated=None, status="completed"):
+        return {"path": f"x/{wf}", "name": deploy_posts.DEPLOYS[wf], "status": status,
+                "conclusion": conclusion, "created_at": created, "updated_at": updated or created}
+
+    def test_all_passed_after_the_barrier_opens(self):
+        evidence = {wf: {"run": self.mkrun(wf, "success", "2026-10-15T10:00:00Z",
+                                         f"2026-10-15T10:0{i}:00Z"), "suite": None}
+                    for i, wf in enumerate(deploy_posts.DEPLOYS, 1)}
+        gate = self.gate(evidence, datetime(2026, 10, 15, 10, 20, tzinfo=UTC))
+        self.assertTrue(gate["ok"])
+        self.assertEqual(gate["deployed_at"], "2026-10-15T10:03:00+00:00")
+
+    def test_a_failed_or_running_deploy_closes(self):
+        evidence = {wf: {"run": self.mkrun(wf, "success", "2026-10-15T10:00:00Z"), "suite": None}
+                    for wf in deploy_posts.DEPLOYS}
+        for bad in ({"conclusion": "failure"}, {"status": "in_progress", "conclusion": None}):
+            broken = {**evidence}
+            wf = list(deploy_posts.DEPLOYS)[0]
+            broken[wf] = {"run": {**evidence[wf]["run"], **bad}, "suite": None}
+            self.assertFalse(self.gate(broken, datetime(2026, 10, 15, 11, 0, tzinfo=UTC))["ok"])
+
+    def test_the_barrier_holds(self):
+        evidence = {wf: {"run": self.mkrun(wf, "success", "2026-10-15T10:10:00Z"), "suite": None}
+                    for wf in deploy_posts.DEPLOYS}
+        self.assertFalse(self.gate(evidence, datetime(2026, 10, 15, 10, 20, tzinfo=UTC))["ok"])
+
+    def test_a_workflow_without_a_run_is_not_expected(self):
+        # A failed Applications push does not block a later Cloudflare-only push:
+        # Applications has no run for this sha, so it is not applicable.
+        evidence = {"deploy-cloudflare-production.yml":
+                    {"run": self.mkrun("deploy-cloudflare-production.yml", "success",
+                                     "2026-10-15T10:00:00Z"), "suite": None}}
+        self.assertTrue(self.gate(evidence, datetime(2026, 10, 15, 11, 0, tzinfo=UTC))["ok"])
+
+    def test_suite_only_evidence_cannot_open_the_gate(self):
+        # Discovery ties a suite to its run; a suite alone is not evidence.
+        suite = {"name": "Deploy / pollinations.ai", "status": "completed", "conclusion": "success",
+                 "created_at": "2026-10-15T10:00:00Z", "updated_at": "2026-10-15T10:05:00Z"}
+        self.assertFalse(self.gate({"deploy-website-cloudflare.yml": {"run": None, "suite": suite}},
+                                   datetime(2026, 10, 15, 11, 0, tzinfo=UTC))["ok"])
+        self.assertFalse(self.gate({}, datetime(2026, 10, 15, 11, 0, tzinfo=UTC))["ok"])
+
+    def test_a_disagreeing_suite_closes_the_gate_even_with_a_green_run(self):
+        # The run and the suite are two views of the same deploy: both must pass.
+        wf = "deploy-cloudflare-production.yml"
+        suite = {"name": deploy_posts.DEPLOYS[wf], "status": "completed", "conclusion": "failure",
+                 "created_at": "2026-10-15T10:00:00Z", "updated_at": "2026-10-15T10:05:00Z"}
+        evidence = {wf: {"run": self.mkrun(wf, "success", "2026-10-15T10:00:00Z"), "suite": suite}}
+        self.assertFalse(self.gate(evidence, datetime(2026, 10, 15, 11, 0, tzinfo=UTC))["ok"])
+
+
+class DeployPostsRunTest(unittest.TestCase):
+    """deploy_posts.py run/mark against a fake news branch, API and Discord."""
+
+    def setUp(self):
+        self.store, self.faults, self.posted = {}, [], []
+        env = {"GITHUB_TOKEN": "test", "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/rt",
+               "GITHUB_REPOSITORY": "pollinations/pollinations"}
+        for patcher in (
+            patch.dict(os.environ, env, clear=False),
+            patch("deploy_posts.requests.get", self.get),
+            patch("deploy_posts.requests.post", self.post),
+            patch("common.requests.request", self.request),
+            patch("time.sleep"),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        os.environ.pop("EVENT_HEAD_SHA", None)
+        os.environ.pop("EVENT_CONCLUSION", None)
+
+    # ── fakes ────────────────────────────────────────────────────────
+
+    def request(self, method, url, headers=None, params=None, json=None, timeout=None):
+        path = url.split("/contents/")[-1]
+        current = self.store.get(path)
+        if method == "GET":
+            if current is None:
+                return reply(404)
+            return reply(200, {"content": base64.b64encode(current).decode(),
+                               "sha": hashlib.sha1(current).hexdigest()})
+        fault = self.faults.pop(0) if self.faults else None
+        if fault == "409":
+            return reply(409)
+        if current is not None and json.get("sha") != hashlib.sha1(current).hexdigest():
+            return reply(409 if "sha" in json else 422)
+        self.store[path] = base64.b64decode(json["content"])
+        return reply(201)
+
+    def get(self, url, headers=None, params=None, timeout=None):
+        if "api.github.com" not in url:  # the post's picture
+            return SimpleNamespace(status_code=200, headers={"content-type": "image/jpeg"},
+                                   content=b"jpeg", json=lambda: {})
+        path = url.split("api.github.com")[-1]
+        path = path.replace("/repos/pollinations/pollinations", "", 1)
+        if "/git/trees/" in path:
+            ref = path.split("/git/trees/")[-1]
+            folder = "" if ref == "news" else ref.removeprefix("tree:")
+            prefix = folder + "/" if folder else ""
+            children = {}
+            for stored in self.store:
+                if not stored.startswith(prefix):
+                    continue
+                rest = stored[len(prefix):]
+                head, _, tail = rest.partition("/")
+                children.setdefault(head, tail)
+            if folder and not children:
+                return reply(404)
+            tree = [{"path": name,
+                     "type": "tree" if tail else "blob",
+                     "sha": f"tree:{prefix}{name}" if tail else "blob-sha"}
+                    for name, tail in sorted(children.items())]
+            return reply(200, {"truncated": False, "tree": tree})
+        body = self.api.get((path, jsonlib.dumps(params or {}, sort_keys=True)),
+                            self.api.get(path))
+        if body is None:
+            if path == "/actions/runs":
+                body = {"workflow_runs": []}
+            elif path.endswith("/check-suites"):
+                body = {"check_suites": []}
+            elif path == "/commits":
+                body = []
+            else:
+                return reply(404)
+        return reply(200, body)
+
+    def post(self, url, json=None, files=None, timeout=None):
+        self.posted.append((url, json, files))
+        answer = self.broken.pop(0) if getattr(self, "broken", None) else None
+        if answer:
+            return reply(*answer)
+        return reply(200, {"id": f"m{len(self.posted)}"})
+
+    # ── fixtures ─────────────────────────────────────────────────────
+
+    def save_post(self, number, merge_sha="merge1", merged_at="2026-10-15T09:00:00Z", delivery=None):
+        doc = {"pr_number": number, "message": f"### PR {number}", "image_url": "https://img.test/x.jpg",
+               "merged_at": merged_at, "merge_commit_sha": merge_sha, "publish_tier": "daily"}
+        if delivery:
+            doc["delivery"] = delivery
+        self.store[f"{NEWS_REL_DIR}/pr-posts/PR-{number}.json"] = jsonlib.dumps(doc).encode()
+
+    def state(self):
+        content = self.store.get(deploy_posts.STATE_PATH)
+        return json.loads(content) if content else None
+
+    def post_doc(self, number):
+        return json.loads(self.store[f"{NEWS_REL_DIR}/pr-posts/PR-{number}.json"])
+
+    def successful_deploy(self, sha, when="2026-10-15T10:00:00Z", workflows=None):
+        runs, suites = [], []
+        for index, wf in enumerate(workflows or list(deploy_posts.DEPLOYS), 1):
+            # A run and its suite are tied by check_suite_id, never by name.
+            runs.append({"path": f"x/{wf}", "name": "wrong names on purpose", "status": "completed",
+                         "conclusion": "success", "created_at": when, "updated_at": when,
+                         "head_sha": sha, "check_suite_id": index})
+            suites.append({"id": index, "name": "not a workflow name", "status": "completed",
+                           "conclusion": "success", "created_at": when, "updated_at": when})
+        self.runs_page(sha, runs)
+        self.api[(f"/commits/{sha}/check-suites",
+                  jsonlib.dumps({"per_page": 100, "page": 1}, sort_keys=True))] = \
+            {"check_suites": suites}
+
+    def runs_page(self, sha, runs, page=1):
+        self.api[("/actions/runs",
+                  jsonlib.dumps({"head_sha": sha, "branch": "production",
+                                 "per_page": 100, "page": page}, sort_keys=True))] = \
+            {"workflow_runs": runs}
+
+    def production(self, shas):
+        self.api[("/commits", jsonlib.dumps({"sha": "production", "per_page": 100, "page": 1},
+                                            sort_keys=True))] = [{"sha": s} for s in shas]
+
+    def ancestor(self, merge, sha, yes=True):
+        self.api[f"/compare/{merge}...{sha}"] = {"status": "ahead" if yes else "diverged"}
+
+    def event(self, sha="prodsha", conclusion="success"):
+        os.environ["EVENT_HEAD_SHA"] = sha
+        os.environ["EVENT_CONCLUSION"] = conclusion
+        self.addCleanup(lambda: (os.environ.pop("EVENT_HEAD_SHA", None),
+                                 os.environ.pop("EVENT_CONCLUSION", None)))
+
+    def setUp2(self):
+        self.api, self.broken = {}, []
+
+    # ── tests ────────────────────────────────────────────────────────
+
+    def test_bootstrap_records_the_cursor_and_sends_nothing(self):
+        self.setUp2()
+        # No state, no saved posts: the cursor parks at the production head,
+        # no gate evidence is invented, nothing is sent.
+        self.api["/branches/production"] = {"commit": {"sha": "prodsha"}}
+        deploy_posts.run()
+        self.assertEqual(self.state(), {"last_gated_sha": "prodsha"})
+        self.assertEqual(self.posted, [])
+        # A second run keeps the state a concurrent writer landed.
+        self.api["/branches/production"] = {"commit": {"sha": "newer"}}
+        deploy_posts.run()
+        self.assertEqual(self.state(), {"last_gated_sha": "prodsha"})
+
+    def test_due_post_is_claimed_before_sending_and_marked_done_after(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        order = []
+        real_request = self.request
+        def watching(method, url, **kwargs):
+            order.append(("api", kwargs.get("json", {}).get("message", method)))
+            return real_request(method, url, **kwargs)
+        real_post = self.post
+        def watching_post(url, **kwargs):
+            order.append(("discord", url))
+            return real_post(url, **kwargs)
+        with patch("common.requests.request", watching), patch("deploy_posts.requests.post", watching_post):
+            deploy_posts.run()
+        claim = next(i for i, (_, msg) in enumerate(order) if "attempt PR #7" in str(msg))
+        sent = next(i for i, (kind, _) in enumerate(order) if kind == "discord")
+        done = next(i for i, (_, msg) in enumerate(order) if "done PR #7" in str(msg))
+        self.assertLess(claim, sent, "the attempt is committed before the webhook call")
+        self.assertLess(sent, done, "the result is committed after the webhook call")
+        doc = self.post_doc(7)
+        self.assertEqual(doc["delivery"]["state"], "done")
+        self.assertEqual(doc["deployed_at"], "2026-10-15T10:00:00+00:00")
+        self.assertEqual(doc["deploy_sha"], "prodsha")
+        self.assertEqual(self.state()["last_gated_sha"], "prodsha")
+        # A rerun sends nothing twice.
+        deploy_posts.run()
+        self.assertEqual(len([c for c in self.posted if c[0].startswith("https://discord")]), 1)
+
+    def test_an_attempt_left_behind_sticks_and_a_person_settles_it(self):
+        self.setUp2()
+        self.save_post(7, delivery={"state": "attempt", "run": "old", "at": "t"})
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        with self.assertRaisesRegex(SystemExit, "Not delivered"):
+            deploy_posts.run()
+        self.assertEqual(self.posted, [])
+        self.save_post(9)
+        with self.assertRaisesRegex(SystemExit, "not attempt"):
+            deploy_posts.mark("PR-9", "done")
+        del self.store[f"{NEWS_REL_DIR}/pr-posts/PR-9.json"]
+        deploy_posts.mark("PR-7", "failed")
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "failed")
+        # The next run retries the failed post.
+        deploy_posts.run()
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "done")
+        self.assertEqual(len(self.posted), 1)
+
+    def test_mark_failed_is_refused_when_a_message_id_was_recorded(self):
+        self.setUp2()
+        self.save_post(7, delivery={"state": "attempt", "run": "r", "at": "t", "discord": "m1"})
+        with self.assertRaisesRegex(SystemExit, "went out"):
+            deploy_posts.mark("PR-7", "failed")
+
+    def test_a_sent_post_whose_record_write_fails_is_stuck_not_resent(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        calls = {"puts": 0}
+        def flaky(method, url, **kwargs):
+            if method == "PUT" and "PR-7.json" in url:
+                calls["puts"] += 1
+                if calls["puts"] > 1:  # the claim lands, every result write conflicts
+                    return reply(409)
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+        self.assertEqual(len(self.posted), 1, "Discord got it exactly once")
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "attempt")
+        # The claim already carries the gate metadata, so a manual settlement
+        # keeps the deploy the post went out with.
+        self.assertEqual(self.post_doc(7)["deployed_at"], "2026-10-15T10:00:00+00:00")
+        self.assertEqual(self.post_doc(7)["deploy_sha"], "prodsha")
+
+    def test_a_webhook_transport_error_keeps_the_outcome_unknown(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        with patch("deploy_posts.post_discord_webhook",
+                   side_effect=requests.ReadTimeout("timed out")):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+        # A read timeout cannot prove non-delivery: attempt, never failed.
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "attempt")
+        # The next run stays red and never resends before a person settles it.
+        with self.assertRaisesRegex(SystemExit, "Not delivered"):
+            deploy_posts.run()
+        self.assertEqual(self.posted, [], "an unresolved attempt is never resent")
+        deploy_posts.mark("PR-7", "failed")
+        deploy_posts.run()
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "done")
+
+    def test_a_post_deleted_before_the_claim_is_not_resurrected(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        reads = {"n": 0}
+        def flaky(method, url, **kwargs):
+            if method == "GET" and "PR-7.json" in url:
+                reads["n"] += 1
+                if reads["n"] == 2:  # the claim's fresh read: a none-tier regeneration deleted it
+                    del self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"]
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            deploy_posts.run()
+        self.assertEqual(self.posted, [], "a suppressed post is never sent")
+        self.assertNotIn(f"{NEWS_REL_DIR}/pr-posts/PR-7.json", self.store)
+
+    def test_a_human_settlement_during_the_result_write_is_kept(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        puts = {"n": 0}
+        def flaky(method, url, **kwargs):
+            if method == "PUT" and "PR-7.json" in url:
+                puts["n"] += 1
+                if puts["n"] == 2:  # the first result write conflicts...
+                    # ...and a person settles the attempt as done meanwhile
+                    path = f"{NEWS_REL_DIR}/pr-posts/PR-7.json"
+                    doc = jsonlib.loads(self.store[path])
+                    doc["delivery"]["state"] = "done"
+                    doc["delivery"]["marked"] = True
+                    self.store[path] = jsonlib.dumps(doc).encode()
+                    return reply(409)
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            deploy_posts.run()
+        self.assertEqual(len(self.posted), 1)
+        doc = self.post_doc(7)
+        self.assertEqual(doc["delivery"]["state"], "done")
+        self.assertTrue(doc["delivery"]["marked"], "the human settlement is never overwritten")
+
+    def test_a_human_failed_settlement_during_the_result_write_is_kept(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        puts = {"n": 0}
+        def flaky(method, url, **kwargs):
+            if method == "PUT" and "PR-7.json" in url:
+                puts["n"] += 1
+                if puts["n"] == 2:  # the first result write conflicts...
+                    # ...and a person decides nothing went out: failed, retry
+                    path = f"{NEWS_REL_DIR}/pr-posts/PR-7.json"
+                    doc = jsonlib.loads(self.store[path])
+                    doc["delivery"]["state"] = "failed"
+                    doc["delivery"]["marked"] = True
+                    self.store[path] = jsonlib.dumps(doc).encode()
+                    return reply(409)
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            deploy_posts.run()
+        # Our send DID land on Discord, but the person's settlement wins; the
+        # next run retries per their decision, never silently overwriting it.
+        doc = self.post_doc(7)
+        self.assertEqual(doc["delivery"]["state"], "failed")
+        self.assertTrue(doc["delivery"]["marked"])
+
+    def test_an_orphan_suite_neither_opens_nor_closes_the_gate(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        # A failed suite no listed run claims: not applicable, gate unaffected.
+        self.api[(f"/commits/prodsha/check-suites",
+                  jsonlib.dumps({"per_page": 100, "page": 1}, sort_keys=True))]["check_suites"].append(
+            {"id": 99, "name": "orphan", "status": "completed", "conclusion": "failure",
+             "created_at": "2026-10-15T10:00:00Z", "updated_at": "2026-10-15T10:01:00Z"})
+        self.ancestor("merge1", "prodsha")
+        deploy_posts.run()
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "done")
+
+    def test_the_latest_run_supersedes_an_earlier_attempt(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        wf = list(deploy_posts.DEPLOYS)[0]
+        key = ("/actions/runs", jsonlib.dumps({"head_sha": "prodsha", "branch": "production",
+                                               "per_page": 100, "page": 1}, sort_keys=True))
+        self.api[key]["workflow_runs"].append(
+            {"path": f"x/{wf}", "name": deploy_posts.DEPLOYS[wf], "status": "completed",
+             "conclusion": "failure", "created_at": "2026-10-15T10:05:00Z",
+             "updated_at": "2026-10-15T10:06:00Z", "head_sha": "prodsha", "check_suite_id": 98})
+        self.ancestor("merge1", "prodsha")
+        deploy_posts.run()  # the gate stays closed on the latest attempt: a green wait
+        self.assertEqual(self.posted, [])
+        self.assertNotIn("delivery", self.post_doc(7))
+
+    def test_a_failed_deploy_beyond_the_first_evidence_page_closes_the_gate(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        filler = [{"path": "x/unrelated.yml", "name": "Unrelated", "status": "completed",
+                   "conclusion": "success", "created_at": "2026-10-15T09:00:00Z",
+                   "updated_at": "2026-10-15T09:01:00Z", "head_sha": "prodsha",
+                   "check_suite_id": 1000 + i} for i in range(100)]
+        self.runs_page("prodsha", filler, page=1)
+        wf = list(deploy_posts.DEPLOYS)[0]
+        self.runs_page("prodsha", [
+            {"path": f"x/{wf}", "name": deploy_posts.DEPLOYS[wf], "status": "completed",
+             "conclusion": "failure", "created_at": "2026-10-15T10:00:00Z",
+             "updated_at": "2026-10-15T10:01:00Z", "head_sha": "prodsha", "check_suite_id": 1}
+        ], page=2)
+        self.api[(f"/commits/prodsha/check-suites",
+                  jsonlib.dumps({"per_page": 100, "page": 1}, sort_keys=True))] = {"check_suites": []}
+        self.ancestor("merge1", "prodsha")
+        deploy_posts.run()  # page 2 is read: the failed deploy holds the post back
+        self.assertEqual(self.posted, [])
+        self.assertNotIn("delivery", self.post_doc(7))
+
+    def test_a_record_deleted_after_a_successful_send_is_stuck_not_settled(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        reads = {"n": 0}
+        def flaky(method, url, **kwargs):
+            if method == "GET" and "PR-7.json" in url:
+                reads["n"] += 1
+                if reads["n"] == 3:  # the result write's fresh read: the file is gone
+                    del self.store[f"{NEWS_REL_DIR}/pr-posts/PR-7.json"]
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+        self.assertEqual(len(self.posted), 1, "Discord got it; the durable result is missing")
+
+    def test_a_record_recreated_after_the_send_is_quarantined_not_resent(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        reads = {"n": 0}
+        def flaky(method, url, **kwargs):
+            if method == "GET" and "PR-7.json" in url:
+                reads["n"] += 1
+                if reads["n"] == 3:  # before the result read: deleted and recreated pending
+                    self.save_post(7)
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+        self.assertEqual(len(self.posted), 1, "Discord got it once")
+        delivery = self.post_doc(7)["delivery"]
+        self.assertEqual(delivery["state"], "attempt")
+        self.assertTrue(delivery["replaced"], "the replacement is quarantined for a person")
+        # Reconciliation never resends the recreated record.
+        with self.assertRaisesRegex(SystemExit, "Not delivered"):
+            deploy_posts.run()
+        self.assertEqual(len(self.posted), 1, "never resent")
+        # A person who checks the channel and marks failed gets exactly one retry.
+        deploy_posts.mark("PR-7", "failed")
+        self.event()
+        deploy_posts.run()
+        self.assertEqual(len(self.posted), 2)
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "done")
+
+    def test_a_lost_quarantine_response_never_turns_into_done(self):
+        self.setUp2()
+        self.save_post(7)
+        self.event()
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        real_request = self.request
+        reads, puts = {"n": 0}, {"n": 0}
+        def flaky(method, url, **kwargs):
+            if "PR-7.json" not in url:
+                return real_request(method, url, **kwargs)
+            if method == "GET":
+                reads["n"] += 1
+                if reads["n"] == 3:  # deleted and recreated pending before the result read
+                    self.save_post(7)
+            if method == "PUT":
+                puts["n"] += 1
+                if puts["n"] == 2:  # the quarantine PUT lands, its answer is lost
+                    real_request(method, url, **kwargs)
+                    raise requests.ConnectionError("lost")
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+        delivery = self.post_doc(7)["delivery"]
+        self.assertEqual(delivery["state"], "attempt", "a lost response must not become done")
+        self.assertTrue(delivery["replaced"])
+        self.assertEqual(len(self.posted), 1)
+
+    def test_a_tied_timestamp_never_lets_an_older_green_run_win(self):
+        for order in ("failed-first", "green-first"):
+            self.setUp()
+            self.setUp2()
+            self.save_post(7)
+            self.event()
+            wf = list(deploy_posts.DEPLOYS)[0]
+            green = {"path": f"x/{wf}", "name": deploy_posts.DEPLOYS[wf], "id": 1,
+                     "status": "completed", "conclusion": "success",
+                     "created_at": "2026-10-15T10:00:00Z", "updated_at": "2026-10-15T10:01:00Z",
+                     "head_sha": "prodsha", "check_suite_id": 1}
+            failed = {**green, "id": 2, "conclusion": "failure", "check_suite_id": 2}
+            pair = [failed, green] if order == "failed-first" else [green, failed]
+            self.runs_page("prodsha", pair)
+            self.api[(f"/commits/prodsha/check-suites",
+                      jsonlib.dumps({"per_page": 100, "page": 1}, sort_keys=True))] = \
+                {"check_suites": []}
+            self.ancestor("merge1", "prodsha")
+            deploy_posts.run()
+            self.assertEqual(self.posted, [], f"{order}: the newer failed run closes the gate")
+            self.assertNotIn("delivery", self.post_doc(7))
+
+    def test_a_late_post_for_the_bootstrap_head_is_picked_up_by_cron(self):
+        self.setUp2()
+        self.api["/branches/production"] = {"commit": {"sha": "prodsha"}}
+        deploy_posts.run()  # bootstrap: cursor parked, no gate evidence
+        self.assertEqual(self.state(), {"last_gated_sha": "prodsha"})
+        # The PR's post is saved only now; its merge is in the bootstrap head.
+        self.save_post(7)
+        self.successful_deploy("prodsha")
+        self.ancestor("merge1", "prodsha")
+        self.ancestor("prodsha", "prodsha")  # the cursor re-evaluation's forward check
+        deploy_posts.run()  # cron: the cursor commit gets its one evaluation
+        self.assertEqual(self.post_doc(7)["delivery"]["state"], "done")
+        self.assertEqual(self.state()["last_deployed"]["sha"], "prodsha")
+        # And the retained sweep never sends it again.
+        self.save_post(8)
+        self.ancestor("merge2", "prodsha")
+        deploy_posts.run()
+        self.assertEqual(self.post_doc(8)["delivery"]["state"], "done")
+        self.assertEqual(len(self.posted), 2)
+
+    def test_an_attempt_created_after_the_listing_still_turns_the_run_red(self):
+        self.setUp2()
+        self.store[deploy_posts.STATE_PATH] = jsonlib.dumps({"last_gated_sha": "gated0"}).encode()
+        self.event()
+        self.successful_deploy("prodsha")
+        self.production([])
+        self.ancestor("gated0", "prodsha")
+        real_request = self.request
+        def flaky(method, url, **kwargs):
+            if method == "PUT" and "state.json" in url:
+                # A concurrent sender leaves an unresolved attempt behind.
+                self.save_post(9, delivery={"state": "attempt", "run": "other", "at": "t"})
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            with self.assertRaisesRegex(SystemExit, "Not delivered"):
+                deploy_posts.run()
+
+    def test_a_history_walk_past_the_page_cap_fails_loud(self):
+        self.setUp2()
+        self.save_post(7)
+        for page in range(1, 21):  # 2,000 commits and no end of history
+            self.api[("/commits", jsonlib.dumps({"sha": "production", "per_page": 100,
+                                                 "page": page}, sort_keys=True))] = \
+                [{"sha": f"c{page}-{i}"} for i in range(100)]
+        with self.assertRaisesRegex(RuntimeError, "truncated history"):
+            deploy_posts.run()
+
+    def test_a_state_landing_during_the_bootstrap_write_is_kept(self):
+        self.setUp2()
+        self.api["/branches/production"] = {"commit": {"sha": "prodsha"}}
+        real_request = self.request
+        def flaky(method, url, **kwargs):
+            if method == "PUT" and "state.json" in url:
+                # A concurrent run wrote its own state between our read and write.
+                self.store[deploy_posts.STATE_PATH] = jsonlib.dumps(
+                    {"last_gated_sha": "theirs"}).encode()
+            return real_request(method, url, **kwargs)
+        with patch("common.requests.request", flaky):
+            deploy_posts.run()
+        self.assertEqual(self.state(), {"last_gated_sha": "theirs"})
+        self.assertEqual(self.posted, [])
+
+    def test_a_stuck_post_turns_even_a_quiet_run_red(self):
+        self.setUp2()
+        self.save_post(7, delivery={"state": "attempt", "run": "old", "at": "t"})
+        self.event(conclusion="failure")
+        with self.assertRaisesRegex(SystemExit, "Not delivered"):
+            deploy_posts.run()
+        self.assertEqual(self.posted, [])
+
+    def test_mark_accepts_a_json_suffix_and_settles_done_with_sent_at(self):
+        self.setUp2()
+        self.save_post(7, delivery={"state": "attempt", "run": "r", "at": "t",
+                                    "discord": "m1"})
+        deploy_posts.mark("PR-7.json", "done")
+        doc = self.post_doc(7)
+        self.assertEqual(doc["delivery"]["state"], "done")
+        self.assertTrue(doc["sent_at"])
+        self.assertNotIn("PR-7.json.json", " ".join(self.store))
+
+    def test_cron_reconciles_against_the_retained_deploy(self):
+        self.setUp2()
+        # 25 docs-only commits after the deploy: none has any deploy evidence.
+        docs = [f"docs{i}" for i in range(25)]
+        self.production(docs + ["deployed1", "gated1"])
+        self.store[deploy_posts.STATE_PATH] = jsonlib.dumps(
+            {"last_gated_sha": "gated1", "last_deployed": {"sha": "deployed1",
+                                                           "at": "2026-10-14T20:00:00Z"}}).encode()
+        self.save_post(8)
+        self.ancestor("merge1", "deployed1")
+        deploy_posts.run()
+        doc = self.post_doc(8)
+        self.assertEqual(doc["delivery"]["state"], "done")
+        self.assertEqual(doc["deployed_at"], "2026-10-14T20:00:00Z")
+        self.assertEqual(self.state()["last_gated_sha"], "gated1", "no new gate pass: the cursor stays")
+
+    def test_cron_picks_the_newest_passing_deploy_and_sends_in_merge_order(self):
+        self.setUp2()
+        self.production(["docs1", "new1", "old1", "gated0"])
+        self.store[deploy_posts.STATE_PATH] = jsonlib.dumps({"last_gated_sha": "gated0"}).encode()
+        self.successful_deploy("new1", "2026-10-10T10:00:00Z")
+        self.successful_deploy("old1", "2026-10-09T10:00:00Z")
+        self.save_post(2, merge_sha="m2", merged_at="2026-10-09T12:00:00Z")
+        self.save_post(1, merge_sha="m1", merged_at="2026-10-09T08:00:00Z")
+        self.ancestor("m1", "new1")
+        self.ancestor("m2", "new1")
+        self.ancestor("gated0", "new1")
+        deploy_posts.run()
+        self.assertEqual([json.loads(f["payload_json"][1])["content"] for _, _, f in self.posted],
+                         ["### PR 1", "### PR 2"])
+        self.assertEqual(self.state()["last_gated_sha"], "new1")
+
+    def test_a_non_success_event_waits(self):
+        self.setUp2()
+        self.save_post(7)  # pending, so the run is past bootstrap
+        self.event(conclusion="failure")
+        deploy_posts.run()
+        self.assertEqual(self.posted, [])
+        self.assertIsNone(self.state())
+        # The post waits: nothing was claimed, nothing was sent.
+        self.assertNotIn("delivery", self.post_doc(7))
+
+
+class NewsIndexDeployTest(unittest.TestCase):
+    """/news shows a deployed PR's announcements as live at the deploy time."""
+
+    def gist(self, pr, source=None):
+        item = {"id": f"{pr}-m", "model_id": "m", "title": "M", "action": "NEW",
+                "changes": {"pricing": {"before": None, "after": 1}}, "effective_at": None,
+                "effective_status": "unconfirmed", "official": True}
+        if source:
+            item["source"] = source
+            item["effective_status"] = "scheduled"
+            item["effective_at"] = "2026-10-20T00:00:00Z"
+        return {"pr_number": pr, "merged_at": "2026-10-14T10:00:00Z",
+                "url": f"https://github.com/pollinations/pollinations/pull/{pr}",
+                "announcements": [item]}
+
+    def test_deployed_pr_shows_live_at_the_deploy_time(self):
+        entries = model_entries([self.gist(7)], "2026-10-01", "2026-10-15",
+                                {7: "2026-10-15T12:00:00Z"})
+        self.assertEqual(entries[0]["status"], "live")
+        self.assertEqual(entries[0]["effective_at"], "2026-10-15T12:00:00Z")
+
+    def test_undeployed_and_pr_description_entries_are_unchanged(self):
+        entries = model_entries([self.gist(7)], "2026-10-01", "2026-10-15", {})
+        self.assertNotIn("status", entries[0])
+        scheduled = model_entries([self.gist(8, source="pr_description")], "2026-10-01",
+                                  "2026-10-15", {8: "2026-10-15T12:00:00Z"})
+        self.assertEqual(scheduled[0]["status"], "scheduled")
 
 
 if __name__ == "__main__":

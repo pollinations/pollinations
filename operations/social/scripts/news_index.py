@@ -33,7 +33,8 @@ def read_json(paths) -> List[Dict]:
     return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(paths)]
 
 
-def model_entries(gists: List[Dict], since: str, today: str) -> List[Dict]:
+def model_entries(gists: List[Dict], since: str, today: str, deploys: Dict = None) -> List[Dict]:
+    deploys = deploys or {}
     entries, decisions, removed = [], {}, {}
     for gist in sorted(gists, key=lambda g: (g["merged_at"], g["pr_number"])):
         merged = gist["merged_at"][:10]
@@ -51,6 +52,12 @@ def model_entries(gists: List[Dict], since: str, today: str) -> List[Dict]:
                 "pricing_units": item.get("pricing_units"),
                 "changes": {k: v for k, v in item.get("changes", {}).items() if k in CARD_FIELDS},
             }
+            # A PR whose production deploy passed shows its deploy time as live (#17406).
+            # PR-description announcements keep their scheduled/cancelled status instead.
+            deployed_at = deploys.get(gist["pr_number"])
+            if deployed_at and item.get("source") != "pr_description":
+                entry["effective_at"] = deployed_at
+                entry["status"] = "live"
             status = item.get("effective_status")
             if item.get("source") == "pr_description":
                 # Retirements announced in a PR description: the latest one per model wins.
@@ -101,13 +108,22 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
     return items[:README_ITEMS] if len(recent) < README_ITEMS else recent
 
 
+def deploy_map(news_dir: Path) -> Dict:
+    """pr_number -> deployed_at for every PR post the deploy sender recorded as sent."""
+    deploys = {}
+    for post in read_json(news_dir.glob("pr-posts/PR-*.json")):
+        if (post.get("delivery") or {}).get("state") == "done" and post.get("deployed_at"):
+            deploys[post["pr_number"]] = post["deployed_at"]
+    return deploys
+
+
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
     gists = read_json(news_dir.glob("gists/*/PR-*.json"))
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "models": model_entries(gists, since, today),
+        "models": model_entries(gists, since, today, deploy_map(news_dir)),
         "api": api_entries(gists, since),
         "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
     }

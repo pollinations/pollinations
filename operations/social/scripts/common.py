@@ -1072,6 +1072,86 @@ def build_monthly_summary_artifact(
     )
 
 
+def read_news_file(
+    file_path: str,
+    github_token: str,
+    owner: str = OWNER,
+    repo: str = REPO,
+    branch: str = GISTS_BRANCH,
+) -> tuple:
+    """A JSON file on the news branch and its blob sha, or (None, None) when absent.
+
+    A non-404, non-200 read raises RuntimeError: a caller deciding from the file
+    must never act on an unread state.
+    """
+    import base64 as _b64
+
+    resp = github_api_request(
+        "GET",
+        f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+        headers=_github_headers(github_token),
+        params={"ref": branch},
+    )
+    if resp.status_code == 404:
+        return None, None
+    if resp.status_code != 200:
+        raise RuntimeError(f"Reading {file_path} from {branch}: HTTP {resp.status_code}")
+    body = resp.json()
+    return json.loads(_b64.b64decode(body["content"]).decode()), body["sha"]
+
+
+def update_news_file(
+    file_path: str,
+    build,
+    github_token: str,
+    message: str,
+    owner: str = OWNER,
+    repo: str = REPO,
+    branch: str = GISTS_BRANCH,
+    attempts: int = 3,
+) -> tuple:
+    """Read-merge-write a JSON file on the news branch with conflict retries.
+
+    build(current: dict | None) -> dict | None merges against the FRESH read on
+    every attempt (None = write nothing, stop). Returns ("landed", doc),
+    ("skipped", None) when build said no, or ("gave up", None) after `attempts`
+    conflicts. A caller that sent an external side effect checks for "landed"
+    and treats anything else as an unknown state.
+    """
+    import base64 as _b64
+
+    for _ in range(attempts):
+        try:
+            current, sha = read_news_file(file_path, github_token, owner, repo, branch)
+        except RuntimeError:
+            continue
+        doc = build(current)
+        if doc is None:
+            return "skipped", None
+        payload = {
+            "message": message,
+            "content": _b64.b64encode(
+                json.dumps(doc, indent=2, ensure_ascii=False).encode()
+            ).decode(),
+            "branch": branch,
+            **({"sha": sha} if sha else {}),
+        }
+        try:
+            resp = github_api_request(
+                "PUT",
+                f"{GITHUB_API_BASE}/repos/{owner}/{repo}/contents/{file_path}",
+                headers=_github_headers(github_token),
+                json=payload,
+            )
+            if resp.status_code in (200, 201):
+                return "landed", doc
+            if resp.status_code not in (409, 412, 422):
+                print(f"  Error writing {file_path}: {resp.status_code} {resp.text[:200]}")
+        except requests.RequestException:
+            pass
+    return "gave up", None
+
+
 def commit_files_to_branch(
     files: List[tuple],
     branch: str,

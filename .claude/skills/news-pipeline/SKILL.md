@@ -11,11 +11,11 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 
 - **Preview first.** A manual `news-posts.yml` run defaults to `run: preview`: it writes into a throwaway checkout, prints the diff and keeps the texts and pictures with the run (artifact `preview`); it sends and saves nothing. Compare with what is on `news`, then run it live.
 - **Never send twice.** Read the date's `delivery.json` before delivering again. Never edit it by hand: settle a post with `deliver.py mark`.
-- **Ask before anything people see:** a live run (`run: all` or `deliver`), a gist regeneration (it posts Discord again) and `mark` each need the user's go.
+- **Ask before anything people see:** a live run (`run: all` or `deliver`), a gist regeneration (it rewrites the saved Discord post) and `mark` each need the user's go.
 
 ## Find what happened
 
-- Runs: `gh run list --workflow news-posts.yml` (or `news-create-pr-gist.yml`, `news-build-index.yml`, `news-sync-readme.yml`); `gh run view <id> --log`.
+- Runs: `gh run list --workflow news-posts.yml` (or `news-create-pr-gist.yml`, `news-deploy-posts.yml`, `news-build-index.yml`, `news-sync-readme.yml`); `gh run view <id> --log`.
 - Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
 - Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Create PR gist". Read every failed run: more than one post can fail in the same run.
 - Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/<daily|weekly|monthly|models|community>/<date>/` — `summary.json`, the post files, `images/`, `delivery.json`.
@@ -50,11 +50,19 @@ Each is written, sent to Discord and saved in one run; the run saves only if its
 
 ## A missing or wrong gist
 
-- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and posts Discord **again**: ask first. Which step of a failed run went red decides the repair:
-  - **Generate PR gist** (classification, model or API changes, analysis, picture): nothing was saved or posted, so rerunning posts once.
-  - **Post to Discord**: the gist is saved, and Discord may have accepted the message before the run timed out. Per-PR posts have no `delivery.json`, so look in the Discord channel first: if the message is there, don't rerun; if not, rerun.
+- `gh workflow run news-create-pr-gist.yml -f pr_number=N` regenerates the gist and its picture and rewrites the saved Discord post: ask first. Which step of a failed run went red decides the repair:
+  - **Generate PR gist** (classification, model or API changes, analysis, picture): nothing was saved, so rerunning is safe.
+  - **Save the Discord post**: the gist is saved; `pr-posts/PR-N.json` may exist already. A record whose `delivery.state` is `done` is never rewritten, so a rerun is safe; otherwise rerunning rewrites the saved message (nothing has been sent yet, so no duplicate reaches Discord).
 - To fix only the gist's facts (classification, model or API changes), edit `gists/<merge date>/PR-N.json` on `news` by hand, keeping its shape.
 - Then `gh workflow run news-build-index.yml`. A daily already written from the old gist keeps its text unless rewritten with `overwrite=true` (preview first).
+
+## A per-PR Discord post: not sent, sent twice, stuck
+
+The post is saved at merge time and sent when its production deploy gate passes (`news-deploy-posts.yml`, after each deploy workflow and every 30 minutes). Its record is `pr-posts/PR-N.json` on `news`; the gate's cursor is `deploy-posts/state.json`.
+
+- **Not sent long after merge:** read the latest `news-deploy-posts.yml` run. The gate holds a post back when a deploy workflow for the production commit is still running or failed, or the 15-minute discovery barrier hasn't passed. A failed deploy is not a pipeline bug: the post goes out with the next commit whose gate passes.
+- **`delivery.state: attempt`:** the send's result is unknown. Look in the Discord channel first. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deploy_posts.py mark PR-N done`. Certainly not sent: `… failed`, and the next run retries. Still unsure: leave it at `attempt` (the run stays red on purpose). A record with a Discord message id can only be marked `done`.
+- **Duplicate in the channel:** settle the record `done` so nothing more is sent, then report it: the claim-before-send write is the one guard against this.
 
 ## Missing from Enter's News page or the README
 

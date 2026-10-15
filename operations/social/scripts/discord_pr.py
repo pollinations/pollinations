@@ -99,40 +99,14 @@ def generate_snippet(gist: Dict, token: str) -> Optional[str]:
     )
 
 
-# ── Main ─────────────────────────────────────────────────────────────
+def build_message(gist: Dict, pr_number, merged_at: str, token: str) -> tuple:
+    """The final Discord message and its picture bytes for one PR gist.
 
-
-def main():
-    print("=== Discord Real-Time Post ===")
-
-    # Environment
-    github_token = get_env("GITHUB_TOKEN")
-    pollinations_token = get_env("POLLINATIONS_TOKEN")
-    discord_webhook = get_env("DISCORD_REALTIME_WEBHOOK_URL")
-    pr_number = get_env("PR_NUMBER")
-    repo_full_name = get_env("REPO_FULL_NAME")
-
-    owner, repo = repo_full_name.split("/")
-
-    # ── Fetch gist ────────────────────────────────────────────────────
-    print(f"\n[1/2] Reading gist for PR #{pr_number}...")
-
-    merged_at = fetch_pr_merged_at(repo_full_name, pr_number, github_token)
-    if not merged_at:
-        print("  FATAL: Could not determine merged_at")
-        sys.exit(1)
-
-    gist = fetch_gist(int(pr_number), merged_at, github_token, owner, repo)
-    if not gist:
-        print("  FATAL: Gist not found")
-        sys.exit(1)
-
-    print(f"  Gist loaded: {gist['title']}")
-
-    # ── Generate Discord message ──────────────────────────────────────
-    print("\n[2/2] Generating Discord message...")
-
-    snippet = generate_snippet(gist, pollinations_token)
+    Any failure is fatal (sys.exit(1)), as the realtime sender had it: a post
+    is never degraded. Shared by discord_pr.py (manual post) and pr_post.py
+    (save for the deploy-time sender).
+    """
+    snippet = generate_snippet(gist, token)
     if not snippet:
         print("  FATAL: Discord snippet generation failed")
         sys.exit(1)
@@ -194,6 +168,46 @@ def main():
     except requests.RequestException as e:
         print(f"  FATAL: Could not download image for Discord: {e}")
         sys.exit(1)
+
+    return message, image_url, image_bytes
+
+
+# ── Main ─────────────────────────────────────────────────────────────
+
+
+def main():
+    print("=== Discord Real-Time Post ===")
+
+    # Environment
+    github_token = get_env("GITHUB_TOKEN")
+    pollinations_token = get_env("POLLINATIONS_TOKEN")
+    discord_webhook = get_env("DISCORD_REALTIME_WEBHOOK_URL")
+    pr_number = get_env("PR_NUMBER")
+    repo_full_name = get_env("REPO_FULL_NAME")
+
+    owner, repo = repo_full_name.split("/")
+
+    # ── Fetch gist ────────────────────────────────────────────────────
+    print(f"\n[1/2] Reading gist for PR #{pr_number}...")
+
+    merged_at = fetch_pr_merged_at(repo_full_name, pr_number, github_token)
+    if not merged_at:
+        print("  FATAL: Could not determine merged_at")
+        sys.exit(1)
+
+    gist = fetch_gist(int(pr_number), merged_at, github_token, owner, repo)
+    if not gist:
+        print("  FATAL: Gist not found")
+        sys.exit(1)
+
+    print(f"  Gist loaded: {gist['title']}")
+
+    # ── Generate Discord message ──────────────────────────────────────
+    print("\n[2/2] Generating Discord message...")
+
+    message, image_url, image_bytes = build_message(
+        gist, pr_number, merged_at, pollinations_token
+    )
 
     # Post to Discord (retries server failures)
     try:

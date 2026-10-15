@@ -81,9 +81,9 @@ function generateUserCode(length: number): string {
  * RFC 8628 §3.1); JSON is accepted for the pre-discovery clients that have
  * always sent it — including without a content-type header.
  */
-export async function parseFormOrJsonBody(
-    c: Context<Env>,
-): Promise<Record<string, string>> {
+export async function parseFormOrJsonBody(c: {
+    req: Pick<Context["req"], "header" | "parseBody" | "json">;
+}): Promise<Record<string, string>> {
     const contentType = c.req.header("content-type") ?? "";
     const parsed: unknown = contentType.includes("form")
         ? await c.req.parseBody().catch(() => null)

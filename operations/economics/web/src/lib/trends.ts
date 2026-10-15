@@ -3,7 +3,7 @@ import { EXPENSE_CATEGORY_ORDER } from "./categories";
 import { toUsd } from "./fx";
 import { modelReconcileRows } from "./modelReconcile";
 import { monthShift, reportingMonths, WINDOW_START } from "./months";
-import { ledgerCategory, resolveProvider } from "./providerRegistry";
+import { ledgerCategory } from "./providerRegistry";
 import { missingUsageCosts } from "./reconciliation";
 import { buildRunway } from "./runway";
 import { salesFraudAdjustment } from "./salesAdjustments";
@@ -14,7 +14,16 @@ export function trendPeriod(count: 3 | 6 | 12, now = new Date()) {
     return { start: start < WINDOW_START ? WINDOW_START : start, end };
 }
 
-export type TrendScope = "compute" | "company";
+export type TrendScope = "product" | "company";
+
+export function isTrendExpense(category: string, scope: TrendScope) {
+    return (
+        category !== "revenue" &&
+        category !== "balance_sheet" &&
+        (scope === "company" ||
+            ["compute", "infrastructure", "revenue_share"].includes(category))
+    );
+}
 export type TrendMonth = {
     month: string;
     provisional: boolean;
@@ -53,11 +62,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
             flag.includes("unsupported currency") ||
             flag.includes("invalid kind"),
     );
-    const missingCostRows = missingUsageCosts(data).filter(
-        (row) =>
-            scope === "company" ||
-            resolveProvider(row.vendor)?.category !== "infrastructure",
-    );
+    const missingCostRows = missingUsageCosts(data);
     const months: TrendMonth[] = reportingMonths(now).map((month) => {
         const column = runway.columns.find(
             (c) => c.month === month && c.kind !== "forecast",
@@ -110,9 +115,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
                   )
                 : null;
         const costs = runway.rows.filter((r) =>
-            scope === "compute"
-                ? r.category === "compute"
-                : r.category !== "revenue" && r.category !== "balance_sheet",
+            isTrendExpense(r.category, scope),
         );
         const paidCost =
             column && hasCosts
@@ -164,9 +167,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         const expenseCosts = Object.fromEntries(
             EXPENSE_CATEGORY_ORDER.map((category) => [
                 category,
-                scope === "company" || category === "compute"
-                    ? categoryCost(category)
-                    : null,
+                isTrendExpense(category, scope) ? categoryCost(category) : null,
             ]),
         ) as Pick<TrendMonth, (typeof EXPENSE_CATEGORY_ORDER)[number]>;
         return {

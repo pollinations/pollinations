@@ -20,9 +20,9 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).toContain("September");
     expect(html).not.toContain("gaps mean missing data");
     expect(html).not.toContain("September*");
-    expect(html).not.toContain('aria-label="Cost scope"');
+    expect(html).toContain('aria-label="Cost scope"');
     expect(html).not.toContain("Company performance");
-    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(5);
+    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(6);
     expect(html).not.toContain("Monthly details");
     expect(html).not.toContain("Provider credit dates &amp; limits");
     expect(html).toContain("Pollen consumed. Pollen by month");
@@ -45,6 +45,18 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("Recent 6 months");
     expect(html).not.toContain("Full year");
     expect(html).not.toContain("<select");
+    expect(html).not.toContain("Expense categories");
+    expect(html).toContain('aria-label="Toggle Compute"');
+    expect(html).toContain('aria-label="Toggle Revenue Share"');
+    expect(html).toContain("Product");
+    expect(
+        /<button[^>]*aria-pressed="true"[^>]*>Whole company<\/button>/.test(
+            html,
+        ),
+    ).toBe(true);
+    expect(html).toContain("Sales. USD by month");
+    expect(html).toContain("Customer payments");
+    expect(html).toContain("After deductions");
     expect(html).not.toContain("API + GPU margin");
     expect(html).toContain("Expenses before credits");
     expect(html).toContain("Infrastructure");
@@ -169,6 +181,8 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
     expect(html).not.toContain("Period results comparison");
     expect(html).toContain("With credits");
     expect(html).toContain("Without credits");
+    expect(html).toContain("$3,000");
+    expect(html).toContain("$2,900");
     expect(html).toContain("$2,800");
     expect(html).toContain("$2,750");
     expect(html).toContain("$2,880");

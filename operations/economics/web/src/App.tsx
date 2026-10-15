@@ -746,8 +746,15 @@ function viewInfoContent(activeView: ActiveView) {
                     Completed months · USD unless marked Pollen. Revenue is
                     after deductions.
                 </li>
-                <li>Company: all expenses. API + GPU: Compute only.</li>
-                <li>Expense curves: full costs before credits.</li>
+                <li>
+                    Product: Compute, Infrastructure and Revenue Share,
+                    including Quest usage. Whole company: all expenses.
+                </li>
+                <li>
+                    Expense curves: full costs before credits. Click a legend
+                    label to hide or show a category.
+                </li>
+                <li>Sales: customer payments before and after deductions.</li>
                 <li>Pollen consumed is usage, not sales or provider cost.</li>
                 <li>
                     Quest costs: known allocation by metered usage; part of

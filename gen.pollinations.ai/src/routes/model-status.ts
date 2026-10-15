@@ -93,7 +93,17 @@ export const modelStatusRoutes = new Hono<Env>().get(
             return c.json({ error: "traffic must be all or regular" }, 400);
         url.searchParams.set("traffic", traffic);
         const minutes = c.req.query("minutes");
-        if (minutes !== undefined) url.searchParams.set("minutes", minutes);
+        if (minutes !== undefined) {
+            const parsed = Number(minutes);
+            if (!Number.isInteger(parsed) || parsed < 1 || parsed > 10080)
+                return c.json(
+                    {
+                        error: "minutes must be an integer between 1 and 10080",
+                    },
+                    400,
+                );
+            url.searchParams.set("minutes", String(parsed));
+        }
         const upstream = await fetch(url, {
             cf: { cacheTtl: 60, cacheEverything: true },
         });

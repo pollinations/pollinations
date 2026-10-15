@@ -1612,6 +1612,35 @@ const TEXT_BASE_SERVICES = {
         contextLength: 8192,
         isSpecialized: true,
     },
+    "perplexity/pplx-decider-v1.1-27b": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Perplexity",
+        category: "text",
+        addedDate: new Date("2026-10-07").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.02),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Decider V1.1 27B",
+        description:
+            "Typed choices, scores and yes/no probabilities over a 262K " +
+            "context; post state and questions to /alpha/decisions, or send " +
+            "the same JSON in the last user message on /v1/chat/completions. " +
+            "Text state only",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 262144,
+        isSpecialized: true,
+    },
     "liquid/d1": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
         aliases: [],
@@ -1691,6 +1720,35 @@ const TEXT_BASE_SERVICES = {
         reasoning: false,
         contextLength: 128000,
         isSpecialized: false,
+    },
+    "microsoft/microsoft-decision-1": {
+        supportedParameters: CHAT_PARAMETERS.typesafeJev,
+        aliases: [],
+        provider: "vercel",
+        publisher: "Microsoft",
+        category: "text",
+        addedDate: new Date("2026-10-09").getTime(),
+        priceMultiplier: 1, // Billed at cost, no margin.
+        paidOnly: true,
+        cost: {
+            // Vercel AI Gateway list price, the cheapest route.
+            promptTextTokens: perMillion(0.042),
+            completionTextTokens: perMillion(0),
+        },
+        title: "Microsoft-Decision-1",
+        description:
+            "Fast typed choices with a calibrated probability for each fixed " +
+            "option and no generated text; post state and questions to " +
+            "/alpha/decisions, or send the same JSON in the last user " +
+            "message on /v1/chat/completions",
+        // Same request shape as Jev: decisions route and chat adapter only.
+        supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: false,
+        reasoning: false,
+        contextLength: 32768,
+        isSpecialized: true,
     },
     "openai/gpt-6-luna-decisions": {
         supportedParameters: CHAT_PARAMETERS.typesafeJev,
@@ -1883,14 +1941,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-haiku-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global standard rates (prompts up to 100K tokens);
+            // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
             promptTextTokens: perMillion(0.1),
             promptCachedTokens: perMillion(0.01),
@@ -1934,7 +1992,7 @@ const TEXT_BASE_SERVICES = {
             "Low-cost adaptive reasoning for everyday tasks, tool use and high-volume sub-agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -1995,14 +2053,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-sonnet-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // AWS Marketplace prod-pjfguoisodbd6, global standard; 5-minute cache writes.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.1),
             promptCacheWriteTokens: perMillion(2.5),
@@ -2013,7 +2071,7 @@ const TEXT_BASE_SERVICES = {
             "Fast adaptive reasoning for everyday coding, agentic tool use and long-context work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,
@@ -2105,14 +2163,13 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-opus-5.5": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Bedrock global route: Anthropic's published global Opus 5.5 rates.
-        // Verify against AWS's price list when the launch-day entry appears.
+        // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
             promptCachedTokens: perMillion(0.2),
@@ -2124,7 +2181,7 @@ const TEXT_BASE_SERVICES = {
             "Flagship reasoning for demanding coding, multi-step codebase changes and long-horizon agentic work",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         contextLength: 1000000,
         isSpecialized: false,
@@ -2187,14 +2244,14 @@ const TEXT_BASE_SERVICES = {
     "anthropic/claude-fable-5.1": {
         supportedParameters: CHAT_PARAMETERS.bedrockClaudeNoForcedTools,
         aliases: [],
-        provider: "aws",
+        provider: "anthropic",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),
             promptCachedTokens: perMillion(0.25),
             promptCacheWriteTokens: perMillion(12.5),
@@ -2205,7 +2262,7 @@ const TEXT_BASE_SERVICES = {
             "Frontier intelligence for complex reasoning, coding and long-running agents",
         inputModalities: ["text", "image"],
         outputModalities: ["text"],
-        maxReferenceImages: 20, // Bedrock Converse image limit.
+        maxReferenceImages: 20, // Preserve the image limit across the AWS fallback.
         tools: true,
         reasoning: true,
         contextLength: 1000000,

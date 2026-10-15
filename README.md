@@ -28,6 +28,9 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [✍️ Summering text](https://fedaasawalmeh753-cmyk.github.io/Mhcj) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@fedaasawalmeh753-cmyk](https://github.com/fedaasawalmeh753-cmyk) |
+| [🖼️ Image-Captioning-](https://zeros372.github.io/Image-Captioning-) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@zeros372](https://github.com/zeros372) |
+| [🎮 The Basement Circuit](https://fisventurous.github.io/The-Basement-Circuit) | A gritty, low-stakes text-to-fighter autobattler. Pollinations inks a complete fight card from a single line of text (up to 80 characters), equipping your contender with distinct personality traits, t | [@fisventurous](https://github.com/fisventurous) |
 | [🎮 Tiny Fighter Arena](https://tomdacatto.github.io/pollinations-fighter-arena) | Describe a fighter in one line and watch it battle. The AI designs the whole fighter (name, look, three moves, a quirk, stats and a fighting style), an image model draws its portrait, and it fights a | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Model Match](https://patbing.github.io/model-match) | A five-round guessing game: read one anonymous answer and pick which of four AI models wrote it. All 96 answers are pre-generated with the Pollinations API; no keys or API calls while you play. | [@patbing](https://github.com/patbing) |
 | [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
@@ -35,9 +38,6 @@
 | [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
 | [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
-| [🖼️ Stickman Image Maker](https://lotxo1.github.io/stickman-image-maker) | Stickman Image Maker turns any scene you describe into a 16:9 stickman cartoon image in a consistent, simple style, made for faceless YouTube videos and explainer content. Users sign in with their own | [@lotxo1](https://github.com/lotxo1) |
-| [💼 RankNest YouTube Research & Strategy Tool](https://ranknest.tech/youtube-research) | RankNest YouTube Research & Strategy Tool turns broad search queries into high-converting, demand-backed YouTube video ideas. | [@asiasi44](https://github.com/asiasi44) |
-| [🎬 MIDI Journey 2](https://github.com/pollinations/MIDIjourney) | Max for Live device for composing and transforming MIDI through conversation in Ableton Live. Uses the hosted Pollinations MIDIjourney prompt agent through the Pollinations SDK, with browser sign-in a | [@ElliotEtag](https://github.com/ElliotEtag) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-10-14** – **🤖 Lightning Text v2.1** Use `inferenceport-ai/lightning-text-v2.1` with text or image input, JSON output, and tool calling. It requires paid Pollen. [View the model](https://enter.pollinations.ai/models?q=inferenceport-ai/lightning-text-v2.1).
+- **2026-10-14** – **✨ 3D in the SDK** Generate binary 3D output with `model3d()`, discover 3D models with `models("3d")`, and get typed model status and speech word timings in the SDK alpha. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
+- **2026-10-14** – **🔗 React generation hooks** The React SDK now has hooks for image, text, audio, video, and transcription generation, plus a streaming transport for Vercel AI SDK’s `useChat`. [Explore the SDK](https://www.npmjs.com/package/@pollinations/sdk).
+- **2026-10-14** – **🎯 Guess the model** Read an anonymous AI answer and guess which of four models wrote it. Five rounds, no API key needed. [Try it](https://patbing.github.io/model-match).
+- **2026-10-14** – **🎨 Make a tiny fighter** Describe a fighter in one line, then see AI give it a portrait, moves, stats, and a battle. [Try it](https://tomdacatto.github.io/pollinations-fighter-arena).
 - **2026-10-13** – **🎵 Kandinsky video with audio** Generate five-second 480p videos with synchronized audio from a prompt or start image using `kandinskylab/kandinsky-6.0-lite`. [Browse the model](https://enter.pollinations.ai/models?q=kandinskylab/kandinsky-6.0-lite).
 - **2026-10-13** – **🎨 Qwen image editing** Generate or edit images with `qwen/qwen-image-2.1-turbo`, using up to ten reference images. [Browse the model](https://enter.pollinations.ai/models?q=qwen/qwen-image-2.1-turbo).
 - **2026-10-13** – **🤖 Gemini 4 Argon** Use `google/gemini-4-argon` with text, image, audio or video input, plus reasoning controls, tools and Google Search. [Browse the model](https://enter.pollinations.ai/models?q=google/gemini-4-argon).
 - **2026-10-13** – **💡 Manage sandboxes in Enter** Create, pause, resume and connect to your sandboxes from the dashboard. Templates also gain tools including ffmpeg, uv and rclone. [Open the dashboard](https://enter.pollinations.ai/keys).
 - **2026-10-13** – **📱 Bit tells tech stories** Watch short AI-agent-narrated stories about open-source projects and AI news in Italian and English. [Try it](https://bit.sessionweave.com).
-- **2026-10-12** – **🤖 Claude Opus 5.5 fast** Use `anthropic/claude-opus-5.5:fast` for text, images, and tool calling when you want the fast-mode route. [Browse the model](https://enter.pollinations.ai/models?q=anthropic/claude-opus-5.5%3Afast).
-- **2026-10-12** – **🎯 Keys scoped to models** Limit an API key to specific model IDs instead of granting access to a whole category. Set model permissions in the dashboard, BYOP authorization, or Polli CLI. [Manage keys](https://enter.pollinations.ai/keys).
-- **2026-10-12** – **💡 See usage your way** Group activity by model or API key to compare request counts and Pollen spending. Your selection stays in shared URLs and browser navigation.
-- **2026-10-12** – **🔗 API access for sandboxed agents** The `pollinations-api` Agent Skill shows agents how to call image generation and chat directly when installing the CLI is not an option. [Explore the API](https://gen.pollinations.ai/docs).
-- **2026-10-12** – **🎯 A blacksmith who remembers** Give Roblox NPCs a persona and a separate conversation with each player using Pollinations text models. Grix the blacksmith comes as an example. [View repo](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc).
 ---
 
 ## 🌱 Introduction

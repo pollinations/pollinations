@@ -314,7 +314,10 @@ export function PrimitivesPage() {
                         name="Input"
                         description="Single-line text entry with the app's control styling."
                     >
-                        <Input placeholder="Describe an image" />
+                        <Input
+                            aria-label="Image prompt"
+                            placeholder="Describe an image"
+                        />
                     </PrimitiveExample>
 
                     <PrimitiveExample
@@ -340,6 +343,7 @@ export function PrimitivesPage() {
                         description="Multi-line prompt, message, and note entry."
                     >
                         <Textarea
+                            aria-label="Detailed prompt"
                             rows={4}
                             placeholder="A precise, minimal interface for exploring model output"
                         />
@@ -351,6 +355,7 @@ export function PrimitivesPage() {
                     >
                         <div className="flex items-center gap-3">
                             <Slider
+                                aria-label="Preview intensity"
                                 min={0}
                                 max={100}
                                 value={sliderValue}
@@ -558,13 +563,14 @@ export function PrimitivesPage() {
 
                     <PrimitiveExample
                         name="Tooltip"
-                        description="Small contextual detail attached to a focused control."
+                        description="Hover or focus the button, then move onto the tooltip; Escape dismisses it."
                     >
                         <Tooltip
-                            content="Copied values stay local."
+                            content="Copied values stay local. This tooltip stays open while you move onto it."
                             triggerAs="span"
+                            align="center"
                         >
-                            <Button size="sm">Hover</Button>
+                            <Button size="sm">Hover or focus</Button>
                         </Tooltip>
                     </PrimitiveExample>
                 </div>

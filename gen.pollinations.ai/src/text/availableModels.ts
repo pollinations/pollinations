@@ -986,6 +986,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {
+        name: "z-ai/glm-5.3:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.3"],
+        transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
         name: "z-ai/glm-5.3:openrouter:friendli",
         config: portkeyConfig["glm-5.3-openrouter-friendli"],
         transform: mandatoryReasoning,

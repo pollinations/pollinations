@@ -12,53 +12,72 @@ test("provider API documentation precedes optional model links inside the same c
         "https://niche.example/docs",
         "https://docs.niche.example/guide",
     ]) {
-        const f = fixture([
-            {
-                url: "https://niche.example/pricing",
-                text: "Niche offers hosted inference.",
-            },
-        ]);
-        delete f.services.triage;
-        f.services.read = async (args) => {
-            f.reads.push(args);
-            return {
-                id: `s${f.reads.length}`,
-                url: args.url,
-                status: "fetched",
-                text: "Niche offers hosted inference.",
-                links: args.url.endsWith("/pricing")
-                    ? [
-                          ...Array.from({ length: 10 }, (_, i) => ({
-                              url: `https://models.example/checkpoint-${i}`,
-                              text: `Model checkpoint ${i}`,
-                          })),
-                          {
-                              url: documentation,
-                              text: "Documentation",
-                          },
-                          {
-                              url: "https://other.example/docs",
-                              text: "Documentation",
-                          },
-                      ]
-                    : [],
+        for (const restored of [0, 256]) {
+            const f = fixture([
+                {
+                    url: "https://niche.example/pricing",
+                    text: "Niche offers hosted inference.",
+                },
+            ]);
+            delete f.services.triage;
+            f.services.read = async (args) => {
+                f.reads.push(args);
+                return {
+                    id: `s${f.reads.length}`,
+                    url: args.url,
+                    status: "fetched",
+                    text: "Niche offers hosted inference.",
+                    links: args.url.endsWith("/pricing")
+                        ? [
+                              ...Array.from({ length: 10 }, (_, i) => ({
+                                  url: `https://models.example/checkpoint-${i}`,
+                                  text: `Model checkpoint ${i}`,
+                              })),
+                              {
+                                  url: documentation,
+                                  text: "Documentation",
+                              },
+                              {
+                                  url: "https://other.example/docs",
+                                  text: "Documentation",
+                              },
+                          ]
+                        : [],
+                };
             };
-        };
-        const result = await prepareResearch({}, f.services);
-        assert.ok(f.reads.some(({ url }) => url === documentation));
-        assert.ok(
-            result.actions.some(
-                (action) =>
-                    action.url === documentation &&
-                    action.providerDocumentation &&
-                    action.parentSourceId === "s1",
-            ),
-        );
-        assert.ok(
-            !f.reads.some(({ url }) => url === "https://other.example/docs"),
-        );
-        assert.ok(f.reads.length <= 9);
-        assert.equal(result.requiredEvidencePending, false);
+            const result = await prepareResearch(
+                {
+                    deferredSources: Array.from(
+                        { length: restored },
+                        (_, i) => ({
+                            url: `https://older.example/provider-${i}`,
+                            modes: ["providers"],
+                            scopes: ["discovery"],
+                        }),
+                    ),
+                },
+                f.services,
+            );
+            const pricingSource = result.sources.find(
+                (source) => source.url === "https://niche.example/pricing",
+            );
+            assert.ok(f.reads.some(({ url }) => url === documentation));
+            assert.ok(
+                result.actions.some(
+                    (action) =>
+                        action.url === documentation &&
+                        action.providerDocumentation &&
+                        action.parentSourceId === pricingSource.id,
+                ),
+            );
+            assert.ok(
+                !f.reads.some(
+                    ({ url }) => url === "https://other.example/docs",
+                ),
+            );
+            assert.ok(f.reads.length <= (restored ? 24 : 9));
+            assert.equal(result.requiredEvidencePending, false);
+        }
     }
 });
 

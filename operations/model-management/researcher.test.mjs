@@ -1030,6 +1030,9 @@ test("parent issue gives concise model/provider findings, documented prices and 
                 },
             ],
             discovery: {
+                pendingProviders: [
+                    { name: "niche-lead", sourceIds: ["pending"] },
+                ],
                 discoveries: [
                     { kind: "model", name: "publisher/new-model" },
                     { kind: "provider", name: "new-provider" },
@@ -1037,6 +1040,13 @@ test("parent issue gives concise model/provider findings, documented prices and 
             },
             catalogDigest: "abc",
             sha: "sha",
+            sources: [
+                {
+                    id: "pending",
+                    status: "fetched",
+                    url: "https://niche.example/pricing",
+                },
+            ],
         },
         artifactUrl,
     );
@@ -1044,6 +1054,10 @@ test("parent issue gives concise model/provider findings, documented prices and 
     assert.match(issue.body, /publisher\/example-v1 → azure/);
     assert.match(issue.body, /New models: publisher\/new-model/);
     assert.match(issue.body, /New providers: new-provider/);
+    assert.match(
+        issue.body,
+        /Provider leads \(need evidence\): \[niche-lead\]\(https:\/\/niche.example\/pricing\)/,
+    );
     assert.match(issue.body, /azure: \$2 input, \$4 output per 1M_tokens/);
     assert.match(issue.body, /Verify: account credits and live routes/);
     assert.ok(issue.body.includes(`[Evidence](${artifactUrl})`));

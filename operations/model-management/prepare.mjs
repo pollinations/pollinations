@@ -1091,14 +1091,17 @@ export async function prepareResearch(task, services) {
                             )
                         )
                             providerDocs.set(source.id, url);
-                        const observed = retain({
-                            url,
-                            title: link.title,
-                            text: link.text,
-                            sourceId: source.id,
-                            modes: ["http"],
-                            scopes: ["crawl"],
-                        });
+                        const observed = retain(
+                            {
+                                url,
+                                title: link.title,
+                                text: link.text,
+                                sourceId: source.id,
+                                modes: ["http"],
+                                scopes: ["crawl"],
+                            },
+                            providerDocs.get(source.id) === url,
+                        );
                         if (!observed || readUrls.has(url) || links.has(url))
                             continue;
                         if (!linkIds.has(url))

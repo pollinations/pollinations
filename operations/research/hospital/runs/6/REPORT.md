@@ -43,8 +43,15 @@ All five reviews hit the hospital's 600 s stage limit, and none gave a verdict.
 
 - Model calls, tokens, time and price come from gen's records of the box
   key's calls. Tool calls come from the logs.
-- On the #17045 low review, one call fell back to Fireworks and one failed.
-- Tools ran for only 7–23 s per review. The rest of the 600 s was model time.
+- No call came near a gateway timeout. Across the 132 calls:
+  - half took 18 s or less, 90% took 46 s or less, and the slowest took 85 s;
+  - Claude Code streams, so Cloudflare's 125 s wait for response headers
+    doesn't apply;
+  - one request got DeepInfra's "429 Model busy", and gen's fallback served
+    it from Fireworks in 4 s. The caller saw no error.
+- The stop came from the harness's 600 s limit per review, spread over 23–29
+  ordinary calls. Tools ran for only 7–23 s per review. The rest was model
+  time.
 - The partial notes list steps only. The reviews wrote no interim
   conclusions.
 - In their last few steps, all three #16911 reviews were checking how

@@ -77,6 +77,12 @@ type SeedreamCustomInput = {
 };
 type SeedreamReplicateInput = SeedreamPresetInput | SeedreamCustomInput;
 
+// Verified against the live bytedance/seedream-4 schema: custom-mode sides
+// must each lie in 1024–4096px. Out-of-range explicit dimensions fall back to
+// the preset path (nearest 1K/2K/4K bucket) instead of an upstream 422.
+const SEEDREAM4_CUSTOM_MIN = 1024;
+const SEEDREAM4_CUSTOM_MAX = 4096;
+
 interface SeedreamVariantConfig {
     replicateModel: string;
     displayName: string;
@@ -213,11 +219,21 @@ async function callSeedreamReplicateAPI(
     // height instead of a preset+aspect_ratio pair. When the caller actually
     // passed dimensions (OpenAI `size:"1792x1024"`, GET `?width=…&height=…`),
     // use that mode so we produce exact pixels instead of rounding to the
-    // nearest preset.
-    const input: SeedreamReplicateInput =
-        variant.supportsCustom && safeParams.dimensionsExplicit
-            ? buildCustomInput(prompt, safeParams, imageInput)
-            : buildPresetInput(prompt, safeParams, imageInput, variant);
+    // nearest preset. The upstream only accepts custom sides of
+    // 1024–4096px, so out-of-range dimensions fall back to the preset path,
+    // which serves the nearest 1K/2K/4K bucket instead of failing the
+    // request — the same treatment the seedream-5 variants give identical
+    // input.
+    const customDimensions =
+        variant.supportsCustom &&
+        safeParams.dimensionsExplicit &&
+        safeParams.width >= SEEDREAM4_CUSTOM_MIN &&
+        safeParams.width <= SEEDREAM4_CUSTOM_MAX &&
+        safeParams.height >= SEEDREAM4_CUSTOM_MIN &&
+        safeParams.height <= SEEDREAM4_CUSTOM_MAX;
+    const input: SeedreamReplicateInput = customDimensions
+        ? buildCustomInput(prompt, safeParams, imageInput)
+        : buildPresetInput(prompt, safeParams, imageInput, variant);
 
     logOps(`${variant.displayName} input:`, {
         ...input,

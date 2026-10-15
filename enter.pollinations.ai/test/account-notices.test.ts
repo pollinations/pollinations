@@ -88,8 +88,9 @@ test("running-low email goes out once per 30 days below 20% of the last pack", a
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
     expect(sent[0].text).toContain(
-        "You have 3.99 Pollen left, less than 20% of your last pack.",
+        "You have 🪷 3.99 Pollen left, less than 20% of your last pack.",
     );
+    expect(sent[0].html).toContain("<strong>🪷 3.99 Pollen</strong>");
 
     await env.DB.prepare(
         "UPDATE user SET low_balance_notified_at = ? WHERE id = 'low'",
@@ -126,7 +127,7 @@ test("auto top-up failed emails once per failure, without the 30-day limit", asy
         reason: "auto top-up disabled",
     });
     expect(sent.map((email) => email.subject)).toEqual(["Auto top-up failed"]);
-    expect(sent[0].text).toContain("You have 2.00 Pollen left.");
+    expect(sent[0].text).toContain("You have 🪷 2.00 Pollen left.");
 
     // The user turns it back on, and it fails again the same day.
     await env.DB.prepare(

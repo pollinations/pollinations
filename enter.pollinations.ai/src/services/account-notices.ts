@@ -32,15 +32,17 @@ type Notice = {
 
 // Rounds down, so a balance just under the threshold never reads as the
 // threshold itself (9.999 shows 9.99, not 10.00). The epsilon absorbs float
-// error such as 3.42 * 100 = 341.99999999999994.
+// error such as 3.42 * 100 = 341.99999999999994. The lotus matches the pack
+// names at checkout ("🪷 10 Pollen").
 const pollen = (amount: number) =>
-    `${(Math.floor(Math.max(0, amount) * 100 + 1e-9) / 100).toFixed(2)} Pollen`;
+    `🪷 ${(Math.floor(Math.max(0, amount) * 100 + 1e-9) / 100).toFixed(2)} Pollen`;
 
+// Bodies separate paragraphs with a blank line and mark bold as **text**.
 export function runningLowNotice(balance: number): Notice {
     return {
         id: "running_low",
         subject: "Your paid balance is running low",
-        body: `You have ${pollen(balance)} left, less than ${LOW_BALANCE_SHARE * 100}% of your last pack. When it runs out, requests that need paid Pollen will fail. Top up now, or turn on auto top-up so it refills by itself.`,
+        body: `You have **${pollen(balance)}** left, less than ${LOW_BALANCE_SHARE * 100}% of your last pack. When it runs out, requests that need paid Pollen will fail.\n\nTop up now, or turn on auto top-up so it refills by itself.`,
         button: { label: "Top up", path: "/top-up" },
     };
 }
@@ -49,7 +51,7 @@ export function autoTopUpOffNotice(balance: number): Notice {
     return {
         id: "auto_top_up_off",
         subject: "Auto top-up failed",
-        body: `We couldn't use your saved payment method, so auto top-up is now off. You have ${pollen(balance)} left. When it runs out, requests that need paid Pollen will fail. Update your payment method, then turn auto top-up back on.`,
+        body: `We couldn’t use your saved payment method, so auto top-up is now off. You have **${pollen(balance)}** left. When it runs out, requests that need paid Pollen will fail.\n\nUpdate your payment method, then turn auto top-up back on.`,
         button: { label: "Open wallet", path: "/pollen" },
     };
 }
@@ -115,7 +117,13 @@ export function renderNotice(
 <img src="${image("polli-lockup")}" width="220" height="48" alt="pollinations.ai" style="display:block;margin:0 0 8px">
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
-<p style="margin:0 0 20px;font-size:16px;line-height:24px">${notice.body}</p>
+${notice.body
+    .split("\n\n")
+    .map(
+        (paragraph) =>
+            `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${paragraph.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</p>`,
+    )
+    .join("\n")}
 <a href="${url(notice.button.path)}" style="display:inline-block;padding:12px 24px;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;text-decoration:none">${notice.button.label}</a>
 </div>
 <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:28px auto 0"><tr>
@@ -130,7 +138,7 @@ ${icons}
     const text = [
         notice.subject,
         "",
-        notice.body,
+        notice.body.replaceAll("**", ""),
         "",
         `${notice.button.label}: ${url(notice.button.path)}`,
         "",

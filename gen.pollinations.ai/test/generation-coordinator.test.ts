@@ -11,7 +11,10 @@ import { createTestApiKey } from "@shared/test/fixtures/index.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import type { GenerationJobHead } from "@/middleware/generation-deduplication.ts";
+import type {
+    GenerationJobHead,
+    GenerationOutcome,
+} from "@/middleware/generation-deduplication.ts";
 import worker from "../src/index.ts";
 
 function testJob(key: string, method = "GET"): GenerationJobHead {
@@ -43,18 +46,46 @@ async function waitForAlarm(state: DurableObjectState): Promise<void> {
     throw new Error("Generation alarm was not scheduled");
 }
 
+/** Runs one job through a fresh coordinator's alarm and leaves no state. */
+async function runAlarmJob(): Promise<GenerationOutcome> {
+    const stub = env.GENERATION_COORDINATOR.getByName(
+        `test-${crypto.randomUUID()}`,
+    );
+    return runInDurableObject(stub, async (coordinator, state) => {
+        const result = coordinator.startAndWait(
+            testJob(`handoff-${crypto.randomUUID()}`),
+        );
+        await waitForAlarm(state);
+        await coordinator.alarm();
+        await state.storage.deleteAlarm();
+        expect([...(await state.storage.list()).keys()]).toEqual([]);
+        return result;
+    });
+}
+
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
 describe("GenerationCoordinator", () => {
-    it.each(["url", "b64_json"] as const)(
-        "completes large Seedream uploads once through the real coordinator (%s)",
-        async (responseFormat) => {
+    it.each([
+        ["url", "in the alarm"],
+        ["b64_json", "in the alarm"],
+        ["url", "behind the public origin"],
+    ] as const)(
+        "completes large Seedream uploads once through the real coordinator (%s, %s)",
+        async (responseFormat, execution) => {
             const { key, userId } = await createTestApiKey({
                 user: { packBalance: 100 },
             });
             env.REPLICATE_API_TOKEN = "not-a-secret-workers-test-only";
+            const handoffs: ExecutionContext[] = [];
+            if (execution === "behind the public origin") {
+                env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+                onTestFinished(() => {
+                    env.GENERATION_EXECUTION_ORIGIN = undefined;
+                });
+            }
             const tinybird = createMockTinybird();
             let executions = 0;
             let requestBytes = 0;
@@ -102,6 +133,18 @@ describe("GenerationCoordinator", () => {
                         return new Response(output, {
                             headers: { "content-type": "image/png" },
                         });
+                    }
+                    if (
+                        url.host === "gen.pollinations.ai" &&
+                        url.pathname.startsWith("/internal/generation/")
+                    ) {
+                        const context = createExecutionContext();
+                        handoffs.push(context);
+                        return worker.fetch(
+                            new Request(input, init),
+                            env,
+                            context,
+                        );
                     }
                     if (url.pathname === "/v0/pipes/public_model_stats.json") {
                         return Response.json({ data: [] });
@@ -213,7 +256,11 @@ describe("GenerationCoordinator", () => {
             await Promise.all([
                 firstSettled,
                 waitOnExecutionContext(secondContext),
+                ...handoffs.map(waitOnExecutionContext),
             ]);
+            expect(handoffs).toHaveLength(
+                execution === "behind the public origin" ? 1 : 0,
+            );
             const cacheContext = createExecutionContext();
             const cached = await worker.fetch(request(), env, cacheContext);
             expect(cached.status).toBe(200);
@@ -479,6 +526,81 @@ describe("GenerationCoordinator", () => {
         }
         expect(received).toBe(size);
     });
+
+    it("rejects a public handoff without the alarm's nonce", async () => {
+        const ids = [
+            env.GENERATION_COORDINATOR.idFromName(
+                `test-${crypto.randomUUID()}`,
+            ).toString(),
+            "a".repeat(64),
+        ];
+        for (const id of ids) {
+            const response = await SELF.fetch(
+                `https://gen.pollinations.ai/internal/generation/${id}`,
+                {
+                    method: "POST",
+                    headers: { "x-generation-handoff": crypto.randomUUID() },
+                },
+            );
+            expect(response.status, id).toBe(404);
+            await response.text();
+        }
+    });
+
+    it("hands a failed job to the public origin with the alarm's outcome, once", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const inAlarm = await runAlarmJob();
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        const replays: number[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const response = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                // The nonce is single-use: a replay finds nothing to run.
+                const replay = await worker.fetch(
+                    new Request(input, init),
+                    env,
+                    createExecutionContext(),
+                );
+                replays.push(replay.status);
+                await replay.text();
+                return response;
+            },
+        );
+
+        const handedOff = await runAlarmJob();
+
+        expect(inAlarm.status).toBe("failed");
+        expect(handedOff).toEqual(inAlarm);
+        expect(replays).toEqual([404]);
+    });
+
+    it("fails waiters closed when the public origin refuses the handoff", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        env.GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai";
+        onTestFinished(() => {
+            env.GENERATION_EXECUTION_ORIGIN = undefined;
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response("blocked", { status: 403 }),
+        );
+
+        const result = await runAlarmJob();
+
+        expect(result.status).toBe("failed");
+        if (result.status !== "failed") return;
+        expect(result.error.httpStatus).toBe(503);
+        expect(new TextDecoder().decode(result.error.body)).toBe(
+            "Detached generation failed",
+        );
+    });
+
     it("returns an existing cached generation without scheduling work", async () => {
         const key = `cached-${crypto.randomUUID()}`;
         await env.TEXT_BUCKET.put(key, "cached");
@@ -646,5 +768,59 @@ describe("GenerationCoordinator", () => {
             body: undefined,
             alarm: null,
         });
+    });
+
+    // Ported from #17353 (tomdacatto).
+    it("remembers a failed async job for a day, then forgets it", async () => {
+        const now = Date.now() + 60_000;
+        const clock = vi.spyOn(Date, "now").mockReturnValue(now);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `async-${crypto.randomUUID()}`,
+        );
+        const seen = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                await coordinator.submit(
+                    testJob(`async-${crypto.randomUUID()}`),
+                );
+                const queued = await coordinator.status("user-1");
+                const notTheirs = await coordinator.status("user-2");
+                // A job the alarm finds already started fails closed.
+                await state.storage.put("job", {
+                    ...(await state.storage.get<object>("job")),
+                    started: true,
+                });
+                await coordinator.alarm();
+                const failed = await coordinator.status("user-1");
+                const expiresAt = await state.storage.getAlarm();
+                clock.mockReturnValue(now + 24 * 60 * 60 * 1_000);
+                await coordinator.alarm();
+                const forgotten = await coordinator.status("user-1");
+                await state.storage.deleteAlarm();
+                return {
+                    queued,
+                    notTheirs,
+                    failed,
+                    expiresAt,
+                    forgotten,
+                    left: [...(await state.storage.list()).keys()],
+                };
+            },
+        );
+        expect(seen.queued).toMatchObject({
+            status: "pending",
+            ownerIds: ["user-1"],
+        });
+        expect(seen.notTheirs).toBeNull();
+        expect(seen.failed).toMatchObject({
+            status: "failed",
+            error: {
+                httpStatus: 503,
+                message: "Detached generation was interrupted",
+            },
+        });
+        expect(seen.expiresAt).toBe(now + 24 * 60 * 60 * 1_000);
+        expect(seen.forgotten).toBeNull();
+        expect(seen.left).toEqual([]);
     });
 });

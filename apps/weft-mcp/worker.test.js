@@ -39,40 +39,19 @@ function createHarness(fetchResponse = pendingFetch) {
                     embedder_model: "test",
                     candidates_considered: 1,
                     warnings: [],
-                    view: "compact",
-                    result_count: 1,
-                    results: [],
-                    compact_results: [
+                    results: [
                         {
-                            provider: { id: "example", name: "Example" },
-                            operation: { id: "one", name: "One" },
-                            request: {
-                                method: "GET",
-                                url: "https://api.example.com/one",
+                            provider: {
+                                provider_id: "example",
+                                display_name: "Example",
+                                origin_domains: ["api.example.com"],
                             },
-                            access: {
-                                protocol: "x402",
-                                price: {
-                                    kind: "fixed",
-                                    indexed_usd: "0.002",
-                                    unit: "request",
-                                },
+                            capability: {
+                                capability_id: "one",
+                                capability_type: "api",
                             },
-                            contract_url:
-                                "https://staging.weft.network/contracts/curated-marketplace/abc/one.json",
-                            contract_detail: "summary",
-                            readiness: { state: "ready" },
-                            next_call: {
-                                method: "POST",
-                                path: "/api/v1/fetch",
-                                body: {
-                                    url: "https://api.example.com/one",
-                                    method: "GET",
-                                    max_cost_usd: "0.002",
-                                    search_id: SEARCH_ID,
-                                },
-                                fill: [],
-                            },
+                            endpoints: [{ url: "https://api.example.com/one" }],
+                            score: 1,
                         },
                     ],
                 });
@@ -139,12 +118,8 @@ test("searches only GET fetch-compatible APIs within the cap for free", async ()
         name: "weft_search",
         arguments: { query: "weather", maxResults: 3 },
     });
-    const body = JSON.parse(result.content[0].text);
-    assert.equal(body.queryTraceId, SEARCH_ID);
-    assert.equal(body.view, "compact");
-    assert.equal(body.compactResults[0].request.url, "https://api.example.com/one");
-    assert.equal(body.compactResults[0].access.price.indexedUsd, "0.002");
-    assert.equal(body.compactResults[0].nextCall.body.search_id, SEARCH_ID);
+    assert.match(result.content[0].text, /api\.example\.com/);
+    assert.match(result.content[0].text, new RegExp(SEARCH_ID));
     assert.equal(calls[0].url, "https://staging.weft.network/api/v1/search");
     assert.deepEqual(calls[0].body, {
         query: "weather",
@@ -154,7 +129,6 @@ test("searches only GET fetch-compatible APIs within the cap for free", async ()
             weft_fetch_compatible: true,
             price: { lte: "0.05" },
         },
-        view: "compact",
     });
     assert.equal(responses.at(-1).headers.has(MCP_USAGE_HEADERS.cost), false);
     await client.close();

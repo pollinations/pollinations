@@ -131,9 +131,6 @@ function buildServer(env, fetchImpl, reportUsage) {
                         // List only APIs that weft_fetch's hard cap can buy.
                         price: { lte: String(WEFT_MCP_MAX_COST_USD) },
                     },
-                    // The agent view: request, price and next call per
-                    // result, about half the size of the full results.
-                    view: "compact",
                 });
                 return textResult(JSON.stringify(body));
             } catch (error) {

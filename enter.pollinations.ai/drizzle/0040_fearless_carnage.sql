@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `delegates_generation` integer DEFAULT false NOT NULL;

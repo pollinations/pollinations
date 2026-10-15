@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `per_user_rpm` real;

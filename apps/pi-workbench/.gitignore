@@ -1,6 +1,0 @@
-node_modules/
-dist/
-.wasmer/
-.env*
-*key*.txt
-.openai/

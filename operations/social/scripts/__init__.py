@@ -1,1 +1,0 @@
-# Social media scripts package

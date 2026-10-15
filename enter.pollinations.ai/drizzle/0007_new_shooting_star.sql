@@ -1,1 +1,0 @@
-CREATE INDEX `idx_event_user_billed_created` ON `event` (`user_id`,`is_billed_usage`,`created_at`);

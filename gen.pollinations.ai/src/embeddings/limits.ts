@@ -1,1 +1,0 @@
-export const MAX_EMBEDDING_BATCH_SIZE = 32;

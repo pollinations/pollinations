@@ -1,6 +1,0 @@
-{
-  "target": "pages",
-  "credentials": "apps",
-  "subdomain": "catgpt",
-  "output": "."
-}

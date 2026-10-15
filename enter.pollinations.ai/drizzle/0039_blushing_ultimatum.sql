@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `supports_image_edits` integer DEFAULT false NOT NULL;

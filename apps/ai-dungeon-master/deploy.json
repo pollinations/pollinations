@@ -1,8 +1,0 @@
-{
-  "target": "pages",
-  "credentials": "apps",
-  "subdomain": "ai-dungeon-master",
-  "install": "npm install --silent",
-  "build": "npm run build",
-  "output": "dist"
-}

@@ -1,1 +1,0 @@
-ALTER TABLE `community_endpoint` ADD `title` text;

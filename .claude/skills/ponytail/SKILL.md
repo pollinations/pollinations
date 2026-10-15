@@ -1,1 +1,0 @@
-../../../.agents/skills/ponytail/SKILL.md

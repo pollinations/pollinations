@@ -1,8 +1,0 @@
-# `npm run dev` copies this to .dev.vars when you don't have the SOPS key.
-
-# Must match BETTER_AUTH_SECRET in ../enter.pollinations.ai/.dev.vars so local
-# dashboard sign-ins work in gen.
-BETTER_AUTH_SECRET=your_better_auth_secret_at_least_32_chars
-
-# Optional: your own provider keys for whatever you test, e.g. sandboxes.
-# E2B_API_KEY=your_e2b_api_key

@@ -1,1 +1,0 @@
-CREATE INDEX `idx_event_user_created` ON `event` (`user_id`,`created_at`);

@@ -293,6 +293,55 @@ describe("provider registry", () => {
         }
     });
 
+    it("starts monthly checks with the first active account and retains earlier observed activity", () => {
+        const provider = resolveProvider("e2b");
+        if (!provider?.accounts?.length)
+            throw new Error("E2B accounts missing");
+        const firstMonth = provider.accounts
+            .map((account) => account.activeFrom)
+            .sort()[0];
+        const before = new Date(`${firstMonth}-01T00:00:00Z`);
+        before.setUTCMonth(before.getUTCMonth() - 1);
+        const previousMonth = before.toISOString().slice(0, 7);
+        const seed = cloud({ start: `${previousMonth}-01 00:00:00` });
+        expect(
+            providerReviewRows(data({ vendorLedger: [seed] })).some(
+                (row) => row.provider === "e2b",
+            ),
+        ).toBe(false);
+        expect(
+            providerReviewRows(
+                data({
+                    vendorLedger: [
+                        cloud({
+                            start: `${firstMonth}-01 00:00:00`,
+                        }),
+                    ],
+                }),
+            ).find((row) => row.provider === "e2b"),
+        ).toMatchObject({
+            month: firstMonth,
+            monthlyReview: true,
+        });
+        expect(
+            providerReviewRows(
+                data({
+                    vendorLedger: [
+                        {
+                            ...seed,
+                            vendor: "e2b",
+                            evidence: "",
+                        },
+                    ],
+                }),
+            ).find((row) => row.provider === "e2b"),
+        ).toMatchObject({
+            month: previousMonth,
+            monthlyReview: true,
+            sources: ["cloud"],
+        });
+    });
+
     it("resolves manually approved aliases and leaves unknown names visible", () => {
         expect(resolveProvider(" BedRock ")?.id).toBe("aws");
         expect(canonicalProvider("aws-bedrock")).toBe("aws");

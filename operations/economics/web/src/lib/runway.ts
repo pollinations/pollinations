@@ -637,7 +637,7 @@ function accountBalanceForecasts(
                 `Estimated ${lastMonth} postpaid bill from recorded cash-funded usage; expected in ${currentMonth}. Current-month vendor payments offset this estimate once. Invoice adjustments and payment matching remain unverified.`,
             );
             notices.push(
-                `${vendor} (${rate.category}): ${currentMonth} includes an estimated $${Math.round(bill).toLocaleString("en-US")} bill for ${lastMonth} usage, less payments recorded this month. Invoice reconciliation pending.`,
+                `${vendor} (${rate.category}): ${currentMonth} includes $${bill.toLocaleString("en-US", { maximumFractionDigits: 2 })} planned settlement for ${lastMonth} cash-funded usage, reduced by payments recorded this month.`,
             );
         }
         const balance = balances.get(vendor);
@@ -1219,11 +1219,40 @@ export function buildRunway(
         );
     }
 
-    const openingRows = transactions.filter(
+    const statementOpeningRows = transactions.filter(
         (row) =>
             row.kind === "opening_balance" &&
             !unsupportedBankRows.includes(row),
     );
+    const firstOpeningDate = statementOpeningRows
+        .map((row) => row.date)
+        .sort()[0];
+    const openingRows = statementOpeningRows.filter((row) => {
+        if (
+            row.date === firstOpeningDate ||
+            statementOpeningRows.filter(
+                (other) => other.currency === row.currency,
+            ).length !== 1
+        )
+            return true;
+        const priorMovements = bankRows.filter(
+            (movement) =>
+                movement.currency === row.currency &&
+                movement.date >= firstOpeningDate &&
+                movement.date < row.date,
+        );
+        // A later first-currency anchor can confirm the balance already
+        // reconstructed from recorded movements; it must not hide that history.
+        return (
+            priorMovements.length === 0 ||
+            Math.abs(
+                priorMovements.reduce(
+                    (sum, movement) => sum + Number(movement.amount),
+                    0,
+                ) - Number(row.amount),
+            ) > 1e-8
+        );
+    });
     const openingDatesByCurrency = new Map<string, string>();
     const conflictingCurrencies = new Set<string>();
     for (const row of openingRows) {

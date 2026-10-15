@@ -1,4 +1,5 @@
 import {
+    TabButton,
     TableBody,
     TableCell,
     TableHead,
@@ -17,8 +18,10 @@ import type { DriveDocumentLink } from "../lib/documents";
 import { fmtUsd } from "../lib/format";
 import { monthName } from "../lib/months";
 import {
+    RECONCILIATION_GROUPS,
     RECONCILIATION_PAGES,
     RECONCILIATION_TYPES,
+    type ReconciliationGroup,
     type ReconciliationIssue,
     type ReconciliationPage,
     type ReconciliationType,
@@ -41,10 +44,8 @@ export function ReconciliationTab({
     year,
     onOpen,
     initialPage = null,
-    pending = [],
 }: {
     issues: ReconciliationIssue[];
-    pending?: string[];
     year: string;
     initialPage?: ReconciliationPage | null;
     onOpen: (page: ReconciliationPage, month: string) => void;
@@ -55,32 +56,50 @@ export function ReconciliationTab({
         initialPage ?? "",
     );
     const [type, setType] = useState<ReconciliationType | "">("");
+    const [section, setSection] = useState<ReconciliationGroup>("financial");
     const scoped = issues.filter(
         (row) =>
             row.month.startsWith(`${year}-`) &&
             (!page || row.affects.includes(page)),
     );
-    const billingNotices = pending.filter(
-        (notice) => notice.includes(`${year}-`) && (!page || page === "runway"),
+    const sectionRows = scoped.filter((row) => row.group === section);
+    const visible = sectionRows.filter(
+        (row) => !type || row.types.includes(type),
     );
-    const visible = scoped.filter((row) => !type || row.types.includes(type));
-    const { rows, headerProps } = useSortableRows(visible, SORT_COLUMNS);
-    // One row per provider/month, even when it has several issue types.
+    const { rows, headerProps } = useSortableRows(visible, SORT_COLUMNS, {
+        key: "amount",
+        direction: "desc",
+    });
     const types = Object.keys(RECONCILIATION_TYPES) as ReconciliationType[];
-    const groups = types
-        .map((key) => ({
-            key,
-            rows: rows.filter(
-                (row) =>
-                    (type ||
-                        types.find((candidate) =>
-                            row.types.includes(candidate),
-                        )) === key,
-            ),
-        }))
-        .filter((group) => group.rows.length > 0);
+    const groups = [{ key: section, rows }];
+    const unknownAmounts = visible.filter(
+        (row) => row.amountUsd == null,
+    ).length;
     return (
         <section className="flex flex-col gap-4">
+            <fieldset
+                className="flex flex-wrap gap-2"
+                aria-label="Reconciliation sections"
+            >
+                {(
+                    Object.keys(RECONCILIATION_GROUPS) as ReconciliationGroup[]
+                ).map((key) => (
+                    <TabButton
+                        key={key}
+                        active={section === key}
+                        aria-pressed={section === key}
+                        size="sm"
+                        variant="soft"
+                        onClick={() => {
+                            setSection(key);
+                            setType("");
+                        }}
+                    >
+                        {RECONCILIATION_GROUPS[key]} ·{" "}
+                        {scoped.filter((row) => row.group === key).length}
+                    </TabButton>
+                ))}
+            </fieldset>
             <div className="flex flex-wrap items-center gap-3">
                 <select
                     aria-label="Affected page"
@@ -112,14 +131,18 @@ export function ReconciliationTab({
                         <option key={key} value={key}>
                             {RECONCILIATION_TYPES[key]} ·{" "}
                             {
-                                scoped.filter((row) => row.types.includes(key))
-                                    .length
+                                sectionRows.filter((row) =>
+                                    row.types.includes(key),
+                                ).length
                             }
                         </option>
                     ))}
                 </select>
                 <span className="text-sm text-theme-text-soft">
                     {visible.length} items · {year}
+                    {unknownAmounts > 0
+                        ? ` · ${unknownAmounts} amounts unknown`
+                        : ""}
                 </span>
             </div>
             {visible.length === 0 && (
@@ -143,7 +166,7 @@ export function ReconciliationTab({
                                     {...headerProps("amount")}
                                     align="right"
                                 >
-                                    Related amount
+                                    Unresolved amount
                                 </TableHeaderCell>
                                 <TableHeaderCell {...headerProps("affects")}>
                                     Affects
@@ -159,7 +182,7 @@ export function ReconciliationTab({
                                         scope="rowgroup"
                                         className="bg-surface-opaque"
                                     >
-                                        {RECONCILIATION_TYPES[group.key]} ·{" "}
+                                        {RECONCILIATION_GROUPS[group.key]} ·{" "}
                                         {group.rows.length}
                                     </TableHeaderCell>
                                 </TableRow>
@@ -169,22 +192,14 @@ export function ReconciliationTab({
                                             {issue.vendor}
                                         </TableCell>
                                         <TableCell className="min-w-64 max-w-xl">
-                                            {issue.types
-                                                .filter(
-                                                    (key) => key !== group.key,
-                                                )
-                                                .map((key) => (
-                                                    <span
-                                                        key={key}
-                                                        className="mr-2 text-xs text-theme-text-soft"
-                                                    >
-                                                        {
-                                                            RECONCILIATION_TYPES[
-                                                                key
-                                                            ]
-                                                        }
-                                                    </span>
-                                                ))}
+                                            {issue.types.map((key) => (
+                                                <span
+                                                    key={key}
+                                                    className="mr-2 text-xs text-theme-text-soft"
+                                                >
+                                                    {RECONCILIATION_TYPES[key]}
+                                                </span>
+                                            ))}
                                             {issue.blockingMessages?.map(
                                                 (message) => (
                                                     <p key={message}>
@@ -223,13 +238,17 @@ export function ReconciliationTab({
                                             align="right"
                                             className="min-w-36 max-w-48"
                                         >
-                                            {issue.amountUsd != null && (
+                                            {issue.amountUsd != null ? (
                                                 <>
                                                     {fmtUsd(issue.amountUsd)}
                                                     <span className="block text-xs text-theme-text-soft">
                                                         {issue.amountLabel}
                                                     </span>
                                                 </>
+                                            ) : (
+                                                <span className="text-theme-text-soft">
+                                                    Unknown
+                                                </span>
                                             )}
                                         </TableCell>
                                         <TableCell className="min-w-40 max-w-60">
@@ -283,23 +302,6 @@ export function ReconciliationTab({
                 documentLink={previewDocument}
                 onClose={() => setPreviewDocument(null)}
             />
-            {billingNotices.length > 0 && (
-                <details className="text-sm text-theme-text-soft">
-                    <summary className="cursor-pointer">
-                        Expected billing · {billingNotices.length} pending
-                        estimates
-                    </summary>
-                    <p className="mt-2">
-                        Already included in the cash forecast; awaiting supplier
-                        invoices.
-                    </p>
-                    <ul className="mt-2 list-disc space-y-2 pl-5">
-                        {billingNotices.map((notice) => (
-                            <li key={notice}>{notice}</li>
-                        ))}
-                    </ul>
-                </details>
-            )}
         </section>
     );
 }

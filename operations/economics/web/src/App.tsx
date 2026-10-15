@@ -713,9 +713,11 @@ function viewInfoContent(activeView: ActiveView) {
                     within each group. Related amounts help prioritize; they are
                     not a measured error in profit.
                 </InfoItem>
-                <InfoItem lead="Expected billing">
-                    Future billing estimates are listed here separately and do
-                    not count as reconciliation items.
+                <InfoItem lead="Scope">
+                    Potential changes to totals, validation of recorded amounts,
+                    and model/GPU allocation are separate. Unresolved amounts
+                    are sorted largest first; unknowns remain explicit. Billing
+                    estimates are shown on Runway.
                 </InfoItem>
             </ViewInfo>
         );
@@ -1131,7 +1133,6 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <ReconciliationTab
                         key={`${selectedYear}:${reconciliationFrom}`}
                         issues={reconciliation?.issues ?? []}
-                        pending={reconciliation?.pending ?? []}
                         year={selectedYear}
                         initialPage={reconciliationFrom}
                         onOpen={(page, month) => {

@@ -685,3 +685,63 @@ it("keeps missing usage in reconciliation when recorded-figures results are prov
     expect(issue?.messages).toContain(report.blockers[0].message);
     expect(issue?.blockingMessages).toBeUndefined();
 });
+
+it("does not request current-month actuals while keeping closed-month financial gaps", () => {
+    const issues = reconciliationState(
+        { opPollen: [usage("aws"), { ...usage("aws"), month: "2026-10" }] },
+        now,
+    ).issues;
+    expect(issues.find((row) => row.id === "2026-09|aws")?.types).toContain(
+        "figures",
+    );
+    expect(
+        issues
+            .filter((row) => row.month === "2026-10")
+            .some(
+                (row) =>
+                    row.types.includes("totals") ||
+                    row.types.includes("provisional"),
+            ),
+    ).toBe(false);
+});
+
+it("distinguishes missing money from recorded usage and model validation", () => {
+    const missing = reconciliationState(
+        { opPollen: [usage("perplexity")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|perplexity");
+    expect(missing).toMatchObject({ group: "financial", amountUsd: 70 });
+    const recorded = reconciliationState(
+        { vendorLedger: [cost("openai")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|openai");
+    expect(recorded).toMatchObject({
+        group: "validation",
+        amountUsd: 50,
+        amountLabel: "Recorded cost · usage unknown",
+    });
+    const unmapped = reconciliationState(
+        { vendorLedger: [cost("azure")], opPollen: [usage("azure")] },
+        now,
+    ).issues.find((row) => row.id === "2026-09|azure");
+    expect(unmapped?.group).toBe("models");
+});
+
+it("keeps unknown financial exposure when a recorded-cost validation shares its row", () => {
+    const issue = reconciliationState(
+        {
+            vendorLedger: [
+                { ...cost("modal"), account_id: "myceli-ai", paid: -100 },
+            ],
+        },
+        now,
+    ).issues.find((row) => row.id === "2026-09|modal");
+    expect(issue).toMatchObject({
+        group: "financial",
+        amountUsd: null,
+        amountLabel: "Impact unknown",
+    });
+    expect(issue?.messages.some((message) => message.includes("$100"))).toBe(
+        true,
+    );
+});

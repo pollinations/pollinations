@@ -53,6 +53,12 @@ export const RECONCILIATION_TYPES = {
     documents: "Documents",
 } as const;
 export type ReconciliationType = keyof typeof RECONCILIATION_TYPES;
+export const RECONCILIATION_GROUPS = {
+    financial: "Could change totals",
+    validation: "Recorded amounts · validate",
+    models: "Model/GPU breakdown",
+} as const;
+export type ReconciliationGroup = keyof typeof RECONCILIATION_GROUPS;
 export type ReconciliationIssue = {
     id: string;
     month: string;
@@ -62,6 +68,7 @@ export type ReconciliationIssue = {
     types: ReconciliationType[];
     affects: ReconciliationPage[];
     priority: number;
+    group: ReconciliationGroup;
     // A known related amount, not a claimed error in profit.
     amountUsd: number | null;
     amountLabel: string;
@@ -69,6 +76,10 @@ export type ReconciliationIssue = {
     archiveChecks?: ArchiveCheck[];
     invoices?: string[];
 };
+
+export function isModelDetail(issue: ReconciliationIssue): boolean {
+    return issue.group === "models";
+}
 
 // Include infrastructure evidence here: excluding it made recorded Exa usage
 // look like a missing bill. Balances and grants never prove monthly usage.
@@ -128,11 +139,27 @@ export function reconciliationState(data: Data, now = new Date()) {
         amountUsd: number | null = null,
         amountLabel = "Impact unknown",
         evidence: string[] = [],
+        group: ReconciliationGroup = type === "models"
+            ? "models"
+            : type === "quality" || type === "documents"
+              ? "validation"
+              : "financial",
     ) => {
         // Open months are pending, not overdue historical reconciliation.
         if (month > currentMonth) return;
         const id = `${month}|${vendor}`;
         const old = byKey.get(id);
+        const groups = Object.keys(RECONCILIATION_GROUPS);
+        // A financial gap outranks validation and allocation. Amounts within
+        // one provider/month can overlap. Compare only amounts with the same
+        // basis; a meter estimate must not replace an invoice difference.
+        const replaceAmount =
+            !old ||
+            groups.indexOf(group) < groups.indexOf(old.group) ||
+            (group === old.group &&
+                amountLabel === old.amountLabel &&
+                amountUsd != null &&
+                (old.amountUsd == null || amountUsd > old.amountUsd));
         byKey.set(
             id,
             old
@@ -142,6 +169,11 @@ export function reconciliationState(data: Data, now = new Date()) {
                       types: [...new Set([...old.types, type])],
                       affects: [...new Set([...old.affects, ...affects])],
                       priority: Math.min(old.priority, priority),
+                      group: replaceAmount ? group : old.group,
+                      amountUsd: replaceAmount ? amountUsd : old.amountUsd,
+                      amountLabel: replaceAmount
+                          ? amountLabel
+                          : old.amountLabel,
                       evidence: [...new Set([...old.evidence, ...evidence])],
                   }
                 : {
@@ -152,6 +184,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                       types: [type],
                       affects,
                       priority,
+                      group,
                       amountUsd,
                       amountLabel,
                       evidence,
@@ -324,6 +357,7 @@ export function reconciliationState(data: Data, now = new Date()) {
             difference.amountLabel ??
                 "Invoice difference · not included in costs",
             difference.evidence,
+            "financial",
         );
     }
     for (const row of providerCloseRows(data, currentMonth)) {
@@ -364,6 +398,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                     ...evidence,
                     ...pending.map((transaction) => transaction.evidence),
                 ],
+                invoiceRetained ? "financial" : "validation",
             );
         } else if (existing) {
             const issue = existing;
@@ -527,6 +562,10 @@ export function reconciliationState(data: Data, now = new Date()) {
                     "trends",
                 ],
                 0,
+                null,
+                "Impact unknown",
+                [],
+                "financial",
             );
         if (row.estimatedFx)
             add(
@@ -536,6 +575,10 @@ export function reconciliationState(data: Data, now = new Date()) {
                 "Published monthly exchange rate is missing; an estimate is used.",
                 ["trends", "runway", "inference", "vendors", "gpu"],
                 1,
+                null,
+                "Impact unknown",
+                [],
+                "financial",
             );
     }
     for (const month of reportingMonths(now).filter((m) => m < currentMonth)) {
@@ -553,6 +596,7 @@ export function reconciliationState(data: Data, now = new Date()) {
             );
     }
     for (const month of reportingMonths(now)) {
+        if (month >= currentMonth) continue;
         for (const view of ["inference", "vendors"] as const) {
             const report = unitEconomicsReport(data, month, view);
             for (const blocker of report.blockers) {
@@ -567,16 +611,13 @@ export function reconciliationState(data: Data, now = new Date()) {
                     blocker.kind === "costs"
                         ? "Usage meter estimate · bill and impact unknown"
                         : "Recorded cost · usage unknown",
+                    [],
+                    blocker.kind === "costs" || blocker.kind === "period"
+                        ? "financial"
+                        : "validation",
                 );
                 const issue = byKey.get(`${month}|${blocker.vendor}`);
                 if (!issue) continue;
-                if (issue.amountUsd == null && blocker.amountUsd != null) {
-                    issue.amountUsd = blocker.amountUsd;
-                    issue.amountLabel =
-                        blocker.kind === "costs"
-                            ? "Usage meter estimate · bill and impact unknown"
-                            : "Recorded cost · usage unknown";
-                }
                 if (!report.provisional) {
                     issue.blockingMessages = [
                         ...new Set([
@@ -619,6 +660,5 @@ export function reconciliationState(data: Data, now = new Date()) {
                 b.month.localeCompare(a.month) ||
                 a.vendor.localeCompare(b.vendor),
         ),
-        pending: runway.billingNotices,
     };
 }

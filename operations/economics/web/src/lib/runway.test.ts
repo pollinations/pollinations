@@ -414,6 +414,52 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(20);
     });
 
+    it("preserves cash history when a later currency opening confirms recorded movements", () => {
+        const transactions = [
+            opening(100, { entry_id: "eur-opening", currency: "EUR" }),
+            transaction({
+                entry_id: "eur-spend",
+                date: "2026-08-31",
+                currency: "EUR",
+                amount: -100,
+            }),
+            transaction({
+                entry_id: "usd-receipt",
+                date: "2026-08-31",
+                amount: 80,
+            }),
+            transaction({
+                entry_id: "usd-spend",
+                date: "2026-09-10",
+                amount: -10,
+            }),
+        ];
+        const now = new Date("2026-09-15T12:00:00.000Z");
+        const original = buildRunway(transactions, now);
+        const checkpoint = opening(80, {
+            entry_id: "usd-opening",
+            date: "2026-09-01",
+        });
+        const confirmed = buildRunway([...transactions, checkpoint], now);
+        expect(confirmed.openingBalanceDate).toBe("2026-01-01");
+        expect(confirmed.currentCashUsd).toBe(70);
+        expect(
+            confirmed.columns
+                .filter((column) => column.month < "2026-09")
+                .map((column) => column.runningCashUsd),
+        ).toEqual(
+            original.columns
+                .filter((column) => column.month < "2026-09")
+                .map((column) => column.runningCashUsd),
+        );
+        const different = buildRunway(
+            [...transactions, { ...checkpoint, amount: 80.01 }],
+            now,
+        );
+        expect(different.openingBalanceDate).toBe("2026-09-01");
+        expect(different.currentCashUsd).toBeCloseTo(70.01, 8);
+    });
+
     it("keeps cash unavailable for conflicting anchors in one currency", () => {
         const result = buildRunway(
             [
@@ -1097,7 +1143,7 @@ describe("buildRunway", () => {
             "Estimated 2026-07 postpaid bill from recorded cash-funded usage",
         );
         expect(result.billingNotices).toContain(
-            "google (compute): 2026-08 includes an estimated $700 bill for 2026-07 usage, less payments recorded this month. Invoice reconciliation pending.",
+            "google (compute): 2026-08 includes $700 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
         );
         expect(
             result.flags.some((flag) => flag.includes("estimated $700")),
@@ -1111,6 +1157,24 @@ describe("buildRunway", () => {
         expect(result.currentCashUsd).toBe(20000);
         expect(result.projectedMonthEndCashUsd).toBe(19395);
         expect(result.runwayMonths).not.toBeNull();
+    });
+
+    it("shows cents in settlement estimates without claiming the supplier invoice is missing", () => {
+        const result = buildRunway([opening()], NOW, [
+            cloud({
+                start: "2026-07-01 00:00:00",
+                end: "2026-08-01 00:00:00",
+                paid: -0.02,
+                source: "invoice",
+                evidence: "Supplier invoice retained; paid in August",
+            }),
+        ]);
+        expect(result.billingNotices).toEqual([
+            "google (compute): 2026-08 includes $0.02 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
+        ]);
+        expect(result.billingNotices.join(" ")).not.toMatch(
+            /awaiting|pending|missing/i,
+        );
     });
 
     it.each([0, 250, 700, 900].map((paid) => ({ paid })))(

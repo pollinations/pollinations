@@ -12,6 +12,7 @@ const issue: ReconciliationIssue = {
     types: ["figures", "documents"],
     affects: ["inference", "trends"],
     priority: 0,
+    group: "financial",
     amountUsd: 1200,
     amountLabel: "Usage meter estimate · bill and impact unknown",
     evidence: [],
@@ -41,7 +42,7 @@ it("shows a yearly grouped table without duplicating multi-type rows", () => {
     expect(html).toContain("impact unknown");
     expect(html).not.toContain("All months");
     expect(html).toContain("<table");
-    expect(html).toContain("Related amount");
+    expect(html).toContain("Unresolved amount");
     expect(html).toContain('aria-sort="none"');
     expect(html).not.toContain("prior-year");
     expect(html).toContain("August");
@@ -103,28 +104,43 @@ it("leaves unknown amounts blank while retaining a known zero", () => {
             onOpen: () => {},
         }),
     );
-    expect(html).not.toContain("Unknown impact");
+    expect(html).toContain("Unknown");
+    expect(html).toContain("1 amounts unknown");
     expect(html).toContain("$0");
     expect(html).toContain("Verified zero");
 });
 
-it("keeps expected billing separate from issue counts and scopes it to the year", () => {
+it("separates model-only details while keeping mixed financial issues visible", () => {
     const html = renderToStaticMarkup(
         createElement(ReconciliationTab, {
-            issues: [issue],
-            year: "2026",
-            pending: [
-                "google: 2026-10 estimated $700",
-                "google: 2027-01 estimated $900",
+            issues: [
+                issue,
+                {
+                    ...issue,
+                    id: "details",
+                    vendor: "details-only",
+                    types: ["models"],
+                    group: "models",
+                },
+                {
+                    ...issue,
+                    id: "mixed",
+                    vendor: "mixed-financial",
+                    types: ["models", "figures"],
+                },
             ],
+            year: "2026",
             onOpen: () => {},
         }),
     );
-    expect(html).toContain("1 items");
-    expect(html).toContain("Expected billing");
-    expect(html).toContain("estimated $700");
-    expect(html).not.toContain("estimated $900");
-    expect(html).not.toContain("<details open");
+    expect(html).toContain("2 items");
+    expect(html).toContain("Could change totals");
+    expect(html).toContain("Recorded amounts · validate");
+    expect(html).toContain("Model/GPU breakdown");
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain("mixed-financial");
+    expect(html).not.toContain("details-only");
+    expect(html).not.toContain("Expected billing");
 });
 
 it("shows deduplicated preview and download icons while keeping collection notes private", () => {
@@ -195,4 +211,44 @@ it("separates exact result blockers from other checks in the same provider month
     expect(html.indexOf("Other checks")).toBeLessThan(
         html.indexOf("Invoice labels need mapping."),
     );
+});
+
+it("sorts unresolved amounts across issue types and keeps unknowns explicit", () => {
+    const html = renderToStaticMarkup(
+        createElement(ReconciliationTab, {
+            issues: [
+                {
+                    ...issue,
+                    id: "small",
+                    vendor: "small-gap",
+                    amountUsd: 5,
+                    types: ["figures"],
+                },
+                {
+                    ...issue,
+                    id: "unknown",
+                    vendor: "unknown-gap",
+                    amountUsd: null,
+                },
+                {
+                    ...issue,
+                    id: "large",
+                    vendor: "large-gap",
+                    amountUsd: 500,
+                    types: ["forecast"],
+                },
+            ],
+            year: "2026",
+            onOpen: () => {},
+        }),
+    );
+    expect(html.indexOf(">large-gap<")).toBeLessThan(
+        html.indexOf(">small-gap<"),
+    );
+    expect(html.indexOf(">small-gap<")).toBeLessThan(
+        html.indexOf(">unknown-gap<"),
+    );
+    expect(html).toContain('aria-sort="descending"');
+    expect(html).toContain("Unknown");
+    expect(html).toContain("1 amounts unknown");
 });

@@ -15,6 +15,7 @@ import {
 } from "./months";
 import {
     canonicalProviderAccountId,
+    cloudObservationMonths,
     providerCheckExplanation,
     providerMeteringBasis,
     providerReviewRows,
@@ -154,7 +155,7 @@ function providerEvidenceFor(
         (row) =>
             ["compute", "infrastructure"].includes(cloudCategory(row)) &&
             !(row.credit > 0 && row.paid === 0) &&
-            row.start.slice(0, 7) === month &&
+            cloudObservationMonths(row).includes(month) &&
             row.vendor === vendor,
     );
 }

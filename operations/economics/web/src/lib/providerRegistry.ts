@@ -294,7 +294,9 @@ function providerRequiresReview(
     return (
         provider.monthlyReview &&
         (provider.activeFrom == null || provider.activeFrom <= month) &&
-        (provider.activeTo == null || provider.activeTo >= month)
+        (provider.activeTo == null || provider.activeTo >= month) &&
+        (!provider.accounts?.length ||
+            activeProviderAccounts(provider, month).length > 0)
     );
 }
 
@@ -357,7 +359,7 @@ function nextMonth(month: string): string {
     return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function cloudObservationMonths(row: VendorLedgerRow): string[] {
+export function cloudObservationMonths(row: VendorLedgerRow): string[] {
     const startMonth = row.start.slice(0, 7);
     const isVerifiedZeroRange =
         row.resource_sku === "verified-zero" &&

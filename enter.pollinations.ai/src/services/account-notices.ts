@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getLogger } from "@logtape/logtape";
+import { LOW_BALANCE_SHARE } from "@shared/billing/auto-top-up.ts";
 
 // Account emails: facts about the user's own account, sent through the
 // Cloudflare Email Service binding. Running low goes out at most once per pack
@@ -16,10 +17,6 @@ const FROM = {
 const REPLY_TO = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
 const NOTICE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
-
-// Each credited pack sets the user's low_balance_threshold to this share of
-// it. Without auto top-up, the charge that crosses it sends the email.
-export const LOW_BALANCE_SHARE = 0.2;
 
 type Link = { label: string; path: string };
 
@@ -191,8 +188,8 @@ export async function sendNotice(
 
 /**
  * Called when a charge takes the paid balance of a user without auto top-up
- * below their low-balance threshold. Sends at most one balance email per 30
- * days.
+ * below LOW_BALANCE_SHARE of their last pack. Sends at most one balance email
+ * per pack bought and per 30 days.
  */
 export async function sendRunningLowNotice(
     env: CloudflareBindings,
@@ -203,12 +200,12 @@ export async function sendRunningLowNotice(
     const user = await env.DB.prepare(
         `UPDATE user SET low_balance_notified_at = ?
             WHERE id = ?
-                AND COALESCE(pack_balance, 0) < low_balance_threshold
+                AND COALESCE(pack_balance, 0) < ? * last_pack_pollen
                 AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
                 AND email_unsubscribed_at IS NULL
             RETURNING email, COALESCE(pack_balance, 0) AS balance`,
     )
-        .bind(now, userId, now - NOTICE_COOLDOWN_MS)
+        .bind(now, userId, LOW_BALANCE_SHARE, now - NOTICE_COOLDOWN_MS)
         .first<{ email: string; balance: number }>();
     if (!user) return;
 

@@ -50,7 +50,7 @@ export const user = sqliteTable("user", {
   autoTopUpAmountUsd: integer("auto_top_up_amount_usd"),
   lowBalanceNotifiedAt: integer("low_balance_notified_at"),
   emailUnsubscribedAt: integer("email_unsubscribed_at"),
-  lowBalanceThreshold: real("low_balance_threshold"),
+  lastPackPollen: real("last_pack_pollen"),
 }, (table) => [
   index("idx_user_email").on(table.email),
   index("idx_user_auto_top_up_enabled").on(table.autoTopUpEnabled),

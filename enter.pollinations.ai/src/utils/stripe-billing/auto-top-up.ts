@@ -16,7 +16,6 @@ import {
 import type Stripe from "stripe";
 import {
     autoTopUpOffNotice,
-    LOW_BALANCE_SHARE,
     sendNotice,
     sendRunningLowNotice,
 } from "../../services/account-notices.ts";
@@ -387,10 +386,7 @@ export async function creditAutoTopUpInvoice(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
                 ),
-                low_balance_threshold = ROUND(
-                    ? * ${LOW_BALANCE_SHARE},
-                    ${POLLEN_BILLING_PRECISION}
-                ),
+                last_pack_pollen = ?,
                 low_balance_notified_at = NULL
                 WHERE id = ?
                     AND EXISTS (

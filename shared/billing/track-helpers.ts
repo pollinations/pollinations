@@ -174,7 +174,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     communityModelReward: CommunityModelRewardResolution | null;
     payerBucket: Bucket | null;
     postDeductionPackBalance: number | null;
-    lowBalanceThreshold: number | null;
+    lastPackPollen: number | null;
     billedPrice: number;
 }> {
     const {
@@ -214,7 +214,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             communityModelReward: null,
             payerBucket: null,
             postDeductionPackBalance: null,
-            lowBalanceThreshold: null,
+            lastPackPollen: null,
             billedPrice: 0,
         };
     }
@@ -236,7 +236,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             communityModelReward: null,
             payerBucket: null,
             postDeductionPackBalance: null,
-            lowBalanceThreshold: null,
+            lastPackPollen: null,
             billedPrice: 0,
         };
     }
@@ -274,7 +274,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     //    payer drew from, so they are only possible once that bucket is known.
     let payerBucket: Bucket | null = null;
     let postDeductionPackBalance: number | null = null;
-    let lowBalanceThreshold: number | null = null;
+    let lastPackPollen: number | null = null;
     let payerDeducted = !userId;
 
     try {
@@ -288,7 +288,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
-            lowBalanceThreshold = deduction.lowBalanceThreshold;
+            lastPackPollen = deduction.lastPackPollen;
             payerDeducted = true;
             if (
                 deduction.postDeductionBalance != null &&
@@ -397,7 +397,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         communityModelReward,
         payerBucket,
         postDeductionPackBalance,
-        lowBalanceThreshold,
+        lastPackPollen,
         billedPrice,
     };
 }
@@ -529,7 +529,7 @@ async function deductUserBalance(
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
-    lowBalanceThreshold: number | null;
+    lastPackPollen: number | null;
     postDeductionBalance: number | null;
 }> {
     try {
@@ -537,7 +537,7 @@ async function deductUserBalance(
             ok,
             bucket,
             packBalance,
-            lowBalanceThreshold,
+            lastPackPollen,
             postDeductionBalance,
         } = await atomicDeductUserBalance(
             db,
@@ -567,7 +567,7 @@ async function deductUserBalance(
         return {
             bucket,
             postDeductionPackBalance: bucket === "pack" ? packBalance : null,
-            lowBalanceThreshold,
+            lastPackPollen,
             postDeductionBalance,
         };
     } catch (error) {

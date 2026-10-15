@@ -41,7 +41,7 @@ export async function atomicDeductUserBalance(
     ok: boolean;
     bucket: Bucket | null;
     packBalance: number | null;
-    lowBalanceThreshold: number | null;
+    lastPackPollen: number | null;
     postDeductionBalance: number | null;
 }> {
     if (amount <= 0) {
@@ -49,7 +49,7 @@ export async function atomicDeductUserBalance(
             ok: true,
             bucket: null,
             packBalance: null,
-            lowBalanceThreshold: null,
+            lastPackPollen: null,
             postDeductionBalance: null,
         };
     }
@@ -58,7 +58,7 @@ export async function atomicDeductUserBalance(
         bucket: Bucket;
         tierBalance: number | null;
         packBalance: number | null;
-        lowBalanceThreshold: number | null;
+        lastPackPollen: number | null;
     }>(
         sql`
         WITH decision AS MATERIALIZED (
@@ -91,7 +91,7 @@ export async function atomicDeductUserBalance(
             (SELECT bucket FROM decision) AS bucket,
             tier_balance AS tierBalance,
             pack_balance AS packBalance,
-            low_balance_threshold AS lowBalanceThreshold
+            last_pack_pollen AS lastPackPollen
     `,
     );
 
@@ -99,7 +99,7 @@ export async function atomicDeductUserBalance(
         ok: !!row,
         bucket: row?.bucket ?? null,
         packBalance: row?.packBalance ?? null,
-        lowBalanceThreshold: row?.lowBalanceThreshold ?? null,
+        lastPackPollen: row?.lastPackPollen ?? null,
         postDeductionBalance: row
             ? row.bucket === "tier"
                 ? row.tierBalance

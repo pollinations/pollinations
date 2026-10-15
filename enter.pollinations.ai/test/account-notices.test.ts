@@ -34,12 +34,12 @@ async function addUser(
     id: string,
     fields: {
         packBalance: number;
-        lowBalanceThreshold?: number;
+        lastPackPollen?: number;
         autoTopUp?: boolean;
     },
 ) {
     await env.DB.prepare(
-        `INSERT INTO user (id, name, email, pack_balance, low_balance_threshold, auto_top_up_enabled, auto_top_up_amount_usd)
+        `INSERT INTO user (id, name, email, pack_balance, last_pack_pollen, auto_top_up_enabled, auto_top_up_amount_usd)
         VALUES (?, ?, ?, ?, ?, ?, 10)`,
     )
         .bind(
@@ -47,7 +47,7 @@ async function addUser(
             id,
             `${id}@example.com`,
             fields.packBalance,
-            fields.lowBalanceThreshold ?? null,
+            fields.lastPackPollen ?? null,
             fields.autoTopUp ? 1 : 0,
         )
         .run();
@@ -74,8 +74,8 @@ const unsubscribedAt = async (userId: string) =>
 test("running-low email goes out once per 30 days below 20% of the last pack", async () => {
     const { sent, notifyEnv } = withOutbox();
     // Last pack of 20 Pollen, so the threshold is 4.
-    await addUser("low", { packBalance: 3.999, lowBalanceThreshold: 4 });
-    await addUser("healthy", { packBalance: 6, lowBalanceThreshold: 4 });
+    await addUser("low", { packBalance: 3.999, lastPackPollen: 20 });
+    await addUser("healthy", { packBalance: 6, lastPackPollen: 20 });
     // Never bought a pack, so there is no threshold.
     await addUser("nopack", { packBalance: 3 });
 
@@ -102,7 +102,7 @@ test("running-low email goes out once per 30 days below 20% of the last pack", a
 });
 
 test("a failed running-low email frees the slot for the next crossing", async () => {
-    await addUser("bounce", { packBalance: 1, lowBalanceThreshold: 2 });
+    await addUser("bounce", { packBalance: 1, lastPackPollen: 10 });
 
     await processAutoTopUpForUser(withOutbox(true).notifyEnv, "bounce");
     expect(await notifiedAt("bounce")).toBeNull();
@@ -144,7 +144,7 @@ test("auto top-up failed emails once per failure, without the 30-day limit", asy
 
 test("the unsubscribe link stops every email", async () => {
     const { sent, notifyEnv } = withOutbox();
-    await addUser("leaver", { packBalance: 3, lowBalanceThreshold: 4 });
+    await addUser("leaver", { packBalance: 3, lastPackPollen: 20 });
     await processAutoTopUpForUser(notifyEnv, "leaver");
     expect(sent[0].headers["List-Unsubscribe-Post"]).toBe(
         "List-Unsubscribe=One-Click",

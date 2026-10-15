@@ -1769,7 +1769,7 @@ describe("tracking observability", () => {
             name: "Track Low Balance Test",
             tierBalance: 0,
             packBalance: 2,
-            lowBalanceThreshold: 2,
+            lastPackPollen: 10,
             autoTopUpEnabled: false,
             createdAt: new Date(),
             updatedAt: new Date(),

@@ -1,3 +1,4 @@
+import { parseCommunityModelId } from "@shared/community-endpoints.ts";
 import { isModelReliable } from "@shared/model-health.ts";
 import { getModelCapabilities, getModelDisplayName } from "./model-info.ts";
 import type { ModelPrice } from "./types.ts";
@@ -125,7 +126,7 @@ export function ensureModelQueryDefaults(query: string): string {
         .filter((token) => token.includes(":"))
         .map((token) => token.split(":")[0]);
     return [
-        ...["source:official", "status:reliable"].filter(
+        ...["source:official", "status:all"].filter(
             (token) => !keys.includes(token.split(":")[0]),
         ),
         normalizedQuery,
@@ -211,11 +212,23 @@ export function getModelQueryVisibleSearch(
         .join(" ");
 }
 
-export function getModelQueryDraftSuggestionValue(option: string): string {
+/** The search text after picking `option`: typed words stay, the draft value is replaced. */
+export function getModelQueryDraftSuggestionValue(
+    option: string,
+    visibleSearch = "",
+    draftValue = "",
+): string {
     const trimmedOption = option.trimEnd();
     const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
     const trailingSpace = option.endsWith(" ") ? " " : "";
-    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
+    const prefix = visibleSearch
+        .slice(0, visibleSearch.length - draftValue.length)
+        .trim();
+    return (
+        [prefix, token.slice(token.indexOf(":") + 1)]
+            .filter(Boolean)
+            .join(" ") + trailingSpace
+    );
 }
 
 function getModelAccess(model: ModelPrice): ModelAccess {
@@ -234,10 +247,8 @@ function getSearchableCapabilities(model: ModelPrice): string[] {
 
 function getModelPublisher(model: ModelPrice): string | null {
     if (model.community) {
-        const separator = model.name.indexOf("/");
-        return separator > 0
-            ? model.name.slice(0, separator).toLowerCase()
-            : null;
+        const owner = parseCommunityModelId(model.name)?.ownerGithubUsername;
+        return owner?.toLowerCase() ?? null;
     }
     return model.publisher?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
 }

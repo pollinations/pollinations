@@ -13,10 +13,10 @@ import type {
     UsageType,
 } from "./registry";
 
-// Normalized request facts that can affect pricing. Set once per request by
-// the service layer via the track middleware's pricing input, consumed only by
-// selectCostVariant. Keep this vocabulary small: a key earns its place when a
-// live model prices on it.
+// Normalized request facts that can affect pricing. Set by the service layer
+// via the track middleware's pricing input; a provider's response may refine
+// them. Consumed by selectCostVariant and billing adjustments. Keep this
+// vocabulary small: a key earns its place when a live model prices on it.
 export type PricingInput = {
     resolution?: string;
     quality?: string;
@@ -27,8 +27,11 @@ export type PricingInput = {
     searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
+    stemVariation?: "two_stems_v1" | "six_stems_v1";
     /** Provider confirmed this response used an explicit prompt-cache entry. */
     hasExplicitCacheHit?: boolean;
+    /** Trusted provider receipt, carried from the generation response. */
+    providerBilling?: { units: number; unitCost: number };
 };
 
 export type CostVariantContext = {

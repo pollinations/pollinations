@@ -22,6 +22,7 @@ const genAliases = [
     "events.ts",
     "logger",
     "logger.ts",
+    "middleware/agent-discovery.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
     "middleware/generation-cache.ts",
@@ -51,6 +52,7 @@ const genAliases = [
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
+    "utils/refusals.ts",
     "utils/safety-features.ts",
     "utils/text-cache.ts",
 ];
@@ -182,6 +184,19 @@ export default defineConfig(async ({ mode }) => {
                                         components: {},
                                     });
                                 }
+                                // Answers key creation with the request it
+                                // got, so tests see what gen sent.
+                                if (url.pathname === "/api/account/keys") {
+                                    return Response.json({
+                                        key: JSON.stringify({
+                                            authorization:
+                                                request.headers.get(
+                                                    "authorization",
+                                                ),
+                                            body: await request.json(),
+                                        }),
+                                    });
+                                }
                                 return new Response("enter test stub");
                             },
                             POLLINATIONS_MCP: async (request: Request) => {
@@ -211,6 +226,14 @@ export default defineConfig(async ({ mode }) => {
                                     },
                                 });
                             },
+                            ASK_JEV_MCP: async (request: Request) =>
+                                Response.json({
+                                    pathname: new URL(request.url).pathname,
+                                    authorization:
+                                        request.headers.get("authorization"),
+                                    cookie: request.headers.get("cookie"),
+                                    payload: await request.json(),
+                                }),
                             FFMPEG_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||

@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -11,7 +10,7 @@ import {
     runReplicatePrediction,
     toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
-import { calculateVideoResolution } from "../utils/videoResolution.ts";
+import type { TrackingData } from "../utils/trackingHeaders.ts";
 
 // Logger
 const logOps = debug("pollinations:veo:ops");
@@ -38,6 +37,17 @@ async function processImageForVeo(
     }
 }
 
+// Explicit aspectRatio wins; otherwise only caller-set dimensions pick the
+// orientation, with square dimensions and omitted dimensions defaulting wide.
+function veoAspectRatio(params: ImageParams): "16:9" | "9:16" {
+    if (params.aspectRatio === "16:9" || params.aspectRatio === "9:16") {
+        return params.aspectRatio;
+    }
+    return params.dimensionsExplicit && params.height > params.width
+        ? "9:16"
+        : "16:9";
+}
+
 // Veo API constants
 const LOCATION = "us-central1"; // Veo is only available in us-central1
 const MODEL_ID = "veo-3.1-fast-generate-001";
@@ -49,10 +59,7 @@ export interface VideoGenerationResult {
     buffer: Buffer;
     mimeType: string;
     durationSeconds: number;
-    trackingData: {
-        actualModel: string;
-        usage: Usage & { totalTokenCount?: number };
-    };
+    trackingData: TrackingData & { actualModel: string };
 }
 
 interface VeoOperationResponse {
@@ -106,12 +113,7 @@ const generateVeoVideo = async (
     const durationSeconds = safeParams.duration || 4;
     // Audio is disabled by default - user must explicitly pass audio=true to enable
     const generateAudio = safeParams.audio === true;
-
-    const { aspectRatio } = calculateVideoResolution({
-        width: safeParams.width,
-        height: safeParams.height,
-        aspectRatio: safeParams.aspectRatio,
-    });
+    const aspectRatio = veoAspectRatio(safeParams);
 
     // Check for input image (image-to-video)
     const hasImage = safeParams.image && safeParams.image.length > 0;
@@ -256,7 +258,7 @@ export async function callVeoReplicateAPI(
                     prompt,
                     duration: params.duration ?? 4,
                     resolution: params.resolution ?? "720p",
-                    aspect_ratio: calculateVideoResolution(params).aspectRatio,
+                    aspect_ratio: veoAspectRatio(params),
                     generate_audio: generateAudio,
                     ...(params.image[0]
                         ? { image: await toDataUri(params.image[0]) }

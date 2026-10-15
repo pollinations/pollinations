@@ -181,8 +181,16 @@ const retiredPublicIds = [
     "nemotron-3.5-lightning",
     "qwen3.8-27b",
 ] as const;
+const retiredNovaAliases: Record<string, string> = {
+    "nova-canvas": "amazon/nova-canvas-v1",
+    "nova-reel": "amazon/nova-reel-v1",
+};
+const retiredNovaCanonicalIds = new Set(Object.values(retiredNovaAliases));
+const historicalModelName = (id: string): string =>
+    retiredNovaAliases[id] ??
+    (retiredNovaCanonicalIds.has(id) ? id : resolveModelName(id));
 const publishedMappings = retiredPublicIds.map(
-    (id) => [id, resolveModelName(id)] as const,
+    (id) => [id, historicalModelName(id)] as const,
 );
 
 const hiddenMappings = [["zimage-fal", "tongyi-mai/z-image-turbo"]] as const;
@@ -230,9 +238,18 @@ async function runMigrationForTest(): Promise<void> {
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID in one direct update", async () => {
         expect(publishedMappings).toHaveLength(158);
-        expect(new Map(modelMappings)).toEqual(
-            new Map([...publishedMappings, ...hiddenMappings]),
-        );
+        // The migration already ran and is frozen, while later retirements
+        // can turn one of its canonical IDs into an alias (Sonar Pro → Sonar).
+        // Keys keep their access as long as the old ID and the ID it wrote
+        // still resolve to the same model, so compare where both land today.
+        expect(
+            new Map(
+                modelMappings.map(
+                    ([oldId, newId]) =>
+                        [oldId, historicalModelName(newId)] as const,
+                ),
+            ),
+        ).toEqual(new Map([...publishedMappings, ...hiddenMappings]));
         expect(modelMappings).toHaveLength(159);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
             159,
@@ -252,11 +269,15 @@ describe("standardize model permissions migration", () => {
         expect(migrationSql).toContain("WITH renames(old_id, new_id)");
         expect(migrationSql).not.toContain("AS MATERIALIZED");
         for (const [retiredId, canonicalId] of modelMappings) {
-            if (retiredId !== "zimage-fal") {
-                expect(resolveModelName(retiredId)).toBe(canonicalId);
-                expect(
-                    getRegistryModelDefinition(canonicalId).aliases,
-                ).toContain(retiredId);
+            if (retiredNovaAliases[retiredId]) {
+                expect(canonicalId).toBe(retiredNovaAliases[retiredId]);
+                expect(() => resolveModelName(retiredId)).toThrow();
+            } else if (retiredId !== "zimage-fal") {
+                const currentId = resolveModelName(canonicalId);
+                expect(resolveModelName(retiredId)).toBe(currentId);
+                expect(getRegistryModelDefinition(currentId).aliases).toContain(
+                    retiredId,
+                );
             }
             expect(migrationSql).toContain(
                 `('${retiredId}', '${canonicalId}')`,

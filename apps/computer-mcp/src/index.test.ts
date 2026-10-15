@@ -114,6 +114,102 @@ describe("computer MCP worker", () => {
         await again.close();
     });
 
+    it("stores UTF-8 and binary bytes unchanged on every write path", async () => {
+        const client = await connect("user-bytes");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const writes = [
+            ["cat > stdin.txt", `${line}\n`],
+            [`cat > heredoc.txt <<'EOF'\n${line}\nEOF`],
+            [`printf '%s\\n' '${line}' > printf.txt`],
+            ["cat stdin.txt | tee tee.txt > /dev/null"],
+            ["cat < heredoc.txt > redirect.txt"],
+            [
+                `printf 'Notes — ' > append.txt; printf 'café · ✓\\n' >> append.txt`,
+            ],
+            ["echo iVBORw0KGgoA/w== | base64 -d > image.bin"],
+        ];
+        for (const [command, stdin] of writes) {
+            const write = await bash(
+                client,
+                command,
+                stdin,
+                "/workspace/bytes",
+            );
+            expect(write.isError, command).toBe(false);
+        }
+        const sizes = await bash(
+            client,
+            "for f in stdin heredoc printf tee redirect append; do wc -c < $f.txt; done; wc -c < image.bin; base64 image.bin; cat heredoc.txt",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(sizes.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(6).fill("23"),
+            "10",
+            "iVBORw0KGgoA/w==",
+            line,
+            "",
+        ]);
+        // git reads the stored bytes directly, as a push to GitHub would.
+        const git = await bash(
+            client,
+            "git init . >/dev/null && git add . && git commit -m bytes >/dev/null && git show HEAD:heredoc.txt | wc -c",
+            undefined,
+            "/workspace/bytes",
+        );
+        expect(git.text.trim()).toBe("23");
+        await client.close();
+    });
+
+    it("reads UTF-8 lines into variables unchanged", async () => {
+        const client = await connect("user-read");
+        const line = "Notes — café · ✓"; // 22 bytes, 23 with the newline
+        const reads = await bash(
+            client,
+            [
+                'read -r a; echo "$a" | wc -c',
+                `printf '%s\\n' '${line}' | { read -r b; echo "$b" | wc -c; }`,
+                `read -r c <<< '${line}'; echo "$c" | wc -c`,
+                `printf '%s\\n' '${line}' | { mapfile -t d; echo "\${d[0]}" | wc -c; }`,
+            ].join("\n"),
+            `${line}\n`,
+        );
+        expect(reads.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(4).fill("23"),
+            "",
+        ]);
+        await client.close();
+    });
+
+    it("keeps UTF-8 intact through command substitution", async () => {
+        const client = await connect("user-substitution");
+        // "Época" is 6 bytes; each line prints the byte count of $x.
+        const count = '; printf "%s" "$x" | wc -c';
+        const result = await bash(
+            client,
+            [
+                `printf '{"t":"\\\\u00c9poca"}' > e.json`,
+                `x=$(printf '\\303\\211poca')${count}`,
+                `x=$(jq -r .t e.json)${count}`,
+                `x=$(jq -r .t e.json | cat)${count}`,
+                `x=$(base64 -d <<< w4lwb2Nh)${count}`,
+                `f() { printf 'Época'; }; x=$(f)${count}`,
+                `x=$(printf 'Época'; exit 3); echo "$?"`,
+                'echo "A $(jq -r .t e.json)" | jq -R .',
+            ].join("\n"),
+            undefined,
+            "/workspace/substitution",
+        );
+        expect(result.isError, result.text).toBe(false);
+        expect(result.text.split("\n").map((part) => part.trim())).toEqual([
+            ...Array(5).fill("6"),
+            "3",
+            '"A Época"',
+            "",
+        ]);
+        await client.close();
+    });
+
     it("empties /tmp after every call", async () => {
         const client = await connect("user-tmp");
         const write = await bash(

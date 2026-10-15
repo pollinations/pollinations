@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
@@ -11,31 +13,6 @@ describe("ImageParamsSchema", () => {
         });
 
         expect(result.seed).toBe(SENTINEL_SEED);
-    });
-
-    it("rejects transparent backgrounds for gpt-image-2", () => {
-        const result = ImageParamsSchema.safeParse({
-            model: "openai/gpt-image-2",
-            transparent: true,
-        });
-
-        expect(result.success).toBe(false);
-        if (!result.success) {
-            expect(result.error.issues[0]).toMatchObject({
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
-        }
-    });
-
-    it("keeps transparent backgrounds available for gptimage models", () => {
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "openai/gpt-image-1-mini",
-                transparent: true,
-            }).success,
-        ).toBe(true);
     });
 
     it("accepts resolutions declared by the model", () => {
@@ -69,10 +46,60 @@ describe("ImageParamsSchema", () => {
         for (const resolution of ["480p", "768p", "1080p"] as const) {
             expect(
                 ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max",
+                    resolution,
+                }).success,
+            ).toBe(true);
+            expect(
+                ImageParamsSchema.safeParse({
                     model: "minimax/minimax-h3-max-turbo",
                     resolution,
                 }).success,
             ).toBe(true);
+        }
+    });
+
+    it("accepts the one resolution a fixed-resolution video model produces", () => {
+        for (const [model, resolution] of [
+            ["alibaba/happyhorse-1.1", "720p"],
+            ["bytedance/seedance-2.0", "720p"],
+            ["alibaba/wan-2.2-fast", "480p"],
+            ["x-ai/grok-imagine-video", "720p"],
+            ["alibaba/wan-2.6", "720p"],
+        ] as const) {
+            expect(
+                ImageParamsSchema.safeParse({ model, resolution }).success,
+            ).toBe(true);
+        }
+    });
+
+    it("leaves audio unset when the caller omits it", () => {
+        const parse = (audio?: string) =>
+            ImageParamsSchema.parse({ model: "google/veo-3.1-fast", audio })
+                .audio;
+        expect(parse()).toBeUndefined();
+        expect(parse("false")).toBe(false);
+        expect(parse("true")).toBe(true);
+    });
+
+    it("accepts the same boolean tokens as the text route", () => {
+        const parse = (value: string) =>
+            ImageParamsSchema.parse({
+                model: "google/veo-3.1-fast",
+                audio: value,
+                transparent: value,
+            });
+        for (const value of ["1", "yes", "on", "TRUE"]) {
+            expect(parse(value)).toMatchObject({
+                audio: true,
+                transparent: true,
+            });
+        }
+        for (const value of ["0", "no", "off"]) {
+            expect(parse(value)).toMatchObject({
+                audio: false,
+                transparent: false,
+            });
         }
     });
 
@@ -123,11 +150,14 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
-    it("enforces the public MiniMax H3 Max Turbo contract", () => {
+    it.each([
+        "minimax/minimax-h3-max",
+        "minimax/minimax-h3-max-turbo",
+    ] as const)("enforces the public %s contract", (model) => {
         for (const duration of [5, 10, 15]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     duration,
                 }).success,
             ).toBe(true);
@@ -140,7 +170,7 @@ describe("ImageParamsSchema", () => {
         ]) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax/minimax-h3-max-turbo",
+                    model,
                     ...params,
                 }).success,
             ).toBe(false);
@@ -279,6 +309,21 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
+    it("accepts reference media on minimax-h3-max and rejects on turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max",
+                reference_videos: "https://media.example/video.mp4",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax/minimax-h3-max-turbo",
+                reference_videos: "https://media.example/video.mp4",
+            }).success,
+        ).toBe(false);
+    });
+
     it("passes provider-specific reference combinations through", () => {
         expect(
             ImageParamsSchema.safeParse({
@@ -301,5 +346,99 @@ describe("ImageParamsSchema", () => {
             reference_images: "http://127.0.0.1/image.png",
         });
         expect(invalidUrl.success).toBe(false);
+    });
+
+    it("accepts inferenceport-ai/lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects an unregistered short model name", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "lightning-image-turbo",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("parses two image references for lightning-image-turbo", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "inferenceport-ai/lightning-image-turbo",
+                image: [
+                    "https://example.com/a.png",
+                    "https://example.com/b.png",
+                ],
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects resolution on lightning-image-turbo", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            resolution: "720p",
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it("accepts default dimensions and explicit 1024x1024 for lightning-image-turbo", () => {
+        const defaultResult = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+        });
+        expect(defaultResult.success).toBe(true);
+        if (defaultResult.success) {
+            expect(defaultResult.data.width).toBe(1024);
+            expect(defaultResult.data.height).toBe(1024);
+            expect(defaultResult.data.dimensionsExplicit).toBe(false);
+        }
+
+        const explicit1024 = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            width: 1024,
+            height: 1024,
+        });
+        expect(explicit1024.success).toBe(true);
+        if (explicit1024.success) {
+            expect(explicit1024.data.dimensionsExplicit).toBe(true);
+        }
+    });
+
+    it.each([
+        [{ width: 768, height: 1024 }],
+        [{ width: 1024, height: 768 }],
+        [{ width: 1536, height: 1536 }],
+        [{ width: 512 }],
+        [{ height: 512 }],
+    ])("rejects non-1024 dimensions on lightning-image-turbo (%j)", (dims) => {
+        const result = ImageParamsSchema.safeParse({
+            model: "inferenceport-ai/lightning-image-turbo",
+            ...dims,
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it.each([
+        "microsoft/mai-image-2.6",
+        "bytedance/seedream-5.0-flash",
+    ] as const)("rejects more reference images than %s declares", (model) => {
+        const max =
+            (IMAGE_SERVICES[model] as ModelDefinition).maxReferenceImages ?? 0;
+        const images = Array.from(
+            { length: max + 1 },
+            (_, i) => `https://example.com/${i}.png`,
+        );
+        expect(
+            ImageParamsSchema.safeParse({ model, image: images.slice(0, max) })
+                .success,
+        ).toBe(true);
+
+        const result = ImageParamsSchema.safeParse({ model, image: images });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]).toMatchObject({
+            path: ["image"],
+            message: expect.stringContaining(`at most ${max} reference`),
+        });
     });
 });

@@ -1,0 +1,9 @@
+# Pollinations
+
+> Pollinations offers text, image, audio, video, 3D, and embedding models through an API, CLI, and MCP server.
+
+## For agents and developers
+
+- [Agent and CLI entry point](https://gen.pollinations.ai/llms.txt): Task recipes, CLI skill, API reference, OpenAPI schema, and MCP server.
+- [Pollinations API docs](https://gen.pollinations.ai/docs): Interactive reference.
+- [Create an API key](https://enter.pollinations.ai/keys): Sign in and manage keys.

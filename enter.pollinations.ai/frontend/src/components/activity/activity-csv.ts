@@ -22,14 +22,19 @@ export function downloadActivityCsv<T>(
     columns: readonly (keyof T & string)[],
     rows: T[],
 ): void {
-    const url = URL.createObjectURL(
+    saveBlob(
         new Blob([activityCsv(columns, rows)], {
             type: "text/csv;charset=utf-8",
         }),
+        `pollinations-${name}.csv`,
     );
+}
+
+export function saveBlob(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pollinations-${name}.csv`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     link.remove();

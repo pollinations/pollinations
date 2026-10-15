@@ -1,3 +1,4 @@
+import { requireAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
     CODE_AGENT_BASE_URL_PLACEHOLDER,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
@@ -31,7 +32,6 @@ import {
     PromptAgentInputSchema,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
-import { requireAccountPermission } from "./account-permissions.ts";
 import {
     CodeAgentUpdateSchema,
     RequiredSafetyFeaturesSchema,
@@ -308,7 +308,7 @@ async function requireAgentWriteAccess(
 }
 
 export const agentsRoutes = new Hono<Env>()
-    .use(auth({ allowSessionCookie: true, allowApiKey: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     .get(
         "/",
         describeRoute({

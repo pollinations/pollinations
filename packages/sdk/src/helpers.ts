@@ -15,11 +15,10 @@
  * ```
  */
 
-import { Pollinations } from "./client.js";
+import { buildTextRequest, Pollinations } from "./client.js";
 import {
     type AudioResponseExt,
     type ChatResponseExt,
-    Conversation,
     type ImageResponseExt,
     type VideoResponseExt,
     wrapAudioResponse,
@@ -39,6 +38,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeviceAuthorization,
     EmbeddingInput,
     EmbeddingsOptions,
@@ -50,6 +51,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    ModelKind,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -166,26 +168,20 @@ export async function editImage(
 }
 
 /**
- * Generate image(s) via the OpenAI-compatible POST /v1/images/generations endpoint.
+ * Generate an image via the OpenAI-compatible POST /v1/images/generations endpoint.
  *
  * @example
  * ```ts
  * // Single image, OpenAI-style size string
  * const img = await imageGenerate('A robot', { size: '1024x1024' });
  * await img.saveToFile('robot.png');
- *
- * // Multiple images
- * const imgs = await imageGenerate('A robot', { n: 3 });
  * ```
  */
 export async function imageGenerate(
     prompt: string,
     options?: ImageGenerateV1Options,
-): Promise<ImageResponseExt | ImageResponseExt[]> {
-    const response = await getClient().imageGenerate(prompt, options);
-    return Array.isArray(response)
-        ? response.map(wrapImageResponse)
-        : wrapImageResponse(response);
+): Promise<ImageResponseExt> {
+    return wrapImageResponse(await getClient().imageGenerate(prompt, options));
 }
 
 // ============================================================================
@@ -197,7 +193,7 @@ export async function imageGenerate(
  *
  * @example
  * ```ts
- * const url = await videoUrl('A bird flying', { model: 'veo', duration: 4 });
+ * const url = await videoUrl('A bird flying', { model: 'google/veo-3.1-fast', duration: 4 });
  * ```
  */
 export async function videoUrl(
@@ -246,9 +242,10 @@ export async function generateText(
 ): Promise<string | ChatResponseExt> {
     const { raw = false, ...textOptions } = options || {};
     if (raw) {
+        const request = buildTextRequest(prompt, textOptions);
         const response = await getClient().chat(
-            [{ role: "user", content: prompt }],
-            textOptions,
+            request.messages,
+            request.options,
         );
         return wrapChatResponse(response);
     }
@@ -311,20 +308,6 @@ export async function* chatStream(
     yield* getClient().chatStream(messages, options);
 }
 
-/**
- * Create a new conversation with the configured client
- *
- * @example
- * ```ts
- * const convo = conversation({ model: 'openai' });
- * convo.system('You are a helpful assistant');
- * const response = await convo.say('Hello!');
- * ```
- */
-export function conversation(options?: ChatOptions): Conversation {
-    return new Conversation(options, getClient());
-}
-
 // ============================================================================
 // Audio Functions
 // ============================================================================
@@ -339,7 +322,7 @@ export function conversation(options?: ChatOptions): Conversation {
  * await audio.saveToFile('speech.mp3');
  *
  * // Music generation
- * const music = await generateAudio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+ * const music = await generateAudio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
  * await music.saveToFile('jazz.mp3');
  *
  * ```
@@ -357,24 +340,10 @@ export async function generateAudio(
 // ============================================================================
 
 /**
- * Get available text models
+ * Get available models, or only one kind of them
  */
-export async function getTextModels(): Promise<ModelInfo[]> {
-    return getClient().textModels();
-}
-
-/**
- * Get available image models
- */
-export async function getImageModels(): Promise<ModelInfo[]> {
-    return getClient().imageModels();
-}
-
-/**
- * Get all available models
- */
-export async function getModels(): Promise<ModelInfo[]> {
-    return getClient().models();
+export async function getModels(kind?: ModelKind): Promise<ModelInfo[]> {
+    return getClient().models(kind);
 }
 
 // ============================================================================
@@ -450,6 +419,17 @@ export async function upload(
 }
 
 // ============================================================================
+// Decisions (TypeSafe / Jev)
+// ============================================================================
+
+/**
+ * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+ */
+export function decision(options: DecisionOptions): Promise<DecisionResponse> {
+    return getClient().decision(options);
+}
+
+// ============================================================================
 // BYOP Functions
 // ============================================================================
 
@@ -460,7 +440,7 @@ export async function upload(
  * ```ts
  * const url = authorizeUrl({
  *   redirectUrl: 'https://myapp.com/callback',
- *   models: ['flux', 'openai'],
+ *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
  *   budget: 10,
  * });
  * ```
@@ -523,8 +503,14 @@ export async function getBalance(): Promise<AccountBalance> {
 /**
  * Get usage history
  */
-export async function getUsage(options?: UsageOptions): Promise<UsageResponse> {
-    return getClient().accountUsage(options);
+export async function getUsage(
+    options: UsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getUsage(options?: UsageOptions): Promise<UsageResponse>;
+export async function getUsage(
+    options?: UsageOptions,
+): Promise<UsageResponse | string> {
+    return getClient().accountUsage(options as UsageOptions);
 }
 
 /**
@@ -540,9 +526,15 @@ export async function getKeyUsage(
  * Get daily usage summary
  */
 export async function getDailyUsage(
+    options: DailyUsageOptions & { format: "csv" },
+): Promise<string>;
+export async function getDailyUsage(
     options?: DailyUsageOptions,
-): Promise<DailyUsageResponse> {
-    return getClient().accountUsageDaily(options);
+): Promise<DailyUsageResponse>;
+export async function getDailyUsage(
+    options?: DailyUsageOptions,
+): Promise<DailyUsageResponse | string> {
+    return getClient().accountUsageDaily(options as DailyUsageOptions);
 }
 
 /**

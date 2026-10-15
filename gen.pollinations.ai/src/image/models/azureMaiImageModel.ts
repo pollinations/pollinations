@@ -23,30 +23,19 @@ const logCloudflare = debug("pollinations:cloudflare");
 
 const AZURE_MAI_ENDPOINT =
     "https://myceli-prod-eastus.services.ai.azure.com/mai/v1/images";
-const MAI_ROUTES: Record<
-    string,
-    { deployment: string; title: string; maxPixels: number }
-> = {
-    "microsoft/mai-image-2.5-flash": {
-        deployment: "MAI-Image-2.5-Flash",
-        title: "MAI Image 2.5 Flash",
-        maxPixels: 1024 * 1024,
-    },
+const MAI_ROUTES: Record<string, { deployment: string; title: string }> = {
     "microsoft/mai-image-2.6-flash": {
         deployment: "MAI-Image-2.6-Flash",
         title: "MAI Image 2.6 Flash",
-        maxPixels: 1536 * 1536,
     },
     "microsoft/mai-image-2.6": {
         deployment: "MAI-Image-2.6",
         title: "MAI Image 2.6",
-        maxPixels: 1536 * 1536,
     },
 };
 type MaiRoute = (typeof MAI_ROUTES)[string];
-// Azure MAI generation limits (docs and live 400s): each side at least 768px,
-// 16px steps (Azure otherwise snaps down silently); max pixels vary by version.
-const AZURE_MAI_MIN_SIDE = 768;
+// Azure MAI rejects out-of-range sizes itself, but snaps sizes that are not
+// 16px steps down silently.
 const AZURE_MAI_DIMENSION_STEP = 16;
 
 type AzureMaiResponse = {
@@ -63,22 +52,12 @@ function validateMaiDimensions(
     height: number,
     route: MaiRoute,
 ): void {
-    if (width < AZURE_MAI_MIN_SIDE || height < AZURE_MAI_MIN_SIDE) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} requires width and height of at least ${AZURE_MAI_MIN_SIDE}px`,
-        });
-    }
     if (
         width % AZURE_MAI_DIMENSION_STEP !== 0 ||
         height % AZURE_MAI_DIMENSION_STEP !== 0
     ) {
         throw UpstreamError.fromProvider(400, {
             message: `${route.title} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
-        });
-    }
-    if (width * height > route.maxPixels) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} supports at most ${route.maxPixels.toLocaleString("en-US")} pixels (width × height)`,
         });
     }
 }
@@ -95,31 +74,39 @@ async function editFormData(
     userInfo: AuthResult,
     route: MaiRoute,
 ): Promise<FormData> {
-    const { buffer, mimeType } = await downloadUserImage(safeParams.image[0]);
-    const imageSafetyResult = await analyzeImageSafety(buffer);
-    if (!imageSafetyResult.safe) {
-        const error = UpstreamError.fromProvider(400, {
-            message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
-        });
-        await logGptImageError(
-            prompt,
-            safeParams,
-            userInfo,
-            error,
-            imageSafetyResult,
-        );
-        throw error;
-    }
+    const images = await Promise.all(
+        safeParams.image.map(async (imageUrl) => {
+            const image = await downloadUserImage(imageUrl);
+            const imageSafetyResult = await analyzeImageSafety(image.buffer);
+            if (!imageSafetyResult.safe) {
+                const error = UpstreamError.fromProvider(400, {
+                    message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+                });
+                await logGptImageError(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    error,
+                    imageSafetyResult,
+                );
+                throw error;
+            }
+            return image;
+        }),
+    );
 
-    // Edits take the reference as multipart; Azure rejects width/height here.
+    // Edits take references as repeated multipart `image` fields (up to 5);
+    // Azure rejects width/height here.
     const formData = new FormData();
     formData.append("model", route.deployment);
     formData.append("prompt", sanitizeString(prompt));
-    formData.append(
-        "image",
-        new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
-        `image.${mimeType.split("/")[1] || "png"}`,
-    );
+    for (const { buffer, mimeType } of images) {
+        formData.append(
+            "image",
+            new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
+            `image.${mimeType.split("/")[1] || "png"}`,
+        );
+    }
     return formData;
 }
 
@@ -132,17 +119,7 @@ export async function callAzureMaiImage(
     if (!route) {
         throw new Error(`Unknown Azure MAI image route: ${safeParams.model}`);
     }
-    if (safeParams.transparent) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
-        });
-    }
-    if (safeParams.image.length > 1) {
-        throw UpstreamError.fromProvider(400, {
-            message: `${route.title} supports at most 1 reference image`,
-        });
-    }
-    const isEdit = safeParams.image.length === 1;
+    const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
         validateMaiDimensions(safeParams.width, safeParams.height, route);
     }
@@ -210,8 +187,6 @@ export async function callAzureMaiImage(
 
     return {
         buffer: base64ToBuffer(encodedImage),
-        isMature: false,
-        isChild: false,
         trackingData: {
             actualModel: safeParams.model,
             usage: {

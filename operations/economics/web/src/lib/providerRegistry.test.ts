@@ -722,6 +722,39 @@ describe("provider observations", () => {
 });
 
 describe("providerReviewRows", () => {
+    it("keeps direct Novita charges separate from gateway-billed usage", () => {
+        const rows = providerReviewRows(
+            data({
+                vendorLedger: [
+                    cloud({ vendor: "novita" }),
+                    cloud({ vendor: "openrouter", entry_id: "gateway-cost" }),
+                ],
+                opPollen: [
+                    pollen({ vendor: "novita" }),
+                    pollen({ vendor: "vercel" }),
+                ],
+            }),
+            "2026-07",
+        );
+        expect(rows.find((row) => row.provider === "novita")).toMatchObject({
+            mapped: true,
+            meteringBasis: "direct",
+            sources: ["cloud", "pollen"],
+            observedAliases: ["novita"],
+        });
+        expect(
+            rows.find((row) => row.provider === "openrouter")?.sources,
+        ).toEqual(["cloud"]);
+        expect(rows.find((row) => row.provider === "vercel")?.sources).toEqual([
+            "pollen",
+        ]);
+        expect(
+            providerReviewRows(data(), "2026-10").find(
+                (row) => row.provider === "novita",
+            ),
+        ).toMatchObject({ dashboardChecked: false, sources: [] });
+    });
+
     it("separates a completed historical limitation review from a check still due", () => {
         const [row] = providerReviewRows(
             data({

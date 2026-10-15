@@ -1,6 +1,7 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
     POLLINATIONS_MCP: Fetcher;
+    ASK_JEV_MCP: Fetcher;
     FFMPEG_MCP: Fetcher;
     EXA_MCP: Fetcher;
     COMPOSIO_MCP: Fetcher;
@@ -19,6 +20,7 @@ interface CloudflareBindings {
     FAL_KEY: string;
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
+    E2B_API_KEY?: string;
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
@@ -41,6 +43,7 @@ interface CloudflareBindings {
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
+    ANTHROPIC_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -67,12 +70,14 @@ interface CloudflareBindings {
     AZURE_CONTENT_SAFETY_ENDPOINT: string;
     FIREWORKS_API_KEY: string;
     FIREWORKS_NEO_API_KEY: string;
+    GEMINI_API_KEY?: string;
     GOOGLE_CLIENT_EMAIL: string;
     GOOGLE_PRIVATE_KEY: string;
     GOOGLE_PRIVATE_KEY_ID: string;
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;

@@ -137,7 +137,7 @@ function EvidenceListDialog({
             title={`Vendor source · ${selection.vendor} · ${monthName(selection.month)}`}
             size="md"
         >
-            <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-3">
+            <div className="flex min-h-0 flex-1 flex-col px-(--polli-dialog-gutter) pb-6 pt-3">
                 <p className="shrink-0 pb-3 text-sm text-theme-text-soft">
                     Statements, invoices, dashboard exports, or usage records
                     collected from the vendor.

@@ -34,6 +34,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "ask-jev",
+                name: "Ask Jev",
+                description:
+                    "Evaluate state with typed choice, score, and probability questions.",
+                url: "https://gen.pollinations.ai/mcp/ask-jev",
+                pricing: {
+                    description:
+                        "Decision tools use Jev's listed model rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:
@@ -85,9 +97,9 @@ test("lists the MCP servers exposed through Gen", async () => {
             },
             {
                 id: "composio",
-                name: "Connected Apps",
+                name: "Connectors",
                 description:
-                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+                    "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
@@ -160,17 +172,63 @@ test("routes Pollinations MCP with caller authorization for downstream billing",
     });
 });
 
-test("requires a Pollinations credential before invoking an MCP server", async () => {
+test("routes Ask Jev with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "jev_decide",
+            arguments: {
+                state: "The invoice is paid.",
+                questions: {
+                    paid: { type: "noul", instructions: "Is it paid?" },
+                },
+            },
+        },
+    };
     const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/pollinations",
+        "https://gen.pollinations.ai/mcp/ask-jev",
         {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(MCP_REQUEST),
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
         },
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
 });
+
+test.for(["pollinations", "ask-jev"])(
+    "requires a Pollinations credential before invoking %s",
+    async (serverId) => {
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({
@@ -238,7 +296,9 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
 });
 
 test("routes Composio with the authenticated user", async () => {
-    const { key, userId } = await createTestApiKey();
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
     const response = await SELF.fetch(
         "https://gen.pollinations.ai/mcp/composio",
         {
@@ -296,6 +356,59 @@ test("routes Computer with the authenticated user and bills the flat call rate",
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.9998,
         packBalance: 0,
+    });
+});
+
+test("refuses receipt-billed tool calls from an empty wallet but keeps initialization free", async () => {
+    const { key } = await createTestApiKey();
+    const callFfmpeg = (body: unknown) =>
+        SELF.fetch("https://gen.pollinations.ai/mcp/ffmpeg", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(body),
+        });
+
+    const refused = await callFfmpeg(MCP_REQUEST);
+    expect(refused.status).toBe(402);
+    expect(await refused.json()).toMatchObject({
+        error: { code: "INSUFFICIENT_BALANCE" },
+    });
+    const initialized = await callFfmpeg({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: {},
+    });
+    expect(initialized.status).toBe(200);
+});
+
+test("refuses tool calls from a Quest Pollen only key without Quest Pollen", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 0, packBalance: 10 },
+        questPollenOnly: true,
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/ffmpeg",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(402);
+    expect(await response.json()).toMatchObject({
+        error: { code: "QUEST_POLLEN_ONLY" },
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 0,
+        packBalance: 10,
     });
 });
 

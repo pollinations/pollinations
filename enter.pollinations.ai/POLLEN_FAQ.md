@@ -35,6 +35,7 @@ Quests reward eligible account activity and community contributions.
 - Browse the dashboard for current requirements, progress, and rewards.
 - Claim completed rewards from the dashboard; past qualifying activity may count.
 - Contribution quests are labeled GitHub issues with a stated reward. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim the reward afterward.
+- A quest that asks for an app is completed through the app submission form: enter the quest number in its Quest field, and the submitter can claim the reward once the app is approved.
 
 Quest availability and reward amounts can change, so the dashboard and the linked issue are the source of truth.
 
@@ -104,4 +105,4 @@ You can also configure automatic top-up from the Pollen dashboard after adding a
 
 ## 🆘 Where can I get help?
 
-Use [Discord](https://discord.gg/pollinations-ai-885844321461485618) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.
+Use [Discord](https://discord.gg/k9F7SyTgqn) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.

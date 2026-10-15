@@ -1,7 +1,6 @@
 import {
     Chip,
     InlineLink,
-    LoadingStatus,
     Table,
     TableBody,
     TableCell,
@@ -152,10 +151,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )}
             </ActivityToolbar>
 
-            <SectionContent loading={loading} label="Loading earnings…">
-                {refreshing && (
-                    <LoadingStatus>Updating earnings…</LoadingStatus>
-                )}
+            <SectionContent loading={loading}>
                 {error && (
                     <LoadError onRetry={() => fetchEarnings()}>
                         {error}

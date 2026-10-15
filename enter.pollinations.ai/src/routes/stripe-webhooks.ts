@@ -10,6 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
+    saveCheckoutCardAsDefault,
 } from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
@@ -655,6 +656,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         c.env,
                     );
 
+                    if (result.success) {
+                        await saveCheckoutCardAsDefault(stripe, session);
+                    }
+
                     if (result.duplicate) {
                         break;
                     }
@@ -682,6 +687,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     session,
                     c.env,
                 );
+
+                if (result.success) {
+                    await saveCheckoutCardAsDefault(stripe, session);
+                }
 
                 if (result.duplicate) {
                     break;
@@ -771,7 +780,6 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     c.env,
                     invoice,
                     "Stripe could not charge the default payment method.",
-                    { disableAutoTopUp: false },
                 );
                 break;
             }

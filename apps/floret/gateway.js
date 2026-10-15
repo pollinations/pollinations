@@ -3,7 +3,7 @@ const AUTH_TIMEOUT_MS = 10_000;
 const AUTH_MAX_BYTES = 16 * 1024;
 
 function token(request) {
-    const match = /^Bearer\s+(ag_\S+)$/i.exec(
+    const match = /^Bearer\s+(\S+)$/i.exec(
         (request.headers.get("Authorization") || "").trim(),
     );
     return match?.[1] || null;
@@ -38,7 +38,7 @@ async function boundedJson(response) {
     }
 }
 
-async function authenticateRun(request, fetchImpl) {
+async function authenticateBearer(request, fetchImpl) {
     const bearer = token(request);
     if (!bearer) return false;
     let response;
@@ -90,9 +90,9 @@ export function createGateway(getAgent, fetchImpl = globalThis.fetch) {
         }
         const isChat =
             path === "/v1/chat/completions" && request.method === "POST";
-        if (isChat && !(await authenticateRun(request, fetchImpl))) {
+        if (isChat && !(await authenticateBearer(request, fetchImpl))) {
             return Response.json(
-                { detail: "Invalid agent run token." },
+                { detail: "Invalid bearer credential." },
                 {
                     status: 401,
                     headers: {

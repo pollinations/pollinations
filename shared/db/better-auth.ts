@@ -147,6 +147,9 @@ export const apikey = sqliteTable("apikey", {
   permissions: text("permissions"),
   metadata: text("metadata"),
   pollenBalance: real("pollen_balance"),
+  questPollenOnly: integer("quest_pollen_only", { mode: "boolean" })
+    .default(false)
+    .notNull(),
   byopClientKeyId: text("byop_client_key_id"),
 }, (table) => [
   index("idx_apikey_key").on(table.key),
@@ -327,6 +330,8 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     enum: ["private", "public"],
   }),
   pendingAt: integer("pending_at", { mode: "timestamp" }),
+  // Historical manual/monitor hide metadata; discovery now uses visibility
+  // and recent reliability. Kept for D1/Tinybird history, never updated.
   hiddenAt: integer("hidden_at", { mode: "timestamp" }),
   hiddenReason: text("hidden_reason"),
   hiddenBy: text("hidden_by"),

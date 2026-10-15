@@ -85,6 +85,41 @@ export function getStripeId(
     return typeof value === "string" ? value : (value?.id ?? null);
 }
 
+/**
+ * Make the card a buyer chose to save at Checkout their default card, so auto
+ * top-up and the billing overview can use it. Never replaces an existing
+ * default. Setting a default charges nothing.
+ */
+export async function saveCheckoutCardAsDefault(
+    stripe: Stripe,
+    session: Stripe.Checkout.Session,
+): Promise<void> {
+    const customerId = getStripeId(session.customer);
+    const paymentIntentId = getStripeId(session.payment_intent);
+    if (!customerId || !paymentIntentId) return;
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentMethodId = getStripeId(paymentIntent.payment_method);
+    if (!paymentMethodId) return;
+
+    // Checkout marks cards saved through its checkbox with "always".
+    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+    if (
+        paymentMethod.type !== "card" ||
+        paymentMethod.allow_redisplay !== "always" ||
+        getStripeId(paymentMethod.customer) !== customerId
+    ) {
+        return;
+    }
+
+    const customer = await retrieveActiveCustomer(stripe, customerId);
+    if (!customer || customer.invoice_settings?.default_payment_method) return;
+
+    await stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+    });
+}
+
 export async function getDefaultPaymentMethod(
     stripe: Stripe,
     customer: Stripe.Customer,

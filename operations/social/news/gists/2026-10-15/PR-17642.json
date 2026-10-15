@@ -1,0 +1,35 @@
+{
+  "pr_number": 17642,
+  "title": "Add Pollinations for MIT App Inventor to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17642",
+  "merged_at": "2026-10-15T20:28:05Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Added @Drjacky’s Pollinations for MIT App Inventor to the app catalog and README showcase. The Android project provides a non-visible App Inventor extension (.aix) and a sample project (.aia) for adding Pollinations to apps; Kodular, Niotron, and Android Builder also accept the extension.",
+    "keywords": [
+      "community app",
+      "MIT App Inventor",
+      "Android",
+      "extension",
+      "Kodular",
+      "Niotron"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17642.jpg",
+    "prompt": "In a cozy pixel art workshop, Polli wears a tiny tool belt and fits a lime green (#ecf874) .aix puzzle block into an Android app on a retro screen, with a .aia sample project and small code-plants nearby; Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, small-to-medium in the scene and strictly pixel art, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background, dark purple (#110518) outlines and a soft lime green glow."
+  },
+  "generated_at": "2026-10-15T20:29:30.854419+00:00",
+  "app_name": "Pollinations for MIT App Inventor",
+  "app_url": "https://github.com/Drjacky/pollinations-appinventor",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "a4191d36bec0aab560f6ef806084ba365a4940ec",
+  "announcements": []
+}

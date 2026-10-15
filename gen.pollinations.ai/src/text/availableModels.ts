@@ -537,9 +537,9 @@ const models: ModelDefinition[] = [
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-haiku-5.5:vercel",
-        config: portkeyConfig["anthropic/claude-haiku-5.5:vercel"],
-        transform: omitClaudeSampling,
+        name: "anthropic/claude-haiku-5.5:aws",
+        config: portkeyConfig["anthropic/claude-haiku-5.5:aws"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-sonnet-4.6",
@@ -555,6 +555,11 @@ const models: ModelDefinition[] = [
         name: "anthropic/claude-sonnet-5.5",
         config: portkeyConfig["anthropic/claude-sonnet-5.5"],
         // Reasoning is mandatory on this route and sampling params are rejected.
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-sonnet-5.5:aws",
+        config: portkeyConfig["anthropic/claude-sonnet-5.5:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -581,13 +586,13 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-opus-5.5",
         config: portkeyConfig["anthropic/claude-opus-5.5"],
-        // Bedrock rejects thinking.type=disabled for this model.
+        // Adaptive thinking is always enabled for this model.
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
-        name: "anthropic/claude-opus-5.5:openrouter:anthropic",
-        config: portkeyConfig["claude-opus-5.5-openrouter-anthropic"],
-        transform: pipe(mandatoryReasoning, omitClaudeSampling),
+        name: "anthropic/claude-opus-5.5:aws",
+        config: portkeyConfig["anthropic/claude-opus-5.5:aws"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-5.5:fast",
@@ -607,6 +612,11 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-fable-5.1",
         config: portkeyConfig["anthropic/claude-fable-5.1"],
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
+    },
+    {
+        name: "anthropic/claude-fable-5.1:aws",
+        config: portkeyConfig["anthropic/claude-fable-5.1:aws"],
         transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
@@ -983,6 +993,11 @@ const models: ModelDefinition[] = [
         name: "z-ai/glm-5.3",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3"],
         // Reasoning is mandatory; off requests keep the upstream default.
+        transform: mandatoryReasoningWithoutCacheControl,
+    },
+    {
+        name: "z-ai/glm-5.3:deepinfra",
+        config: portkeyConfig["zai-org/GLM-5.3"],
         transform: mandatoryReasoningWithoutCacheControl,
     },
     {

@@ -316,8 +316,8 @@ export function CommunityEndpointDialog({
 
     // Pricing is only meaningful when the model is (or is being made) public —
     // keyed off the LIVE form value so flipping Visibility to Public in place
-    // reveals the test + pricing section immediately. Private models carry no
-    // pricing (owner is the only caller).
+    // reveals the test + pricing section immediately. Private models are free
+    // at runtime but retain their saved public pricing.
     const isShared = form.visibility === "public" && !isEndpointAgent;
     const returnedFields = isShared
         ? returnedPriceFields(testState, form.modality, form.imagePricing)

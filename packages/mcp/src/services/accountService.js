@@ -51,7 +51,7 @@ async function getBalance(_params, context) {
 const getUsage = ({ daily, days, limit, model, key }, context) =>
     callAccount(daily ? "/account/usage/daily" : "/account/usage", context, {
         params: daily
-            ? { days }
+            ? { days, api_key_ids: key?.join(",") }
             : {
                   days,
                   limit,
@@ -141,9 +141,7 @@ export const accountTools = [
             key: z
                 .array(z.string())
                 .optional()
-                .describe(
-                    "Only these API key ids, from listKeys (history only)",
-                ),
+                .describe("Only these API key ids, from listKeys"),
         },
         getUsage,
     ],

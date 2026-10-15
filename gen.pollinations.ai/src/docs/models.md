@@ -107,7 +107,7 @@ Newer Claude and Gemini models may omit sampling controls entirely. On
 Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
 Reasoning effort levels and forced-tool restrictions remain model-specific.
 
-## Community Models
+## Community model discovery
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 

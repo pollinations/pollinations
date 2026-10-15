@@ -789,6 +789,12 @@ function loadIntroductionTagline(): string {
 }
 
 function renderGettingStarted(): string {
+    const guides = readFileSync(INTRODUCTION_PATH, "utf8")
+        .split("\n## Guides\n")[1]
+        ?.split("\n## ")[0]
+        .trim();
+    if (!guides)
+        throw new Error(`Missing Guides section in ${INTRODUCTION_PATH}`);
     return `## ${sectionHeading(SECTIONS.start)}
 
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
@@ -805,7 +811,9 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
+## Guides
+
+${guides}`;
 }
 
 function renderTableOfContents(
@@ -819,6 +827,7 @@ function renderTableOfContents(
     out.push(
         `- [${sectionHeading(SECTIONS.start)}](#${sectionAnchor(SECTIONS.start)})`,
     );
+    out.push("- [Guides](#guides)");
     for (const heading of recipeHeadings) {
         out.push(`- [${heading}](#${slug(heading)})`);
     }

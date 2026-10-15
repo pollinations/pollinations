@@ -10,6 +10,7 @@ import {
 import { resolveProvider, transactionCategory } from "./providerRegistry";
 
 export type LedgerTab =
+    | "sales"
     | "op-transactions"
     | "op-pollen"
     | "vendor-ledger"
@@ -71,7 +72,7 @@ export function ledgerFacets(
     tab: LedgerTab,
     selection: LedgerFacetSelection,
 ): LedgerFacets {
-    if (tab === "revenue-share-ledger") {
+    if (tab === "revenue-share-ledger" || tab === "sales") {
         return { vendors: [], categories: [] };
     }
 

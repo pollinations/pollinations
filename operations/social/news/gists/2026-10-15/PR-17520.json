@@ -1,0 +1,34 @@
+{
+  "pr_number": 17520,
+  "title": "Add The Basement Circuit to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17520",
+  "merged_at": "2026-10-15T02:09:52Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added @fisventurous’s The Basement Circuit to the games catalog and README’s recent-apps list. The web autobattler uses Pollinations to turn a description of up to 80 characters into a fighter’s fight card, including personality traits. MIDI Journey 2 rotated out of the README’s recent-apps list; this change does not remove it from the catalog.",
+    "keywords": [
+      "community app",
+      "games",
+      "autobattler",
+      "fighters",
+      "app catalog"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17520.jpg",
+    "prompt": "In a cozy pixel art basement game room, Polli wears a tiny referee cap and studies a glowing fight card beside a retro terminal, with little code-plants growing around the ring. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized and shares the frame with the scene, never oversized or dominating it, in strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with prominent lime green (#ecf874) glow and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T02:11:02.335900+00:00",
+  "app_name": "The Basement Circuit",
+  "app_url": "https://fisventurous.github.io/The-Basement-Circuit",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "b5f8b2c42ac1a0b23c4f60a8d200322834a69b97",
+  "announcements": []
+}

@@ -3514,6 +3514,12 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
     expect(pack).toBeDefined();
     if (!pack) throw new Error("Expected $10 pollen pack");
 
+    await env.DB.prepare(
+        "UPDATE user SET low_balance_notified_at = 1 WHERE id = ?",
+    )
+        .bind(user.id)
+        .run();
+
     const response = await postSignedStripeWebhook({
         id: "evt_test_checkout_paid_emit",
         type: "checkout.session.completed",
@@ -3533,13 +3539,16 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         },
     });
     expect(response.status).toBe(200);
-    // The low-balance email threshold is 20% of the latest pack.
+    // The low-balance email threshold is 20% of the latest pack, and buying a
+    // pack re-arms the email.
     const credited = await env.DB.prepare(
-        "SELECT low_balance_threshold AS threshold FROM user WHERE id = ?",
+        `SELECT low_balance_threshold AS threshold,
+            low_balance_notified_at AS notifiedAt
+        FROM user WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ threshold: number | null }>();
-    expect(credited?.threshold).toBe(2);
+        .first<{ threshold: number | null; notifiedAt: number | null }>();
+    expect(credited).toEqual({ threshold: 2, notifiedAt: null });
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

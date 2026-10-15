@@ -246,7 +246,8 @@ async function creditCheckoutSessionOnce({
                 low_balance_threshold = ROUND(
                     ? * ${LOW_BALANCE_SHARE},
                     ${POLLEN_BILLING_PRECISION}
-                )
+                ),
+                low_balance_notified_at = NULL
                 WHERE id = ?`,
             ).bind(creditsToAdd, creditsToAdd, userId),
         ]);

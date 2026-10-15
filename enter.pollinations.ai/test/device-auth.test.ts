@@ -535,7 +535,10 @@ describe("Device endpoints — malformed bodies never 500 / never leak (#17384)"
         ["JSON array", JSON.stringify([1, 2, 3])],
         ["JSON number", "42"],
         ["empty body", ""],
-        ["object-valued device_code", JSON.stringify({ device_code: { a: 1 } })],
+        [
+            "object-valued device_code",
+            JSON.stringify({ device_code: { a: 1 } }),
+        ],
         ["numeric device_code", JSON.stringify({ device_code: 42 })],
     ];
 

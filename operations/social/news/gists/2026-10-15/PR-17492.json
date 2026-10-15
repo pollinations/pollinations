@@ -1,0 +1,33 @@
+{
+  "pr_number": 17492,
+  "title": "feat(gen): advertise OAuth metadata on 401",
+  "author": "ismailbanouigu",
+  "url": "https://github.com/pollinations/pollinations/pull/17492",
+  "merged_at": "2026-10-15T03:57:33Z",
+  "labels": [],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Gen adds an RFC 9728 Bearer `WWW-Authenticate` challenge to every 401 response, pointing to its existing `/.well-known/oauth-protected-resource` endpoint on the request’s public origin. OAuth clients can discover the metadata URL without hardcoding it, including after an unauthenticated generation cache miss. A regression test checks the staging-origin URL.",
+    "keywords": [
+      "gen",
+      "OAuth",
+      "RFC 9728",
+      "authentication",
+      "WWW-Authenticate",
+      "metadata discovery"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17492.jpg",
+    "prompt": "In a cozy pixel art garden shed, a retro terminal displays a small 401 card with a clear path to an OAuth metadata sign, while lime green (#ecf874) code-plants grow beside it against a warm cream and pastel gradient background. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny explorer glasses and points out the path, small-to-medium sized beside the terminal, in strictly pixel art style with chunky retro sprites, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-15T03:58:48.532010+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Quests",
+  "merge_commit_sha": "93a0f6955fe057919836d63644a7956e2c7a8912",
+  "announcements": []
+}

@@ -264,7 +264,10 @@ test("browsers get the free limit's page with the time left and the VM's headers
     );
     expect(text).toContain("Skip the wait");
     expect(text).not.toContain("undefined");
-    expect(text).toContain('href="https://enter.pollinations.ai/?ref=classic"');
+    // Straight to GitHub's sign-in, tagged as a Classic visit
+    expect(text).toContain(
+        'href="https://enter.pollinations.ai/sign-in?provider=github&amp;ref=classic"',
+    );
     // The countdown runs to an end time, so a slowed-down tab stays exact
     expect(text).toContain(`const end = Date.now() + ${wait} * 1000;`);
     expect(text).not.toContain("{{");

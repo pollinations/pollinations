@@ -17,11 +17,16 @@ import {
     CodeBlock,
     DiscordIcon,
     ExternalLinkButton,
+    Eyebrow,
+    GitHubIcon,
     Heading,
     InlineLink,
+    SparklesIcon,
+    SproutIcon,
     StableLabel,
     Surface,
     Text,
+    WalletIcon,
 } from "@pollinations/ui";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -139,11 +144,7 @@ const page = h(
         h(
             "div",
             { className: "polli:flex polli:flex-col polli:gap-3" },
-            h(
-                Text,
-                { size: "sm", weight: "semibold", tone: "strong" },
-                "Skip the wait",
-            ),
+            h(Eyebrow, null, "Skip the wait"),
             h(
                 "div",
                 { className: "paths" },
@@ -156,20 +157,20 @@ const page = h(
                             { size: "sm", tone: "soft" },
                             "Unlimited {{items}}, every model, no waiting.",
                         ),
-                        h(
-                            Text,
-                            { size: "xs", tone: "muted" },
-                            "Sign in with GitHub and start with free pollen.",
-                        ),
+                        footnote(SproutIcon, "Start with free pollen."),
                     ],
+                    // enter's sign-in, which goes on to GitHub at once
                     h(
                         ExternalLinkButton,
                         {
-                            href: "https://enter.pollinations.ai/?ref=classic",
+                            href: "https://enter.pollinations.ai/sign-in?provider=github&ref=classic",
                             external: false,
                             size: "lg",
+                            icon: h(GitHubIcon, {
+                                className: "polli:size-4 polli:shrink-0",
+                            }),
                         },
-                        "Get unlimited {{items}}",
+                        "Sign in with GitHub",
                     ),
                 ),
                 path(
@@ -184,9 +185,8 @@ const page = h(
                         h(CodeBlock, {
                             code: "set up https://weft.network/setup.md",
                         }),
-                        h(
-                            Text,
-                            { size: "xs", tone: "muted" },
+                        footnote(
+                            SparklesIcon,
                             "New Weft accounts get $3 in free credit once the email is verified.",
                         ),
                     ],
@@ -196,6 +196,9 @@ const page = h(
                             href: "https://weft.network/setup.md",
                             size: "lg",
                             showIcon: false,
+                            icon: h(WalletIcon, {
+                                className: "polli:size-4 polli:shrink-0",
+                            }),
                         },
                         "Give my agent a wallet",
                     ),

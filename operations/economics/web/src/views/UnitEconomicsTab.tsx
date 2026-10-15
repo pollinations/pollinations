@@ -1,4 +1,8 @@
 import {
+    CardIcon,
+    SproutIcon,
+    StatCard,
+    Surface,
     TableBody,
     TableCell,
     TableHead,
@@ -15,12 +19,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import {
-    Gauge,
-    type GaugePalette,
-    GaugeSummary,
-} from "../components/EconomicsGauge";
-import { StatCards, type StatItem } from "../components/StatCards";
+import { Gauge, type GaugePalette } from "../components/EconomicsGauge";
 import {
     type ComputeMode,
     providerMonthComputeMode,
@@ -241,97 +240,113 @@ function UnitEconomicsTable({
         fullCostResultUsd == null
             ? null
             : unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd);
-    const stats = useMemo<StatItem[]>(
-        () => [
-            {
-                label: "Retained Paid",
-                value: fmtUsd(summary.retainedPaidUsd),
-                detail: (
-                    <GaugeSummary
-                        left={summary.paidPollenUsd}
-                        leftLabel="Paid used"
-                        right={summary.questPollenUsd}
-                        rightLabel="Quest used"
-                    />
-                ),
-            },
-            {
-                label: "Quest used",
-                value: fmtUsd(summary.questPollenUsd),
-                detail: "free usage · never fiat revenue",
-            },
-            {
-                label: missingCosts
-                    ? "Vendor cost · recorded so far"
-                    : "Vendor cost",
-                value: fmtUsd(summary.providerUsageUsd),
-                detail: (
-                    <GaugeSummary
-                        left={summary.providerCashUsd}
-                        leftLabel="cash"
-                        palette="neutral"
-                        right={summary.providerCreditUsd}
-                        rightLabel="credit"
-                    />
-                ),
-            },
-            {
-                label: provisional
-                    ? "Current result · provisional"
-                    : "Current result",
-                value:
-                    currentResultUsd == null
-                        ? "Unknown"
-                        : fmtSignedUsd(currentResultUsd),
-                tone:
-                    currentResultUsd == null
-                        ? "base"
-                        : currentResultUsd > 0
-                          ? "pos"
-                          : currentResultUsd < 0
-                            ? "neg"
-                            : "base",
-                detail:
-                    currentResultUsd == null
-                        ? "with credits"
-                        : `with credits · ${fmtMarginPct(currentPerformancePct)}`,
-            },
-            {
-                label: provisional
-                    ? "Full-cost result · provisional"
-                    : "Full-cost result",
-                value:
-                    fullCostResultUsd == null
-                        ? "Unknown"
-                        : fmtSignedUsd(fullCostResultUsd),
-                tone:
-                    fullCostResultUsd == null
-                        ? "base"
-                        : fullCostResultUsd > 0
-                          ? "pos"
-                          : fullCostResultUsd < 0
-                            ? "neg"
-                            : "base",
-                detail:
-                    fullCostResultUsd == null
-                        ? "without credits"
-                        : `without credits · ${fmtMarginPct(fullCostPerformancePct)}`,
-            },
-        ],
-        [
-            currentPerformancePct,
-            currentResultUsd,
-            fullCostPerformancePct,
-            fullCostResultUsd,
-            summary,
-            missingCosts,
-            provisional,
-        ],
-    );
+    const stats = [
+        {
+            label: "Pollen used",
+            items: [
+                {
+                    label: (
+                        <span className="inline-flex items-center gap-1.5 text-paid-deep">
+                            <CardIcon className="h-3.5 w-3.5" />
+                            Paid
+                        </span>
+                    ),
+                    value: fmtUsd(summary.paidPollenUsd),
+                    valueClassName: "polli:text-paid-deep",
+                    detail: `Retained Paid ${fmtUsd(summary.retainedPaidUsd)}`,
+                },
+                {
+                    label: (
+                        <span className="inline-flex items-center gap-1.5 text-tier-deep">
+                            <SproutIcon className="h-3.5 w-3.5" />
+                            Quest
+                        </span>
+                    ),
+                    value: fmtUsd(summary.questPollenUsd),
+                    valueClassName: "polli:text-tier-deep",
+                    detail: "Free usage",
+                },
+            ],
+        },
+        {
+            label: missingCosts
+                ? "Provider costs · recorded so far"
+                : "Provider costs",
+            total: `${fmtUsd(summary.providerUsageUsd)} total`,
+            items: [
+                { label: "Cash", value: fmtUsd(summary.providerCashUsd) },
+                { label: "Credits", value: fmtUsd(summary.providerCreditUsd) },
+            ],
+        },
+        {
+            label: provisional ? "Result · provisional" : "Result",
+            items: [
+                {
+                    label: "With credits",
+                    value:
+                        currentResultUsd == null
+                            ? "Unknown"
+                            : fmtSignedUsd(currentResultUsd),
+                    detail:
+                        currentResultUsd == null
+                            ? undefined
+                            : fmtMarginPct(currentPerformancePct),
+                    valueClassName:
+                        currentResultUsd == null
+                            ? undefined
+                            : signedToneOrSoft(currentResultUsd),
+                },
+                {
+                    label: "Without credits",
+                    value:
+                        fullCostResultUsd == null
+                            ? "Unknown"
+                            : fmtSignedUsd(fullCostResultUsd),
+                    detail:
+                        fullCostResultUsd == null
+                            ? undefined
+                            : fmtMarginPct(fullCostPerformancePct),
+                    valueClassName:
+                        fullCostResultUsd == null
+                            ? undefined
+                            : signedToneOrSoft(fullCostResultUsd),
+                },
+            ],
+        },
+    ];
 
     return (
         <div className="flex flex-col gap-4">
-            <StatCards items={stats} />
+            <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
+                {stats.map((card) => (
+                    <Surface
+                        as="section"
+                        key={card.label}
+                        aria-label={card.label}
+                    >
+                        <div className="mb-3 flex min-h-10 flex-wrap content-start items-baseline justify-between gap-x-3 gap-y-1">
+                            <h3 className="text-sm font-semibold">
+                                {card.label}
+                            </h3>
+                            {card.total && (
+                                <span className="text-xs text-theme-text-soft">
+                                    {card.total}
+                                </span>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 divide-x divide-theme-text-muted/20">
+                            {card.items.map((item, index) => (
+                                <StatCard
+                                    key={index}
+                                    {...item}
+                                    className="min-w-0 first:pr-3 last:pl-3"
+                                    labelClassName="polli:normal-case polli:tracking-normal polli:whitespace-nowrap"
+                                />
+                            ))}
+                        </div>
+                    </Surface>
+                ))}
+            </div>
 
             <TableScroller>
                 <DataTable className="min-w-[1420px]">
@@ -392,7 +407,10 @@ function UnitEconomicsTable({
                                             "Paid used − BYOP share − model-owner share",
                                     }}
                                 >
-                                    Paid retained
+                                    <span className="inline-flex items-center gap-1.5 text-paid-deep">
+                                        <CardIcon className="h-3.5 w-3.5 shrink-0" />
+                                        Paid retained
+                                    </span>
                                 </HeaderHint>
                             </TableHeaderCell>
                             <TableHeaderCell
@@ -405,7 +423,10 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("questPollenUsd")}
                             >
-                                Quest used
+                                <span className="inline-flex items-center gap-1.5 text-tier-deep">
+                                    <SproutIcon className="h-3.5 w-3.5 shrink-0" />
+                                    Quest used
+                                </span>
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"

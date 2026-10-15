@@ -746,8 +746,9 @@ function viewInfoContent(activeView: ActiveView) {
                     after deductions.
                 </li>
                 <li>
-                    Product: Compute, Infrastructure and Revenue Share,
-                    including Quest usage. Whole company: all expenses.
+                    Product: Compute and Infrastructure, including Quest usage.
+                    Whole company: all expenses. Result, expenses and funding
+                    switch independently.
                 </li>
                 <li>
                     Expense curves: full costs before credits. Click a legend

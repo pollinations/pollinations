@@ -486,3 +486,213 @@ describe("Device Authorization Flow", () => {
         expect(body).toHaveProperty("preferred_username");
     }, 30000);
 });
+
+/**
+ * Internal parser/SQL details must never reach a client, on any malformed
+ * body class: JSON parse errors, JSON null, scalars, arrays, empty bodies,
+ * and non-string field values. RFC 6749 §5.2 / RFC 8628 §3.5 require a 400
+ * OAuth error envelope instead.
+ */
+const LEAK_PATTERN =
+    /Unexpected token|Failed query|params:|select .* from|TypeError/i;
+
+async function expectNoLeak(res: Response): Promise<string> {
+    const text = await res.text();
+    expect(text).not.toMatch(LEAK_PATTERN);
+    return text;
+}
+
+describe("Device token malformed bodies (RFC 6749 §5.2 / RFC 8628 §3.5)", () => {
+    test("POST /api/device/token with a non-JSON body returns 400 invalid_request, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "not json",
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an object device_code returns 400 invalid_request without leaking SQL", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: { a: 1 } }),
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a JSON null body returns 400 invalid_request, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a JSON string body returns 400, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify("hello"),
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a JSON array body returns 400, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify([1, 2, 3]),
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a JSON number body returns 400, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "42",
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an empty body returns 400, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "",
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an empty-string device_code returns 400 invalid_request", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: "" }),
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token accepts a form-encoded body (RFC 8628 §3.5)", async () => {
+        // OAuth wire format: form encoding must reach the grant checks
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                device_code: device.deviceCode,
+            }).toString(),
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("authorization_pending");
+    });
+
+    test("POST /api/device/token with a charset suffix on content-type still parses JSON", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json; charset=utf-8" },
+            body: "not json",
+        });
+        expect(res.status).toBe(400);
+        const body = JSON.parse(await expectNoLeak(res)) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an unknown form-encoded device_code returns 400 invalid_grant", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                device_code: crypto.randomUUID(),
+            }).toString(),
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("invalid_grant");
+    });
+
+    test("POST /api/device/deny with a non-JSON body returns 400, not 500", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: "not json",
+        });
+        expect(res.status).toBe(400);
+        await expectNoLeak(res);
+    }, 30000);
+
+    test("POST /api/device/deny with a non-string userCode returns 400, not 500", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: { a: 1 } }),
+        });
+        expect(res.status).toBe(400);
+        await expectNoLeak(res);
+    }, 30000);
+
+    test("POST /api/device/deny accepts a form-encoded userCode", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: new URLSearchParams({
+                userCode: device.userCode,
+            }).toString(),
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { success: boolean };
+        expect(body.success).toBe(true);
+    }, 30000);
+
+    test("POST /api/device/code with a JSON null body issues a code, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { device_code: string };
+        expect(body.device_code).toBeTruthy();
+    });
+});

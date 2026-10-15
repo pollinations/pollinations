@@ -1,0 +1,32 @@
+{
+  "pr_number": 17452,
+  "title": "MCP getUsage({daily: true, key: [...]}) silently drops the key filter — and its description says it can't filter",
+  "author": "NamanSoni78",
+  "url": "https://github.com/pollinations/pollinations/pull/17452",
+  "merged_at": "2026-10-15T03:18:27Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "MCP getUsage now forwards the key filter as comma-separated api_key_ids when daily is true, so daily usage can be limited to selected API keys instead of returning usage across all keys. The tool description no longer says key filtering is history-only, and a test checks that both key IDs reach /account/usage/daily.",
+    "keywords": [
+      "MCP",
+      "getUsage",
+      "daily usage",
+      "API keys",
+      "account usage"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17452.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny accountant glasses and points to two labeled key-shaped flower pots while a single CRT monitor robot sorts their daily usage into separate lime green (#ecf874) charts. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients over warm cream, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T03:19:44.610981+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "b90b99dbe735d19b84b9531c30bc0fdd87481dec",
+  "announcements": []
+}

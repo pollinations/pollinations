@@ -11,6 +11,7 @@ import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
 import type { LoggerVariables } from "@/middleware/logger.ts";
+import type { ModelVariables } from "@/middleware/model.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
 
@@ -43,7 +44,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<ModelVariables>;
 };
 
 function createTextCacheApp() {
@@ -78,6 +79,25 @@ function createTextCacheApp() {
                         },
                     },
                 );
+            },
+        )
+        .post(
+            "/v1/chat/completions/agent",
+            (c, next) => {
+                // resolveModel scopes agents; each request has its own id.
+                c.set("model", {
+                    definition: {},
+                    cacheScope: "agent:agent-id",
+                } as ModelVariables["model"]);
+                c.set("requestId", crypto.randomUUID());
+                return next();
+            },
+            textCache,
+            async () => {
+                originHits += 1;
+                return new Response(`agent-hit:${originHits}`, {
+                    headers: { "Content-Type": "text/plain" },
+                });
             },
         )
         .get("/text/:prompt", textCache, async (c) => {
@@ -346,6 +366,38 @@ describe("text cache", () => {
         expect(second.response.status).toBe(202);
         expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
         expect(originHits).toBe(2);
+    });
+
+    it("runs an agent again when the same request repeats", async () => {
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+        const init = chatInit({
+            model: "owner/agent",
+            messages: [{ role: "user", content: "same question" }],
+        });
+
+        const first = await dispatch(
+            app,
+            "/v1/chat/completions/agent",
+            init,
+            env,
+        );
+        await consumeAndWait(first);
+        const second = await dispatch(
+            app,
+            "/v1/chat/completions/agent",
+            chatInit({
+                model: "owner/agent",
+                messages: [{ role: "user", content: "same question" }],
+            }),
+            env,
+        );
+        await consumeAndWait(second);
+
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+        expect(second.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(cache.originHits).toBe(2);
     });
 
     it("treats different POST bodies as different cache entries", async () => {

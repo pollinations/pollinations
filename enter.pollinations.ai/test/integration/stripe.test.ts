@@ -998,6 +998,45 @@ test("GET /api/stripe/billing returns default card billing address", async ({
     });
 });
 
+test("GET /api/stripe/billing returns the pack of the last checkout purchase", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+
+    const db = drizzle(env.DB);
+    const [user] = await db
+        .select({ id: userTable.id })
+        .from(userTable)
+        .limit(1);
+    if (!user) throw new Error("Expected seeded test user");
+
+    const lastPack = async () => {
+        const response = await SELF.fetch(`${base}/billing`, {
+            headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        expect(response.status).toBe(200);
+        const data = (await response.json()) as {
+            lastPackAmountUsd: number | null;
+        };
+        return data.lastPackAmountUsd;
+    };
+
+    expect(await lastPack()).toBeNull();
+
+    const credit = env.DB.prepare(
+        `INSERT INTO stripe_checkout_credits
+            (session_id, event_id, event_type, user_id, pollen_credited, created_at)
+            VALUES (?, ?, 'checkout.session.completed', ?, ?, ?)`,
+    );
+    await env.DB.batch([
+        credit.bind("cs_last_pack_new", "evt_new", user.id, 10, 2_000),
+        credit.bind("cs_last_pack_old", "evt_old", user.id, 5, 1_000),
+    ]);
+
+    expect(await lastPack()).toBe(10);
+});
+
 test("GET /api/stripe/billing shows auto top-up unavailable without changing its setting", async ({
     sessionToken,
     mocks,

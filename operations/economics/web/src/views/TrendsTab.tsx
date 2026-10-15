@@ -1,6 +1,5 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { type ReactNode, useMemo, useState } from "react";
-import { DataTable } from "../components/DataTable";
 import { FilterMultiSelect } from "../components/Filters";
 import { StatCards } from "../components/StatCards";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
@@ -221,7 +220,7 @@ function TrendChart({
                 <svg
                     viewBox="0 0 620 246"
                     className="w-full"
-                    aria-label={`${title}. ${unit} by month; exact values in Monthly details.`}
+                    aria-label={`${title}. ${unit} by month; select a month to inspect values.`}
                 >
                     <title>{title}</title>
                     {ticks.map((value) => (
@@ -474,36 +473,6 @@ export function TrendsTab({
               0,
           )
         : null;
-    const details: [
-        keyof Omit<
-            TrendRow,
-            "month" | "issues" | "provisional" | "costIncomplete"
-        >,
-        string,
-    ][] = [
-        ["gross", "Gross sales"],
-        ["deductions", "Deductions"],
-        ["revenue", "Revenue after deductions"],
-        ...selectedExpenses.map((s): [ExpenseCategory, string] => [
-            s.key as ExpenseCategory,
-            s.label,
-        ]),
-        ["paidCost", "Costs after credits"],
-        ["credits", "Credits used"],
-        ["fullCost", "Full costs"],
-        ["result", "Actual result with credits"],
-        ["fullResult", "Actual result without credits"],
-        ["oneOffFraud", "Identified fraud costs excluded"],
-        ["adjustedResult", "Excluding fraud · with credits"],
-        ["adjustedFullResult", "Excluding fraud · without credits"],
-        ["apiResult", "API + GPU margin with credits"],
-        ["apiFullResult", "API + GPU margin without credits"],
-        ["paidPollen", "Paid used · Pollen"],
-        ["questPollen", "Quest used · Pollen"],
-        ["questCash", "Quest cost · cash"],
-        ["questCredits", "Quest cost · credits"],
-        ["unallocatedCost", "Compute cost not allocated to Paid / Quest"],
-    ];
     return (
         <section className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -625,7 +594,7 @@ export function TrendsTab({
                     {
                         label: "Recorded provider credits",
                         value: usd(creditTotal),
-                        detail: "Separate provider pools · dates and limits below",
+                        detail: "Separate provider pools",
                     },
                     {
                         label: "Unspent Paid Pollen",
@@ -643,121 +612,6 @@ export function TrendsTab({
                     },
                 ]}
             />
-            <details className="text-sm">
-                <summary className="cursor-pointer font-semibold">
-                    Provider credit dates & limits
-                </summary>
-                <div className="mt-3 overflow-x-auto">
-                    <DataTable>
-                        <caption className="mb-2 text-left text-xs text-theme-text-soft">
-                            Recorded balances, not a single spendable budget.
-                            Expiry and provider restrictions apply.
-                        </caption>
-                        <thead>
-                            <tr>
-                                {[
-                                    "Provider / account",
-                                    "Recorded credit",
-                                    "Checked",
-                                    "Expiry",
-                                ].map((label) => (
-                                    <th
-                                        key={label}
-                                        className="px-3 py-2 text-left"
-                                    >
-                                        {label}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {positiveBalances.map((row) => (
-                                <tr
-                                    key={`${row.vendor}:${row.accountId}`}
-                                    className="border-t"
-                                >
-                                    <th
-                                        scope="row"
-                                        className="px-3 py-2 text-left"
-                                    >
-                                        {row.label} · {row.accountLabel}
-                                    </th>
-                                    <td className="whitespace-nowrap px-3 py-2">
-                                        {usd(row.creditBalanceUsd)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-2">
-                                        {fmtPeriod(row.balanceAsOf)}
-                                        {row.balanceStatus === "stale"
-                                            ? " · stale"
-                                            : ""}
-                                    </td>
-                                    <td className="px-3 py-2">
-                                        {row.expiryAssumed
-                                            ? "Ignored for planning"
-                                            : row.creditExpiry
-                                              ? fmtPeriod(row.creditExpiry)
-                                              : row.creditTermsKnown
-                                                ? "No expiry recorded"
-                                                : "Unverified"}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </DataTable>
-                </div>
-            </details>
-            <div className="flex flex-wrap justify-between gap-2 border-t pt-4 text-sm text-theme-text-soft">
-                <span>
-                    Return from Quest rewards · contributions, returning users,
-                    first purchases
-                </span>
-                <span>Not measured yet</span>
-            </div>
-            <details className="text-sm">
-                <summary className="cursor-pointer font-semibold">
-                    Monthly details
-                </summary>
-                <div className="mt-3 overflow-x-auto">
-                    <DataTable className="text-right tabular-nums">
-                        <caption className="mb-2 text-left">
-                            Company · USD, except Pollen usage
-                        </caption>
-                        <thead>
-                            <tr>
-                                <th className="px-3 py-2 text-left">Month</th>
-                                {details.map(([key, heading]) => (
-                                    <th key={key} className="px-3 py-2">
-                                        {heading}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row) => (
-                                <tr key={row.month} className="border-t">
-                                    <th
-                                        scope="row"
-                                        className="whitespace-nowrap px-3 py-2 text-left"
-                                    >
-                                        {monthName(row.month)}
-                                    </th>
-                                    {details.map(([key]) => (
-                                        <td
-                                            key={key}
-                                            className="whitespace-nowrap px-3 py-2"
-                                        >
-                                            {key === "paidPollen" ||
-                                            key === "questPollen"
-                                                ? fmtNumber(row[key])
-                                                : usd(row[key])}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </DataTable>
-                </div>
-            </details>
         </section>
     );
 }

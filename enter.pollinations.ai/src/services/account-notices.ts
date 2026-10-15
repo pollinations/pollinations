@@ -4,9 +4,9 @@ import { getLogger } from "@logtape/logtape";
 import { LOW_BALANCE_SHARE } from "@shared/billing/auto-top-up.ts";
 
 // Account emails: facts about the user's own account, sent through the
-// Cloudflare Email Service binding. Running low goes out at most once per pack
-// bought (each credit re-arms it) and once per 30 days; auto top-up failed goes
-// out each time it switches off. None after the user unsubscribes.
+// Cloudflare Email Service binding. Running low goes out once per pack bought
+// (each credit re-arms it); auto top-up failed goes out each time it switches
+// off. None after the user unsubscribes.
 
 const log = getLogger(["enter", "account-notices"]);
 
@@ -16,7 +16,6 @@ const FROM = {
 };
 const REPLY_TO = "billing@pollinations.ai";
 const ADDRESS = "Myceli.AI OÜ · Tornimäe tn 5, 10145 Tallinn, Estonia";
-const NOTICE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 type Link = { label: string; path: string };
 
@@ -189,23 +188,22 @@ export async function sendNotice(
 /**
  * Called when a charge takes the paid balance of a user without auto top-up
  * below LOW_BALANCE_SHARE of their last pack. Sends at most one balance email
- * per pack bought and per 30 days.
+ * per pack bought.
  */
 export async function sendRunningLowNotice(
     env: CloudflareBindings,
     userId: string,
 ): Promise<void> {
-    const now = Date.now();
     // Claim the slot first, so parallel triggers send a single email.
     const user = await env.DB.prepare(
         `UPDATE user SET low_balance_notified_at = ?
             WHERE id = ?
                 AND COALESCE(pack_balance, 0) < ? * last_pack_pollen
-                AND (low_balance_notified_at IS NULL OR low_balance_notified_at < ?)
+                AND low_balance_notified_at IS NULL
                 AND email_unsubscribed_at IS NULL
             RETURNING email, COALESCE(pack_balance, 0) AS balance`,
     )
-        .bind(now, userId, LOW_BALANCE_SHARE, now - NOTICE_COOLDOWN_MS)
+        .bind(Date.now(), userId, LOW_BALANCE_SHARE)
         .first<{ email: string; balance: number }>();
     if (!user) return;
 

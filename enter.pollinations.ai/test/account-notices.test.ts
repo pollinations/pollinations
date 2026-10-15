@@ -71,7 +71,7 @@ const unsubscribedAt = async (userId: string) =>
             .first<{ at: number | null }>()
     )?.at;
 
-test("running-low email goes out once per 30 days below 20% of the last pack", async () => {
+test("running-low email goes out once per pack below 20% of the last pack", async () => {
     const { sent, notifyEnv } = withOutbox();
     // Last pack of 20 Pollen, so the threshold is 4.
     await addUser("low", { packBalance: 3.999, lastPackPollen: 20 });
@@ -92,11 +92,10 @@ test("running-low email goes out once per 30 days below 20% of the last pack", a
     );
     expect(sent[0].html).toContain("<strong>🪷 3.99 Pollen</strong>");
 
+    // Crediting the next pack clears the marker, which re-arms the email.
     await env.DB.prepare(
-        "UPDATE user SET low_balance_notified_at = ? WHERE id = 'low'",
-    )
-        .bind(Date.now() - 31 * 24 * 60 * 60 * 1000)
-        .run();
+        "UPDATE user SET low_balance_notified_at = NULL WHERE id = 'low'",
+    ).run();
     await processAutoTopUpForUser(notifyEnv, "low");
     expect(sent).toHaveLength(2);
 });
@@ -113,7 +112,7 @@ test("a failed running-low email frees the slot for the next crossing", async ()
     expect(await notifiedAt("bounce")).not.toBeNull();
 });
 
-test("auto top-up failed emails once per failure, without the 30-day limit", async () => {
+test("auto top-up failed emails once per failure", async () => {
     const { sent, notifyEnv } = withOutbox();
     // No Stripe customer: the trigger turns auto top-up off before any charge.
     await addUser("nocard", { packBalance: 2, autoTopUp: true });
@@ -138,7 +137,7 @@ test("auto top-up failed emails once per failure, without the 30-day limit", asy
         "Auto top-up failed",
         "Auto top-up failed",
     ]);
-    // It leaves the running-low email's 30-day limit alone.
+    // It doesn't use up the running-low email.
     expect(await notifiedAt("nocard")).toBeNull();
 });
 

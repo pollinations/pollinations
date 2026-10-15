@@ -22,6 +22,8 @@ const INCLUDE = "Include ~/.pollinations/ssh/config";
 const SSH_PORT = 8022;
 // Renews the lease well before it runs out while a connection is open.
 const RENEW_MS = 300_000;
+// Windows' ssh can't share a connection between ssh, scp and rsync.
+export const SHARES_CONNECTIONS = process.platform !== "win32";
 
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
@@ -157,6 +159,15 @@ export function setupSsh() {
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
             `    ProxyCommand ${polli} sandbox proxy %h`,
+            // Later ssh, scp and rsync reuse the first connection, up to 10
+            // minutes after it ends.
+            ...(SHARES_CONNECTIONS
+                ? [
+                      "    ControlMaster auto",
+                      `    ControlPath "${join(SSH_DIR, "cm-%C")}"`,
+                      "    ControlPersist 10m",
+                  ]
+                : []),
             "",
         ].join("\n"),
     );

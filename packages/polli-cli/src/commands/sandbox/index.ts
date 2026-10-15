@@ -1,6 +1,8 @@
+import { spawnSync } from "node:child_process";
 import { Command, InvalidArgumentError } from "commander";
 import { requireKey } from "../../lib/api.js";
 import {
+    ExitSignal,
     fail,
     getOutputMode,
     printResult,
@@ -17,9 +19,10 @@ import {
     type LogEntry,
     listSandboxes,
     pauseSandbox,
+    type Sandbox,
     sandboxLogs,
 } from "./e2b.js";
-import { proxy, setupSsh } from "./ssh.js";
+import { proxy, SHARES_CONNECTIONS, setupSsh } from "./ssh.js";
 
 // Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
 // `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
@@ -39,6 +42,25 @@ const runsUntil = (seconds: number, endAt: number) =>
     seconds === KEEP_SECONDS
         ? "runs until you pause or kill it"
         : `runs until ${new Date(endAt).toLocaleString()}, then pauses`;
+
+function printSandboxes(sandboxes: Sandbox[]) {
+    if (getOutputMode() === "json") {
+        printResult(sandboxes);
+        return;
+    }
+    printTable(
+        // A paused sandbox's endAt is when it paused.
+        sandboxes.map((sandbox) => ({
+            id: sandbox.sandboxID,
+            template: sandbox.alias ?? sandbox.templateID,
+            size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
+            state:
+                sandbox.state === "running"
+                    ? `running until ${new Date(sandbox.endAt).toLocaleString()}`
+                    : sandbox.state,
+        })),
+    );
+}
 
 // E2B's tracing fields mean nothing to a user.
 const TRACE_FIELDS = ["edge_trace_id", "trace_id", "span_id", "source_type"];
@@ -111,23 +133,7 @@ export const sandboxCommand = new Command("sandbox")
             .action(async () => {
                 requireKey();
                 try {
-                    const sandboxes = await listSandboxes();
-                    if (getOutputMode() === "json") {
-                        printResult(sandboxes);
-                        return;
-                    }
-                    printTable(
-                        // A paused sandbox's endAt is when it paused.
-                        sandboxes.map((sandbox) => ({
-                            id: sandbox.sandboxID,
-                            template: sandbox.alias ?? sandbox.templateID,
-                            size: `${sandbox.cpuCount} vCPU, ${sandbox.memoryMB} MB`,
-                            state:
-                                sandbox.state === "running"
-                                    ? `running until ${new Date(sandbox.endAt).toLocaleString()}`
-                                    : sandbox.state,
-                        })),
-                    );
+                    printSandboxes(await listSandboxes());
                 } catch (err) {
                     fail("Failed to list sandboxes", err);
                 }
@@ -209,6 +215,48 @@ export const sandboxCommand = new Command("sandbox")
                 } catch (err) {
                     fail("Failed to kill sandboxes", err);
                 }
+            }),
+    )
+    .addCommand(
+        new Command("ssh")
+            .description(
+                "Open a shell in a sandbox, setting up ssh first; the id is optional when you have one sandbox",
+            )
+            .argument("[id]")
+            .action(async (id?: string) => {
+                requireKey();
+                if (!id) {
+                    const sandboxes = await listSandboxes().catch((err) =>
+                        fail("Failed to list sandboxes", err),
+                    );
+                    if (sandboxes.length !== 1) {
+                        if (sandboxes.length) printSandboxes(sandboxes);
+                        fail(
+                            sandboxes.length
+                                ? "Pick one: polli sandbox ssh <id>"
+                                : "No sandboxes yet. Start one with: polli sandbox create",
+                        );
+                    }
+                    id = sandboxes[0].sandboxID;
+                }
+                try {
+                    // Also rewrites a config that points at an old Node or polli.
+                    setupSsh();
+                } catch (err) {
+                    fail("Failed to set up ssh", err);
+                }
+                const ssh = spawnSync("ssh", [`${id}.polli`], {
+                    stdio: "inherit",
+                });
+                if (ssh.error) fail("Could not run ssh", ssh.error);
+                // A shared connection's ssh sends polli's errors to /dev/null
+                // (OpenSSH's sshconnect.c), so ask Gen again for the reason.
+                if (ssh.status === 255 && SHARES_CONNECTIONS) {
+                    await connectSandbox(id).catch((err) =>
+                        fail(`Could not reach sandbox ${id}`, err),
+                    );
+                }
+                if (ssh.status) throw new ExitSignal(ssh.status);
             }),
     )
     .addCommand(

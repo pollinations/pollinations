@@ -16,9 +16,8 @@ type AgentBase = {
     id: string;
     name: string;
     // The exact string to pass as `model` when calling this agent, e.g.
-    // "community/octocat/my-agent". Null only for agents predating the
-    // GitHub-linked-owner requirement.
-    modelId: string | null;
+    // "community/octocat/my-agent".
+    modelId: string;
     title: string;
     description: string | null;
     visibility: "private" | "public";
@@ -90,9 +89,7 @@ function printAgents(agents: Agent[]): void {
         agents.map((agent) => ({
             id: chalk.dim(agent.id),
             name: agent.name,
-            model: agent.modelId
-                ? chalk.hex("#a78bfa").bold(agent.modelId)
-                : "-",
+            model: chalk.hex("#a78bfa").bold(agent.modelId),
             type: agent.type,
             base_model: agent.type === "prompt_agent" ? agent.baseModel : "-",
             visibility: agent.visibility,

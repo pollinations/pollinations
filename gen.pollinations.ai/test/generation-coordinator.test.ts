@@ -572,7 +572,7 @@ describe("GenerationCoordinator", () => {
                     started: true,
                 });
                 await state.storage.put("async", {
-                    ownerIds: ["user-1"],
+                    ownerIds: ["async-owner"],
                     cache: { storage: "media", key: cacheKey },
                     status: "pending",
                     createdAt: Date.now(),
@@ -590,7 +590,7 @@ describe("GenerationCoordinator", () => {
                 const outcome = await coordinator.startAndWait(job);
                 return {
                     outcome,
-                    record: await coordinator.status("user-1"),
+                    record: await coordinator.status("async-owner"),
                     alarm: await state.storage.getAlarm(),
                 };
             },
@@ -600,7 +600,11 @@ describe("GenerationCoordinator", () => {
         expect(result.outcome).toEqual({ status: "cached" });
         // ...but the pending async record must not be left without a wake-up.
         expect(result.alarm).not.toBeNull();
-        expect(result.record).toMatchObject({ status: "succeeded" });
+        // The sync caller (user-1) doesn't become an owner of the job.
+        expect(result.record).toMatchObject({
+            status: "succeeded",
+            ownerIds: ["async-owner"],
+        });
     });
 
     it("streams request bodies above the 32 MiB RPC limit into storage", async () => {

@@ -99,11 +99,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 await body?.cancel();
                 if (stored) {
                     await this.clear(stored.bodyChunks, true);
-                    // The in-flight alarm may have been evicted after the
-                    // cache was written but before finish(); its retry was
-                    // cancelled above, so settle the record here instead of
-                    // leaving a pending job without a wake-up.
-                    await this.settleCacheHitRecord(job.auth.user.id);
+                    // The alarm cancelled above may have died after writing
+                    // the cache, so settle its pending async record here.
+                    await this.settleCacheHitRecord();
                 }
                 immediate = { status: "cached" };
                 return;
@@ -329,15 +327,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         });
     }
 
-    /** A cache-hit join settles the shared record when the alarm cannot. */
-    private async settleCacheHitRecord(userId: string): Promise<void> {
+    /** A cache-hit join settles the pending record when the alarm cannot. */
+    private async settleCacheHitRecord(): Promise<void> {
         const record = await this.readRecord();
-        if (!record) return;
+        if (record?.status !== "pending") return;
         await this.ctx.storage.put<AsyncJobRecord>(ASYNC_KEY, {
             ...record,
-            ownerIds: [...new Set([...record.ownerIds, userId])],
             status: "succeeded",
-            completedAt: record.completedAt ?? Date.now(),
+            completedAt: Date.now(),
         });
         await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
     }

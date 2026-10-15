@@ -1,5 +1,7 @@
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import JSON5 from "json5";
+import { BASE_URL } from "../lib/config.js";
 import {
     commandExists,
     readTextIfExists,
@@ -10,19 +12,30 @@ import {
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
-import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
+import type {
+    HarnessAdapter,
+    HarnessContext,
+    HarnessModel,
+    HarnessResult,
+} from "./types.js";
 
 const ID = "opencode";
 const LABEL = "OpenCode";
 const DEFAULT_MODEL = "openai/gpt-6-sol";
 const PLUGIN_SPEC = "opencode-pollinations-plugin";
+const PROVIDER_ID = "pollinations";
+const PROVIDER_PACKAGE = "@ai-sdk/openai-compatible";
+const MODEL_PREFIX = `${PROVIDER_ID}/`;
 
 /**
- * OpenCode's Pollinations plugin registers the `pollinations` provider itself
- * (models as `free/<id>` and `enter/<id>`), serves its media tools, usage,
- * and quest commands, and reads `apiKey` from its own config.json first. The
- * harness therefore only wires the plugin in, stores the dedicated key, and
- * points OpenCode's default model at the plugin's `enter/` catalog.
+ * The plugin registers the `pollinations` provider on OpenCode 1.x, serves its
+ * media tools, usage, and quest commands, and reads `apiKey` from its own
+ * config.json. OpenCode 2.x rejects that plugin, so on 2.x no Pollinations
+ * models appeared at all. 2.x still reads the 1.x `provider` block, so the
+ * harness also writes a native provider entry: one config serves both versions.
+ *
+ * The provider block stays minimal on purpose. OpenCode 2.x drops a model whose
+ * entry carries anything beyond `name`, and reports it as unavailable.
  */
 const pollinationsConfigDir = (ctx: HarnessContext) => {
     if (process.platform === "win32") {
@@ -124,14 +137,111 @@ const deleteApiKey = (ctx: HarnessContext) => {
 const openCodeConfig = (ctx: HarnessContext): Record<string, unknown> =>
     readJson(opencodeConfigFile(ctx)) ?? {};
 
-// The plugin exposes paid tool-calling models as `enter/<id>` under its own
-// `pollinations` provider.
-const defaultModelRef = (model: string) => `pollinations/enter/${model}`;
+interface OpenCodeSettings {
+    apiKey: string;
+    model: string;
+    /** Catalog ids the provider block lists. Defaults to the selected model. */
+    models?: string[];
+    /** OpenCode major version; 2 and up resolve models natively. */
+    major?: number;
+}
+
+/**
+ * OpenCode 1.x resolves models through the plugin, which namespaces them as
+ * `enter/<id>` and shadows the provider block. OpenCode 2.x rejects the plugin
+ * and falls back to the provider block, so the default model has to match the
+ * version that is installed.
+ */
+const usesNativeModels = (major: number | undefined) => (major ?? 1) >= 2;
+
+/** Default model ref, e.g. `pollinations/openai/gpt-6-sol` on 2.x. */
+const modelRef = (model: string, major: number | undefined) =>
+    usesNativeModels(major)
+        ? `${MODEL_PREFIX}${model}`
+        : `${MODEL_PREFIX}enter/${model}`;
+
+/** Major version of the installed OpenCode, or undefined when unreadable. */
+const openCodeMajor = (ctx: HarnessContext): number | undefined => {
+    const binary = commandExists("opencode", ctx.env)
+        ? "opencode"
+        : join(ctx.home, ".opencode", "bin", "opencode");
+    const run = spawnSync(binary, ["--version"], {
+        encoding: "utf8",
+        env: ctx.env,
+    });
+    if (run.status !== 0) return undefined;
+    // "opencode v2.0.26" and "1.19.0" both start with the major version.
+    const match = `${run.stdout ?? ""}`.match(/(\d+)\./);
+    return match ? Number.parseInt(match[1], 10) : undefined;
+};
 
 const isOurDefaultModel = (model: unknown) =>
-    typeof model === "string" && model.startsWith("pollinations/enter/");
+    typeof model === "string" && model.startsWith(MODEL_PREFIX);
 
-const writeOpenCodeConfig = (ctx: HarnessContext, model: string) => {
+/**
+ * Reads the model out of a ref we wrote, tolerating the `enter/` namespace the
+ * plugin uses on 1.x.
+ */
+const modelFromRef = (ref: string) => {
+    const legacy = `${MODEL_PREFIX}enter/`;
+    return ref.startsWith(legacy)
+        ? ref.slice(legacy.length)
+        : ref.slice(MODEL_PREFIX.length);
+};
+
+const providerEntries = (config: Record<string, unknown>) => {
+    const existing = config.provider;
+    return existing !== null &&
+        typeof existing === "object" &&
+        !Array.isArray(existing)
+        ? (existing as Record<string, unknown>)
+        : {};
+};
+
+const isOurProvider = (entry: unknown) =>
+    entry !== null &&
+    typeof entry === "object" &&
+    (entry as Record<string, unknown>).npm === PROVIDER_PACKAGE;
+
+/**
+ * OpenCode 2.x reads this 1.x provider block, but only keeps a minimal model
+ * entry: a model that carries anything beyond `name` becomes unavailable. On
+ * 1.x the plugin shadows this block, which is harmless.
+ */
+const writeProvider = (
+    config: Record<string, unknown>,
+    settings: OpenCodeSettings,
+) => {
+    const ids = settings.models?.length ? settings.models : [settings.model];
+    config.provider = {
+        ...providerEntries(config),
+        [PROVIDER_ID]: {
+            npm: PROVIDER_PACKAGE,
+            name: "Pollinations",
+            options: {
+                baseURL: `${BASE_URL}/v1`,
+                apiKey: settings.apiKey,
+            },
+            models: Object.fromEntries(ids.map((id) => [id, { name: id }])),
+        },
+    };
+};
+
+const stripProvider = (config: Record<string, unknown>) => {
+    const entries = providerEntries(config);
+    if (!isOurProvider(entries[PROVIDER_ID])) return false;
+
+    const remaining = { ...entries };
+    delete remaining[PROVIDER_ID];
+    if (Object.keys(remaining).length === 0) delete config.provider;
+    else config.provider = remaining;
+    return true;
+};
+
+const writeOpenCodeConfig = (
+    ctx: HarnessContext,
+    settings: OpenCodeSettings,
+) => {
     const config = openCodeConfig(ctx);
     if (typeof config.$schema !== "string") {
         config.$schema = "https://opencode.ai/config.json";
@@ -141,7 +251,8 @@ const writeOpenCodeConfig = (ctx: HarnessContext, model: string) => {
         const entries = Array.isArray(config[key]) ? config[key] : [];
         config[key] = [...entries, PLUGIN_SPEC];
     }
-    config.model = defaultModelRef(model);
+    writeProvider(config, settings);
+    config.model = modelRef(settings.model, settings.major);
     writeJson(opencodeConfigFile(ctx), config);
 };
 
@@ -160,6 +271,8 @@ const stripOpenCodeConfig = (ctx: HarnessContext) => {
         changed = true;
     }
 
+    changed = stripProvider(config) || changed;
+
     if (isOurDefaultModel(config.model)) {
         delete config.model;
         changed = true;
@@ -172,13 +285,14 @@ const stripOpenCodeConfig = (ctx: HarnessContext) => {
 const result = (ctx: HarnessContext): HarnessResult => {
     const config = openCodeConfig(ctx);
     const model = isOurDefaultModel(config.model)
-        ? (config.model as string).slice("pollinations/enter/".length)
+        ? modelFromRef(config.model as string)
         : undefined;
     return {
         harness: ID,
         label: LABEL,
         configured:
             hasPluginEntry(config) &&
+            isOurProvider(providerEntries(config)[PROVIDER_ID]) &&
             isOurDefaultModel(config.model) &&
             readApiKey(ctx) !== null,
         model,
@@ -186,13 +300,8 @@ const result = (ctx: HarnessContext): HarnessResult => {
     };
 };
 
-interface OpenCodeSettings {
-    apiKey: string;
-    model: string;
-}
-
 const writeConfig = (ctx: HarnessContext, settings: OpenCodeSettings) => {
-    writeOpenCodeConfig(ctx, settings.model);
+    writeOpenCodeConfig(ctx, settings);
     writeApiKey(ctx, settings.apiKey);
 };
 
@@ -234,7 +343,8 @@ export const opencode: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        await fetchHarnessModels(model);
+        const major = openCodeMajor(ctx);
+        const models = await fetchHarnessModels(model);
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,
@@ -244,7 +354,12 @@ export const opencode: HarnessAdapter = {
             },
             { browser: options.browser },
         );
-        return configureOpenCode(ctx, { apiKey, model });
+        return configureOpenCode(ctx, {
+            apiKey,
+            model,
+            models: models.map((entry) => entry.id),
+            major,
+        });
     },
 
     off: disableOpenCode,

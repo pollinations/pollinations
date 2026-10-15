@@ -486,3 +486,99 @@ describe("Device Authorization Flow", () => {
         expect(body).toHaveProperty("preferred_username");
     }, 30000);
 });
+
+describe("Device token malformed bodies (RFC 6749 §5.2 / RFC 8628 §3.5)", () => {
+    test("POST /api/device/token with a non-JSON body returns 400 invalid_request, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "not json",
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with an object device_code returns 400 invalid_request without leaking SQL", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device_code: { a: 1 } }),
+        });
+        expect(res.status).toBe(400);
+        const text = await res.text();
+        // The Drizzle SQL statement/params must never reach the client
+        expect(text).not.toMatch(/select|from "device_code"|params:/i);
+        const body = JSON.parse(text) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token with a JSON null body returns 400 invalid_request, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("invalid_request");
+    });
+
+    test("POST /api/device/token accepts a form-encoded body (RFC 8628 §3.5)", async () => {
+        // OAuth wire format: form encoding must reach the grant checks
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                device_code: device.deviceCode,
+            }).toString(),
+        });
+        expect(res.status).toBe(400);
+        const body = (await res.json()) as { error: string };
+        expect(body.error).toBe("authorization_pending");
+    });
+
+    test("POST /api/device/deny with a non-JSON body returns 400, not 500", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: "not json",
+        });
+        expect(res.status).toBe(400);
+    }, 30000);
+
+    test("POST /api/device/deny with a non-string userCode returns 400, not 500", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ userCode: { a: 1 } }),
+        });
+        expect(res.status).toBe(400);
+    }, 30000);
+
+    test("POST /api/device/code with a JSON null body issues a code, not 500", async () => {
+        const res = await SELF.fetch(`${BASE}/api/device/code`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: "null",
+        });
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { device_code: string };
+        expect(body.device_code).toBeTruthy();
+    });
+});

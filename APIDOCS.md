@@ -20,7 +20,6 @@ Show one in Markdown:
 | `width`, `height` | 768 | Image size. At most 768 × 768 pixels in area; the aspect ratio is kept |
 | `seed` | 42 | The same prompt and seed return the same image. Change it for a new one |
 | `safe` | `false` | `true` applies stricter content filtering |
-| `nofeed` | `false` | `true` keeps your prompt off the public feed |
 
 One model. Every image is a JPEG with a small Pollinations logo in the corner.
 
@@ -36,12 +35,11 @@ https://text.pollinations.ai/{your question}
 | `seed`, `temperature` | Repeatable or more varied answers |
 | `json=true` | Answer as JSON |
 | `stream=true` | Stream the answer (server-sent events) |
-| `private=true` | Keep your prompt off the public feed |
 
 Also available:
 
 - `POST https://text.pollinations.ai/` with `{"messages": [...]}`: plain-text answer
-- `POST https://text.pollinations.ai/openai` (or `/v1/chat/completions`): OpenAI-compatible chat completions. These requests never appear on the feed
+- `POST https://text.pollinations.ai/openai` (or `/v1/chat/completions`): OpenAI-compatible chat completions
 - `GET https://text.pollinations.ai/models`: the available model (GPT-OSS 20B)
 
 ## Limits
@@ -62,7 +60,6 @@ Beyond the limit you get **402 Payment Required**. You can:
 ## Good to know
 
 - **Best effort.** There is no uptime guarantee, and limits, models and behaviour can change.
-- **Public feed.** [image.pollinations.ai/feed](https://image.pollinations.ai/feed) and [text.pollinations.ai/feed](https://text.pollinations.ai/feed) show prompts as they are generated. Use `nofeed=true` (images) or `private=true` (text) to stay off it.
 - **Cached results.** The same URL returns the same result, to anyone who has the URL.
 - **No keys in URLs.** This API needs no key; never put one in a URL.
 - **Safety filters.** Some prompts are refused.

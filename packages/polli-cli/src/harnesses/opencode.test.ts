@@ -69,9 +69,10 @@ describe("opencode harness", () => {
                 apiKey: "sk_test_key",
             },
         });
-        expect(
-            Object.keys(config.provider.pollinations.models),
-        ).toEqual(["openai", "kimi"]);
+        expect(Object.keys(config.provider.pollinations.models)).toEqual([
+            "openai",
+            "kimi",
+        ]);
         expect(config.provider.pollinations.models.openai).toMatchObject({
             tool_call: true,
             limit: { context: 128000, output: 32768 },
@@ -140,7 +141,7 @@ describe("opencode harness", () => {
             JSON.stringify({ mode: "quest", lang: "en", apiKey: "sk_old" }),
         );
 
-        const result = configureOpenCode(ctx, settings);
+        configureOpenCode(ctx, settings);
 
         const config = readJsonFile(opencodeFile());
         expect(config.plugin).toEqual(["other-plugin"]);

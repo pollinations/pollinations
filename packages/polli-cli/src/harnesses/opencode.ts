@@ -36,7 +36,9 @@ const MAX_OUTPUT_TOKENS = 32768;
 const dataDir = (ctx: HarnessContext) => {
     const xdg = ctx.env.XDG_DATA_HOME?.trim();
     return join(
-        xdg ? resolveHomePath(ctx.home, xdg) : join(ctx.home, ".local", "share"),
+        xdg
+            ? resolveHomePath(ctx.home, xdg)
+            : join(ctx.home, ".local", "share"),
         "opencode",
     );
 };

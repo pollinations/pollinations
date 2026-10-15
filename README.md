@@ -10,16 +10,9 @@
 [![License](https://img.shields.io/github/license/pollinations/pollinations?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/discord/885844321461485618?style=for-the-badge&logo=discord&label=Discord&color=5865F2)](https://discord.gg/k9F7SyTgqn)
 
-[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
+[Website](https://pollinations.ai) · [Dashboard](https://enter.pollinations.ai) · [Playground](https://pollinations.ai/play) · [Guides](#guides) · [API Docs](APIDOCS.md) · [Discord](https://discord.gg/k9F7SyTgqn)
 
 </div>
-
-> [!IMPORTANT]
-> **Model IDs are now standardized**
->
-> Model IDs now follow `publisher/model`—for example, `flux` → `black-forest-labs/flux.1-schnell`. The model catalog uses the new IDs. Existing IDs remain supported as aliases in API requests.
->
-> [Browse models and their aliases →](https://enter.pollinations.ai/models)
 
 <p align="center"><img src="https://media.pollinations.ai/eb3be88cf66d7491" alt="Pixel art cozy hackerspace — robot at terminal, nomnom creature eating code, bee with glasses" width="800" /></p>
 
@@ -28,6 +21,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🛠️ Pollinations Blocks](https://github.com/Saauf/pollinations-blocks) | Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u | [@Saauf](https://github.com/Saauf) |
+| [🛠️ Pollinations for MIT App Inventor](https://github.com/Drjacky/pollinations-appinventor) | One non-visible App Inventor extension (.aix) plus a ready sample project (.aia) that adds Pollinations to App Inventor apps (Kodular, Niotron and Android Builder take .aix files too). Everything is a | [@Drjacky](https://github.com/Drjacky) |
 | [✍️ Summering text](https://fedaasawalmeh753-cmyk.github.io/Mhcj) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@fedaasawalmeh753-cmyk](https://github.com/fedaasawalmeh753-cmyk) |
 | [🖼️ Image-Captioning-](https://zeros372.github.io/Image-Captioning-) | A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s | [@zeros372](https://github.com/zeros372) |
 | [🎮 The Basement Circuit](https://fisventurous.github.io/The-Basement-Circuit) | A gritty, low-stakes text-to-fighter autobattler. Pollinations inks a complete fight card from a single line of text (up to 80 characters), equipping your contender with distinct personality traits, t | [@fisventurous](https://github.com/fisventurous) |
@@ -36,8 +31,6 @@
 | [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
 | [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
 | [🎮 SPOT AI](https://spotai-gold.vercel.app) | Real or AI? — Spot the synthetic 🕵️ A browser guessing game built for Pollinations Quest #15725: It uses pollination ai different different image generation model Players are shown two images or two | [@07mrbeastofficial](https://github.com/07mrbeastofficial) |
-| [🎮 Pollinations NPC for Roblox](https://github.com/pollinations/pollinations/tree/main/apps/roblox-npc) | Roblox Luau module: give an NPC a persona and a conversation with each player using Pollinations text models, shown as chat bubbles. The key stays in the secrets store. Example: Grix the blacksmith. | [@tomdacatto](https://github.com/tomdacatto) |
-| [🎮 Pollen Village - Roblox NPC dialogue](https://github.com/pollinations/pollinations/tree/main/apps/roblox-pollen-village) | Roblox Luau module: give an NPC a persona and it answers nearby players in chat with any Pollinations text model, as a bubble and a chat line. The key stays in the secrets store. Example: Sage. | [@xiaotian1171](https://github.com/xiaotian1171) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -74,6 +67,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 [pollinations.ai](https://pollinations.ai) is an open-source generative AI platform based in Berlin, powering 500+ community projects with accessible text, image, video, audio, 3D and embeddings generation APIs. We build in the open and keep AI accessible to everyone—thanks to our amazing supporters.
 
+<!-- Updated daily by .github/workflows/news-sync-readme.yml.
+     Regenerate locally with:
+     GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
+<a href="https://star-history.com/#pollinations/pollinations&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" width="600" />
+   <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="600" />
+ </picture>
+</a>
+
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source** — code, decisions, roadmap all public
@@ -89,16 +93,17 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - 🤖 **Managed Agents** — Turn a prompt, base model, and optional Pollinations tools into a reusable model
 - 🎣 **_Easy-to-use Packages_** ([Packages](packages/))
 
-<!-- Updated daily by .github/workflows/news-sync-readme.yml.
-     Regenerate locally with:
-     GITHUB_TOKEN=$(gh auth token) node .github/scripts/star-history-chart.mjs -->
-<a href="https://star-history.com/#pollinations/pollinations&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" width="600" />
-   <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" width="600" />
-   <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="600" />
- </picture>
-</a>
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
+| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
+| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
+| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
+| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
+| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
 
 ## 🤖 Managed Agents
 

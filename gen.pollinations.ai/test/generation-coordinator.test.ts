@@ -668,6 +668,67 @@ describe("GenerationCoordinator", () => {
         expect(await env.TEXT_BUCKET.head(key)).toBeNull();
     });
 
+    it("settles a pending async record when a sync join cancels its alarm", async () => {
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `test-${crypto.randomUUID()}`,
+        );
+        const cacheKey = crypto.randomUUID().replaceAll("-", "").repeat(2);
+        const job = {
+            ...testJob(cacheKey),
+            cache: {
+                storage: "media" as const,
+                key: cacheKey,
+            },
+        };
+
+        const result = await runInDurableObject(
+            stub,
+            async (coordinator, state) => {
+                // Arrange the state an eviction leaves behind: the alarm
+                // claimed the job, the executor wrote the cache, and the
+                // handler died before finish(). The scheduled alarm retry is
+                // the only event that can still finalize the record.
+                await state.storage.put("job", {
+                    ...job,
+                    bodyChunks: 0,
+                    started: true,
+                });
+                await state.storage.put("async", {
+                    ownerIds: ["async-owner"],
+                    cache: { storage: "media", key: cacheKey },
+                    status: "pending",
+                    createdAt: Date.now(),
+                });
+                await state.storage.setAlarm(Date.now() + 60_000);
+                await env.MEDIA.put(
+                    cacheKey,
+                    new Response("late-result", {
+                        headers: { "content-type": "image/png" },
+                    }),
+                );
+
+                // A sync client now submits the identical request and joins
+                // on the freshly written cache.
+                const outcome = await coordinator.startAndWait(job);
+                return {
+                    outcome,
+                    record: await coordinator.status("async-owner"),
+                    alarm: await state.storage.getAlarm(),
+                };
+            },
+        );
+
+        // The sync client is served from the cache...
+        expect(result.outcome).toEqual({ status: "cached" });
+        // ...but the pending async record must not be left without a wake-up.
+        expect(result.alarm).not.toBeNull();
+        // The sync caller (user-1) doesn't become an owner of the job.
+        expect(result.record).toMatchObject({
+            status: "succeeded",
+            ownerIds: ["async-owner"],
+        });
+    });
+
     it("streams request bodies above the 32 MiB RPC limit into storage", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(

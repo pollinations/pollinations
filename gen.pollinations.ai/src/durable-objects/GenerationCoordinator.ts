@@ -105,6 +105,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 await body?.cancel();
                 if (stored) {
                     await this.clear(stored.bodyChunks, true);
+                    // The alarm cancelled above may have died after writing
+                    // the cache, so settle its pending async record here.
+                    await this.settleCacheHitRecord();
                 }
                 immediate = { status: "cached" };
                 return;
@@ -138,15 +141,12 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const stored = await this.ctx.storage.get<PersistedJob>(JOB_KEY);
             const previous = await this.readRecord();
             const sameRun = stored && previous?.status === "pending";
-            const ownerIds =
-                sameRun || cachePresent
-                    ? [
-                          ...new Set([
-                              ...(previous?.ownerIds ?? []),
-                              job.auth.user.id,
-                          ]),
-                      ]
-                    : [job.auth.user.id];
+            // Every account that submitted this identical request keeps
+            // reading the shared record, including when a new run replaces
+            // a terminal one.
+            const ownerIds = [
+                ...new Set([...(previous?.ownerIds ?? []), job.auth.user.id]),
+            ];
             status = cachePresent ? "succeeded" : "pending";
             if (cachePresent) {
                 await body?.cancel();
@@ -375,6 +375,18 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             for (const resolve of this.waiters) resolve(outcome);
             this.waiters.clear();
         });
+    }
+
+    /** A cache-hit join settles the pending record when the alarm cannot. */
+    private async settleCacheHitRecord(): Promise<void> {
+        const record = await this.readRecord();
+        if (record?.status !== "pending") return;
+        await this.ctx.storage.put<AsyncJobRecord>(ASYNC_KEY, {
+            ...record,
+            status: "succeeded",
+            completedAt: Date.now(),
+        });
+        await this.ctx.storage.setAlarm(Date.now() + ASYNC_TTL_MS);
     }
 
     private async clear(

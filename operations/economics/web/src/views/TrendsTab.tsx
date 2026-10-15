@@ -1,11 +1,10 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { type ReactNode, useMemo, useState } from "react";
 import { FilterMultiSelect } from "../components/Filters";
-import { StatCards } from "../components/StatCards";
 import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
-import { fmtUsd as axisUsd, fmtNumber, fmtPeriod } from "../lib/format";
+import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName } from "../lib/months";
-import { providerAccountBalanceRows } from "../lib/providerBalances";
+import { signedToneOrSoft } from "../lib/tone";
 import {
     monthlyPollenTrends,
     monthlyTrends,
@@ -161,7 +160,7 @@ function TrendChart({
     const y = (value: number) => 208 - ((value - min) / (max - min)) * 184;
     const barWidth = Math.min(18, slot * 0.28);
     return (
-        <Surface className="min-w-0 p-4 sm:p-5">
+        <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <Heading as="h3">{title}</Heading>
                 {controls}
@@ -219,7 +218,7 @@ function TrendChart({
             <div className="mt-2 overflow-x-auto">
                 <svg
                     viewBox="0 0 620 246"
-                    className="w-full"
+                    className="mx-auto w-full max-w-3xl"
                     aria-label={`${title}. ${unit} by month; select a month to inspect values.`}
                 >
                     <title>{title}</title>
@@ -417,26 +416,21 @@ export function TrendsTab({
         "development",
     ]);
     const [activeMonth, setActiveMonth] = useState<string | null>(null);
-    const { months, balances } = useMemo(() => {
+    const months = useMemo(() => {
         const company = monthlyTrends(data, "company").months;
         const api = monthlyTrends(data, "compute").months;
         const pollen = monthlyPollenTrends(
             data,
             company.map((row) => row.month),
         );
-        return {
-            months: company.map(
-                (row, i): TrendRow => ({
-                    ...row,
-                    ...pollen[i],
-                    apiResult: api[i].result,
-                    apiFullResult: api[i].fullResult,
-                }),
-            ),
-            balances: providerAccountBalanceRows(data, new Date()).filter(
-                (row) => row.active && row.creditBalanceUsd != null,
-            ),
-        };
+        return company.map(
+            (row, i): TrendRow => ({
+                ...row,
+                ...pollen[i],
+                apiResult: api[i].result,
+                apiFullResult: api[i].fullResult,
+            }),
+        );
     }, [data]);
     const { start, end } = trendPeriod(period);
     const rows = months.filter((row) => row.month >= start && row.month <= end);
@@ -455,6 +449,10 @@ export function TrendsTab({
         : null;
     const adjustedResult =
         result != null && oneOffFraud != null ? result + oneOffFraud : null;
+    const adjustedFullResult =
+        fullResult != null && oneOffFraud != null
+            ? fullResult + oneOffFraud
+            : null;
     const chartProps = {
         rows,
         activeMonth: selected?.month ?? null,
@@ -463,16 +461,6 @@ export function TrendsTab({
     const selectedExpenses = EXPENSE_SERIES.filter(
         (s) => !categories.length || categories.includes(s.key),
     );
-    const wallet = data.userBalances?.[0];
-    const positiveBalances = balances.filter(
-        (row) => (row.creditBalanceUsd ?? 0) > 0,
-    );
-    const creditTotal = balances.length
-        ? positiveBalances.reduce(
-              (sum, row) => sum + (row.creditBalanceUsd ?? 0),
-              0,
-          )
-        : null;
     return (
         <section className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -496,55 +484,97 @@ export function TrendsTab({
                     {monthLabel(start)} – {monthLabel(end)}
                 </span>
             </div>
-            <div className="flex items-baseline justify-between gap-3">
-                <Heading as="h2">Company performance</Heading>
-                <span className="text-xs text-theme-text-soft">
-                    Period totals · {monthLabel(start)} – {monthLabel(end)}
-                </span>
+            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
+                <Surface className="w-full min-w-0 max-w-4xl p-4 sm:p-5">
+                    <Heading as="h2">Company performance</Heading>
+                    <p className="mt-1 text-xs text-theme-text-soft">
+                        Period totals · {monthLabel(start)} – {monthLabel(end)}
+                    </p>
+                    <table
+                        aria-label="Period results comparison"
+                        className="mt-5 w-full text-sm"
+                    >
+                        <thead>
+                            <tr className="text-theme-text-soft">
+                                <th
+                                    scope="col"
+                                    className="pb-3 text-left font-normal"
+                                >
+                                    Result
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="pb-3 pl-3 text-right font-normal"
+                                >
+                                    With credits
+                                </th>
+                                <th
+                                    scope="col"
+                                    className="pb-3 pl-3 text-right font-normal"
+                                >
+                                    Without credits
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[
+                                {
+                                    label: "Actual company result",
+                                    withCredits: result,
+                                    withoutCredits: fullResult,
+                                },
+                                {
+                                    label: "Excluding identified fraud",
+                                    withCredits: adjustedResult,
+                                    withoutCredits: adjustedFullResult,
+                                    note:
+                                        oneOffFraud == null
+                                            ? "No reviewed adjustment"
+                                            : `${usd(oneOffFraud)} excluded`,
+                                },
+                                {
+                                    label: "API + GPU margin",
+                                    withCredits: total("apiResult"),
+                                    withoutCredits: total("apiFullResult"),
+                                },
+                            ].map((row) => (
+                                <tr
+                                    key={row.label}
+                                    className="border-t border-theme-border"
+                                >
+                                    <th
+                                        scope="row"
+                                        className="py-4 text-left font-medium text-theme-text-strong"
+                                    >
+                                        {row.label}
+                                        {row.note && (
+                                            <span className="mt-1 block text-xs font-normal text-theme-text-soft">
+                                                {row.note}
+                                            </span>
+                                        )}
+                                    </th>
+                                    {[row.withCredits, row.withoutCredits].map(
+                                        (value, index) => (
+                                            <td
+                                                key={index}
+                                                className={`whitespace-nowrap py-4 pl-3 text-right font-semibold tabular-nums sm:text-xl ${signedToneOrSoft(value)}`}
+                                            >
+                                                {usd(value)}
+                                            </td>
+                                        ),
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </Surface>
+                <TrendChart
+                    title="Monthly result"
+                    series={RESULT_SERIES}
+                    kind="bar"
+                    {...chartProps}
+                />
             </div>
-            <StatCards
-                items={[
-                    {
-                        label: "Actual · with credits",
-                        value: usd(result),
-                        tone:
-                            result == null
-                                ? "base"
-                                : result < 0
-                                  ? "neg"
-                                  : "pos",
-                    },
-                    {
-                        label: "Excluding identified fraud",
-                        value: usd(adjustedResult),
-                        detail:
-                            oneOffFraud == null
-                                ? "No reviewed adjustment"
-                                : `${usd(oneOffFraud)} excluded · with credits`,
-                    },
-                    {
-                        label: "Actual · without credits",
-                        value: usd(fullResult),
-                        tone:
-                            fullResult == null
-                                ? "base"
-                                : fullResult < 0
-                                  ? "neg"
-                                  : "pos",
-                    },
-                    {
-                        label: "API + GPU margin",
-                        value: usd(total("apiResult")),
-                        detail: `With credits · ${usd(total("apiFullResult"))} without`,
-                    },
-                ]}
-            />
-            <TrendChart
-                title="Monthly result"
-                series={RESULT_SERIES}
-                kind="bar"
-                {...chartProps}
-            />
             <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                 <TrendChart
                     title="Expenses before credits"
@@ -588,30 +618,6 @@ export function TrendsTab({
                     {...chartProps}
                 />
             </div>
-            <Heading as="h2">Latest recorded balances</Heading>
-            <StatCards
-                items={[
-                    {
-                        label: "Recorded provider credits",
-                        value: usd(creditTotal),
-                        detail: "Separate provider pools",
-                    },
-                    {
-                        label: "Unspent Paid Pollen",
-                        value: fmtNumber(wallet?.paid_balance),
-                        detail: wallet
-                            ? `Pollen · snapshot ${fmtPeriod(wallet.synced_at.slice(0, 10))}`
-                            : "No wallet snapshot",
-                    },
-                    {
-                        label: "Unspent Quest Pollen",
-                        value: fmtNumber(wallet?.quest_balance),
-                        detail: wallet
-                            ? `Pollen · snapshot ${fmtPeriod(wallet.synced_at.slice(0, 10))}`
-                            : "No wallet snapshot",
-                    },
-                ]}
-            />
         </section>
     );
 }

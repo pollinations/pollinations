@@ -29,7 +29,7 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).toContain("Pollen consumed. Pollen by month");
     expect(html).toContain("Quest serving costs");
     expect(html).not.toContain('aria-label="Trends focus"');
-    expect(html).toContain("No wallet snapshot");
+    expect(html).not.toContain("No wallet snapshot");
     expect(html).not.toContain("Not measured yet");
     expect(html).not.toContain("NaN");
     expect(html).not.toContain("January");
@@ -69,7 +69,7 @@ it("shows only available 2026 history in the twelve-month view", () => {
     expect(html).not.toContain("2025");
 });
 
-it("keeps wallet snapshots separate from monthly flows and does not invent a provider balance", () => {
+it("omits current balances while retaining monthly Pollen activity", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
     const html = renderToStaticMarkup(
@@ -90,16 +90,14 @@ it("keeps wallet snapshots separate from monthly flows and does not invent a pro
             onPeriodChange: () => {},
         }),
     );
-    expect(html).toContain("Pollen · snapshot October 5, 26");
-    expect(html).toContain("1,234");
-    expect(html).toContain("4,567");
-    expect(html).not.toContain("$1,234");
-    expect(html).not.toContain("$4,567");
-    const creditCard = html
-        .split("Recorded provider credits")[1]
-        .split("Separate provider pools")[0];
-    expect(creditCard).toContain("–");
-    expect(creditCard).not.toContain("$0");
+    expect(html).not.toContain("Latest recorded balances");
+    expect(html).not.toContain("Recorded provider credits");
+    expect(html).not.toContain("Unspent Paid Pollen");
+    expect(html).not.toContain("Unspent Quest Pollen");
+    expect(html).not.toContain("1,234");
+    expect(html).not.toContain("4,567");
+    expect(html).toContain("Pollen consumed");
+    expect(html).toContain("Quest serving costs");
 });
 
 it("summarizes the full selected period and keeps missing months unknown", () => {
@@ -175,6 +173,12 @@ it("summarizes the full selected period and keeps missing months unknown", () =>
     expect(cards.match(/>\$5,400</g)).toHaveLength(2);
     expect(cards).toContain("$5,250");
     expect(cards).toContain("$5,480");
+    expect(cards).toContain("$5,330");
+    expect(cards).toContain('aria-label="Period results comparison"');
+    expect(cards).toContain("With credits");
+    expect(cards).toContain("Without credits");
+    expect(cards).not.toContain("Actual · with credits");
+    expect(cards).not.toContain("Actual · without credits");
     expect(cards).toContain("$80 excluded");
     expect(cards).not.toContain("August:");
     expect(html).not.toContain("April");
@@ -187,4 +191,5 @@ it("summarizes the full selected period and keeps missing months unknown", () =>
     expect(incomplete).toContain("–");
     expect(incomplete).not.toContain("$5,400");
     expect(incomplete).not.toContain("$5,480");
+    expect(incomplete).not.toContain("$5,330");
 });

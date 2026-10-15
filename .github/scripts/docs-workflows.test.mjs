@@ -251,6 +251,8 @@ test("a removal disables existing auto-merge before pushing and stops if disabli
                     RUNNER_TEMP: directory,
                     EVENTS: events,
                     DISABLE_STATUS: String(disableStatus),
+                    GITHUB_SERVER_URL: "https://github.com",
+                    GITHUB_REPOSITORY: "pollinations/pollinations",
                 },
                 input: `
 gh() {
@@ -263,12 +265,16 @@ gh() {
 }
 ${publication}`,
             });
-            assert.equal(result.status, disableStatus, result.stderr);
+            assert.equal(result.status, 1, result.stderr);
             assert.equal(
                 await readFile(events, "utf8"),
                 disableStatus ? "disable\n" : "disable\npush\nedit\n",
             );
             if (!disableStatus) {
+                assert.match(
+                    result.stdout,
+                    /::error::[^\n]*https:\/\/github\.com\/pollinations\/pollinations\/pull\/42/,
+                );
                 assert.equal(
                     run("git", [
                         "--git-dir",

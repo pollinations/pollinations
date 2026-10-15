@@ -198,8 +198,8 @@ jobs:
           fi
 
           if [ -n "$REMOVED" ]; then
-            echo "PR #$EXISTING requires manual review of removed operations."
-            exit 0
+            echo "::error::Removed API operations require manual review: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pull/$EXISTING"
+            exit 1
           fi
 
           # Fail loud if auto-merge can't be enabled — otherwise the docs PR

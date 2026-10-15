@@ -1,4 +1,5 @@
 import type { BalanceCheckResult } from "@shared/billing/balance.ts";
+import { getPublicOrigin } from "@shared/public-origin.ts";
 import { getRoutePath } from "@shared/util.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
@@ -57,6 +58,16 @@ export type GenerationJobHead = Omit<GenerationJob, "request"> & {
 export type GenerationOutcome =
     | { status: "cached" }
     | { status: "failed"; error: GenerationErrorSnapshot };
+
+export type AsyncJobRecord = {
+    /** All accounts that actually submitted this identical request. */
+    ownerIds: string[];
+    cache: GenerationCacheIdentity;
+    status: "pending" | "succeeded" | "failed";
+    createdAt: number;
+    completedAt?: number;
+    error?: { httpStatus: number; message: string };
+};
 
 type DeduplicationEnv = {
     Bindings: CloudflareBindings;
@@ -171,6 +182,45 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const { job, body } = await createJob(c, cache.adapter, cache.key);
+        const asyncRequested =
+            cache.adapter.storage === "media" &&
+            !c.var.generationRequestUrl &&
+            c.req
+                .header("prefer")
+                ?.split(",")
+                .some((part) =>
+                    /^respond-async(?:\s*;.*)?$/i.test(part.trim()),
+                );
+        const bodyStream =
+            body &&
+            (new Response(body as Uint8Array<ArrayBuffer>).body ?? undefined);
+        if (asyncRequested) {
+            try {
+                const status = await stub.submit(job, bodyStream);
+                if (c.var.track) c.var.track.detachedExecutionTracked = true;
+                const url = `${getPublicOrigin(c)}/v1/jobs/${name}`;
+                return c.json({ id: name, status, status_url: url }, 202, {
+                    Location: url,
+                    "Retry-After": "5",
+                    "Preference-Applied": "respond-async",
+                    "Cache-Control": "private, no-store",
+                });
+            } catch (error) {
+                c.get("log").error(
+                    "Async generation submission failed: {error}",
+                    {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                throw new HTTPException(503, {
+                    message: "Generation coordination is unavailable",
+                    cause: error,
+                });
+            }
+        }
         let outcome: GenerationOutcome | undefined;
         let coordinationError: HTTPException | undefined;
         try {
@@ -178,9 +228,7 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             // control instead of serializing it into the 32 MiB-capped call.
             outcome = (await stub.startAndWait(
                 job,
-                body &&
-                    (new Response(body as Uint8Array<ArrayBuffer>).body ??
-                        undefined),
+                bodyStream,
             )) as GenerationOutcome;
         } catch (error) {
             const rpcError = error as Error & {

@@ -22,7 +22,9 @@ type Link = { label: string; path: string };
 type Notice = {
     id: "running_low" | "auto_top_up_off";
     subject: string;
-    // Paid balance, shown large under the heading.
+    // Optional line between the heading and the balance.
+    intro?: string;
+    // Paid balance, shown large under the heading (or the intro).
     balance: number;
     body: string;
     button: Link;
@@ -51,7 +53,8 @@ export function autoTopUpOffNotice(balance: number, topUp: number): Notice {
         id: "auto_top_up_off",
         subject: "Auto top-up failed",
         balance,
-        body: `We couldn’t charge your saved payment method for your ${topUp} pollen auto top-up, so auto top-up is now off. When your paid balance runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.`,
+        intro: `We couldn’t charge your saved payment method for your ${topUp} pollen auto top-up, so auto top-up is now off.`,
+        body: "When it runs out, requests that need it will fail.\n\nUpdate your payment method, then turn auto top-up back on.",
         button: { label: "Open wallet", path: "/pollen" },
     };
 }
@@ -117,6 +120,7 @@ export function renderNotice(
 <img src="${image("polli-lockup")}" width="220" height="48" alt="pollinations.ai" style="display:block;margin:0 0 8px">
 <div style="background:#fffaf0;border-radius:16px;padding:28px">
 <h1 style="margin:0 0 12px;font-size:22px;line-height:28px">${notice.subject}</h1>
+${notice.intro ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px">${notice.intro}</p>` : ""}
 <p style="margin:0 0 20px;padding:14px 18px;background:#f4efe6;border-radius:12px;font-size:32px;line-height:40px;font-weight:700"><img src="${image("card")}" width="28" height="28" alt="" style="vertical-align:-3px;margin-right:8px">${amount(notice.balance)} <span style="font-size:18px;font-weight:600">pollen left</span></p>
 ${notice.body
     .split("\n\n")
@@ -139,6 +143,7 @@ ${icons}
     const text = [
         notice.subject,
         "",
+        ...(notice.intro ? [notice.intro, ""] : []),
         `💳 ${amount(notice.balance)} pollen left`,
         "",
         notice.body.replaceAll("**", ""),

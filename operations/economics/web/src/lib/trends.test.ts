@@ -12,6 +12,7 @@ import {
     monthlyPollenTrends,
     monthlyTrends,
     trendComparison,
+    trendPercentChange,
     trendPeriod,
 } from "./trends";
 
@@ -72,7 +73,7 @@ const bank = (overrides: Partial<OpTransactionRow>): OpTransactionRow => ({
 });
 const find = (
     data: Data,
-    scope: "product" | "company" = "product",
+    scope: "product" | "company" | "overhead" = "product",
     month = "2026-09",
 ) => {
     const row = monthlyTrends(data, scope, now).months.find(
@@ -190,6 +191,36 @@ describe("monthly sales-based trends", () => {
             result: 85,
             fullResult: -315,
         });
+        const overhead = find(data, "overhead");
+        expect(overhead).toMatchObject({
+            compute: null,
+            infrastructure: null,
+            revenue_share: 25,
+            development: 40,
+            payroll: 400,
+            revenue: 0,
+            gross: 0,
+            deductions: 0,
+            paidCost: 465,
+            credits: 0,
+            fullCost: 465,
+            result: -465,
+            fullResult: -465,
+            oneOffFraud: null,
+            adjustedResult: null,
+        });
+        for (const key of [
+            "paidCost",
+            "credits",
+            "fullCost",
+            "revenue",
+            "result",
+            "fullResult",
+        ] as const) {
+            expect((product[key] ?? 0) + (overhead[key] ?? 0)).toBe(
+                company[key],
+            );
+        }
         expect(product.gross).toBe(company.gross);
         expect(product.deductions).toBe(company.deductions);
         expect(product.revenue).toBe(company.revenue);
@@ -481,4 +512,27 @@ describe("Pollen activity and Quest funding trends", () => {
             unallocatedCost: 0,
         });
     });
+});
+
+it("calculates signed month changes without reversing losses or inventing a zero baseline", () => {
+    expect(trendPercentChange(150, 100)).toBe(50);
+    expect(trendPercentChange(80, 100)).toBe(-20);
+    expect(trendPercentChange(-100, -200)).toBe(50);
+    expect(trendPercentChange(-300, -200)).toBe(-50);
+    expect(trendPercentChange(100, -100)).toBe(200);
+    expect(trendPercentChange(0, 100)).toBe(-100);
+    expect(trendPercentChange(100, 0)).toBeNull();
+    expect(trendPercentChange(100, null)).toBeNull();
+    expect(trendPercentChange(undefined, 100)).toBeNull();
+});
+
+it("keeps overhead independent of missing provider costs and sales", () => {
+    expect(find({ opTransactions: [bank({})] }, "overhead")).toMatchObject({
+        revenue: 0,
+        paidCost: 400,
+        result: -400,
+        fullResult: -400,
+        costIncomplete: false,
+    });
+    expect(find({}, "overhead").paidCost).toBeNull();
 });

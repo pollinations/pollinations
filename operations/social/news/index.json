@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-15T13:31:16.812980+00:00",
+  "generated_at": "2026-10-15T20:10:29.956057+00:00",
   "models": [
     {
       "id": "pr-14895:fish-audio/s2.1-pro",
@@ -9157,6 +9157,27 @@
       "url": "https://github.com/pollinations/pollinations/pull/17526"
     },
     {
+      "id": "pr-17641:POST /v1/images/edits",
+      "endpoint": "POST /v1/images/edits",
+      "summary": "Edit Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": null,
+          "after": {
+            "type": "integer|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-15",
+      "pr": 17641,
+      "url": "https://github.com/pollinations/pollinations/pull/17641"
+    },
+    {
       "id": "pr-17443:POST /v1/images/generations",
       "endpoint": "POST /v1/images/generations",
       "summary": "Generate Image (OpenAI-compatible)",
@@ -9197,6 +9218,27 @@
       "date": "2026-10-15",
       "pr": 17526,
       "url": "https://github.com/pollinations/pollinations/pull/17526"
+    },
+    {
+      "id": "pr-17641:POST /v1/images/generations",
+      "endpoint": "POST /v1/images/generations",
+      "summary": "Generate Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": null,
+          "after": {
+            "type": "integer|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ],
+      "date": "2026-10-15",
+      "pr": 17641,
+      "url": "https://github.com/pollinations/pollinations/pull/17641"
     }
   ],
   "highlights": [

@@ -22,6 +22,45 @@ afterEach(() => {
 });
 
 describe("gen audio output", () => {
+    it("names Gemini TTS default WAV output with a wav extension", async () => {
+        const folder = mkdtempSync(join(tmpdir(), "polli-audio-test-"));
+        try {
+            process.chdir(folder);
+            setKeyOverride("sk_test");
+            setOutputMode("json");
+            const output: string[] = [];
+            vi.spyOn(process.stdout, "write").mockImplementation((value) => {
+                output.push(String(value));
+                return true;
+            });
+            // Gemini TTS defaults to WAV when response_format is omitted.
+            vi.stubGlobal(
+                "fetch",
+                async () =>
+                    new Response(
+                        Buffer.from("RIFF\u0000\u0000\u0000\u0000WAVE"),
+                        {
+                            headers: { "Content-Type": "audio/wav" },
+                        },
+                    ),
+            );
+
+            await createAudioCommand().parseAsync(
+                ["Hello", "--model", "google/gemini-3.8-flash-tts"],
+                { from: "user" },
+            );
+
+            const meta = JSON.parse(output.join(""));
+            expect(meta.path).toBe("speech.wav");
+            expect(readFileSync("speech.wav").subarray(0, 4).toString()).toBe(
+                "RIFF",
+            );
+        } finally {
+            process.chdir(originalCwd);
+            rmSync(folder, { recursive: true });
+        }
+    });
+
     it.each(["mp3", "opus", "aac", "flac", "wav"])(
         "uses the requested %s format for the default filename",
         async (format) => {

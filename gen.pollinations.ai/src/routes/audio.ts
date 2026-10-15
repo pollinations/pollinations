@@ -1097,7 +1097,11 @@ const GEMINI_STT_FORMAT_ALIASES: Record<string, string> = {
 
 function resolveGeminiSttFormat(file: File): string {
     const extension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
-    const subtype = file.type.split("/")[1]?.toLowerCase().replace(/^x-/, "");
+    const subtype = file.type
+        .split(";")[0]
+        .split("/")[1]
+        ?.toLowerCase()
+        .replace(/^x-/, "");
     for (const candidate of [extension, subtype ?? ""]) {
         const format = GEMINI_STT_FORMAT_ALIASES[candidate] ?? candidate;
         if ((GEMINI_STT_FORMATS as readonly string[]).includes(format)) {

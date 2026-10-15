@@ -289,7 +289,7 @@ const REALTIME_DOCS = [
     `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
-    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
+    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized `sk_` in `?key=`.",
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
@@ -298,7 +298,6 @@ const REALTIME_DOCS = [
     "```js",
     'import WebSocket from "ws";',
     "",
-    "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
     "const ws = new WebSocket(",
     `    "wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}",`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
@@ -312,7 +311,7 @@ const REALTIME_DOCS = [
     'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
     "```",
     "",
-    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself.",
     "",
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");

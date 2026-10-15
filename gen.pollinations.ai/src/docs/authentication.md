@@ -4,7 +4,7 @@ All generation requests require an API key from [enter.pollinations.ai](https://
 
 | Type | Prefix | Use case | Rate limits | Description |
 |------|--------|----------|-------------|-------------|
-| Secret | `sk_` | Server-side apps | None | Personal developer key. Never expose in client-side code. |
+| Secret | `sk_` | API requests | None | Personal keys stay out of browser code. Browser apps use a user-authorized `sk_` from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). Secret keys have configurable model permissions, account permissions, and budgets. |
 | App Key (Connect User Wallets) | `pk_` with redirect URIs | Client apps via OAuth / device flow | None on the App Key itself | Publishable App Key used as the OAuth `client_id`. Users authorize; your app receives a scoped `sk_`. |
 | Raw publishable | `pk_` with no app binding | Legacy direct spend | 1 pollen / IP / hour | Retained for existing integrations. Do not mint new ones. |
 

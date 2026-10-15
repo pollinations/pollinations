@@ -122,7 +122,7 @@ const page = h(
             h(
                 Heading,
                 { as: "h1", size: "title" },
-                "Your next free {{item}} is ready in ",
+                "Next free {{item}} in ",
                 h(
                     "span",
                     { "data-clock": "" },
@@ -132,64 +132,73 @@ const page = h(
             h(
                 Text,
                 { tone: "soft" },
-                "The Classic API makes 1 free {{item}} every {{every}} seconds. This page reloads by itself when the time is up, or skip the wait:",
+                "1 free {{item}} every {{every}} seconds per IP. This page reloads when it’s ready.",
             ),
         ),
         // The two ways past the limit, side by side and equally weighted
         h(
             "div",
-            { className: "paths" },
-            path(
-                "Sign in to enter",
-                null,
-                [
-                    h(
-                        Text,
-                        { size: "sm", tone: "soft" },
-                        "Unlimited {{items}} with pollen, every model, no waiting.",
-                    ),
-                    h(
-                        Text,
-                        { size: "xs", tone: "muted" },
-                        "Sign in with GitHub. Start with free pollen from quests.",
-                    ),
-                ],
-                h(
-                    ExternalLinkButton,
-                    {
-                        href: "https://enter.pollinations.ai/?ref=classic",
-                        external: false,
-                        size: "lg",
-                    },
-                    "Get unlimited {{items}}",
-                ),
+            { className: "polli:flex polli:flex-col polli:gap-3" },
+            h(
+                Text,
+                { size: "sm", weight: "semibold", tone: "strong" },
+                "Skip the wait",
             ),
-            path(
-                "Let your AI agent pay",
-                "x402",
-                [
+            h(
+                "div",
+                { className: "paths" },
+                path(
+                    "Sign in to enter",
+                    null,
+                    [
+                        h(
+                            Text,
+                            { size: "sm", tone: "soft" },
+                            "Unlimited {{items}}, every model, no waiting.",
+                        ),
+                        h(
+                            Text,
+                            { size: "xs", tone: "muted" },
+                            "Sign in with GitHub and start with free pollen.",
+                        ),
+                    ],
                     h(
-                        Text,
-                        { size: "sm", tone: "soft" },
-                        "{{price}} USD per {{item}}, paid over x402 with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
+                        ExternalLinkButton,
+                        {
+                            href: "https://enter.pollinations.ai/?ref=classic",
+                            external: false,
+                            size: "lg",
+                        },
+                        "Get unlimited {{items}}",
                     ),
-                    h(CodeBlock, {
-                        code: "set up https://weft.network/setup.md",
-                    }),
+                ),
+                path(
+                    "Let your AI agent pay",
+                    "x402",
+                    [
+                        h(
+                            Text,
+                            { size: "sm", tone: "soft" },
+                            "{{price}} USD per {{item}} with Weft. Paste this into your agent, then ask: “Pay for this {{item}} with Weft.”",
+                        ),
+                        h(CodeBlock, {
+                            code: "set up https://weft.network/setup.md",
+                        }),
+                        h(
+                            Text,
+                            { size: "xs", tone: "muted" },
+                            "New Weft accounts get $3 in free credit once the email is verified.",
+                        ),
+                    ],
                     h(
-                        Text,
-                        { size: "xs", tone: "muted" },
-                        "New Weft accounts get $3 in free credit once the email is verified.",
+                        ExternalLinkButton,
+                        {
+                            href: "https://weft.network/setup.md",
+                            size: "lg",
+                            showIcon: false,
+                        },
+                        "Give my agent a wallet",
                     ),
-                ],
-                h(
-                    ExternalLinkButton,
-                    {
-                        href: "https://weft.network/setup.md",
-                        size: "lg",
-                        showIcon: false,
-                    },
-                    "Give my agent a wallet",
                 ),
             ),
         ),
@@ -214,17 +223,23 @@ const page = h(
     ),
 );
 
-// The countdown, the reload when it ends, and CodeBlock's copy button
+// The countdown, the reload when it ends, and CodeBlock's copy button. The
+// countdown runs to an end time: browsers slow down timers in hidden tabs
 const script = `
-let wait = {{wait}};
+const end = Date.now() + {{wait}} * 1000;
 const label = document.querySelector("[data-clock] > span > span:last-child");
-const tick = setInterval(() => {
-    wait -= 1;
-    if (wait <= 0) {
-        clearInterval(tick);
-        location.reload();
-    } else label.textContent = "0:" + String(wait).padStart(2, "0");
-}, 1000);
+function tick() {
+    const left = Math.ceil((end - Date.now()) / 1000);
+    if (left > 0) {
+        label.textContent = "0:" + String(left).padStart(2, "0");
+        return;
+    }
+    clearInterval(timer);
+    document.removeEventListener("visibilitychange", tick);
+    location.reload();
+}
+const timer = setInterval(tick, 250);
+document.addEventListener("visibilitychange", tick);
 for (const button of document.querySelectorAll("button[aria-label='Copy code']")) {
     button.onclick = () =>
         navigator.clipboard?.writeText(button.parentElement.nextElementSibling.textContent);

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-10-14",
+  "period_start": "2026-10-14",
+  "period_end": "2026-10-14",
+  "generated_at": "2026-10-15T06:08:35.897019+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-10-14/images/twitter.jpg"
+    }
+  ],
+  "text": "merged SDK support for 3D generation, model status, and speech word timings. React gets generation hooks and a streaming useChat transport. empty chat streams no longer get cached as answers, so the next request can reach a model."
+}

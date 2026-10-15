@@ -276,7 +276,7 @@ jobs:
         id: gen-files
         run: |
           # Include imported docs and old paths of deleted or renamed inputs.
-          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal-white\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(pollinations-api|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
+          FILES=$(git diff --no-renames --name-only HEAD^1 HEAD | grep -E '^(gen\.pollinations\.ai/|shared/|packages/ui/src/(styles/tokens\.css|brand/lockup-horizontal-white\.svg)$|pollinations\.ai/public/legal/SUBPROCESSORS\.md$|packages/polli-cli/(README|SKILL|TASKS)\.md$|\.claude/skills/(bring-your-own-pollen|pollinations-api|quest-contributor)/SKILL\.md$|(BRING_YOUR_OWN_MODEL|BRING_YOUR_OWN_POLLEN|BUILD_YOUR_OWN_AGENT|CODING_HARNESSES)\.md$|package(-lock)?\.json$|\.github/workflows/ci-pull-request-checks\.yml$)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT

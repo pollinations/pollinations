@@ -136,6 +136,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [Polli CLI agent skill](${origin}/docs/polli-skill.md): Commands, authentication, structured output, and common tasks.
 - [Agent Skills index](${origin}/.well-known/agent-skills/index.json): Install the polli skill with any Agent Skills discovery client.
 - [Direct REST API skill](${origin}/.well-known/agent-skills/pollinations-api/SKILL.md): Call the API with curl or fetch when the CLI cannot be installed.
+- [Bring Your Own Pollen skill](${origin}/.well-known/agent-skills/bring-your-own-pollen/SKILL.md): Add user-paid sign-in (OAuth PKCE, fragment, or device flow) so each user spends their own Pollen.
 - [API catalog](${origin}/.well-known/api-catalog): RFC 9727 linkset pointing agents at the OpenAPI schema and the plain-text API guide.
 - [Polli CLI guide](${origin}/docs/llm.txt?section=cli): Installation, login, usage, and harness setup.
 - [API quick start and reference](${origin}/docs/llm.txt): Plain-text API guide and integrations.
@@ -194,6 +195,15 @@ function redirectLegacyDocs(c: Context<Env>): Response {
 app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     .use("*", requestId())
     .use("*", logger)
+    .use("*", async (c, next) => {
+        await next();
+        if (c.res.status === 401) {
+            c.header(
+                "WWW-Authenticate",
+                `Bearer resource_metadata="${getPublicOrigin(c)}/.well-known/oauth-protected-resource"`,
+            );
+        }
+    })
     .use("*", agentDiscoveryLinks())
     .get("/robots.txt", (c) => robotsTxt(c))
     .get("/sitemap.xml", (c) => sitemapXml(c))

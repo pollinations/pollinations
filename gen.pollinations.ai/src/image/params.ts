@@ -94,6 +94,9 @@ export const ImageParamsSchema = z
                 if (!value) return [];
                 // Already an array (from POST JSON body)
                 if (Array.isArray(value)) return value;
+                // A base64 data URI always contains exactly one comma, so it
+                // must never be split like a remote-URL list would be.
+                if (value.startsWith("data:")) return [value];
                 // String: support both pipe (|) and comma (,) separators
                 return value.includes("|")
                     ? value.split("|")

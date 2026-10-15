@@ -442,3 +442,28 @@ describe("ImageParamsSchema", () => {
         });
     });
 });
+
+describe("image data URIs", () => {
+    it("keeps a base64 data URI whole instead of splitting it on its comma", () => {
+        const uri =
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+        const result = ImageParamsSchema.parse({
+            model: "black-forest-labs/flux.1-schnell",
+            image: uri,
+        });
+
+        expect(result.image).toEqual([uri]);
+    });
+
+    it("still splits comma-separated remote URL lists", () => {
+        const result = ImageParamsSchema.parse({
+            model: "black-forest-labs/flux.1-schnell",
+            image: "https://example.com/a.png,https://example.com/b.png",
+        });
+
+        expect(result.image).toEqual([
+            "https://example.com/a.png",
+            "https://example.com/b.png",
+        ]);
+    });
+});

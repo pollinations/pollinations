@@ -1055,6 +1055,8 @@ const PATH_PARAM_EXAMPLES: Record<string, Record<string, string>> = {
     "/account/my-models/{id}": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/update": { id: RESOURCE_ID_EXAMPLE },
     "/account/my-models/{id}/fallback-candidates": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/test": { id: RESOURCE_ID_EXAMPLE },
+    "/account/my-models/{id}/failures": { id: RESOURCE_ID_EXAMPLE },
     "/v1/models/{model}": { model: "openai/gpt-5.4-nano" },
 };
 

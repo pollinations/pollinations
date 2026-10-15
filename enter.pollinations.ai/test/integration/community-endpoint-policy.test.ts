@@ -7,7 +7,7 @@ import {
 import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
 import { deriveCreateProxyPolicy } from "../../src/routes/community-endpoints/proxy-policy.ts";
 import { test } from "../fixtures.ts";
 
@@ -515,5 +515,95 @@ describe("community endpoint configuration policy", () => {
             where: eq(schema.communityEndpoint.id, created.id as string),
         });
         expect(after?.payload).toBe(before?.payload);
+    });
+
+    test("tests a saved model with its stored token and lists its failures", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "", {
+            name: "health-check",
+            title: "Health check",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
+            bearerToken: "saved-provider-token",
+            upstreamModel: "upstream-model",
+            modality: "text",
+        });
+        const id = created.id as string;
+
+        const upstreamCalls: RequestInit[] = [];
+        const mockedFetch = globalThis.fetch;
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) => {
+                const url = input instanceof Request ? input.url : input;
+                if (new URL(url).host !== "text.example.com") {
+                    return mockedFetch(input, init);
+                }
+                upstreamCalls.push(init ?? {});
+                return Promise.resolve(
+                    Response.json({
+                        choices: [{ message: { content: "OK" } }],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 1,
+                            total_tokens: 3,
+                        },
+                    }),
+                );
+            },
+        );
+        const tested = await postModel(accountToken, `/${id}/test`, {});
+        vi.unstubAllGlobals();
+        expect(tested).toMatchObject({ ok: true, streaming: false });
+        expect(
+            new Headers(upstreamCalls[0]?.headers).get("Authorization"),
+        ).toBe("Bearer saved-provider-token");
+        expect(JSON.parse(String(upstreamCalls[0]?.body))).toMatchObject({
+            model: "upstream-model",
+        });
+
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.modelFailuresResponse = [
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                from_pollinations: 2,
+                from_owner: 0,
+                last_at: "2026-10-15 17:06:15",
+                message: "402 Payment Required",
+            },
+        ];
+        const failures = await SELF.fetch(`${endpointUrl}/${id}/failures`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(failures.status).toBe(200);
+        expect(await failures.json()).toEqual({
+            data: [
+                {
+                    status: 502,
+                    code: "upstream_error",
+                    host: "text.example.com",
+                    failures: 4,
+                    counted: 1,
+                    fromPollinations: 2,
+                    fromOwner: 0,
+                    lastAt: "2026-10-15T17:06:15.000Z",
+                    message: "402 Payment Required",
+                },
+            ],
+        });
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
+
+        const missing = await SELF.fetch(`${endpointUrl}/missing/failures`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(missing.status).toBe(404);
     });
 });

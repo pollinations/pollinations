@@ -317,6 +317,7 @@ export const TestEndpointSchema = z
             });
         }
     });
+export type TestEndpointInput = z.infer<typeof TestEndpointSchema>;
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
@@ -479,6 +480,35 @@ export const CommunityEndpointTestResponseSchema = z
             ),
     })
     .passthrough();
+export const CommunityEndpointFailuresResponseSchema = z.object({
+    data: z.array(
+        z.object({
+            status: z.number().describe("HTTP status of the failed call."),
+            code: z.string().describe("Pollinations error code."),
+            host: z
+                .string()
+                .describe(
+                    "Upstream hostname Gen recorded, or empty when the failure has none.",
+                ),
+            failures: z.number(),
+            counted: z
+                .number()
+                .describe(
+                    "Failures that were the final answer to a caller. Listing health counts these; the rest were retried.",
+                ),
+            fromPollinations: z
+                .number()
+                .describe(
+                    "Failures on calls from Pollinations monitors and bots.",
+                ),
+            fromOwner: z.number().describe("Failures on your own calls."),
+            lastAt: z.string().describe("Latest failure, ISO 8601."),
+            message: z
+                .string()
+                .describe("Latest error message, up to 300 characters."),
+        }),
+    ),
+});
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });

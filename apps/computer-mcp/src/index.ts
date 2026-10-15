@@ -120,9 +120,9 @@ export class Computer extends withWorkspace(
                     exports: { Egress: (options: object) => Fetcher };
                 }
             ).exports.Egress({}),
-            // Part of the loader id: stable, so the loaded shell isolate is
-            // reused. Change it when the shell code changes, or a cached
-            // isolate keeps the old code.
+            // Shell backend only: part of its loader id, so the loaded shell
+            // isolate is reused. Change it when the shell code changes, or a
+            // cached isolate keeps the old code.
             revision: "bytes-substitution",
         };
         return {
@@ -154,6 +154,9 @@ export class Computer extends withWorkspace(
                     id: JAVASCRIPT_BACKEND,
                     loader: env.LOADER,
                     access: "read-write",
+                    // The whole filesystem, as bash sees it; the default
+                    // confines code to /workspace.
+                    root: "/",
                     egress,
                 }),
             ],

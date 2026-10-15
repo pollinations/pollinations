@@ -29,7 +29,7 @@ export default async () => { const fs = await import("node:fs/promises"); consol
 
 The function is called, console.log inside it prints to stdout, and its return value is printed as JSON. Code outside the function runs while the module loads, where console output is lost and fetch, timers and file access throw, so keep only imports and constants there.
 
-Read and write your files with node:fs/promises (async API only). Relative imports load modules from cwd, which defaults to /workspace. Files survive between runs, except /tmp, which is emptied after every call. fetch reaches any public URL. There are no npm packages: only node:fs, node:fs/promises and your own files can be imported.
+Read and write your files with node:fs/promises (async API only), using absolute paths: cwd does not apply to them. Relative imports load modules from cwd, which defaults to /workspace. Files survive between runs, except /tmp, which is emptied after every call. fetch reaches any public URL. There are no npm packages: only node:fs, node:fs/promises and your own files can be imported.
 
 Output is stdout, stderr and the return value, truncated at 64 KB; a thrown error is an error.`;
 

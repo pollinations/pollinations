@@ -253,13 +253,17 @@ describe("computer MCP worker", () => {
                 export default async () => {
                     console.log("hello");
                     await fs.writeFile("/workspace/js/out.txt", String(double(21)));
+                    await fs.writeFile("/tmp/scratch.txt", "tmp");
+                    const scratch = await fs.readFile("/tmp/scratch.txt", "utf8");
                     const page = await fetch("https://example.com/");
-                    return { doubled: double(21), status: page.status };
+                    return { doubled: double(21), scratch, status: page.status };
                 };
             `,
         });
         expect(run.isError).toBe(false);
-        expect(run.text).toBe('hello\n\n[result]\n{"doubled":42,"status":200}');
+        expect(run.text).toBe(
+            'hello\n\n[result]\n{"doubled":42,"scratch":"tmp","status":200}',
+        );
         const read = await bash(client, "cat /workspace/js/out.txt");
         expect(read.text).toBe("42");
         await client.close();

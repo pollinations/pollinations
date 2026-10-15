@@ -37,8 +37,8 @@ current facts in `memory/facts.md` and a dated append-only journal in
 optional `cwd`. `WorkerJavaScriptBackend` runs it in a fresh Dynamic Worker
 and prints stdout, stderr and the function's return value as JSON. Code outside
 the function runs in Worker global scope, so console output is lost there and
-I/O throws. `node:fs/promises` reads and writes the same filesystem, relative
-imports load modules from `cwd`, and `fetch` goes through the same `Egress`
+I/O throws. `node:fs/promises` reads and writes the same filesystem by absolute
+path, relative imports load modules from `cwd`, and `fetch` goes through the same `Egress`
 gateway as curl. There are no npm packages. Calls are billed like `bash` calls.
 
 ## Collective memory

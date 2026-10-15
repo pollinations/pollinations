@@ -2285,7 +2285,7 @@ export async function auditEvidence(proposal, models, sources, decision) {
             const claim =
                 discovery.kind === "provider" &&
                 discovery.reason === discoveryLeadReason("provider")
-                    ? `The source identifies ${discovery.name} as a potential hosted-inference provider or API marketplace research lead.`
+                    ? `The document advertises inference API access or an API marketplace under the name ${discovery.name}.`
                     : `The source identifies ${discovery.name} as a ${discovery.kind}${discovery.reason === discoveryLeadReason(discovery.kind) ? "." : ` and explicitly supports this reason for discovery: ${discovery.reason}`}`;
             if (claim.length > 1000) {
                 rejected.add(discovery);

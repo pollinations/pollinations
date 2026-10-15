@@ -32,7 +32,7 @@ test("provider discovery audits include literal API evidence after long pricing 
             assert.ok(item.excerpt.includes(api));
             assert.match(
                 item.claim,
-                /potential hosted-inference provider or API marketplace research lead/,
+                /document advertises inference API access or an API marketplace/,
             );
             assert.ok(
                 item.excerpt.includes(

@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "✍️",
+    "name": "Summering text",
+    "url": "https://fedaasawalmeh753-cmyk.github.io/Mhcj",
+    "description": "A static web application with an Arabic (RTL) interface that implements the Pollinations.ai BYOP OAuth 2.1 PKCE login flow entirely on the client side, in a single index.html file, without a backend s",
+    "language": "ar",
+    "category": "writing",
+    "platform": "web",
+    "githubUsername": "fedaasawalmeh753-cmyk",
+    "githubUserId": "343075847",
+    "repositoryUrl": "https://github.com/fedaasawalmeh753-cmyk/Mhcj",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17613",
+    "approvedDate": "2026-10-15",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/59f136fe-67b1-4f03-8404-4dd6fd9d5114"
+  },
+  {
     "emoji": "🖼️",
     "name": "Image-Captioning-",
     "url": "https://zeros372.github.io/Image-Captioning-",

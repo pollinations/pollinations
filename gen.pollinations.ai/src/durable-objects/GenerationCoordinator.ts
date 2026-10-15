@@ -6,7 +6,12 @@ import type {
     GenerationJobHead,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
-import { executeGeneration } from "@/utils/execute-generation.ts";
+import {
+    executeGeneration,
+    GENERATION_HANDOFF_HEADER,
+    GENERATION_HANDOFF_PATH,
+    readHandoffResponse,
+} from "@/utils/execute-generation.ts";
 
 const JOB_KEY = "job";
 const ASYNC_KEY = "async";
@@ -79,6 +84,7 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
+    private handoff?: { nonce: string; job: GenerationJobHead };
 
     /**
      * The body arrives as a stream: RPC streams it with flow control, while
@@ -183,6 +189,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         return record;
     }
 
+    /** The public execution route claims the job this alarm handed off. */
+    async takeHandoff(nonce: string): Promise<GenerationJobHead | null> {
+        if (!this.handoff || this.handoff.nonce !== nonce) return null;
+        const { job } = this.handoff;
+        this.handoff = undefined;
+        return job;
+    }
+
     async alarm(): Promise<void> {
         let stored: PersistedJob | undefined;
         let interrupted: PersistedJob | undefined;
@@ -222,6 +236,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             const job = await this.restore(stored);
+            const origin = this.env.GENERATION_EXECUTION_ORIGIN;
+            if (origin) {
+                await this.finish(
+                    await this.executeAtOrigin(origin, job),
+                    stored.bodyChunks,
+                );
+                return;
+            }
             const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
@@ -233,6 +255,37 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             );
         } finally {
             if (settlement) await settlement;
+        }
+    }
+
+    /**
+     * Fetches made by a Durable Object get Cloudflare's default 125 s proxy
+     * read timeout, whatever the zone sets. Running the job behind the public
+     * origin gives provider fetches the zone's timeout instead; the
+     * global_fetch_strictly_public flag is what sends this fetch through the
+     * zone. The nonce proves the request came from this alarm; the job itself
+     * never leaves the Durable Object except through takeHandoff.
+     */
+    private async executeAtOrigin(
+        origin: string,
+        job: GenerationJob,
+    ): Promise<GenerationOutcome> {
+        const { body, ...request } = job.request;
+        const nonce = crypto.randomUUID();
+        this.handoff = { nonce, job: { ...job, request } };
+        try {
+            return await readHandoffResponse(
+                await fetch(
+                    `${origin}${GENERATION_HANDOFF_PATH}/${this.ctx.id}`,
+                    {
+                        method: "POST",
+                        headers: { [GENERATION_HANDOFF_HEADER]: nonce },
+                        body: body as Uint8Array<ArrayBuffer> | undefined,
+                    },
+                ),
+            );
+        } finally {
+            this.handoff = undefined;
         }
     }
 

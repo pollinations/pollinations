@@ -95,27 +95,37 @@ export default defineConfig(({ mode }) => ({
                         ),
                     });
                 }
-                // The UI kit's paid-balance card icon, in the emails' text
-                // colour, as a PNG because email clients drop SVG.
-                const [{ CardIcon }, { renderToStaticMarkup }, sharp] =
-                    await Promise.all([
+                // The UI kit's icons the emails show, in their text colour, as
+                // PNGs because email clients drop SVG.
+                const [ui, { renderToStaticMarkup }, sharp] = await Promise.all(
+                    [
                         import("@pollinations/ui"),
                         import("react-dom/server"),
                         import("sharp").then((m) => m.default),
-                    ]);
-                const svg = renderToStaticMarkup(
-                    createElement(CardIcon, {
-                        stroke: "#1d1420",
-                        width: 64,
-                        height: 64,
-                        xmlns: "http://www.w3.org/2000/svg",
-                    }),
+                    ],
                 );
-                this.emitFile({
-                    type: "asset",
-                    fileName: "email/card.png",
-                    source: await sharp(Buffer.from(svg)).png().toBuffer(),
-                });
+                const icons = {
+                    "email/card.png": ui.CardIcon,
+                    "email/website.png": ui.GlobeIcon,
+                    "email/dashboard.png": ui.AppIcon,
+                    "email/github.png": ui.GitHubIcon,
+                    "email/discord.png": ui.DiscordIcon,
+                };
+                for (const [fileName, Icon] of Object.entries(icons)) {
+                    const svg = renderToStaticMarkup(
+                        createElement(Icon, {
+                            color: "#1d1420",
+                            width: 64,
+                            height: 64,
+                            xmlns: "http://www.w3.org/2000/svg",
+                        }),
+                    );
+                    this.emitFile({
+                        type: "asset",
+                        fileName,
+                        source: await sharp(Buffer.from(svg)).png().toBuffer(),
+                    });
+                }
             },
         },
     ],

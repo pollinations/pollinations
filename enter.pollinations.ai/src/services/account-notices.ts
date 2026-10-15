@@ -78,8 +78,8 @@ export function verifyUnsubscribe(
     );
 }
 
-// Footer links, shown as round icons. PNGs live in frontend/public/email,
-// because email clients don't render SVG.
+// Footer links, shown as round icons. The build renders the PNGs from the UI
+// kit's icons (vite.config.ts), because email clients don't render SVG.
 const FOOTER_LINKS = [
     { label: "Website", icon: "website", href: "https://pollinations.ai" },
     { label: "Dashboard", icon: "dashboard", href: "/" },
@@ -88,7 +88,11 @@ const FOOTER_LINKS = [
         icon: "github",
         href: "https://github.com/pollinations/pollinations",
     },
-    { label: "Email", icon: "email", href: `mailto:${REPLY_TO}` },
+    {
+        label: "Discord",
+        icon: "discord",
+        href: "https://discord.gg/k9F7SyTgqn",
+    },
 ];
 
 /** One notice as a short HTML email plus its plain-text twin. */
@@ -151,9 +155,7 @@ ${icons}
         `${notice.button.label}: ${url(notice.button.path)}`,
         "",
         "--",
-        ...links.map(
-            (link) => `${link.label}: ${link.href.replace("mailto:", "")}`,
-        ),
+        ...links.map((link) => `${link.label}: ${link.href}`),
         "Questions? Reply to this email.",
         `Unsubscribe: ${unsubscribeUrl}`,
         ADDRESS,

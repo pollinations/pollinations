@@ -56,6 +56,7 @@ export const referralRoutes = new Hono<Env>().post("/", (c) => {
 
     if (
         ref === "image" ||
+        ref === "text" ||
         ref === "agent_low_balance_topup" ||
         ref === "agent_low_balance_quests" ||
         ref === "agent_key_budget" ||

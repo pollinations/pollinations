@@ -1,0 +1,35 @@
+{
+  "pr_number": 17643,
+  "title": "Add Pollinations Blocks to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17643",
+  "merged_at": "2026-10-15T20:32:31Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added @Saauf’s Pollinations Blocks to the build app catalog and README showcase. The Android extension brings Pollinations text, images, speech, AAC/M4A recording and transcription, and questions about picked images to MIT App Inventor and Kodular. Device sign-in lets users spend their own Pollen. The README’s recent-apps list now features it in place of Pollinations NPC for Roblox.",
+    "keywords": [
+      "Pollinations Blocks",
+      "MIT App Inventor",
+      "Kodular",
+      "Android",
+      "audio transcription",
+      "Pollen"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17643.jpg",
+    "prompt": "In a cozy garden workshop, Polli wears a tiny tool belt and helps snap colorful coding blocks beside an Android phone showing a flower image, a speech bubble, and an audio waveform; a code-plant grows beside them. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, chunky retro sprites, soft pastel gradients, a prominent soft lime green (#ecf874) glow against warm cream, warm lighting, retro gaming vibes, nostalgic but emotionally warm."
+  },
+  "generated_at": "2026-10-15T20:33:39.751243+00:00",
+  "app_name": "Pollinations Blocks",
+  "app_url": "https://github.com/Saauf/pollinations-blocks",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "b06e7a2e0621a4f025a92b95bbf9fec56445ae05",
+  "announcements": []
+}

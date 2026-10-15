@@ -481,7 +481,8 @@ class PostsTest(unittest.TestCase):
             return json.dumps(reply)
         def image(prompt, token, width=2048, height=2048, index=0, model=None):
             images.append((prompt, width, height, index))
-            return prompt.encode() + b" picture", None
+            return prompt.encode() + b" picture", {"url": f"https://media.pollinations.ai/p{len(images)}",
+                                                    "recipe": f"https://gen.pollinations.ai/image/{prompt}"}
         return calls, images, model, image
 
     def new(self, job, date, overwrite=False, **options):
@@ -493,14 +494,16 @@ class PostsTest(unittest.TestCase):
         return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
 
     def assertDeliverable(self, job, base, saved):
-        """Each file deliver.py sends is saved with its text and its pictures' saved urls."""
+        """Each file deliver.py sends is saved with its text and its pictures' links and recipes;
+        the pictures themselves stay with the image service."""
         for name in deliver.POSTS[job]:
             post = json.loads(saved[f"{base}/{name}"])
             self.assertTrue(post["text"].strip())
-            pictures = deliver.get_post_image_urls(post)
-            self.assertTrue(pictures)
-            for url in pictures:
-                self.assertIn(url.split("/news/", 1)[1], saved)
+            self.assertTrue(deliver.get_post_image_urls(post))
+            for image in post["images"]:
+                self.assertTrue(image["url"].startswith("https://media.pollinations.ai/"))
+                self.assertTrue(image["recipe"].startswith("https://gen.pollinations.ai/image/"))
+        self.assertFalse([path for path in saved if "/images/" in path])
 
     def test_daily(self):
         self.notes["2026-10-06"] = [note(1, "2026-10-06T10:00:00Z"), note(2, "2026-10-06T10:00:00Z"),
@@ -508,8 +511,7 @@ class PostsTest(unittest.TestCase):
         self.notes["2026-10-07"] = [note(4, "2026-10-07T11:00:00Z", tier="discord_only")]
         calls, images, saved = self.new("daily", "2026-10-06")
         base = f"{NEWS_REL_DIR}/daily/2026-10-06"
-        self.assertEqual(sorted(saved), [f"{base}/{name}" for name in (
-            "images/twitter.jpg", "prs.json", "summary.json", "twitter.json")])
+        self.assertEqual(sorted(saved), [f"{base}/{name}" for name in ("prs.json", "summary.json", "twitter.json")])
         # Every merged PR's note is kept for the weekly, the daily-tier ones and the rest.
         self.assertEqual([n["pr_number"] for n in json.loads(saved[f"{base}/prs.json"])], [1, 2, 3])
         self.assertDeliverable("daily", base, saved)
@@ -520,8 +522,7 @@ class PostsTest(unittest.TestCase):
         self.assertEqual(images, [("Bee carrying a big box", 2048, 2048, 0)])
         twitter = json.loads(saved[f"{base}/twitter.json"])
         self.assertEqual((twitter["text"], twitter["images"][0]["url"]), (
-            "Uploads now take 100 MiB.",
-            f"https://raw.githubusercontent.com/pollinations/pollinations/news/{base}/images/twitter.jpg"))
+            "Uploads now take 100 MiB.", "https://media.pollinations.ai/p1"))
         self.assertEqual(json.loads(saved[f"{base}/summary.json"])["pr_count"], 2)
         # A day without daily-tier PRs writes nothing and keeps only its notes.
         calls, images, saved = self.new("daily", "2026-10-07")
@@ -540,7 +541,7 @@ class PostsTest(unittest.TestCase):
                                                        note(number + 10, f"{day}T11:00:00Z", tier="discord_only")])
                 calls, images, saved = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
                 base = f"{NEWS_REL_DIR}/weekly/2026-10-04"
-                self.assertEqual(len(saved), 11)
+                self.assertEqual(len(saved), 5)  # the summary and four posts; pictures stay links
                 self.assertDeliverable("weekly", base, saved)
                 self.assertLessEqual(len(json.loads(saved[f"{base}/linkedin.json"])["text"]), 1248)
                 self.assertEqual([temperature for _, _, temperature in calls], temperatures)
@@ -569,8 +570,11 @@ class PostsTest(unittest.TestCase):
                                                            "prs": [{"number": 1, "date": day}]})
                 calls, images, saved = self.new("monthly", "2026-09", **reply)
                 base = f"{NEWS_REL_DIR}/monthly/2026-09"
-                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/images/cover.jpg",
+                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/monthly-cover.json",
                                                  f"{base}/summary.json"])
+                # The cover stays with the image service: its link and recipe are kept.
+                cover = json.loads(saved[f"{base}/monthly-cover.json"])["image"]
+                self.assertEqual((cover["url"], cover["prompt"]), ("https://media.pollinations.ai/p1", picture))
                 self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
                                  {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
                 self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7])

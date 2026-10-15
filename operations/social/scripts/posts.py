@@ -28,7 +28,6 @@ from pathlib import Path
 
 from common import (
     DAILY_REL_DIR,
-    NEWS_BRANCH,
     IMAGE_SIZE,
     MODELS_NEWS_DIR,
     MONTHLY_REL_DIR,
@@ -383,10 +382,11 @@ def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) 
             ):
                 if index:
                     time.sleep(3)
-                image, _ = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
+                image, links = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
                 if not image:
                     sys.exit(f"{post['name']}: picture {name} failed")
-                (work / "images" / name).write_bytes(image)
+                (work / "images" / name).write_bytes(image)  # for a preview to show
+                raw.setdefault("pictures", {})[name] = links
     else:
         print("  Nothing new to write")
     (work / "raw.json").write_bytes(json_file(raw))
@@ -396,7 +396,7 @@ def json_file(data) -> bytes:
     return json.dumps(data, indent=2, ensure_ascii=False).encode()
 
 
-def post_files(raw: dict, work: Path) -> dict[str, bytes]:
+def post_files(raw: dict) -> dict[str, bytes]:
     """The summary, each post and its pictures."""
     job, date, outputs = raw["job"], raw["date"], raw["outputs"]
     if not outputs:
@@ -419,18 +419,16 @@ def post_files(raw: dict, work: Path) -> dict[str, bytes]:
             digest, raw["inputs"], date, generated_at
         )
     files = {f"{base}/summary.json": json_file(artifact)}
-    repo = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
     for post in posts:
         output = outputs[post["name"]]
         for index, (name, prompt) in enumerate(pictures(post, output)):
-            path = f"{base}/images/{name}"
-            files[path] = (work / "images" / name).read_bytes()
-            url = f"https://raw.githubusercontent.com/{repo}/{NEWS_BRANCH}/{path}"
+            picture = {**raw["pictures"][name], "prompt": prompt}
             if len(post["pictures"]) == 1:
-                output["image"] = {"url": url, "prompt": prompt}
+                output["image"] = picture
             else:
-                output["images"][index]["url"] = url
-        if "file" not in post:
+                output["images"][index].update(picture)
+        if "file" not in post:  # a picture-only post (the monthly cover) keeps its links here
+            files[f"{base}/{post['name']}.json"] = json_file(output)
             continue
         if (
             "max_chars" in post
@@ -510,7 +508,7 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
     elif job in CATALOG_JOBS:
         files = model_files(raw, news)
     else:
-        files = post_files(raw, work)
+        files = post_files(raw)
     if job == "monthly":  # every month has its counts, even one with nothing to write
         files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
     if job == "daily":  # every day keeps its notes, for the weekly to read

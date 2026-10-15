@@ -394,12 +394,17 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         print("  Invalid image format")
         return None, None
 
+    # The image service keeps the picture: posts save its link, never the file. The recipe
+    # (the request without our key) makes it again with any key.
+    media = response.links.get("enclosure", {}).get("url")
+    if not media:
+        print("  No media link in the response")
+        return None, None
     img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
-    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes)")
-    # Build public URL without key
+    print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes): {media}")
     public_params = {k: v for k, v in params.items() if k != "key"}
-    public_url = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
-    return image_bytes, public_url
+    recipe = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
+    return image_bytes, {"url": media, "recipe": recipe}
 
 
 def _github_headers(token: str) -> Dict:
@@ -560,21 +565,14 @@ def build_instagram_post_text(post_data: Dict) -> str:
     return "\n\n".join(parts)
 
 
-def extract_generated_post_image_urls(post_data: Dict) -> List[str]:
-    """Extract image URLs from in-memory generated post data before normalization."""
-    urls = []
-
-    for image in post_data.get("images", []) or []:
+def generated_post_images(post_data: Dict) -> List[Dict]:
+    """A generated post's pictures, each as its link and recipe."""
+    images = []
+    for image in [*(post_data.get("images") or []), post_data.get("image") or {}]:
         url = str(image.get("url") or "").strip()
-        if url and url not in urls:
-            urls.append(url)
-
-    single_image = post_data.get("image") or {}
-    url = str(single_image.get("url") or "").strip()
-    if url and url not in urls:
-        urls.append(url)
-
-    return urls
+        if url and url not in [known["url"] for known in images]:
+            images.append({"url": url, "recipe": image.get("recipe")})
+    return images
 
 
 def get_post_image_urls(post_data: Dict) -> List[str]:
@@ -609,7 +607,7 @@ def normalize_platform_post(
     elif platform == "instagram":
         text = build_instagram_post_text(raw_post)
         metadata["post_type"] = (
-            "carousel" if len(extract_generated_post_image_urls(raw_post)) > 1 else "post"
+            "carousel" if len(generated_post_images(raw_post)) > 1 else "post"
         )
     elif platform == "discord":
         text = (raw_post.get("message") or "").strip()
@@ -624,7 +622,7 @@ def normalize_platform_post(
         "period_start": period_start,
         "period_end": period_end,
         "generated_at": generated_at,
-        "images": [{"url": url} for url in extract_generated_post_image_urls(raw_post)],
+        "images": generated_post_images(raw_post),
     }
 
     if title:

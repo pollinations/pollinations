@@ -40,6 +40,8 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
+    /** Public origin that runs coordinator jobs; unset runs them in the alarm. */
+    GENERATION_EXECUTION_ORIGIN?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;

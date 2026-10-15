@@ -517,7 +517,11 @@ export class Pollinations {
         };
 
         if (options.image) {
-            body.image = options.image;
+            // The JSON edits endpoint follows the OpenAI shape: a single URL
+            // string or an array of { image_url } objects.
+            body.image = Array.isArray(options.image)
+                ? options.image.map((image_url) => ({ image_url }))
+                : options.image;
         }
 
         const json = await fetchWithTimeout(

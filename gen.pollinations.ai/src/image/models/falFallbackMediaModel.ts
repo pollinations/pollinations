@@ -1,4 +1,5 @@
 import { UpstreamError } from "@shared/error.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     FalError,
     runFalJob,
@@ -322,5 +323,66 @@ function isRejectedAfterGeneration(error: unknown): error is FalError {
         );
     } catch {
         return false;
+    }
+}
+
+const MIRELO_ENDPOINT = "mirelo-ai/sfx2.0/video-to-video";
+
+/**
+ * Mirelo SFX 2.0 adds sound effects to the one `reference_videos` source and
+ * returns that video. fal bills the seconds it returns at its live price.
+ */
+export async function callMireloSfxAPI(
+    prompt: string,
+    params: ImageParams,
+): Promise<VideoGenerationResult> {
+    if (params.image.length > 0) {
+        throw new UpstreamError(400, {
+            message: `${params.model} does not accept image inputs; pass the video as reference_videos.`,
+        });
+    }
+    const sources = params.reference_videos ?? [];
+    if (sources.length !== 1) {
+        throw new UpstreamError(400, {
+            message: `${params.model} needs exactly one reference_videos URL: the video to add sound to.`,
+        });
+    }
+    try {
+        const apiKey = requireFalKey();
+        const unitCost = await falUnitPrice(MIRELO_ENDPOINT, apiKey);
+        const response = await runFalJobResponse(
+            {
+                endpoint: MIRELO_ENDPOINT,
+                input: withSeed(
+                    {
+                        video_url: sources[0],
+                        text_prompt: prompt,
+                        // fal defaults to two versions, each billed.
+                        num_samples: 1,
+                        // fal defaults to the first 10 seconds.
+                        duration:
+                            params.duration ??
+                            IMAGE_SERVICES["mirelo/sfx-2.0"].defaultDuration,
+                    },
+                    params,
+                ),
+            },
+            apiKey,
+        );
+        const units = falBillableUnits(response);
+        const result = (await response.json()) as { video?: FalFile[] };
+        const { buffer } = await download(result.video?.[0], params.model);
+        return {
+            buffer,
+            mimeType: "video/mp4",
+            durationSeconds: units,
+            trackingData: {
+                actualModel: params.model,
+                usage: { completionVideoSeconds: units },
+                providerBilling: { units, unitCost },
+            },
+        };
+    } catch (error) {
+        throw toUpstreamError(error, params.model);
     }
 }

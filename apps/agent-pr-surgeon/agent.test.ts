@@ -234,8 +234,16 @@ test("a fix is pushed from the sandbox in one clone, one write per file, one pus
     });
     assert.equal(delivery.status, "pushed");
     assert.equal(commands.length, 4);
-    assert.match(commands[0], /git clone --depth 1 --branch feature\/async/);
+    // The sandbox refuses to create unsafe symlinks, so the clone checks them
+    // out as regular files instead of failing.
+    assert.match(
+        commands[0],
+        /git clone -c core\.symlinks=false --depth 1 --branch feature\/async/,
+    );
     assert.match(commands[1], /cd \/workspace\/pr-surgeon-pr-surgeon-12-fix\/repo && mkdir -p \$\(dirname src\/audio\.js\) && cat > src\/audio\.js$/);
+    // Only the fixed path is staged: a converted symlink or a line ending
+    // must not travel with the fix.
+    assert.match(commands[2], /git add -- src\/audio\.js &&/);
     assert.match(commands[2], /git push https:\/\/x-access-token:ghp_secret@github\.com\/octo\/fork\.git/);
     // The command list handed back to the caller never carries the secret.
     assert.ok(

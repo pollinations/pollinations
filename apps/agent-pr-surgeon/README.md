@@ -132,8 +132,13 @@ maintainer pays for.
    computes the unified diff itself. A patch is the more natural exchange format
    for a reviewer; if `git apply` were available the agent could hand over a real
    patch instead of whole files.
-3. **Symlinks are rejected in the sandbox workspace.** A checked-out repository
-   that contains one cannot be cloned there as it is.
+3. **A symlink with an unsafe target cannot be created in the sandbox
+   workspace.** The first run through the hosted `computer` failed the clone with
+   `refusing to create symlink with unsafe target
+   '../../.claude/skills/abuse-detection'`, because the tree that was checked out
+   contains one. Cloning with `core.symlinks=false` writes the target path as a
+   regular file instead and the clone succeeds; only the fixed paths are staged,
+   so that file never travels with the fix.
 4. **The sandbox has no git identity.** `git commit` fails with "Author identity
    unknown" and nothing is pushed. The agent now passes `-c user.name` and
    `-c user.email` on the commit command only, so it works whether or not the
@@ -182,14 +187,23 @@ maintainer pays for.
 ## Publishing it
 
 `agent.ts` is self-contained: no imports, one default export that returns a
-`Response`, and only standard Worker APIs. A code agent is deployed from a public
-repository with `agent.ts` at its root, so publishing means pointing the
-dashboard at a repository that holds this file at the top level
-(`apps/agent-pr-surgeon/` is the quest's layout):
+`Response`, and only standard Worker APIs, so it can be deployed as a
+[code agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md)
+without this application. It is already prepared for that:
+**[`rekty/pr-surgeon`](https://github.com/rekty/pr-surgeon)** is the publish repo,
+with this `agent.ts` at its root next to a `code-agent.json` holding the
+configuration the dashboard takes:
 
 ```json
-{ "type": "code_agent", "repository": "https://github.com/<you>/pr-surgeon" }
+{ "type": "code_agent", "repository": "https://github.com/rekty/pr-surgeon" }
 ```
+
+Point **My Models → Add agent → Code agent** at it and the repository name becomes
+the model ID. The deployment was checked against the platform's own steps: the
+head revision of that repository serves `agent.ts` at 39,709 bytes (the limit is
+64 KiB), `sucrase` with `transforms: ["typescript"]` and `disableESTransforms`
+compiles it, and the result loads as an ES module with a default export function.
+A change here must be copied to that repository to be published.
 
 The `pollinations` and `computer` MCP servers are all it needs. `x-github-token`
 is the only value that cannot come from the platform, and it stays with the

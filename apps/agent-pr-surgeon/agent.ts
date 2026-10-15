@@ -642,14 +642,22 @@ export async function deliverFix(
     const commands = [
         // A second review of the same pull request lands in the same directory,
         // and git clone refuses a target that is already there.
-        `rm -rf ${repo} && mkdir -p ${directory} && cd ${directory} && git clone --depth 1 --branch ${headRef} ${cloneUrl} repo`,
+        //
+        // The hosted computer refuses to create a symlink with an unsafe target,
+        // so a repository whose tree contains one cannot be checked out as it
+        // is: `core.symlinks=false` writes the target path as a regular file
+        // instead, which the agent never commits because only the fixed paths
+        // are staged.
+        `rm -rf ${repo} && mkdir -p ${directory} && cd ${directory} && git clone -c core.symlinks=false --depth 1 --branch ${headRef} ${cloneUrl} repo`,
         ...files.map(
             (file) =>
                 `cd ${repo} && mkdir -p $(dirname ${file.path}) && cat > ${file.path}`,
         ),
+        // Only the paths the agent changed are staged, so the commit never
+        // carries a conversion, a line ending or anything else from the clone.
         // The sandbox has no git identity configured, and a commit without one
         // fails, so both values are passed for this command only.
-        `cd ${repo} && git checkout -b ${branch} && git add -A && git -c user.name="pr-surgeon" -c user.email="pr-surgeon@users.noreply.github.com" commit -m ${JSON.stringify(commit)} -m "Prepared by the Pollinations pr-surgeon agent." && git push ${remote} ${branch}`,
+        `cd ${repo} && git checkout -b ${branch} && git add -- ${files.map((file) => file.path).join(" ")} && git -c user.name="pr-surgeon" -c user.email="pr-surgeon@users.noreply.github.com" commit -m ${JSON.stringify(commit)} -m "Prepared by the Pollinations pr-surgeon agent." && git push ${remote} ${branch}`,
     ].map(redact);
     const executed = commands.map((command) =>
         token ? command.split("***").join(token) : command,

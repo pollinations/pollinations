@@ -50,6 +50,7 @@ import {
     Fragment,
     useCallback,
     useEffect,
+    useId,
     useMemo,
     useRef,
     useState,
@@ -680,6 +681,7 @@ async function uploadFiles(
 }
 
 export function Playground() {
+    const dimensionsLabelId = useId();
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
     const catalog = useModelCatalog({
@@ -1346,7 +1348,6 @@ export function Playground() {
                                     className="min-w-0"
                                 >
                                     <Input
-                                        aria-label="Language"
                                         className="max-w-40"
                                         placeholder="Auto (e.g. en)"
                                         value={language}
@@ -1364,7 +1365,6 @@ export function Playground() {
                                     className="min-w-0"
                                 >
                                     <Input
-                                        aria-label="Length in seconds"
                                         className="max-w-40"
                                         type="number"
                                         hideNumberSteppers
@@ -1652,11 +1652,19 @@ export function Playground() {
                                     )}
 
                                     {customSize && (
-                                        <FieldStack
-                                            label="Dimensions"
-                                            orientation="inline"
-                                            className="min-w-0"
+                                        <fieldset
+                                            aria-labelledby={dimensionsLabelId}
+                                            className="grid min-w-0 grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 max-sm:grid-cols-[5.5rem_minmax(0,1fr)] max-sm:gap-x-2"
                                         >
+                                            <Text
+                                                as="span"
+                                                id={dimensionsLabelId}
+                                                size="sm"
+                                                weight="semibold"
+                                                tone="strong"
+                                            >
+                                                Dimensions
+                                            </Text>
                                             <div className="flex min-w-0 items-center gap-2">
                                                 {(
                                                     [
@@ -1718,7 +1726,7 @@ export function Playground() {
                                                     px
                                                 </span>
                                             </div>
-                                        </FieldStack>
+                                        </fieldset>
                                     )}
 
                                     <FieldStack

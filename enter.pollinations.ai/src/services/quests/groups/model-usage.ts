@@ -57,7 +57,7 @@ const useVideoModelQuest: QuestDefinition = {
     id: "use_video_model",
     title: "Use a video model",
     description:
-        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models.",
+        "Make one successful request from any of the [video](https://gen.pollinations.ai/docs#tag/video) models. Models marked `paid_only` in the [video catalog](https://gen.pollinations.ai/video/models) require Paid Pollen and cannot run with a Quest-only key.",
     category: "setup",
     scope: "perUser",
     rewardAmount: 0.25,

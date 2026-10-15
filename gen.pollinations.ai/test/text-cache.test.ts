@@ -10,6 +10,7 @@ import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { Hono } from "hono";
 import type { RequestIdVariables } from "hono/request-id";
 import { describe, expect, it } from "vitest";
+import type { AuthVariables } from "@/middleware/auth.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { generateCacheKey } from "@/utils/text-cache.ts";
@@ -43,7 +44,7 @@ const testLog = {
 
 type TestEnv = {
     Bindings: CloudflareBindings;
-    Variables: LoggerVariables & RequestIdVariables;
+    Variables: LoggerVariables & RequestIdVariables & Partial<AuthVariables>;
 };
 
 function createTextCacheApp() {
@@ -87,6 +88,62 @@ function createTextCacheApp() {
             });
         })
         .get("/v1/models", async () => Response.json({ data: [] }));
+
+    return {
+        app,
+        get originHits() {
+            return originHits;
+        },
+    };
+}
+
+// A cache app whose bearer token value is the API key id, so a test can put
+// two different keys - or a keyless caller - on the same request body.
+function createCallerScopedCacheApp() {
+    let originHits = 0;
+    const app = new Hono<TestEnv>()
+        .use("*", async (c, next) => {
+            c.set("log", testLog);
+            c.set("requestId", "test-request");
+            await next();
+        })
+        .post(
+            "/v1/chat/completions",
+            validator("json", CreateChatCompletionRequestSchema),
+            // Install the auth variables the cache reads, the way the real
+            // auth middleware does, so an authenticated and a keyless caller
+            // resolve to different cache partitions.
+            async (c, next) => {
+                const keyId = c.req
+                    .header("authorization")
+                    ?.replace(/^Bearer /, "");
+                c.set("auth", {
+                    user: keyId
+                        ? ({ id: `user-${keyId}` } as never)
+                        : undefined,
+                    apiKey: keyId ? ({ id: keyId } as never) : undefined,
+                    requireUser: () => {
+                        throw new Error("Authentication required");
+                    },
+                    requireModelAccess: () => {},
+                });
+                await next();
+            },
+            textCache,
+            async (c, next) => {
+                if (!c.req.header("authorization")) {
+                    return Response.json(
+                        { error: "Authentication required" },
+                        { status: 401 },
+                    );
+                }
+                await next();
+            },
+            async () => {
+                originHits += 1;
+                return Response.json({ originHits });
+            },
+        );
 
     return {
         app,
@@ -165,53 +222,56 @@ describe("text cache", () => {
         expect(otherCaller).not.toBe(first);
     });
 
-    it("serves cached responses before auth while misses still require auth", async () => {
-        let originHits = 0;
-        const app = new Hono<TestEnv>()
-            .use("*", async (c, next) => {
-                c.set("log", testLog);
-                c.set("requestId", "test-request");
-                await next();
-            })
-            .post(
-                "/v1/chat/completions",
-                validator("json", CreateChatCompletionRequestSchema),
-                textCache,
-                async (c, next) => {
-                    if (c.req.header("authorization") !== "Bearer test-key") {
-                        return Response.json(
-                            { error: "Authentication required" },
-                            { status: 401 },
-                        );
-                    }
-                    await next();
-                },
-                async () => {
-                    originHits += 1;
-                    return Response.json({ originHits });
-                },
-            );
+    it("keeps authenticated cache entries out of reach of keyless callers", async () => {
+        const cache = createCallerScopedCacheApp();
+        const { app } = cache;
         const env = createTextCacheEnv();
         const cachedBody = {
             model: "openai-fast",
             messages: [{ role: "user", content: "cached public hit" }],
         };
+        const authed = (body: unknown, key = "test-key"): RequestInit => ({
+            ...chatInit(body),
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
+            },
+        });
 
         const warm = await dispatch(
             app,
             "/v1/chat/completions",
-            {
-                ...chatInit(cachedBody),
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Bearer test-key",
-                },
-            },
+            authed(cachedBody),
             env,
         );
         await consumeAndWait(warm);
         expect(warm.response.headers.get("X-Cache")).toBe("MISS");
 
+        // The same key still gets its own cached answer.
+        const warmAgain = await dispatch(
+            app,
+            "/v1/chat/completions",
+            authed(cachedBody),
+            env,
+        );
+        await consumeAndWait(warmAgain);
+        expect(warmAgain.response.headers.get("X-Cache")).toBe("HIT");
+        expect(warmAgain.response.status).toBe(200);
+
+        // A different key must not reuse the first key's entry either.
+        const otherKey = await dispatch(
+            app,
+            "/v1/chat/completions",
+            authed(cachedBody, "other-key"),
+            env,
+        );
+        await consumeAndWait(otherKey);
+        expect(otherKey.response.headers.get("X-Cache")).toBe("MISS");
+        expect(otherKey.response.status).toBe(200);
+        expect(cache.originHits).toBe(2);
+
+        // A keyless caller must not receive it (#17407).
+        const hitsBeforeKeyless = cache.originHits;
         const cachedNoAuth = await dispatch(
             app,
             "/v1/chat/completions",
@@ -219,9 +279,9 @@ describe("text cache", () => {
             env,
         );
         await consumeAndWait(cachedNoAuth);
-        expect(cachedNoAuth.response.status).toBe(200);
-        expect(cachedNoAuth.response.headers.get("X-Cache")).toBe("HIT");
-        expect(originHits).toBe(1);
+        expect(cachedNoAuth.response.headers.get("X-Cache")).not.toBe("HIT");
+        expect(cachedNoAuth.response.status).toBe(401);
+        expect(cache.originHits).toBe(hitsBeforeKeyless);
 
         const missNoAuth = await dispatch(
             app,
@@ -234,7 +294,39 @@ describe("text cache", () => {
         );
         await consumeAndWait(missNoAuth);
         expect(missNoAuth.response.status).toBe(401);
-        expect(originHits).toBe(1);
+        expect(cache.originHits).toBe(hitsBeforeKeyless);
+    });
+
+    it("still shares one public cache entry between keyless callers", async () => {
+        // Public cache hits stay public: two keyless callers with the same
+        // request still share an entry, they just no longer overlap with an
+        // authenticated one.
+        const cache = createTextCacheApp();
+        const { app } = cache;
+        const env = createTextCacheEnv();
+        const body = {
+            model: "openai-fast",
+            messages: [{ role: "user", content: "shared by the keyless" }],
+        };
+
+        const first = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit(body),
+            env,
+        );
+        await consumeAndWait(first);
+        expect(first.response.headers.get("X-Cache")).toBe("MISS");
+
+        const second = await dispatch(
+            app,
+            "/v1/chat/completions",
+            chatInit(body),
+            env,
+        );
+        await consumeAndWait(second);
+        expect(second.response.headers.get("X-Cache")).toBe("HIT");
+        expect(cache.originHits).toBe(1);
     });
 
     it("caches chat completions after JSON validation consumed the body", async () => {

@@ -15,6 +15,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
+import deploy_posts
 import posts
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
                     monthly_digest_input, post_recap, weekly_digest_input)
@@ -957,6 +958,45 @@ class DeliverTest(unittest.TestCase):
         (_, payload, _), = self.sent("https://discord.test/models?wait=true")
         self.assertEqual(payload["allowed_mentions"], {"parse": []})
         self.assertEqual(self.record("community", "2026-10-16"), {"discord.json": "done"})
+
+
+    def test_each_pr_a_deploy_shipped_is_posted_once_with_its_picture(self):
+        def pr(number, merged_at="2026-10-21T10:00:00Z", base="main"):
+            return {"number": number, "title": f"PR {number}", "body": "", "merged_at": merged_at,
+                    "base": {"ref": base}, "head": {"ref": "feature"}, "user": {"login": "bee"},
+                    "html_url": f"https://github.com/pollinations/pollinations/pull/{number}"}
+        github = {
+            f"actions/workflows/{deploy_posts.DEPLOY_WORKFLOW}/runs": {"workflow_runs": [
+                {"head_sha": "c"}, {"head_sha": "b"}, {"head_sha": "b"}, {"head_sha": "a"}]},
+            "compare/b...c": {"commits": [{"commit": {"message": message}} for message in (
+                "feat: faster images (#1)\n\nbody", "fix: retries (#2)", "Merge pull request #3 from pollinations/main",
+                "news: before the switch (#4)", "Promote main to production (#5)")]},
+            "pulls/1": pr(1), "pulls/2": pr(2), "pulls/4": pr(4, merged_at="2026-10-19T10:00:00Z"),
+            "pulls/5": pr(5, base="production"),
+        }
+        reply_text = json.dumps({"text": "Faster images\n- 🐝 `flux` answers in half the time", "image_prompt": "bee"})
+        links = {"url": "https://media.pollinations.ai/abc", "recipe": "https://gen.pollinations.ai/image/bee?seed=1"}
+        pictures = [(b"jpeg", links), (None, None), (b"jpeg", links)]  # PR 2's first picture fails
+        env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
+               "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
+        with patch.dict(os.environ, env), patch("deploy_posts.START", "2026-10-20T00:00:00Z"), \
+             patch("deploy_posts.github", side_effect=lambda path, **params: github[path]), \
+             patch("deploy_posts.fetch_pr_files", return_value=("diff", ["gen.pollinations.ai/src/x.ts"])), \
+             patch("deploy_posts.call_pollinations_api", return_value=reply_text), \
+             patch("deploy_posts.generate_image", side_effect=lambda *args: pictures.pop(0)), \
+             patch("sys.argv", ["deploy_posts.py", "c"]):
+            with self.assertRaises(SystemExit):
+                deploy_posts.main()
+            deploy_posts.main()  # the rerun posts only the PR that failed
+        sent = self.sent("https://discord.test/realtime?wait=true")
+        self.assertEqual(len(sent), 2)  # PRs 1 and 2; not the promotion, nor a PR merged before the switch
+        payload = json.loads(sent[0][2]["payload_json"][1])
+        self.assertTrue(payload["content"].startswith("### Faster images\n\n- 🐝 `flux`"))
+        self.assertIn("[PR #1](<https://github.com/pollinations/pollinations/pull/1>) | By [bee]", payload["content"])
+        self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
+        record = json.loads(self.store[f"{NEWS_REL_DIR}/discord/2026-10/delivery.json"])
+        self.assertEqual({post: (entry["state"], entry["picture"]) for post, entry in record.items()},
+                         {"pr-1": ("done", links), "pr-2": ("done", links)})
 
 
 if __name__ == "__main__":

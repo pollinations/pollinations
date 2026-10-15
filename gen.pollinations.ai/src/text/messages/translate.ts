@@ -1,15 +1,30 @@
 import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
-import type {
-    CompletionUsage,
-    CreateChatCompletionRequest,
-    CreateChatCompletionResponse,
+import {
+    type CompletionUsage,
+    type CreateChatCompletionRequest,
+    CreateChatCompletionResponseSchema,
 } from "@shared/schemas/openai.ts";
+import { z } from "zod";
 import type {
     CreateMessageRequest,
     CreateMessageResponse,
     MessagesContentBlock,
     MessagesUsage,
 } from "./schema.ts";
+
+// Preserve refusal at the Messages boundary without changing the shared schema.
+export const MessagesChatCompletionResponseSchema =
+    CreateChatCompletionResponseSchema.extend({
+        choices: z.array(
+            CreateChatCompletionResponseSchema.shape.choices.element.extend({
+                message:
+                    CreateChatCompletionResponseSchema.shape.choices.element.shape.message
+                        .unwrap()
+                        .extend({ refusal: z.string().nullish() })
+                        .optional(),
+            }),
+        ),
+    });
 
 type ChatMessage = CreateChatCompletionRequest["messages"][number];
 type ChatPart = Record<string, unknown>;
@@ -298,7 +313,7 @@ export function toolUseInput(argumentsJson: string): unknown {
 
 /** Translate a Chat Completions response into a Messages response. */
 export function chatToMessagesResponse(
-    completion: CreateChatCompletionResponse,
+    completion: z.infer<typeof MessagesChatCompletionResponseSchema>,
     model: string,
 ): CreateMessageResponse {
     const choice = completion.choices[0];
@@ -318,6 +333,7 @@ export function chatToMessagesResponse(
         });
     }
     if (message?.content) content.push({ type: "text", text: message.content });
+    if (message?.refusal) content.push({ type: "text", text: message.refusal });
     for (const call of message?.tool_calls ?? []) {
         content.push({
             type: "tool_use",

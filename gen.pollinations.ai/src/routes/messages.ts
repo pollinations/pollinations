@@ -1,4 +1,3 @@
-import { CreateChatCompletionResponseSchema } from "@shared/schemas/openai.ts";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver, validator } from "hono-openapi";
@@ -14,6 +13,7 @@ import {
 import { chatToMessagesStream } from "../text/messages/stream.ts";
 import {
     chatToMessagesResponse,
+    MessagesChatCompletionResponseSchema,
     MessagesRequestError,
     messagesError,
     messagesToChatRequest,
@@ -164,7 +164,7 @@ export function createMessagesRoutes(dispatch: Dispatch) {
                     { headers: responseHeaders },
                 );
             }
-            const completion = CreateChatCompletionResponseSchema.safeParse(
+            const completion = MessagesChatCompletionResponseSchema.safeParse(
                 await response.json().catch(() => null),
             );
             if (!completion.success) {

@@ -1956,6 +1956,30 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000125,
     },
   },
+  "meta/muse-spark-open": {
+    "cost": {
+      "completionTextTokens": 0.00000448375,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.00000131875,
+    },
+    "price": {
+      "completionTextTokens": 0.00000448375,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.00000131875,
+    },
+  },
+  "meta/muse-spark-open:openrouter:together": {
+    "cost": {
+      "completionTextTokens": 0.00000448375,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.00000131875,
+    },
+    "price": {
+      "completionTextTokens": 0.00000448375,
+      "promptCachedTokens": 0.00000015825,
+      "promptTextTokens": 0.00000131875,
+    },
+  },
   "meta/muse-wonder-1.0": {
     "cost": {
       "completionTextTokens": 0.0000211,

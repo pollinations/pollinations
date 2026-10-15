@@ -3239,6 +3239,32 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "meta/muse-spark-open": {
+        supportedParameters: CHAT_PARAMETERS.openRouterMuseSparkOpen,
+        aliases: [],
+        provider: "openrouter",
+        publisher: "Meta",
+        category: "text",
+        addedDate: new Date("2026-10-15").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter BaseTen FP4 rates (2026-10-15), including the account's
+            // 5.5% credit-purchase fee.
+            promptTextTokens: perMillion(1.25) * 1.055,
+            promptCachedTokens: perMillion(0.15) * 1.055,
+            completionTextTokens: perMillion(4.25) * 1.055,
+        },
+        title: "Meta Muse Spark Open",
+        description:
+            "Agentic coding and tool use with reasoning controls and 1M context",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "meta/muse-wonder-1.0": {
         supportedParameters: CHAT_PARAMETERS.openRouterMuseWonder,
         aliases: [],

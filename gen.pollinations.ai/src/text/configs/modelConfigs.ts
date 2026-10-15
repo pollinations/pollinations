@@ -721,6 +721,14 @@ export const portkeyConfig: PortkeyConfigMap = {
         "meta/muse-glimmer-30b",
         "together",
     ),
+    "muse-spark-open-openrouter-baseten": createPinnedOpenRouterConfig(
+        "meta/muse-spark-open",
+        "baseten/fp4",
+    ),
+    "muse-spark-open-openrouter-together": createPinnedOpenRouterConfig(
+        "meta/muse-spark-open",
+        "together",
+    ),
     "meta/muse-wonder-1.0": createPinnedOpenRouterConfig(
         "meta/muse-wonder",
         "meta",

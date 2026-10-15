@@ -649,6 +649,25 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
+    it("routes Muse Spark Open to BaseTen with a Together fallback", () => {
+        const primary = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open",
+        });
+        const fallback = resolveModelConfig(messages, {
+            model: "meta/muse-spark-open:openrouter:together",
+        });
+
+        expect(primary.options.model).toBe("meta/muse-spark-open");
+        expect(primary.options.provider).toEqual({
+            only: ["baseten/fp4"],
+            allow_fallbacks: false,
+        });
+        expect(fallback.options.provider).toEqual({
+            only: ["together"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Muse Glimmer directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, { model: "muse-glimmer" });
 

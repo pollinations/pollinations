@@ -365,8 +365,9 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     sandboxes: SANDBOXES_SECTION,
 };
 
-// llms-full.txt (https://llmstxt.org): the llms.txt companion that inlines the
-// docs so an agent gets them in one request instead of following the index.
+// llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
+// inlines the docs so an agent gets them in one request instead of following
+// the index. The llms.txt spec itself doesn't define it.
 export const LLMS_FULL_TEXT = [
     "# Pollinations",
     "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",

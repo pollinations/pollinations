@@ -1,0 +1,74 @@
+{
+  "pr_number": 17443,
+  "title": "POST image endpoints silently rewrite out-of-range seeds to seed 42 (and bill for it)",
+  "author": "NamanSoni78",
+  "url": "https://github.com/pollinations/pollinations/pull/17443",
+  "merged_at": "2026-10-15T03:13:15Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added seed validation to POST /v1/images/generations and /v1/images/edits: seeds must be integers from -1 through 2147483647, or null. Invalid values now receive a 400 response instead of producing an image with a substituted seed. The API docs now describe the field and note that -1 maps to the stable compatibility seed.",
+    "keywords": [
+      "image API",
+      "seed validation",
+      "image generation",
+      "image edits",
+      "reproducibility"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17443.jpg",
+    "prompt": "In a cozy pixel garden beside a retro image terminal, Polli wears tiny gardening gloves and sorts numbered seeds into lime green (#ecf874) flower pots, setting an unsuitable seed aside. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T03:14:59.680785+00:00",
+  "area": "API & reliability",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "3a191fb76b3515e0a23ae46803f5a583ea8910c2",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "3a191fb76b3515e0a23ae46803f5a583ea8910c2^1",
+    "after_ref": "3a191fb76b3515e0a23ae46803f5a583ea8910c2"
+  },
+  "api_changes": [
+    {
+      "id": "pr-17443:POST /v1/images/edits",
+      "endpoint": "POST /v1/images/edits",
+      "summary": "Edit Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": null,
+          "after": {
+            "type": "integer|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ]
+    },
+    {
+      "id": "pr-17443:POST /v1/images/generations",
+      "endpoint": "POST /v1/images/generations",
+      "summary": "Generate Image (OpenAI-compatible)",
+      "action": "CHANGE",
+      "breaking": false,
+      "changes": [
+        {
+          "field": "body:seed",
+          "before": null,
+          "after": {
+            "type": "integer|null",
+            "required": false
+          },
+          "breaking": false
+        }
+      ]
+    }
+  ]
+}

@@ -38,7 +38,10 @@ Live-only on the box, never committed:
 - `people_mapping.json` — GitHub↔Discord identity map the agent maintains
   for tagging owners correctly. Contains real Discord user IDs, so it stays
   off git; the agent both reads and appends to it in place on the box.
-- `probe-results.json`, `loop.log` — generated output.
+- `probe-results.json` — generated output.
+- `loop.log` — cycle start/end times and exit status only. Cycles run with
+  `--no-session-persistence` and discard their output, so no transcript or log
+  keeps Discord message text.
 
 ## Provisioning / reproducing the box
 

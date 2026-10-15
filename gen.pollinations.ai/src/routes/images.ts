@@ -88,7 +88,7 @@ function responseImageUsage(
 function resolveParams(opts: {
     size?: string;
     quality?: string;
-    seed?: number;
+    seed?: number | null;
 }): {
     width?: number;
     height?: number;

@@ -40,6 +40,7 @@ async function getBalance(_params, context) {
         createTextContent(
             {
                 pollen: data.balance,
+                accountBalance: data.accountBalance,
                 note: "Pollen balance for the authenticated key. Key-scoped when the key has its own budget, otherwise account-wide.",
             },
             true,
@@ -50,7 +51,7 @@ async function getBalance(_params, context) {
 const getUsage = ({ daily, days, limit, model, key }, context) =>
     callAccount(daily ? "/account/usage/daily" : "/account/usage", context, {
         params: daily
-            ? { days }
+            ? { days, api_key_ids: key?.join(",") }
             : {
                   days,
                   limit,
@@ -140,9 +141,7 @@ export const accountTools = [
             key: z
                 .array(z.string())
                 .optional()
-                .describe(
-                    "Only these API key ids, from listKeys (history only)",
-                ),
+                .describe("Only these API key ids, from listKeys"),
         },
         getUsage,
     ],
@@ -194,7 +193,7 @@ export const accountTools = [
                 .array(z.string())
                 .optional()
                 .describe(
-                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime); a model id allows its whole category",
+                    "Restrict the key to these model categories (text, image, video, audio, 3d, embedding, realtime) or model IDs; a model ID allows only that model",
                 ),
             budget: z
                 .number()

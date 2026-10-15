@@ -327,10 +327,9 @@ export async function callAzureFlux11Pro(
             message: "FLUX 1.1 Pro supports text-to-image generation only",
         });
     }
-    if (safeParams.guidance_scale !== undefined || safeParams.transparent) {
+    if (safeParams.guidance_scale !== undefined) {
         throw UpstreamError.fromProvider(400, {
-            message:
-                "FLUX 1.1 Pro does not support guidance_scale or transparency",
+            message: "FLUX 1.1 Pro does not support guidance_scale",
         });
     }
     const { width, height } = safeParams;

@@ -39,7 +39,7 @@
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials
-- **Discord:** https://discord.gg/pollinations-ai-885844321461485618
+- **Discord:** https://discord.gg/k9F7SyTgqn
 - **Twitter/X:** https://x.com/pollinations_ai
 - **Reddit:** https://www.reddit.com/r/pollinations_ai/
 - **YouTube:** https://www.youtube.com/channel/UCk4yKnLnYfdOstmxYE_tmHFw

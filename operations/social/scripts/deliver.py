@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Deliver the saved news posts, as today: Buffer posts scheduled at today's slots,
-Discord and Reddit sends.
+"""Deliver the saved news posts: Buffer posts scheduled at today's slots, Discord sends.
 
     python deliver.py schedule JOB DATE                 # Buffer: X, LinkedIn, Instagram
-    python deliver.py send     JOB DATE [--work WORK]   # Discord and Reddit; WORK for models
+    python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models and community
     python deliver.py mark     JOB DATE POST done|failed
 
 Each post folder on the news branch gets a delivery.json with one entry per post.
@@ -16,7 +15,6 @@ waits for a person to check the channel and run mark.
 import argparse
 import base64
 import hashlib
-import io
 import json
 import os
 import sys
@@ -35,15 +33,19 @@ from common import (
     REPO,
     _github_headers,
     chunk_message,
-    deploy_reddit_post,
     get_env,
     get_post_image_urls,
     safe_truncate,
 )
-from posts import JOB_DIRS, check_date, model_post
+from posts import CATALOG_JOBS, JOB_DIRS, check_date, model_post
 
 # The first date each job is delivered here; older folders went out with the old senders.
-START = {"daily": "2026-10-12", "weekly": "2026-10-18", "models": "2026-10-14"}
+START = {
+    "daily": "2026-10-12",
+    "weekly": "2026-10-18",
+    "models": "2026-10-14",
+    "community": "2026-10-21",
+}
 # The channel today's lookup picks: the first listed of each service in Buffer.
 BUFFER_CHANNELS = {
     "twitter": "695fe0e5457dae6a34edc9a5",  # pollinations_ai
@@ -52,17 +54,17 @@ BUFFER_CHANNELS = {
 }
 BUFFER_URL = "https://api.buffer.com"
 
-# Each job's post files and where they go; Discord before Reddit, so a Reddit timeout can't delay it.
+# Each job's post files and where they go.
 POSTS = {
-    "daily": {"twitter.json": "twitter", "reddit.json": "reddit"},
+    "daily": {"twitter.json": "twitter"},
     "weekly": {
         "twitter.json": "twitter",
         "linkedin.json": "linkedin",
         "instagram.json": "instagram",
         "discord.json": "discord",
-        "reddit.json": "reddit",
     },
     "models": {"discord.json": "discord"},
+    "community": {"discord.json": "discord"},
 }
 # Buffer slots, as today: the next of these weekdays (1 = Monday) at this UTC hour,
 # at least 10 minutes away.
@@ -172,8 +174,8 @@ def deliver(folder: str, post: str, prepare, **extra) -> str:
     """
     record, sha = read_record(folder)
     state = (record.get(post) or {}).get("state")
-    if state in ("done", "started"):
-        return "already " + state
+    if state == "done":
+        return "already done"
     if state == "attempt":
         return "stuck"
     try:
@@ -292,7 +294,7 @@ def create_buffer_post(post_input: dict, token: str) -> tuple[str, dict]:
     return "attempt", error
 
 
-# ── Discord and Reddit ───────────────────────────────────────────────
+# ── Discord ──────────────────────────────────────────────────────────
 
 
 def send_discord(webhook: str, payloads: list[dict], picture: bytes | None = None):
@@ -354,32 +356,6 @@ def weekly_discord(post: dict):
     return lambda: send_discord(webhook, payloads, picture)
 
 
-def reddit_settings() -> tuple:
-    host, user, key = (
-        os.environ.get(name)
-        for name in ("REDDIT_VPS_HOST", "REDDIT_VPS_USER", "REDDIT_VPS_SSH_KEY")
-    )
-    if not (host and user and key and key.strip()):
-        raise ValueError(
-            "REDDIT_VPS_HOST, REDDIT_VPS_USER and REDDIT_VPS_SSH_KEY are needed"
-        )
-    import paramiko
-
-    try:
-        pkey = paramiko.Ed25519Key.from_private_key(
-            io.StringIO(base64.b64decode(key.strip()).decode())
-        )
-    except Exception as error:
-        raise ValueError(f"the Reddit key doesn't load: {error}") from error
-    return host, user, pkey
-
-
-def reddit_post(post: dict):
-    settings = reddit_settings()
-    # deploy_reddit_post raises only after the deploy command was sent: deliver() records attempt.
-    return lambda: ("started" if deploy_reddit_post(post, *settings) else "failed", {})
-
-
 # ── Commands ─────────────────────────────────────────────────────────
 
 
@@ -390,7 +366,7 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             f"{job} {date} is before deliver.py's start date ({START[job]}); the old senders deliver it"
         )
     folder = f"{JOB_DIRS[job]}/{date}"
-    channels = SLOTS if command == "schedule" else ("discord", "reddit")
+    channels = SLOTS if command == "schedule" else ("discord",)
     targets = {
         post: channel for post, channel in POSTS[job].items() if channel in channels
     }
@@ -403,22 +379,23 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
         print(f"Nothing to {command} for {job} {date}")
         return
 
-    if job == "models":
+    if job in CATALOG_JOBS:
         if work is None:
-            sys.exit("send models needs --work, the folder posts.py wrote")
+            sys.exit(f"send {job} needs --work, the folder posts.py wrote")
         raw = json.loads((work / "raw.json").read_text(encoding="utf-8"))
         if (raw["job"], raw["date"]) != (job, date):
             sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
         payload = model_post(raw)
         if not payload:
-            print(f"No model changes for {date}: nothing to send")
+            print(f"No {job} changes for {date}: nothing to send")
             return
         text = payload["text"].strip()
         digest = hashlib.sha256(text.encode()).hexdigest()
         webhook = get_env("DISCORD_MODELS_WEBHOOK_URL")
+        # Only the model post mentions its role; community text never pings anyone.
         message = {
             "content": safe_truncate(text, DISCORD_CHUNK_SIZE),
-            "allowed_mentions": {"parse": ["roles"]},
+            "allowed_mentions": {"parse": ["roles"] if job == "models" else []},
         }
 
         def prepare():
@@ -431,7 +408,7 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             entry.get("state"),
             entry.get("text_sha256"),
         ) != ("done", digest):
-            sys.exit(f"models {date} isn't recorded as sent with this WORK's text")
+            sys.exit(f"{job} {date} isn't recorded as sent with this WORK's text")
         outcomes = {"discord.json": outcome}
     else:
         # A date counts as empty only when none of its files exist; a saved post is
@@ -448,8 +425,6 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
                 if content is None:
                     raise ValueError("the post file is missing")
                 data = json.loads(content)
-                if channel == "reddit":
-                    return reddit_post(data)
                 if channel == "discord":
                     return weekly_discord(data)
                 return buffer_post(channel, data)
@@ -500,7 +475,7 @@ def main() -> None:
         command.add_argument("job", choices=POSTS)
         command.add_argument("date")
         command.add_argument(
-            "--work", type=Path, help="the folder posts.py wrote (models)"
+            "--work", type=Path, help="the folder posts.py wrote (models, community)"
         )
     command = commands.add_parser("mark")
     command.add_argument("job", choices=POSTS)

@@ -99,7 +99,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "composio",
                 name: "Connectors",
                 description:
-                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+                    "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
@@ -215,20 +215,20 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for([
-    "pollinations",
-    "ask-jev",
-])("requires a Pollinations credential before invoking %s", async (serverId) => {
-    const response = await SELF.fetch(
-        `https://gen.pollinations.ai/mcp/${serverId}`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(MCP_REQUEST),
-        },
-    );
-    expect(response.status).toBe(401);
-});
+test.for(["pollinations", "ask-jev"])(
+    "requires a Pollinations credential before invoking %s",
+    async (serverId) => {
+        const response = await SELF.fetch(
+            `https://gen.pollinations.ai/mcp/${serverId}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(MCP_REQUEST),
+            },
+        );
+        expect(response.status).toBe(401);
+    },
+);
 
 test("proxies FFmpeg without caller credentials and bills reported usage", async () => {
     const { key, userId } = await createTestApiKey({

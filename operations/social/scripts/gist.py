@@ -290,8 +290,39 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
     return resp.json()
 
 
+# Files whose diff says nothing about what a PR does: they are listed without one.
+DIFF_SKIPPED = re.compile(
+    r"(^|/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|uv\.lock|Cargo\.lock)$"
+    r"|(^|/)(__snapshots__|snapshots)/|\.snap$"
+)
+FILE_DIFF_CHARS = 3000
+DIFF_CHARS = 40000
+
+
+def changes_text(files: list) -> str:
+    """Each changed file with its diff. Lockfiles and test snapshots are listed without
+    one, each diff is capped, and past the total cap files are listed only."""
+    lines, budget, unshown = [], DIFF_CHARS, 0
+    for f in files:
+        name = f.get("filename", "")
+        lines.append(f"  {f.get('status', 'modified')}: {name} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
+        patch = f.get("patch")
+        if not patch or DIFF_SKIPPED.search(name):
+            continue
+        if budget <= 0:
+            unshown += 1
+            continue
+        shown = patch[: min(FILE_DIFF_CHARS, budget)]
+        budget -= len(shown)
+        cut = "\n… (cut)" if len(shown) < len(patch) else ""
+        lines.append("\n".join("    " + line for line in (shown + cut).splitlines()))
+    if unshown:
+        lines.append(f"  (diffs of {unshown} more files not shown)")
+    return "\n".join(lines) if lines else "(no files changed)"
+
+
 def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
-    """Fetch list of changed files. Returns (formatted_string, list_of_filenames)."""
+    """The changed files with their diff, and their names."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -309,76 +340,55 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
         if len(files) < 100:
             break
         page += 1
-
-    filenames = [f.get("filename", "") for f in all_files]
-    lines = []
-    for f in all_files:
-        status = f.get("status", "modified")
-        filename = f.get("filename", "")
-        lines.append(f"  {status}: {filename} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
-    summary = "\n".join(lines) if lines else "(no files changed)"
-    return summary, filenames
+    return changes_text(all_files), [f.get("filename", "") for f in all_files]
 
 
 def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
-    """Keep social publication independent of classification/catalog failures."""
+    """Classification and the PR's exact model and API changes. Any failure stops the gist:
+    nothing is saved or posted, and a person reruns it."""
     root = Path(get_repo_root())
     gist.update({"area": None, "type": None, "source": None,
                  "merge_commit_sha": pr["merge_commit_sha"], "announcements": []})
-    status = gist["enrichment"] = {}
-    try:
-        with tempfile.TemporaryDirectory(prefix="gist-classification-") as directory:
-            output = Path(directory) / "classification.json"
-            subprocess.run(
-                [sys.executable, str(root / "operations/github/project_manager.py")],
-                env={**os.environ, "GITHUB_TOKEN": token,
-                     "GITHUB_EVENT": json.dumps({"action": "closed", "pull_request": pr}),
-                     "CLASSIFICATION_OUTPUT": str(output)}, check=True,
-            )
-            gist.update(json.loads(output.read_text()))
-        status["classification"] = "complete"
-    except (OSError, ValueError, subprocess.CalledProcessError):
-        print("  WARNING: Merge-time classification failed; gist classification remains unknown")
-        status["classification"] = "failed"
-    try:
-        changed = any(path.startswith("shared/") for path in files)
-        if changed or announces_retirement(pr):
-            if not (root / "node_modules/tsx").is_dir():
-                subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
-            # Rebase detection needs original commits as well as the merged history.
-            if changed and pr.get("commits", 1) > 1:
-                commits = []
-                page = 1
-                while True:
-                    response = github_api_request("GET",
-                        f"{GITHUB_API_BASE}/repos/{os.environ['REPO_FULL_NAME']}/pulls/{pr['number']}/commits",
-                        headers={"Authorization": f"Bearer {token}"},
-                        params={"per_page": 100, "page": page})
-                    response.raise_for_status()
-                    batch = response.json()
-                    commits.extend(commit["sha"] for commit in batch)
-                    if len(batch) < 100:
-                        break
-                    page += 1
-                pr = {**pr, "_commit_shas": commits}
-                subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
-            refs = pr_comparison_refs(pr, root) if changed else None
-            gist["announcements"] = announcements_for_pr(pr, files, root, refs)
-            if refs:
-                gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
-        status["models"] = "complete"
-    except Exception as error:
-        # Preserve the established social pipeline, with a visible retryable gap.
-        print(f"  WARNING: Model enrichment failed ({type(error).__name__}); values remain unknown")
-        status["models"] = "failed"
+    with tempfile.TemporaryDirectory(prefix="gist-classification-") as directory:
+        output = Path(directory) / "classification.json"
+        subprocess.run(
+            [sys.executable, str(root / "operations/github/project_manager.py")],
+            env={**os.environ, "GITHUB_TOKEN": token,
+                 "GITHUB_EVENT": json.dumps({"action": "closed", "pull_request": pr}),
+                 "CLASSIFICATION_OUTPUT": str(output)}, check=True,
+        )
+        gist.update(json.loads(output.read_text()))
+    # Model and API changes describe main; master (the legacy APIs) has its own
+    # unrelated shared/ folder and APIDOCS.md.
+    on_main = pr["base"]["ref"] == "main"
+    changed = on_main and any(path.startswith("shared/") for path in files)
+    if changed or (on_main and announces_retirement(pr)):
+        if not (root / "node_modules/tsx").is_dir():
+            subprocess.run(["npm", "ci", "--ignore-scripts"], cwd=root, check=True)
+        # Rebase detection needs original commits as well as the merged history.
+        if changed and pr.get("commits", 1) > 1:
+            commits = []
+            page = 1
+            while True:
+                response = github_api_request("GET",
+                    f"{GITHUB_API_BASE}/repos/{os.environ['REPO_FULL_NAME']}/pulls/{pr['number']}/commits",
+                    headers={"Authorization": f"Bearer {token}"},
+                    params={"per_page": 100, "page": page})
+                response.raise_for_status()
+                batch = response.json()
+                commits.extend(commit["sha"] for commit in batch)
+                if len(batch) < 100:
+                    break
+                page += 1
+            pr = {**pr, "_commit_shas": commits}
+            subprocess.run(["git", "fetch", "origin", f"pull/{pr['number']}/head"], cwd=root, check=True)
+        refs = pr_comparison_refs(pr, root) if changed else None
+        gist["announcements"] = announcements_for_pr(pr, files, root, refs)
+        if refs:
+            gist["announcement_evidence"] = {"before_ref": refs[0], "after_ref": refs[1]}
     # The docs PR regenerated after each production deploy carries the live API changes.
-    if API_DOCS in files:
-        try:
-            gist["api_changes"] = api_changes_for_pr(pr, root)
-            status["api"] = "complete"
-        except Exception as error:
-            print(f"  WARNING: API enrichment failed ({type(error).__name__}); values remain unknown")
-            status["api"] = "failed"
+    if on_main and API_DOCS in files:
+        gist["api_changes"] = api_changes_for_pr(pr, root)
 
 # ── App catalog lookup ──────────────────────────────────────────────
 
@@ -415,13 +425,13 @@ def lookup_newest_app() -> Optional[Dict]:
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
-def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) -> Optional[Dict]:
+def analyze_pr(pr_data: Dict, changes: str, token: str, enrichment: Dict) -> Optional[Dict]:
     """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
     # Build user prompt with PR context
     # Trust boundary: PR body comes from merged PRs (requires repo write access),
-    # not arbitrary user input. Truncated to 2000 chars as a size guard.
+    # not arbitrary user input. Truncated to 6000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
     context = {key: enrichment.get(key) for key in ("area", "type", "source", "announcements")}
@@ -432,10 +442,10 @@ Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
 
 Description:
-{body[:2000] if body else 'No description provided.'}
+{body[:6000] if body else 'No description provided.'}
 
-Changed files:
-{files_summary}
+Changed files and their diff:
+{changes}
 
 Classification and exact model changes already recorded:
 {json.dumps(context, indent=2)}"""
@@ -529,12 +539,12 @@ def main():
     # ── Fetch PR data ────────────────────────────────────────────────
     print(f"\n[1/2] Analyzing PR #{pr_number}...")
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
-    files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
+    changes, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
     # ── Step 1: Enrichment + AI analysis → gist JSON ─────────────────
     enrichment = {}
     enrich_gist(enrichment, pr_data, changed_files, github_token)
-    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token, enrichment)
+    ai_analysis = analyze_pr(pr_data, changes, pollinations_token, enrichment)
     if not ai_analysis:
         print(f"  FATAL: PR analysis failed with model {MODEL}")
         sys.exit(1)

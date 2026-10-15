@@ -4,11 +4,11 @@ Pollinations recognises two prefixes. Use the right *kind* of `pk_` for the surf
 
 | Key type | Prefix | Where it goes | What it can do |
 |---|---|---|---|
-| Secret key | `sk_` | Personal keys stay out of browser code. Browser apps use a user-authorized `sk_` from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
-| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user `sk_`. Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
+| Secret key | `sk_` | Personal secret keys stay out of browser code. Browser apps use a user-authorized secret key (`sk_`) from [Connect User Wallets](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md). | Secret keys have configurable model permissions, account permissions, and budgets. |
+| App key (BYOP) | `pk_` with redirect URIs | OAuth `client_id` for web/mobile/CLI consent | Users authorize your app; you receive a scoped user secret key (`sk_`). Create at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). This is the supported client path. |
 | Raw publishable key | `pk_` with no app / OAuth binding | Legacy only | Existing integrations only. Rate-limited to 1 pollen per IP per hour. **Do not mint new raw `pk_` keys, and do not embed them in new browser code.** |
 
-Authenticate generation requests with an API key:
+Authenticate generation requests with a secret key:
 
 ```http
 Authorization: Bearer <key>
@@ -32,7 +32,7 @@ The header is preferred for everything except browser flows that can't set custo
 
 ## 🔓 Sign in with Pollinations (OAuth 2.1)
 
-Third-party apps can obtain an API key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
+Third-party apps can obtain a secret key on behalf of a Pollinations user — the OAuth 2.1 authorization-code flow with PKCE (S256) for web apps, or the device flow (RFC 8628) for CLIs. Register a **publishable App Key** (`pk_…`) with your redirect URIs at [enter.pollinations.ai](https://enter.pollinations.ai/keys); the `pk_` key is your `client_id` (public client, no secret), and the issued access token is an opaque `sk_` key bound to the budget, expiry, and scopes the user approved.
 
 Endpoints are discoverable via RFC 8414 metadata — resolve them from there rather than hardcoding:
 

@@ -289,7 +289,7 @@ const REALTIME_DOCS = [
     `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
-    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized `sk_` in `?key=`.",
+    "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
@@ -480,9 +480,9 @@ function generationDocumentation(): OpenApiSchema {
                 bearerAuth: {
                     type: "http",
                     scheme: "bearer",
-                    bearerFormat: "API Key",
+                    bearerFormat: "Secret key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
+                        "Secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },

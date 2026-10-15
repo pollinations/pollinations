@@ -1,0 +1,33 @@
+{
+  "pr_number": 17506,
+  "title": "fix(ci): install docs validator dependencies for Media deployment",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17506",
+  "merged_at": "2026-10-15T00:12:13Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "summary": "The Media production deployment job now runs root `npm ci` instead of installing only the `shared` workspace, while retaining Media’s separate install. This supplies dependencies such as `ajv` to the Gen request-example validator used by Media’s docs test, which had blocked the Media and Gen deployment pipeline.",
+    "keywords": [
+      "CI",
+      "deployment",
+      "Media",
+      "Gen",
+      "docs validation",
+      "ajv"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17506.jpg",
+    "prompt": "In a cozy pixel art garden shed, Polli wears a tiny tool belt and connects a missing dependency-shaped puzzle piece to a glowing lime green (#ecf874) terminal beside a sprouting code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-15T00:13:25.030019+00:00",
+  "area": "CI & releases",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "274baf25d4959a2deefec5b3cad8a05ce198ab7b",
+  "announcements": []
+}

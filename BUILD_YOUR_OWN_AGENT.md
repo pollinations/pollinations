@@ -37,7 +37,7 @@ Example `agent.json`:
 }
 ```
 
-Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
+Send only the fields to change; omitted fields keep their current values. You can also change the name, title, description, or visibility.
 
 The `composio` server uses each caller's connections from [**Account → Connected apps**](https://enter.pollinations.ai/account#connectors). Public agents never receive or use the agent owner's app credentials.
 

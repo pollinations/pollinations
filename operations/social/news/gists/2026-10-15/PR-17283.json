@@ -1,0 +1,37 @@
+{
+  "pr_number": 17283,
+  "title": "fix: explain agent pricing in the model catalog and MCP",
+  "author": "Drjacky",
+  "url": "https://github.com/pollinations/pollinations/pull/17283",
+  "merged_at": "2026-10-15T21:02:52Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Clarified agent pricing in the model catalog schemas and MCP documentation. Agents add no charge of their own, but callers pay for the model and tool calls they make; a currency-only pricing entry without a base_model does not mean a request is free. Prompt agents show their base model’s rates, while agents without a base_model have usage-dependent charges. MCP’s getUsage description now explains that agent calls appear under the models the agent called. Response fields and prices are unchanged.",
+    "keywords": [
+      "agents",
+      "pricing",
+      "model catalog",
+      "MCP",
+      "usage",
+      "schemas"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-15/PR-17283.jpg",
+    "prompt": "In a cozy garden workbench scene, Polli wears tiny reading glasses and points to a lime green (#ecf874) catalog card showing an agent branching into model and tool calls, while a single CRT monitor robot studies the call records beside potted code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-15T21:05:54.450769+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Community",
+  "merge_commit_sha": "47b1fbaace1db940d505d1832e12c3906f1ae1eb",
+  "announcements": [],
+  "announcement_evidence": {
+    "before_ref": "47b1fbaace1db940d505d1832e12c3906f1ae1eb^1",
+    "after_ref": "47b1fbaace1db940d505d1832e12c3906f1ae1eb"
+  }
+}

@@ -196,6 +196,9 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+# Durable Object fetches get a 125 s proxy read timeout; requests through
+# this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
+GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -309,6 +312,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"

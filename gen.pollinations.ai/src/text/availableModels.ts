@@ -789,6 +789,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "perplexity/pplx-decider-v1.1-27b",
+        config: portkeyConfig["pplx-decider-v1.1-27b"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "perplexity/pplx-decider-v1.1-27b:openrouter",
+        config: portkeyConfig["perplexity/pplx-decider-v1.1-27b:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "liquid/d1",
         config: portkeyConfig["liquid-d1"],
         useSystemOneApi: true,
@@ -814,6 +824,16 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-luna-decisions:openrouter",
         config: portkeyConfig["openai/gpt-6-luna-decisions:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1",
+        config: portkeyConfig["microsoft-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1:openrouter"],
         useSystemOneApi: true,
     },
     {

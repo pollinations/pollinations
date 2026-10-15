@@ -6,8 +6,9 @@ import {
     useAuthState,
 } from "@pollinations/sdk/react";
 import { useEffect } from "react";
-import markUrl from "../../brand/mark.svg";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
+import { cn } from "../../lib/cn.ts";
+import { BrandMark } from "../../primitives/BrandMark.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
 import {
     ExternalLinkIcon,
@@ -32,6 +33,8 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     /** Optional caller-owned dashboard destination for the linked avatar. */
     dashboardHref?: string;
+    /** Larger logged-out action for prominent placements such as a page hero. */
+    connectSize?: keyof typeof CONNECT_SIZES;
     labels?: Partial<AppUserMenuLabels>;
 };
 
@@ -43,11 +46,24 @@ const defaultLabels: AppUserMenuLabels = {
     logout: "Disconnect",
 };
 
+const CONNECT_SIZES = {
+    md: {
+        button: "polli:h-10 polli:px-4",
+        mark: "polli:h-5 polli:w-5",
+    },
+    lg: {
+        button: "polli:h-12 polli:px-5 polli:text-base",
+        mark: "polli:h-6 polli:w-6",
+    },
+};
+
 export function AppUserMenu({
     dashboardHref,
+    connectSize = "md",
     labels: labelOverrides,
 }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
+    const size = CONNECT_SIZES[connectSize];
     const { logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
@@ -104,21 +120,15 @@ export function AppUserMenu({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             {!isLoggedIn ? (
-                <LoginButton className="polli:h-10 polli:gap-0 polli:overflow-hidden polli:border polli:border-theme-bg-active polli:bg-surface-white polli:p-0 polli:text-theme-text-strong polli:whitespace-nowrap polli:hover:bg-surface-white polli:[.dark_&]:bg-transparent polli:[.dark_&]:hover:bg-transparent">
-                    {/* Amber cell with the mark, then a light cell with the label. */}
-                    <span
-                        aria-hidden="true"
-                        className="polli:flex polli:h-full polli:w-10 polli:shrink-0 polli:items-center polli:justify-center polli:bg-theme-bg-active"
-                    >
-                        <span
-                            className="polli:relative polli:-top-px polli:left-px polli:block polli:h-6 polli:w-6 polli:bg-current"
-                            style={{
-                                mask: `url('${markUrl}') center / contain no-repeat`,
-                                WebkitMask: `url('${markUrl}') center / contain no-repeat`,
-                            }}
-                        />
-                    </span>
-                    <span className="polli:px-3">{labels.authorize}</span>
+                <LoginButton
+                    intent="brand"
+                    className={cn(
+                        "polli:gap-2 polli:py-0 polli:whitespace-nowrap",
+                        size.button,
+                    )}
+                >
+                    <BrandMark className={size.mark} />
+                    {labels.authorize}
                 </LoginButton>
             ) : (
                 <AccountMenu

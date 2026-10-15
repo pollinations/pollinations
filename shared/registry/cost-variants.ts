@@ -27,8 +27,11 @@ export type PricingInput = {
     searchContextSize?: "low" | "medium" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
+    stemVariation?: "two_stems_v1" | "six_stems_v1";
     /** Provider confirmed this response used an explicit prompt-cache entry. */
     hasExplicitCacheHit?: boolean;
+    /** Trusted provider receipt, carried from the generation response. */
+    providerBilling?: { units: number; unitCost: number };
 };
 
 export type CostVariantContext = {

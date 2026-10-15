@@ -136,8 +136,10 @@ key ID and parent request ID.
   as query parameters.
 - Every use reloads the parent key. A disabled, expired, or deleted parent key
   invalidates the run token.
-- The token inherits the parent key's model allowlist and spending budget, but
-  account-management permissions are removed.
+- The token inherits the parent key's permissions and spending budget,
+  including account permissions. An endpoint agent's server receives the
+  token, so call third-party agents with a key that holds only what the agent
+  needs.
 - The caller's raw `pk_` or `sk_` value is never included in or forwarded with
   the token.
 - The signed parent request ID links downstream usage to the agent invocation;

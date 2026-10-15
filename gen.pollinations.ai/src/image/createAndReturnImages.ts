@@ -1,5 +1,6 @@
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import debug from "debug";
+import { isRetryableFallbackError } from "../fallback.ts";
 import {
     fetchFromWeightedServer,
     type ServerType,
@@ -20,15 +21,18 @@ import {
     callIdeogramQualityAPI,
     callIdeogramTurboAPI,
 } from "./models/ideogramReplicateModel.ts";
+import { callInferencePortImage } from "./models/inferencePortImageModel.ts";
 import { callKreaImageAPI } from "./models/kreaModel.ts";
-import { callNovaCanvasAPI } from "./models/novaCanvasModel.ts";
 import {
     callOpenRouterFlux2MaxAPI,
+    callOpenRouterFlux3API,
     callOpenRouterGeminiImageAPI,
     callOpenRouterGrokImagineImage2API,
     callOpenRouterGrokImagineProAPI,
+    callOpenRouterQwenImage3API,
     callOpenRouterRecraftFlashAPI,
     callOpenRouterRecraftVectorAPI,
+    callOpenRouterSeedreamFlashAPI,
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
@@ -369,6 +373,22 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             apiKeyEnv: "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
             region: "eastus2",
         },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://westus3.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
+            region: "westus3",
+        },
+        {
+            provider: "azure",
+            baseUrl:
+                "https://polandcentral.api.cognitive.microsoft.com/openai/deployments/gpt-image-2",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
+            region: "polandcentral",
+        },
     ],
     "openai/gpt-image-1-mini:openai": [
         {
@@ -439,14 +459,13 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
 
 const gptImageEndpointIndexes = new Map<string, number>();
 
-/** Round robins the Azure regions to spread load. One region per request. */
-function nextGPTImageConfig(model: string): GPTImageConfig {
+/** Every region of the model, starting from the next one in the rotation. */
+function gptImageConfigsInTurn(model: string): GPTImageConfig[] {
     const configs =
         GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
-    const index = gptImageEndpointIndexes.get(model) ?? 0;
-    const config = configs[index % configs.length];
+    const index = (gptImageEndpointIndexes.get(model) ?? 0) % configs.length;
     gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
-    return config;
+    return [...configs.slice(index), ...configs.slice(0, index)];
 }
 
 const callGPTImageWithEndpoint = async (
@@ -719,24 +738,32 @@ export const callGPTImage = async (
     userInfo: AuthResult,
     model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
-    // One region, one attempt. Azure bills a generation it completed even when
-    // we never saw the response, so a second region would pay for a second
-    // image to answer a request the caller has already been told failed.
-    const config = nextGPTImageConfig(model);
-    try {
-        return await callGPTImageWithEndpoint(
-            prompt,
-            safeParams,
-            userInfo,
-            config,
-        );
-    } catch (error) {
-        logError(
-            `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
-            error,
-        );
-        throw error;
+    // Any Azure-side failure, timeouts and 5xx included, moves on to the next
+    // region; only the caller's own request errors stop here. A timeout may
+    // already have been billed, which is accepted to keep the request alive.
+    const configs = gptImageConfigsInTurn(model);
+    for (const [index, config] of configs.entries()) {
+        try {
+            return await callGPTImageWithEndpoint(
+                prompt,
+                safeParams,
+                userInfo,
+                config,
+            );
+        } catch (error) {
+            logError(
+                `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
+                error,
+            );
+            if (
+                index === configs.length - 1 ||
+                !isRetryableFallbackError(error)
+            ) {
+                throw error;
+            }
+        }
     }
+    throw new Error(`No GPT Image endpoint configured for ${model}`);
 };
 
 /**
@@ -815,6 +842,7 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image:openrouter:vertex-global":
         case "google/gemini-3.1-flash-image:openrouter:vertex-global":
+        case "google/gemini-nano-banana-2.1":
         case "google/gemini-3.1-flash-lite-image:openrouter:vertex-global":
         case "google/gemini-3-pro-image:openrouter:ai-studio-global": {
             logError(
@@ -882,7 +910,9 @@ const generateImage = async (
         case "black-forest-labs/flux.2-max:openrouter":
             return await callOpenRouterFlux2MaxAPI(prompt, safeParams);
 
-        case "microsoft/mai-image-2.5-flash":
+        case "black-forest-labs/flux-3-image":
+            return await callOpenRouterFlux3API(prompt, safeParams);
+
         case "microsoft/mai-image-2.6-flash":
         case "microsoft/mai-image-2.6": {
             try {
@@ -894,11 +924,31 @@ const generateImage = async (
             }
         }
 
+        case "inferenceport-ai/lightning-image-turbo": {
+            try {
+                return await callInferencePortImage(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                );
+            } catch (error) {
+                logError(
+                    "InferencePort image generation failed:",
+                    error.message,
+                );
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
 
         case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-flash":
+            return await callOpenRouterSeedreamFlashAPI(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -949,9 +999,6 @@ const generateImage = async (
         case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
 
-        case "amazon/nova-canvas-v1":
-            return await callNovaCanvasAPI(prompt, safeParams);
-
         case "alibaba/wan-2.7-image":
             return await callAlibabaImage(prompt, safeParams, "wan2.7-image");
 
@@ -978,16 +1025,18 @@ const generateImage = async (
                 "qwen-image-3.0-pro",
             );
 
-        case "qwen/qwen-image-3:fal":
-            return await callFalQwenImageAPI(
+        case "qwen/qwen-image-2.1-turbo":
+            return await callAlibabaImage(
                 prompt,
                 safeParams,
-                "qwen/qwen-image-3:fal",
+                "qwen-image-2.1-turbo",
             );
+
+        case "qwen/qwen-image-3:openrouter":
+            return await callOpenRouterQwenImage3API(prompt, safeParams);
 
         case "black-forest-labs/flux.1-kontext-pro:replicate":
         case "black-forest-labs/flux.2-pro:replicate":
-        case "qwen/qwen-image-3:replicate":
         case "prunaai/p-image-edit:replicate":
         case "krea/krea-2-medium:replicate":
             return await callReplicateFallbackImage(prompt, safeParams);

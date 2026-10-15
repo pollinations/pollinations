@@ -1,4 +1,5 @@
 import { ensureUpstreamOk } from "@shared/error.ts";
+import { completionToChatStream } from "./chat/stream.js";
 import { withUpstreamRequestUrl } from "./genericOpenAIClient.js";
 import type {
     ChatCompletion,
@@ -23,6 +24,117 @@ type SystemOneRequest = {
     questions: Record<string, unknown>;
 };
 
+function decisionText(value: unknown): string {
+    return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function toOpenAIQuestions(questions: Record<string, unknown>) {
+    return Object.entries(questions).map(([name, question]) => {
+        if (!isPlainObject(question))
+            throw nativeRequestError("Invalid question.");
+        const instructions = decisionText(question.instructions);
+        if (question.type === "noul") {
+            return {
+                name,
+                type: "predicate",
+                instructions: question.criteria
+                    ? `${instructions}\n${decisionText(question.criteria)}`
+                    : instructions,
+            };
+        }
+        if (question.type === "choice" && isPlainObject(question.criteria)) {
+            return {
+                name,
+                type: "choice",
+                instructions,
+                choices: Object.entries(question.criteria).map(
+                    ([value, description]) => ({
+                        value,
+                        ...(description === null
+                            ? {}
+                            : { description: decisionText(description) }),
+                    }),
+                ),
+            };
+        }
+        if (question.type === "score" && Array.isArray(question.criteria)) {
+            return {
+                name,
+                type: "score",
+                instructions,
+                levels: question.criteria.map((description, index) => ({
+                    label: String(index),
+                    description: decisionText(description),
+                })),
+            };
+        }
+        throw nativeRequestError("Unsupported decision question.");
+    });
+}
+
+function fromOpenAIResponse(
+    body: unknown,
+    questions: Record<string, unknown>,
+): SystemOneResponse {
+    if (!isPlainObject(body) || !Array.isArray(body.answers)) {
+        throw serviceError("OpenAI returned invalid decision answers.", 502);
+    }
+    const answers = Object.fromEntries(
+        body.answers.map((entry) => {
+            if (!isPlainObject(entry) || typeof entry.name !== "string") {
+                throw serviceError(
+                    "OpenAI returned an invalid decision answer.",
+                    502,
+                );
+            }
+            const { name, type, ...answer } = entry;
+            if (type === "predicate")
+                return [name, { type: "noul", noul: answer.probability }];
+            const question = questions[name];
+            return [
+                name,
+                {
+                    ...answer,
+                    type,
+                    ...(Array.isArray(answer.probabilities) && {
+                        probabilities: Object.fromEntries(
+                            answer.probabilities.map((probability) => {
+                                if (!isPlainObject(probability))
+                                    throw serviceError(
+                                        "OpenAI returned invalid probabilities.",
+                                        502,
+                                    );
+                                return [
+                                    String(probability.value),
+                                    probability.probability,
+                                ];
+                            }),
+                        ),
+                    }),
+                    ...(type === "score" &&
+                        isPlainObject(question) &&
+                        Array.isArray(question.criteria) && {
+                            legend: Object.fromEntries(
+                                question.criteria.map((criterion, index) => [
+                                    String(index),
+                                    criterion,
+                                ]),
+                            ),
+                        }),
+                },
+            ];
+        }),
+    );
+    if (!Object.keys(questions).every((name) => Object.hasOwn(answers, name))) {
+        throw serviceError("OpenAI returned incomplete decision answers.", 502);
+    }
+    return {
+        model: body.model,
+        answers,
+        usage: body.usage,
+    } as SystemOneResponse;
+}
+
 function serviceError(message: string, status: number): ServiceError {
     const error = new Error(message) as ServiceError;
     error.status = status;
@@ -36,7 +148,10 @@ function nativeRequestError(detail: string): ServiceError {
     );
 }
 
-function parseNativeRequest(messages: ChatMessage[]): {
+function parseNativeRequest(
+    messages: ChatMessage[],
+    model: unknown,
+): {
     state: unknown;
     questions: Record<string, unknown>;
 } {
@@ -45,7 +160,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
     const message = messages.findLast((item) => item?.role === "user");
     if (typeof message?.content !== "string") {
         throw nativeRequestError(
-            "typesafe/jev-1.13 requires a user message with string content.",
+            `${model} requires a user message with string content.`,
         );
     }
     let payload: unknown;
@@ -53,7 +168,7 @@ function parseNativeRequest(messages: ChatMessage[]): {
         payload = JSON.parse(message.content);
     } catch {
         throw nativeRequestError(
-            "typesafe/jev-1.13 could not parse the user message content as JSON.",
+            `${model} could not parse the user message content as JSON.`,
         );
     }
     if (
@@ -62,42 +177,10 @@ function parseNativeRequest(messages: ChatMessage[]): {
         !isPlainObject(payload.questions)
     ) {
         throw nativeRequestError(
-            'typesafe/jev-1.13 expects a JSON object with "state" and a "questions" map.',
+            `${model} expects a JSON object with "state" and a "questions" map.`,
         );
     }
     return { state: payload.state, questions: payload.questions };
-}
-
-// TypeSafe answers arrive in one piece, so the stream is the finished
-// completion re-emitted as chunks: content, then the usage chunk billing
-// requires, then the terminator.
-function toStreamedCompletion(completion: ChatCompletion): ChatCompletion {
-    const { id, created, model, choices, usage } = completion;
-    const chunk = { id, object: "chat.completion.chunk", created, model };
-    const body = [
-        {
-            ...chunk,
-            choices: [
-                {
-                    index: 0,
-                    delta: {
-                        role: "assistant",
-                        content: choices?.[0]?.message?.content ?? "",
-                    },
-                    finish_reason: "stop",
-                },
-            ],
-            usage: null,
-        },
-        { ...chunk, choices: [], usage },
-    ]
-        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-        .join("");
-    return {
-        ...completion,
-        stream: true,
-        responseStream: new Blob([body, "data: [DONE]\n\n"]).stream(),
-    };
 }
 
 /**
@@ -112,16 +195,15 @@ export async function requestDecision(
     const { state, questions } = request;
     const apiKey = options.modelConfig?.authKey;
     const endpoint = options.modelConfig?.directEndpoint;
+    const model = options.modelConfig?.model;
     if (typeof apiKey !== "string" || !apiKey || typeof endpoint !== "string") {
         throw serviceError(
-            "The decisions route is not configured for typesafe/jev-1.13.",
+            `The decisions route is not configured for ${model}.`,
             500,
         );
     }
-    const model = options.modelConfig?.model;
+    const openai = options.modelConfig?.decisionsProtocol === "openai";
     const requestUrl = new URL(endpoint);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30_000);
     try {
         const response = await fetch(requestUrl, {
             method: "POST",
@@ -129,19 +211,33 @@ export async function requestDecision(
                 Authorization: `Bearer ${apiKey}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ state, model, questions }),
-            signal: controller.signal,
+            body: JSON.stringify(
+                openai
+                    ? {
+                          model,
+                          input: decisionText(state),
+                          questions: toOpenAIQuestions(questions),
+                      }
+                    : { state, model, questions },
+            ),
         });
         await ensureUpstreamOk(response, requestUrl);
-        const result = (await response.json()) as SystemOneResponse;
+        const body = await response.json();
+        const result = openai
+            ? fromOpenAIResponse(body, questions)
+            : (body as SystemOneResponse);
         // Billable responses must carry usage; reject rather than bill zero.
         if (
             !isPlainObject(result?.answers) ||
-            typeof result?.usage?.input_tokens !== "number" ||
-            typeof result?.usage?.output_tokens !== "number"
+            ![result?.usage?.input_tokens, result?.usage?.output_tokens].every(
+                (count) =>
+                    typeof count === "number" &&
+                    Number.isSafeInteger(count) &&
+                    count >= 0,
+            )
         ) {
             throw serviceError(
-                "Jev returned a response without valid answers or usage.",
+                `${model} returned a response without valid answers or usage.`,
                 502,
             );
         }
@@ -151,11 +247,9 @@ export async function requestDecision(
             thrown instanceof Error
                 ? (thrown as ServiceError)
                 : (new Error(String(thrown)) as ServiceError);
-        error.status ??= controller.signal.aborted ? 504 : 502;
+        error.status ??= 502;
         error.requestUrl = requestUrl;
         throw error;
-    } finally {
-        clearTimeout(timeout);
     }
 }
 
@@ -169,7 +263,7 @@ export async function callSystemOne(
     options: TransformOptions,
 ): Promise<ChatCompletion> {
     const { result, requestUrl } = await requestDecision(
-        parseNativeRequest(messages),
+        parseNativeRequest(messages, options.modelConfig?.model),
         options,
     );
     const completion: ChatCompletion = {
@@ -195,7 +289,8 @@ export async function callSystemOne(
         },
     };
     return withUpstreamRequestUrl(
-        options.stream ? toStreamedCompletion(completion) : completion,
+        // TypeSafe answers arrive in one piece.
+        options.stream ? completionToChatStream(completion) : completion,
         requestUrl,
     );
 }

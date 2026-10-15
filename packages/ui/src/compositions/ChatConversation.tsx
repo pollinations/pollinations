@@ -53,7 +53,7 @@ export const ChatConversation = forwardRef<
                     aria-label={scrollButtonLabel}
                     title={scrollButtonLabel}
                     onClick={onScrollToBottom}
-                    className="polli-control polli:absolute polli:bottom-3 polli:left-1/2 polli:flex polli:size-9 polli:-translate-x-1/2 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded-full polli:border polli:border-theme-border/60 polli:bg-surface-opaque polli:text-theme-text-strong polli:shadow-well polli:transition-transform polli:hover:translate-y-0.5"
+                    className="polli-control polli:absolute polli:bottom-3 polli:left-1/2 polli:flex polli:size-9 polli:-translate-x-1/2 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded-full polli:border polli:border-theme-border/60 polli:bg-surface-opaque polli:text-theme-text-strong polli:transition-transform polli:hover:translate-y-0.5"
                 >
                     <ArrowRightIcon className="polli:size-4 polli:rotate-90" />
                 </button>

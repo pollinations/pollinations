@@ -2,6 +2,10 @@ DESCRIPTION >
     Hourly generation usage for the rebuilt Grafana dashboards. Production is
     the live scope; debug-prod-copy is retained as an isolated staging fixture.
     Preserves separate all, successful, and billed request populations.
+    Rows written before the four traffic groups keep their legacy split:
+    everything_else maps to regular, so operations and dev stay inside regular
+    there. Migrating instead of rebuilding keeps the deployment within
+    Tinybird's populate memory limit.
 
 TOKEN "tinybird_read" READ
 
@@ -30,6 +34,8 @@ SCHEMA >
     `completion_reasoning_tokens` AggregateFunction(sum, UInt64),
     `prompt_image_tokens` AggregateFunction(sum, UInt64),
     `completion_image_tokens` AggregateFunction(sum, UInt64),
+    `prompt_image_units` AggregateFunction(sum, Float64) DEFAULT initializeAggregation('sumState', toFloat64(finalizeAggregation(prompt_image_tokens))),
+    `completion_image_units` AggregateFunction(sum, Float64) DEFAULT initializeAggregation('sumState', toFloat64(finalizeAggregation(completion_image_tokens))),
     `prompt_audio_seconds` AggregateFunction(sum, Float64),
     `completion_audio_seconds` AggregateFunction(sum, Float64),
     `completion_video_seconds` AggregateFunction(sum, Float64),

@@ -38,7 +38,7 @@ const REAL_MODERATION_MESSAGES = [
     // Azure Content Safety (kontext, gpt-image)
     "Prompt contains unsafe content: sexual, violence",
     "Input image contains unsafe content: hate",
-    // Azure MAI image route (microsoft/mai-image-2.5-flash) 400 body
+    // Azure MAI image route (microsoft/mai-image-2.6-flash) 400 body
     '{"error":{"code":"content_safety_violation","message":"Response content blocked by label \'MultiSeverity_ViolenceScore\'."}}',
 ];
 
@@ -68,17 +68,19 @@ const NON_MODERATION_MESSAGES = [
 ];
 
 describe("isContentPolicyViolation", () => {
-    it.each(
-        REAL_MODERATION_MESSAGES,
-    )("flags real moderation message as content policy: %s", (message) => {
-        expect(isContentPolicyViolation(message)).toBe(true);
-    });
+    it.each(REAL_MODERATION_MESSAGES)(
+        "flags real moderation message as content policy: %s",
+        (message) => {
+            expect(isContentPolicyViolation(message)).toBe(true);
+        },
+    );
 
-    it.each(
-        NON_MODERATION_MESSAGES,
-    )("does NOT flag genuine backend failure: %s", (message) => {
-        expect(isContentPolicyViolation(message)).toBe(false);
-    });
+    it.each(NON_MODERATION_MESSAGES)(
+        "does NOT flag genuine backend failure: %s",
+        (message) => {
+            expect(isContentPolicyViolation(message)).toBe(false);
+        },
+    );
 
     it("returns false for empty, null, or undefined", () => {
         expect(isContentPolicyViolation("")).toBe(false);

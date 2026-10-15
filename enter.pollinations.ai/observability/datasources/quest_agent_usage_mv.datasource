@@ -1,13 +1,16 @@
 DESCRIPTION >
-    Successful agent usage by caller and creator username, from existing events.
-    Sticky flags avoid scanning generation history on each quest refresh.
+    Successful agent and community model usage by caller and creator username,
+    from existing events. Sticky flags and the Paid Pollen sum avoid scanning
+    generation history on each quest refresh.
 
 TOKEN tinybird_read READ
 
 SCHEMA >
     `user_id` String,
     `owner_username` String,
-    `used_agent` AggregateFunction(max, UInt8)
+    `used_agent` AggregateFunction(max, UInt8),
+    `used_community_model` AggregateFunction(max, UInt8),
+    `community_model_paid_pollen` AggregateFunction(sum, Float64)
 
 ENGINE AggregatingMergeTree
 ENGINE_SORTING_KEY user_id, owner_username

@@ -308,7 +308,11 @@ dist
 venv/
 cursor-party/
 .aider*
+# Bare pattern: matches a `data/` directory at ANY depth, so source folders
+# that happen to be called data are swallowed too. Un-ignore them explicitly.
 data/
+!pollinations.ai/src/data/
+!pollinations.ai/public/data/
 text.pollinations.ai/v2/
 
 # Local Netlify folder

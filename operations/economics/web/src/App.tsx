@@ -1,5 +1,6 @@
 import {
     Alert,
+    AppBrand,
     Button,
     ChevronIcon,
     Chip,
@@ -23,10 +24,8 @@ import {
     XIcon,
 } from "@pollinations/ui";
 import { DashboardAccountMenu } from "@pollinations/ui/auth";
-import logoUrl from "@pollinations/ui/brand/mark.svg";
 import {
     type ComponentType,
-    type CSSProperties,
     type ReactNode,
     type RefObject,
     useEffect,
@@ -112,11 +111,6 @@ function initialView(): ActiveView {
         ? (requested as ActiveView)
         : "runway";
 }
-
-const logoMask: CSSProperties = {
-    WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
-    mask: `url(${logoUrl}) center / contain no-repeat`,
-};
 
 type DrawerItem<Id extends string> = {
     id: Id;
@@ -296,7 +290,7 @@ function NavMenuButton({
             ref={buttonRef}
             size="md"
             className={cn(
-                "fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque",
+                "fixed left-3 top-3 z-30 bg-surface-menu/80 text-theme-text-strong backdrop-blur-md hover:bg-surface-menu",
                 !desktopVisible && "md:hidden",
             )}
             onClick={onOpen}
@@ -426,7 +420,7 @@ function EconomicsDrawer({
             aria-label="Economics navigation"
         >
             <div className="hidden shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:flex">
-                <EconomicsBrand size="desktop" />
+                <AppBrand appName="Economics" />
                 {onCollapse && (
                     <IconButton
                         size="sm"
@@ -527,7 +521,7 @@ function EconomicsShell({
                 contentClassName="md:hidden"
             >
                 <div className="flex shrink-0 items-center justify-between gap-3 border-b border-theme-text-strong/10 px-4 py-3 text-theme-text-strong">
-                    <EconomicsBrand size="drawer" />
+                    <AppBrand appName="Economics" size="sm" />
                     <IconButton
                         size="md"
                         className="shrink-0 bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
@@ -559,36 +553,6 @@ function EconomicsShell({
                     {children}
                 </ScrollArea>
             </div>
-        </div>
-    );
-}
-
-function EconomicsBrand({ size }: { size: "desktop" | "drawer" }) {
-    return (
-        <div
-            className={cn(
-                "flex min-w-0 items-center",
-                size === "desktop" ? "gap-3" : "gap-2.5",
-            )}
-        >
-            <span className="sr-only">Economics</span>
-            <span
-                aria-hidden="true"
-                className={cn(
-                    "block shrink-0 bg-current",
-                    size === "desktop" ? "h-8 w-8" : "h-7 w-7",
-                )}
-                style={logoMask}
-            />
-            <span
-                aria-hidden="true"
-                className={cn(
-                    "min-w-0 truncate font-subheading font-medium leading-none",
-                    size === "desktop" ? "text-2xl" : "text-xl",
-                )}
-            >
-                Economics
-            </span>
         </div>
     );
 }

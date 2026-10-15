@@ -9,7 +9,6 @@ import {
     DiscordIcon,
     GitHubIcon,
     InlineLink,
-    LoadingStatus,
     RocketIcon,
     Section,
     SparkleIcon,
@@ -22,7 +21,7 @@ import {
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
 import { formatPollen, WalletBalanceCard } from "@pollinations/ui/wallet";
-import { useLoaderData } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
     type ComponentType,
     type FC,
@@ -31,12 +30,20 @@ import {
     useRef,
     useState,
 } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import type {
     QuestCatalogResponse,
     QuestCheckResult,
+    QuestStandingsResponse,
 } from "../../backend-types.ts";
-import { LoadError, SectionContent } from "../layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+    SectionContent,
+} from "../layout/dashboard-loading.tsx";
+import { QUEST_STATUS_UPDATED_EVENT } from "./quest-nav-status.ts";
+import { QuestStandings } from "./quest-standings.tsx";
+import { RedeemCode } from "./redeem-code.tsx";
 
 type QuestCatalogItem = QuestCatalogResponse["quests"][number];
 type QuestProgress = QuestCheckResult["progress"][number];
@@ -57,6 +64,8 @@ type QuestReward = {
 type FetchState = {
     catalog: QuestCatalogItem[];
     rewards: QuestReward[];
+    // Monthly leaderboard; null when it failed to load (the page still works).
+    standings: QuestStandingsResponse | null;
     progress: QuestProgress[];
     loading: boolean;
     checking: boolean;
@@ -71,6 +80,7 @@ type FetchState = {
 const INITIAL_STATE: FetchState = {
     catalog: [],
     rewards: [],
+    standings: null,
     progress: [],
     loading: true,
     checking: false,
@@ -184,16 +194,21 @@ function rewardIconKind(
         : "tier";
 }
 
-type QuestData = Pick<FetchState, "catalog" | "rewards" | "anonymous">;
+type QuestData = Pick<
+    FetchState,
+    "catalog" | "rewards" | "standings" | "anonymous"
+>;
 
 async function loadQuestData(): Promise<QuestData> {
     // The catalog is public; the per-user rewards endpoint requires auth. A
     // logged-out visitor still gets the full catalog (rendered all-open as a
     // preview), so a 401 on rewards is expected, not an error.
-    const [catalogResponse, rewardsResponse] = await Promise.all([
-        apiClient.quests.catalog.$get(),
-        apiClient.quests.rewards.$get(),
-    ]);
+    const [catalogResponse, rewardsResponse, standingsResponse] =
+        await Promise.all([
+            apiClient.quests.catalog.$get(),
+            accountClient.quests.rewards.$get(),
+            apiClient.quests.standings.$get(),
+        ]);
     if (!catalogResponse.ok) {
         throw new Error(`Failed to load quests (${catalogResponse.status})`);
     }
@@ -208,9 +223,14 @@ async function loadQuestData(): Promise<QuestData> {
         : ((await rewardsResponse.json()) as { rewards: QuestReward[] })
               .rewards;
 
+    const standings = standingsResponse.ok
+        ? ((await standingsResponse.json()) as QuestStandingsResponse)
+        : null;
+
     return {
         catalog: catalog.quests ?? [],
         rewards: rewards ?? [],
+        standings,
         anonymous,
     };
 }
@@ -425,8 +445,10 @@ export function QuestRow({
     const claimed = card.status === "claimed";
     const claimableRewardId =
         card.status === "claimable" ? card.rewardId : undefined;
+    // A claimed quest no longer needs its progress bar — the reward is banked,
+    // so the "N / N" count is done and just adds noise.
     const progress =
-        !card.comingSoon && card.progress ? (
+        !card.comingSoon && !claimed && card.progress ? (
             <QuestProgressBar progress={card.progress} />
         ) : null;
     const rewardAmount = earned
@@ -584,6 +606,7 @@ export const QuestOverview: FC<QuestOverviewProps> = () => {
 };
 
 function QuestOverviewContent({ userId }: { userId: string | null }) {
+    const router = useRouter();
     const [claimError, setClaimError] = useState<string | null>(null);
     const [state, setState] = useState<FetchState>({
         ...INITIAL_STATE,
@@ -643,7 +666,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             // warm) or any failure leaves the already-loaded quests intact and
             // does NOT surface a red error — the cached data is still valid.
             try {
-                const response = await apiClient.quests.check.$post();
+                const response = await accountClient.quests.check.$post();
                 if (cancelled) return;
                 if (response.ok) {
                     const checkResult =
@@ -658,6 +681,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                         loading: false,
                         error: null,
                     }));
+                    window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
                     return;
                 }
                 // Not ok (throttled or failed) — just stop the indicator.
@@ -680,7 +704,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         }));
 
         try {
-            const response = await apiClient.quests.rewards[
+            const response = await accountClient.quests.rewards[
                 ":rewardId"
             ].claim.$post({
                 param: { rewardId },
@@ -688,6 +712,9 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             if (!response.ok) {
                 throw new Error("Couldn’t claim the reward. Please try again.");
             }
+            void router.invalidate({
+                filter: (match) => match.routeId === "/_dashboard",
+            });
             const questData = await loadQuestData();
             setState((current) => ({
                 ...current,
@@ -696,6 +723,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     (id) => id !== rewardId,
                 ),
             }));
+            window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
         } catch (error) {
             setState((current) => ({
                 ...current,
@@ -709,6 +737,15 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                     : "Couldn’t claim the reward. Please try again.",
             );
         }
+    }
+
+    async function refreshRewards(): Promise<void> {
+        void router.invalidate({
+            filter: (match) => match.routeId === "/_dashboard",
+        });
+        const questData = await loadQuestData();
+        setState((current) => ({ ...current, ...questData }));
+        window.dispatchEvent(new Event(QUEST_STATUS_UPDATED_EVENT));
     }
 
     // A reward's questId IS the catalog id it earned (one reward == one quest),
@@ -877,6 +914,24 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
         return { count, segments };
     }, [state.rewards]);
 
+    // Quests the viewer can still earn, for the leaderboard's "next step" line.
+    const openQuests = useMemo(
+        () =>
+            Object.values(sections)
+                .flat()
+                .filter(
+                    (card) =>
+                        card.status === "open" &&
+                        !card.comingSoon &&
+                        (card.reward ?? 0) > 0,
+                )
+                .map((card) => ({
+                    title: card.title,
+                    reward: card.reward ?? 0,
+                })),
+        [sections],
+    );
+
     const initialError =
         state.catalog.length === 0 && state.rewards.length === 0
             ? state.error
@@ -884,7 +939,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
     const showSummary = !initialError;
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             {/* Summary. The per-user accounting (completed/claimed cards +
                 claimable footers + checking indicator) is hidden for logged-out
                 visitors, but the alpha + claim-flow footer stays so the preview
@@ -892,9 +947,6 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
             <Section
                 title={state.anonymous ? "Pollen you can earn" : "Claimed"}
             >
-                {state.loading && (
-                    <LoadingStatus>Loading quests…</LoadingStatus>
-                )}
                 <SectionContent loading={state.loading}>
                     {state.error && <LoadError>{state.error}</LoadError>}
                     {claimError && <Alert intent="danger">{claimError}</Alert>}
@@ -905,9 +957,7 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             claimable={claimable}
                         />
                     )}
-                    {state.checking && (
-                        <LoadingStatus>Refreshing quests…</LoadingStatus>
-                    )}
+                    {state.checking && <PageStatus />}
                     {/* The preview counts available quests and their possible rewards. */}
                     {showSummary && state.anonymous && (
                         <QuestSummary
@@ -942,27 +992,40 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                 </div>
             </Section>
 
-            <div className="flex flex-col gap-6">
-                {bonusRewardCards.length > 0 && (
+            {state.standings && (
+                <QuestStandings
+                    standings={state.standings}
+                    openQuests={openQuests}
+                />
+            )}
+
+            {CATEGORIES.map((category) => {
+                const cards = sections[category.key];
+                if (state.loading || cards.length === 0) return null;
+                // The progress chip counts only real (grantable) quests —
+                // coming_soon rows are excluded from both done and total.
+                const liveCards = cards.filter((card) => !card.comingSoon);
+                const done = liveCards.filter(
+                    (card) => card.status !== "open",
+                ).length;
+                return (
                     <Section
-                        title="Bonus rewards"
+                        key={category.key}
+                        title={category.label}
                         action={
-                            <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                {
-                                    bonusRewardCards.filter(
-                                        (card) => card.status === "claimed",
-                                    ).length
-                                }{" "}
-                                / {bonusRewardCards.length}
-                            </span>
+                            !initialError && (
+                                <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                                    {done} / {liveCards.length}
+                                </span>
+                            )
                         }
                     >
                         <div className="flex flex-col gap-2">
-                            {bonusRewardCards.map((card) => (
+                            {cards.map((card) => (
                                 <QuestRow
                                     key={card.key}
                                     card={card}
-                                    icon={SparkleIcon}
+                                    icon={category.icon}
                                     claiming={state.claimingRewardIds.includes(
                                         card.rewardId ?? "",
                                     )}
@@ -971,45 +1034,41 @@ function QuestOverviewContent({ userId }: { userId: string | null }) {
                             ))}
                         </div>
                     </Section>
-                )}
-                {CATEGORIES.map((category) => {
-                    const cards = sections[category.key];
-                    if (state.loading || cards.length === 0) return null;
-                    // The progress chip counts only real (grantable) quests —
-                    // coming_soon rows are excluded from both done and total.
-                    const liveCards = cards.filter((card) => !card.comingSoon);
-                    const done = liveCards.filter(
-                        (card) => card.status !== "open",
-                    ).length;
-                    return (
-                        <Section
-                            key={category.key}
-                            title={category.label}
-                            action={
-                                !initialError && (
-                                    <span className="text-xs font-medium tabular-nums text-theme-text-strong">
-                                        {done} / {liveCards.length}
-                                    </span>
-                                )
-                            }
-                        >
-                            <div className="flex flex-col gap-2">
-                                {cards.map((card) => (
-                                    <QuestRow
-                                        key={card.key}
-                                        card={card}
-                                        icon={category.icon}
-                                        claiming={state.claimingRewardIds.includes(
-                                            card.rewardId ?? "",
-                                        )}
-                                        onClaim={handleClaimReward}
-                                    />
-                                ))}
-                            </div>
-                        </Section>
-                    );
-                })}
-            </div>
-        </div>
+                );
+            })}
+            {bonusRewardCards.length > 0 && (
+                <Section
+                    title="Bonus rewards"
+                    action={
+                        <span className="text-xs font-medium tabular-nums text-theme-text-strong">
+                            {
+                                bonusRewardCards.filter(
+                                    (card) => card.status === "claimed",
+                                ).length
+                            }{" "}
+                            / {bonusRewardCards.length}
+                        </span>
+                    }
+                >
+                    <div className="flex flex-col gap-2">
+                        {bonusRewardCards.map((card) => (
+                            <QuestRow
+                                key={card.key}
+                                card={card}
+                                icon={SparkleIcon}
+                                claiming={state.claimingRewardIds.includes(
+                                    card.rewardId ?? "",
+                                )}
+                                onClaim={handleClaimReward}
+                            />
+                        ))}
+                    </div>
+                </Section>
+            )}
+            {/* Mounts after the quests load, so a `?code=` link scrolls to its final spot. */}
+            {!state.anonymous && !state.loading && (
+                <RedeemCode onRedeemed={() => void refreshRewards()} />
+            )}
+        </>
     );
 }

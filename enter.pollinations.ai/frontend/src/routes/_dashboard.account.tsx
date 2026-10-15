@@ -22,7 +22,10 @@ import { Await, createFileRoute, redirect } from "@tanstack/react-router";
 import { useDeferredValue, useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
 import { ConnectedApps } from "../components/account/connected-apps.tsx";
-import { LoadError } from "../components/layout/dashboard-loading.tsx";
+import {
+    LoadError,
+    PageStatus,
+} from "../components/layout/dashboard-loading.tsx";
 import { Route as DashboardRoute, useDashboardRetry } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -76,7 +79,7 @@ function AccountPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
+        <>
             <Section title="Profile">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-4">
@@ -121,7 +124,14 @@ function AccountPage() {
 
             {signOutError && <Alert intent="danger">{signOutError}</Alert>}
 
-            <Await promise={profile} fallback={null}>
+            <Await
+                promise={profile}
+                fallback={
+                    <Section title="Community">
+                        <PageStatus />
+                    </Section>
+                }
+            >
                 {(details) =>
                     details ? (
                         <CommunityConnections
@@ -201,7 +211,7 @@ function AccountPage() {
                         type="button"
                         intent="danger"
                         icon={<TrashIcon />}
-                        className="shrink-0"
+                        className="shrink-0 self-start sm:self-center"
                         onClick={() => setDeleteDialogOpen(true)}
                     >
                         Delete account
@@ -209,7 +219,7 @@ function AccountPage() {
                 </div>
             </Section>
 
-            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-theme-text-muted">
+            <footer className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 text-[13px] text-theme-text-muted sm:px-1">
                 <span>© 2026 Myceli.AI OÜ</span>
                 <InlineLink
                     href="https://pollinations.ai/terms"
@@ -238,7 +248,7 @@ function AccountPage() {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
             />
-        </div>
+        </>
     );
 }
 

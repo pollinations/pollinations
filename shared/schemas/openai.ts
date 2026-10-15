@@ -151,9 +151,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -315,6 +313,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
         metadata: z
             .record(z.string(), z.string())
             .nullish()
@@ -397,6 +401,7 @@ export type CreateChatCompletionRequest = z.infer<
 >;
 
 const StatelessResponseIncludeSchema = z.enum([
+    "reasoning.encrypted_content",
     "web_search_call.action.sources",
     "code_interpreter_call.outputs",
     "computer_call_output.output.image_url",
@@ -446,6 +451,8 @@ export const CreateResponseRequestSchema = z
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).nullish(),
+        // Codex session telemetry; accepted, never sent upstream.
+        client_metadata: z.record(z.string(), z.string()).nullish(),
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
@@ -570,9 +577,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -823,6 +828,20 @@ const imageSizeField = z
     .default("1024x1024")
     .meta(imageSizeMeta);
 const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+// Same bounds as the GET image route and the chat route: out-of-range seeds
+// are rejected here instead of being silently replaced with seed 42 by the
+// generation pipeline.
+const imageSeedField = z
+    .number()
+    .int()
+    .min(-1)
+    .max(2147483647)
+    .nullable()
+    .optional()
+    .meta({
+        description:
+            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -856,6 +875,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -936,6 +956,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,

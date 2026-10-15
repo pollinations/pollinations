@@ -349,7 +349,7 @@ export const KPIS = [
         name: "App submissions",
         category: "Community",
         tooltip:
-            "Issues opened this week with the APP-SUBMISSION label on pollinations/pollinations.",
+            "Issues opened this week with the APP-SUBMISSION label on pollinations/pollinations. Counted daily near 00:17 UTC, subject to GitHub Actions scheduling delays, so the current week can be a day behind.",
     },
 ];
 

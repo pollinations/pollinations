@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useLayoutEffect, useRef } from "react";
 import { routeHead } from "../routeMeta";
+import { Analytics } from "../ui/site/Analytics";
 import { pageCardClassName } from "../ui/site/PageCard";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
@@ -90,6 +91,7 @@ function RootLayout() {
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <HeadContent />
+            <Analytics />
             <SiteHeader />
             <div className="site-shell site-page-shell flex flex-1 flex-col sm:mb-6 sm:pt-4 min-[700px]:pt-0">
                 <main

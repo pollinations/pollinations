@@ -2,74 +2,82 @@ import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { HTTPException } from "hono/http-exception";
 import {
-    COMMUNITY_MODALITY_SPEC,
+    communityModelId,
     parseCommunityModelId,
-    parseListingPayload,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
 import {
     type Category,
     getRegistryModelDefinition,
     MODEL_CATEGORIES,
+    type ModelDefinition,
     resolveModelName,
 } from "./registry.ts";
 
 /**
- * A key's `permissions.models` lists the model categories it may call: null
- * allows every model and [] none. Membership comes from each model's registry
- * `category`, so models join and leave a key's reach as the registry changes.
+ * A key's `permissions.models` lists the model categories and model IDs it may
+ * call: null allows every model and [] none. A category allows every model
+ * whose registry `category` matches, so models join and leave a key's reach as
+ * the registry changes; a model ID allows exactly that model. Matching aliases
+ * keeps a stored ID working after its model is renamed.
  */
-export function keyAllowsCategory(
+export function keyAllowsModel(
     models: readonly string[] | null | undefined,
-    category: Category,
+    id: string,
+    { category, aliases }: Pick<ModelDefinition, "category" | "aliases">,
 ): boolean {
-    return !models || models.includes(category);
+    return (
+        !models ||
+        [category, id, ...aliases].some((value) => models.includes(value))
+    );
 }
 
 /**
- * Normalizes requested key model permissions to categories. Accepts category
- * names and model IDs or aliases; a model ID widens to its model's category.
+ * Normalizes requested key model permissions. Category names stay as they are
+ * and model IDs or aliases become canonical model IDs.
  */
-export async function toModelCategories(
+export async function toModelPermissions(
     dbBinding: D1Database,
     values: readonly string[],
-): Promise<Category[]> {
-    const categories = new Set<Category>();
-    const communityIds: string[] = [];
-    for (const value of values) {
-        const category = registryCategory(value);
-        if (category) categories.add(category);
-        else communityIds.push(value);
-    }
-    const found = await communityCategories(dbBinding, communityIds);
-    const unknown = communityIds.find((id) => !found.has(id));
+): Promise<string[]> {
+    const registry = values.flatMap((value) => registryPermission(value) ?? []);
+    const communityIds = values.filter((value) => !registryPermission(value));
+    const community = await communityModelIds(dbBinding, communityIds);
+    const unknown = communityIds.find((id) => !community.has(id));
     if (unknown !== undefined) {
         throw new HTTPException(400, {
             message: `Model permission '${unknown}' is not a model category (${MODEL_CATEGORIES.join(", ")}) or a model ID from /models.`,
         });
     }
-    for (const category of found.values()) categories.add(category);
-    return MODEL_CATEGORIES.filter((category) => categories.has(category));
+    const permissions = new Set([...registry, ...community.values()]);
+    return [
+        ...MODEL_CATEGORIES.filter((category) => permissions.has(category)),
+        ...[...permissions].filter((value) => !isModelCategory(value)),
+    ];
 }
 
-function registryCategory(value: string): Category | undefined {
-    if ((MODEL_CATEGORIES as readonly string[]).includes(value)) {
-        return value as Category;
-    }
+export function isModelCategory(value: string): value is Category {
+    return (MODEL_CATEGORIES as readonly string[]).includes(value);
+}
+
+function registryPermission(value: string): string | undefined {
+    if (isModelCategory(value)) return value;
     try {
-        const definition = getRegistryModelDefinition(resolveModelName(value));
+        const modelName = resolveModelName(value);
         // Provider routes are internal; callers select the public model.
-        return definition.fallbackOnly ? undefined : definition.category;
+        return getRegistryModelDefinition(modelName).fallbackOnly
+            ? undefined
+            : modelName;
     } catch {
         return undefined;
     }
 }
 
-/** Categories of the requested community model IDs that exist. */
-async function communityCategories(
+/** Canonical IDs of the requested community model IDs that exist. */
+async function communityModelIds(
     dbBinding: D1Database,
     ids: readonly string[],
-): Promise<Map<string, Category>> {
+): Promise<Map<string, string>> {
     const parsed = ids.flatMap((id) => {
         const model = parseCommunityModelId(id);
         return model ? [{ id, ...model }] : [];
@@ -79,8 +87,6 @@ async function communityCategories(
         .select({
             owner: schema.user.githubUsername,
             name: schema.communityEndpoint.name,
-            type: schema.communityEndpoint.type,
-            payload: schema.communityEndpoint.payload,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -101,20 +107,16 @@ async function communityCategories(
                 ),
             ),
         );
-    const categories = new Map<string, Category>();
+    const canonical = new Map<string, string>();
     for (const { id, ownerGithubUsername, modelName } of parsed) {
-        const row = rows.find(
-            (row) =>
-                row.owner === ownerGithubUsername && row.name === modelName,
-        );
-        if (!row) continue;
-        // Agents are text models; a proxy publishes its modality's category.
-        const modality =
-            row.type === "proxy"
-                ? (parseListingPayload("proxy", row.payload)?.modality ??
-                  "text")
-                : "text";
-        categories.set(id, COMMUNITY_MODALITY_SPEC[modality].category);
+        if (
+            rows.some(
+                (row) =>
+                    row.owner === ownerGithubUsername && row.name === modelName,
+            )
+        ) {
+            canonical.set(id, communityModelId(ownerGithubUsername, modelName));
+        }
     }
-    return categories;
+    return canonical;
 }

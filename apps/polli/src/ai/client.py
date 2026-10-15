@@ -80,11 +80,14 @@ from ..core.request_auth import authorization_or, request_authorization
 _auth_override = request_authorization
 from .prompts import get_tool_system_prompt
 from .tool_filters import (
+    API_EXCLUDED_TOOLS,
+    API_RESTRICTED_ACTIONS,
     filter_admin_actions_from_tools,
     filter_api_tools,
     get_tools_with_embeddings,
 )
 from .tools import GITHUB_TOOLS
+from ..discord.replies import REPLY_INSTRUCTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +227,10 @@ class PollinationsClient:
         messages: list[dict[str, object]] = [{"role": "system", "content": system_content}]
         if mode == "discord":
             location_context = tool_context or {}
+            current_message = location_context.get("discord_message")
+            if current_message is not None:
+                messages.append({"role": "system", "content": REPLY_INSTRUCTIONS +
+                    f"\nFirst message ID: {current_message.id}; author: <@{current_message.author.id}>."})
             source_channel_id = location_context.get("source_channel_id")
             parent_channel_id = location_context.get("parent_channel_id")
             channel_id = location_context.get("channel_id")
@@ -402,7 +409,27 @@ class PollinationsClient:
         # being retried, where the outcome cannot possibly differ.
         failed_signatures: set[str] = set()
 
+        def ingest_pending():
+            take_pending = (tool_context or {}).get("take_pending") if mode == "discord" else None
+            # A new user must not inherit evidence fetched using someone else's access.
+            pending = take_pending(allow_mixed=not all_tool_calls) if take_pending else []
+            for item in pending:
+                message = item["source_message"]
+                notices = (item.get("video_urls") or []) + (item.get("file_urls") or [])
+                body = item["text"] + ("\nAttached video/files:\n" + "\n".join(notices) if notices else "")
+                messages.append({"role": "system", "content":
+                    f"Another message arrived: ID {message.id}; author <@{message.author.id}>. "
+                    "Include it in your reply choices; earlier drafts have not been delivered."})
+                content = [{"type": "text", "text": body}]
+                content.extend({"type": "image_url", "image_url": {"url": url}}
+                               for url in item["image_urls"])
+                messages.append({"role": "user", "content": content})
+            if (tool_context or {}).get("discord_mixed_batch"):
+                tools[:] = filter_api_tools(all_tools)
+            return bool(pending)
+
         for iteration in range(max_iterations):
+            ingest_pending()
             start_time = time.time()
             # Tool-selection rounds stay buffered so private planning text cannot leak.
             # Once no private tools remain, the final answer streams in real time.
@@ -436,6 +463,8 @@ class PollinationsClient:
             tool_calls = response.get("tool_calls", [])
 
             if not tool_calls:
+                if ingest_pending():
+                    continue
                 if event_handler:
                     final_response = await self._call_api_with_tools_stream(
                         messages,
@@ -465,6 +494,13 @@ class PollinationsClient:
                     "usage": total_usage,
                     "finish_reason": response.get("finish_reason") or "stop",
                 }
+
+            working_reaction = (tool_context or {}).get("working_reaction") if mode == "discord" else None
+            if working_reaction and response.get("content"):
+                try:
+                    await working_reaction(response["content"])
+                except Exception as error:
+                    logger.warning("Working reaction failed (%s)", type(error).__name__)
 
             caller_tool_calls = [
                 tool_call
@@ -658,6 +694,17 @@ class PollinationsClient:
             except ValueError:
                 args = {}
 
+            if (tool_context or {}).get("discord_mixed_batch") and (
+                func_name in API_EXCLUDED_TOOLS
+                or str(args.get("action", "")).lower() in API_RESTRICTED_ACTIONS.get(func_name, set())
+            ):
+                return {"error": "Mixed-user batch is read-only. Defer this message to process its writes separately."}
+
+            if (tool_context or {}).get("discord_mixed_batch") and func_name == "discord_search":
+                tool_context_for_call = {**tool_context, "is_http_api": True, "is_admin": False}
+            else:
+                tool_context_for_call = tool_context
+
             # Signature is taken from the model's own arguments, before the context
             # injection below — otherwise per-request context would make two identical
             # calls hash differently and this check would never fire.
@@ -698,7 +745,7 @@ class PollinationsClient:
 
             # Inject tool context if provided (contains user info, channel, admin status, etc.)
             if tool_context:
-                args["_context"] = tool_context
+                args["_context"] = tool_context_for_call
 
             try:
                 logger.info(f"Calling tool {func_name} with action={args.get('action', 'N/A')}")

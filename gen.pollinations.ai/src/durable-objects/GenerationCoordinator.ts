@@ -13,6 +13,11 @@ const ASYNC_KEY = "async";
 const ASYNC_TTL_MS = 24 * 60 * 60 * 1_000;
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
+/** Longest a delivery may wait for billing telemetry before giving up. */
+const SETTLEMENT_WAIT_MS = 2_000;
+
+const sleep = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 type PersistedJob = GenerationJobHead & {
     bodyChunks: number;
@@ -224,6 +229,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             const job = await this.restore(stored);
             const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
+            // Report success only once billing has settled. Bounded: a slow
+            // settlement must not stall delivery, and the finally below
+            // still drains it either way.
+            if (settlement)
+                await Promise.race([settlement, sleep(SETTLEMENT_WAIT_MS)]);
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {
             console.error("Detached generation failed", error);

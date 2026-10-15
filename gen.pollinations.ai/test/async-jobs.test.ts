@@ -304,3 +304,125 @@ it("submits POST /v1/images/generations with Prefer: wait=10, respond-async", as
     expect(new Uint8Array(await result.arrayBuffer())).toEqual(output);
     expect(executions).toBe(1);
 }, 30_000);
+
+// Success must not be reported before the payer's settlement commits: an
+// eviction in that window would deliver a result that was never billed.
+it("marks an async job complete only after the billing settlement commits", async () => {
+    const owner = await createTestApiKey({ user: { packBalance: 100 } });
+    env.REPLICATE_API_TOKEN = "workers-test-only";
+    const tinybird = createMockTinybird();
+    const output = Uint8Array.from(
+        atob(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==",
+        ),
+        (char) => char.charCodeAt(0),
+    );
+    let releaseSettlement!: () => void;
+    const settlementGate = new Promise<void>((resolve) => {
+        releaseSettlement = resolve;
+    });
+    let gateOpened = false;
+    let inFlightIngests = 0;
+    const ingestsDrained = new Promise<void>((resolve) => {
+        const check = () => {
+            if (gateOpened && inFlightIngests === 0) resolve();
+            else setTimeout(check, 25);
+        };
+        setTimeout(check, 25);
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = new URL(
+            input instanceof Request ? input.url : String(input),
+        );
+        if (url.host === "api.replicate.com") {
+            return Response.json(
+                {
+                    id: "async-ordering-test",
+                    status: "succeeded",
+                    output: ["https://replicate.delivery/async-ordering.png"],
+                },
+                { status: 201 },
+            );
+        }
+        if (url.host === "replicate.delivery") {
+            return new Response(output, {
+                headers: { "content-type": "image/png" },
+            });
+        }
+        if (url.pathname === "/v0/pipes/public_model_stats.json") {
+            return Response.json({ data: [] });
+        }
+        const handler = tinybird.handlerMap[url.host];
+        if (handler) {
+            // Hold every billing ingest open until the test releases it.
+            inFlightIngests++;
+            try {
+                if (!gateOpened) await settlementGate;
+                return await handler(new Request(input, init));
+            } finally {
+                inFlightIngests--;
+            }
+        }
+        throw new Error(
+            `Unexpected outbound request: ${url.host}${url.pathname}`,
+        );
+    });
+
+    const before = await getUserBalance(drizzle(env.DB), owner.userId);
+    const submitted = await worker.fetch(
+        new Request(
+            `https://gen.pollinations.ai/image/async-ordering-${crypto.randomUUID()}?model=bytedance/seedream-4.0&safe=false&width=1024&height=1024`,
+            {
+                headers: {
+                    authorization: `Bearer ${owner.key}`,
+                    Prefer: "respond-async",
+                },
+            },
+        ),
+        env,
+        createExecutionContext(),
+    );
+    expect(submitted.status, await submitted.clone().text()).toBe(202);
+    const { id } = await submitted.json<{ id: string }>();
+    const statusRequest = () =>
+        worker.fetch(
+            new Request(`https://gen.pollinations.ai/v1/jobs/${id}`, {
+                headers: { authorization: `Bearer ${owner.key}` },
+            }),
+            env,
+            createExecutionContext(),
+        );
+
+    try {
+        // While the settlement is held open the job must not report success.
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        const pending = await statusRequest();
+        expect((await pending.json<{ status: string }>()).status).toBe(
+            "pending",
+        );
+    } finally {
+        releaseSettlement();
+        gateOpened = true;
+    }
+
+    await vi.waitFor(
+        async () => {
+            const completed = await statusRequest();
+            expect((await completed.json<{ status: string }>()).status).toBe(
+                "succeeded",
+            );
+        },
+        { timeout: 10_000 },
+    );
+
+    // The charge lands exactly once, after the record flipped.
+    await vi.waitFor(() =>
+        expect(
+            tinybird.state.events.filter((event) => event.isBilledUsage),
+        ).toHaveLength(1),
+    );
+    const after = await getUserBalance(drizzle(env.DB), owner.userId);
+    expect(before.packBalance - after.packBalance).toBeGreaterThan(0);
+    // Let every gated ingest settle so no storage work outlives the test.
+    await ingestsDrained;
+}, 30_000);

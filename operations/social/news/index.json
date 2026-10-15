@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-15T06:09:48.419823+00:00",
+  "generated_at": "2026-10-15T11:14:26.914402+00:00",
   "models": [
     {
       "id": "pr-14895:fish-audio/s2.1-pro",
@@ -7088,6 +7088,54 @@
         "max_reference_images": {
           "before": 1,
           "after": 5
+        }
+      }
+    },
+    {
+      "id": "pr-17485:microsoft/microsoft-decision-1",
+      "model_id": "microsoft/microsoft-decision-1",
+      "title": "Microsoft-Decision-1",
+      "previous_title": null,
+      "action": "NEW",
+      "category": "text",
+      "date": "2026-10-15",
+      "pr": 17485,
+      "url": "https://github.com/pollinations/pollinations/pull/17485",
+      "pricing_units": {
+        "before": null,
+        "after": null
+      },
+      "changes": {
+        "capabilities": {
+          "before": null,
+          "after": []
+        },
+        "context_length": {
+          "before": null,
+          "after": 32768
+        },
+        "input_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "output_modalities": {
+          "before": null,
+          "after": [
+            "text"
+          ]
+        },
+        "paid_only": {
+          "before": null,
+          "after": true
+        },
+        "pricing": {
+          "before": null,
+          "after": {
+            "currency": "pollen",
+            "promptTextTokens": "0.000000042"
+          }
         }
       }
     }

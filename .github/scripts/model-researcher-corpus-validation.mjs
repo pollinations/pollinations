@@ -11,6 +11,7 @@ import {
 } from "../../operations/model-management/calibration.mjs";
 import { extractDiscoveries } from "../../operations/model-management/discovery.mjs";
 import {
+    buildClaimAudit,
     buildResearchControl,
     JEV_ENDPOINT,
     JEV_MODEL,
@@ -83,7 +84,8 @@ const baseline =
     budgetUsed(resumedDiscovery) +
     0.011555206110000004 +
     budgetUsed(verified) +
-    0.00029604;
+    0.00029604 +
+    0.00281395086;
 const sources = [];
 const seen = new Set();
 for (const source of [
@@ -383,6 +385,31 @@ try {
         null,
         report.sources,
         decision,
+    );
+    const negativeProviderClaims = await decision(
+        buildClaimAudit([
+            {
+                id: "foreign-api",
+                claim: "The document advertises inference API access or an API marketplace under the name NewsBrand.",
+                excerpt:
+                    "NewsBrand is a newsletter. This article links to the unrelated service OmniAPI, whose operator sells hosted inference. OmniAPI owns its API endpoint and charges the user. NewsBrand publishes news only and offers no API or marketplace of its own.",
+            },
+            {
+                id: "sdk-only",
+                claim: "The document advertises inference API access or an API marketplace under the name ClientKit.",
+                excerpt:
+                    "ClientKit is an offline request-formatting library. It cannot run or relay inference and has no hosted endpoint, account balance, inference credits or marketplace. Its documentation mentions API keys solely as inputs that callers must obtain from an unrelated provider.",
+            },
+        ]),
+        validateClaimAudit,
+    );
+    report.negativeProviderClaims = negativeProviderClaims;
+    assert.equal(negativeProviderClaims.grades.length, 2);
+    assert.ok(
+        negativeProviderClaims.grades.every(
+            (grade) => grade.relation !== "supported",
+        ),
+        "Unrelated API mentions and offline SDKs cannot become provider advertisements",
     );
     assert.ok(
         report.discovery.discoveries.length > 0,

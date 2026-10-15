@@ -227,6 +227,61 @@ describe("Device Authorization Flow", () => {
         expect(body.error).toBe("authorization_pending");
     });
 
+    test.each([
+        "not json",
+        "null",
+        "[]",
+        "false",
+        '{"device_code":{"a":1}}',
+        '{"device_code":123}',
+    ])(
+        "POST /api/device/token rejects malformed body %s without leaking internals",
+        async (body) => {
+            const res = await SELF.fetch(`${BASE}/api/device/token`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(JSON.parse(text)).toMatchObject({
+                error: "invalid_request",
+            });
+            expect(text).not.toMatch(/Failed query|Unexpected token|SQL/i);
+        },
+    );
+
+    test("POST /api/device/token accepts form-encoded device codes", async () => {
+        const device = await insertDeviceCode();
+        const res = await SELF.fetch(`${BASE}/api/device/token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ device_code: device.deviceCode }),
+        });
+        expect(res.status).toBe(400);
+        expect(await res.json()).toMatchObject({
+            error: "authorization_pending",
+        });
+    });
+
+    test("POST /api/device/deny handles malformed bodies without leaking internals", async ({
+        sessionToken,
+    }) => {
+        for (const body of ["not json", "null", '{"userCode":{"a":1}}']) {
+            const res = await SELF.fetch(`${BASE}/api/device/deny`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body,
+            });
+            const text = await res.text();
+            expect(res.status).toBe(400);
+            expect(text).not.toMatch(/Failed query|Unexpected token|SQL/i);
+        }
+    });
+
     test("POST /api/device/approve without auth returns 401", async () => {
         const res = await SELF.fetch(`${BASE}/api/device/approve`, {
             method: "POST",

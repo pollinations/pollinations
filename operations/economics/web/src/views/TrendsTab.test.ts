@@ -55,12 +55,14 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("<select");
     expect(html).not.toContain("Expense categories");
     expect(html).toContain('aria-label="Toggle Compute"');
-    expect(html).not.toContain('aria-label="Toggle Revenue Share"');
-    expect(html).not.toContain('aria-label="Toggle Payroll"');
-    expect(html.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(2);
+    expect(html).toContain('aria-label="Toggle Revenue Share"');
+    expect(html).toContain('aria-label="Toggle Payroll"');
+    expect(html.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(8);
     expect(html).toContain("Product");
     expect(
-        /<button[^>]*aria-pressed="true"[^>]*>Product<\/button>/.test(html),
+        /<button[^>]*aria-pressed="true"[^>]*>Whole company<\/button>/.test(
+            html,
+        ),
     ).toBe(true);
     expect(html).toContain("Sales. USD by month");
     expect(html).toContain("Customer payments");
@@ -68,8 +70,9 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("API + GPU margin");
     expect(html).toContain("Expenses before credits");
     expect(html).toContain("Infrastructure");
-    expect(html).not.toContain('aria-label="Toggle Development"');
-    expect(html).toContain('aria-label="Company overhead"');
+    expect(html).toContain('aria-label="Toggle Development"');
+    expect(html).toContain('aria-label="Whole company"');
+    expect(html).not.toContain("Overhead");
     expect(html).not.toContain("September · USD");
     expect(html).toContain("vs August");
     expect(html).not.toContain("Other operations");
@@ -141,6 +144,19 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
             payments: 10,
             refund_count: 1,
         })),
+        opTransactions: months.map((month) => ({
+            entry_id: `payroll-${month}`,
+            kind: "transaction",
+            source: "wise",
+            date: `${month}-28`,
+            vendor: "deel",
+            category: "payroll",
+            amount: -400,
+            currency: "USD",
+            description: "Salary",
+            evidence: "Statement",
+            recorded_at: "2026-10-15 00:00:00",
+        })),
         vendorLedger: months.map((month) => ({
             entry_id: `cost-${month}`,
             source: "dashboard",
@@ -194,12 +210,12 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
     expect(html).toContain("Without credits");
     expect(html).toContain("$3,000");
     expect(html).toContain("$2,900");
-    expect(html).toContain("$2,800");
-    expect(html).toContain("$2,750");
-    expect(html).toContain("$2,880");
-    expect(html).toContain("$2,830");
+    expect(html).toContain("$2,400");
+    expect(html).toContain("$2,350");
+    expect(html).toContain("$2,480");
+    expect(html).toContain("$2,430");
     expect(html).toContain("excluding fraud");
-    expect(html).toContain("+55.6%");
+    expect(html).toContain("+71.4%");
     expect(html).toContain("text-outcome-positive-text");
     expect(html).not.toContain("April");
     expect(
@@ -207,7 +223,7 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
     ).toBe(true);
     const longer = render(6);
     expect(longer).toContain("April 26 – September 26");
-    expect(longer).toContain("$2,800");
-    expect(longer).toContain("$2,880");
+    expect(longer).toContain("$2,400");
+    expect(longer).toContain("$2,480");
     expect(longer).not.toContain("NaN");
 });

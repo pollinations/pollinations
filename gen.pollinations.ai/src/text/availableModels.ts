@@ -827,6 +827,16 @@ const models: ModelDefinition[] = [
         useSystemOneApi: true,
     },
     {
+        name: "microsoft/microsoft-decision-1",
+        config: portkeyConfig["microsoft-decision-1"],
+        useSystemOneApi: true,
+    },
+    {
+        name: "microsoft/microsoft-decision-1:openrouter",
+        config: portkeyConfig["microsoft/microsoft-decision-1:openrouter"],
+        useSystemOneApi: true,
+    },
+    {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: pipe(

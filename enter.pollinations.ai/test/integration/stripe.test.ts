@@ -1725,11 +1725,17 @@ test("POST /api/stripe/auto-top-up/trigger followed by webhook credits once", as
     expect(webhookResponse.status).toBe(200);
 
     const afterWebhook = await env.DB.prepare(
-        `SELECT pack_balance AS packBalance FROM user WHERE id = ?`,
+        `SELECT pack_balance AS packBalance,
+            low_balance_threshold AS lowBalanceThreshold
+        FROM user WHERE id = ?`,
     )
         .bind(user.id)
-        .first<{ packBalance: number | null }>();
-    expect(afterWebhook?.packBalance).toBe(11);
+        .first<{
+            packBalance: number | null;
+            lowBalanceThreshold: number | null;
+        }>();
+    // The low-balance email threshold is 20% of the latest pack.
+    expect(afterWebhook).toEqual({ packBalance: 11, lowBalanceThreshold: 2 });
 
     const duplicateResponse = await postSignedStripeWebhook(
         createAutoTopUpInvoiceEvent("invoice.paid", "in_mock_1", user.id),
@@ -3527,6 +3533,13 @@ test("POST /api/webhooks/stripe emits paid checkout.session.completed to Tinybir
         },
     });
     expect(response.status).toBe(200);
+    // The low-balance email threshold is 20% of the latest pack.
+    const credited = await env.DB.prepare(
+        "SELECT low_balance_threshold AS threshold FROM user WHERE id = ?",
+    )
+        .bind(user.id)
+        .first<{ threshold: number | null }>();
+    expect(credited?.threshold).toBe(2);
 
     expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
     expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({

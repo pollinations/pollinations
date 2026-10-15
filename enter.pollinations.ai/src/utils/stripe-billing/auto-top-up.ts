@@ -14,6 +14,12 @@ import {
     SERVICE_FEE_TAX_CODE,
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
+import {
+    autoTopUpOffNotice,
+    LOW_BALANCE_SHARE,
+    sendNotice,
+    sendRunningLowNotice,
+} from "../../services/account-notices.ts";
 import { createStripeClient } from "../stripe.ts";
 import { isBillingDetailsComplete } from "./billing-details.ts";
 import { getBillingOverview } from "./billing-overview.ts";
@@ -137,6 +143,7 @@ export async function processAutoTopUpForUser(
     }
 
     if (!user.autoTopUpEnabled) {
+        await sendRunningLowNotice(env, userId);
         return { status: "skipped", reason: "auto top-up disabled" };
     }
 
@@ -189,7 +196,7 @@ export async function processAutoTopUpForUser(
         const customerId = user.stripeCustomerId;
         if (!customerId) {
             await failAttempt(env.DB, attemptId, "missing Stripe customer");
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(env, userId);
             return {
                 status: "skipped",
                 reason: "missing Stripe customer",
@@ -198,7 +205,7 @@ export async function processAutoTopUpForUser(
         const customer = await retrieveActiveCustomer(stripe, customerId);
         if (!customer) {
             await failAttempt(env.DB, attemptId, "deleted Stripe customer");
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(env, userId);
             return {
                 status: "skipped",
                 reason: "deleted Stripe customer",
@@ -212,7 +219,7 @@ export async function processAutoTopUpForUser(
                 attemptId,
                 "missing default payment method",
             );
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(env, userId);
             return {
                 status: "skipped",
                 reason: "missing default payment method",
@@ -221,7 +228,7 @@ export async function processAutoTopUpForUser(
 
         if (!isBillingDetailsComplete(customer, paymentMethod)) {
             await failAttempt(env.DB, attemptId, "missing billing details");
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(env, userId);
             return { status: "skipped", reason: "missing billing details" };
         }
 
@@ -319,7 +326,7 @@ export async function processAutoTopUpForUser(
             await cleanupFailedAutoTopUpInvoice(env, createdInvoiceId);
         }
         if (disableAfterFailure) {
-            await disableAutoTopUp(env.DB, userId);
+            await disableAutoTopUp(env, userId);
         }
         return { status: "failed", reason: message };
     }
@@ -379,6 +386,10 @@ export async function creditAutoTopUpInvoice(
                 SET pack_balance = ROUND(
                     COALESCE(pack_balance, 0) + ?,
                     ${POLLEN_BILLING_PRECISION}
+                ),
+                low_balance_threshold = ROUND(
+                    ? * ${LOW_BALANCE_SHARE},
+                    ${POLLEN_BILLING_PRECISION}
                 )
                 WHERE id = ?
                     AND EXISTS (
@@ -389,6 +400,7 @@ export async function creditAutoTopUpInvoice(
                             AND status IN (?, ?)
                     )`,
         ).bind(
+            attempt.amountUsd,
             attempt.amountUsd,
             attempt.userId,
             invoice.id,
@@ -467,7 +479,7 @@ export async function markAutoTopUpInvoiceFailed(
                 reason,
             )
             .first<{ userId: string }>();
-        if (attempt) await disableAutoTopUp(env.DB, attempt.userId);
+        if (attempt) await disableAutoTopUp(env, attempt.userId);
     }
 
     if (options.cleanupInvoice !== false) {
@@ -782,15 +794,32 @@ async function cleanupRetrievedAutoTopUpInvoice(
     }
 }
 
-async function disableAutoTopUp(db: D1Database, userId: string): Promise<void> {
-    await db
-        .prepare(
-            `UPDATE user
-                SET auto_top_up_enabled = 0
-                WHERE id = ?`,
-        )
+// Tells the user once per failure: only the switch from on to off emails, so
+// turning auto top-up back on and failing again sends a new email.
+async function disableAutoTopUp(
+    env: CloudflareBindings,
+    userId: string,
+): Promise<void> {
+    const user = await env.DB.prepare(
+        `UPDATE user
+            SET auto_top_up_enabled = 0
+            WHERE id = ? AND auto_top_up_enabled = 1
+            RETURNING email, COALESCE(pack_balance, 0) AS balance,
+                email_unsubscribed_at AS unsubscribedAt`,
+    )
         .bind(userId)
-        .run();
+        .first<{
+            email: string;
+            balance: number;
+            unsubscribedAt: number | null;
+        }>();
+    if (user && !user.unsubscribedAt) {
+        await sendNotice(
+            env,
+            { id: userId, email: user.email },
+            autoTopUpOffNotice(user.balance),
+        );
+    }
 }
 
 function createAutoTopUpIdempotencyKey(attemptId: string): string {

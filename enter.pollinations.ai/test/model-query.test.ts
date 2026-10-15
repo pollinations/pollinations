@@ -341,6 +341,25 @@ describe("matchesModelQuery", () => {
         expect(matches(model({ type: "image" }), "type:image")).toBe(true);
     });
 
+    it("lists models served at /alpha/decisions under the decisions type", () => {
+        const decision = model({
+            type: "text",
+            supportedEndpoints: ["/alpha/decisions", "/v1/chat/completions"],
+        });
+
+        expect(matches(decision, "type:decisions")).toBe(true);
+        expect(matches(decision, "type:text")).toBe(false);
+        expect(
+            matches(
+                model({
+                    type: "text",
+                    supportedEndpoints: ["/v1/chat/completions"],
+                }),
+                "type:text",
+            ),
+        ).toBe(true);
+    });
+
     it("matches raw and displayed capabilities with hyphen aliases", () => {
         const candidate = model({
             agent: true,

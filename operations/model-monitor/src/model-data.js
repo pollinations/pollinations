@@ -10,6 +10,11 @@ export function normalizeCatalogModel(model) {
         "unknown";
     return {
         ...model,
+        // Display tab only: decision models are text by category, so their
+        // identity and health events stay with text.
+        tab: model.supported_endpoints?.includes("/alpha/decisions")
+            ? "decisions"
+            : type,
         name,
         aliases: model.aliases || [],
         community: model.community === true,
@@ -63,6 +68,7 @@ export function mergeModelHealth(models, healthStats, catalogAvailable) {
             // image events. Only fall back to the event type when no catalog
             // entry claims this ID.
             let type = eventType;
+            let tab = eventType;
             let endpointType = eventType;
             if (catalogAvailable === false) {
                 catalogStatus = "catalog-unavailable";
@@ -78,12 +84,14 @@ export function mergeModelHealth(models, healthStats, catalogAvailable) {
                     "Historical ID, now an alias. Recorded traffic is kept separate from current model health.";
                 community = aliased.community;
                 type = aliased.type;
+                tab = aliased.tab;
                 endpointType = aliased.endpointType;
             }
             return {
                 name: row.model || "(unknown)",
                 community,
                 type,
+                tab,
                 endpointType,
                 provider: row.provider,
                 description,

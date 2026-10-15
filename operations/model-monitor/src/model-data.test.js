@@ -483,3 +483,32 @@ test("rollupRows keeps only model totals, and drops the undefined sentinel", () 
         [""],
     );
 });
+
+test("decision models get their own tab without changing text identity", () => {
+    const decision = normalizeCatalogModel({
+        name: "span-01-lite",
+        category: "text",
+        supported_endpoints: ["/alpha/decisions", "/v1/chat/completions"],
+    });
+    const chat = normalizeCatalogModel({
+        name: "plain",
+        category: "text",
+        supported_endpoints: ["/v1/chat/completions"],
+    });
+    assert.equal(decision.tab, "decisions");
+    assert.equal(decision.type, "text");
+    assert.equal(decision.endpointType, "text");
+    assert.equal(chat.tab, "text");
+    const [merged] = mergeModelHealth(
+        [decision],
+        [
+            {
+                model: "span-01-lite",
+                event_type: "generate.text",
+                total_requests: 3,
+            },
+        ],
+        true,
+    );
+    assert.equal(merged.stats.total_requests, 3);
+});

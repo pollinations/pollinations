@@ -48,6 +48,7 @@ type UnifiedModelTableProps = {
     audioModels: ModelPrice[];
     realtimeModels: ModelPrice[];
     embeddingModels: ModelPrice[];
+    decisionModels: ModelPrice[];
     agentModels: ModelPrice[];
     activeTab: SectionType;
 };
@@ -61,6 +62,7 @@ export const sectionLabels: Record<SectionType, string> = {
     realtime: "Realtime",
     text: "Text",
     embedding: "Embedding",
+    decisions: "Decisions",
     agent: "Agents",
     mcp: "MCPs",
 };
@@ -366,6 +368,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
     audioModels,
     realtimeModels,
     embeddingModels,
+    decisionModels,
     agentModels,
     activeTab,
 }) => {
@@ -379,6 +382,7 @@ export const UnifiedModelTable: FC<UnifiedModelTableProps> = ({
         { type: "realtime", models: realtimeModels },
         { type: "text", models: textModels },
         { type: "embedding", models: embeddingModels },
+        { type: "decisions", models: decisionModels },
         { type: "agent", models: agentModels },
     ];
 

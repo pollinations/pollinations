@@ -15,6 +15,7 @@ describe("model search", () => {
             "video",
             "audio",
             "embedding",
+            "decisions",
             "agent",
             "mcp",
         ] as const) {

@@ -105,6 +105,14 @@ export const getModelModalityLabel = (model: ModelPrice): string => {
     return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
 };
 
+/** Decision models are listed apart from text by the endpoint they serve. */
+export const isDecisionModel = (model: ModelPrice): boolean =>
+    model.supportedEndpoints?.includes("/alpha/decisions") ?? false;
+
+/** Catalog tab a model is listed under; its registry category scopes keys. */
+export const getModelDisplayType = (model: ModelPrice): string =>
+    model.agent ? "agent" : isDecisionModel(model) ? "decisions" : model.type;
+
 export type DisplayCapability =
     | "agent"
     | "tool_calling"

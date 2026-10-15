@@ -71,6 +71,7 @@ const MODEL_TYPES = [
     { key: "3d", title: "3D" },
     { key: "text", title: "Text" },
     { key: "embedding", title: "Embedding" },
+    { key: "decisions", title: "Decisions" },
 ];
 
 const MODEL_SCOPES = [
@@ -266,7 +267,7 @@ function CategoryTab({ title, stats, showBadges = true }) {
 // categories with models are shown, each carrying its own rate + badges.
 function CategoryTabs({ models, value, onChange }) {
     const available = MODEL_TYPES.filter(({ key }) =>
-        models.some((model) => model.type === key),
+        models.some((model) => model.tab === key),
     );
     if (available.length === 0) return null;
 
@@ -289,7 +290,7 @@ function CategoryTabs({ models, value, onChange }) {
                     <CategoryTab
                         title={title}
                         stats={calcGroupStats(
-                            models.filter((model) => model.type === key),
+                            models.filter((model) => model.tab === key),
                         )}
                     />
                 </TabButton>
@@ -727,7 +728,7 @@ function App({ view, onView }) {
         const dir = sort.asc ? 1 : -1;
         switch (sort.key) {
             case "type":
-                return dir * (a.type || "").localeCompare(b.type || "");
+                return dir * (a.tab || "").localeCompare(b.tab || "");
             case "name":
                 return dir * (a.name || "").localeCompare(b.name || "");
             case "requests":
@@ -839,7 +840,7 @@ function App({ view, onView }) {
         (model) => modelScope(model) === scopeFilter,
     );
     const filteredModels = scopedModels
-        .filter((model) => (typeFilter ? model.type === typeFilter : true))
+        .filter((model) => (typeFilter ? model.tab === typeFilter : true))
         .filter((model) =>
             favoritesOnly ? favorites.includes(modelKey(model)) : true,
         );
@@ -1132,7 +1133,7 @@ function App({ view, onView }) {
                                                         size="sm"
                                                         className="text-micro font-bold uppercase tracking-wide"
                                                     >
-                                                        {model.type}
+                                                        {model.tab}
                                                     </ModalityChip>
                                                 </TableCell>
                                                 <TableCell className="w-full min-w-[16rem] max-w-0 overflow-hidden">

@@ -35,6 +35,7 @@ import {
     MODEL_FILTER_LABELS,
     ModelFilterTokens,
 } from "./model-filter-tokens.tsx";
+import { getModelDisplayType } from "./model-info.ts";
 import {
     ensureModelQueryDefaults,
     getExplicitModelQuerySource,
@@ -73,6 +74,7 @@ const MODEL_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
+    "decisions",
 ];
 
 type PrimaryTab = "models" | "agent" | "mcp";
@@ -109,6 +111,7 @@ const SEARCH_LABELS: Record<SectionType, string> = {
     realtime: "realtime",
     text: "text",
     embedding: "embedding",
+    decisions: "decision",
     agent: "agent",
     mcp: "MCP server",
 };
@@ -125,6 +128,7 @@ function categorizeModels(
         realtime: [],
         text: [],
         embedding: [],
+        decisions: [],
         agent: [],
         mcp: [],
     };
@@ -134,7 +138,8 @@ function categorizeModels(
             categorized.agent.push(model);
         } else {
             categorized.all.push(model);
-            categorized[model.type].push(model);
+            const type = getModelDisplayType(model);
+            categorized[type as SectionType].push(model);
         }
     }
     return categorized;
@@ -687,6 +692,7 @@ export const Models: FC = () => {
                                     realtimeModels={sectionModels.realtime}
                                     textModels={sectionModels.text}
                                     embeddingModels={sectionModels.embedding}
+                                    decisionModels={sectionModels.decisions}
                                     agentModels={sectionModels.agent}
                                     activeTab={activeTab}
                                 />

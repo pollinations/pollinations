@@ -7,6 +7,7 @@ export const MODEL_CATEGORIES = [
     "realtime",
     "text",
     "embedding",
+    "decisions",
     "agent",
     "mcp",
 ] as const;

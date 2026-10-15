@@ -4,9 +4,12 @@ Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
 by Economics Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
 The app has three operating views:
 
-- **Insights:** Runway, Close, and Balances.
+- **Insights:** Trends, Runway, Reconciliation, and Balances. Trends defaults to
+  the full reporting year (starting January 2026), with API + GPU / Whole company
+  and Recent 6 months / Full year controls. Its four charts share month inspection
+  and use the same revenue, cost and credit calculations as Runway.
 - **Unit economics:** Vendors, Inference, GPUs, and Revenue Share.
-- **Ledgers:** Bank, Vendor, Pollen, and Revenue Share.
+- **Ledgers:** Sales, Bank, Vendor, Pollen, and Revenue Share. Sales shows existing monthly Stripe facts by stream and settlement currency; closed-month coverage gaps link to Sales from Reconciliation.
 
 ## Run
 
@@ -24,6 +27,25 @@ In local `.dev.vars`, use `POLLINATIONS_AUTH_BASE_URL=http://localhost:3000`
 and `TINYBIRD_POLLEN_PIPE=economics_pollen_usage_snapshot_api`.
 Register `http://localhost:4180/auth/callback` on the local Economics OAuth
 client. The production registration accepts only the HTTPS app callback.
+
+Before the first local sign-in, initialize Enter's **Vite** database. Run these
+commands from `enter.pollinations.ai/`, using the Wrangler bundled with Vite's
+Cloudflare plugin so the CLI and dev server use the same database format:
+
+```bash
+node ../node_modules/@cloudflare/vite-plugin/node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local --env local --persist-to frontend/.wrangler/state
+node ../node_modules/@cloudflare/vite-plugin/node_modules/wrangler/bin/wrangler.js d1 execute DB --local --env local --persist-to frontend/.wrangler/state --command "UPDATE oauth_client SET redirect_uris='[\"http://localhost:4180/auth/callback\"]' WHERE id='internal-economics';"
+```
+
+Vite's root is `frontend/`; migrating the service-root `.wrangler/state`
+database does not initialize the running sign-in service. These commands affect
+only the disposable local database and reuse the existing public OAuth client.
+
+A first GitHub sign-in creates a new local user with the default `user` role;
+production admin roles are not copied. If Economics denies that account, verify
+its GitHub identity and existing production admin role before requesting scoped
+approval to set that same local user's role to `admin`. Keep the app's admin
+checks enabled; never grant all local users admin access.
 
 The app requires its own `POLLINATIONS_AUTH_SESSION_SECRET` and
 `TINYBIRD_ECONOMICS_READ_TOKEN`. Local development must use the staging reader
@@ -66,6 +88,18 @@ one grouped row, and unjoined cost stays visible as needs mapping or missing
 breakdown rows rather than spread across models.
 Collection and correction conventions live in
 `.claude/skills/economics-provider-collection/SKILL.md` at the repository root.
+Collection retains reviewed business Drive checks in
+`economics_private_config.reconciliation.archiveChecks`, scoped by provider,
+account and service month. Each check records `checkedAt`, `status` (`found`,
+`partial`, `not_found` or `blocked`), a short `note`, and exact archived
+`evidence` links. Collection updates these through the normal named-batch
+approval flow; there is no live Drive sync. The reconciliation table shows only compact preview/download actions for the
+verified supplier invoices already linked to the records. Receipts, exports and
+account/date/status notes stay in private collection metadata.
+These observations annotate open issues only and never change financial
+calculations, coverage or issue counts.
+Remove or refresh obsolete checks during the next collection.
+
 Each view loads only its required endpoints. An unrelated endpoint failure does
 not block other views. Refresh retains the selected view and reporting month.
 

@@ -21,6 +21,7 @@ import {
     Tooltip,
     UsageIcon,
     WalletIcon,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import { DashboardAccountMenu } from "@pollinations/ui/auth";
@@ -55,16 +56,23 @@ import {
 } from "./lib/months";
 import type { ProvenanceCode } from "./lib/provenance";
 import { providerAccountBalanceRows } from "./lib/providerBalances";
+import {
+    RECONCILIATION_PAGES,
+    type ReconciliationPage,
+    reconciliationState,
+} from "./lib/reconciliation";
 import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
-import { ProviderCloseTab } from "./views/ProviderCloseTab";
+import { ReconciliationTab } from "./views/ReconciliationTab";
 import { RevenueShareLedgerTab } from "./views/RevenueShareLedgerTab";
 import { RevenueShareTab } from "./views/RevenueShareTab";
 import { RunwayTab } from "./views/RunwayTab";
+import { SalesLedgerTab } from "./views/SalesLedgerTab";
+import { TrendsTab } from "./views/TrendsTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
 import { VendorLedgerTab } from "./views/VendorLedgerTab";
 
@@ -76,6 +84,7 @@ type AccountUser = {
 };
 
 type InsightTab =
+    | "trends"
     | "close"
     | "runway"
     | "vendors"
@@ -86,12 +95,14 @@ type InsightTab =
 type ActiveView = InsightTab | LedgerTab;
 
 const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
+    sales: ["stripeSales"],
     "op-transactions": ["opTransactions"],
     "vendor-ledger": ["vendorLedger"],
     "op-pollen": ["opPollen"],
     "revenue-share-ledger": ["revenueShare"],
     "revenue-share": ["revenueShare", "opTransactions"],
     balances: ["vendorLedger", "opTransactions"],
+    trends: ["opTransactions", "vendorLedger", "stripeSales", "opPollen"],
     runway: [
         "opTransactions",
         "vendorLedger",
@@ -123,6 +134,12 @@ type DrawerItem<Id extends string> = {
 };
 
 const INSIGHT_TABS = [
+    {
+        id: "trends",
+        label: "Trends",
+        note: "Monthly sales, costs and operating results with and without cloud credits.",
+        icon: UsageIcon,
+    },
     {
         id: "runway",
         label: "Runway",
@@ -158,8 +175,8 @@ const INSIGHT_TABS = [
 const LEDGER_INSIGHT_TABS = [
     {
         id: "close",
-        label: "Close",
-        note: "Monthly close readiness from vendor sources, account coverage, and ledger quality; tax filing confirmation remains separate.",
+        label: "Reconciliation",
+        note: "Missing numbers, account coverage and documents, with affected months and calculations.",
         icon: EyeIcon,
     },
     {
@@ -187,6 +204,18 @@ type LedgerDrawerItem = DrawerItem<LedgerTab> & {
 };
 
 const TABS = [
+    {
+        id: "sales",
+        source: "stripeSales",
+        label: "Sales",
+        codes: ["ST"],
+        pipe: "economics_stripe_sales_api",
+        note: "Monthly Stripe sales by stream and settlement currency. Net after fees subtracts refunds, reversals and fees from gross sales; bank payouts remain in Bank. Coverage is confirmed only when all required accounts cover the full month.",
+        icon: DatabaseIcon,
+        rows: (data) =>
+            (data.stripeSales ?? []).filter((row) => row.month >= WINDOW_START)
+                .length,
+    },
     {
         id: "op-transactions",
         source: "opTransactions",
@@ -673,19 +702,18 @@ function viewInfoContent(activeView: ActiveView) {
     if (activeView === "close") {
         return (
             <ViewInfo>
-                <InfoItem lead="Vendor rows">
-                    Archived source coverage, active accounts, and whether usage
-                    was cash- or credit-funded.
+                <InfoItem lead="Items">
+                    One item per provider and month across the selected year,
+                    grouped by issue type with links to the affected pages.
                 </InfoItem>
-                <InfoItem lead="Month result">
-                    Adds the transaction-document, vendor-mapping,
-                    row-integrity, duplicate and FX checks shown in the
-                    integrity history below.
+                <InfoItem lead="Order">
+                    Issue groups keep each item in one place. Headers sort
+                    within each group. Related amounts help prioritize; they are
+                    not a measured error in profit.
                 </InfoItem>
-                <InfoItem lead="Ready">
-                    Means the books are ready to file, not legally filed; e-MTA
-                    confirmation is not tracked. Invoices and bank entries stay
-                    in Bank.
+                <InfoItem lead="Expected billing">
+                    Future billing estimates are listed here separately and do
+                    not count as reconciliation items.
                 </InfoItem>
             </ViewInfo>
         );
@@ -708,38 +736,39 @@ function viewInfoContent(activeView: ActiveView) {
             </ViewInfo>
         );
     }
+    if (activeView === "trends") {
+        return (
+            <ul className="list-disc space-y-1 pl-4 text-left">
+                <li>
+                    Revenue: customer sales after fees, refunds and reversals.
+                    All amounts in USD.
+                </li>
+                <li>Expense curves: full costs before credits.</li>
+                <li>
+                    Other operations: development, operations, revenue share,
+                    office, admin and payroll.
+                </li>
+                <li>
+                    * and faded marks: provisional. Gaps: missing figures.
+                    Details are in Reconciliation.
+                </li>
+            </ul>
+        );
+    }
     if (activeView === "runway") {
         return (
-            <ViewInfo>
-                <InfoItem lead="Cash">
-                    Cash change and Cash balance are the Wise bank ledger. The
-                    forecast columns and running cash stay cash-based.
-                </InfoItem>
-                <InfoItem lead="Revenue">
-                    What entered Stripe in the month, net of Stripe fees, with
-                    refunds and reversals on one line. Wise payouts are cash
-                    only and are not reconciled against it.
-                </InfoItem>
-                <InfoItem lead="Expenses">
-                    Compute and Infrastructure come from the vendor ledger by
-                    service month; every other category is bank cash. Expand a
-                    category for its vendors.
-                </InfoItem>
-                <InfoItem lead="Gray figures">
-                    Usage paid with provider credits, shown in parentheses
-                    beside the cash figure. Not cash, never in the sums.
-                </InfoItem>
-                <InfoItem lead="Not reconciled">
-                    Unpaid bills, prepaid balances and the Stripe float stay out
-                    of the table, so the lines do not add up to Cash change. A
-                    paid vendor without ledger rows is a warning, never a cash
-                    fallback.
-                </InfoItem>
-                <InfoItem lead="Current month">
-                    Bank movements to date and the full-month plan sit in
-                    separate columns.
-                </InfoItem>
-            </ViewInfo>
+            <ul className="list-disc space-y-1 pl-4 text-left">
+                <li>All amounts are in USD.</li>
+                <li>Revenue: Stripe sales, counted by calendar month.</li>
+                <li>
+                    Fees, refunds and reversals: deducted in the month recorded.
+                </li>
+                <li>
+                    Cash balance: month-end; “To date” uses imported bank
+                    entries.
+                </li>
+                <li>Plan: future estimates. Parentheses: provider credits.</li>
+            </ul>
         );
     }
     if (activeView === "gpu") {
@@ -788,6 +817,8 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
+    const [reconciliationFrom, setReconciliationFrom] =
+        useState<ReconciliationPage | null>(null);
 
     useEffect(() => {
         const retryKey = attempt;
@@ -796,7 +827,19 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
         setError(null);
         setLoading(true);
         setLoadedView(null);
-        loadAll(VIEW_SOURCES[activeView], controller.signal)
+        loadAll(
+            [
+                ...new Set([
+                    ...VIEW_SOURCES[activeView],
+                    "opTransactions",
+                    "vendorLedger",
+                    "opPollen",
+                    "stripeSales",
+                    "privateConfig",
+                ]),
+            ] as DataSource[],
+            controller.signal,
+        )
             .then((loaded) => {
                 if (cancelled || retryKey !== attempt) return;
                 // Keep the ledger sources already in memory so the row-count
@@ -857,6 +900,17 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const viewData =
         !error && loadedView === activeView && !loading ? data : null;
 
+    const reconciliation = useMemo(
+        () => (viewData ? reconciliationState(viewData) : null),
+        [viewData],
+    );
+    const issueCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        for (const issue of reconciliation?.issues ?? []) {
+            counts[issue.month] = (counts[issue.month] ?? 0) + 1;
+        }
+        return counts;
+    }, [reconciliation]);
     const months = reportingMonths();
     const reportingYears = useMemo(() => yearsOf(months), [months]);
     const monthFilter = months.includes(selectedMonth)
@@ -889,7 +943,9 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const showVendorFilter =
         isLedgerTab(activeView) && rawFacets.vendors.length > 0;
     const showPeriodFilter =
-        activeView !== "balances" && activeView !== "runway";
+        activeView !== "balances" &&
+        activeView !== "runway" &&
+        activeView !== "trends";
     const showRunwayYearFilter = activeView === "runway";
     const showTopMonthFilter = showPeriodFilter && activeView !== "close";
     const showCategoryFilter = activeView === "op-transactions";
@@ -973,6 +1029,14 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
             </div>
         </FilterBar>
     ) : null;
+    const relevantIssues =
+        reconciliation?.issues.filter(
+            (row) =>
+                row.affects.includes(activeView as ReconciliationPage) &&
+                (activeView === "trends"
+                    ? row.month.startsWith(selectedYear)
+                    : row.month === monthFilter),
+        ) ?? [];
     const content = (
         <>
             {error && (
@@ -992,6 +1056,9 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
             <ErrorBoundary
                 resetKey={`${activeView}:${selectedYear}:${monthFilter}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
+                {viewData && activeView === "sales" && (
+                    <SalesLedgerTab data={viewData} month={monthFilter} />
+                )}
                 {viewData && activeView === "op-transactions" && (
                     <OpTransactionsTab
                         category={selectedCategories}
@@ -1021,16 +1088,42 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     />
                 )}
                 {viewData && activeView === "close" && (
-                    <ProviderCloseTab
-                        data={viewData}
-                        month={monthFilter}
-                        months={months}
+                    <ReconciliationTab
+                        key={`${selectedYear}:${reconciliationFrom}`}
+                        issues={reconciliation?.issues ?? []}
+                        pending={reconciliation?.pending ?? []}
                         year={selectedYear}
-                        onMonthChange={setSelectedMonth}
+                        initialPage={reconciliationFrom}
+                        onOpen={(page, month) => {
+                            setSelectedMonth(month);
+                            if (page === "runway")
+                                setRunwayYear(month.slice(0, 4));
+                            setActiveView(page);
+                        }}
+                    />
+                )}
+                {viewData && activeView === "trends" && (
+                    <TrendsTab
+                        data={viewData}
+                        year={selectedYear}
+                        onYearChange={(year) => {
+                            const yearMonths = months.filter((month) =>
+                                month.startsWith(year),
+                            );
+                            setSelectedMonth(
+                                latestClosedMonth(yearMonths) ??
+                                    yearMonths.at(-1) ??
+                                    "",
+                            );
+                        }}
                     />
                 )}
                 {viewData && activeView === "runway" && (
-                    <RunwayTab data={viewData} year={runwayYear} />
+                    <RunwayTab
+                        data={viewData}
+                        year={runwayYear}
+                        issueCounts={issueCounts}
+                    />
                 )}
                 {viewData && activeView === "vendors" && (
                     <VendorsTab data={viewData} month={monthFilter} />
@@ -1060,6 +1153,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                 data={data}
                 footer={drawerFooter}
                 onViewChange={(value) => {
+                    setReconciliationFrom(null);
                     setSelectedVendors([]);
                     setSelectedCategories([]);
                     setActiveView(value);
@@ -1069,6 +1163,34 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <section className="flex flex-col gap-5">
                         <header className="flex shrink-0 justify-end px-1">
                             <div className="flex min-w-0 items-center gap-2">
+                                {viewData &&
+                                    activeView !== "close" &&
+                                    relevantIssues.length > 0 && (
+                                        <Button
+                                            size="sm"
+                                            intent="neutral"
+                                            className="text-intent-warning-text"
+                                            aria-label={`${relevantIssues.length} reconciliation items`}
+                                            title="Open reconciliation"
+                                            onClick={() => {
+                                                setReconciliationFrom(
+                                                    Object.hasOwn(
+                                                        RECONCILIATION_PAGES,
+                                                        activeView,
+                                                    )
+                                                        ? (activeView as ReconciliationPage)
+                                                        : null,
+                                                );
+                                                setActiveView("close");
+                                            }}
+                                        >
+                                            <WarningIcon
+                                                className="h-4 w-4"
+                                                aria-hidden="true"
+                                            />
+                                            {relevantIssues.length}
+                                        </Button>
+                                    )}
                                 <Heading
                                     as="h2"
                                     size="section"

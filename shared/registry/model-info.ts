@@ -59,6 +59,16 @@ export type ModelHealth = z.infer<typeof ModelHealthSchema>;
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
 //         completionTextTokens, completionReasoningTokens, completionAudioTokens,
 //         completionImageTokens, completionVideoSeconds, completionVideoTokens
+// An agent has no price of its own: callers pay for the model and tool calls
+// it makes. Shared by the Pollinations and OpenAI-compatible model schemas.
+export const AGENT_FIELD_DESCRIPTIONS = {
+    agent: "True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models.",
+    base_model:
+        "Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls.",
+    pricing:
+        "Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes.",
+};
+
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
@@ -75,25 +85,16 @@ export const ModelInfoSchema = z.object({
         )
         .optional(),
     community: z.boolean(),
-    agent: z
-        .boolean()
-        .optional()
-        .describe(
-            "True for agents. An agent adds no charge of its own; the caller pays for each model and tool call it makes. An agent is free only when those calls are free, such as a prompt agent on a free base model whose tools cost nothing.",
-        ),
+    agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
     base_model: z
         .string()
         .optional()
-        .describe(
-            "Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls.",
-        ),
+        .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
     per_user_rpm: z.number().positive().nullable().optional(),
     pricing: z
         .record(z.string(), z.string())
         .and(z.object({ currency: z.literal("pollen") }))
-        .describe(
-            "Pollen rates per billed unit. A prompt agent shows its base model's rates; paid tool calls are billed on top. An agent without `base_model` shows only `currency`: its cost depends on the calls it makes, so do not read it as free.",
-        ),
+        .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
     pricing_variants: z
         .array(
             z.object({

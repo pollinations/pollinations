@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -753,18 +756,11 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z
-            .boolean()
-            .optional()
-            .describe(
-                "True for agents. An agent adds no charge of its own; the caller pays for each model and tool call it makes. An agent is free only when those calls are free, such as a prompt agent on a free base model whose tools cost nothing.",
-            ),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
         base_model: z
             .string()
             .optional()
-            .describe(
-                "Model a managed prompt agent runs on; the agent's pricing is this model's rate. Omitted when Gen cannot see the model an agent calls.",
-            ),
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
         paid_only: z
             .boolean()
             .describe(
@@ -773,9 +769,7 @@ export const OpenAIModelSchema = z
         pricing: z
             .record(z.string(), z.string())
             .optional()
-            .describe(
-                "Pollen rates per billed unit. A prompt agent shows its base model's rates; paid tool calls are billed on top. An agent without `base_model` shows only `currency`: its cost depends on the calls it makes, so do not read it as free.",
-            ),
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())

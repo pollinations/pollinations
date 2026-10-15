@@ -625,6 +625,13 @@ export const portkeyConfig: PortkeyConfigMap = {
         }),
     "zai-org/GLM-5.2": () =>
         createDeepInfraModelConfig({ model: "zai-org/GLM-5.2" }),
+    "zai-org/GLM-5.3": () =>
+        createDeepInfraModelConfig({
+            model: "zai-org/GLM-5.3",
+            directEndpoint:
+                "https://api.deepinfra.com/v1/openai/chat/completions",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "meta-models/Muse-Glimmer-30B": () =>
         createDeepInfraModelConfig({ model: "meta-models/Muse-Glimmer-30B" }),
     "Qwen/Qwen3.8-2.4T-A95B": () =>

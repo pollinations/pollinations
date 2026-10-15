@@ -66,21 +66,37 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     expect(cards.match(/>Unknown</g)).toHaveLength(2);
 });
 
-it("shows complete results when both providers have usage and costs", () => {
+it("pairs usage, funding and complete results in three cards without repeating Quest", () => {
     const html = renderToStaticMarkup(
         createElement(ManagedInferenceTab, {
             data: {
-                opPollen: [usage("aws"), usage("google")],
+                opPollen: [
+                    { ...usage("aws"), price_quests: 25 },
+                    { ...usage("google"), price_quests: 35 },
+                ],
                 vendorLedger: [
-                    cost("aws", "2026-09"),
-                    cost("google", "2026-09"),
+                    { ...cost("aws", "2026-09"), credit: -10 },
+                    { ...cost("google", "2026-09"), credit: -20 },
                 ],
             },
             month: "2026-09",
         }),
     );
-    expect(html).toContain("$190");
-    expect(html).toContain("+$90");
+    const cards = html.slice(0, html.indexOf("<table"));
+    expect(cards.match(/<\/section>/g)).toHaveLength(3);
+    expect(cards).toContain('aria-label="Pollen used"');
+    expect(cards).toContain('aria-label="Provider costs"');
+    expect(cards).toContain('aria-label="Result"');
+    expect(cards.match(/>Quest</g)).toHaveLength(1);
+    expect(cards).not.toContain("Quest used");
+    expect(cards).toContain("$200");
+    expect(cards).toContain("Retained Paid $190");
+    expect(cards).toContain(">$60<");
+    expect(cards).toContain("$130 total");
+    expect(cards).toContain(">$100<");
+    expect(cards).toContain(">$30<");
+    expect(cards).toContain("+$90");
+    expect(cards).toContain("+$60");
     expect(html).not.toContain("awaiting complete evidence");
     expect(html).not.toContain("provider costs missing");
 });
@@ -114,8 +130,9 @@ it("labels both recorded-figures results provisional and includes the unmatched 
         }),
     );
     const cards = html.slice(0, html.indexOf("<table"));
-    expect(cards).toContain("Current result · provisional");
-    expect(cards).toContain("Full-cost result · provisional");
+    expect(cards).toContain('aria-label="Result · provisional"');
+    expect(cards).toContain(">With credits<");
+    expect(cards).toContain(">Without credits<");
     expect(cards).toContain("+$42");
     expect(cards).toContain("+$35");
     expect(cards).not.toContain(">Unknown<");

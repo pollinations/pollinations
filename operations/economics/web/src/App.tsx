@@ -644,8 +644,8 @@ function viewInfoContent(activeView: ActiveView) {
                     Shared infrastructure is excluded.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
-                    Paid is retained cash-backed value; Quest is free usage and
-                    stays separate. Gross Paid is in the usage-mix hover.
+                    Cards show consumed Paid and Quest value. Retained Paid is
+                    after creator shares; Quest is free usage.
                 </InfoItem>
                 <InfoItem lead="Mixed modes">
                     Vendor totals hold when a vendor serves both modes; the
@@ -667,8 +667,8 @@ function viewInfoContent(activeView: ActiveView) {
                     partial; mixed inference and GPU months stay unallocated.
                 </InfoItem>
                 <InfoItem lead="Paid and Quest">
-                    Paid is retained cash-backed value; Quest is free usage and
-                    stays separate. Gross Paid is in the usage-mix hover.
+                    Cards show consumed Paid and Quest value. Retained Paid is
+                    after creator shares; Quest is free usage.
                 </InfoItem>
                 <InfoItem lead="Model costs">
                     Vendor-month totals are authoritative. Models use exact

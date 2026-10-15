@@ -22,8 +22,14 @@ const INCLUDE = "Include ~/.pollinations/ssh/config";
 const SSH_PORT = 8022;
 // Renews the lease well before it runs out while a connection is open.
 const RENEW_MS = 300_000;
-// Windows' ssh can't share a connection between ssh, scp and rsync.
-export const SHARES_CONNECTIONS = process.platform !== "win32";
+// Windows' ssh can't share a connection between ssh, scp and rsync. Elsewhere
+// its socket path must stay under 104 bytes, and OpenSSH adds 17 to %C's 40.
+export const SHARES_CONNECTIONS =
+    process.platform !== "win32" &&
+    Buffer.byteLength(join(homedir(), ".ssh", "polli-")) + 57 < 104;
+// While ssh shares connections it sends the proxy's errors to /dev/null
+// (OpenSSH's sshconnect.c), so the proxy also leaves them here.
+export const proxyError = (id: string) => join(SSH_DIR, `error-${id}`);
 
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
@@ -86,7 +92,10 @@ export async function proxy(host: string) {
     }
     if (typeof WebSocket === "undefined")
         fail("This needs Node.js 22 or newer");
-    const sandbox = await connectSandbox(id);
+    const sandbox = await connectSandbox(id).catch((err) => {
+        writeFileSync(proxyError(id), err.message);
+        throw err;
+    });
     await runAsRoot(sandbox, bootstrap, {
         POLLI_SSH_KEY: readFileSync(`${SSH_KEY}.pub`, "utf8").trim(),
         POLLI_SSH_PORT: String(SSH_PORT),
@@ -164,7 +173,7 @@ export function setupSsh() {
             ...(SHARES_CONNECTIONS
                 ? [
                       "    ControlMaster auto",
-                      `    ControlPath "${join(SSH_DIR, "cm-%C")}"`,
+                      `    ControlPath "${join(homedir(), ".ssh", "polli-%C")}"`,
                       "    ControlPersist 10m",
                   ]
                 : []),

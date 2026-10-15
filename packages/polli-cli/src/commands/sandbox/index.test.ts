@@ -6,7 +6,7 @@ import {
     rmSync,
     writeFileSync,
 } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,7 +24,8 @@ let home: string;
 
 beforeEach(() => {
     vi.resetModules();
-    home = mkdtempSync(join(tmpdir(), "polli-sandbox-test-"));
+    // Short, so ssh's connection-sharing socket path fits.
+    home = mkdtempSync("/tmp/polli-");
     vi.mocked(homedir).mockReturnValue(home);
     mkdirSync(join(home, ".pollinations", "ssh"), { recursive: true });
     // Avoid generating an SSH key; setup only needs this file to exist.
@@ -271,6 +272,22 @@ describe("sandbox ssh", () => {
         expect(config).toContain("ControlPersist 10m");
     });
 
+    it("doesn't share connections when the socket path would be too long", async () => {
+        const long = join(home, "a-long-company-managed-account-name");
+        mkdirSync(join(long, ".pollinations", "ssh"), { recursive: true });
+        writeFileSync(join(long, ".pollinations", "ssh", "id_ed25519"), "");
+        vi.mocked(homedir).mockReturnValue(long);
+        const command = await prepare(Response.json([]));
+
+        await command.run("ssh", "only1");
+
+        const config = readFileSync(
+            join(long, ".pollinations", "ssh", "config"),
+            "utf8",
+        );
+        expect(config).not.toContain("ControlMaster");
+    });
+
     it("lists several sandboxes instead of guessing", async () => {
         const command = await prepare(
             Response.json([sandbox("first1"), sandbox("second2")]),
@@ -305,18 +322,19 @@ describe("sandbox ssh", () => {
             "Could not reach sandbox paused1.polli: At most 3 sandboxes can run at once. Kill or pause one first.\nSee your sandboxes: polli sandbox list",
         );
         expect(command.output().stderr).not.toContain('"code"');
+        const { proxyError } = await import("./ssh.js");
+        expect(readFileSync(proxyError("paused1"), "utf8")).toContain(
+            "At most 3 sandboxes can run at once.",
+        );
     });
 
-    it("asks Gen why when ssh fails, since ssh hides polli's errors", async () => {
-        const command = await prepare(
-            Response.json(
-                { code: 404, message: "Sandbox gone1 not found" },
-                { status: 404 },
-            ),
-        );
-        vi.mocked(spawnSync).mockReturnValue({
-            status: 255,
-        } as ReturnType<typeof spawnSync>);
+    it("shows the proxy's error that ssh hid, without asking Gen again", async () => {
+        const command = await prepare(Response.json([]));
+        const { proxyError } = await import("./ssh.js");
+        vi.mocked(spawnSync).mockImplementation(() => {
+            writeFileSync(proxyError("gone1"), "Sandbox gone1 not found");
+            return { status: 255 } as ReturnType<typeof spawnSync>;
+        });
 
         await expect(command.run("ssh", "gone1")).rejects.toMatchObject({
             code: 1,
@@ -325,5 +343,34 @@ describe("sandbox ssh", () => {
         expect(command.output().stderr).toContain(
             "Could not reach sandbox gone1: Sandbox gone1 not found",
         );
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("passes on a dropped connection's exit code and ignores old errors", async () => {
+        const command = await prepare(Response.json([]));
+        const { proxyError } = await import("./ssh.js");
+        writeFileSync(proxyError("live1"), "Sandbox live1 not found");
+        vi.mocked(spawnSync).mockReturnValue({
+            status: 255,
+        } as ReturnType<typeof spawnSync>);
+
+        await expect(command.run("ssh", "live1")).rejects.toMatchObject({
+            code: 255,
+        });
+
+        expect(command.output().stderr).not.toContain("not found");
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("fails when ssh is killed", async () => {
+        const command = await prepare(Response.json([]));
+        vi.mocked(spawnSync).mockReturnValue({
+            status: null,
+            signal: "SIGKILL",
+        } as ReturnType<typeof spawnSync>);
+
+        await expect(command.run("ssh", "live1")).rejects.toMatchObject({
+            code: 1,
+        });
     });
 });

@@ -17,7 +17,7 @@ polli sandbox pause <id>
 polli sandbox kill <id>
 ```
 
-- A sandbox pauses 15 to 20 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it. ssh keeps the connection 10 of those minutes, so the next `ssh`, `scp` or `rsync` starts in under a second; `ssh -O exit <id>.polli` closes it sooner. On Windows, whose ssh can't share a connection, it pauses 5 to 10 minutes after.
+- A sandbox pauses 15 to 20 minutes after the last ssh session ends. Your files stay, and the next `ssh` resumes it. ssh keeps the connection 10 of those minutes, so the next `ssh`, `scp` or `rsync` starts in under a second; `ssh -O exit <id>.polli` closes it sooner. Where ssh can't share a connection, on Windows or with a home folder path over 34 characters, it pauses 5 to 10 minutes after.
 - If `ssh` only says `Connection closed by UNKNOWN port 65535`, run `polli sandbox ssh <id>`: it prints why, such as a sandbox that doesn't exist or too many running. ssh hides polli's own messages while it shares connections.
 - Port forwarding works (`-L`, `-R`, `-D`), and VS Code's Remote-SSH connects to `<id>.polli` like any host. While a connection is open, VS Code's included, the sandbox keeps running and is paid: about 0.8 Pollen a day for `pollinations`, 2 for `pollinations-large`.
 - To keep it running without ssh, give it a timeout: `polli sandbox create --timeout <seconds>`, or `polli sandbox timeout <id> <seconds>`, which also resumes a paused sandbox. A timeout of 0 never expires, as Daytona's `autoStopInterval: 0`: polli asks for E2B's largest timeout, about 68 years.

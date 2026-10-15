@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { Command, InvalidArgumentError } from "commander";
 import { requireKey } from "../../lib/api.js";
 import {
@@ -22,7 +23,7 @@ import {
     type Sandbox,
     sandboxLogs,
 } from "./e2b.js";
-import { proxy, SHARES_CONNECTIONS, setupSsh } from "./ssh.js";
+import { proxy, proxyError, SHARES_CONNECTIONS, setupSsh } from "./ssh.js";
 
 // Whole seconds, as in E2B's `timeout`. 0 never expires, like Daytona's
 // `autoStopInterval: 0`; E2B has no such value, so polli asks for its largest.
@@ -245,18 +246,23 @@ export const sandboxCommand = new Command("sandbox")
                 } catch (err) {
                     fail("Failed to set up ssh", err);
                 }
+                rmSync(proxyError(id), { force: true });
                 const ssh = spawnSync("ssh", [`${id}.polli`], {
                     stdio: "inherit",
                 });
                 if (ssh.error) fail("Could not run ssh", ssh.error);
-                // A shared connection's ssh sends polli's errors to /dev/null
-                // (OpenSSH's sshconnect.c), so ask Gen again for the reason.
-                if (ssh.status === 255 && SHARES_CONNECTIONS) {
-                    await connectSandbox(id).catch((err) =>
-                        fail(`Could not reach sandbox ${id}`, err),
+                // A shared connection's ssh hid the proxy's error; show it.
+                if (
+                    ssh.status === 255 &&
+                    SHARES_CONNECTIONS &&
+                    existsSync(proxyError(id))
+                ) {
+                    fail(
+                        `Could not reach sandbox ${id}: ${readFileSync(proxyError(id), "utf8")}`,
                     );
                 }
-                if (ssh.status) throw new ExitSignal(ssh.status);
+                // A killed ssh has no status.
+                if (ssh.status !== 0) throw new ExitSignal(ssh.status ?? 1);
             }),
     )
     .addCommand(

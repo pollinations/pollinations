@@ -191,3 +191,73 @@ it("drops InferencePort's PAYG ledger chunk from client streams", async () => {
     expect(text).toContain("data: [DONE]\n\n");
     expect(text).not.toContain("payg");
 });
+
+it("drops InferencePort's PAYG ledger entry from non-streaming completions", async () => {
+    vi.stubEnv("INFERENCEPORT_API_KEY", "test-ip-key");
+    const { key } = await createTestApiKey({
+        expiresIn: 600,
+        user: { packBalance: 100 },
+    });
+    let calls = 0;
+    const wire = JSON.stringify({
+        id: "chatcmpl-nonstream",
+        object: "chat.completion",
+        created: 1760000000,
+        model: "inferenceport-ai/lightning-text-v2.1",
+        choices: [
+            {
+                index: 0,
+                message: { role: "assistant", content: "🌼 hello" },
+                finish_reason: "stop",
+            },
+        ],
+        usage: {
+            prompt_tokens: 3,
+            completion_tokens: 1,
+            total_tokens: 4,
+            payg_credits_charged: 0.0001,
+        },
+        // Top-level ledger entry, same shape the stream test strips.
+        payg_usage: {
+            payg_credits_charged: 0.0001,
+            payg_ledger_entry: { balance_after: 38.9 },
+        },
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const request = new Request(input, init);
+        const target =
+            request.headers.get("x-portkey-custom-host") ?? request.url;
+        if (new URL(target).host === "api.inferenceport.ai") {
+            calls++;
+            return new Response(wire, {
+                headers: { "content-type": "application/json" },
+            });
+        }
+        return Response.json({ data: [] });
+    });
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request("https://gen.pollinations.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "inferenceport-ai/lightning-text-v2.1",
+                messages: [
+                    { role: "user", content: `Hello ${crypto.randomUUID()}` },
+                ],
+            }),
+        }),
+        withInlineGenerationCoordinator(env),
+        context,
+    );
+    const text = await response.text();
+    await waitOnExecutionContext(context);
+    expect(response.status, text).toBe(200);
+    expect(calls).toBe(1);
+    expect(text).toContain("🌼 hello");
+    expect(text).not.toContain("payg");
+    expect(text).not.toContain("balance_after");
+});

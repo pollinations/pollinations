@@ -7,13 +7,13 @@
   "compatibility_date": "2026-10-13",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  "vars": { "WEFT_API_URL": "https://weft.network/api/v1" },
+  "vars": { "WEFT_BASE_URL": "https://weft.network" },
   "env": {
     "staging": {
       "name": "pollinations-weft-mcp-staging",
       "workers_dev": false,
       "observability": { "enabled": true },
-      "vars": { "WEFT_API_URL": "https://staging.weft.network/api/v1" }
+      "vars": { "WEFT_BASE_URL": "https://staging.weft.network" }
     }
   }
 }

@@ -9,7 +9,8 @@ export const STRIPE_NEW_CARD_GATE_METADATA = {
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
-    distinctFailedCardCount24h: number;
+    /** Distinct fingerprints from successful and failed charges in the window. */
+    distinctCardCount24h: number;
     limit: number;
 };
 
@@ -28,7 +29,7 @@ export async function getStripeNewCardGateStatus(
     if (!userId) {
         return {
             gate: "ok",
-            distinctFailedCardCount24h: 0,
+            distinctCardCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
         };
     }
@@ -44,14 +45,11 @@ export async function getStripeNewCardGateStatus(
         .bind(userId, windowStart)
         .first<{ count: number | null }>();
 
-    const distinctFailedCardCount24h = Number(row?.count ?? 0);
+    const distinctCardCount24h = Number(row?.count ?? 0);
 
     return {
-        gate:
-            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
-                ? "locked"
-                : "ok",
-        distinctFailedCardCount24h,
+        gate: distinctCardCount24h >= STRIPE_NEW_CARD_LIMIT ? "locked" : "ok",
+        distinctCardCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,
     };
 }
@@ -62,7 +60,7 @@ export function stripeNewCardGateMetadata(
     return {
         [STRIPE_NEW_CARD_GATE_METADATA.gate]: status.gate,
         [STRIPE_NEW_CARD_GATE_METADATA.count24h]: String(
-            status.distinctFailedCardCount24h,
+            status.distinctCardCount24h,
         ),
         [STRIPE_NEW_CARD_GATE_METADATA.limit24h]: String(status.limit),
     };

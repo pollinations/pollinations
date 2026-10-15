@@ -1,8 +1,13 @@
 import { validator } from "@shared/middleware/validator.ts";
 import { DEFAULT_3D_MODEL } from "@shared/registry/model3d.ts";
 import {
+    CreateDecisionRequestSchema,
+    DEFAULT_DECISION_MODEL,
+} from "@shared/schemas/decisions.ts";
+import {
     CreateChatCompletionRequestSchema,
     CreateImageRequestSchema,
+    CreateResponseRequestSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { Hono } from "hono";
@@ -28,7 +33,10 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateDecision } from "@/text/decisions/handler.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
+import { handleStemSeparation } from "../audio/stem-separation.ts";
 import {
     handleSimpleAudio,
     handleSpeech,
@@ -48,9 +56,8 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
     handleImageGeneration,
+    prepareOpenAIImageEditReplay,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -74,14 +81,54 @@ const model3dHandlers = factory.createHandlers(
 export const generationExecutorRoutes = new Hono<Env>();
 
 generationExecutorRoutes.post(
+    "/alpha/audio/stem-separation",
+    resolveModel("generate.audio", {
+        defaultModel: "elevenlabs/stem-separation",
+        supportedEndpoint: "/alpha/audio/stem-separation",
+    }),
+    track("generate.audio"),
+    prepareGenerationRequest,
+    audioExecutionCache,
+    apiKeyBudgetReservation,
+    handleStemSeparation,
+);
+
+generationExecutorRoutes.post(
     "/v1/chat/completions",
     textBodyLimit,
     validator("json", CreateChatCompletionRequestSchema),
-    resolveModel("generate.text"),
+    resolveModel("generate.text", {
+        supportedEndpoint: "/v1/chat/completions",
+    }),
     track("generate.text"),
     textExecutionCache,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+generationExecutorRoutes.post(
+    "/alpha/decisions",
+    textBodyLimit,
+    validator("json", CreateDecisionRequestSchema),
+    resolveModel("generate.text", {
+        defaultModel: DEFAULT_DECISION_MODEL,
+        supportedEndpoint: "/alpha/decisions",
+    }),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateDecision,
+);
+
+generationExecutorRoutes.post(
+    "/v1/responses",
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 generationExecutorRoutes.post(
@@ -176,7 +223,6 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,
@@ -187,16 +233,17 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
+    prepareOpenAIImageEditReplay,
     prepareGenerationRequest,
-    textExecutionCache,
+    imageExecutionCache,
     apiKeyBudgetReservation,
-    handleImageEdit,
+    handleImageGeneration,
 );
 
 generationExecutorRoutes.post(
     "/v1/audio/voice-changer",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-changer",
+        defaultModel: "elevenlabs/eleven-multilingual-sts-v2",
         supportedEndpoint: "/v1/audio/voice-changer",
     }),
     track("generate.audio"),
@@ -209,7 +256,7 @@ generationExecutorRoutes.post(
 generationExecutorRoutes.post(
     "/v1/audio/voice-isolator",
     resolveModel("generate.audio", {
-        defaultModel: "eleven-voice-isolator",
+        defaultModel: "elevenlabs/voice-isolator",
         supportedEndpoint: "/v1/audio/voice-isolator",
     }),
     track("generate.audio"),

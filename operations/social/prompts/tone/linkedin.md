@@ -71,7 +71,7 @@ Don't:
 - Write hooks designed to bait clicks ("The hardest part of X isn't Y...")
 - Frame things as business impact — frame them as useful things that exist now
 - Use engagement farming questions ("What will YOU build?")
-- Spin pricing changes — if tiers change, state it matter-of-factly and move on. no apologies, no "sustainability" framing, no negativity. just: "X moved to paid tiers. Y stays free."
+- Discuss pricing, Pollen balance or Quest/Paid eligibility changes — Discord and Enter's model news cover them
 - Use more than 1-2 emojis (and only if they serve a purpose)
 - Sound like a press release, a VC update, or a corporate comms team
 

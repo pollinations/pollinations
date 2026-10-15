@@ -6,11 +6,12 @@ Every change starts with the confirmation gate in `SKILL.md`. Test the exact con
 
 | Change | Required verification |
 |---|---|
+| Any model addition or modification | Research viable fallback routes; document the best exact candidate and use/decline decision. If configured, directly probe it and run forced-fallback E2E for every applicable capability, parameter, permission, billing field, cache path, error path, and expected burst |
 | Add model | Full declared-modality matrix, aliases, permissions, provider price, billing audit, cache, errors, burst, catalog entry, description, logo |
-| Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, provider-managed fallback |
+| Provider or upstream model ID | Full declared-modality matrix, every previously supported capability, params, price, usage fields, cache, errors, latency, quotas, and provider-managed fallback behavior |
 | Price or multiplier | Official exact-route price, one real request per declared modality, usage headers/body, billing row, displayed price, no missing conversion |
-| Canonical name or alias | Audit every registry plus model changes between production and `main`; count stored aliases in production and staging; when non-zero, merge the D1 migration before the registry rename and promote a revision containing both so D1 runs immediately before the Worker; verify all old-ID counts reach zero, API-key create/update writes aliases canonically while preserving unknown/community IDs, restricted keys retain access, catalogs display canonical permissions, and removed IDs return model-not-found when no alias was approved |
-| Description or brand | Catalog returns developer-facing copy without the title; brand mapping resolves to a real SVG; `addedDate` unchanged |
+| Canonical name or alias | Audit registries and stored aliases; migrate stale stored IDs in one D1 migration and verify zero old IDs after deploy. Test old/new IDs, catalogs, realtime and fallback filtering. API keys store categories and need no migration. Removed IDs return model-not-found when no alias was approved |
+| Description or publisher | Catalog returns developer-facing copy without the title; publisher mapping resolves to a real SVG; `addedDate` unchanged |
 | Input/output modality | Real sample proves the modality; unsupported inputs fail clearly; matching usage field is billed |
 | Image size/aspect/format | Every supported value returns the claimed dimensions/format; unsupported values are 4xx |
 | Video duration/resolution/fps/audio | Every supported combination needed by the public contract is verified with media inspection and exact billing |
@@ -24,6 +25,7 @@ Test every claimed capability:
 
 - non-streaming and streaming completion, including finish reason and final stream marker
 - small `max_tokens` edge
+- non-streaming latency at the default reasoning effort with a realistic hard prompt, against the gateway budget in the operating policy
 - system/user/assistant messages and any supported JSON/structured output
 - tool call and valid tool arguments
 - reasoning usage when advertised
@@ -94,3 +96,4 @@ For any media route that may exceed 120 seconds:
 - Verify paid-only access with the correct balance types.
 - For caches, test a real MISS followed by a byte-identical HIT and understand whether usage headers and billing rows are expected on each.
 - Sample current production peak before choosing burst concurrency. Run cache-busted bursts at expected load and document 429s, 5xx responses, and latency. Zero unexplained 5xx responses is the acceptance gate.
+- For token-limited deployments, also send one request near the largest accepted input and output size. A 429 there means the per-minute token limit is too small for the contract, not that traffic is too high.

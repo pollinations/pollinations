@@ -32,6 +32,8 @@ const configDir = () =>
           ? join(home, "Library", "Application Support", "pollinations")
           : join(home, ".config", "pollinations");
 const opencodeFile = () => join(home, ".config", "opencode", "opencode.json");
+const opencodeJsoncFile = () =>
+    join(home, ".config", "opencode", "opencode.jsonc");
 const pluginConfig = () => join(configDir(), "config.json");
 const snapshotFiles = () => {
     const dir = join(home, ".pollinations", "harnesses");
@@ -99,6 +101,40 @@ describe("opencode harness", () => {
         });
     });
 
+    it("uses the highest-precedence existing JSONC config", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        const json = '{"autoupdate":false}\n';
+        const jsonc = `{
+            // OpenCode accepts comments and trailing commas.
+            autoupdate: true,
+        }`;
+        writeFileSync(opencodeFile(), json);
+        writeFileSync(opencodeJsoncFile(), jsonc);
+
+        configureOpenCode(ctx, settings);
+
+        expect(read(opencodeFile())).toBe(json);
+        expect(readJsonFile(opencodeJsoncFile())).toMatchObject({
+            autoupdate: true,
+            plugin: ["opencode-pollinations-plugin"],
+            model: "pollinations/enter/openai",
+        });
+
+        disableOpenCode(ctx);
+        expect(read(opencodeJsoncFile())).toBe(jsonc);
+    });
+
+    it("refuses to overwrite an invalid config", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        writeFileSync(opencodeFile(), "{");
+
+        expect(() => configureOpenCode(ctx, settings)).toThrow(
+            "Could not parse OpenCode config",
+        );
+        expect(read(opencodeFile())).toBe("{");
+        expect(existsSync(pluginConfig())).toBe(false);
+    });
+
     it("uses an existing plugins array instead of plugin", () => {
         mkdirSync(join(home, ".config", "opencode"), { recursive: true });
         writeFileSync(
@@ -160,6 +196,18 @@ describe("opencode harness", () => {
 
         disableOpenCode(ctx);
         expect(existsSync(opencodeFile())).toBe(false);
+    });
+
+    it("keeps edits made between repeated on runs", () => {
+        configureOpenCode(ctx, settings);
+        const edited = readJsonFile(opencodeFile());
+        edited.autoupdate = false;
+        writeFileSync(opencodeFile(), JSON.stringify(edited, null, 2));
+        configureOpenCode(ctx, { ...settings, model: "kimi" });
+
+        expect(disableOpenCode(ctx).outcome).toBe("stripped");
+        expect(readJsonFile(opencodeFile()).autoupdate).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 
     it("honors OPENCODE_CONFIG", () => {

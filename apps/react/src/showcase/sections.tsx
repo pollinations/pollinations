@@ -26,7 +26,6 @@ import {
     DownloadIcon,
     Dropdown,
     DropdownItem,
-    ExternalLinkButton,
     ExternalLinkIcon,
     EyeIcon,
     FieldStack,
@@ -39,6 +38,7 @@ import {
     type IconProps,
     ImageIcon,
     InfoTip,
+    InlineLink,
     Input,
     KeyIcon,
     LockIcon,
@@ -53,7 +53,6 @@ import {
     PeriodPicker,
     type PeriodSelection,
     PlusIcon,
-    Prose,
     ReasoningIcon,
     ScrollArea,
     SearchIcon,
@@ -89,6 +88,7 @@ import {
     ModalityDot,
     ModalityTab,
 } from "@pollinations/ui/gen";
+import { Prose } from "@pollinations/ui/markdown";
 import {
     formatPollen,
     PaidChip,
@@ -454,12 +454,12 @@ export const ButtonsDemo: FC = () => (
                 <Button intent="danger">Delete</Button>
             </Row>
             <Row label="External link">
-                <ExternalLinkButton href="https://pollinations.ai">
+                <InlineLink href="https://pollinations.ai">
                     Pollinations
-                </ExternalLinkButton>
-                <ExternalLinkButton href="https://pollinations.ai" size="sm">
+                </InlineLink>
+                <InlineLink href="https://pollinations.ai" size="sm">
                     Small link
-                </ExternalLinkButton>
+                </InlineLink>
             </Row>
             <Row label="Icon button">
                 <IconButton title="Copy" onClick={noop}>
@@ -499,6 +499,17 @@ export const ButtonsDemo: FC = () => (
                 <TabButton active={false} disabled onClick={noop}>
                     Disabled
                 </TabButton>
+                <TabButton active intent="amber" onClick={noop}>
+                    Amber
+                </TabButton>
+                <TabButton
+                    active
+                    intent="green"
+                    detail="@creator"
+                    onClick={noop}
+                >
+                    Green
+                </TabButton>
             </Row>
             <Row label="Chip">
                 <Chip>Default</Chip>
@@ -534,27 +545,27 @@ export const InputsDemo: FC = () => {
                 variant="panel"
                 className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4"
             >
-                <ControlGroup label="Input">
+                <FieldStack label="Input">
                     <Input placeholder="Name" />
-                </ControlGroup>
-                <ControlGroup label="Number">
+                </FieldStack>
+                <FieldStack label="Number">
                     <Input type="number" placeholder="100" hideNumberSteppers />
-                </ControlGroup>
-                <ControlGroup label="Error">
+                </FieldStack>
+                <FieldStack label="Error">
                     <Input placeholder="Invalid" error />
-                </ControlGroup>
-                <ControlGroup label="Disabled">
+                </FieldStack>
+                <FieldStack label="Disabled">
                     <Input placeholder="Disabled" disabled />
-                </ControlGroup>
-                <ControlGroup label="Textarea">
+                </FieldStack>
+                <FieldStack label="Textarea">
                     <Textarea placeholder="Describe an image" rows={3} />
-                </ControlGroup>
-                <ControlGroup label="Textarea error">
+                </FieldStack>
+                <FieldStack label="Textarea error">
                     <Textarea placeholder="Invalid" rows={3} error />
-                </ControlGroup>
-                <ControlGroup label="Textarea disabled">
+                </FieldStack>
+                <FieldStack label="Textarea disabled">
                     <Textarea placeholder="Disabled" rows={3} disabled />
-                </ControlGroup>
+                </FieldStack>
                 <div className="col-span-full">
                     <FieldStack
                         label="FieldStack"
@@ -1066,8 +1077,10 @@ export const FeedbackDemo: FC = () => (
                     </PaidChip>
                 </Tooltip>
                 <Tooltip
-                    content="Use triggerAs='span' around inline text."
+                    content="Use tapEnabled so inline help also opens by touch, Enter, or Space."
                     triggerAs="span"
+                    tapEnabled
+                    ariaLabel="About inline help"
                 >
                     <span className="cursor-help text-sm text-theme-text-strong underline decoration-dotted">
                         inline help

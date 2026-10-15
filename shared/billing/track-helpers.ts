@@ -84,6 +84,8 @@ interface DeductionParams {
     apiKeyReservedAmount?: number;
     byopClientKeyId?: string | null;
     modelPaidOnly?: boolean;
+    /** The key never spends paid Pollen, so the charge always takes Quest Pollen. */
+    questPollenOnly?: boolean;
     communityModelReward?: CommunityModelRewardInput | null;
 }
 
@@ -100,7 +102,7 @@ export async function resolveDevMarkup(
 
     const [clientRow] = await db
         .select({
-            userId: apikeyTable.userId,
+            userId: apikeyTable.referenceId,
             metadata: apikeyTable.metadata,
             prefix: apikeyTable.prefix,
             enabled: apikeyTable.enabled,
@@ -184,6 +186,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         apiKeyReservedAmount,
         byopClientKeyId,
         modelPaidOnly,
+        questPollenOnly,
         communityModelReward: communityModelRewardInput,
     } = params;
 
@@ -277,6 +280,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 userId,
                 billedPrice,
                 modelPaidOnly,
+                questPollenOnly,
             );
             payerBucket = deduction.bucket;
             postDeductionPackBalance = deduction.postDeductionPackBalance;
@@ -298,24 +302,65 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
         }
 
         // API key budgets are decremented by the amount the user authorized the
-        // app to spend, including BYOP markup when it applies.
+        // app to spend, including BYOP markup when it applies. Later failures
+        // must not discard the committed user debit.
         if (apiKeyId && hasApiKeyBudget(apiKeyPollenBalance)) {
-            await reconcileApiKeyBalance(
-                db,
-                apiKeyId,
-                apiKeyPollenBalance,
-                apiKeyReservedAmount,
-                billedPrice,
-            );
+            try {
+                await reconcileApiKeyBalance(
+                    db,
+                    apiKeyId,
+                    apiKeyPollenBalance,
+                    apiKeyReservedAmount,
+                    billedPrice,
+                );
+            } catch (error) {
+                log.error(
+                    "API key reconciliation failed for {keyId} after committed debit: {error}",
+                    {
+                        keyId: apiKeyId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+            }
         }
 
         // 4. Credits. Both require a payer bucket (nothing to net against
         //    otherwise) and write to it so the flows stay in balance.
         if (markup) {
-            await creditDev(db, markup, payerBucket);
+            try {
+                await creditDev(db, markup, payerBucket);
+            } catch (error) {
+                log.error("Dev credit failed for {devUserId}: {error}", {
+                    devUserId: markup.devUserId,
+                    error:
+                        error instanceof Error ? error.message : String(error),
+                });
+                markup = null;
+            }
         }
         if (communityModelReward) {
-            await creditCommunityOwner(db, communityModelReward, payerBucket);
+            try {
+                await creditCommunityOwner(
+                    db,
+                    communityModelReward,
+                    payerBucket,
+                );
+            } catch (error) {
+                log.error(
+                    "Community model reward failed for {userId}: {error}",
+                    {
+                        userId: communityModelReward.userId,
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    },
+                );
+                communityModelReward = null;
+            }
         }
     } catch (error) {
         if (!payerDeducted) {
@@ -339,7 +384,6 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
                 );
             }
         }
-        logBillingFailure(error, markup, communityModelReward);
         throw error;
     }
 
@@ -425,47 +469,6 @@ async function creditCommunityOwner(
     );
 }
 
-/** Log a pipeline failure with the same severity and labels as before. */
-function logBillingFailure(
-    error: unknown,
-    markup: MarkupResolution | null,
-    communityModelReward: CommunityModelRewardResolution | null,
-): void {
-    const message = error instanceof Error ? error.message : String(error);
-    const isCommunityCreditFailure =
-        error instanceof Error &&
-        error.message.startsWith("Community model reward");
-    const isDevCreditFailure =
-        error instanceof Error && error.message.startsWith("Dev credit");
-
-    if (communityModelReward) {
-        if (isCommunityCreditFailure) {
-            log.error("Community model reward failed for {userId}: {error}", {
-                userId: communityModelReward.userId,
-                error: message,
-            });
-        } else {
-            log.error(
-                "Failed to bill community model request for owner {userId}: {error}",
-                { userId: communityModelReward.userId, error: message },
-            );
-        }
-    }
-    if (markup) {
-        if (isDevCreditFailure) {
-            log.error("Dev credit failed for {devUserId}: {error}", {
-                devUserId: markup.devUserId,
-                error: message,
-            });
-        } else {
-            log.error(
-                "Failed to bill BYOP request for dev {devUserId}: {error}",
-                { devUserId: markup.devUserId, error: message },
-            );
-        }
-    }
-}
-
 function hasApiKeyBudget(
     balance: number | null | undefined,
 ): balance is number {
@@ -516,6 +519,7 @@ async function deductUserBalance(
     userId: string,
     amount: number,
     modelPaidOnly?: boolean,
+    questPollenOnly?: boolean,
 ): Promise<{
     bucket: Bucket | null;
     postDeductionPackBalance: number | null;
@@ -528,6 +532,7 @@ async function deductUserBalance(
                 userId,
                 amount,
                 modelPaidOnly ?? false,
+                questPollenOnly ?? false,
             );
         if (!ok) {
             throw new Error(

@@ -32,7 +32,7 @@ gh pr list --head <branch-name> --state merged --json number --jq '.[0].number'
 
 1. `git status` and `git diff --stat` to review changes
 2. Stage relevant files (avoid `.env`, credentials, `.claude/settings.local.json`)
-3. Commit with conventional format (`feat:`, `fix:`, `refactor:`, etc.)
+3. Commit with conventional format (`feat:`, `fix:`, `refactor:`, etc.). Several `Co-authored-by:` lines must sit together at the end with no blank line between them, or squash merge keeps only the last one. Check with `git interpret-trailers --parse`.
 4. Push: `git push` (or `git push -u origin HEAD` for new branches)
 
 ## Step 3: Create PR (only if no open PR exists)
@@ -54,3 +54,7 @@ Follow PR format from AGENTS.md:
 - Use "- Adds X", "- Fix Y" format
 - 3-5 bullets max
 - Simple titles: "fix:", "feat:", "Add"
+
+For PRs touching models, follow [model-management](../skills/model-management/SKILL.md#6-open-the-pr), including its required model change table with a `NEW`, `UPDATE`, or `RETIRE` action and exact before/after prices, balance access, capabilities, availability, and effective timing. Apply this when updating an existing PR description too.
+
+After a squash merge, check the squash commit kept every `Co-authored-by:` line. If one was dropped, never rewrite the shared branch to fix it.

@@ -32,7 +32,7 @@ Collection steps:
    ```
 
 2. For dollars, credits, or invoices, use the dashboard or an exported source.
-   Save it to `data/inbox/`.
+   Save it to `<collection-dir>/evidence/`.
 3. Use this skill to extract or reconcile the bounded evidence.
 
 Known traps:

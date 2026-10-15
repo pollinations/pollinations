@@ -10,15 +10,99 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
+    type SafetyFeature,
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
+import { parseBooleanLike } from "@/util.ts";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
-const CACHED_HEADER_NAMES = new Set(["x-fallback-target", "x-model-used"]);
+const CACHED_HEADER_NAMES = new Set([
+    "x-fallback-target",
+    "x-model-used",
+    "x-pollinations-response-format",
+    "x-tts-voice",
+]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+// Streams stopped caching empty output (#14994). The version retires stream
+// entries written before that, which reads would otherwise keep alive.
+const STREAM_CACHE_VERSION = "stream-output-v1";
+
+function sseData(text: string): string[] {
+    return text
+        .split(/\r?\n/)
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice("data:".length).trim());
+}
+
+function isStreamingErrorResponse(text: string): boolean {
+    if (/(?:^|\r?\n)event:\s*error(?:\r?\n|$)/m.test(text)) return true;
+
+    return sseData(text).some((data) => {
+        try {
+            const event = JSON.parse(data);
+            return Boolean(
+                event && typeof event === "object" && "error" in event,
+            );
+        } catch {
+            return false;
+        }
+    });
+}
+
+// Fields of a Chat Completions stream delta that carry output. Reasoning is
+// not output: `reasoning_content` and Claude's `content_blocks` (thinking and
+// signature deltas only) are left out on purpose.
+const CHAT_OUTPUT_FIELDS = [
+    "content",
+    "refusal",
+    "tool_calls",
+    "function_call",
+    "audio",
+];
+
+/**
+ * A Chat Completions stream whose choices carry no output, e.g. a reasoning
+ * model that spent max_tokens on reasoning. Cached, it would be replayed to
+ * every identical request without reaching a model (#14994).
+ */
+function isEmptyChatStream(text: string): boolean {
+    let sawChoice = false;
+    for (const data of sseData(text)) {
+        if (data === "[DONE]") continue;
+        let event: { choices?: unknown };
+        try {
+            event = JSON.parse(data);
+        } catch {
+            return false;
+        }
+        if (!Array.isArray(event?.choices)) return false;
+        for (const choice of event.choices) {
+            sawChoice = true;
+            const hasOutput = CHAT_OUTPUT_FIELDS.some((field) => {
+                const value = choice?.delta?.[field];
+                return Array.isArray(value) ? value.length > 0 : Boolean(value);
+            });
+            if (hasOutput) return false;
+        }
+    }
+    return sawChoice;
+}
+
+/**
+ * Streams are not coordinated, so skipping their write only drops the cache
+ * entry. Non-streaming results must still be written: the generation
+ * coordinator delivers them by reading this entry back.
+ */
+function isUncacheableStream(response: Response, body: Uint8Array): boolean {
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        return false;
+    }
+    const text = new TextDecoder().decode(body);
+    return isStreamingErrorResponse(text) || isEmptyChatStream(text);
+}
 
 function hasActiveSafety(value: unknown): boolean {
     return (
@@ -37,6 +121,7 @@ export async function generateCacheKey(
     request: Request,
     bodyText?: string,
     partition?: string,
+    requiredSafetyFeatures: readonly SafetyFeature[] = [],
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -62,6 +147,7 @@ export async function generateCacheKey(
     const hasQuerySafe = url.searchParams.has("safe");
     let hasBodySafe = false;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
+    let streams = parseBooleanLike(url.searchParams.get("stream")) === true;
 
     // Add filtered body for POST/PUT requests
     if (bodyText && (request.method === "POST" || request.method === "PUT")) {
@@ -70,6 +156,7 @@ export async function generateCacheKey(
             const bodyObj = JSON.parse(bodyText);
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
+            streams ||= parseBooleanLike(bodyObj.stream) === true;
             const filteredBody: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(bodyObj)) {
                 if (!EXCLUDED_PARAMS.includes(key.toLowerCase())) {
@@ -90,9 +177,16 @@ export async function generateCacheKey(
         parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);
         usesSafety ||= hasActiveSafety(safeHeader);
     }
+    if (requiredSafetyFeatures.length > 0) {
+        parts.push(
+            `required-safety:${[...new Set(requiredSafetyFeatures)].sort().join(",")}`,
+        );
+        usesSafety = true;
+    }
     if (usesSafety) {
         parts.push(SAFETY_CACHE_VERSION);
     }
+    if (streams) parts.push(STREAM_CACHE_VERSION);
     if (partition) parts.push(`partition:${partition}`);
 
     // Generate a hash of all parts using Web Crypto API
@@ -204,9 +298,12 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
     cacheKey: string,
     response: Response,
 ): {
-    stream: TransformStream<Uint8Array, Uint8Array>;
+    stream: ReadableStream<Uint8Array>;
     write: Promise<void>;
 } {
+    if (!response.body) {
+        throw new Error("Cannot cache a response without a body");
+    }
     const log = c.get("log");
     let chunks: Uint8Array[] = [];
     let totalSize = 0;
@@ -217,7 +314,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
         rejectWrite = reject;
     });
 
-    const stream = new TransformStream({
+    const stream = new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
             // Save a copy of the chunk for caching later
             chunks.push(chunk.slice());
@@ -245,6 +342,11 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         offset += chunk.byteLength;
                     }
 
+                    if (isUncacheableStream(response, completeResponse)) {
+                        resolveWrite();
+                        return;
+                    }
+
                     await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
                         customMetadata: prepareMetadata(response),
                     });
@@ -261,6 +363,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
             })();
         },
     });
+    void response.body.pipeTo(stream.writable).catch(rejectWrite);
 
-    return { stream, write };
+    return { stream: stream.readable, write };
 }

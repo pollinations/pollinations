@@ -2,6 +2,7 @@ import Markdown, { type Components } from "react-markdown";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
+import { InlineLink } from "../primitives/InlineLink.tsx";
 import { headingClassName } from "../primitives/Typography.tsx";
 
 export type ProseProps = {
@@ -31,12 +32,7 @@ const components: Components = {
     p: ({ node, ...props }) => (
         <p className="polli:my-4 polli:leading-relaxed" {...props} />
     ),
-    a: ({ node, ...props }) => (
-        <a
-            className="polli-control polli:rounded-sm polli:font-semibold polli:text-theme-text-strong polli:underline polli:decoration-theme-border polli:decoration-2 polli:underline-offset-3 polli:hover:decoration-theme-text-soft"
-            {...props}
-        />
-    ),
+    a: ({ node, ...props }) => <InlineLink {...props} />,
     ul: ({ node, ...props }) => (
         <ul
             className="polli:my-4 polli:list-disc polli:pl-6 polli:leading-relaxed"

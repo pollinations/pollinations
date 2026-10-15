@@ -3,10 +3,15 @@
   "credentials": "observability",
   "sops": "default",
   "docker": true,
-  "install": "npm ci",
+  "install": "npm ci --prefix ../.. && npm ci",
   "deploy": "npm run check && npm run deploy && npm run push-secrets",
   "verify": [
-    "https://observability.myceli.ai/api/health",
     "https://observability.pollinations.ai/api/health"
+  ],
+  "watch": [
+    "packages/auth/",
+    "packages/ui/",
+    "package.json",
+    "package-lock.json"
   ]
 }

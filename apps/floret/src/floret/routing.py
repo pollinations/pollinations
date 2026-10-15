@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from floret.registry import fetch_model_catalog
+from floret.registry import fetch_model_catalog, find_model_meta, get_audio_endpoint
 
 ModelPreference = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -57,6 +57,7 @@ _REQUIREMENTS = {
         category="image",
         required_input="image",
         required_output="image",
+        endpoint_when_present="/v1/images/edits",
     ),
     "video": CapabilityRequirement(
         category="video",
@@ -66,7 +67,6 @@ _REQUIREMENTS = {
     "audio": CapabilityRequirement(
         required_input="text",
         required_output="audio",
-        endpoint_when_present="/v1/chat/completions",
     ),
 }
 
@@ -79,12 +79,14 @@ class RoutingPreferences:
     image_editing: str | None = None
     video: str | None = None
     audio: str | None = None
+    audio_endpoint: str | None = None
 
     def explicit(self) -> dict[str, str]:
         return {
             field.name: value
             for field in fields(self)
-            if (value := getattr(self, field.name)) is not None
+            if field.name != "audio_endpoint"
+            and (value := getattr(self, field.name)) is not None
         }
 
     def model_for_tool(self, tool_name: str) -> str | None:
@@ -104,7 +106,7 @@ class RoutingPreferences:
 class RoutingInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    text: ModelPreference | None = None
+    text: ModelPreference | None = Field(default=None, alias="model")
     web_search: ModelPreference | None = None
     image_generation: ModelPreference | None = None
     image_editing: ModelPreference | None = None
@@ -118,7 +120,7 @@ class RoutingInput(BaseModel):
             null_fields = [field for field, item in value.items() if item is None]
             if null_fields:
                 raise ValueError(
-                    f"routing fields cannot be null: {', '.join(null_fields)}"
+                    f"metadata fields cannot be null: {', '.join(null_fields)}"
                 )
         return value
 
@@ -194,6 +196,12 @@ def _validation_reason(
 
     endpoints = _string_values(meta, "supported_endpoints")
     if (
+        requirement is _REQUIREMENTS["audio"]
+        and endpoints
+        and get_audio_endpoint("", meta) is None
+    ):
+        return "requires an audio generation endpoint"
+    if (
         endpoints
         and requirement.endpoint_when_present
         and requirement.endpoint_when_present not in endpoints
@@ -202,7 +210,9 @@ def _validation_reason(
     return None
 
 
-async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
+async def validate_routing(
+    value: RoutingInput | None,
+) -> RoutingPreferences:
     preferences = value.to_preferences() if value is not None else RoutingPreferences()
     explicit = preferences.explicit()
     if not explicit:
@@ -214,10 +224,17 @@ async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
         raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
 
     for field, model in explicit.items():
-        meta = catalog.get(model)
+        meta = find_model_meta(catalog, model)
         if meta is None:
             raise RoutingValidationError(field, model, "unknown model")
         reason = _validation_reason(meta, _REQUIREMENTS[field])
         if reason is not None:
             raise RoutingValidationError(field, model, reason)
+        if field == "audio":
+            preferences = RoutingPreferences(
+                **{
+                    **preferences.explicit(),
+                    "audio_endpoint": get_audio_endpoint(model, meta),
+                }
+            )
     return preferences

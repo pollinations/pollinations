@@ -4,8 +4,8 @@ import {
     buildUrl,
     createMCPResponse,
     createTextContent,
-    fetchAndUploadMedia,
     fetchJsonWithAuth,
+    fetchMediaLink,
 } from "../utils/coreUtils.js";
 
 function publicAudioUrl(source) {
@@ -42,12 +42,22 @@ export async function transcribeAudio(params, context) {
     const source = publicAudioUrl(params.source);
     let response;
     try {
+        // Workers reject redirect: "error"; use "manual" and refuse 3xx below.
         response = await fetch(source, {
-            redirect: "error",
+            redirect: "manual",
         });
     } catch {
         throw new Error(
             "Could not fetch source audio. Use a directly accessible public HTTPS URL.",
+        );
+    }
+    if (
+        response.type === "opaqueredirect" ||
+        (response.status >= 300 && response.status < 400)
+    ) {
+        await response.body?.cancel();
+        throw new Error(
+            "Source audio URL redirects. Use the final, directly accessible HTTPS URL.",
         );
     }
     if (!response.ok) {
@@ -72,16 +82,18 @@ export async function transcribeAudio(params, context) {
     if (typeof result?.text !== "string") {
         throw new Error("Transcription returned no text");
     }
-    return createMCPResponse([createTextContent(result.text)]);
+    return createMCPResponse([
+        createTextContent(result.text),
+        createTextContent({ usage: result.usage }, true),
+    ]);
 }
 
 async function generateAudio(params, context) {
     requireApiKey(context);
 
     const { text, ...options } = params;
-    const { contentType, mediaUrl } = await fetchAndUploadMedia(
+    const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
-        {},
         context,
     );
     return createMCPResponse([
@@ -146,7 +158,7 @@ export const audioTools = [
                 .boolean()
                 .optional()
                 .describe("Generate instrumental music where supported"),
-            instruct: z
+            instructions: z
                 .string()
                 .optional()
                 .describe("Emotion or style instruction where supported"),

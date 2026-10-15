@@ -1,3 +1,4 @@
+import { ACCOUNT_RESTRICTED_MESSAGE, isUserBanned } from "@shared/auth/ban.ts";
 import {
     AUTO_TOP_UP_PACK_MAX_USD,
     AUTO_TOP_UP_PACK_MIN_USD,
@@ -8,7 +9,6 @@ import {
     calculateServiceFeeCents,
     getPollenPackByAmount,
     POLLEN_PACK_LINE_TYPE,
-    type PollenPack,
     SERVICE_FEE_LINE_TYPE,
     SERVICE_FEE_NAME,
     SERVICE_FEE_TAX_CODE,
@@ -38,36 +38,7 @@ import type {
     AutoTopUpProcessResult,
     BillingOverview,
     PendingAutoTopUpAttempt,
-    UserStripeBillingRow,
 } from "./types.ts";
-
-type AutoTopUpEligibilityInput = Pick<
-    UserStripeBillingRow,
-    "autoTopUpEnabled" | "packBalance" | "autoTopUpAmountUsd"
->;
-
-type AutoTopUpEligibility =
-    | { eligible: false; reason: "auto top-up disabled" }
-    | { eligible: false; reason: "paid balance above threshold" }
-    | { eligible: false; reason: "auto top-up pack invalid" }
-    | { eligible: true; pack: PollenPack };
-
-function getAutoTopUpEligibility(
-    user: AutoTopUpEligibilityInput,
-): AutoTopUpEligibility {
-    if (!user.autoTopUpEnabled) {
-        return { eligible: false, reason: "auto top-up disabled" };
-    }
-
-    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
-        return { eligible: false, reason: "paid balance above threshold" };
-    }
-
-    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
-    return pack
-        ? { eligible: true, pack }
-        : { eligible: false, reason: "auto top-up pack invalid" };
-}
 
 export async function updateAutoTopUpSettings(
     env: CloudflareBindings,
@@ -75,7 +46,7 @@ export async function updateAutoTopUpSettings(
     input: AutoTopUpInput,
 ): Promise<
     | { ok: true; overview: BillingOverview }
-    | { ok: false; status: 400; error: string }
+    | { ok: false; status: 400 | 403; error: string }
 > {
     if (!input.enabled) {
         await env.DB.prepare(
@@ -87,6 +58,10 @@ export async function updateAutoTopUpSettings(
             .run();
 
         return { ok: true, overview: await getBillingOverview(env, userId) };
+    }
+
+    if (isUserBanned(await getUserStripeBillingRow(env.DB, userId))) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
     }
 
     const pack =
@@ -135,14 +110,18 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    await env.DB.prepare(
+    const updated = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = ?
-            WHERE id = ?`,
+            WHERE id = ? AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())`,
     )
         .bind(packAmountUsd, userId)
         .run();
+
+    if (!updated.meta.changes) {
+        return { ok: false, status: 403, error: ACCOUNT_RESTRICTED_MESSAGE };
+    }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }
@@ -153,12 +132,22 @@ export async function processAutoTopUpForUser(
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
 
-    const eligibility = getAutoTopUpEligibility(user);
-    if (!eligibility.eligible) {
-        return { status: "skipped", reason: eligibility.reason };
+    if (isUserBanned(user)) {
+        return { status: "skipped", reason: "account restricted" };
     }
 
-    const { pack } = eligibility;
+    if (!user.autoTopUpEnabled) {
+        return { status: "skipped", reason: "auto top-up disabled" };
+    }
+
+    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
+        return { status: "skipped", reason: "paid balance above threshold" };
+    }
+
+    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
+    if (!pack) {
+        return { status: "skipped", reason: "auto top-up pack invalid" };
+    }
 
     await expireStaleClaimedAttempts(env.DB, userId);
 
@@ -381,8 +370,32 @@ export async function creditAutoTopUpInvoice(
         return { credited: false, reason: verification.reason };
     }
 
+    // Credit only while the attempt is still unpaid, then mark it paid in the
+    // same transaction, so a concurrent caller for this invoice credits nothing.
     const now = Date.now();
-    const [attemptUpdate] = await env.DB.batch([
+    const [walletUpdate] = await env.DB.batch([
+        env.DB.prepare(
+            `UPDATE user
+                SET pack_balance = ROUND(
+                    COALESCE(pack_balance, 0) + ?,
+                    ${POLLEN_BILLING_PRECISION}
+                )
+                WHERE id = ?
+                    AND EXISTS (
+                        SELECT 1
+                        FROM stripe_auto_top_up_attempt
+                        WHERE stripe_invoice_id = ?
+                            AND user_id = ?
+                            AND status IN (?, ?)
+                    )`,
+        ).bind(
+            attempt.amountUsd,
+            attempt.userId,
+            invoice.id,
+            attempt.userId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        ),
         env.DB.prepare(
             `UPDATE stripe_auto_top_up_attempt
                 SET status = ?,
@@ -399,33 +412,9 @@ export async function creditAutoTopUpInvoice(
             AUTO_TOP_UP_ATTEMPT_STATUS.PENDING,
             AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
         ),
-        env.DB.prepare(
-            `UPDATE user
-                SET pack_balance = ROUND(
-                    COALESCE(pack_balance, 0) + ?,
-                    ${POLLEN_BILLING_PRECISION}
-                )
-                WHERE id = ?
-                    AND EXISTS (
-                        SELECT 1
-                        FROM stripe_auto_top_up_attempt
-                        WHERE stripe_invoice_id = ?
-                            AND user_id = ?
-                            AND status = ?
-                            AND completed_at = ?
-                    )`,
-        ).bind(
-            attempt.amountUsd,
-            attempt.userId,
-            invoice.id,
-            attempt.userId,
-            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-            now,
-        ),
     ]);
 
-    const attemptChanges = attemptUpdate.meta.changes ?? 0;
-    if (attemptChanges === 0) {
+    if ((walletUpdate.meta.changes ?? 0) === 0) {
         return { credited: false, reason: "invoice already credited" };
     }
 
@@ -454,18 +443,35 @@ export async function markAutoTopUpInvoiceFailed(
         if (paymentIntent?.status === "requires_action") return;
     }
 
-    if (options.cleanupInvoice !== false) {
-        await cleanupFailedAutoTopUpInvoice(env, invoice.id);
+    if (options.disableAutoTopUp === false) {
+        await markAttemptFailedByInvoice(env.DB, invoice.id, reason);
+    } else {
+        const now = Date.now();
+        const attempt = await env.DB.prepare(
+            `UPDATE stripe_auto_top_up_attempt
+            SET status = ?, failure_reason = ?, updated_at = ?,
+                completed_at = COALESCE(completed_at, ?)
+            WHERE stripe_invoice_id = ?
+                AND status != ?
+                AND (status != ? OR failure_reason IS NOT ?)
+            RETURNING user_id AS userId`,
+        )
+            .bind(
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+                now,
+                now,
+                invoice.id,
+                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+                reason,
+            )
+            .first<{ userId: string }>();
+        if (attempt) await disableAutoTopUp(env.DB, attempt.userId);
     }
 
-    const attempt = await markAttemptFailedByInvoice(
-        env.DB,
-        invoice.id,
-        reason,
-    );
-
-    if (options.disableAutoTopUp !== false && attempt) {
-        await disableAutoTopUp(env.DB, attempt.userId);
+    if (options.cleanupInvoice !== false) {
+        await cleanupFailedAutoTopUpInvoice(env, invoice.id);
     }
 }
 
@@ -605,6 +611,7 @@ async function claimAutoTopUpAttempt(
                 FROM user
                 WHERE id = ?
                     AND auto_top_up_enabled = 1
+                    AND (COALESCE(banned, 0) = 0 OR ban_expires <= unixepoch())
                     AND auto_top_up_amount_usd IS NOT NULL
                     AND COALESCE(pack_balance, 0) <= ?
             )
@@ -716,31 +723,28 @@ async function markAttemptFailedByInvoice(
     db: D1Database,
     invoiceId: string,
     reason: string,
-): Promise<{ id: string; userId: string } | null> {
+): Promise<void> {
     const now = Date.now();
-    return (
-        (await db
-            .prepare(
-                `UPDATE stripe_auto_top_up_attempt
+    await db
+        .prepare(
+            `UPDATE stripe_auto_top_up_attempt
                     SET status = ?,
                         failure_reason = ?,
                         updated_at = ?,
                         completed_at = ?
                     WHERE stripe_invoice_id = ?
-                        AND status NOT IN (?, ?)
-                    RETURNING id, user_id AS userId`,
-            )
-            .bind(
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-                reason,
-                now,
-                now,
-                invoiceId,
-                AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
-                AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
-            )
-            .first<{ id: string; userId: string }>()) ?? null
-    );
+                        AND status NOT IN (?, ?)`,
+        )
+        .bind(
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+            reason,
+            now,
+            now,
+            invoiceId,
+            AUTO_TOP_UP_ATTEMPT_STATUS.PAID,
+            AUTO_TOP_UP_ATTEMPT_STATUS.FAILED,
+        )
+        .run();
 }
 
 async function cleanupFailedAutoTopUpInvoice(

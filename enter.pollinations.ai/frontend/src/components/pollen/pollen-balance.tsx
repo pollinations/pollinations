@@ -1,15 +1,16 @@
 import {
     CardIcon,
-    ClockIcon,
+    CheckIcon,
+    ClipboardIcon,
     CopyButton,
-    ExternalLinkButton,
-    GlobeIcon,
+    cn,
     InfoTip,
     InlineLink,
     MailIcon,
+    ReceiptIcon,
+    RefreshIcon,
     SproutIcon,
     Surface,
-    Tooltip,
     WalletIcon,
 } from "@pollinations/ui";
 import {
@@ -17,26 +18,26 @@ import {
     WalletBalanceCard,
     WalletKindIcon,
 } from "@pollinations/ui/wallet";
-import {
-    calculateServiceFeeCents,
-    formatUsdCentsCompact,
-    POLLEN_PACKS,
-} from "@shared/pollen-packs.ts";
+import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
+import { type PollenPackKey, SERVICE_FEE_NAME } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
 import type { FC, ReactNode } from "react";
-import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
+import type { BillingOverview } from "../../backend-types.ts";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
-import { PollenPackSlider } from "./pollen-pack-controls.tsx";
+import { TopUpPanel } from "./top-up-panel.tsx";
 
 type PollenBalanceProps = {
     tierBalance: number;
     packBalance: number;
     paidWeek?: number;
     tierWeek?: number;
+    /** Only the two balance cards: no total row, no "how it works" footer. */
+    compact?: boolean;
 };
 
 const BALANCE_DISPLAY_EPSILON = 0.0001;
-const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
+export const TERMS_URL = "https://pollinations.ai/terms";
+export const REFUND_POLICY_URL = "https://pollinations.ai/refunds";
 
 function normalizeDisplayBalance(value: number): number {
     return Math.abs(value) < BALANCE_DISPLAY_EPSILON ? 0 : value;
@@ -77,6 +78,7 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
     packBalance,
     paidWeek = 0,
     tierWeek = 0,
+    compact = false,
 }) => {
     const displayTierBalance = normalizeDisplayBalance(tierBalance);
     const displayPaidBalance = normalizeDisplayBalance(packBalance);
@@ -155,49 +157,52 @@ export const PollenBalance: FC<PollenBalanceProps> = ({
                 />
             </div>
 
-            {/* Total + 7d earnings below */}
-            <div className="flex items-start justify-between gap-3 pt-3">
-                <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
-                    Total
-                </span>
-                <div className="flex flex-col items-end leading-tight">
-                    <span className="flex items-baseline gap-1.5">
-                        <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
-                            {formatPollen(totalPollen)}
+            {!compact && (
+                <>
+                    {/* Total + 7d earnings below */}
+                    <Surface className="flex items-start justify-between gap-3">
+                        <span className="text-sm font-bold uppercase tracking-wide text-theme-text-soft pt-1">
+                            Total
                         </span>
-                        <span className="text-xs font-bold text-theme-text-soft">
-                            pollen
-                        </span>
-                    </span>
-                    {totalWeek > 0 && (
-                        <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
-                            +{formatPollen(totalWeek)}{" "}
-                            <span className="font-medium text-theme-text-muted">
-                                / 7d
+                        <div className="flex flex-col items-end leading-tight">
+                            <span className="flex items-baseline gap-1.5">
+                                <span className="text-2xl sm:text-3xl font-bold tabular-nums leading-none tracking-tight text-theme-text-soft">
+                                    {formatPollen(totalPollen)}
+                                </span>
+                                <span className="text-xs font-bold text-theme-text-soft">
+                                    pollen
+                                </span>
                             </span>
-                        </span>
-                    )}
-                </div>
-            </div>
+                            {totalWeek > 0 && (
+                                <span className="mt-1 text-sm font-bold tabular-nums text-intent-success-text">
+                                    +{formatPollen(totalWeek)}{" "}
+                                    <span className="font-medium text-theme-text-muted">
+                                        / 7d
+                                    </span>
+                                </span>
+                            )}
+                        </div>
+                    </Surface>
 
-            {/* Footer: learn more */}
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <p className="flex items-start gap-1.5">
-                    <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Your wallet holds Pollen you've purchased plus Pollen
-                        you've earned.{" "}
-                        <InlineLink
-                            as={Link}
-                            to="/news"
-                            hash="how-does-my-pollen-wallet-work"
-                            external={false}
-                        >
-                            How it works
-                        </InlineLink>
-                    </span>
-                </p>
-            </div>
+                    {/* Footer: learn more */}
+                    <Footnotes className="mt-2">
+                        <p className="flex items-start gap-1.5">
+                            <WalletIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>
+                                What you've purchased plus what you've earned.{" "}
+                                <InlineLink
+                                    as={Link}
+                                    to="/news"
+                                    hash="how-does-my-pollen-wallet-work"
+                                    external={false}
+                                >
+                                    How it works
+                                </InlineLink>
+                            </span>
+                        </p>
+                    </Footnotes>
+                </>
+            )}
         </div>
     );
 };
@@ -258,113 +263,122 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 };
 
 type BuyPollenPanelProps = {
-    initialBillingState: BillingState | null;
-    selectedPackAmount: number;
-    onSelectedPackAmountChange: (amount: number) => void;
+    initialBilling: BillingOverview | null;
+    /** Standalone /top-up: Stripe returns there, carrying the app link. */
+    returnToTopUp?: { redirect?: string };
+    /** Reload the wallet and billing after Top-up changed them. */
+    onWalletChange?: () => void;
+    initialPack?: PollenPackKey;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
-    initialBillingState,
-    selectedPackAmount,
-    onSelectedPackAmountChange,
-}) => {
-    const selectedPackIndex = Math.max(
-        0,
-        POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
-    );
-    const selectedPack = POLLEN_PACKS[selectedPackIndex] ?? POLLEN_PACKS[0];
-    const serviceFeeCents = selectedPack
-        ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
-        : 0;
-    const subtotalBeforeTaxCents =
-        (selectedPack?.amountUsd ?? 0) * 100 + serviceFeeCents;
-    const chargeLabel = selectedPack
-        ? formatUsdCentsCompact(subtotalBeforeTaxCents)
-        : "$0";
+    initialBilling,
+    returnToTopUp,
+    onWalletChange,
+    initialPack,
+}) => (
+    <>
+        <TopUpPanel
+            initialBilling={initialBilling}
+            returnToTopUp={returnToTopUp}
+            onWalletChange={onWalletChange}
+            initialPack={initialPack}
+        />
+        <Footnotes>
+            {/* When auto top-up charges, stated before anyone turns it on.
+                "Paid": Quest Pollen doesn't trigger it. */}
+            <p className="flex items-start gap-1.5">
+                <RefreshIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Auto top-up buys its pack when your paid balance reaches{" "}
+                    {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen
+                </span>
+            </p>
+            <p className="flex items-start gap-1.5">
+                <ReceiptIcon
+                    aria-hidden="true"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                />
+                <span>
+                    Prices include the {SERVICE_FEE_NAME.toLowerCase()}, plus
+                    tax at payment
+                </span>
+            </p>
+            <PaymentTrustBadge
+                className="mt-0 pt-0"
+                country={initialBilling?.ipCountry}
+            />
+        </Footnotes>
+    </>
+);
 
-    return (
-        <>
-            <Surface>
-                {selectedPack && (
-                    <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
-                        <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
-                            <PollenPackSlider
-                                value={selectedPack.amountUsd}
-                                onChange={onSelectedPackAmountChange}
-                                selectedBadgeLabel={chargeLabel}
-                                selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
+/**
+ * The dashboard's footnote block: 8px between lines, 4px inset. The section's
+ * own gap sets the space above it, as on every other page.
+ */
+export const Footnotes: FC<{ className?: string; children: ReactNode }> = ({
+    className,
+    children,
+}) => (
+    <div
+        className={cn(
+            "space-y-2 px-1 text-[13px] leading-snug text-theme-text-muted",
+            className,
+        )}
+    >
+        {children}
+    </div>
+);
+
+/**
+ * Who to ask and the terms of buying, in Billing on the Pollen page. The
+ * standalone top-up page says it in its footer instead.
+ */
+export const PaymentHelp: FC = () => (
+    <p className="flex items-start gap-1.5">
+        <MailIcon aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+            Payment help:{" "}
+            {/* Styled like Terms and Refund; a copy icon where theirs has
+                the arrow. The icon says copy and the text says email
+                copied, so no tooltip. */}
+            <CopyButton
+                value="billing@pollinations.ai"
+                className="polli-link"
+                data-tone="accent"
+                tooltip={null}
+            >
+                {(copied) => (
+                    <>
+                        {copied ? "email copied" : "billing@pollinations.ai"}
+                        {copied ? (
+                            <CheckIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
                             />
-                        </div>
-                        <Tooltip
-                            content={
-                                <span className="block">
-                                    Buy{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {selectedPack.amountUsd} pollen
-                                    </span>{" "}
-                                    for{" "}
-                                    <span className="font-semibold text-theme-text-strong">
-                                        {chargeLabel}
-                                    </span>
-                                    <span className="mt-1 block text-theme-text-muted">
-                                        Tax calculated at checkout
-                                    </span>
-                                </span>
-                            }
-                            displayContents
-                        >
-                            <ExternalLinkButton
-                                href={`/api/stripe/checkout/${selectedPack.packKey}`}
-                                target="_self"
-                                className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
-                            >
-                                <span className="inline-flex items-center gap-1.5">
-                                    <WalletIcon className="h-4 w-4 shrink-0" />
-                                    Buy
-                                </span>
-                            </ExternalLinkButton>
-                        </Tooltip>
-                    </div>
+                        ) : (
+                            <ClipboardIcon
+                                aria-hidden="true"
+                                className="polli-link-external-icon"
+                            />
+                        )}
+                    </>
                 )}
-            </Surface>
-            <Surface>
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
-            </Surface>
-            <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
-                <PaymentTrustBadge className="mt-0 pt-0" />
-                <p className="flex items-start gap-1.5">
-                    <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Credits are instant, never expire, and follow our{" "}
-                        <InlineLink href={REFUND_POLICY_URL}>
-                            Refund Policy
-                        </InlineLink>
-                        .
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <GlobeIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Prices exclude tax — VAT or sales tax is added at
-                        checkout.
-                    </span>
-                </p>
-                <p className="flex items-start gap-1.5">
-                    <MailIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Payment issue or missing pollen?{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="underline decoration-theme-text-soft/30 underline-offset-2 transition-colors hover:text-theme-text-soft"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        — we reply same day.
-                    </span>
-                </p>
-            </div>
-        </>
-    );
-};
+            </CopyButton>
+            <LinkSeparator />
+            <InlineLink href={TERMS_URL}>Terms</InlineLink>
+            <LinkSeparator />
+            <InlineLink href={REFUND_POLICY_URL}>Refund</InlineLink>
+        </span>
+    </p>
+);
+
+/** A dot between links, with room around it. */
+const LinkSeparator: FC = () => (
+    <span aria-hidden="true" className="mx-2 text-theme-text-muted">
+        ·
+    </span>
+);

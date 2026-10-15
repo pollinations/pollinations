@@ -1,6 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 
 const MINUTE_MS = 60_000;
+// Avoid waking high-RPM buckets immediately after they refill.
+const CLEANUP_GRACE_MS = 5 * MINUTE_MS;
 
 type RateLimitState = {
     rpm: number;
@@ -49,7 +51,9 @@ export class CommunityModelRateLimiter extends DurableObject {
             if (limitChanged) {
                 await this.ctx.storage.put("state", state);
                 await this.ctx.storage.setAlarm(
-                    now + ((capacity - state.tokens) * MINUTE_MS) / limit,
+                    now +
+                        ((capacity - state.tokens) * MINUTE_MS) / limit +
+                        CLEANUP_GRACE_MS,
                 );
             }
             return {
@@ -65,7 +69,9 @@ export class CommunityModelRateLimiter extends DurableObject {
         this.state = state;
         await this.ctx.storage.put("state", state);
         await this.ctx.storage.setAlarm(
-            now + ((capacity - state.tokens) * MINUTE_MS) / limit,
+            now +
+                ((capacity - state.tokens) * MINUTE_MS) / limit +
+                CLEANUP_GRACE_MS,
         );
         return { allowed: true };
     }

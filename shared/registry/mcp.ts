@@ -13,12 +13,21 @@ export const MCP_USAGE_HEADERS = {
     error: "x-pollinations-mcp-error",
 } as const;
 
+// Gen overwrites this header before forwarding a user-scoped MCP request.
+// Private MCP Workers use it to select the caller's connected accounts.
+export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
+// The caller's linked GitHub account as `id+username`, the local part of its
+// noreply address. Gen overwrites it too.
+export const MCP_USER_GITHUB_HEADER = "x-pollinations-user-github";
+
 type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
     binding: McpBindingName;
     pricing: McpPricingDefinition;
+    userScoped?: boolean;
+    accountPath?: string;
 };
 
 type McpPricingDefinition = {
@@ -31,7 +40,13 @@ export type McpPricingInfo = {
     rates: PublicPriceInfo[];
 };
 
-export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "EXA_MCP";
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "ASK_JEV_MCP"
+    | "FFMPEG_MCP"
+    | "EXA_MCP"
+    | "COMPOSIO_MCP"
+    | "COMPUTER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -47,6 +62,42 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
+export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
+export const COMPUTER_TOOL_CALL_PRICE = 0.0002;
+const COMPUTER_MCP_PRICING = {
+    description: "Preview price",
+    rates: [
+        {
+            id: "computer.tool_call.v1",
+            description: "Computer tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: COMPUTER_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Tool call",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
+const COMPOSIO_MCP_PRICING = {
+    description: "Launch price",
+    rates: [
+        {
+            id: "composio.tool_call.v1",
+            description: "Connected app tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: COMPOSIO_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Tool call",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
 
 export const MCP_SERVERS = [
     {
@@ -59,6 +110,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Generation tools use each selected model's listed rate. Discovery and account tools are free.",
+            rates: [],
+        },
+    },
+    {
+        id: "ask-jev",
+        name: "Ask Jev",
+        description:
+            "Evaluate state with typed choice, score, and probability questions.",
+        binding: "ASK_JEV_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Decision tools use Jev's listed model rate. No additional MCP fee.",
             rates: [],
         },
     },
@@ -124,6 +188,29 @@ export const MCP_SERVERS = [
                 },
             ],
         },
+    },
+    {
+        id: "composio",
+        name: "Connectors",
+        description:
+            "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+        binding: "COMPOSIO_MCP",
+        billing: "usage_receipt",
+        provider: "composio",
+        userScoped: true,
+        accountPath: "/account#connectors",
+        pricing: COMPOSIO_MCP_PRICING,
+    },
+    {
+        id: "computer",
+        name: "Computer",
+        description:
+            "A private persistent computer: files and a bash shell that survive between runs.",
+        binding: "COMPUTER_MCP",
+        billing: "usage_receipt",
+        provider: "cloudflare",
+        userScoped: true,
+        pricing: COMPUTER_MCP_PRICING,
     },
 ] as const satisfies readonly McpServerDefinition[];
 

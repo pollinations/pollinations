@@ -1,3 +1,5 @@
+import { textEnvironmentValue } from "../environment.js";
+
 // =============================================================================
 // Shared Types
 // =============================================================================
@@ -61,7 +63,34 @@ export function createAzureModelConfig(
         "azure-deployment-id": deploymentId,
         "azure-api-version": apiVersion,
         "azure-model-name": deploymentId,
+        // Non-OpenAI Azure deployments reject stream_options; OpenAI entries opt in.
+        supportsStreamOptions: false,
         authKey: apiKey,
+        ...overrides,
+    };
+}
+
+/** Azure OpenAI v1 transport for deployments proven on the Responses API. */
+export function createAzureResponsesModelConfig(
+    apiKey: string | undefined,
+    endpoint: string,
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    const { resourceName } = parseAzureEndpoint(endpoint);
+    return createAzureModelConfig(apiKey, endpoint, {
+        responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
+        responsesAuthHeader: "api-key",
+        responsesStreamUpstream: true,
+        ...overrides,
+    });
+}
+
+export function createAnthropicConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "anthropic",
+        authKey: textEnvironmentValue("ANTHROPIC_API_KEY"),
         ...overrides,
     };
 }
@@ -71,9 +100,10 @@ export function createBedrockNativeConfig(
 ): ProviderConfig {
     return {
         provider: "bedrock",
-        "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
-        "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
-        "aws-region": process.env.AWS_REGION || "us-east-1",
+        requiresBase64ImageUrls: true,
+        "aws-access-key-id": textEnvironmentValue("AWS_ACCESS_KEY_ID"),
+        "aws-secret-access-key": textEnvironmentValue("AWS_SECRET_ACCESS_KEY"),
+        "aws-region": textEnvironmentValue("AWS_REGION") || "us-east-1",
         ...overrides,
     };
 }
@@ -83,8 +113,12 @@ export function createFireworksModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_NEO_API_KEY,
-        overrides,
+        textEnvironmentValue("FIREWORKS_NEO_API_KEY"),
+        {
+            responsesEndpoint:
+                "https://api.fireworks.ai/inference/v1/responses",
+            ...overrides,
+        },
     );
 }
 
@@ -93,7 +127,27 @@ export function createDeepInfraModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.deepinfra.com/v1/openai",
-        process.env.DEEPINFRA_API_KEY,
+        textEnvironmentValue("DEEPINFRA_API_KEY"),
+        overrides,
+    );
+}
+
+export function createInferencePortModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.inferenceport.ai/v1",
+        textEnvironmentValue("INFERENCEPORT_API_KEY"),
+        overrides,
+    );
+}
+
+export function createMistralModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return createOpenAICompatibleConfig(
+        "https://api.mistral.ai/v1",
+        textEnvironmentValue("MISTRAL_API_KEY"),
         overrides,
     );
 }
@@ -104,7 +158,19 @@ export function createOpenRouterModelConfig(
     return {
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
-        authKey: process.env.OPENROUTER_API_KEY,
+        responsesEndpoint: "https://openrouter.ai/api/v1/responses",
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
+        ...overrides,
+    };
+}
+
+export function createNovitaModelConfig(
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    return {
+        provider: "openai",
+        directEndpoint: "https://api.novita.ai/openai/v1/chat/completions",
+        authKey: textEnvironmentValue("NOVITA_API_KEY"),
         ...overrides,
     };
 }
@@ -126,28 +192,42 @@ export function createVercelAIGatewayModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://ai-gateway.vercel.sh/v1",
-        process.env.AI_GATEWAY_API_KEY,
-        overrides,
+        textEnvironmentValue("AI_GATEWAY_API_KEY"),
+        {
+            responsesEndpoint: "https://ai-gateway.vercel.sh/v1/responses",
+            ...overrides,
+        },
     );
 }
 
-export function createPerplexityModelConfig(
-    overrides: ModelOverride = {},
-): ProviderConfig {
-    return {
-        provider: "perplexity-ai",
-        authKey: process.env.PERPLEXITY_API_KEY,
-        ...overrides,
-    };
-}
-
-export function createOVHcloudModelConfig(
-    overrides: ModelOverride = {},
+/**
+ * Perplexity's Agent API takes Responses requests. Its models search only
+ * when given the web_search tool (and skip it for simple questions unless
+ * required), and cite inline only when asked to; the cited numbers are the IDs
+ * of the returned search results.
+ */
+export function createPerplexityAgentConfig(
+    model: string,
+    webSearch: unknown = {},
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
-        "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        process.env.OVHCLOUD_API_KEY,
-        overrides,
+        "https://api.perplexity.ai",
+        textEnvironmentValue("PERPLEXITY_API_KEY"),
+        {
+            model,
+            responsesEndpoint: "https://api.perplexity.ai/v1/agent",
+            responsesDefaults: {
+                instructions:
+                    "Cite sources inline with bracketed numbers that match the search result IDs, like [1][2].",
+                tools: [
+                    {
+                        type: "web_search",
+                        ...(webSearch as Record<string, unknown>),
+                    },
+                ],
+                tool_choice: "required",
+            },
+        },
     );
 }
 
@@ -156,7 +236,7 @@ export function createOVHcloudOAIConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
-        process.env.OVHCLOUD_API_KEY,
+        textEnvironmentValue("OVHCLOUD_API_KEY"),
         overrides,
     );
 }

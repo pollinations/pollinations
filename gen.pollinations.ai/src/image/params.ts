@@ -2,7 +2,7 @@ import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
-import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
+import { normalizeSeed, parseBooleanLike, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -13,12 +13,10 @@ const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
 const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
+// Same tokens as the text route (1/yes/on); unrecognized values stay false.
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
-    .transform((value) => {
-        if (typeof value === "boolean") return value;
-        return value?.toString()?.toLowerCase?.() === "true";
-    });
+    .transform((value) => parseBooleanLike(value) ?? false);
 
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
@@ -135,7 +133,8 @@ export const ImageParamsSchema = z
                 "adaptive",
             ])
             .optional(),
-        audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
+        // Unset when omitted, so each model applies its own audio default.
+        audio: sanitizedBoolean.optional().catch(undefined),
     })
     .superRefine((data, ctx) => {
         if (data.resolution) {
@@ -151,15 +150,30 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "gpt-image-2" && data.transparent) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
+        if (data.model === "inferenceport-ai/lightning-image-turbo") {
+            if (
+                (data.width !== undefined && data.width !== 1024) ||
+                (data.height !== undefined && data.height !== 1024)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "inferenceport-ai/lightning-image-turbo only supports 1024x1024 output.",
+                });
+            }
         }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        if (
+            definition.maxReferenceImages !== undefined &&
+            data.image &&
+            data.image.length > definition.maxReferenceImages
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message: `${data.model} supports at most ${definition.maxReferenceImages} reference image${definition.maxReferenceImages === 1 ? "" : "s"}.`,
+            });
+        }
         const references = [
             {
                 field: "reference_images" as const,
@@ -187,7 +201,7 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "minimax-h3") {
+        if (data.model === "minimax/minimax-h3") {
             if (data.duration !== undefined && data.duration !== 5) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
@@ -207,6 +221,40 @@ export const ImageParamsSchema = z
                     code: z.ZodIssueCode.custom,
                     path: ["fps"],
                     message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if (
+            data.model === "minimax/minimax-h3-max" ||
+            data.model === "minimax/minimax-h3-max-turbo"
+        ) {
+            if (
+                data.duration !== undefined &&
+                ![5, 10, 15].includes(data.duration)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message: `${data.model} supports 5, 10, or 15 seconds.`,
+                });
+            }
+            if (
+                data.aspectRatio !== undefined &&
+                !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
+                    data.aspectRatio,
+                )
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message: `${data.model} supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.`,
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message: `${data.model} outputs video at 24 FPS.`,
                 });
             }
         }
@@ -232,7 +280,7 @@ export const ImageParamsSchema = z
             }
         }
         if (
-            data.model === "grok-imagine-image-2.0" &&
+            data.model === "x-ai/grok-imagine-image-2.0" &&
             !["low", "medium"].includes(data.quality)
         ) {
             ctx.addIssue({

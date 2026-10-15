@@ -2,9 +2,14 @@
 
 Canonical vendor: `elevenlabs`
 
-## Verified — 2026-08-20
+## Verified — 2026-09-04
 
 - Status: workspace analytics API works with the stored key.
+- Login: `elliot@myceli.ai` in the Myceli browser workspace.
+- Workspace: `My Workspace` (`myceli`).
+- The plan page states the plan name, its monthly price, the renewal date and
+  the remaining share of the subscription usage credits. Record all four on the
+  balance row; the credits are non-transferable and expire at renewal.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 
@@ -40,7 +45,7 @@ Collection steps:
      }'
    ```
 
-   Save raw JSON to `data/inbox/elevenlabs-<period>-usage-by-product.json`.
+   Save raw JSON to `<collection-dir>/evidence/elevenlabs-<period>-usage-by-product.json`.
 
 2. Verify the response includes `columns` with `timestamp`, `product_type`,
    `model`, and `total_cost`.
@@ -51,6 +56,8 @@ Collection steps:
 
 Known traps:
 
+- Usage credits are a non-USD quota; record them as `usage-quota`, never as a
+  monetary credit balance.
 - A plain runtime key can 401; the key needs workspace analytics/admin scope.
 - Analytics usage can differ from invoice cash because subscriptions, overage timing, and top-ups are separate evidence surfaces.
 - Grant waterfall assumptions need dashboard or transaction backing.

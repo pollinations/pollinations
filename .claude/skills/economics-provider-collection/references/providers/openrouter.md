@@ -7,7 +7,12 @@ Canonical accounts:
 - `myceli` — Myceli.AI organization.
 - `pollinations` — PollinationsAI organization.
 
-## Verified — 2026-08-20
+Dashboard routing (verified 2026-09-05): PollinationsAI credits use the registry
+URL in the `elliot@pollinations.ai` Chrome window, not `elliot@myceli.ai`.
+Verify Org Account: PollinationsAI. Credit Grants shows remaining amount,
+expiry, and restrictions; keep purchased credit separate from grants.
+
+## Verified — 2026-09-04
 
 - Status: management-key credit and activity APIs work.
 - The activity window is truncated, so a single response cannot prove a
@@ -33,19 +38,43 @@ Current balance snapshot:
 - Save a snapshot only when the user asks for balance now. The all-time counters
   do not prove month-to-date usage without a separately evidenced baseline.
 
+## Verified — 2026-09-06
+
+- Completed months for the Myceli organization: open the Activity Explore
+  view with explicit UTC bounds in the `elliot@myceli.ai` browser session,
+
+  ```
+  https://openrouter.ai/activity/explore?from=<YYYY-MM-01>T00:00:00.000Z&to=<next-YYYY-MM-01>T00:00:00.000Z
+  ```
+
+  The table lists every model with rounded values; the exact figures come from
+  the page's own `POST /api/frontend/v1/private/analytics-query` responses.
+  The app does not use `window.fetch`, so capture them by wrapping
+  `Response.prototype.json` and `Response.prototype.text` in the page, then
+  switching the metric (Request Count, then back to Total Usage). Union the
+  `total_usage` and `request_count` rows by model; the total must equal the
+  month's credits-usage line. Book one row per model with the display name as
+  the label and the slug in `resource_id`.
+
 Known traps:
 
 - Use the management API key. Runtime keys cannot read activity.
 - The activity endpoint only reaches back a limited recent window, roughly 30 days.
 - Do not emit a completed-month total from a truncated API window. Use dashboard/manual evidence for older completed months.
-- For an open month, reconcile the exact account usage export first. Model rows
-  from the Activity Explorer may be allocated proportionally to that exact
-  total when the UI only exposes rounded model values; keep the month marked
-  provisional and retain both sources in the reconciliation report.
+- Activity Explorer: set exact UTC month bounds; export `top_n=30` descending
+  and ascending; union by `(date, model)`; discard `Other`; assert overlapping
+  rows are identical and the union total equals the dashboard total.
+- Activity “Spend” includes OpenRouter credits plus estimated BYOK spend. Check
+  the BYOK keys page. If keys exist, separate BYOK before booking OpenRouter
+  spend; if none exist, the exported total is OpenRouter spend.
+- Collect `PollinationsAI` only in its matching signed-in browser workspace.
+  Never reuse the Myceli browser or management key for that account.
+- Read the grant's displayed expiry; a grant receipt date is not an expiry.
+- Never proportionally allocate completed-month totals. Keep missing detail as
+  an explicit gap.
 - Do not reproduce the retired mutable month-open usage cache. Prefer bounded
   activity evidence or an explicit user-reviewed estimate.
-- OpenRouter usage has been grant/credit-funded locally; do not force a cash transaction match unless separate payment evidence exists.
-- Myceli's first $3,000 grant was exhausted in August 2026. Apply the remaining
-  grant to August usage before assigning the residual to purchased credit.
-- PollinationsAI received a separate $3,000 startup grant on 2026-07-20; do not
-  combine the two organizations' grant balances.
+- Determine funding from the account's grant and purchased-credit history;
+  do not force a cash match without payment evidence.
+- Apply eligible remaining grants before purchased credit. Never combine the
+  two organizations' balances.

@@ -1,17 +1,22 @@
 import { Scalar } from "@scalar/hono-api-reference";
-import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import {
-    getImageModelIds,
-    getVideoModelIds,
-    IMAGE_SERVICES,
-} from "@shared/registry/image.ts";
+import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import {
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
+import {
+    isPublicEnterPath,
+    isPublicQuestCatalogPath,
+    publicEnterPath,
+} from "@shared/utils/public-docs.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
@@ -37,6 +42,8 @@ import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
+import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
+import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
@@ -51,6 +58,7 @@ import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
+import SANDBOXES_MD from "../docs/sandboxes.md?raw";
 import TEXT_GENERATION_MD from "../docs/text-generation.md?raw";
 import VIDEO_GENERATION_MD from "../docs/video-generation.md?raw";
 
@@ -67,11 +75,13 @@ const DOC_TAGS = {
     cli: "CLI",
     codingHarnesses: "Coding Harnesses",
     mcpServers: "MCP Servers",
+    sandboxes: "Sandboxes",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
     image: "Image",
     video: "Video",
+    jobs: "Jobs",
     realtime: "Realtime",
     model3d: "3D",
     audio: "Audio",
@@ -87,8 +97,6 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
-    "🧩 Community Models": DOC_TAGS.communityModels,
-    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
@@ -96,14 +104,13 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "✍️ Text": DOC_TAGS.text,
     "🖼️ Image": DOC_TAGS.image,
     "🎬 Video": DOC_TAGS.video,
+    "🧰 Jobs": DOC_TAGS.jobs,
     "🎙️ Realtime": DOC_TAGS.realtime,
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
     "🤖 Models": DOC_TAGS.models,
-    "✨ Quests": DOC_TAGS.quests,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
-    "👤 Account": DOC_TAGS.account,
     "📊 Public Stats": DOC_TAGS.publicStats,
     "media.pollinations.ai": DOC_TAGS.mediaStorage,
 };
@@ -142,6 +149,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
+    [DOC_TAGS.sandboxes]: docsIcon(
+        '<rect x="3" y="4" width="18" height="16" rx="2" /><polyline points="7 9 10 12 7 15" /><line x1="13" y1="15" x2="17" y2="15" />',
+    ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
     [DOC_TAGS.safety]: docsIcon('<polyline points="20 6 9 17 4 12" />'),
     [DOC_TAGS.text]: docsIcon(
@@ -152,6 +162,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     ),
     [DOC_TAGS.video]: docsIcon(
         '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
+    ),
+    [DOC_TAGS.jobs]: docsIcon(
+        '<path d="M3 6h18v15H3z" /><path d="M8 6V3h8v3" /><path d="M3 12h18" />',
     ),
     [DOC_TAGS.realtime]: docsIcon(
         '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
@@ -200,6 +213,7 @@ const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
 
 const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
+const SANDBOXES_DOCS = stripLeadingHeading(SANDBOXES_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -220,49 +234,22 @@ const ACCOUNT_DOCS = ACCOUNT_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
-const IMAGE_ALIASES = new Set(
-    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-);
-const TEXT_ALIASES = new Set(
-    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-);
-const AUDIO_ALIASES = new Set(
-    Object.values(AUDIO_SERVICES).flatMap((service) => service.aliases),
-);
-const EMBEDDING_ALIASES = new Set(
-    Object.values(EMBEDDING_SERVICES).flatMap((service) => service.aliases),
-);
-const ALL_ALIASES = new Set([
-    ...IMAGE_ALIASES,
-    ...TEXT_ALIASES,
-    ...AUDIO_ALIASES,
-    ...EMBEDDING_ALIASES,
-]);
-const imageModelDisplayNames = getImageModelIds().join(", ");
+const visibleImageIds = new Set<string>(getVisibleImageModels());
+const imageModelDisplayNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const videoModelDisplayNames = getVideoModelIds().join(", ");
+const videoModelDisplayNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
-const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
+const textModelDisplayNames = getVisibleTextModels().join(", ");
+const audioModelDisplayNames = getVisibleAudioModels().join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
-function filterAliases(schema: OpenApiSchema): OpenApiSchema {
-    return JSON.parse(
-        JSON.stringify(schema, (key, value) => {
-            if (key === "enum" && Array.isArray(value)) {
-                const filtered = value.filter(
-                    (v) => typeof v !== "string" || !ALL_ALIASES.has(v),
-                );
-                return filtered.length !== value.length ? filtered : value;
-            }
-            return value;
-        }),
-    ) as OpenApiSchema;
-}
-
 // Substitute live registry values into the section markdown.
 const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
@@ -304,7 +291,7 @@ const REALTIME_DOCS = [
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
-    "The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
+    "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
     "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
     "",
@@ -359,6 +346,7 @@ const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
 const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
+const SANDBOXES_SECTION = `## Sandboxes\n\n${SANDBOXES_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -368,6 +356,7 @@ const LLM_DOC_TEXT = [
     CLI_SECTION,
     CODING_HARNESSES_SECTION,
     MCP_SECTION,
+    SANDBOXES_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
@@ -378,7 +367,19 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     cli: CLI_SECTION,
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
+    sandboxes: SANDBOXES_SECTION,
 };
+
+// llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
+// inlines the docs so an agent gets them in one request instead of following
+// the index. The llms.txt spec itself doesn't define it.
+export const LLMS_FULL_TEXT = [
+    "# Pollinations",
+    "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
+    LLM_DOC_TEXT,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
+].join("\n\n");
 
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
@@ -501,6 +502,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
                     DOC_TAGS.codingHarnesses,
+                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -509,6 +511,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.text,
                     DOC_TAGS.image,
                     DOC_TAGS.video,
+                    DOC_TAGS.jobs,
                     DOC_TAGS.realtime,
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
@@ -574,6 +577,10 @@ function generationDocumentation(): OpenApiSchema {
                 description: MCP_DOCS,
             },
             {
+                name: DOC_TAGS.sandboxes,
+                description: SANDBOXES_DOCS,
+            },
+            {
                 name: DOC_TAGS.errors,
                 description: stripLeadingHeading(ERRORS_DOCS),
             },
@@ -592,6 +599,11 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.video,
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
+            },
+            {
+                name: DOC_TAGS.jobs,
+                description:
+                    "Submit, poll and download asynchronous image, video, audio and 3D jobs.",
             },
             {
                 name: DOC_TAGS.realtime,
@@ -646,17 +658,6 @@ function normalizeDocTagName(tag: string): string {
     return LEGACY_DOC_TAGS[tag] ?? tag;
 }
 
-function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
-    return mergeTags(
-        tags.map((tag) =>
-            typeof tag.name === "string"
-                ? { ...tag, name: normalizeDocTagName(tag.name) }
-                : tag,
-        ),
-        [],
-    );
-}
-
 function normalizeOperationTags(paths: OpenApiSchema): void {
     for (const pathItem of Object.values(paths)) {
         if (!pathItem || typeof pathItem !== "object") continue;
@@ -679,10 +680,10 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     }
     normalizeOperationTags(paths);
 
-    return filterAliases({
+    return {
         ...schema,
         paths,
-    });
+    };
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
@@ -745,71 +746,48 @@ function isPublicMediaRead(method: string, path: string): boolean {
     return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
+// gen owns every docs tag. enter operations get their sidebar tag from their
+// public path, so a tag string written in enter can never split a group.
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
-        paths[publicEnterPath(path)] = value;
+        const publicPath = publicEnterPath(path);
+        paths[publicPath] = withOperationTag(value, enterDocTag(publicPath));
     }
-    normalizeOperationTags(paths);
-    return {
-        ...schema,
-        tags: tagsForPaths(
-            {
-                ...schema,
-                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
-            },
-            paths,
-        ),
-        paths,
-    };
+    return { ...schema, paths };
 }
 
-function isPublicEnterPath(path: string): boolean {
-    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
-}
-
-function isPublicAccountPath(path: string): boolean {
-    return (
-        path === "/account" ||
-        path.startsWith("/account/") ||
-        path === "/api/account" ||
-        path.startsWith("/api/account/")
-    );
-}
-
-// Only the catalog is part of the public gen API. Session-only dashboard quest
-// actions stay on enter and are omitted from the merged gen docs.
-function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests/catalog" || path === "/api/quests/catalog";
-}
-
-function publicEnterPath(path: string): string {
-    return path
-        .replace(/^\/api\/account(?=\/|$)/, "/account")
-        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
-}
-
-function tagsForPaths(
-    schema: OpenApiSchema,
-    paths: OpenApiSchema,
-): OpenApiSchema[] {
-    const usedTags = new Set<string>();
-    for (const pathItem of Object.values(paths)) {
-        if (!pathItem || typeof pathItem !== "object") continue;
-        for (const operation of Object.values(pathItem as OpenApiSchema)) {
-            if (!operation || typeof operation !== "object") continue;
-            const tags = (operation as { tags?: unknown }).tags;
-            if (!Array.isArray(tags)) continue;
-            for (const tag of tags) {
-                if (typeof tag === "string") usedTags.add(tag);
-            }
-        }
+function enterDocTag(path: string): string {
+    if (isPublicQuestCatalogPath(path)) return DOC_TAGS.quests;
+    if (
+        path === "/account/agents" ||
+        path.startsWith("/account/agents/") ||
+        path === "/account/my-models/endpoint-agents"
+    ) {
+        return DOC_TAGS.communityAgents;
     }
+    if (
+        path === "/account/my-models" ||
+        path.startsWith("/account/my-models/")
+    ) {
+        return DOC_TAGS.communityModels;
+    }
+    return DOC_TAGS.account;
+}
 
-    return asRecordArray(schema.tags).filter(
-        (tag) => typeof tag.name === "string" && usedTags.has(tag.name),
-    );
+function withOperationTag(pathItem: unknown, tag: string): unknown {
+    if (!pathItem || typeof pathItem !== "object") return pathItem;
+    const tagged: OpenApiSchema = {};
+    for (const [key, operation] of Object.entries(pathItem as OpenApiSchema)) {
+        tagged[key] =
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+                ? { ...(operation as OpenApiSchema), tags: [tag] }
+                : operation;
+    }
+    return tagged;
 }
 
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
@@ -887,16 +865,13 @@ function mergeSchemas(
     enterSchema?: OpenApiSchema,
     mediaSchema?: OpenApiSchema,
 ): OpenApiSchema {
-    const merged = filterAliases({
+    const merged = {
         ...(enterSchema ?? {}),
         ...generationSchema,
         info: generationSchema.info,
         servers: generationSchema.servers,
         security: generationSchema.security,
-        tags: mergeTags(
-            asRecordArray(generationSchema.tags),
-            asRecordArray(enterSchema?.tags),
-        ),
+        tags: generationSchema.tags,
         components: mergeComponents(
             asRecord(enterSchema?.components),
             asRecord(generationSchema.components),
@@ -905,11 +880,11 @@ function mergeSchemas(
             ...asRecord(enterSchema?.paths),
             ...asRecord(generationSchema.paths),
         },
-    });
+    };
 
     if (!mediaSchema) return merged;
 
-    return filterAliases({
+    return {
         ...merged,
         components: mergeComponents(
             asRecord(merged.components),
@@ -919,17 +894,7 @@ function mergeSchemas(
             ...asRecord(merged.paths),
             ...asRecord(mediaSchema.paths),
         },
-    });
-}
-
-function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {
-    const tags = new Map<string, OpenApiSchema>();
-    for (const tag of [...primary, ...secondary]) {
-        if (typeof tag.name === "string" && !tags.has(tag.name)) {
-            tags.set(tag.name, tag);
-        }
-    }
-    return [...tags.values()];
+    };
 }
 
 function mergeComponents(base: OpenApiSchema, overrides: OpenApiSchema) {
@@ -957,11 +922,17 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
-function asRecordArray(value: unknown): OpenApiSchema[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-        (item): item is OpenApiSchema =>
-            !!item && typeof item === "object" && !Array.isArray(item),
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
     );
 }
 
@@ -979,15 +950,35 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
+                // Pinned: the unversioned CDN URL serves every new release, and
+                // 1.74.0 broke the sidebar our CSS and nav script target.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
@@ -1041,6 +1032,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
+        .get("/polli-skill.md", (c) => c.text(CLI_SKILL))
+        .get("/polli-tasks.md", (c) => c.text(CLI_TASKS))
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {

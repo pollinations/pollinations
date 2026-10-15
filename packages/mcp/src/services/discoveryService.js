@@ -8,22 +8,17 @@ import {
 import { getModels } from "../utils/models.js";
 
 async function listModels(params, context) {
-    let models = await getModels(
-        params.type || "all",
-        context,
-        params.community,
-    );
-    if (params.agent !== undefined) {
-        models = models.filter(
-            (model) => (model.agent === true) === params.agent,
-        );
-    }
+    const { type, capabilities, ...filters } = params;
+    const models = await getModels(type || "all", context, {
+        ...filters,
+        capabilities: capabilities?.join(","),
+    });
     return createMCPResponse([createTextContent(models, true)]);
 }
 
 async function getModelStatus(params, context) {
     const status = await fetchJsonWithAuth(
-        buildUrl("/v1/models/status", { minutes: params.minutes }),
+        buildUrl("/models/status", { minutes: params.minutes }),
         {},
         context,
     );
@@ -33,7 +28,7 @@ async function getModelStatus(params, context) {
 export const discoveryTools = [
     [
         "listModels",
-        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Filter by modality, community ownership, or agents.",
+        "Call before claiming that a named model or agent is unavailable. Returns live canonical names, aliases, modalities, capabilities, voices, supported endpoints, agent status, and pricing in Pollen. Gen filters the catalog server-side, so narrow with query, capabilities, agent, community and limit instead of fetching every model.",
         {
             type: z
                 .enum([
@@ -57,12 +52,31 @@ export const discoveryTools = [
                 .boolean()
                 .optional()
                 .describe("True for agents only, false to exclude agents"),
+            query: z
+                .string()
+                .optional()
+                .describe(
+                    "Search name, aliases, title, description and publisher; every word must match",
+                ),
+            capabilities: z
+                .array(z.string())
+                .optional()
+                .describe(
+                    "Keep models with all of these capabilities, e.g. tool_calling, reasoning, web_search",
+                ),
+            limit: z
+                .number()
+                .int()
+                .min(1)
+                .max(500)
+                .optional()
+                .describe("Return at most this many models"),
         },
         listModels,
     ],
     [
         "getModelStatus",
-        "Return recent per-model request counts, errors, and latency from GET /v1/models/status.",
+        "Return recent per-model and per-route request counts, errors, fallback rescues, and latency from GET /models/status.",
         {
             minutes: z
                 .number()

@@ -1,0 +1,10 @@
+# Intentionally (almost) empty.
+#
+# The vitest workers pool loads .dev.vars on top of [env.test.vars] from
+# wrangler.toml. With decrypted secrets present, that leaks live keys such as
+# ELEVENLABS_API_KEY into tests and un-skips runIf(Boolean(env.ELEVENLABS_API_KEY))
+# cases so they hit mocks instead of staying skipped.
+#
+# This file shadows .dev.vars for the `test` environment, keeping unit tests
+# on the mocked wrangler.toml [env.test.vars] values regardless of whether
+# local secrets have been decrypted.

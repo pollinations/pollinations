@@ -1,13 +1,21 @@
 import { env } from "cloudflare:test";
+import {
+    getModels,
+    getRegistryModelDefinition,
+} from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import {
+    availableModels,
+    supportsDirectResponses,
+} from "../src/text/availableModels.ts";
 
-afterEach(() => {
-    resetGenerationModelRegistryCache();
+afterEach(async () => {
+    await resetGenerationModelRegistryCache(env);
     vi.restoreAllMocks();
 });
 
@@ -40,17 +48,150 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("requires paid Pollen outside Azure and Fireworks except the approved exceptions", () => {
+        const exceptions = new Set([
+            "tongyi-mai/z-image-turbo",
+            "black-forest-labs/flux.1-schnell",
+            "black-forest-labs/flux.2-klein-4b",
+            "qwen/qwen3guard-gen-8b",
+            "openai/gpt-oss-20b",
+            "respan/span-01-lite",
+            "openai/whisper-large-v3",
+            "lykon/dreamshaper-8-lcm",
+        ]);
+        const questModels = [];
+        for (const id of getModels()) {
+            const definition = getRegistryModelDefinition(id);
+            // Access follows the requested public model, including its internal fallbacks.
+            if (definition.fallbackOnly) continue;
+            if (["azure", "fireworks"].includes(definition.provider)) continue;
+            expect(definition.paidOnly, id).toBe(!exceptions.has(id));
+            if (!definition.paidOnly) questModels.push(id);
+        }
+        expect(new Set(questModels)).toEqual(exceptions);
+    });
+
+    it("declares unique Chat controls for every configured route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const model of availableModels) {
+            const info = registry.resolve(model.name)?.info;
+            const parameters = info?.supported_parameters ?? [];
+            expect(parameters.length, model.name).toBeGreaterThan(0);
+            expect(new Set(parameters).size, model.name).toBe(
+                parameters.length,
+            );
+            for (const internal of [
+                "model",
+                "messages",
+                "stream_options",
+                "thinking",
+                "thinking_budget",
+                "safe",
+                "provider",
+            ]) {
+                expect(parameters, model.name).not.toContain(internal);
+            }
+        }
+    });
+
+    it("keeps provider-specific controls separate instead of inheriting unsupported ones", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        for (const [id, parameter, supported] of [
+            ["openai/gpt-5.4", "temperature", false],
+            ["openai/gpt-5.4", "parallel_tool_calls", true],
+            ["openai/gpt-5.4-mini", "parallel_tool_calls", false],
+            ["openai/gpt-6-astra", "verbosity", false],
+            ["openai/gpt-oss-20b", "top_p", true],
+            ["openai/gpt-audio-mini", "stream", true],
+            ["openai/gpt-audio-1.5", "max_completion_tokens", true],
+            ["x-ai/grok-4.3", "max_tokens", true],
+            ["anthropic/claude-sonnet-4.6", "response_format", true],
+            ["anthropic/claude-sonnet-5", "temperature", false],
+            ["anthropic/claude-sonnet-5", "response_format", false],
+            ["anthropic/claude-fable-5.1", "tool_choice", false],
+            ["google/gemini-3.7-flash", "temperature", false],
+            ["google/gemini-3.7-flash", "stop", true],
+            ["google/gemini-3.7-flash:openrouter:vertex-global", "stop", true],
+            ["nvidia/nemotron-3.5-lightning", "top_k", true],
+            ["nvidia/nemotron-3-ultra", "top_k", true],
+            ["qwen/qwen3-coder-30b-a3b-instruct", "top_k", false],
+            ["qwen/qwen3-vl-235b-a22b-thinking", "response_format", false],
+            ["perplexity/sonar", "search_domain_filter", true],
+        ] as const) {
+            const parameters = registry.resolve(id)?.info.supported_parameters;
+            expect(parameters?.includes(parameter), `${id}: ${parameter}`).toBe(
+                supported,
+            );
+        }
+    });
+
+    it("keeps the Bedrock coder's catalog aligned with its serving route", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const model = registry.resolve("qwen-coder");
+
+        expect(model?.id).toBe("qwen/qwen3-coder-30b-a3b-instruct");
+        expect(model?.definition.provider).toBe("aws");
+        expect(model?.definition.paidOnly).toBe(true);
+        expect(model?.definition.fallbacks ?? []).toEqual([]);
+        // Responses runs through its Chat route; there is no native target.
+        expect(model?.supportedEndpoints).toContain("/v1/responses");
+        expect(supportsDirectResponses(model?.id ?? "")).toBe(false);
+        for (const parameter of ["seed", "logprobs", "stop"]) {
+            expect(model?.info.supported_parameters).not.toContain(parameter);
+        }
+    });
+
+    it("advertises Responses on every text model that serves Chat", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const text = registry
+            .visibleEntries()
+            .filter((entry) => entry.eventType === "generate.text");
+        const chat = text.filter((entry) =>
+            entry.supportedEndpoints.includes("/v1/chat/completions"),
+        );
+
+        expect(chat.length).toBeGreaterThan(0);
+        for (const entry of chat) {
+            expect(entry.info.supported_endpoints).toContain("/v1/responses");
+        }
+        // Native Responses targets stay a subset; the rest are adapted.
+        const native = chat.filter((entry) =>
+            supportsDirectResponses(entry.id),
+        );
+        expect(native.length).toBeGreaterThan(0);
+        expect(native.length).toBeLessThan(chat.length);
+    });
+
+    it("serves the community catalog from KV without querying D1", async () => {
+        await resetGenerationModelRegistryCache(env);
+        const healthy = await getGenerationModelRegistry(env);
+
+        // A different DB binding misses the in-memory cache; the catalog must
+        // still come from KV, so the failing D1 is never reached.
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const fromKv = await getGenerationModelRegistry({
+            ...env,
+            DB: skewedDbBinding(),
+        });
+        expect(consoleError).not.toHaveBeenCalled();
+        expect(fromKv.visibleEntries().map((e) => e.id)).toEqual(
+            healthy.visibleEntries().map((e) => e.id),
+        );
+    });
+
     it("serves static models when the community catalog query fails", async () => {
         const consoleError = vi
             .spyOn(console, "error")
             .mockImplementation(() => {});
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const healthy = await getGenerationModelRegistry(env);
         const healthyCount = healthy.visibleEntries().length;
         expect(healthyCount).toBeGreaterThan(0);
 
-        resetGenerationModelRegistryCache();
+        await resetGenerationModelRegistryCache(env);
         const degradedEnv: CommunityModelEnv = {
             ...env,
             DB: skewedDbBinding(),

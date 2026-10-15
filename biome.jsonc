@@ -27,6 +27,8 @@
             // exclude dependencies
             ".github/**",
             "!**/node_modules/**",
+            // exclude sops-encrypted secrets: reformatting them breaks the MAC
+            "!**/secrets/**",
             // exclude build outputs (force-ignore with !!)
             "!**/dist/**",
             "!**/build/**",
@@ -50,6 +52,18 @@
         ]
     },
     "overrides": [
+        {
+            // SVG files are image assets shown through <img alt="…">, so a
+            // <title> in each file adds nothing
+            "includes": ["**/*.svg"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off"
+                    }
+                }
+            }
+        },
         {
             "includes": ["apps/chat/**"],
             "linter": {

@@ -1,16 +1,18 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import { secretEquals } from "@shared/secret-equal.ts";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
+import { UserImageError } from "../userImage.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
@@ -36,18 +38,17 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
 import {
     CommunityReferenceParamsSchema,
     type ImageParams,
     ImageParamsSchema,
 } from "./params.ts";
-import { sanitizeString, sleep } from "./util.ts";
+import { sanitizeString } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
-    contentPolicyMessage,
     firstContentPolicyMessage,
+    providerErrorText,
 } from "./utils/contentModeration.ts";
 import {
     bufferToUint8Array,
@@ -75,9 +76,14 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_15_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY",
     "AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_FLARE_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_IMG_25_SUNBURST_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_SWEDEN_API_KEY",
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
+    "AZURE_MYCELI_PROD_API_KEY",
+    "AZURE_MYCELI_PROD_POLANDCENTRAL_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
+    "AZURE_MYCELI_PROD_WESTUS3_API_KEY",
     "DASHSCOPE_API_KEY",
     "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
@@ -85,8 +91,10 @@ const IMAGE_ENV_KEYS = [
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
     "FAL_KEY",
+    "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
+    "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
@@ -116,14 +124,6 @@ async function readJsonBody(c: ImageContext): Promise<Record<string, unknown>> {
         return (await c.req.json()) as Record<string, unknown>;
     } catch {
         return {};
-    }
-}
-
-function decodePrompt(rawPrompt: string): string {
-    try {
-        return decodeURIComponent(rawPrompt);
-    } catch {
-        return rawPrompt;
     }
 }
 
@@ -163,6 +163,16 @@ function parseImageParams(
         throw new UpstreamError(400, {
             message: `Invalid parameters: ${parseResult.error.issues[0]?.message || "validation failed"}`,
             cause: parseResult.error.issues,
+        });
+    }
+    // Community endpoints receive the flag and decide for themselves.
+    if (
+        parseResult.data.transparent &&
+        !c.var.model.communityEndpoint &&
+        !c.var.model.definition.supportsTransparency
+    ) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: Transparent backgrounds are not supported by ${resolvedModel}.`,
         });
     }
     return {
@@ -218,198 +228,42 @@ function mediaHeaders(
     return headers;
 }
 
-function safeUpstreamUrl(value: string | undefined): URL | undefined {
-    if (!value) return undefined;
-    try {
-        return new URL(value);
-    } catch {
-        return undefined;
-    }
-}
-
-function throwImageError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
-
-    // Content-policy rejections from any provider (DashScope green-net, Replicate
-    // moderation, Vertex safety, Azure content safety) are client errors, not
-    // backend failures. Catch them here — the single funnel for image/video
-    // errors — so they surface as 422 with a stable, detectable code instead of
-    // a 500 that pollutes model-health stats.
-    const candidateMessages =
-        error instanceof HttpError
-            ? [parseUpstreamErrorBody(error).text, error.message]
-            : [error instanceof Error ? error.message : String(error)];
-    const moderationMessage = firstContentPolicyMessage(candidateMessages);
-    if (moderationMessage) {
-        throw new UpstreamError(CONTENT_POLICY_STATUS, {
-            message: contentPolicyMessage(moderationMessage),
-            errorCode: CONTENT_POLICY_ERROR_CODE,
-            requestUrl:
-                error instanceof HttpError
-                    ? safeUpstreamUrl(error.upstreamUrl)
-                    : undefined,
-            upstreamStatus:
-                error instanceof HttpError ? error.status : undefined,
-            responseBody:
-                error instanceof HttpError
-                    ? imageResponseBody(error)
-                    : undefined,
-            cause: error,
-        });
-    }
-
-    if (error instanceof HttpError) {
-        const { status, message } = classifyImageHttpError(error);
-        throw new UpstreamError(status, {
-            message,
-            // Propagate only — the code is decided at the throw site.
-            errorCode: error.errorCode,
-            requestUrl: safeUpstreamUrl(error.upstreamUrl),
-            upstreamStatus: error.status,
-            responseBody: imageResponseBody(error),
-            cause: error,
-        });
-    }
-    const message = error instanceof Error ? error.message : String(error);
-    throw new UpstreamError(500, {
-        message: message || "Image generation failed",
-        cause: error,
+export function throwImageError(error: unknown): never {
+    const upstream =
+        error instanceof UpstreamError
+            ? error
+            : new UpstreamError(500, {
+                  message:
+                      (error instanceof Error
+                          ? error.message
+                          : String(error)) || "Image generation failed",
+                  cause: error,
+              });
+    // Explicit codes (including user-image failures) already define the public contract.
+    if (upstream.errorCode) throw upstream;
+    const moderation = firstContentPolicyMessage([
+        providerErrorText(upstream.responseBody),
+        providerErrorText(upstream.message),
+    ]);
+    const status = moderation
+        ? CONTENT_POLICY_STATUS
+        : upstream.status === 422
+          ? 400
+          : upstream.status;
+    if (status === upstream.status && !moderation) throw upstream;
+    throw new UpstreamError(status, {
+        ...upstream,
+        message: upstream.message,
+        errorCode: moderation ? CONTENT_POLICY_ERROR_CODE : upstream.errorCode,
+        cause: upstream,
     });
-}
-
-type ParsedUpstreamBody = {
-    kind: "validation" | "message" | "none";
-    text: string | null;
-};
-
-/**
- * Build the responseBody to thread through UpstreamError so clients see a real
- * error message instead of `"{}"`. Prefer the upstream provider's raw body
- * (already in details.body), then the HttpError message, then a JSON-encoded
- * details bag as last resort.
- */
-function imageResponseBody(error: HttpError): string {
-    const detailsBody = error.details?.body;
-    if (typeof detailsBody === "string" && detailsBody.length > 0) {
-        return detailsBody;
-    }
-    if (error.message) {
-        return JSON.stringify({ message: error.message });
-    }
-    return JSON.stringify(error.details || {});
-}
-
-function classifyImageHttpError(error: HttpError): {
-    status: ContentfulStatusCode;
-    message: string;
-} {
-    const parsed = parseUpstreamErrorBody(error);
-    const isValidation =
-        error.status === 422 ||
-        (error.status === 400 &&
-            (error.details?.validation === true ||
-                parsed.kind === "validation"));
-
-    if (isValidation) {
-        const text = parsed.text || error.message;
-        return {
-            status: 400,
-            message: text
-                ? `Invalid image request: ${text}`
-                : "Invalid image request",
-        };
-    }
-
-    if (error.status === 413) {
-        return {
-            status: remapUpstreamStatus(error.status),
-            message: "Image request payload is too large",
-        };
-    }
-
-    if (error.status >= 400 && error.status < 500) {
-        const text = parsed.text || error.message;
-        return {
-            status: remapUpstreamStatus(error.status),
-            message: text
-                ? `Image provider error: ${text}`
-                : "Image provider error",
-        };
-    }
-
-    return {
-        status: remapUpstreamStatus(error.status),
-        message: error.message,
-    };
-}
-
-function parseUpstreamErrorBody(error: HttpError): ParsedUpstreamBody {
-    const body =
-        typeof error.details?.body === "string" ? error.details.body : "";
-    if (!body) return { kind: "none", text: null };
-
-    let parsed: {
-        detail?:
-            | string
-            | Array<{
-                  loc?: unknown[];
-                  msg?: string;
-                  ctx?: Record<string, unknown>;
-              }>;
-        message?: string;
-        error?: string | { message?: string };
-    };
-    try {
-        parsed = JSON.parse(body);
-    } catch {
-        return { kind: "none", text: null };
-    }
-
-    if (Array.isArray(parsed.detail) && parsed.detail.length > 0) {
-        const text = parsed.detail
-            .map(formatImageValidationDetail)
-            .filter((m): m is string => Boolean(m))
-            .join("; ");
-        return { kind: "validation", text: text || null };
-    }
-    if (typeof parsed.detail === "string") {
-        return { kind: "validation", text: parsed.detail };
-    }
-    if (typeof parsed.message === "string") {
-        return { kind: "message", text: parsed.message };
-    }
-    if (typeof parsed.error === "string") {
-        return { kind: "message", text: parsed.error };
-    }
-    if (typeof parsed.error?.message === "string") {
-        return { kind: "message", text: parsed.error.message };
-    }
-    return { kind: "none", text: null };
-}
-
-function formatImageValidationDetail(detail: {
-    loc?: unknown[];
-    msg?: string;
-    ctx?: Record<string, unknown>;
-}): string | null {
-    const field = detail.loc
-        ?.filter((part) => part !== "body")
-        .map(String)
-        .join(".");
-    if (!detail.msg) return field || null;
-    const ctx = detail.ctx || {};
-    if (field && ctx.ge !== undefined) {
-        return `${field} must be at least ${ctx.ge}`;
-    }
-    if (field && ctx.le !== undefined) {
-        return `${field} must be at most ${ctx.le}`;
-    }
-    return field ? `${field}: ${detail.msg}` : detail.msg;
 }
 
 function assertNonEmptyMedia(buffer: Buffer, label: string): void {
     if (buffer.length === 0) {
-        throw new HttpError(`${label} returned an empty response`, 502);
+        throw UpstreamError.fromProvider(502, {
+            message: `${label} returned an empty response`,
+        });
     }
 }
 
@@ -420,18 +274,12 @@ async function generateImageResult(
 ): Promise<ImageGenerationResult> {
     const prompt = sanitizeString(String(originalPrompt));
 
-    const result = await createAndReturnImageCached(
+    return await createAndReturnImageCached(
         prompt,
         safeParams as ImageParams,
         originalPrompt,
         createAuthResult(c),
     );
-
-    if (result.isChild && result.isMature) {
-        await sleep(5000);
-    }
-
-    return result;
 }
 
 /** Tries the requested model and its fallbacks through one modality-neutral loop. */
@@ -444,6 +292,21 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
+    const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
+        if (
+            candidate.definition?.provider === "azure" &&
+            candidate.definition.publisher === "OpenAI"
+        ) {
+            // Every Azure region failed, or the reference image host is rate
+            // limiting and the next target downloads it again.
+            return (
+                isRetryableFallbackError(error) ||
+                (error instanceof UserImageError &&
+                    error.upstreamStatus === 429)
+            );
+        }
+        return isRetryableFallbackError(error);
+    };
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
@@ -472,7 +335,7 @@ async function generateMediaWithFallback(
                 return { result: generated, params };
             }
             if (isVideoModel(params.model)) {
-                const generated = await generateVideoResult(c, prompt, params);
+                const generated = await generateVideoResult(prompt, params);
                 assertNonEmptyMedia(generated.buffer, "Video provider");
                 return { result: generated, params };
             }
@@ -482,6 +345,7 @@ async function generateMediaWithFallback(
         },
         c.var.track?.attempts,
         (attempt) => enforceModelRateLimit(c, attempt),
+        shouldFallback,
     );
     return {
         ...result,
@@ -490,15 +354,10 @@ async function generateMediaWithFallback(
 }
 
 async function generateVideoResult(
-    c: ImageContext,
     originalPrompt: string,
     safeParams: RuntimeImageParams,
 ): Promise<VideoGenerationResult> {
-    return createAndReturnVideo(
-        originalPrompt,
-        safeParams as ImageParams,
-        c.get("requestId"),
-    );
+    return createAndReturnVideo(originalPrompt, safeParams as ImageParams);
 }
 
 /**
@@ -546,7 +405,7 @@ export async function generateImageOrVideoResponse(
     body: Record<string, unknown> = {},
 ): Promise<Response> {
     syncImageEnvironment(c.env);
-    const originalPrompt = decodePrompt(prompt || "random_prompt");
+    const originalPrompt = prompt || "random_prompt";
     const parsedParams = parseImageParams(c, body);
     const definition = c.var.model.definition;
     const safeParams =
@@ -554,19 +413,12 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
-    const pricingDimensions =
-        c.var.model.resolved === "nova-canvas"
-            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
-            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
         hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
-        maxImageDimension: Math.max(
-            pricingDimensions.width,
-            pricingDimensions.height,
-        ),
+        maxImageDimension: Math.max(safeParams.width, safeParams.height),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 
@@ -576,6 +428,9 @@ export async function generateImageOrVideoResponse(
             originalPrompt,
             safeParams,
         );
+        if (result.trackingData.pricingInput) {
+            c.var.track.setPricingInput(result.trackingData.pricingInput);
+        }
         const headers = mediaHeaders(
             originalPrompt,
             params,
@@ -619,13 +474,14 @@ function extractRegisterToken(
     return null;
 }
 
-function isAuthorizedRegisterWrite(
+async function isAuthorizedRegisterWrite(
     c: ImageContext,
     body: Record<string, unknown>,
-): boolean {
+): Promise<boolean> {
     const expected = getImageEnv("PLN_GPU_TOKEN");
-    if (!expected) return false;
-    return extractRegisterToken(c, body) === expected;
+    const presented = extractRegisterToken(c, body);
+    if (!expected || !presented) return false;
+    return secretEquals(presented, expected);
 }
 
 export async function handleRegisterServer(c: ImageContext): Promise<Response> {
@@ -644,7 +500,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
 
         if (!url) return handleListRegisteredServers(c);
 
-        if (!isAuthorizedRegisterWrite(c, {})) {
+        if (!(await isAuthorizedRegisterWrite(c, {}))) {
             return c.json({ success: false, message: "Unauthorized" }, 401);
         }
         if (!isValidType(typeParam)) {
@@ -668,7 +524,7 @@ export async function handleRegisterServer(c: ImageContext): Promise<Response> {
         return c.json({ success: false, message: "Invalid JSON" }, 400);
     }
 
-    if (!isAuthorizedRegisterWrite(c, body)) {
+    if (!(await isAuthorizedRegisterWrite(c, body))) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
     }
 

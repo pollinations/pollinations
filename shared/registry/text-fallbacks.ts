@@ -237,18 +237,6 @@ export const TEXT_FALLBACKS = {
                 completionTextTokens: perMillion(1.2),
             },
         },
-        "deepseek/deepseek-v4.1-flash:deepinfra": {
-            supportedParameters: CHAT_PARAMETERS.deepinfraReasoning,
-            provider: "deepinfra",
-            addedDate: new Date("2026-10-15").getTime(),
-            cost: {
-                // DeepInfra list rates (2026-10-12); its open-ended 30% discount
-                // is not passed on.
-                promptTextTokens: perMillion(0.2),
-                promptCachedTokens: perMillion(0.006),
-                completionTextTokens: perMillion(0.6),
-            },
-        },
     },
     "minimax/minimax-m2.7": {
         "minimax/minimax-m2.7:openrouter:minimax": {

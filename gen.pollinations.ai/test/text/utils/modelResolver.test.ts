@@ -823,15 +823,12 @@ describe("resolveModelConfig", () => {
         ).toBe("none");
     });
 
-    it("routes DeepSeek V4.1 Flash to Azure with Fireworks and DeepInfra fallbacks", () => {
+    it("routes DeepSeek V4.1 Flash to Azure with a Fireworks fallback", () => {
         const primary = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash",
         });
         const fireworks = resolveModelConfig(messages, {
             model: "deepseek/deepseek-v4.1-flash:fireworks",
-        });
-        const deepinfra = resolveModelConfig(messages, {
-            model: "deepseek/deepseek-v4.1-flash:deepinfra",
         });
 
         expect(primary.options.model).toBe("DeepSeek-V4.1-Flash");
@@ -846,11 +843,6 @@ describe("resolveModelConfig", () => {
         expect(fireworks.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.fireworks.ai/inference/v1",
-        });
-        expect(deepinfra.options.model).toBe("deepseek-ai/DeepSeek-V4.1-Flash");
-        expect(deepinfra.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 

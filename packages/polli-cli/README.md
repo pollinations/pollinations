@@ -101,8 +101,8 @@ Two kinds of keys:
 polli keys list
 polli keys create --name mybot --budget 100                    # secret (default)
 polli keys create --name myapp --type publishable              # API publishable
-polli keys create --name myapp --type publishable \            # 3rd-party app key
-  --redirect-uri https://myapp.com/callback --earnings
+polli keys create --name myapp --type publishable \
+  --redirect-uri https://myapp.com/callback --earnings          # 3rd-party app key
 polli keys create --name server --models black-forest-labs/flux.1-schnell tongyi-mai/z-image-turbo  # only these models
 polli keys update <id> --models text black-forest-labs/flux.1-schnell  # change the model list
 polli keys revoke <id>
@@ -208,7 +208,7 @@ The default template, and `pollinations-large`, come logged in with the coding h
 - [enter.pollinations.ai](https://enter.pollinations.ai) — dashboard, keys, billing
 - [API docs](https://gen.pollinations.ai/docs)
 - [Source](https://github.com/pollinations/pollinations/tree/main/packages/polli-cli)
-- [Discord](https://discord.gg/pollinations-ai-885844321461485618)
+- [Discord](https://discord.gg/k9F7SyTgqn)
 
 ## License
 

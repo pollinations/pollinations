@@ -34,7 +34,7 @@ export const footnotes = {
         <>
             Need help?{" "}
             <InlineLink
-                href="https://discord.gg/pollinations-ai-885844321461485618"
+                href="https://discord.gg/k9F7SyTgqn"
                 tone="quiet"
                 showIcon={false}
             >

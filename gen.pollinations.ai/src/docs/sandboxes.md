@@ -21,13 +21,14 @@ polli sandbox kill <id>
 - E2B ends a run after 24 hours, so once a day gen pauses and resumes a kept sandbox. Its files, memory and processes stay; open connections drop. If a renewal is missed and the sandbox pauses, gen resumes it at the next renewal, within 5 minutes.
 - `polli sandbox pause <id>` pauses it with its files and memory, ending a keep, until `ssh` or `polli sandbox timeout` resumes it. `polli sandbox kill <id>` deletes it.
 - The first `ssh` allows only polli's key, `~/.pollinations/ssh/id_ed25519`. On other templates than the default, it first installs `sshd`, `rsync` and `websocat` (Debian-based templates only).
-- The default template, `pollinations` (2 vCPU, 2 GB, 20 GB free disk), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi, Hermes Agent and OpenClaw. `pollinations-large` is the same with 4 vCPU, 8 GB and 50 GB free disk, for builds, test suites and media that need more.
+- The default template, `pollinations` (2 vCPU, 2 GB, 20 GB free disk), is E2B's `base` (Debian 12, Python 3.11) with Node.js 24, polli, and the coding harnesses polli connects: Claude Code, OpenCode, Pi and OpenClaw. `pollinations-large` is the same with 4 vCPU, 8 GB and 50 GB free disk, for builds, test suites and media that need more.
 - Both come logged in when the key that creates it has the `keys` permission, as polli's own key does. polli inside uses a key of the sandbox's own, `polli-sandbox-<id>`, created like any other key, with polli's usual permissions except `keys`, so code in the sandbox can't create keys or change budgets. Killing the sandbox leaves the key. Your first interactive `ssh` connects each harness to Pollinations with that same key.
 - Both also run a [herdr](https://herdr.dev) server, started by `ssh`. Agents you start in `herdr` keep running after ssh disconnects, and a paused sandbox resumes them where they were. `ssh <id>.polli herdr agent list` shows them and their state; `herdr machine add <id>.polli` lets herdr on your own machine manage them.
 - Both include everyday tools: ffmpeg, ImageMagick, git-lfs, [uv](https://docs.astral.sh/uv/), ripgrep, fd, jq, sqlite3, tmux, pdftotext, `gh`, gcc and make.
 - cron runs in every sandbox, but only while the sandbox runs, so keep it running with `--timeout 0` for jobs around the clock. A paused sandbox runs nothing, and `@reboot` never fires, since sandboxes resume instead of booting. Your crontab starts with a `PATH` line that finds node, polli and uv; keep it when you replace the crontab.
 - Both include [rclone](https://rclone.org) to mount a bucket as a folder, for big files that should outlive the sandbox: set it up once with `rclone config` (S3, R2, Google Cloud Storage and others), then `mkdir ~/bucket && rclone mount <remote>:<bucket> ~/bucket --daemon --vfs-cache-mode full`. The mount stays through pause and resume. Buckets are slow with many small files, so keep git repos, `node_modules` and databases on the sandbox's own disk, which `kill` deletes.
 - `polli sandbox create <template>` starts another E2B template instead, such as `claude` (Claude Code), `codex`, `opencode` or `amp` (2 vCPU, 2 GB each), or [any public one](https://docs.e2b.dev/use-cases/coding-agents). Bigger templates cost more per second.
+- A sandbox's name is its E2B `metadata.name`, set at creation: the dashboard suggests one such as `brave-otter`, and API callers pass `"metadata": {"name": "…"}`. `polli sandbox list` shows it. E2B can't change metadata later, so a name stays as created.
 - `polli sandbox logs <id>` shows the sandbox's system log: when it started and paused, and each process run in it.
 - Needs Node.js 22 or newer.
 
@@ -36,7 +37,7 @@ polli sandbox kill <id>
 - Billed per second for the sandbox's CPU and memory, at a quarter of [E2B's rates](https://e2b.dev/pricing) during the launch: about 0.033 Pollen an hour for `pollinations`, 0.083 for `pollinations-large`. Paid 10 minutes ahead: at creation, while an ssh session is open, and while a timeout keeps it running.
 - Unused time is not refunded. Pausing or killing a sandbox, or shortening its timeout, gives up the rest of its paid 10 minutes; resuming pays again.
 - A new sandbox needs enough balance, and enough key budget, for its first block; otherwise it is stopped with a 402.
-- At most 3 sandboxes run at once per account.
+- At most 8 sandboxes run at once per account.
 
 ### E2B SDKs
 

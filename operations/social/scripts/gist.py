@@ -60,6 +60,10 @@ def api_surface(markdown: str) -> Dict:
             section = "parameters"
         elif endpoint and "**Request body**" in line:
             section = "body"
+        elif endpoint and section == "body" and line.startswith("**Alternative "):
+            # Alternative requirements cannot be flattened into one body contract.
+            surface[endpoint]["body"] = {}
+            section = None
         elif endpoint and line.startswith(("📤", "💻", "🔎")):
             section = None
         elif endpoint and section and line.startswith("| `"):
@@ -290,8 +294,39 @@ def fetch_pr_data(repo: str, pr_number: str, token: str) -> Dict:
     return resp.json()
 
 
+# Files whose diff says nothing about what a PR does: they are listed without one.
+DIFF_SKIPPED = re.compile(
+    r"(^|/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml|uv\.lock|Cargo\.lock)$"
+    r"|(^|/)(__snapshots__|snapshots)/|\.snap$"
+)
+FILE_DIFF_CHARS = 3000
+DIFF_CHARS = 40000
+
+
+def changes_text(files: list) -> str:
+    """Each changed file with its diff. Lockfiles and test snapshots are listed without
+    one, each diff is capped, and past the total cap files are listed only."""
+    lines, budget, unshown = [], DIFF_CHARS, 0
+    for f in files:
+        name = f.get("filename", "")
+        lines.append(f"  {f.get('status', 'modified')}: {name} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
+        patch = f.get("patch")
+        if not patch or DIFF_SKIPPED.search(name):
+            continue
+        if budget <= 0:
+            unshown += 1
+            continue
+        shown = patch[: min(FILE_DIFF_CHARS, budget)]
+        budget -= len(shown)
+        cut = "\n… (cut)" if len(shown) < len(patch) else ""
+        lines.append("\n".join("    " + line for line in (shown + cut).splitlines()))
+    if unshown:
+        lines.append(f"  (diffs of {unshown} more files not shown)")
+    return "\n".join(lines) if lines else "(no files changed)"
+
+
 def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
-    """Fetch list of changed files. Returns (formatted_string, list_of_filenames)."""
+    """The changed files with their diff, and their names."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
@@ -309,15 +344,7 @@ def fetch_pr_files(repo: str, pr_number: str, token: str) -> tuple:
         if len(files) < 100:
             break
         page += 1
-
-    filenames = [f.get("filename", "") for f in all_files]
-    lines = []
-    for f in all_files:
-        status = f.get("status", "modified")
-        filename = f.get("filename", "")
-        lines.append(f"  {status}: {filename} (+{f.get('additions', 0)}/-{f.get('deletions', 0)})")
-    summary = "\n".join(lines) if lines else "(no files changed)"
-    return summary, filenames
+    return changes_text(all_files), [f.get("filename", "") for f in all_files]
 
 
 def enrich_gist(gist: Dict, pr: Dict, files: list, token: str) -> None:
@@ -402,13 +429,13 @@ def lookup_newest_app() -> Optional[Dict]:
 
 # ── Step 1: AI analysis ─────────────────────────────────────────────
 
-def analyze_pr(pr_data: Dict, files_summary: str, token: str, enrichment: Dict) -> Optional[Dict]:
+def analyze_pr(pr_data: Dict, changes: str, token: str, enrichment: Dict) -> Optional[Dict]:
     """Call AI to analyze a PR and return structured gist JSON."""
     system_prompt = load_prompt("gist")
 
     # Build user prompt with PR context
     # Trust boundary: PR body comes from merged PRs (requires repo write access),
-    # not arbitrary user input. Truncated to 2000 chars as a size guard.
+    # not arbitrary user input. Truncated to 6000 chars as a size guard.
     labels = [l["name"] for l in pr_data.get("labels", [])]
     body = pr_data.get("body") or ""
     context = {key: enrichment.get(key) for key in ("area", "type", "source", "announcements")}
@@ -419,10 +446,10 @@ Labels: {', '.join(labels) if labels else 'none'}
 Branch: {pr_data.get('head', {}).get('ref', 'unknown')} → {pr_data.get('base', {}).get('ref', 'main')}
 
 Description:
-{body[:2000] if body else 'No description provided.'}
+{body[:6000] if body else 'No description provided.'}
 
-Changed files:
-{files_summary}
+Changed files and their diff:
+{changes}
 
 Classification and exact model changes already recorded:
 {json.dumps(context, indent=2)}"""
@@ -516,12 +543,12 @@ def main():
     # ── Fetch PR data ────────────────────────────────────────────────
     print(f"\n[1/2] Analyzing PR #{pr_number}...")
     pr_data = fetch_pr_data(repo_full_name, pr_number, github_token)
-    files_summary, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
+    changes, changed_files = fetch_pr_files(repo_full_name, pr_number, github_token)
 
     # ── Step 1: Enrichment + AI analysis → gist JSON ─────────────────
     enrichment = {}
     enrich_gist(enrichment, pr_data, changed_files, github_token)
-    ai_analysis = analyze_pr(pr_data, files_summary, pollinations_token, enrichment)
+    ai_analysis = analyze_pr(pr_data, changes, pollinations_token, enrichment)
     if not ai_analysis:
         print(f"  FATAL: PR analysis failed with model {MODEL}")
         sys.exit(1)

@@ -268,10 +268,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6 Flash",
         description:
-            "Photorealistic generation and single-reference editing with accurate text rendering",
+            "Photorealistic generation and editing with up to five references and accurate text rendering",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "microsoft/mai-image-2.6": {
         aliases: [],
@@ -291,10 +291,10 @@ const IMAGE_BASE_SERVICES = {
         },
         title: "MAI Image 2.6",
         description:
-            "Detailed photorealistic generation and single-reference editing with strong instruction following",
+            "Detailed photorealistic generation and editing with up to five references and strong instruction following",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1,
+        maxReferenceImages: 5, // Azure MAI edits accept 1 to 5 `image` parts.
     },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
@@ -1317,7 +1317,7 @@ const IMAGE_BASE_SERVICES = {
             "Versatile image creation and editing, strong at text inside images",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 3, // DashScope Qwen Image Edit route cap.
+        maxReferenceImages: 3, // Replicate qwen-image-edit-plus works best with 1 to 3.
     },
     "qwen/qwen-image-2.1": {
         aliases: [],
@@ -1456,7 +1456,7 @@ const IMAGE_BASE_SERVICES = {
         description: "Photorealistic image generation and quick edits",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // xAI image edit route forwards one input image.
+        maxReferenceImages: 5, // xAI image edits accept up to 5 `images`.
     },
     "x-ai/grok-imagine-image-quality": {
         aliases: [
@@ -1483,7 +1483,7 @@ const IMAGE_BASE_SERVICES = {
             "Higher-fidelity photorealistic images for polished results",
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
-        maxReferenceImages: 1, // OpenRouter image edit route forwards one input image.
+        maxReferenceImages: 3, // OpenRouter input_references limit.
     },
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
@@ -2294,6 +2294,31 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,
+    },
+    "mirelo/sfx-2.0": {
+        aliases: [],
+        provider: "fal",
+        publisher: "Mirelo AI",
+        category: "video",
+        addedDate: new Date("2026-10-15").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal's price per returned second: $0.010 during Mirelo's launch
+        // promo, $0.015 from 2026-12-14. Charges use fal's reported seconds at
+        // its live endpoint price.
+        cost: { completionVideoSeconds: 0.01 },
+        // The output keeps the source video's dimensions.
+        resolutions: ["source"],
+        title: "Mirelo SFX 2.0",
+        description: "Adds synchronized sound effects to an existing video",
+        inputModalities: ["text", "video"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["reference_videos", "audio_output"],
+        maxReferenceVideos: 1,
+        // Up to the first 120 seconds of the source; fal bills the seconds it returns.
+        minDuration: 1,
+        maxDuration: 120,
+        defaultDuration: 120,
     },
 } as const satisfies Record<string, ModelDefinition>;
 

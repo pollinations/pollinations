@@ -28,7 +28,10 @@ export function createImageCommand() {
         .option("--height <n>", "Image height", "1024")
         .option("--seed <n>", "Random seed")
         .option("--safe", "Enable safety filters")
-        .option("--transparent", "Transparent background (PNG)")
+        .option(
+            "--transparent",
+            "Transparent background (GPT Image 1 Mini, 1.5 and 2.5 only)",
+        )
         .option(
             "--image <url...>",
             "Reference image URL(s) for editing/i2i (repeatable)",

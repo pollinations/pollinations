@@ -150,15 +150,30 @@ export const ImageParamsSchema = z
                 });
             }
         }
-        if (data.model === "openai/gpt-image-2" && data.transparent) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["transparent"],
-                message:
-                    "Transparent backgrounds are not supported by gpt-image-2.",
-            });
+        if (data.model === "inferenceport-ai/lightning-image-turbo") {
+            if (
+                (data.width !== undefined && data.width !== 1024) ||
+                (data.height !== undefined && data.height !== 1024)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message:
+                        "inferenceport-ai/lightning-image-turbo only supports 1024x1024 output.",
+                });
+            }
         }
         const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        if (
+            definition.maxReferenceImages !== undefined &&
+            data.image &&
+            data.image.length > definition.maxReferenceImages
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["image"],
+                message: `${data.model} supports at most ${definition.maxReferenceImages} reference image${definition.maxReferenceImages === 1 ? "" : "s"}.`,
+            });
+        }
         const references = [
             {
                 field: "reference_images" as const,

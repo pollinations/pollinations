@@ -12,6 +12,11 @@ import {
     getVisibleImageModels,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
+import {
+    isPublicEnterPath,
+    isPublicQuestCatalogPath,
+    publicEnterPath,
+} from "@shared/utils/public-docs.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
@@ -773,31 +778,6 @@ function withOperationTag(pathItem: unknown, tag: string): unknown {
     return tagged;
 }
 
-function isPublicEnterPath(path: string): boolean {
-    return isPublicAccountPath(path) || isPublicQuestCatalogPath(path);
-}
-
-function isPublicAccountPath(path: string): boolean {
-    return (
-        path === "/account" ||
-        path.startsWith("/account/") ||
-        path === "/api/account" ||
-        path.startsWith("/api/account/")
-    );
-}
-
-// Only the catalog is part of the public gen API. Session-only dashboard quest
-// actions stay on enter and are omitted from the merged gen docs.
-function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests/catalog" || path === "/api/quests/catalog";
-}
-
-function publicEnterPath(path: string): string {
-    return path
-        .replace(/^\/api\/account(?=\/|$)/, "/account")
-        .replace(/^\/api\/quests(?=\/|$)/, "/quests");
-}
-
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
@@ -930,6 +910,20 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
+    );
+}
+
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -944,15 +938,35 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
+                // Pinned: the unversioned CDN URL serves every new release, and
+                // 1.74.0 broke the sidebar our CSS and nav script target.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,

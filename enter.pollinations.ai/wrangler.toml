@@ -52,6 +52,8 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 STRIPE_PUBLISHABLE_KEY = "pk_test_51SrYSy6O03AauPe86YtzDRq37x49b3XS0D8Mbg8oeooUGgUdV2Rl8YPNW25UOy4Oj7I3tMnHqwZmncIu9vSMKa3V00munj0lUE"
 
 [env.local]
+# Same name as `wrangler dev`, so gen's ENTER binding finds `npm run dev` too.
+name = "pollinations-enter"
 
 [[env.local.services]]
 binding = "COMPOSIO_MCP"

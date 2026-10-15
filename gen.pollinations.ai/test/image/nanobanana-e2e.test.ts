@@ -229,7 +229,7 @@ test("nanobanana bills exact Vertex usage end-to-end", async ({
     });
     const expectedCost = (11 * 0.3 + 1290 * 30) / 1_000_000;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+    expect(event.totalPrice).toBe(Number(expectedCost.toFixed(8)));
 });
 
 test("nanobanana falls back to its proven OpenRouter Vertex route", async ({
@@ -474,7 +474,7 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
     });
     const expectedCost = (12 * 0.5 + 4 * 3 + 2520 * 60) / 1_000_000;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+    expect(event.totalPrice).toBe(Number(expectedCost.toFixed(8)));
 });
 
 test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
@@ -529,7 +529,7 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
     });
     const expectedCost = (10 * 0.25 + 4 * 1.5 + 1120 * 30) / 1_000_000;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+    expect(event.totalPrice).toBe(Number(expectedCost.toFixed(8)));
 });
 
 test("nano-banana-2.1 routes to OpenRouter AI Studio and bills exact usage", async ({
@@ -671,5 +671,5 @@ test("nanobanana-pro preserves 4K Vertex routing and exact billing", async ({
     });
     const expectedCost = (14 * 2 + 8 * 12 + 2000 * 120) / 1_000_000;
     expect(event.totalCost).toBeCloseTo(expectedCost, 10);
-    expect(event.totalPrice).toBe(Number((expectedCost * 1.055).toFixed(8)));
+    expect(event.totalPrice).toBe(Number(expectedCost.toFixed(8)));
 });

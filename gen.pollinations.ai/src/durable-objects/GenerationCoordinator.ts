@@ -261,9 +261,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     /**
      * Fetches made by a Durable Object get Cloudflare's default 125 s proxy
      * read timeout, whatever the zone sets. Running the job behind the public
-     * origin gives provider fetches the zone's timeout instead. The nonce
-     * proves the request came from this alarm; the job itself never leaves
-     * the Durable Object except through takeHandoff.
+     * origin gives provider fetches the zone's timeout instead; the
+     * global_fetch_strictly_public flag is what sends this fetch through the
+     * zone. The nonce proves the request came from this alarm; the job itself
+     * never leaves the Durable Object except through takeHandoff.
      */
     private async executeAtOrigin(
         origin: string,

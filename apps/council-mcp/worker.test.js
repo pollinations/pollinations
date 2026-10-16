@@ -15,8 +15,13 @@ function createHarness(failModels = []) {
             assert.equal(init.headers.Authorization, "Bearer test-ip-key");
             const body = JSON.parse(init.body);
             calls.push(body);
+            assert.ok(init.signal, "calls must carry a timeout signal");
             if (failModels.includes(body.model)) {
-                return new Response("boom", { status: 500 });
+                // A failed call can still have been charged.
+                return Response.json(
+                    { usage: { payg_credits_charged: 0.002 } },
+                    { status: 500 },
+                );
             }
             return Response.json({
                 choices: [
@@ -100,6 +105,11 @@ test("a failed member is skipped and the answer is still billed", async () => {
         arguments: { problem: "x", tier: "basic" },
     });
     assert.match(result.content[0].text, /4\/5 members answered/);
+    // 4 good members + judge at 0.001, 1 failed member at 0.002, + 0.10 fee
+    assert.equal(
+        Number(responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost)).toFixed(6),
+        "0.107000",
+    );
     await client.close();
 });
 
@@ -115,13 +125,14 @@ test("a failed judge bills spent credits without the tier fee", async () => {
     const response = responses.at(-1);
     assert.equal(
         Number(response.headers.get(MCP_USAGE_HEADERS.cost)).toFixed(6),
-        "0.005000",
+        "0.007000",
     );
     assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "502");
+    assert.equal(response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "0");
     await client.close();
 });
 
-test("fails with zero cost when every member fails", async () => {
+test("bills charged credits when every member fails", async () => {
     const { env, worker } = createHarness(TIERS.basic.members);
     const responses = [];
     const client = await connect(worker, env, responses);
@@ -130,7 +141,11 @@ test("fails with zero cost when every member fails", async () => {
         arguments: { problem: "x" },
     });
     assert.equal(result.isError, true);
-    assert.equal(responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost), "0");
+    // Failed members were still charged 0.002 each.
+    assert.equal(
+        Number(responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost)).toFixed(6),
+        "0.010000",
+    );
     await client.close();
 });
 

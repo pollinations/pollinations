@@ -359,7 +359,18 @@ export default defineConfig(async ({ mode }) => {
                                 const payload = (await request.json()) as {
                                     jsonrpc: string;
                                     id?: string | number;
+                                    method?: string;
+                                    params?: { name?: string };
                                 };
+                                if (
+                                    payload.method !== "tools/call" ||
+                                    payload.params?.name !== "council_reason"
+                                ) {
+                                    return new Response(
+                                        "Unexpected council request",
+                                        { status: 400 },
+                                    );
+                                }
                                 return Response.json(
                                     {
                                         jsonrpc: payload.jsonrpc,

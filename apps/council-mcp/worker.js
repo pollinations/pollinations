@@ -14,29 +14,43 @@ class CouncilFailure extends Error {
     }
 }
 
+const CALL_TIMEOUT_MS = 120_000;
+
 // One chat call. InferencePort reports the credits it charged for the call in
 // usage.payg_credits_charged; that is the amount we bill, never an estimate.
+// A call never throws: a failed call still carries any credits it was charged,
+// so the receipt covers everything InferencePort billed.
 async function chat(model, prompt, maxTokens, env, fetchImpl) {
-    const response = await fetchImpl(CHAT_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${env.INFERENCEPORT_API_KEY}`,
-        },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: prompt }],
-            max_tokens: maxTokens,
-            stream: false,
-        }),
-    });
-    const body = await response.json().catch(() => null);
-    const cost = body?.usage?.payg_credits_charged;
-    const text = body?.choices?.[0]?.message?.content;
-    if (!response.ok || !text || !Number.isFinite(cost) || cost < 0) {
-        throw new Error(`${model} returned no usable answer`);
+    try {
+        const response = await fetchImpl(CHAT_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${env.INFERENCEPORT_API_KEY}`,
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: maxTokens,
+                stream: false,
+            }),
+            signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        });
+        const body = await response.json().catch(() => null);
+        const reported = body?.usage?.payg_credits_charged;
+        const hasCost = Number.isFinite(reported) && reported >= 0;
+        const text = body?.choices?.[0]?.message?.content;
+        if (!response.ok || !text || !hasCost) {
+            console.error(
+                `council call to ${model} failed: ${response.status}`,
+            );
+            return { model, cost: hasCost ? reported : 0 };
+        }
+        return { model, text, cost: reported };
+    } catch (error) {
+        console.error(`council call to ${model} failed: ${error.name}`);
+        return { model, cost: 0 };
     }
-    return { model, text, cost };
 }
 
 async function runCouncil({ problem, tier }, env, fetchImpl) {
@@ -44,7 +58,7 @@ async function runCouncil({ problem, tier }, env, fetchImpl) {
         throw new CouncilFailure(500, "InferencePort key is not configured");
     }
     const { members, judge, maxTokens } = TIERS[tier];
-    const settled = await Promise.allSettled(
+    const results = await Promise.all(
         members.map((model) =>
             chat(
                 model,
@@ -55,12 +69,10 @@ async function runCouncil({ problem, tier }, env, fetchImpl) {
             ),
         ),
     );
-    const answers = settled
-        .filter(({ status }) => status === "fulfilled")
-        .map(({ value }) => value);
-    let cost = answers.reduce((sum, { cost: c }) => sum + c, 0);
+    const answers = results.filter(({ text }) => text);
+    let cost = results.reduce((sum, { cost: c }) => sum + c, 0);
     if (answers.length === 0) {
-        throw new CouncilFailure(502, "Every council member failed");
+        throw new CouncilFailure(502, "Every council member failed", cost);
     }
 
     const judged = await chat(
@@ -73,10 +85,11 @@ async function runCouncil({ problem, tier }, env, fetchImpl) {
         maxTokens,
         env,
         fetchImpl,
-    ).catch(() => {
-        throw new CouncilFailure(502, "The council judge failed", cost);
-    });
+    );
     cost += judged.cost;
+    if (!judged.text) {
+        throw new CouncilFailure(502, "The council judge failed", cost);
+    }
 
     // The run fee applies only to a run that produced a final answer.
     cost += COUNCIL_MCP_TIER_FEES[tier];
@@ -127,6 +140,8 @@ function buildServer(env, fetchImpl, reportUsage) {
                 reportUsage({
                     ...receipt,
                     cost: failure.cost,
+                    // No run fee was charged, only spent model credits.
+                    adjustmentUnits: 0,
                     status: failure.status,
                     error: failure.message,
                 });

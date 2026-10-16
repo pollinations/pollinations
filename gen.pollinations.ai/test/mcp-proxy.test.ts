@@ -371,7 +371,15 @@ test("bills the Council run from its usage receipt", async () => {
                 Cookie: "session=private",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(MCP_REQUEST),
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "tools/call",
+                params: {
+                    name: "council_reason",
+                    arguments: { problem: "Is 17 prime?" },
+                },
+            }),
         },
     );
 

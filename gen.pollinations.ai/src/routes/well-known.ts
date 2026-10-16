@@ -5,8 +5,8 @@ import { etag } from "hono/etag";
 import type { Env } from "@/env.ts";
 import BYOP_SKILL from "../../../.claude/skills/bring-your-own-pollen/SKILL.md?raw";
 import API_SKILL from "../../../.claude/skills/pollinations-api/SKILL.md?raw";
-import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import SDK_SKILL from "../../../.claude/skills/pollinations-sdk/SKILL.md?raw";
+import QUEST_CONTRIBUTOR_SKILL from "../../../.claude/skills/quest-contributor/SKILL.md?raw";
 import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import { SERVER_CARD_MEDIA_TYPE } from "./mcp-card.ts";
 

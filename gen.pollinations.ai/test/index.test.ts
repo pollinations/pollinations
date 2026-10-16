@@ -429,6 +429,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "pollinations-sdk/SKILL.md",
             "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {

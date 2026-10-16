@@ -1,0 +1,32 @@
+{
+  "pr_number": 17665,
+  "title": "docs: drop docs-site guides table to avoid duplicate links",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17665",
+  "merged_at": "2026-10-16T01:40:58Z",
+  "labels": [],
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "summary": "Removed the duplicate seven-guide table from the docs-site introduction; readers can use the existing sidebar to jump to guides. The README keeps its guide table for GitHub readers, and the generated API reference now copies that table from the README. The sync test compares the README’s guide names with the plain-text guide list instead of the docs introduction.",
+    "keywords": [
+      "documentation",
+      "guides",
+      "sidebar",
+      "README",
+      "API reference"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17665.jpg",
+    "prompt": "In a cozy pixel art reading nook, Polli points to a CRT screen’s guide sidebar while an open README keeps its guide table beside a small code-plant; lime green (#ecf874) glows against warm cream, mint, and peach. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses; she is small-to-medium sized and shares the frame with the books and screen, in cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-16T01:42:08.380121+00:00",
+  "area": "Docs & support",
+  "type": "Task",
+  "source": "Team",
+  "merge_commit_sha": "2a2d090848fd5de2bd5cf8d87868d7f3005ef670",
+  "announcements": []
+}

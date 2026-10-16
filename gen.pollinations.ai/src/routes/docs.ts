@@ -46,6 +46,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -231,6 +232,7 @@ const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
@@ -330,6 +332,7 @@ const GEN_API_DOCS = [
     REALTIME_DOCS,
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
+    ASYNC_JOBS_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
@@ -607,8 +610,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: DOC_TAGS.jobs,
-                description:
-                    "Submit, poll and download asynchronous image, video, audio and 3D jobs.",
+                description: stripLeadingHeading(ASYNC_JOBS_DOCS),
             },
             {
                 name: DOC_TAGS.realtime,

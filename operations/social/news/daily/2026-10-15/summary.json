@@ -1,0 +1,292 @@
+{
+  "date": "2026-10-15",
+  "period_start": "2026-10-15",
+  "period_end": "2026-10-15",
+  "title": "Typed decisions and sound for silent videos",
+  "summary": "Async media jobs, two decision models, video sound effects and sturdier agent workflows shared the day with five community apps.\n\nTwo decision models were added for fixed choices and probabilities: Perplexity’s Decider V1.1 27B and Microsoft-Decision-1. Mirelo SFX 2.0 adds prompted, synchronized sound effects to a supplied video. GLM 5.3 also gained another fallback route.\n\nImage, video, audio and 3D requests can now return an async job ID, with endpoints and SDK methods for checking status and fetching the result. Follow-up fixes keep job status accurate across retries and cache hits. Image requests now reject invalid seeds and undersized dimensions; Gemini transcription accepts browser-style WebM uploads, and the SDK correctly formats multi-image edits.\n\nAgent responses and Polli CLI now show the model name needed to call an agent, while repeated identical agent requests run again so tools can return fresh results. Two Quest contributions added PR-review-and-fix agents. Sandboxes gained names, faster repeat SSH connections and a default pause behavior that keeps files when a lease expires; their dashboard now explains costs and pause behavior. A new agent skill documents how to connect user wallets.",
+  "pr_count": 58,
+  "prs": [
+    {
+      "number": 15382,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 15489,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17135,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17282,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17283,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17380,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17387,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17405,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17411,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17415,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17416,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17419,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17437,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17439,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17443,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17444,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17447,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17449,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17451,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17452,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17478,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17480,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17484,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17485,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17492,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17508,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17509,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17512,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17518,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17519,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17520,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17523,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17526,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17537,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17542,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17547,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17563,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17576,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17577,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17581,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17583,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17589,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17590,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17595,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17596,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17601,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17602,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17608,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17610,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17611,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17620,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17638,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17641,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17642,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17643,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17646,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17648,
+      "date": "2026-10-15"
+    },
+    {
+      "number": 17660,
+      "date": "2026-10-15"
+    }
+  ],
+  "generated_at": "2026-10-16T06:08:10.730704+00:00",
+  "highlights": [
+    {
+      "emoji": "🚀",
+      "title": "Media jobs without waiting",
+      "text": "Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17380
+      ],
+      "kind": "api"
+    },
+    {
+      "emoji": "🤖",
+      "title": "Models for typed decisions",
+      "text": "Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17484,
+        17485
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "🎵",
+      "title": "Sound effects for video",
+      "text": "Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).",
+      "prs": [
+        17590
+      ],
+      "kind": "model"
+    },
+    {
+      "emoji": "💡",
+      "title": "Sandboxes keep their work",
+      "text": "New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17416,
+        17646
+      ],
+      "kind": "product"
+    },
+    {
+      "emoji": "📱",
+      "title": "Pollinations in Android blocks",
+      "text": "Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).",
+      "prs": [
+        17643
+      ],
+      "kind": "app"
+    }
+  ]
+}

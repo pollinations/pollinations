@@ -21,6 +21,8 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🎮 PollinationsCraft](https://github.com/rekty/pollinations-craft/releases/tag/v1.0.0) | A Paper plugin that adds Pollinations to a Minecraft server, paid with the owner's own Pollen: **villager NPCs with personas** that players talk to by right-clicking or /polli say , each NPC with its | [@rekty](https://github.com/rekty) |
+| [🎮 PolliCraft](https://drjacky.github.io/PolliCraft) | A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the | [@Drjacky](https://github.com/Drjacky) |
 | [🎬 Echo Island](https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space) | Turn a character idea into an illustrated story and voice note. Duplicate this static Hugging Face Space and sign in with your own Pollen; narration falls back when timestamped voice is unavailable. | [@xiaotian1171](https://github.com/xiaotian1171) |
 | [🛠️ Pollinations Blocks](https://github.com/Saauf/pollinations-blocks) | Android extension for MIT App Inventor and Kodular: text, images, speech, AAC/M4A recording and transcription, and questions about picked images. Device sign-in lets users spend their own Pollen; no u | [@Saauf](https://github.com/Saauf) |
 | [🛠️ Pollinations for MIT App Inventor](https://github.com/Drjacky/pollinations-appinventor) | One non-visible App Inventor extension (.aix) plus a ready sample project (.aia) that adds Pollinations to App Inventor apps (Kodular, Niotron and Android Builder take .aix files too). Everything is a | [@Drjacky](https://github.com/Drjacky) |
@@ -29,8 +31,6 @@
 | [🎮 The Basement Circuit](https://fisventurous.github.io/The-Basement-Circuit) | A gritty, low-stakes text-to-fighter autobattler. Pollinations inks a complete fight card from a single line of text (up to 80 characters), equipping your contender with distinct personality traits, t | [@fisventurous](https://github.com/fisventurous) |
 | [🎮 Tiny Fighter Arena](https://tomdacatto.github.io/pollinations-fighter-arena) | Describe a fighter in one line and watch it battle. The AI designs the whole fighter (name, look, three moves, a quirk, stats and a fighting style), an image model draws its portrait, and it fights a | [@tomdacatto](https://github.com/tomdacatto) |
 | [🎮 Model Match](https://patbing.github.io/model-match) | A five-round guessing game: read one anonymous answer and pick which of four AI models wrote it. All 96 answers are pre-generated with the Pollinations API; no keys or API calls while you play. | [@patbing](https://github.com/patbing) |
-| [🎬 Bit — tech stories told by an AI agent](https://bit.sessionweave.com) | Bit is a small robot mascot who tells true tech stories (security incidents, open-source projects, AI news) in short vertical videos for TikTok, Instagram and YouTube Shorts, in Italian and English. E | [@EnzinoBB](https://github.com/EnzinoBB) |
-| [💬 Colmena](https://lotxo1.github.io/colmena) | Colmena is a multi-model AI studio. Chat with GPT-6, DeepSeek, Grok, Kimi and 30+ Pollinations text models (streaming, Markdown, code highlighting) and use "Ask another model" to compare answers in pl | [@lotxo1](https://github.com/lotxo1) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->

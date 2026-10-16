@@ -271,10 +271,13 @@ fixtureTest(
     "a new agent works for its owner before the catalog cache expires",
     async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const ownerUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: ownerGithubUsername,
-        });
+        const { key: ownerApiKey, userId: ownerUserId } =
+            await createTestApiKey({
+                user: {
+                    githubId: nextAllowedGithubId(),
+                    githubUsername: ownerGithubUsername,
+                },
+            });
         const otherUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: `other-${crypto.randomUUID().slice(0, 8)}`,
@@ -284,28 +287,22 @@ fixtureTest(
         expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
             null,
         );
-        const insertAgent = (name: string, updatedAt: Date) => {
-            const id = `${name}-${crypto.randomUUID()}`;
-            return insertCommunityEndpoints({
-                id,
-                ownerUserId,
-                name,
-                description: "Test",
-                type: "prompt_agent",
-                visibility: "private",
-                baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-                upstreamModel: id,
-                payload: JSON.stringify({
-                    prompt: "Test",
-                    baseModel: DEFAULT_TEXT_MODEL,
-                    mcpServers: [],
-                }),
-                createdAt: updatedAt,
-                updatedAt,
-            }).then(() => id);
-        };
-        const id = await insertAgent("fresh-agent", new Date());
-        await insertAgent("old-agent", new Date(Date.now() - 4 * 60_000));
+        const id = `fresh-agent-${crypto.randomUUID()}`;
+        await insertCommunityEndpoints({
+            id,
+            ownerUserId,
+            name: "fresh-agent",
+            description: "Test",
+            type: "prompt_agent",
+            visibility: "private",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: id,
+            payload: JSON.stringify({
+                prompt: "Test",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+        });
         const resolve = (model: string, callerUserId: string) =>
             resolveModelDefinition(
                 model,
@@ -315,12 +312,10 @@ fixtureTest(
                 "/v1/chat/completions",
             );
 
-        // Only the owner's exact model id counts, and only while the cached
-        // catalog can still be missing it.
+        // Only the owner's exact model id counts.
         for (const [model, callerUserId] of [
             [modelId, otherUserId],
             ["someone-else/fresh-agent", ownerUserId],
-            [communityModelId(ownerGithubUsername, "old-agent"), ownerUserId],
         ]) {
             await expect(resolve(model, callerUserId)).rejects.toThrow(
                 "Invalid model or alias",
@@ -328,6 +323,12 @@ fixtureTest(
         }
         const resolved = await resolve(modelId, ownerUserId);
         expect(resolved.communityEndpoint?.id).toBe(id);
+        const modelResponse = await fetchGen(
+            new Request(`https://gen.pollinations.ai/v1/models/${modelId}`, {
+                headers: { Authorization: `Bearer ${ownerApiKey}` },
+            }),
+        );
+        expect(modelResponse.status).toBe(200);
         // Other callers keep the cached catalog until it expires.
         expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
             null,

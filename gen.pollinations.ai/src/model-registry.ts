@@ -27,7 +27,7 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
-    findUncachedOwnListing,
+    findOwnListing,
     getCommunityModelRegistryEntries,
     resetCommunityModelRegistryCache,
 } from "./community-models.ts";
@@ -318,11 +318,12 @@ export async function getGenerationModelRegistry(
 }
 
 /**
- * Resolves a model for a caller. A listing the caller saved too recently for
- * the cached catalog resolves from D1 for that caller alone, so a new agent
- * works for its owner straight away instead of failing as an unknown model
- * until the caches expire. The shared caches are left as they are, so each
- * such call rebuilds a registry until they catch up, within three minutes.
+ * Resolves one model for a caller. The catalog is cached for up to a minute
+ * in KV and again in each isolate, so on a miss the caller's own listings are
+ * read from D1: a new agent works for its owner straight away. New listings
+ * stay private until review, so their owner is the only one who can call
+ * them. The shared caches are left as they are; until they refresh, each such
+ * call builds its own registry.
  */
 export async function resolveGenerationModel(
     env: CommunityModelEnv,
@@ -333,11 +334,9 @@ export async function resolveGenerationModel(
     const entry = registry.resolve(model);
     if (entry || !callerUserId) return entry;
     // Like the catalog itself, a D1 failure here leaves the miss a miss.
-    const listing = await findUncachedOwnListing(
-        env.DB,
-        callerUserId,
-        model,
-    ).catch(() => undefined);
+    const listing = await findOwnListing(env.DB, callerUserId, model).catch(
+        () => undefined,
+    );
     if (!listing) return null;
     return registry
         .with([communityEntryToGenerationEntry(listing)])

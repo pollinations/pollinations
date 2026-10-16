@@ -16,7 +16,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { and, eq, gt, isNotNull, type SQL } from "drizzle-orm";
+import { and, eq, isNotNull, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
@@ -53,31 +53,21 @@ export async function getCommunityModelRegistryEntries(
     return entries;
 }
 
-// The KV copy, its edge cache and each isolate's registry can each be up to
-// one TTL old, so a listing saved this recently may be missing from them.
-const CATALOG_MAX_STALENESS_SECONDS = 3 * COMMUNITY_CATALOG_CACHE_TTL_SECONDS;
-
 /**
- * The caller's listing with `model` as its id or alias, if they saved it too
- * recently for the cached catalog to have it. It goes through the catalog's
- * own query and mapping, so it is exactly the entry the next refresh adds.
+ * The caller's own listing with `model` as its id or alias. It goes through
+ * the catalog's own query and mapping, so it is exactly the entry the next
+ * catalog refresh adds.
  */
-export async function findUncachedOwnListing(
+export async function findOwnListing(
     dbBinding: CloudflareBindings["DB"],
     ownerUserId: string,
     model: string,
 ): Promise<CommunityModelRegistryEntry | undefined> {
     // Every community id and alias is "<owner>/<name>" or prefixed.
     if (!model.includes("/")) return undefined;
-    const savedAfter = new Date(
-        Date.now() - CATALOG_MAX_STALENESS_SECONDS * 1000,
-    );
     const entries = await queryCommunityModelRegistryEntries(
         dbBinding,
-        and(
-            eq(schema.communityEndpoint.ownerUserId, ownerUserId),
-            gt(schema.communityEndpoint.updatedAt, savedAfter),
-        ),
+        eq(schema.communityEndpoint.ownerUserId, ownerUserId),
     );
     return entries.find(
         (entry) => entry.id === model || entry.aliases.includes(model),

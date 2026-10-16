@@ -1,0 +1,34 @@
+{
+  "pr_number": 17711,
+  "title": "feat: serve /v1/systemone as an alias of /alpha/decisions",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/17711",
+  "merged_at": "2026-10-16T12:19:01Z",
+  "labels": [
+    "API"
+  ],
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added POST /v1/systemone as an alias for TypeSafe decisions on /alpha/decisions. Clients that append /v1/systemone to a base URL can use gen.pollinations.ai with the same request and response shape, model handling, key permissions, caching, and usage tracking. /alpha/decisions remains available; the two paths have separate cache keys, so sending the same request to both produces two generations. Added the alias to the OpenAPI and text-generation docs.",
+    "keywords": [
+      "System One",
+      "TypeSafe",
+      "decisions",
+      "API compatibility",
+      "OpenAPI"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17711.jpg",
+    "prompt": "In a cozy pixel art garden workspace, Polli wears tiny reading glasses and points from two differently labeled path signs to the same glowing decision card beside a lime green (#ecf874) code-plant. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, never oversized, and strictly pixel art. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with a soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, and a nostalgic, emotionally warm feel."
+  },
+  "generated_at": "2026-10-16T12:21:24.262157+00:00",
+  "area": "API & reliability",
+  "type": "Feature",
+  "source": "Team",
+  "merge_commit_sha": "e55a1e24b138c32d75e1999b26292bd5fe8f45f1",
+  "announcements": []
+}

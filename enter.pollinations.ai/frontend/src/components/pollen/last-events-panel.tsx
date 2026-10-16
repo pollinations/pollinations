@@ -69,6 +69,7 @@ function timestampMs(value: string): number {
 function formatTimestamp(value: string): string {
     return parseTimestamp(value).toLocaleString(undefined, {
         timeZone: "UTC",
+        timeZoneName: "short",
         year: "numeric",
         month: "short",
         day: "numeric",

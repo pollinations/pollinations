@@ -266,7 +266,7 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     expect(text).not.toContain("undefined");
     // Straight to GitHub's sign-in, tagged as a Classic visit
     expect(text).toContain(
-        'href="https://enter.pollinations.ai/sign-in?ref=classic"',
+        'href="https://enter.pollinations.ai/sign-in?ref=legacy-image"',
     );
     // No clock to watch: the page reloads by itself when the wait is over
     expect(text).toContain(

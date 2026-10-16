@@ -9,6 +9,7 @@ import {
 import {
     hasArchivedEvidence,
     hasReconciledTransactionEvidence,
+    isAcknowledgedLostTransactionEvidence,
     supplierInvoiceLinks,
 } from "./documents";
 import { forecastRuleEntries } from "./forecastTerms";
@@ -20,14 +21,20 @@ import { modelReconcileRows } from "./modelReconcile";
 import { collectMonths, reportingMonths } from "./months";
 import { providerAccountBalanceRows } from "./providerBalances";
 import { providerCloseRows } from "./providerClose";
-import { meterDriftExplanation, resolveProvider } from "./providerRegistry";
+import {
+    meterDriftExplanation,
+    pollenWitnessExplanation,
+    providerCheckExplanation,
+    resolveProvider,
+} from "./providerRegistry";
 import { buildRunway } from "./runway";
-import { salesCoverage } from "./sales";
+import { salesSourceIssues } from "./sales";
 import {
     providerCostCheck,
     unitEconomicsReport,
     unitEconomicsRows,
 } from "./unitEconomics";
+import { vendorSourceDifferences } from "./vendorLedger";
 
 export const RECONCILIATION_PAGES = {
     inference: "Inference",
@@ -59,6 +66,19 @@ export const RECONCILIATION_GROUPS = {
     models: "Model/GPU breakdown",
 } as const;
 export type ReconciliationGroup = keyof typeof RECONCILIATION_GROUPS;
+export type ReconciliationAmount = {
+    amountUsd: number | null;
+    amountLabel: string;
+    group: ReconciliationGroup;
+};
+export type ReconciliationException = {
+    id: string;
+    month: string;
+    vendor: string;
+    messages: string[];
+    affects: ReconciliationPage[];
+    evidence: string[];
+};
 export type ReconciliationIssue = {
     id: string;
     month: string;
@@ -75,6 +95,8 @@ export type ReconciliationIssue = {
     evidence: string[];
     archiveChecks?: ArchiveCheck[];
     invoices?: string[];
+    relatedAmounts?: ReconciliationAmount[];
+    reviewedNotes?: { message: string; evidence: string[] }[];
 };
 
 export function isModelDetail(issue: ReconciliationIssue): boolean {
@@ -129,6 +151,7 @@ export function missingUsageCosts(data: Data) {
 export function reconciliationState(data: Data, now = new Date()) {
     const currentMonth = now.toISOString().slice(0, 7);
     const byKey = new Map<string, ReconciliationIssue>();
+    const acceptedExceptions: ReconciliationException[] = [];
     const add = (
         month: string,
         vendor: string,
@@ -160,6 +183,17 @@ export function reconciliationState(data: Data, now = new Date()) {
                 amountLabel === old.amountLabel &&
                 amountUsd != null &&
                 (old.amountUsd == null || amountUsd > old.amountUsd));
+        const relatedAmounts = [...(old?.relatedAmounts ?? [])];
+        const sameBasis = relatedAmounts.findIndex(
+            (item) => item.group === group && item.amountLabel === amountLabel,
+        );
+        if (sameBasis < 0)
+            relatedAmounts.push({ amountUsd, amountLabel, group });
+        else if (
+            amountUsd != null &&
+            amountUsd > (relatedAmounts[sameBasis].amountUsd ?? -1)
+        )
+            relatedAmounts[sameBasis] = { amountUsd, amountLabel, group };
         byKey.set(
             id,
             old
@@ -175,6 +209,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                           ? amountLabel
                           : old.amountLabel,
                       evidence: [...new Set([...old.evidence, ...evidence])],
+                      relatedAmounts,
                   }
                 : {
                       id,
@@ -188,8 +223,33 @@ export function reconciliationState(data: Data, now = new Date()) {
                       amountUsd,
                       amountLabel,
                       evidence,
+                      relatedAmounts,
                   },
         );
+    };
+    const addReviewedNote = (
+        month: string,
+        vendor: string,
+        reviewed:
+            | { explanation: string; evidence: string[] }
+            | null
+            | undefined,
+    ) => {
+        const issue = byKey.get(`${month}|${vendor}`);
+        if (!issue || !reviewed) return;
+        issue.reviewedNotes ??= [];
+        if (
+            !issue.reviewedNotes.some(
+                (note) => note.message === reviewed.explanation,
+            )
+        )
+            issue.reviewedNotes.push({
+                message: reviewed.explanation,
+                evidence: reviewed.evidence,
+            });
+        issue.evidence = [
+            ...new Set([...issue.evidence, ...reviewed.evidence]),
+        ];
     };
     const modes = computeModeIndex(data);
     const identity = ledgerModelResolver(data);
@@ -258,11 +318,19 @@ export function reconciliationState(data: Data, now = new Date()) {
                     month,
                     bankVendor,
                     "figures",
-                    "Bank payment recorded; invoice or service-month usage is missing.",
+                    payments.length > 0 &&
+                        payments.every(
+                            (payment) =>
+                                supplierInvoiceLinks(payment.evidence).length >
+                                0,
+                        )
+                        ? "Invoice retained; service-month usage still needs reconciliation."
+                        : "Bank payment recorded; invoice or service-month usage is missing.",
                     costPages(bankVendor, month),
                     0,
                     amount,
                     "Bank payment · expense to reconcile",
+                    payments.map((payment) => payment.evidence),
                 );
             } else {
                 const scheduled = scheduledRules
@@ -351,9 +419,8 @@ export function reconciliationState(data: Data, now = new Date()) {
             reviewed?.evidence ?? [],
         );
     }
-    // Reviewed source differences stay open without changing booked costs.
-    for (const difference of data.privateConfig?.reconciliation
-        .costDifferences ?? []) {
+    // Recomputed from ledger facts on every load; no saved issue state.
+    for (const difference of vendorSourceDifferences(data)) {
         add(
             difference.month,
             difference.provider,
@@ -369,10 +436,60 @@ export function reconciliationState(data: Data, now = new Date()) {
         );
     }
     for (const row of providerCloseRows(data, currentMonth)) {
-        if (row.partial || row.closeStatus === "ready") continue;
+        if (row.partial) continue;
+        const reviewed =
+            row.coverageStatus === "exception"
+                ? providerCheckExplanation(
+                      row.month,
+                      row.vendor,
+                      data.privateConfig,
+                  )
+                : null;
+        const acknowledged = (data.opTransactions ?? []).filter(
+            (transaction) =>
+                transaction.kind === "transaction" &&
+                transaction.vendor === row.vendor &&
+                transaction.date.startsWith(row.month) &&
+                isAcknowledgedLostTransactionEvidence(transaction),
+        );
+        if (reviewed || acknowledged.length) {
+            acceptedExceptions.push({
+                id: `${row.month}|${row.vendor}`,
+                month: row.month,
+                vendor: row.vendor,
+                messages: [
+                    ...new Set([
+                        ...(reviewed ? [reviewed.explanation] : []),
+                        ...acknowledged.map(
+                            (transaction) => transaction.description,
+                        ),
+                    ]),
+                ],
+                affects: [
+                    ...new Set<ReconciliationPage>([
+                        ...(reviewed
+                            ? [
+                                  ...costPages(row.vendor, row.month),
+                                  "op-pollen" as const,
+                              ]
+                            : []),
+                        ...(acknowledged.length
+                            ? ["op-transactions" as const]
+                            : []),
+                    ]),
+                ],
+                evidence: [
+                    ...new Set([
+                        ...(reviewed?.evidence ?? []),
+                        ...acknowledged.map(
+                            (transaction) => transaction.evidence,
+                        ),
+                    ]),
+                ],
+            });
+        }
+        if (row.closeStatus === "ready") continue;
         const evidence = row.evidence.map((r) => r.evidence);
-        const key = `${row.month}|${row.vendor}`;
-        const existing = byKey.get(key);
         if (row.closeStatus === "missing document") {
             const pending = (data.opTransactions ?? []).filter(
                 (transaction) =>
@@ -408,13 +525,6 @@ export function reconciliationState(data: Data, now = new Date()) {
                 ],
                 invoiceRetained ? "financial" : "validation",
             );
-        } else if (existing) {
-            const issue = existing;
-            if (row.missingAccounts?.length)
-                issue.messages.push(
-                    `Accounts to check: ${row.missingAccounts.join(", ")}.`,
-                );
-            issue.evidence = [...new Set([...issue.evidence, ...evidence])];
         } else {
             add(
                 row.month,
@@ -489,6 +599,44 @@ export function reconciliationState(data: Data, now = new Date()) {
                 amount,
                 "Recorded cost · model allocation only",
             );
+        for (const status of [
+            "missing usage",
+            "ambiguous allocation",
+        ] as const) {
+            const models = row.models.filter(
+                (model) => model.status === status,
+            );
+            if (!models.length) continue;
+            const amounts = models
+                .map((model) => model.providerUsageUsd)
+                .filter((amount): amount is number => amount != null);
+            add(
+                row.month,
+                row.vendor,
+                "models",
+                status === "missing usage"
+                    ? "Billed models have no matching Pollen usage; provider totals are unchanged."
+                    : "Shared model cost allocation is unresolved; provider totals are unchanged.",
+                ["inference", "vendors", "vendor-ledger", "op-pollen"],
+                2,
+                amounts.length
+                    ? amounts.reduce((sum, amount) => sum + amount, 0)
+                    : null,
+                status === "missing usage"
+                    ? "Recorded cost · model usage missing"
+                    : "Recorded cost · shared allocation unresolved",
+            );
+            if (status === "missing usage")
+                addReviewedNote(
+                    row.month,
+                    row.vendor,
+                    pollenWitnessExplanation(
+                        row.month,
+                        row.vendor,
+                        data.privateConfig,
+                    ),
+                );
+        }
     }
     // Derive GPU issues from exactly the same workload join as the GPU page.
     for (const month of collectMonths(data).filter(
@@ -516,12 +664,24 @@ export function reconciliationState(data: Data, now = new Date()) {
         for (const vendor of vendors) {
             for (const row of gpuWorkloadRows(data, month, vendor)) {
                 for (const flag of row.flags) {
+                    const reviewed =
+                        flag === "missing Pollen"
+                            ? pollenWitnessExplanation(
+                                  month,
+                                  vendor,
+                                  data.privateConfig,
+                              )
+                            : null;
                     const message =
                         flag === "missing GPU cost"
                             ? `GPU usage has no matching resource cost: ${row.workload}.`
                             : flag === "missing Pollen"
-                              ? `GPU resource costs have no matching Pollen usage: ${row.workload}.`
-                              : "GPU resource costs have no workload mapping.";
+                              ? reviewed
+                                  ? `GPU usage attribution is unavailable for a reviewed historical period: ${row.workload}.`
+                                  : `GPU resource costs have no matching Pollen usage: ${row.workload}.`
+                              : flag === "ambiguous workload allocation"
+                                ? "Shared GPU workload allocation is unresolved; resource totals are unchanged."
+                                : "GPU resource costs have no workload mapping.";
                     add(
                         month,
                         vendor,
@@ -532,6 +692,7 @@ export function reconciliationState(data: Data, now = new Date()) {
                         flag === "missing GPU cost" ? null : row.totalCostUsd,
                         "Workload allocation · provider totals unchanged",
                     );
+                    addReviewedNote(month, vendor, reviewed);
                 }
             }
         }
@@ -589,30 +750,44 @@ export function reconciliationState(data: Data, now = new Date()) {
                 "financial",
             );
     }
-    for (const month of reportingMonths(now).filter((m) => m < currentMonth)) {
+    for (const month of reportingMonths(now)) {
         const sales = (data.stripeSales ?? []).filter((r) => r.month === month);
-        if (salesCoverage(sales) !== "Complete")
+        for (const issue of salesSourceIssues(sales, month, now)) {
             add(
                 month,
                 "Stripe",
-                "figures",
-                !sales.length
-                    ? "Calendar-month sales are missing."
-                    : "Calendar-month sales coverage is not confirmed complete.",
+                issue.financial ? "figures" : "quality",
+                issue.message,
                 ["sales", "trends", "runway"],
-                0,
+                issue.financial ? 0 : 2,
+                issue.financial ? null : 0,
+                issue.financial
+                    ? "Impact unknown"
+                    : "Financial amounts recorded",
             );
+        }
     }
     for (const month of reportingMonths(now)) {
         if (month >= currentMonth) continue;
         for (const view of ["inference", "vendors"] as const) {
             const report = unitEconomicsReport(data, month, view);
             for (const blocker of report.blockers) {
+                const reviewed =
+                    blocker.kind === "usage"
+                        ? pollenWitnessExplanation(
+                              month,
+                              blocker.vendor,
+                              data.privateConfig,
+                          )
+                        : null;
+                const message = reviewed
+                    ? "Pollen usage is unavailable for a reviewed historical period."
+                    : blocker.message;
                 add(
                     month,
                     blocker.vendor,
                     report.provisional ? "provisional" : "totals",
-                    blocker.message,
+                    message,
                     [view, "vendor-ledger", "op-pollen"],
                     0,
                     blocker.amountUsd,
@@ -624,13 +799,14 @@ export function reconciliationState(data: Data, now = new Date()) {
                         ? "financial"
                         : "validation",
                 );
+                addReviewedNote(month, blocker.vendor, reviewed);
                 const issue = byKey.get(`${month}|${blocker.vendor}`);
                 if (!issue) continue;
                 if (!report.provisional) {
                     issue.blockingMessages = [
                         ...new Set([
                             ...(issue.blockingMessages ?? []),
-                            blocker.message,
+                            message,
                         ]),
                     ];
                 }
@@ -647,8 +823,7 @@ export function reconciliationState(data: Data, now = new Date()) {
     }
     // Archive observations annotate existing issues; they never prove costs,
     // close an item or create a stale issue after the ledger is reconciled.
-    for (const check of data.privateConfig?.reconciliation.archiveChecks ??
-        []) {
+    for (const check of data.privateConfig?.reviewNotes.archiveChecks ?? []) {
         const issue = byKey.get(`${check.month}|${check.provider}`);
         if (issue) {
             issue.archiveChecks ??= [];
@@ -660,7 +835,56 @@ export function reconciliationState(data: Data, now = new Date()) {
                 ];
         }
     }
+    // Explicitly accepted historical detail gaps remain visible as limitations,
+    // without repeated actions. Financial blockers and source differences stay open.
+    for (const exception of acceptedExceptions) {
+        const issue = byKey.get(exception.id);
+        const decision = providerCheckExplanation(
+            exception.month,
+            exception.vendor,
+            data.privateConfig,
+        );
+        const usageNote = pollenWitnessExplanation(
+            exception.month,
+            exception.vendor,
+            data.privateConfig,
+        );
+        if (
+            decision?.decision !== "known_limitation" ||
+            !issue ||
+            !issue.types.every(
+                (type) =>
+                    type === "models" ||
+                    (type === "provisional" &&
+                        usageNote?.reason === "unverifiable_history"),
+            )
+        )
+            continue;
+        exception.messages = [
+            ...new Set([
+                ...exception.messages,
+                "Model detail remains unavailable; recorded amounts are unchanged.",
+                ...(issue.types.includes("provisional")
+                    ? [
+                          "Usage remains incomplete; results from recorded figures stay provisional.",
+                      ]
+                    : []),
+            ]),
+        ];
+        exception.affects = [
+            ...new Set([...exception.affects, ...issue.affects]),
+        ];
+        exception.evidence = [
+            ...new Set([...exception.evidence, ...issue.evidence]),
+        ];
+        byKey.delete(exception.id);
+    }
     return {
+        acceptedExceptions: acceptedExceptions.sort(
+            (a, b) =>
+                b.month.localeCompare(a.month) ||
+                a.vendor.localeCompare(b.vendor),
+        ),
         issues: [...byKey.values()].sort(
             (a, b) =>
                 a.priority - b.priority ||

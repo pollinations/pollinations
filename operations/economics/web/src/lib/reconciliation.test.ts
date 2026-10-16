@@ -262,7 +262,7 @@ describe("shared reconciliation", () => {
             privateConfig: parsePrivateConfig({
                 config: JSON.stringify({
                     forecastRules: {},
-                    reconciliation: {
+                    reviewNotes: {
                         providerCheckExplanations: [],
                         pollenWitnessExplanations: [],
                         meterDriftExplanations: [
@@ -317,47 +317,29 @@ describe("shared reconciliation", () => {
     });
 });
 
-describe("reviewed invoice differences", () => {
-    const config = {
-        forecastRules: {},
-        reconciliation: {
-            providerCheckExplanations: [],
-            meterDriftExplanations: [],
-            pollenWitnessExplanations: [],
-            costDifferences: [
-                {
-                    month: "2026-09",
-                    provider: "aws-bedrock",
-                    amountUsd: 12.5,
-                    explanation:
-                        "Invoice credits exceed the recorded net usage costs.",
-                    evidence: ["https://example.com/invoice"],
-                },
-            ],
-        },
+describe("source invoice comparisons", () => {
+    const statement: VendorLedgerRow = {
+        ...cost("aws", "statement"),
+        entry_id: "invoice",
+        resource_name: "Invoice credits",
+        paid: 0,
+        statement_amount: 62.5,
+        compared_entry_ids: ["aws"],
+        comparison_basis: "cost",
+        comparison_month: "2026-09",
     };
-    it("keeps a source difference open after usage is imported, without adding it to results", () => {
+    it("derives the difference without changing results and clears it when source records agree", () => {
         const before: Data = {
             opPollen: [usage("aws")],
             vendorLedger: [cost("aws", "infra")],
         };
-        const data = {
-            ...before,
-            privateConfig: parsePrivateConfig({
-                config: JSON.stringify(config),
-                recorded_at: "2026-10-15 00:00:00",
-            }),
-        };
-        expect(missingUsageCosts(data)).toEqual([]);
+        const data: Data = { ...before, vendorStatements: [statement] };
         const issue = reconciliationState(data, now).issues.find(
-            (r) => r.vendor === "aws" && r.month === "2026-09",
-        );
-        expect(issue?.messages).toContain(
-            config.reconciliation.costDifferences[0].explanation,
+            (r) => r.vendor === "aws",
         );
         expect(issue?.amountUsd).toBe(12.5);
         expect(issue?.amountLabel).toBe(
-            "Invoice difference · not included in costs",
+            "Source difference · not included in costs",
         );
         expect(issue?.affects).toEqual(
             expect.arrayContaining(["trends", "runway", "inference"]),
@@ -365,64 +347,49 @@ describe("reviewed invoice differences", () => {
         expect(monthlyTrends(data, "company", now)).toEqual(
             monthlyTrends(before, "company", now),
         );
-        data.privateConfig.reconciliation.costDifferences = [];
+        if (!data.vendorLedger) throw new Error("Missing fixture");
+        data.vendorLedger[0].paid = -62.5;
         expect(
-            reconciliationState(data, now).issues.flatMap((r) => r.messages),
-        ).not.toContain(config.reconciliation.costDifferences[0].explanation);
+            reconciliationState(data, now)
+                .issues.flatMap((r) => r.messages)
+                .some((m) => m.startsWith("Invoice credits:")),
+        ).toBe(false);
     });
-    it("displays a funding difference with its reviewed label", () => {
-        const reviewed = {
-            ...config,
-            reconciliation: {
-                ...config.reconciliation,
-                costDifferences: config.reconciliation.costDifferences.map(
-                    (item) => ({
-                        ...item,
-                        amountLabel: "Funding difference · allocation pending",
-                    }),
-                ),
-            },
+    it("keeps missing linked figures unknown and source-only periods out of cost coverage", () => {
+        const data: Data = {
+            vendorStatements: [statement],
+            opPollen: [usage("aws")],
         };
-        const privateConfig = parsePrivateConfig({
-            config: JSON.stringify(reviewed),
-            recorded_at: "2026-10-15 00:00:00",
+        expect(missingUsageCosts(data)).toHaveLength(1);
+        const issue = reconciliationState(data, now).issues.find(
+            (r) => r.vendor === "aws",
+        );
+        expect(issue?.relatedAmounts).toContainEqual({
+            amountUsd: null,
+            amountLabel: "Impact unknown",
+            group: "financial",
         });
-        const issue = reconciliationState({ privateConfig }, now).issues.find(
-            (row) => row.vendor === "aws",
-        );
-        expect(issue?.amountLabel).toBe(
-            "Funding difference · allocation pending",
-        );
+        expect(
+            issue?.messages.some((m) =>
+                m.includes("linked source records are missing"),
+            ),
+        ).toBe(true);
     });
-    it("rejects a non-text source-difference label", () => {
-        const invalid = {
-            ...config,
-            reconciliation: {
-                ...config.reconciliation,
-                costDifferences: [
-                    {
-                        ...config.reconciliation.costDifferences[0],
-                        amountLabel: 123,
+    it("rejects saved financial differences in notes", () => {
+        expect(() =>
+            parsePrivateConfig({
+                config: JSON.stringify({
+                    forecastRules: {},
+                    reviewNotes: {
+                        providerCheckExplanations: [],
+                        meterDriftExplanations: [],
+                        pollenWitnessExplanations: [],
+                        costDifferences: [],
                     },
-                ],
-            },
-        };
-        expect(() =>
-            parsePrivateConfig({
-                config: JSON.stringify(invalid),
-                recorded_at: "2026-10-15 00:00:00",
+                }),
+                recorded_at: "2026-10-16",
             }),
-        ).toThrow("invalid cost differences");
-    });
-    it("rejects an invalid difference amount before displaying it", () => {
-        const invalid = structuredClone(config);
-        invalid.reconciliation.costDifferences[0].amountUsd = -1;
-        expect(() =>
-            parsePrivateConfig({
-                config: JSON.stringify(invalid),
-                recorded_at: "2026-10-15 00:00:00",
-            }),
-        ).toThrow("invalid cost differences");
+        ).toThrow("invalid shape");
     });
 });
 
@@ -441,7 +408,7 @@ describe("Drive archive observations", () => {
             recorded_at: "2026-10-15 12:00:00",
             config: JSON.stringify({
                 forecastRules: {},
-                reconciliation: {
+                reviewNotes: {
                     providerCheckExplanations: [],
                     meterDriftExplanations: [],
                     pollenWitnessExplanations: [],
@@ -497,8 +464,8 @@ describe("Drive archive observations", () => {
                 "invalid archive checks",
             );
         expect(
-            parse([{ ...check, status: "blocked", evidence: [] }])
-                .reconciliation.archiveChecks,
+            parse([{ ...check, status: "blocked", evidence: [] }]).reviewNotes
+                .archiveChecks,
         ).toHaveLength(1);
     });
 });
@@ -589,7 +556,7 @@ it("shows an explicitly verified archived invoice while retaining the cost gap",
             recorded_at: "2026-10-15 12:00:00",
             config: JSON.stringify({
                 forecastRules: {},
-                reconciliation: {
+                reviewNotes: {
                     providerCheckExplanations: [],
                     meterDriftExplanations: [],
                     pollenWitnessExplanations: [],
@@ -791,5 +758,78 @@ it("keeps unknown financial exposure when a recorded-cost validation shares its 
     });
     expect(issue?.messages.some((message) => message.includes("$100"))).toBe(
         true,
+    );
+});
+
+it("keeps accepted historical detail gaps neutral without suppressing financial differences", () => {
+    const data: Data = {
+        vendorLedger: [
+            {
+                ...cost("pruna"),
+                start: "2026-03-01T00:00:00Z",
+                end: "2026-04-01T00:00:00Z",
+                model: "unrecoverable-label",
+            },
+        ],
+        opPollen: [
+            {
+                ...usage("pruna"),
+                month: "2026-03",
+                model: "black-forest-labs/flux.1-schnell",
+                cost_paid: 50,
+            },
+        ],
+        privateConfig: {
+            forecastRules: {},
+            reviewNotes: {
+                providerCheckExplanations: [
+                    {
+                        month: "2026-03",
+                        provider: "pruna",
+                        reason: "unverifiable_history",
+                        decision: "known_limitation",
+                        explanation: "Historical source cannot be recovered.",
+                        evidence: [],
+                    },
+                ],
+                pollenWitnessExplanations: [],
+                meterDriftExplanations: [],
+            },
+        },
+    };
+    const state = reconciliationState(data, now);
+    expect(state.issues.filter((issue) => issue.vendor === "pruna")).toEqual(
+        [],
+    );
+    expect(
+        state.acceptedExceptions.some((issue) => issue.vendor === "pruna"),
+    ).toBe(true);
+    const withDifference = reconciliationState(
+        {
+            ...data,
+            vendorStatements: [
+                {
+                    ...cost("pruna", "statement"),
+                    entry_id: "pruna-source-total",
+                    paid: 0,
+                    statement_amount: 55,
+                    compared_entry_ids: ["pruna"],
+                    comparison_basis: "cost",
+                    comparison_month: "2026-03",
+                },
+            ],
+        },
+        now,
+    );
+    expect(
+        withDifference.issues.find((issue) => issue.vendor === "pruna")
+            ?.amountUsd,
+    ).toBe(5);
+    expect(unitEconomicsReport(data, "2026-03", "inference").summary).toEqual(
+        unitEconomicsReport(
+            { ...data, privateConfig: undefined },
+            "2026-03",
+            "inference",
+        ).summary,
     );
 });

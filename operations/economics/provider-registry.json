@@ -4986,7 +4986,7 @@
             "default"
           ],
           "loginEmail": "elliot@myceli.ai",
-          "activeFrom": "2026-01",
+          "activeFrom": "2026-03",
           "activeTo": null
         },
         {
@@ -5346,7 +5346,23 @@
       "connector": "retell",
       "monthlyReview": false,
       "balanceTracking": false,
-      "collectionMethod": "dashboard"
+      "collectionMethod": "dashboard",
+      "accounts": [
+        {
+          "id": "org_8wql0LvG9gOjAAl7",
+          "label": "Thomas — four phone numbers",
+          "loginEmail": "thomash@pollinations.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-09"
+        },
+        {
+          "id": "org_7vIuRlJNY0grKLsv",
+          "label": "Thomas — three phone numbers (Wise matched)",
+          "loginEmail": "thomash@pollinations.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-09"
+        }
+      ]
     },
     {
       "id": "roblox",

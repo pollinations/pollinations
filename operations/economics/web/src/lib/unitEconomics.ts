@@ -194,6 +194,11 @@ function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.netCashContributionUsd != null) {
         return model.netCashContributionUsd;
     }
@@ -212,6 +217,11 @@ function modelEconomicContribution(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
         return model.retainedPaidUsd - model.providerUsageUsd;
     }
@@ -230,6 +240,11 @@ function modelMeterGap(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
 ): number | null {
+    if (
+        model.status === "missing usage" ||
+        model.status === "ambiguous allocation"
+    )
+        return null;
     if (model.meterGapUsd != null) return model.meterGapUsd;
     if (
         parent.status === "both sources" &&

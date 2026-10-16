@@ -5,7 +5,7 @@ import { modelReconcileRows } from "./modelReconcile";
 import { monthShift, reportingMonths, WINDOW_START } from "./months";
 import { ledgerCategory } from "./providerRegistry";
 import { missingUsageCosts } from "./reconciliation";
-import { buildRunway } from "./runway";
+import { buildRunway, sumRecorded } from "./runway";
 import { salesFraudAdjustment } from "./salesAdjustments";
 
 export function trendPeriod(count: 3 | 6 | 12, now = new Date()) {
@@ -125,34 +125,43 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         const costs = runway.rows.filter((r) =>
             isTrendExpense(r.category, scope),
         );
+        const recordedCost = column
+            ? sumRecorded(costs.map((row) => row.values[column.id]))
+            : null;
         const paidCost =
-            column && hasCosts
-                ? -costs.reduce((n, r) => n + (r.values[column.id] ?? 0), 0)
-                : null;
+            scope === "company" && column
+                ? column.totalExpensesUsd == null
+                    ? null
+                    : -column.totalExpensesUsd
+                : recordedCost == null
+                  ? null
+                  : -recordedCost;
         const credits =
-            column && hasCosts
-                ? costs.reduce(
-                      (n, r) => n - (r.creditValues?.[column.id] ?? 0),
+            column && paidCost != null
+                ? -costs.reduce(
+                      (sum, row) => sum + (row.creditValues?.[column.id] ?? 0),
                       0,
                   )
                 : null;
         const fullCost =
             paidCost != null && credits != null ? paidCost + credits : null;
-        const categoryCost = (category: string) =>
-            column && hasCosts
-                ? -costs
-                      .filter((r) => r.category === category)
-                      .reduce(
-                          (sum, r) =>
-                              sum +
-                              (r.values[column.id] ?? 0) +
-                              (r.creditValues?.[column.id] ?? 0),
-                          0,
-                      )
-                : null;
+        const categoryCost = (category: string) => {
+            if (!column) return null;
+            const total = sumRecorded(
+                costs
+                    .filter((row) => row.category === category)
+                    .map((row) => {
+                        const value = row.values[column.id];
+                        return value == null
+                            ? null
+                            : value + (row.creditValues?.[column.id] ?? 0);
+                    }),
+            );
+            return total == null ? null : -total;
+        };
         const adjustments = sales
             .map((sale) => {
-                const adjustment = salesFraudAdjustment(data, sale);
+                const adjustment = salesFraudAdjustment(sale);
                 return adjustment == null
                     ? null
                     : toUsd(adjustment.total, sale.currency, month);
@@ -163,9 +172,8 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
             sales.every((sale) => sale.coverage_complete === 1) &&
             adjustments.length > 0 &&
             adjustments.length ===
-                (data.privateConfig?.salesAdjustments ?? []).filter(
-                    (item) => item.month === month,
-                ).length
+                sales.filter((sale) => (sale.fraud_transactions ?? 0) > 0)
+                    .length
                 ? adjustments.reduce((sum, amount) => sum + amount, 0)
                 : null;
         const result =
@@ -181,7 +189,7 @@ export function monthlyTrends(data: Data, scope: TrendScope, now = new Date()) {
         return {
             month,
             issues,
-            provisional: issues.length > 0,
+            provisional: issues.length > 0 || column?.provisional === true,
             costIncomplete,
             revenue,
             deductions,
@@ -258,10 +266,7 @@ export function monthlyPollenTrends(
     months: string[],
 ): PollenTrendMonth[] {
     const allocations = modelReconcileRows(data);
-    const knownSum = (values: (number | null)[]) => {
-        const known = values.filter((n): n is number => n != null);
-        return known.length ? known.reduce((sum, n) => sum + n, 0) : null;
-    };
+    const knownSum = sumRecorded;
     return months.map((month) => {
         const usage = (data.opPollen ?? []).filter(
             (row) => row.month === month,

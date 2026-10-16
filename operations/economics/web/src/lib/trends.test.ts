@@ -6,7 +6,6 @@ import type {
     StripeSalesRow,
     VendorLedgerRow,
 } from "../types";
-import { parsePrivateConfig } from "./pipeContracts";
 import { buildRunway } from "./runway";
 import {
     monthlyPollenTrends,
@@ -326,57 +325,28 @@ it("does not claim improving results when usage exists but its provider costs ar
     expect(trendComparison(months, "2026-09")).toBeNull();
 });
 
-it("adds reviewed fraud markers without changing actuals, and rejects stale or incomplete classifications", () => {
+it("derives reviewed fraud from Sales without changing actuals and rejects incomplete classifications", () => {
     const data: Data = {
         stripeSales: [sale("2026-09"), sale("2026-09", { currency: "EUR" })],
         vendorLedger: [cost("2026-09")],
-        privateConfig: {
-            forecastRules: {},
-            reconciliation: {
-                providerCheckExplanations: [],
-                meterDriftExplanations: [],
-                pollenWitnessExplanations: [],
-            },
-            salesAdjustments: [
-                {
-                    month: "2026-09",
-                    revenue_stream: "pollen",
-                    currency: "USD",
-                    refunds: 30,
-                    reversals: 10,
-                    stripe_fees: 20,
-                    evidence: ["https://drive.google.com/file/d/review/view"],
-                },
-                {
-                    month: "2026-09",
-                    revenue_stream: "pollen",
-                    currency: "EUR",
-                    refunds: 10,
-                    reversals: 5,
-                    stripe_fees: 5,
-                    evidence: ["https://drive.google.com/file/d/review/view"],
-                },
-            ],
-        },
     };
-    const stored = {
-        config: JSON.stringify(data.privateConfig),
-        recorded_at: "2026-10-15 00:00:00",
-    };
-    data.privateConfig = parsePrivateConfig(stored);
-    const invalid = structuredClone(data.privateConfig);
-    const first = invalid.salesAdjustments?.[0];
-    if (!first) throw new Error("Missing classification fixture");
-    invalid.salesAdjustments?.push(first);
-    expect(() =>
-        parsePrivateConfig({ ...stored, config: JSON.stringify(invalid) }),
-    ).toThrow("invalid sales adjustments");
-    first.evidence = [];
-    invalid.salesAdjustments?.pop();
-    expect(() =>
-        parsePrivateConfig({ ...stored, config: JSON.stringify(invalid) }),
-    ).toThrow("invalid sales adjustments");
-    const before = find({ ...data, privateConfig: undefined });
+    const before = find(data);
+    const sales = data.stripeSales;
+    if (!sales) throw new Error("Missing fixture");
+    Object.assign(sales[0], {
+        fraud_refunds: 30,
+        fraud_reversals: 10,
+        fraud_fees: 20,
+        fraud_transactions: 2,
+        fraud_evidence: ["https://drive.google.com/file/d/review/view"],
+    });
+    Object.assign(sales[1], {
+        fraud_refunds: 10,
+        fraud_reversals: 5,
+        fraud_fees: 5,
+        fraud_transactions: 2,
+        fraud_evidence: ["https://drive.google.com/file/d/review/view"],
+    });
     const after = find(data);
     expect(after.result).toBe(before.result);
     expect(after.fullResult).toBe(before.fullResult);
@@ -388,16 +358,12 @@ it("adds reviewed fraud markers without changing actuals, and rejects stale or i
         (before.fullResult ?? 0) + 60 + 20 * 1.1513,
     );
     expect(before.adjustedResult).toBeNull();
-    const sales = data.stripeSales;
-    const adjustments = data.privateConfig?.salesAdjustments;
-    if (!sales || !adjustments) throw new Error("Missing fixture");
     sales[0].coverage_complete = 0;
     expect(find(data).adjustedResult).toBeNull();
     sales[0].coverage_complete = 1;
-    adjustments[0].refunds = 101;
-    adjustments.pop();
+    sales[0].fraud_refunds = 101;
     expect(find(data).adjustedResult).toBeNull();
-    adjustments[0].refunds = -1;
+    sales[0].fraud_refunds = -1;
     expect(find(data).adjustedResult).toBeNull();
 });
 
@@ -505,4 +471,45 @@ it("calculates signed month changes without reversing losses or inventing a zero
     expect(trendPercentChange(100, 0)).toBeNull();
     expect(trendPercentChange(100, null)).toBeNull();
     expect(trendPercentChange(undefined, 100)).toBeNull();
+});
+
+it("shares recorded totals with Runway while unmatched payments stay in reconciliation", () => {
+    const data: Data = {
+        stripeSales: [sale("2026-09", { coverage_complete: 0 })],
+        vendorLedger: [cost("2026-09")],
+        opTransactions: [
+            bank({ vendor: "retell", category: "compute", amount: -50 }),
+        ],
+    };
+    const before = JSON.stringify(data);
+    const runway = buildRunway(
+        data.opTransactions ?? [],
+        now,
+        data.vendorLedger ?? [],
+        undefined,
+        data.stripeSales ?? [],
+    );
+    const col = runway.columns.find((c) => c.id === "2026-09:actual");
+    const company = find(data, "company");
+    expect(col?.provisional).toBe(true);
+    expect(col?.totalExpensesUsd).toBe(-200);
+    expect(col?.operatingResultUsd).toBe(600);
+    expect(company).toMatchObject({
+        paidCost: 200,
+        credits: 300,
+        fullCost: 500,
+        result: 600,
+        fullResult: 300,
+        provisional: true,
+    });
+    expect(company.result).toBe(col?.operatingResultUsd);
+    expect(company.issues).toContain(
+        "Paid provider invoice or usage evidence missing",
+    );
+    expect(
+        runway.rows.find((r) => r.vendor === "retell")?.values[
+            "2026-09:actual"
+        ],
+    ).toBeNull();
+    expect(JSON.stringify(data)).toBe(before);
 });

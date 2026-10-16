@@ -400,6 +400,7 @@ export function gpuWorkloadRows(
         hasPollen: boolean;
         hasCost: boolean;
         missingCost: boolean;
+        ambiguous: boolean;
     };
 
     const identity = ledgerModelResolver(data);
@@ -427,6 +428,7 @@ export function gpuWorkloadRows(
             hasPollen: false,
             hasCost: false,
             missingCost: false,
+            ambiguous: false,
         };
         groups.set(key, created);
         return created;
@@ -475,12 +477,20 @@ export function gpuWorkloadRows(
             (group) =>
                 group.kind === "workload" &&
                 group.models.has(model) &&
-                group.costVendors.has(vendor),
+                group.resources.some(
+                    (resource) =>
+                        resource.vendor === vendor &&
+                        resource.month === pollen.month,
+                ),
         );
         const group =
             containing.length === 1
                 ? containing[0]
                 : (exact ?? ensure(workloadKey([model]), "workload", [model]));
+        if (containing.length > 1) {
+            for (const candidate of containing) candidate.ambiguous = true;
+            group.ambiguous = true;
+        }
         if (
             !group.resources.some(
                 (resource) =>
@@ -516,7 +526,8 @@ export function gpuWorkloadRows(
                 : group.kind === "workload" &&
                     group.hasPollen &&
                     group.hasCost &&
-                    !group.missingCost
+                    !group.missingCost &&
+                    !group.ambiguous
                   ? group.retainedUsd - group.paidCostUsd
                   : null;
         const fullCostResultUsd =
@@ -525,12 +536,14 @@ export function gpuWorkloadRows(
                 : group.kind === "workload" &&
                     group.hasPollen &&
                     group.hasCost &&
-                    !group.missingCost
+                    !group.missingCost &&
+                    !group.ambiguous
                   ? group.retainedUsd - totalCostUsd
                   : null;
         const flags: string[] = [];
         if (group.kind === "unassigned") flags.push("unmapped");
-        if (group.kind === "workload" && !group.hasPollen) {
+        if (group.ambiguous) flags.push("ambiguous workload allocation");
+        if (group.kind === "workload" && !group.hasPollen && !group.ambiguous) {
             flags.push("missing Pollen");
         }
         if (
@@ -596,7 +609,8 @@ export function gpuWorkloadSummary(
             creditCostUsd: 0,
         },
     );
-    const complete = rows.every((row) => row.flags.length === 0);
+    const complete =
+        rows.length > 0 && rows.every((row) => row.flags.length === 0);
     const currentResultUsd = complete
         ? summary.retainedUsd - summary.paidCostUsd
         : null;

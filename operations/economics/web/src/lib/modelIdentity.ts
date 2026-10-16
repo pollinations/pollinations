@@ -21,6 +21,8 @@ export type LabelQualifiers = {
     name?: string;
     // Ledger month (YYYY-MM), for labels whose meaning changed over time.
     month?: string;
+    // Exact identity observed at this provider and month; reviewed labels win.
+    observedModel?: string;
 };
 
 // A dated rule pins a label to the Pollen id it billed during a period. Both
@@ -89,8 +91,8 @@ export function resolveLedgerLabel(
         Object.hasOwn(table, candidate),
     );
     if (key === undefined) {
-        return MODEL_IDS.has(name)
-            ? { kind: "model", model: name }
+        return qualifiers.observedModel || MODEL_IDS.has(name)
+            ? { kind: "model", model: qualifiers.observedModel ?? name }
             : { kind: "unmapped", label: name };
     }
     let target: ModelLabelTarget = table[key];
@@ -152,15 +154,14 @@ export function ledgerModelResolver(data: Data) {
         const month = row.start.slice(0, 7);
         const vendor = canonicalProvider(row.vendor);
         const id = model(month, vendor, label);
-        let resolution: LabelResolution = observed.has(
-            `${month}|${vendor}|${id}`,
-        )
-            ? { kind: "model", model: id }
-            : resolveLedgerLabel(vendor, label, {
-                  month,
-                  sku: row.resource_sku,
-                  name: row.resource_name,
-              });
+        let resolution = resolveLedgerLabel(vendor, label, {
+            month,
+            sku: row.resource_sku,
+            name: row.resource_name,
+            observedModel: observed.has(`${month}|${vendor}|${id}`)
+                ? id
+                : undefined,
+        });
         if (resolution.kind === "model") {
             return {
                 kind: "model",

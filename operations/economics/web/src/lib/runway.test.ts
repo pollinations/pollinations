@@ -361,7 +361,8 @@ describe("buildRunway", () => {
             (column) => column.id === "2026-07:actual",
         );
         if (!july) throw new Error("July column missing");
-        expect(july.operatingResultUsd).toBe(95);
+        // Revenue is known; this fixture has no expense coverage.
+        expect(july.operatingResultUsd).toBeNull();
         // Revenue is what entered Stripe in the month; the Wise payout is
         // cash only, so no settlement line bridges the two.
         expect(
@@ -561,7 +562,7 @@ describe("buildRunway", () => {
         expect(
             result.columns.find((column) => column.id === "2026-07:actual")
                 ?.operatingResultUsd,
-        ).toBe(103);
+        ).toBeNull(); // No expense coverage in this sales-only fixture.
         expect(result.currentCashUsd).toBe(1080);
     });
 
@@ -1159,7 +1160,7 @@ describe("buildRunway", () => {
         expect(result.runwayMonths).not.toBeNull();
     });
 
-    it("shows cents in settlement estimates without claiming the supplier invoice is missing", () => {
+    it("keeps tiny settlement estimates visible without decimals without claiming the supplier invoice is missing", () => {
         const result = buildRunway([opening()], NOW, [
             cloud({
                 start: "2026-07-01 00:00:00",
@@ -1170,7 +1171,7 @@ describe("buildRunway", () => {
             }),
         ]);
         expect(result.billingNotices).toEqual([
-            "google (compute): 2026-08 includes $0.02 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
+            "google (compute): 2026-08 includes <$1 planned settlement for 2026-07 cash-funded usage, reduced by payments recorded this month.",
         ]);
         expect(result.billingNotices.join(" ")).not.toMatch(
             /awaiting|pending|missing/i,
@@ -1239,7 +1240,10 @@ describe("buildRunway", () => {
         const google = result.rows.filter((r) => r.vendor === "google");
         expect(google).toHaveLength(2);
         expect(
-            google.reduce((sum, r) => sum + r.values["2026-08:forecast"], 0),
+            google.reduce(
+                (sum, r) => sum + (r.values["2026-08:forecast"] ?? Number.NaN),
+                0,
+            ),
         ).toBe(-730);
         expect(result.remainingCurrentPlanUsd).toBe(95);
         expect(result.currentCashUsd).toBe(19270);
@@ -1461,7 +1465,7 @@ describe("ledger-based P&L categories", () => {
         );
 
         expect(compute?.values["2026-07:actual"]).toBe(-700);
-        expect(compute?.values["2026-08:current"]).toBe(0);
+        expect(compute?.values["2026-08:current"]).toBeNull();
         // Credit-funded usage stays beside the cash figure, never inside it.
         expect(infrastructure?.values["2026-07:actual"]).toBe(0);
         expect(infrastructure?.creditValues?.["2026-07:actual"]).toBe(-300);
@@ -1601,7 +1605,7 @@ describe("ledger-based P&L categories", () => {
         );
 
         expect(tinybird?.values["2026-07:actual"]).toBe(-40);
-        expect(tinybird?.values["2026-05:actual"]).toBe(0);
+        expect(tinybird?.values["2026-05:actual"]).toBeNull();
         expect(
             result.flags.some(
                 (flag) =>
@@ -1610,12 +1614,12 @@ describe("ledger-based P&L categories", () => {
                     /ledger/.test(flag),
             ),
         ).toBe(true);
-        // June is paid and the ledger covers July: a postpaid bill, no warning.
+        // An adjacent month's costs do not identify the invoice June paid.
         expect(
             result.flags.some(
                 (flag) => /tinybird/.test(flag) && /2026-06/.test(flag),
             ),
-        ).toBe(false);
+        ).toBe(true);
     });
 
     it("does not assume credit-funded usage can never need cash", () => {
@@ -1733,4 +1737,63 @@ describe("ledger-based P&L categories", () => {
         expect(pnlSource("compute")).toBe("ledger");
         expect(pnlSource("infrastructure")).toBe("ledger");
     });
+});
+
+it("ends Ko-fi recurring sales after shutdown without dropping the payment already recorded that month", () => {
+    const sale = (overrides: Partial<StripeSalesRow>) =>
+        stripeSales({
+            month: "2026-09",
+            currency: "USD",
+            gross_sales: 100,
+            refunds: 0,
+            reversals: 0,
+            stripe_fees: 5,
+            net_sales: 100,
+            net_after_fees: 95,
+            coverage_complete: 1,
+            ...overrides,
+        });
+    const result = buildRunway(
+        [opening(1000)],
+        new Date("2026-10-16T12:00:00Z"),
+        [],
+        {
+            "stripe sales|revenue": {
+                salesStoppedFrom: { kofi: "2026-10-16" },
+            },
+        },
+        [
+            sale({}),
+            sale({
+                revenue_stream: "kofi",
+                gross_sales: 20,
+                stripe_fees: 2,
+                net_sales: 20,
+                net_after_fees: 18,
+            }),
+            sale({
+                revenue_stream: "kofi",
+                month: "2026-10",
+                gross_sales: 5,
+                stripe_fees: 1,
+                net_sales: 5,
+                net_after_fees: 4,
+                coverage_complete: 0,
+            }),
+        ],
+    );
+    const row = result.rows.find((row) => row.vendor === "stripe sales");
+    if (!row) throw new Error("Missing Stripe sales row");
+    expect(row.values["2026-09:actual"]).toBe(113);
+    expect(row.values["2026-10:forecast"]).toBe(99);
+    expect(row.values["2026-11:forecast"]).toBe(95);
+    expect(
+        row.details?.find((row) => row.label === "Gross customer payments")
+            ?.values["2026-10:forecast"],
+    ).toBe(105);
+    expect(
+        row.details?.find(
+            (row) => row.label === "Stripe fees (including dispute fees)",
+        )?.values["2026-10:forecast"],
+    ).toBe(-6);
 });

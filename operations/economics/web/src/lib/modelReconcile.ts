@@ -22,6 +22,8 @@ const MONTH_KEY = /^\d{4}-\d{2}$/;
 // Residual statuses carry provider cost that no Pollen model row owns.
 export type ModelAllocationStatus =
     | "allocated"
+    | "missing usage"
+    | "ambiguous allocation"
     | "missing provider"
     | "unallocated"
     | "needs mapping"
@@ -326,6 +328,8 @@ export function residualBuckets(
         const usd = model.providerUsageUsd ?? 0;
         switch (model.status) {
             case "allocated":
+            case "missing usage":
+            case "ambiguous allocation":
                 buckets.allocatedUsd += usd;
                 break;
             case "missing breakdown":
@@ -388,6 +392,12 @@ function groupedRow(
     }
     return {
         ...modelFundingAllocation(merged, funding),
+        status:
+            members.length < group.models.length
+                ? "ambiguous allocation"
+                : members.some((member) => entry.pollenModels.has(member))
+                  ? "allocated"
+                  : "missing usage",
         members: group.models,
         lines,
     };
@@ -415,7 +425,13 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
         if (grouped.has(model.model)) continue;
         const funding = entry.providerModels.get(model.model);
         if (funding) {
-            models.push(modelFundingAllocation(model, funding));
+            models.push({
+                ...modelFundingAllocation(model, funding),
+                status:
+                    (memberships.get(model.model) ?? 0) > 1
+                        ? "ambiguous allocation"
+                        : "allocated",
+            });
             continue;
         }
         models.push({
@@ -430,25 +446,12 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     }
     // A ledger line with no cash and no credit (for example a corrected fact
     // re-appended at zero) records no usage and is not a residual.
-    // A provider line that names a Pollen model the meter did not see this
-    // month on this vendor is still that model's cost: a normal row with
-    // zero Pollen usage, not a residual.
+    // Keep a named provider cost without inventing zero usage or a settled
+    // model margin when this vendor/month has no matching Pollen row.
     for (const [model, funding] of entry.providerModels) {
         if (grouped.has(model)) continue;
         if (!entry.pollenModels.has(model) && hasFunding(funding)) {
-            models.push(
-                modelFundingAllocation(
-                    {
-                        model,
-                        paidPollenUsd: 0,
-                        questPollenUsd: 0,
-                        retainedPaidUsd: 0,
-                        paidMeterUsd: 0,
-                        questMeterUsd: 0,
-                    },
-                    funding,
-                ),
-            );
+            models.push(residualRow(model, "missing usage", funding));
         }
     }
     for (const [label, funding] of entry.providerOnlyLabels) {
@@ -471,6 +474,23 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     }
     if (entry.hasProvider && models.length === 0) {
         models.push(residualRow("No Pollen usage", "provider only", entry));
+    }
+    for (const row of models) {
+        if (
+            row.status !== "ambiguous allocation" &&
+            row.status !== "missing usage"
+        )
+            continue;
+        row.netCashContributionUsd = null;
+        row.paidContributionUsd = null;
+        row.questCashSubsidyUsd = null;
+        row.meterGapUsd = null;
+        row.paidProviderCashUsd = null;
+        row.questProviderCashUsd = null;
+        row.paidProviderCreditUsd = null;
+        row.questProviderCreditUsd = null;
+        row.paidPollenOnCreditsUsd = null;
+        row.questPollenOnCreditsUsd = null;
     }
     return models.sort(
         (a, b) =>

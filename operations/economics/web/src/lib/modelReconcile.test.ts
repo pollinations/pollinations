@@ -838,7 +838,7 @@ describe("modelReconcileRows", () => {
                 (m) => m.model === "claude-large + anthropic/claude-opus-4.6",
             ),
         ).toMatchObject({
-            status: "allocated",
+            status: "ambiguous allocation",
             providerCreditUsd: 1000,
             pollenMeterUsd: 5,
         });
@@ -847,7 +847,7 @@ describe("modelReconcileRows", () => {
                 (m) => m.model === "anthropic/claude-opus-4.8 + claude-large",
             ),
         ).toMatchObject({
-            status: "allocated",
+            status: "ambiguous allocation",
             providerCreditUsd: 700,
             pollenMeterUsd: 600,
         });
@@ -860,7 +860,7 @@ describe("modelReconcileRows", () => {
         });
     });
 
-    it("keeps a mapped model with no Pollen usage as a normal model row", () => {
+    it("keeps a mapped cost visible while unmatched usage and margin remain unknown", () => {
         const [row] = modelReconcileRows(
             data({
                 vendorLedger: [
@@ -888,12 +888,12 @@ describe("modelReconcileRows", () => {
         expect(
             row.models.find((m) => m.model === "black-forest-labs/flux.2-flex"),
         ).toMatchObject({
-            status: "allocated",
+            status: "missing usage",
             providerCashUsd: 5,
-            pollenMeterUsd: 0,
-            paidPollenUsd: 0,
-            questPollenUsd: 0,
-            netCashContributionUsd: -5,
+            pollenMeterUsd: null,
+            paidPollenUsd: null,
+            questPollenUsd: null,
+            netCashContributionUsd: null,
         });
         expect(
             row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),

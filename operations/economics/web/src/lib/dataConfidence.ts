@@ -1,3 +1,4 @@
+import { fmtUsd } from "./format";
 import type { ReconciliationIssue } from "./reconciliation";
 import type { unitEconomicsReport } from "./unitEconomics";
 
@@ -9,7 +10,19 @@ export function dataConfidence(
     issues: ReconciliationIssue[],
     report?: Report | null,
 ) {
+    if (issues.some((row) => row.group === "financial")) {
+        return {
+            status: "Incomplete",
+            detail: "Financial source checks remain open; recorded totals may change. See reconciliation for the affected amounts and months.",
+        };
+    }
     if (report) {
+        if (!report.vendorMonths.length) {
+            return {
+                status: "Incomplete",
+                detail: "No provider records for this period; missing data is not zero.",
+            };
+        }
         const { blockers, vendorMonths } = report;
         if (blockers.some((row) => row.kind !== "usage")) {
             return {
@@ -29,16 +42,9 @@ export function dataConfidence(
             // Floor rather than round: an outstanding gap must not display 100%.
             const percentage =
                 cost > 0
-                    ? `${(Math.floor(Math.max(0, 1 - unmatched / cost) * 10000) / 100).toFixed(2)}% of recorded costs have usage records. `
+                    ? `${Math.floor(Math.max(0, 1 - unmatched / cost) * 100)}% of recorded costs have usage records. `
                     : "";
-            const amount =
-                unmatched > 0 && unmatched < 0.01
-                    ? "Less than $0.01"
-                    : unmatched.toLocaleString("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                          minimumFractionDigits: 2,
-                      });
+            const amount = fmtUsd(unmatched);
             return {
                 status: "Partial",
                 detail: `${percentage}${amount} has no matching usage; ${report.provisional ? "results use recorded figures" : "results remain unknown"}.`,

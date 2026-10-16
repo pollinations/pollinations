@@ -31,6 +31,7 @@ import {
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
 import { audioRoutes } from "./routes/audio.ts";
+import { authMdRoutes } from "./routes/auth-md.ts";
 import {
     buildMergedOpenApiSpec,
     createDocsRoutes,
@@ -150,6 +151,7 @@ function llmsTxt(c: Context<Env>): Response {
 - [MCP server catalog](${origin}/mcp): Agent tools and server URLs.
 - [OAuth protected resource metadata](${origin}/.well-known/oauth-protected-resource): RFC 9728 pointer to the authorization server that issues API keys.
 - [MCP AI Catalog](${origin}/.well-known/ai-catalog.json): SEP-2127 discovery of MCP Server Cards.
+- [Sign-in guide for agents](${origin}/auth.md): auth.md — the supported flows, scopes, and endpoints for getting a key without a human reading the docs.
 
 ## Guides
 
@@ -281,6 +283,8 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
     // only the exact /mcp/:serverId path, while its /mcp/* edge rate limit
     // still runs first because the cards are mounted after it.
     .route("/", mcpCardRoutes)
+    // auth.md: the agent-facing sign-in guide (https://github.com/workos/auth.md).
+    .route("/", authMdRoutes)
     .route(E2B_PATH, e2bRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
     // the ?format=yaml passthrough stays on /docs/open-api/generate-schema.

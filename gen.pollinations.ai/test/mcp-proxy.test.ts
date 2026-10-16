@@ -46,6 +46,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
+                id: "embeddings",
+                name: "Embeddings",
+                description:
+                    "Create text embeddings for semantic search, clustering, and RAG.",
+                url: "https://gen.pollinations.ai/mcp/embeddings",
+                pricing: {
+                    description:
+                        "Embedding tools use the caller's embedding model rate. No additional MCP fee.",
+                    rates: [],
+                },
+            },
+            {
                 id: "ffmpeg",
                 name: "FFmpeg",
                 description:

@@ -3,6 +3,9 @@
 A sandbox is a Linux computer in the cloud, run by [E2B](https://e2b.dev) (alpha).
 Open it with `ssh` or VS Code's Remote-SSH.
 Its files stay while it's paused, and you pay from your Pollinations wallet only while it runs.
+You can also create and manage sandboxes on the [dashboard](https://enter.pollinations.ai/sandboxes).
+
+<p align="left"><img src="https://media.pollinations.ai/7452f81b-4065-4af5-a65b-662c811e7ea2" alt="Sandboxes page on the dashboard" width="560"></p>
 
 ### Use a sandbox
 

@@ -1,11 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
-import {
-    parsePrivateConfig,
-    REQUIRED_PIPES,
-    validatePipeRows,
-} from "../src/lib/pipeContracts.ts";
+import { REQUIRED_PIPES, validatePipeRows } from "../src/lib/pipeContracts.ts";
 
 export { REQUIRED_PIPES } from "../src/lib/pipeContracts.ts";
 
@@ -58,8 +54,6 @@ export async function checkTinybirdContract({
         }
         try {
             validatePipeRows(pipe, body.data);
-            if (pipe === "economics_private_config_api")
-                parsePrivateConfig(body.data[0]);
         } catch (error) {
             // Shared validators report field names only, never source payloads.
             failures.push(error.message);

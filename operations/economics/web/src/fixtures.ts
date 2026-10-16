@@ -1,6 +1,5 @@
 import type {
     EconomicsPrivateConfig,
-    EconomicsPrivateConfigRow,
     OpPollenRow,
     OpTransactionRow,
     RevenueShareSourceRow,
@@ -15,12 +14,13 @@ export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
             fixedAmounts: [{ amount: -90, currency: "USD" }],
         },
     },
-    reconciliation: {
+    reviewNotes: {
         providerCheckExplanations: [
             {
                 month: "2026-03",
                 provider: "pruna",
                 reason: "unverifiable_history",
+                decision: "known_limitation",
                 explanation: "Example reviewed limitation.",
                 evidence: [
                     "https://drive.google.com/file/d/example-check/view",
@@ -681,18 +681,39 @@ const userBalances: UserBalanceSummaryRow[] = [
         synced_at: "2026-08-31 03:00:00",
     },
 ];
-const privateConfig: EconomicsPrivateConfigRow[] = [
-    {
-        config: JSON.stringify(PRIVATE_CONFIG_FIXTURE),
-        recorded_at: "2026-01-01 00:00:00.000",
-    },
-];
+export const PLANNING_DOCUMENT_FIXTURE: EconomicsPrivateConfig = {
+    ...PRIVATE_CONFIG_FIXTURE,
+    forecastRules: {},
+    recordedAt: "2026-10-16T00:00:00Z",
+};
+const examplePlan: VendorLedgerRow = {
+    entry_id: "example-openai-plan",
+    source: "reviewed-plan",
+    vendor: "openai",
+    type: "planned",
+    start: "",
+    end: "",
+    paid: 0,
+    credit: 0,
+    currency: "USD",
+    resource_id: "",
+    resource_name: "Development subscription",
+    resource_sku: "",
+    resource_count: 0,
+    model: "",
+    evidence: "Example plan",
+    recorded_at: "2026-10-16 00:00:00.000",
+    plan_amount: -90,
+    plan_category: "development",
+    plan_cadence: "monthly",
+    settled_by_entry_ids: [],
+};
+
 export const FIXTURES: Record<string, unknown[]> = {
     economics_bank_ledger_api: opTransactions,
-    economics_vendor_ledger_api: vendorLedger,
+    economics_vendor_ledger_api: [...vendorLedger, examplePlan],
     economics_pollen_usage_api: opPollen,
     economics_revenue_share_api: revenueShare,
     economics_stripe_sales_api: stripeSales,
     economics_user_balances_api: userBalances,
-    economics_private_config_api: privateConfig,
 };

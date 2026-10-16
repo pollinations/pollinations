@@ -68,10 +68,6 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
             "requests_quests",
         ],
     },
-    economics_private_config_api: {
-        strings: ["config", "recorded_at"],
-        numbers: [],
-    },
     economics_revenue_share_api: {
         strings: [
             "row_type",
@@ -152,6 +148,30 @@ export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
                 throw new Error(`${pipe}[${index}].${field}: expected number`);
             }
         }
+        if (
+            pipe === "economics_vendor_ledger_api" &&
+            (row.type === "statement" ||
+                (Array.isArray(row.compared_entry_ids) &&
+                    row.compared_entry_ids.length))
+        ) {
+            if (
+                (row.type === "statement" &&
+                    (typeof row.statement_amount !== "number" ||
+                        !Number.isFinite(row.statement_amount) ||
+                        row.paid !== 0 ||
+                        row.credit !== 0)) ||
+                !Array.isArray(row.compared_entry_ids) ||
+                row.compared_entry_ids.some(
+                    (id: unknown) => typeof id !== "string" || !id,
+                ) ||
+                (row.compared_entry_ids.length > 0 &&
+                    (!["cost", "balance"].includes(
+                        String(row.comparison_basis),
+                    ) ||
+                        !/^\d{4}-\d{2}$/.test(String(row.comparison_month))))
+            )
+                throw new Error(`${pipe}[${index}]: invalid source comparison`);
+        }
         for (const [field, allowed] of Object.entries(contract.enums ?? {})) {
             if (!allowed.includes(String(row[field]))) {
                 throw new Error(`${pipe}[${index}].${field}: unexpected value`);
@@ -159,9 +179,6 @@ export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
         }
     });
 
-    if (pipe === "economics_private_config_api" && rows.length !== 1) {
-        throw new Error(`${pipe}: expected one row, received ${rows.length}`);
-    }
     if (
         pipe === "economics_user_balances_api" &&
         (rows.length !== 1 || (rows[0] as { users: number }).users <= 0)
@@ -188,57 +205,28 @@ export function parsePrivateConfig(
     try {
         value = JSON.parse(row.config);
     } catch {
-        throw new Error("economics_private_config_api.config: invalid JSON");
+        throw new Error("Planning document: invalid JSON");
     }
     if (value == null || typeof value !== "object" || Array.isArray(value)) {
-        throw new Error("economics_private_config_api.config: expected object");
+        throw new Error("Planning document: expected object");
     }
     const config = value as Partial<EconomicsPrivateConfig>;
     if (
         config.forecastRules == null ||
         typeof config.forecastRules !== "object" ||
         Array.isArray(config.forecastRules) ||
-        config.reconciliation == null ||
-        typeof config.reconciliation !== "object" ||
-        !Array.isArray(config.reconciliation.providerCheckExplanations) ||
-        !Array.isArray(config.reconciliation.meterDriftExplanations) ||
-        !Array.isArray(config.reconciliation.pollenWitnessExplanations)
+        "salesAdjustments" in config ||
+        "reconciliation" in config ||
+        config.reviewNotes == null ||
+        typeof config.reviewNotes !== "object" ||
+        "costDifferences" in config.reviewNotes ||
+        !Array.isArray(config.reviewNotes.providerCheckExplanations) ||
+        !Array.isArray(config.reviewNotes.meterDriftExplanations) ||
+        !Array.isArray(config.reviewNotes.pollenWitnessExplanations)
     ) {
-        throw new Error("economics_private_config_api.config: invalid shape");
+        throw new Error("Planning document: invalid shape");
     }
-    const adjustments = config.salesAdjustments ?? [];
-    const adjustmentKeys = new Set<string>();
-    if (
-        !Array.isArray(adjustments) ||
-        adjustments.some((item) => {
-            if (item == null) return true;
-            const key = `${item.month}|${item.revenue_stream}|${item.currency}`;
-            const duplicate = adjustmentKeys.has(key);
-            adjustmentKeys.add(key);
-            return (
-                duplicate ||
-                !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) ||
-                !["pollen", "kofi"].includes(item.revenue_stream) ||
-                !["USD", "EUR"].includes(item.currency) ||
-                [item.refunds, item.reversals, item.stripe_fees].some(
-                    (amount) =>
-                        typeof amount !== "number" ||
-                        !Number.isFinite(amount) ||
-                        amount < 0,
-                ) ||
-                !Array.isArray(item.evidence) ||
-                !item.evidence.length ||
-                item.evidence.some(
-                    (link: unknown) =>
-                        typeof link !== "string" || !hasArchivedEvidence(link),
-                )
-            );
-        })
-    )
-        throw new Error(
-            "economics_private_config_api.config: invalid sales adjustments",
-        );
-    const archiveChecks = config.reconciliation.archiveChecks ?? [];
+    const archiveChecks = config.reviewNotes.archiveChecks ?? [];
     if (
         !Array.isArray(archiveChecks) ||
         archiveChecks.some(
@@ -263,34 +251,7 @@ export function parsePrivateConfig(
                     !item.evidence.length),
         )
     ) {
-        throw new Error(
-            "economics_private_config_api.config: invalid archive checks",
-        );
-    }
-    const differences = config.reconciliation.costDifferences ?? [];
-    if (
-        !Array.isArray(differences) ||
-        differences.some(
-            (item) =>
-                item == null ||
-                !/^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) ||
-                typeof item.provider !== "string" ||
-                !item.provider.trim() ||
-                typeof item.amountUsd !== "number" ||
-                !Number.isFinite(item.amountUsd) ||
-                item.amountUsd < 0 ||
-                (item.amountLabel !== undefined &&
-                    (typeof item.amountLabel !== "string" ||
-                        !item.amountLabel.trim())) ||
-                typeof item.explanation !== "string" ||
-                !item.explanation.trim() ||
-                !Array.isArray(item.evidence) ||
-                item.evidence.some((link: unknown) => typeof link !== "string"),
-        )
-    ) {
-        throw new Error(
-            "economics_private_config_api.config: invalid cost differences",
-        );
+        throw new Error("Planning document: invalid archive checks");
     }
     // Stored rules can predate a vendor rename, just like ledger rows.
     const forecastRules: EconomicsPrivateConfig["forecastRules"] = {};
@@ -303,25 +264,33 @@ export function parsePrivateConfig(
         if (Object.hasOwn(forecastRules, key)) {
             throw new Error(`Duplicate forecast rule for ${key}`);
         }
+        if (
+            rule.salesStoppedFrom !== undefined &&
+            (key !== "stripe sales|revenue" ||
+                rule.salesStoppedFrom === null ||
+                typeof rule.salesStoppedFrom !== "object" ||
+                Array.isArray(rule.salesStoppedFrom) ||
+                Object.entries(rule.salesStoppedFrom).some(
+                    ([stream, date]) =>
+                        !["pollen", "kofi"].includes(stream) ||
+                        typeof date !== "string" ||
+                        !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+                        !Number.isFinite(Date.parse(date)) ||
+                        new Date(date).toISOString().slice(0, 10) !== date,
+                ))
+        )
+            throw new Error("Invalid sales stop date");
         forecastRules[key] = rule;
     }
     return {
         ...config,
         forecastRules,
-        reconciliation: {
-            ...config.reconciliation,
-            ...(config.reconciliation.archiveChecks === undefined
+        reviewNotes: {
+            ...config.reviewNotes,
+            ...(config.reviewNotes.archiveChecks === undefined
                 ? {}
                 : {
                       archiveChecks: archiveChecks.map((item) => ({
-                          ...item,
-                          provider: canonicalProvider(item.provider),
-                      })),
-                  }),
-            ...(config.reconciliation.costDifferences === undefined
-                ? {}
-                : {
-                      costDifferences: differences.map((item) => ({
                           ...item,
                           provider: canonicalProvider(item.provider),
                       })),

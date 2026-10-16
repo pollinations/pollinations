@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import type { OpPollenRow } from "../types";
+import {
+    FIXTURES,
+    PLANNING_DOCUMENT_FIXTURE,
+    PRIVATE_CONFIG_FIXTURE,
+} from "../fixtures";
+import type { OpPollenRow, VendorLedgerRow } from "../types";
 import {
     canonicalPollenRows,
     canonicalVendor,
@@ -55,14 +59,20 @@ describe("loadAll", () => {
         expect(result.revenueShare).toBeUndefined();
         expect(result.privateConfig).toBeUndefined();
     });
-    it("requires and parses the authenticated private configuration", async () => {
+    it("loads authenticated Drive decisions and non-posting Vendor plans", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
                 const pipe = decodeURIComponent(
                     String(input).split("/").at(-1) ?? "",
                 );
-                return Promise.resolve(Response.json({ data: FIXTURES[pipe] }));
+                return Promise.resolve(
+                    Response.json(
+                        pipe === "planning"
+                            ? PLANNING_DOCUMENT_FIXTURE
+                            : { data: FIXTURES[pipe] },
+                    ),
+                );
             }),
         );
 
@@ -72,13 +82,33 @@ describe("loadAll", () => {
             expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
             expect(rows?.some((row) => row.vendor === "vast.ai")).toBe(false);
         }
-        expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+        expect(result.privateConfig).toEqual({
+            ...PRIVATE_CONFIG_FIXTURE,
+            forecastRules: {
+                ...PRIVATE_CONFIG_FIXTURE.forecastRules,
+                "stripe refunds|revenue": {
+                    fixedAmounts: [{ amount: 0, currency: "USD" }],
+                },
+            },
+            recordedAt: PLANNING_DOCUMENT_FIXTURE.recordedAt,
+        });
+        expect(result.vendorPlans?.map((row) => row.plan_amount)).toEqual([
+            -90,
+        ]);
+        expect(result.vendorLedger?.some((row) => row.type === "planned")).toBe(
+            false,
+        );
+        expect(
+            result.providerObservations?.some(
+                (row) => row.vendor === "openai" && row.month === "",
+            ),
+        ).toBe(false);
         expect(result.userBalances).toEqual(
             FIXTURES.economics_user_balances_api,
         );
     });
 
-    it("fails closed when the private configuration is absent", async () => {
+    it("fails closed when the Drive document is absent", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn((input: RequestInfo | URL) => {
@@ -86,18 +116,15 @@ describe("loadAll", () => {
                     String(input).split("/").at(-1) ?? "",
                 );
                 return Promise.resolve(
-                    Response.json({
-                        data:
-                            pipe === "economics_private_config_api"
-                                ? []
-                                : FIXTURES[pipe],
-                    }),
+                    Response.json(
+                        pipe === "planning" ? null : { data: FIXTURES[pipe] },
+                    ),
                 );
             }),
         );
 
         await expect(loadAll()).rejects.toThrow(
-            "economics_private_config_api: expected one row, received 0",
+            "Planning document: expected object",
         );
     });
 
@@ -288,4 +315,34 @@ describe("canonicalPollenRows", () => {
             ]),
         ).toEqual([]);
     });
+});
+
+it("loads non-posting statement facts from Vendor without treating them as usage", async () => {
+    const usage = FIXTURES.economics_vendor_ledger_api[0] as VendorLedgerRow;
+    const statement = {
+        ...usage,
+        entry_id: "source-statement",
+        type: "statement",
+        paid: 0,
+        credit: 0,
+        statement_amount: 55.8,
+        compared_entry_ids: [usage.entry_id],
+        comparison_basis: "cost",
+        comparison_month: "2026-09",
+    };
+    vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+            Promise.resolve(Response.json({ data: [usage, statement] })),
+        ),
+    );
+    const result = await loadAll(["vendorLedger"]);
+    expect(result.vendorLedger).toHaveLength(1);
+    expect(result.vendorStatements).toHaveLength(1);
+    expect(result.vendorStatements?.[0].statement_amount).toBe(55.8);
+    expect(() =>
+        validatePipeRows("economics_vendor_ledger_api", [
+            { ...statement, paid: -55.8 },
+        ]),
+    ).toThrow("invalid source comparison");
 });

@@ -1,7 +1,7 @@
-import { FIXTURES } from "../fixtures";
+import { FIXTURES, PLANNING_DOCUMENT_FIXTURE } from "../fixtures";
 import type {
     Data,
-    EconomicsPrivateConfigRow,
+    EconomicsPrivateConfig,
     OpPollenRow,
     OpTransactionRow,
     RevenueShareSourceRow,
@@ -9,7 +9,12 @@ import type {
     UserBalanceSummaryRow,
     VendorLedgerRow,
 } from "../types";
-import { parsePrivateConfig, validatePipeRows } from "./pipeContracts";
+import { validatePipeRows } from "./pipeContracts";
+import {
+    ledgerForecastRules,
+    parsePlanningDocument,
+    validateVendorPlan,
+} from "./planning";
 import {
     canonicalProvider,
     collectProviderObservations,
@@ -113,7 +118,10 @@ export function canonicalPollenRows(
     );
 }
 
-export type DataSource = Exclude<keyof Data, "providerObservations">;
+export type DataSource = Exclude<
+    keyof Data,
+    "providerObservations" | "vendorStatements" | "vendorPlans"
+>;
 
 export const DATA_SOURCES = [
     "opTransactions",
@@ -132,6 +140,7 @@ export async function loadAll(
     // Every requested source remains required. Unrelated views do not wait
     // for an expensive or unavailable endpoint they do not consume.
     const wanted = new Set(sources);
+    if (wanted.has("privateConfig")) wanted.add("vendorLedger");
     const [
         opTransactions,
         vendorLedger,
@@ -139,7 +148,7 @@ export async function loadAll(
         revenueShare,
         stripeSales,
         userBalances,
-        privateConfigRows,
+        planningDocument,
     ] = await Promise.all([
         wanted.has("opTransactions")
             ? fetchPipe<OpTransactionRow>("economics_bank_ledger_api", signal)
@@ -165,31 +174,46 @@ export async function loadAll(
                   signal,
               )
             : undefined,
-        wanted.has("privateConfig")
-            ? fetchPipe<EconomicsPrivateConfigRow>(
-                  "economics_private_config_api",
-                  signal,
-              )
-            : undefined,
+        wanted.has("privateConfig") ? fetchPlanning(signal) : undefined,
     ]);
-    const privateConfig = privateConfigRows
-        ? parsePrivateConfig(privateConfigRows[0])
-        : undefined;
-
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
         vendor: canonicalVendor(row.vendor),
     });
 
+    const vendorPlans = vendorLedger
+        ?.filter((row) => row.type === "planned")
+        .map(canonicalize);
+    for (const row of vendorPlans ?? []) validateVendorPlan(row);
+    const privateConfig = planningDocument
+        ? {
+              ...planningDocument,
+              forecastRules: ledgerForecastRules(
+                  vendorPlans ?? [],
+                  planningDocument,
+              ),
+          }
+        : undefined;
+
     const providerObservations = collectProviderObservations({
         opTransactions,
-        vendorLedger,
+        vendorLedger: vendorLedger?.filter(
+            (row) => row.type !== "statement" && row.type !== "planned",
+        ),
         opPollen,
     });
 
     return {
         opTransactions: opTransactions?.map(canonicalize),
-        vendorLedger: vendorLedger?.map(canonicalize),
+        vendorLedger: vendorLedger
+            ?.filter(
+                (row) => row.type !== "statement" && row.type !== "planned",
+            )
+            .map(canonicalize),
+        vendorPlans,
+        vendorStatements: vendorLedger
+            ?.filter((row) => row.type === "statement")
+            .map(canonicalize),
         opPollen: opPollen ? canonicalPollenRows(opPollen) : undefined,
         revenueShare,
         stripeSales,
@@ -197,4 +221,16 @@ export async function loadAll(
         providerObservations,
         privateConfig,
     };
+}
+
+async function fetchPlanning(
+    signal?: AbortSignal,
+): Promise<EconomicsPrivateConfig> {
+    if (fixturesMode()) return parsePlanningDocument(PLANNING_DOCUMENT_FIXTURE);
+    const response = await fetch("/api/economics/planning", {
+        credentials: "same-origin",
+        signal,
+    });
+    if (!response.ok) throw new TbError("Planning document", response.status);
+    return parsePlanningDocument(await response.json());
 }

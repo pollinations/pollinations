@@ -337,7 +337,7 @@ export function meterDriftExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): MeterDriftExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.meterDriftExplanations ?? [],
+        privateConfig?.reviewNotes.meterDriftExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -347,7 +347,7 @@ export function providerCheckExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): ProviderCheckExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.providerCheckExplanations ?? [],
+        privateConfig?.reviewNotes.providerCheckExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -357,7 +357,7 @@ export function pollenWitnessExplanation(
     privateConfig?: EconomicsPrivateConfig,
 ): PollenWitnessExplanation | undefined {
     return explanationByKey(
-        privateConfig?.reconciliation.pollenWitnessExplanations ?? [],
+        privateConfig?.reviewNotes.pollenWitnessExplanations ?? [],
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
@@ -385,7 +385,8 @@ export function cloudObservationMonths(row: VendorLedgerRow): string[] {
     if (!/^\d{4}-\d{2}$/.test(endMonth) || endMonth < startMonth) {
         return [startMonth];
     }
-    const endIsMonthBoundary = row.end.startsWith(`${endMonth}-01 00:00:00`);
+    const endIsMonthBoundary =
+        /^\d{4}-\d{2}-01[ T]00:00:00(?:\.0+)?(?:Z|\+00:00)?$/.test(row.end);
     const exclusiveEnd = endIsMonthBoundary ? endMonth : nextMonth(endMonth);
     const months: string[] = [];
     for (

@@ -30,6 +30,15 @@ export type VendorLedgerRow = {
     resource_count: number;
     model: string;
     evidence: string;
+    // Planned cash movements are non-posting: paid and credit remain zero.
+    plan_amount?: number | null;
+    plan_category?: string;
+    plan_cadence?: "monthly" | "once" | "";
+    settled_by_entry_ids?: string[];
+    statement_amount?: number | null;
+    compared_entry_ids?: string[];
+    comparison_month?: string;
+    comparison_basis?: string;
     recorded_at: string;
 };
 
@@ -77,8 +86,18 @@ export type RevenueShareSourceRow = {
 export type StripeSalesRow = {
     revenue_stream: "pollen" | "kofi";
     reversals: number;
+    fraud_refunds?: number;
+    fraud_reversals?: number;
+    fraud_fees?: number;
+    fraud_transactions?: number;
+    fraud_evidence?: string[];
     // Absent coverage is unknown, never a completed month.
     coverage_complete?: number;
+    coverage_end?: string;
+    collected_at?: string;
+    missing_accounts?: string;
+    count_mismatches?: number;
+    enter_unmatched_payments?: number;
     month: string;
     currency: string;
     gross_sales: number;
@@ -125,6 +144,9 @@ export type ScheduledForecastAmount = ForecastAmount & {
 };
 
 export type PrivateForecastRule = {
+    salesStoppedFrom?: Partial<
+        Record<StripeSalesRow["revenue_stream"], string>
+    >;
     fixedAmounts?: ForecastAmount[];
     activeFrom?: string;
     activeThrough?: string;
@@ -135,6 +157,7 @@ export type ProviderCheckExplanation = {
     month: string;
     provider: string;
     reason: "unverifiable_history";
+    decision?: "known_limitation";
     explanation: string;
     evidence: string[];
 };
@@ -169,30 +192,13 @@ export type ArchiveCheck = {
     evidence: string[];
 };
 
-// Reviewed classifications of deductions already present in the Sales ledger.
-export type StripeFraudAdjustment = {
-    month: string;
-    revenue_stream: StripeSalesRow["revenue_stream"];
-    currency: string;
-    refunds: number;
-    reversals: number;
-    stripe_fees: number;
-    evidence: string[];
-};
-
 export type EconomicsPrivateConfig = {
-    salesAdjustments?: StripeFraudAdjustment[];
+    recordedAt?: string;
     forecastRules: Record<string, PrivateForecastRule>;
-    reconciliation: {
+    documentUrl?: string;
+    reviewNotes: {
+        planNotes?: { entryId: string; explanation: string }[];
         archiveChecks?: ArchiveCheck[];
-        costDifferences?: {
-            month: string;
-            provider: string;
-            amountUsd: number;
-            amountLabel?: string;
-            explanation: string;
-            evidence: string[];
-        }[];
         providerCheckExplanations: ProviderCheckExplanation[];
         meterDriftExplanations: MeterDriftExplanation[];
         pollenWitnessExplanations: PollenWitnessExplanation[];
@@ -207,6 +213,9 @@ export type EconomicsPrivateConfigRow = {
 export type Data = {
     opTransactions?: OpTransactionRow[];
     vendorLedger?: VendorLedgerRow[];
+    // Non-posting source totals from the same Vendor ledger endpoint.
+    vendorStatements?: VendorLedgerRow[];
+    vendorPlans?: VendorLedgerRow[];
     opPollen?: OpPollenRow[];
     revenueShare?: RevenueShareSourceRow[];
     stripeSales?: StripeSalesRow[];

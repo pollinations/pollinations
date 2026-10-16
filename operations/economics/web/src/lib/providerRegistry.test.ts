@@ -476,7 +476,7 @@ describe("provider registry", () => {
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.pollenWitnessExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.pollenWitnessExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
@@ -512,15 +512,14 @@ describe("provider registry", () => {
 
     it("finds historical reconciliation explanations by the renamed vendor", () => {
         const explanation = {
-            ...PRIVATE_CONFIG_FIXTURE.reconciliation
-                .pollenWitnessExplanations[0],
+            ...PRIVATE_CONFIG_FIXTURE.reviewNotes.pollenWitnessExplanations[0],
             provider: "vast.ai",
         };
         expect(
             pollenWitnessExplanation(explanation.month, "vast", {
                 ...PRIVATE_CONFIG_FIXTURE,
-                reconciliation: {
-                    ...PRIVATE_CONFIG_FIXTURE.reconciliation,
+                reviewNotes: {
+                    ...PRIVATE_CONFIG_FIXTURE.reviewNotes,
                     pollenWitnessExplanations: [explanation],
                 },
             }),
@@ -529,7 +528,7 @@ describe("provider registry", () => {
 
     it("keeps reviewed provider limitations unique, canonical, and archived", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.providerCheckExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.providerCheckExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );
@@ -563,7 +562,7 @@ describe("provider registry", () => {
 
     it("keeps explained meter drift unique, canonical, and archived", () => {
         const explanations =
-            PRIVATE_CONFIG_FIXTURE.reconciliation.meterDriftExplanations;
+            PRIVATE_CONFIG_FIXTURE.reviewNotes.meterDriftExplanations;
         const keys = explanations.map(
             (explanation) => `${explanation.month}|${explanation.provider}`,
         );

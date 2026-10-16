@@ -1,4 +1,4 @@
-import type { Data, StripeSalesRow } from "../types";
+import type { StripeSalesRow } from "../types";
 
 export const FRAUD_COMPONENTS = [
     "refunds",
@@ -7,15 +7,15 @@ export const FRAUD_COMPONENTS = [
 ] as const;
 
 // Classification only: actual sales and deductions are never rewritten.
-export function salesFraudAdjustment(data: Data, sale: StripeSalesRow) {
-    const matches = (data.privateConfig?.salesAdjustments ?? []).filter(
-        (row) =>
-            row.month === sale.month &&
-            row.revenue_stream === sale.revenue_stream &&
-            row.currency === sale.currency,
-    );
-    if (matches.length !== 1 || sale.coverage_complete !== 1) return null;
-    const adjustment = matches[0];
+export function salesFraudAdjustment(sale: StripeSalesRow) {
+    if (!sale.fraud_transactions || sale.coverage_complete !== 1) return null;
+    const adjustment = {
+        refunds: sale.fraud_refunds ?? NaN,
+        reversals: sale.fraud_reversals ?? NaN,
+        stripe_fees: sale.fraud_fees ?? NaN,
+        evidence: sale.fraud_evidence ?? [],
+    };
+    if (!adjustment.evidence.length) return null;
     if (
         FRAUD_COMPONENTS.some(
             (key) =>

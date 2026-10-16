@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "PollinationsCraft",
+    "url": "https://github.com/rekty/pollinations-craft/releases/tag/v1.0.0",
+    "description": "A Paper plugin that adds Pollinations to a Minecraft server, paid with the owner's own Pollen: **villager NPCs with personas** that players talk to by right-clicking or /polli say , each NPC with its ",
+    "language": "en",
+    "category": "games",
+    "platform": "desktop",
+    "githubUsername": "rekty",
+    "githubUserId": "30191185",
+    "repositoryUrl": "https://github.com/rekty/pollinations-craft",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17538",
+    "approvedDate": "2026-10-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/83c068b1-1694-4483-a7b3-d17d10fcbb5e"
+  },
+  {
+    "emoji": "🎮",
     "name": "PolliCraft",
     "url": "https://drjacky.github.io/PolliCraft",
     "description": "A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the",

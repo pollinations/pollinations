@@ -1,0 +1,32 @@
+{
+  "pr_number": 17659,
+  "title": "fix(news): record 3D and realtime models for model news",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/17659",
+  "merged_at": "2026-10-16T10:36:37Z",
+  "labels": [],
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "summary": "The model-news pipeline now records 3D and realtime models alongside the five existing catalog categories, covering the three 3D and five realtime models previously omitted from snapshots. A newly recorded category triggers a snapshot even if the models in older categories have not changed. Weekly model posts now recognize both categories for additions, removals, access changes and price changes; 3D price comparisons use image tokens, while realtime comparisons use audio tokens or, when absent, prompt-audio seconds. The post prompts also gain category labels and emojis for both.",
+    "keywords": [
+      "model news",
+      "catalog snapshots",
+      "3D models",
+      "realtime models",
+      "weekly posts"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17659.jpg",
+    "prompt": "In a cozy pixel art garden newsroom, Polli pins a little 3D cube and microphone beside the existing model cards on a lime green (#ecf874) noticeboard, with code-plants growing below. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, wears a tiny reporter's cap, and appears only once. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; warm cream background, dark purple (#110518) outlines, chunky sprites and a subtle CRT glow."
+  },
+  "generated_at": "2026-10-16T10:37:49.842140+00:00",
+  "area": "Brand & news",
+  "type": "Bug",
+  "source": "Team",
+  "merge_commit_sha": "5c2e5ea4386c6a2ec09141a8d3a59be00370aebc",
+  "announcements": []
+}

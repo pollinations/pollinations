@@ -346,6 +346,47 @@ export default defineConfig(async ({ mode }) => {
                                     { headers },
                                 );
                             },
+                            COUNCIL_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller credentials reached MCP",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                };
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "council proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    {
+                                        headers: {
+                                            "x-pollinations-mcp-cost": "0.106",
+                                            "x-pollinations-mcp-tool":
+                                                "council_reason",
+                                            "x-pollinations-mcp-status": "200",
+                                            "x-pollinations-mcp-adjustment-id":
+                                                "inferenceport.council.basic.v1",
+                                            "x-pollinations-mcp-adjustment-units":
+                                                "1",
+                                        },
+                                    },
+                                );
+                            },
                             COMPOSIO_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||

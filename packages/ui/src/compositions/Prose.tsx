@@ -15,7 +15,7 @@ export type ProseProps = {
     /**
      * `page` (default) uses the brand headings and framed code. `docs` is
      * quieter for long reading: body-face headings one size smaller, grey
-     * quotes and borderless code.
+     * quotes and table rules, and borderless code.
      */
     variant?: "page" | "docs";
     className?: string;
@@ -134,6 +134,25 @@ const componentsByVariant: Record<
         ),
         pre: ({ children }) => (
             <MarkdownCodeBlock variant="plain">{children}</MarkdownCodeBlock>
+        ),
+        // Grey rules: in docs the accent is kept for links and actions.
+        th: ({ node, ...props }) => (
+            <th
+                className="polli:border polli:border-theme-text-strong/15 polli:bg-surface-block polli:px-3 polli:py-2 polli:text-left polli:font-semibold"
+                {...props}
+            />
+        ),
+        td: ({ node, ...props }) => (
+            <td
+                className="polli:border polli:border-theme-text-strong/15 polli:px-3 polli:py-2"
+                {...props}
+            />
+        ),
+        hr: ({ node, ...props }) => (
+            <hr
+                className="polli:my-6 polli:border-theme-text-strong/15"
+                {...props}
+            />
         ),
     },
 };

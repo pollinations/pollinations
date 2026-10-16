@@ -6,7 +6,10 @@ type BaseNavItemProps = {
     active?: boolean;
     /** Optional leading icon. */
     icon?: ComponentType<{ className?: string }>;
-    /** `sm` packs long menus such as docs; `md` by default. */
+    /**
+     * `md` (default). `sm`: compact, quiet rows for long menus such as docs —
+     * smaller type, muted until hovered, a soft fill when active.
+     */
     size?: "md" | "sm";
     className?: string;
 };
@@ -14,14 +17,23 @@ type BaseNavItemProps = {
 // Neutral/quiet when inactive; filled with the accent when active. The leading
 // icon is the section marker.
 const base =
-    "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
+    "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:text-left polli:font-medium polli:whitespace-nowrap polli:transition-colors";
 const sizeClasses = {
-    md: "polli:px-3 polli:py-2",
-    sm: "polli:px-3 polli:py-1.5",
+    md: {
+        row: "polli:px-3 polli:py-2 polli:text-sm",
+        icon: "polli:h-4 polli:w-4",
+        active: "polli:bg-theme-bg-active polli:text-theme-text-strong",
+        inactive:
+            "polli:text-ink-800 polli:hover:bg-surface-opaque/60 polli:hover:text-ink-950",
+    },
+    sm: {
+        row: "polli:px-3 polli:py-1.5 polli:text-[13px]",
+        icon: "polli:h-3.5 polli:w-3.5",
+        active: "polli:bg-theme-bg-subtle polli:text-theme-text-strong",
+        inactive:
+            "polli:text-theme-text-muted polli:hover:bg-theme-bg-subtle polli:hover:text-theme-text-strong",
+    },
 } as const;
-const activeClasses = "polli:bg-theme-bg-active polli:text-theme-text-strong";
-const inactiveClasses =
-    "polli:text-ink-800 polli:hover:bg-surface-opaque/60 polli:hover:text-ink-950";
 
 export type NavItemProps<T extends React.ElementType = "button"> =
     PropsWithChildren<BaseNavItemProps> & {
@@ -49,14 +61,16 @@ export function NavItem<T extends React.ElementType = "button">({
             aria-current={active ? "page" : undefined}
             className={cn(
                 base,
-                sizeClasses[size],
-                active ? activeClasses : inactiveClasses,
+                sizeClasses[size].row,
+                active ? sizeClasses[size].active : sizeClasses[size].inactive,
                 className,
             )}
             {...rest}
         >
             {Icon ? (
-                <Icon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                <Icon
+                    className={cn(sizeClasses[size].icon, "polli:shrink-0")}
+                />
             ) : null}
             {children}
         </Component>

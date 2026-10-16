@@ -49,11 +49,15 @@ function clean(value, maxLength = 200) {
         .slice(0, maxLength);
 }
 
+// Reads one "### Label" block. The block ends at the next heading, at a
+// horizontal rule, or at the end of the body: submissions append a credit block
+// after "---", and without that boundary the value swallowed it, so a valid
+// "#17246" failed numeric validation as "#17246\n\n---\n\n**Made with…**".
 function section(body, label) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const match = String(body || "").match(
         new RegExp(
-            `(?:^|\\n)### ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`,
+            `(?:^|\\n)### ${escaped}\\s*\\n([\\s\\S]*?)(?=\\n### |\\n---\\s*\\n|$)`,
             "i",
         ),
     );

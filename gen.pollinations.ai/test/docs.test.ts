@@ -205,6 +205,15 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/systemone",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
         const jobStatusGet = (
             schema.paths["/v1/jobs/{id}"] as Record<string, unknown>
         )?.get as { tags?: string[] } | undefined;

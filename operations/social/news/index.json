@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-16T00:08:52.697774+00:00",
+  "generated_at": "2026-10-16T06:09:19.977531+00:00",
   "models": [
     {
       "id": "pr-15042:elevenlabs/music-v2.5",
@@ -7797,6 +7797,58 @@
     }
   ],
   "highlights": [
+    {
+      "date": "2026-10-15",
+      "emoji": "🚀",
+      "title": "Media jobs without waiting",
+      "text": "Send `Prefer: respond-async` for image, video, audio or 3D generation, then check the job and download its result when it finishes. The SDK has async methods for the same flow. [Read the API docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17380
+      ],
+      "kind": "api"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🤖",
+      "title": "Models for typed decisions",
+      "text": "Ask Perplexity Decider V1.1 27B or Microsoft-Decision-1 to score fixed choices and return probabilities instead of prose. Both accept decision requests through `/alpha/decisions`. [Browse models](https://enter.pollinations.ai/models).",
+      "prs": [
+        17484,
+        17485
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "🎵",
+      "title": "Sound effects for video",
+      "text": "Give `mirelo/sfx-2.0` a video URL and a sound prompt to add synchronized effects to the clip. [View the model](https://enter.pollinations.ai/models?q=mirelo/sfx-2.0).",
+      "prs": [
+        17590
+      ],
+      "kind": "model"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "💡",
+      "title": "Sandboxes keep their work",
+      "text": "New sandboxes default to pausing rather than deleting when their lease expires, so their files remain available. You can also name them and see estimated costs before choosing a template. [Read the sandbox docs](https://gen.pollinations.ai/docs).",
+      "prs": [
+        17416,
+        17646
+      ],
+      "kind": "product"
+    },
+    {
+      "date": "2026-10-15",
+      "emoji": "📱",
+      "title": "Pollinations in Android blocks",
+      "text": "Pollinations Blocks brings text, images, speech and transcription to MIT App Inventor and Kodular projects. [View repo](https://github.com/Saauf/pollinations-blocks).",
+      "prs": [
+        17643
+      ],
+      "kind": "app"
+    },
     {
       "date": "2026-10-14",
       "emoji": "🤖",

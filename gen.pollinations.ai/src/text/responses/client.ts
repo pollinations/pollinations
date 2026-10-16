@@ -1,10 +1,13 @@
 import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
+import { createParser } from "eventsource-parser";
 import { findModelByName } from "../availableModels.js";
-import type { ServiceError, TransformOptions } from "../types.js";
+import { imageUrlToBase64Transform } from "../transforms/imageUrlToBase64Transform.js";
+import type { ChatMessage, ServiceError, TransformOptions } from "../types.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
 import { isPlainObject } from "../utils/objectCleaners.js";
 import { buildDirectResponsesRequestBody } from "./request.js";
+import { RESPONSE_TERMINAL_EVENT_TYPES } from "./tracking.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -17,6 +20,13 @@ export type DirectResponsesTarget = {
     headers: Record<string, string>;
     model: string;
     defaults: JsonObject;
+    imageConversionModel?: string;
+    /**
+     * Ask for a stream even when the caller wants JSON. Cloudflare ends a
+     * subrequest to Azure that has no response headers after ~125 s, and a
+     * long JSON answer only sends them at the end.
+     */
+    streamUpstream?: true;
 };
 
 /** Build a Responses target from an already-resolved model configuration. */
@@ -46,6 +56,12 @@ export function responsesTargetFromConfig(
         endpoint,
         headers: authHeader,
         model,
+        ...(config.requiresBase64ImageUrls === true
+            ? { imageConversionModel: model }
+            : {}),
+        ...(config.responsesStreamUpstream === true
+            ? { streamUpstream: true as const }
+            : {}),
         defaults: {
             // Request fields the route always sends unless the caller sets them.
             ...(isPlainObject(config.responsesDefaults)
@@ -83,7 +99,10 @@ export function resolveDirectResponsesTarget(
     };
     const resolved = resolveModelConfig([], options).options;
     const config = resolved.modelConfig ?? {};
-    return responsesTargetFromConfig(String(resolved.model), config);
+    const target = responsesTargetFromConfig(String(resolved.model), config);
+    return target?.imageConversionModel
+        ? { ...target, imageConversionModel: modelId }
+        : target;
 }
 
 function parseJson(text: string): unknown {
@@ -108,11 +127,51 @@ function errorMessage(details: unknown, response: Response): string {
     return `${response.status} ${response.statusText}`;
 }
 
+/** The response object carried by a Responses stream's terminal event. */
+async function finalStreamResponse(
+    response: Response,
+    requestUrl: URL,
+): Promise<unknown> {
+    let final: unknown;
+    let failure: string | undefined;
+    const parser = createParser({
+        onEvent(message) {
+            const event = parseJson(message.data);
+            if (!isPlainObject(event)) return;
+            const type = event.type ?? message.event;
+            if (type === "error") failure = errorMessage(event, response);
+            if (RESPONSE_TERMINAL_EVENT_TYPES.has(String(type))) {
+                final = event.response;
+            }
+        },
+    });
+    parser.feed(await response.text());
+    if (final !== undefined) return final;
+    const error = new Error(
+        failure ?? "Responses provider stream ended without a final response",
+    ) as ServiceError;
+    error.status = 502;
+    error.requestUrl = requestUrl;
+    throw error;
+}
+
 export async function callDirectResponses(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,
     fetcher: typeof fetch = fetch,
 ): Promise<{ response: Response; requestUrl: URL }> {
+    if (target.streamUpstream && !request.stream) {
+        const result = await callDirectResponses(
+            { ...request, stream: true },
+            target,
+            fetcher,
+        );
+        const final = await finalStreamResponse(
+            result.response,
+            result.requestUrl,
+        );
+        return { ...result, response: Response.json(final) };
+    }
     const requestUrl = new URL(target.endpoint);
     if (!target.authConfigured) {
         const error = new Error(
@@ -121,6 +180,23 @@ export async function callDirectResponses(
         error.status = 500;
         error.requestUrl = requestUrl;
         throw error;
+    }
+
+    if (target.imageConversionModel && Array.isArray(request.input)) {
+        const transformed = await imageUrlToBase64Transform(
+            request.input.filter(isPlainObject) as ChatMessage[],
+            {
+                requestedModel: target.imageConversionModel,
+                modelConfig: { requiresBase64ImageUrls: true },
+            },
+        );
+        let index = 0;
+        request = {
+            ...request,
+            input: request.input.map((item) =>
+                isPlainObject(item) ? transformed.messages[index++] : item,
+            ),
+        };
     }
 
     let response: Response;

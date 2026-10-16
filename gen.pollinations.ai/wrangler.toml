@@ -90,6 +90,10 @@ run_worker_first = ["/", "/manifest.webmanifest"]
 [env.production.images]
 binding = "IMAGES"
 
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.production.triggers]
+crons = ["*/5 * * * *"]
+
 [[env.production.routes]]
 pattern = "gen.myceli.ai"
 zone_name = "myceli.ai"
@@ -192,6 +196,9 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
+# Durable Object fetches get a 125 s proxy read timeout; requests through
+# this origin get the zone's 300 s (src/durable-objects/GenerationCoordinator.ts).
+GENERATION_EXECUTION_ORIGIN = "https://gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -204,6 +211,10 @@ BEDROCK_GUARDRAIL_VERSION = "2"
 
 [env.staging.images]
 binding = "IMAGES"
+
+# Renews kept sandboxes (src/routes/e2b.ts).
+[env.staging.triggers]
+crons = ["*/5 * * * *"]
 
 [[env.staging.routes]]
 pattern = "staging.gen.myceli.ai"
@@ -301,6 +312,7 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
+GENERATION_EXECUTION_ORIGIN = "https://staging.gen.pollinations.ai"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"

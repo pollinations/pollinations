@@ -57,7 +57,14 @@ export default defineConfig(({ mode }) => ({
         }),
         react(),
         tailwindcss(),
-        cloudflare({ configPath: "../wrangler.toml" }),
+        cloudflare({
+            configPath: "../wrangler.toml",
+            persistState: {
+                path: fileURLToPath(
+                    new URL("./.wrangler/state", import.meta.url),
+                ),
+            },
+        }),
         {
             // Swap %PUBLIC_ORIGIN% in index.html for this build's asset origin.
             name: "enter-public-origin",

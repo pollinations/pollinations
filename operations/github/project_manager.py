@@ -9,6 +9,7 @@ import json
 import re
 import requests
 import time
+from functools import cache
 from typing import Optional
 
 
@@ -41,14 +42,6 @@ AI_MODEL = "openai/gpt-6-luna"
 # Log what would change instead of writing to GitHub (used by the manual dispatch).
 DRY_RUN = os.getenv("DRY_RUN") == "1"
 
-# Validate required tokens at startup
-if not GITHUB_TOKEN:
-    print("GITHUB_TOKEN environment variable not set")
-    sys.exit(1)
-if not POLLINATIONS_TOKEN:
-    print("POLLINATIONS_TOKEN environment variable not set")
-    sys.exit(1)
-
 GITHUB_HEADERS = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
     "Accept": "application/vnd.github+json",
@@ -61,6 +54,7 @@ TEAM_IDS = {5099901, 36901823, 74301576, 158852059, 34513273}
 # The Discord relay ends each relayed issue with "**Author:** `name` (UID: `123`)".
 RELAY_AUTHOR_LINE = re.compile(r"^\*\*Author:\*\* .*\(UID:\s*`?\d+`?\)\s*$", re.MULTILINE)
 TYPES = ["Bug", "Feature", "Question", "Task"]
+PR_TYPES = ["Bug", "Feature", "Task"]
 PRIORITIES = ["High", "Medium", "Low"]
 SOURCES = ["Team", "Community", "Agent", "Apps", "Quests"]
 # Workflow sources, in order: an issue with the label, or a PR that closes one.
@@ -178,7 +172,10 @@ def dev_fields(areas: list) -> dict:
         for n in nodes
         if n.get("options")
     }
-    for name, values in (("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)):
+    expected = [("Area", areas), ("Priority", PRIORITIES), ("Source", SOURCES)]
+    if IS_PULL_REQUEST:
+        expected.append(("Work type", PR_TYPES))
+    for name, values in expected:
         missing = [v for v in values if v not in fields.get(name, {}).get("options", {})]
         if missing:
             fail(f"Dev field {name} does not match project-manager.md; missing options: {missing}")
@@ -199,21 +196,28 @@ def author_source() -> str:
     return "Community"
 
 
-def closing_issue_labels() -> set:
-    """Labels of the issues this PR closes ("Fixes #123")."""
+@cache
+def closing_issues() -> list:
+    """Linked issues provide Source labels and work-type hints."""
     data = graphql_request(
-        """query($id: ID!) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 10) { nodes {
-            labels(first: 20) { nodes { name } }
+        """query($id: ID!) { node(id: $id) { ... on PullRequest { closingIssuesReferences(first: 30) { nodes {
+            number issueType { name } labels(first: 20) { nodes { name } }
         } } } } }""",
         {"id": ISSUE_NODE_ID},
     )
-    issues = data.get("node", {}).get("closingIssuesReferences", {}).get("nodes", [])
-    return {l["name"].upper() for i in issues for l in i["labels"]["nodes"]}
+    node = data.get("node")
+    if node is None:
+        fail(f"Failed to fetch linked issues for PR #{ISSUE_NUMBER}")
+    return node["closingIssuesReferences"]["nodes"]
 
 
 def item_source(labels: set) -> str:
     """Exactly one source: Apps, then Quests, then who opened it."""
-    linked = closing_issue_labels() if IS_PULL_REQUEST else set()
+    linked = {
+        label["name"].upper()
+        for issue in closing_issues()
+        for label in issue["labels"]["nodes"]
+    } if IS_PULL_REQUEST else set()
     for name, label in LABEL_SOURCES:
         if label in labels or label in linked:
             return name
@@ -316,12 +320,14 @@ def fetch_pr_files() -> list:
 
 
 def classify(brief: str, areas: list) -> dict:
-    """The project manager's answer: area for everything, plus type and priority for issues."""
+    """Area and type for work; priority only for issues."""
     if IS_PULL_REQUEST:
         files = fetch_pr_files()
         facts = f"Changed files ({len(files)}):\n" + "\n".join(files[:300])
         if len(files) > 300:
             facts += f"\n... and {len(files) - 300} more"
+        linked = [{"number": issue["number"], "type": (issue.get("issueType") or {}).get("name")} for issue in closing_issues()]
+        facts += "\nLinked issue types (hints, verify against PR scope):\n" + json.dumps(linked)
     else:
         facts = ""
     author = "a person, relayed from Discord" if is_relayed() else ITEM_DATA.get("user", {}).get("type", "User")
@@ -333,18 +339,30 @@ Body: {ISSUE_BODY[:2000]}
 """)
     if raw is None:
         fail(f"AI classification failed for #{ISSUE_NUMBER}")
+    try:
+        return classification_answer(raw, areas, IS_PULL_REQUEST)
+    except ValueError as error:
+        fail(f"Invalid classification for #{ISSUE_NUMBER}: {error}")
+
+
+def classification_answer(raw: dict, areas: list, is_pr: bool) -> dict:
     area = raw.get("area")
     if area is not None and area not in areas:
-        fail(f"AI returned invalid area for #{ISSUE_NUMBER}: {area!r}")
-    # No area means a promotion PR or an unlabelled census response.
-    if IS_PULL_REQUEST or area is None:
-        return {"area": area, "type": None, "priority": None}
-    if raw.get("type") not in TYPES or raw.get("priority") not in PRIORITIES:
-        fail(f"AI returned invalid type or priority for #{ISSUE_NUMBER}: {raw.get('type')!r}, {raw.get('priority')!r}")
-    return {"area": area, "type": raw["type"], "priority": raw["priority"]}
+        raise ValueError(f"invalid area: {area!r}")
+    # Promotions and census responses have no type or priority.
+    if area is None:
+        return {"area": None, "type": None, "priority": None}
+    allowed_types = PR_TYPES if is_pr else TYPES
+    if raw.get("type") not in allowed_types:
+        raise ValueError(f"invalid type: {raw.get('type')!r}")
+    if not is_pr and raw.get("priority") not in PRIORITIES:
+        raise ValueError(f"invalid priority: {raw.get('priority')!r}")
+    return {"area": area, "type": raw["type"], "priority": None if is_pr else raw["priority"]}
 
 
 def main():
+    if not GITHUB_TOKEN or not POLLINATIONS_TOKEN:
+        fail("GITHUB_TOKEN and POLLINATIONS_TOKEN are required")
     if not ISSUE_NUMBER or not ISSUE_NODE_ID:
         log_debug("Missing issue or PR number, skipping")
         return
@@ -383,8 +401,15 @@ def main():
     set_field(item_id, fields["Source"], source)
     if answer["priority"] and not existing:
         set_field(item_id, fields["Priority"], answer["priority"])
-    if answer["type"]:
+    if IS_PULL_REQUEST:
+        set_field(item_id, fields["Work type"], answer["type"])
+    elif answer["type"]:
         set_issue_type(answer["type"])
+
+    # The gist pipeline consumes the same classification after the project update.
+    if output := os.getenv("CLASSIFICATION_OUTPUT"):
+        with open(output, "w") as stream:
+            json.dump({"area": answer["area"], "type": answer["type"], "source": source}, stream)
 
 
 if __name__ == "__main__":

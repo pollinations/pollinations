@@ -73,9 +73,9 @@ describe("x402 prepaid API keys", () => {
     });
 
     test("offers an exact x402 challenge for a configured holding account", async ({
-        sessionToken,
+        accountToken,
     }) => {
-        const ownerKey = await createApiKeyViaApi(sessionToken, {
+        const ownerKey = await createApiKeyViaApi(accountToken, {
             name: "holding-owner-challenge",
         });
         const owner = await env.DB.prepare(
@@ -149,9 +149,9 @@ describe("x402 prepaid API keys", () => {
     });
 
     test("credits a new key and its holding wallet only once", async ({
-        sessionToken,
+        accountToken,
     }) => {
-        const ownerKey = await createApiKeyViaApi(sessionToken, {
+        const ownerKey = await createApiKeyViaApi(accountToken, {
             name: "holding-owner",
         });
         const owner = await env.DB.prepare(
@@ -212,9 +212,9 @@ describe("x402 prepaid API keys", () => {
     });
 
     test("rejects reusing one payment for a different pack", async ({
-        sessionToken,
+        accountToken,
     }) => {
-        const ownerKey = await createApiKeyViaApi(sessionToken, {
+        const ownerKey = await createApiKeyViaApi(accountToken, {
             name: "holding-owner-2",
         });
         const owner = await env.DB.prepare(

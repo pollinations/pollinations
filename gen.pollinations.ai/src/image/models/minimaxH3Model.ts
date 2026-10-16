@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -392,7 +391,6 @@ export async function callMinimaxH3MaxTurboAPI(
         undefined,
         prompt,
         safeParams,
-        // Turbo's reviewed registry rate applies to fal's weighted units.
-        IMAGE_SERVICES[H3_MAX_TURBO_MODEL].cost.completionVideoSeconds,
+        "lookup",
     );
 }

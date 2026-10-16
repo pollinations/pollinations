@@ -1,3 +1,4 @@
+import { EMBEDDING_FALLBACKS } from "./embeddings-fallbacks";
 import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
@@ -35,7 +36,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        retirementDate: new Date("2028-02-09").getTime(),
+        // Provider retires this route on 2028-02-09.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -54,7 +55,7 @@ const EMBEDDING_BASE_SERVICES = {
         publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
-        retirementDate: new Date("2028-02-09").getTime(),
+        // Provider retires this route on 2028-02-09.
         priceMultiplier: 0.75,
         paidOnly: false,
         cost: {
@@ -94,27 +95,26 @@ const EMBEDDING_BASE_SERVICES = {
     },
     "qwen/qwen3-embedding-8b": {
         aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
-        provider: "fireworks",
+        provider: "deepinfra",
         publisher: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
-        paidOnly: false,
+        paidOnly: true,
         cost: {
-            promptTextTokens: perMillion(0.1),
+            promptTextTokens: perMillion(0.01),
         },
         title: "Qwen3 Embedding 8B",
         description:
             "Multilingual text vectors. 4096 dimensions, 40,960-token context.",
         inputModalities: ["text"],
         outputModalities: ["embedding"],
-        // Match the effective context advertised by the Fireworks deployment.
+        // Verified on the live DeepInfra route; its catalog still lists 32K.
         contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;
 
-export const EMBEDDING_SERVICES = mergeFallbacks(EMBEDDING_BASE_SERVICES, {
-    "cohere/embed-v4.0": {
-        "cohere/embed-v4.0:azure:sweden": { provider: "azure" },
-    },
-});
+export const EMBEDDING_SERVICES = mergeFallbacks(
+    EMBEDDING_BASE_SERVICES,
+    EMBEDDING_FALLBACKS,
+);

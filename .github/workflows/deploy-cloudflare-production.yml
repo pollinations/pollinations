@@ -12,6 +12,16 @@ on:
       - 'packages/sdk/**'
       - 'packages/ui/**'
       - 'packages/mcp/**'
+      - 'BRING_YOUR_OWN_MODEL.md'
+      - 'BRING_YOUR_OWN_POLLEN.md'
+      - 'BUILD_YOUR_OWN_AGENT.md'
+      - 'CODING_HARNESSES.md'
+      - 'packages/polli-cli/README.md'
+      - 'packages/polli-cli/SKILL.md'
+      - 'packages/polli-cli/TASKS.md'
+      - '.claude/skills/bring-your-own-pollen/SKILL.md'
+      - '.claude/skills/pollinations-api/SKILL.md'
+      - '.claude/skills/quest-contributor/SKILL.md'
       - 'apps/*-mcp/**'
       - 'package.json'
       - 'package-lock.json'
@@ -76,6 +86,19 @@ jobs:
             gen:
               - 'gen.pollinations.ai/**'
               - 'packages/mcp/**'
+              - 'packages/ui/src/styles/tokens.css'
+              - 'packages/ui/src/brand/lockup-horizontal-white.svg'
+              - 'packages/ui/src/brand/lockup-horizontal.svg'
+              - 'BRING_YOUR_OWN_MODEL.md'
+              - 'BRING_YOUR_OWN_POLLEN.md'
+              - 'BUILD_YOUR_OWN_AGENT.md'
+              - 'CODING_HARNESSES.md'
+              - 'packages/polli-cli/README.md'
+              - 'packages/polli-cli/SKILL.md'
+              - 'packages/polli-cli/TASKS.md'
+              - '.claude/skills/bring-your-own-pollen/SKILL.md'
+              - '.claude/skills/pollinations-api/SKILL.md'
+              - '.claude/skills/quest-contributor/SKILL.md'
               - 'shared/**'
               - 'package.json'
               - 'package-lock.json'
@@ -307,8 +330,8 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install shared dependencies
-        run: npm install --workspace shared --include-workspace-root=false
+      - name: Install workspace dependencies
+        run: npm ci
 
       - name: Install media dependencies
         run: npm install

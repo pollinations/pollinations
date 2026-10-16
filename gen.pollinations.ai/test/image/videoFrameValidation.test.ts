@@ -27,6 +27,8 @@ const VIDEO_FRAME_LIMITS = [
     ["x-ai/grok-imagine-video:openrouter", 1],
     ["x-ai/grok-imagine-video-1.5", 1],
     ["x-ai/grok-imagine-video-1.5:fal", 1],
+    ["x-ai/grok-imagine-video-1.5-lite", 1],
+    ["x-ai/grok-imagine-video-1.5-lite:openrouter", 1],
     ["bytedance/seedance-2.5", 2],
     ["alibaba/happyhorse-1.1", 1],
     ["heygen/heygen-video-1", 1],
@@ -34,6 +36,8 @@ const VIDEO_FRAME_LIMITS = [
     ["minimax/minimax-h3-max", 2],
     ["minimax/minimax-h3-max-turbo", 2],
     ["prunaai/p-video", 1],
+    ["kandinskylab/kandinsky-6.0-lite", 1],
+    ["mirelo/sfx-2.0", 0],
 ] as const satisfies readonly (readonly [ImageModelName, number])[];
 
 describe("video frame capabilities", () => {

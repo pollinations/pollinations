@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { POLLI_CLIENT } from "../../lib/client.js";
 import { setKeyOverride } from "../../lib/config.js";
 import { setOutputMode } from "../../lib/output.js";
 import { createChatCommand } from "./chat.js";
@@ -160,6 +161,23 @@ describe("polli gen chat session lifecycle", () => {
         expect(process.exitCode).toBe(0);
     });
 
+    it("sends the X-Polli-Client attribution header the other commands set", async () => {
+        prepare(
+            async () =>
+                new Response(STREAM_OK, {
+                    headers: { "Content-Type": "text/event-stream" },
+                }),
+        );
+
+        const line = await startSession();
+        await line("hello");
+
+        const headers = vi.mocked(globalThis.fetch).mock.calls[0][1]
+            ?.headers as Record<string, string>;
+        expect(headers["X-Polli-Client"]).toBe(POLLI_CLIENT);
+        await line("/exit");
+    });
+
     it("labels an omitted model as the API default without sending a model", async () => {
         prepare(async () => new Response(STREAM_OK));
 
@@ -175,6 +193,47 @@ describe("polli gen chat session lifecycle", () => {
         const body = vi.mocked(fetch).mock.calls[0][1]?.body as string;
         expect(JSON.parse(body)).not.toHaveProperty("model");
         await line("/exit");
+    });
+
+    it("includes the preceding assistant reply in a quickly entered follow-up turn", async () => {
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let turns = 0;
+        const fetch = prepare(async () => {
+            const content = ++turns === 1 ? "first reply" : "second reply";
+            await gate;
+            return new Response(
+                `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`,
+            );
+        });
+        const dir = mkdtempSync(join(tmpdir(), "polli-chat-turns-"));
+        const path = join(dir, "chat.txt");
+        try {
+            const line = await startSession(["--save", path]);
+            const first = line("first question");
+            const second = line("follow-up question");
+            // EOF must drain both accepted turns before autosaving.
+            h.fakeRl.close();
+            release();
+            await Promise.all([first, second]);
+
+            expect(fetch).toHaveBeenCalledTimes(2);
+            const body = vi.mocked(globalThis.fetch).mock.calls[1][1]
+                ?.body as string;
+            expect(JSON.parse(body).messages).toEqual([
+                { role: "user", content: "first question" },
+                { role: "assistant", content: "first reply" },
+                { role: "user", content: "follow-up question" },
+            ]);
+            expect(h.state.promptsAfterClose).toBe(0);
+            expect(readFileSync(path, "utf-8")).toBe(
+                "You: first question\n\nAI: first reply\n\nYou: follow-up question\n\nAI: second reply",
+            );
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
     });
 
     it("does not prompt a closed interface when stdin ends mid-turn", async () => {

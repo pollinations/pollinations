@@ -7,9 +7,24 @@ import {
     DEFAULT_CONSENT_EXPIRY_DAYS,
     expiryDaysToExpiresIn,
     getAuthorizeInitialPermissions,
+    getGrantedOAuthScope,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { describe, expect, it } from "vitest";
+
+describe("getGrantedOAuthScope", () => {
+    it.each([
+        [[], [], undefined],
+        [["generate"], [], "generate"],
+        [["generate", "usage", "keys"], ["usage"], "generate usage"],
+        [["usage"], [], ""],
+        [["unknown"], [], ""],
+    ])("echoes granted scopes for %j", (requested, granted, expected) => {
+        expect(getGrantedOAuthScope(new Set(requested), granted)).toBe(
+            expected,
+        );
+    });
+});
 
 describe("getAuthorizeInitialPermissions", () => {
     it("uses the consent defaults when url params are absent", () => {

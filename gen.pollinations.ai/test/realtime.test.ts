@@ -577,6 +577,24 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     client.accept();
     upstream.server.accept();
 
+    // The proxy enables transcription by default on connect, so the provider
+    // receives the injected baseline session.update before the client's own.
+    const injectedUpdate = nextMessage(upstream.server);
+    await expect(injectedUpdate).resolves.toBe(
+        JSON.stringify({
+            type: "session.update",
+            session: {
+                type: "transcription",
+                audio: {
+                    input: {
+                        format: { type: "audio/pcm", rate: 24000 },
+                        transcription: { model: "test-gpt-live-transcribe" },
+                    },
+                },
+            },
+        }),
+    );
+
     const forwardedUpdate = nextMessage(upstream.server);
     const sessionUpdate = JSON.stringify({
         type: "session.update",

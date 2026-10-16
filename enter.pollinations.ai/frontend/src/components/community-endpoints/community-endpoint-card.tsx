@@ -252,6 +252,9 @@ export function CommunityEndpointCard({
             <EndpointHealth
                 id={endpoint.id}
                 proxy={endpoint.type === "proxy"}
+                listing={
+                    isPublic && endpoint.type === "proxy" ? health : undefined
+                }
             />
         </Surface>
     );

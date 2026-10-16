@@ -565,70 +565,76 @@ describe("community endpoint configuration policy", () => {
         });
 
         await mocks.enable("tinybird");
-        mocks.tinybird.state.modelFailuresResponse = [
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const row = {
+            status: 0,
+            code: "",
+            host: "",
+            counted: 0,
+            from_pollinations: 0,
+            from_owner: 0,
+            message: "",
+        };
+        mocks.tinybird.state.modelHealthResponse = [
             {
+                ...row,
+                day: daysAgo(0),
+                failure_group: 0,
+                succeeded: 15,
+                failed: 4,
+                last_at: "2026-10-15 17:06:15",
+            },
+            {
+                ...row,
+                day: "1970-01-01",
+                failure_group: 1,
                 status: 502,
                 code: "upstream_error",
                 host: "text.example.com",
-                failures: 4,
+                succeeded: 0,
+                failed: 4,
                 counted: 1,
                 from_pollinations: 2,
-                from_owner: 0,
                 last_at: "2026-10-15 17:06:15",
                 message: "402 Payment Required",
             },
-        ];
-        const failures = await SELF.fetch(`${endpointUrl}/${id}/failures`, {
-            headers: { Authorization: `Bearer ${accountToken}` },
-        });
-        expect(failures.status).toBe(200);
-        expect(await failures.json()).toEqual({
-            data: [
-                {
-                    status: 502,
-                    code: "upstream_error",
-                    host: "text.example.com",
-                    failures: 4,
-                    counted: 1,
-                    fromPollinations: 2,
-                    fromOwner: 0,
-                    lastAt: "2026-10-15T17:06:15.000Z",
-                    message: "402 Payment Required",
-                },
-            ],
-        });
-        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
-            model: created.modelId,
-        });
-
-        const daysAgo = (days: number) =>
-            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
-        const sample = { sample_succeeded: 15, sample_failed: 35 };
-        mocks.tinybird.state.modelHealthResponse = [
-            { day: daysAgo(7), succeeded: 0, failed: 12, ...sample },
-            { day: daysAgo(0), succeeded: 15, failed: 2, ...sample },
         ];
         const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
             headers: { Authorization: `Bearer ${accountToken}` },
         });
         expect(health.status).toBe(200);
         const body = (await health.json()) as {
-            successRate: number;
-            requests: number;
             days: { day: string; succeeded: number; failed: number }[];
+            failures: unknown[];
         };
-        expect(body).toMatchObject({ successRate: 30, requests: 50 });
+        expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
+            model: created.modelId,
+        });
         expect(body.days.map((day) => day.day)).toEqual(
             [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
         );
         expect(body.days.at(-1)).toEqual({
             day: daysAgo(0),
             succeeded: 15,
-            failed: 2,
+            failed: 4,
         });
         expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
+        expect(body.failures).toEqual([
+            {
+                status: 502,
+                code: "upstream_error",
+                host: "text.example.com",
+                failures: 4,
+                counted: 1,
+                fromPollinations: 2,
+                fromOwner: 0,
+                lastAt: "2026-10-15T17:06:15.000Z",
+                message: "402 Payment Required",
+            },
+        ]);
 
-        const missing = await SELF.fetch(`${endpointUrl}/missing/failures`, {
+        const missing = await SELF.fetch(`${endpointUrl}/missing/health`, {
             headers: { Authorization: `Bearer ${accountToken}` },
         });
         expect(missing.status).toBe(404);

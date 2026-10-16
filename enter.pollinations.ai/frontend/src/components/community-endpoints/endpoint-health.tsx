@@ -1,14 +1,10 @@
 import { Alert, Button, CheckIcon, Collapsible, XIcon } from "@pollinations/ui";
 import { isModelReliable } from "@shared/model-health.ts";
+import type { ModelHealth } from "@shared/registry/model-info.ts";
 import type { InferResponseType } from "hono/client";
 import { useEffect, useState } from "react";
 import { accountClient } from "../../api.ts";
 import { type CommunityEndpointTestResponse, readError } from "./types.ts";
-
-type Failure = InferResponseType<
-    (typeof accountClient)["my-models"][":id"]["failures"]["$get"],
-    200
->["data"][number];
 
 type Health = InferResponseType<
     (typeof accountClient)["my-models"][":id"]["health"]["$get"],
@@ -19,14 +15,22 @@ type TestResult = { ok: boolean; message?: string };
 
 const percent = new Intl.NumberFormat("en", { maximumFractionDigits: 1 });
 
-// Owner-only health: the listing-rule success rate and a 7-day sparkline show
-// on the closed row; failed calls load on first expand, plus a live upstream
-// test with the saved token for proxies.
-export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
-    const [health, setHealth] = useState<Health | "error" | null>(null);
-    const [expanded, setExpanded] = useState(false);
-    const [failures, setFailures] = useState<Failure[] | null>(null);
+// Owner-only health. The closed row shows the listing verdict for public
+// proxies, from the catalog health the card already has, or the week's success
+// for other models, plus a 7-day sparkline. Expanding lists failed calls and,
+// for proxies, a live upstream test with the saved token.
+export function EndpointHealth({
+    id,
+    proxy,
+    listing,
+}: {
+    id: string;
+    proxy: boolean;
+    listing?: ModelHealth;
+}) {
+    const [health, setHealth] = useState<Health | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [expanded, setExpanded] = useState(false);
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState<TestResult | null>(null);
 
@@ -38,25 +42,12 @@ export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
                 ].health.$get({ param: { id } });
                 if (!response.ok) throw new Error(await readError(response));
                 setHealth(await response.json());
-            } catch {
-                setHealth("error");
+            } catch (error) {
+                setLoadError(error instanceof Error ? error.message : "Failed");
             }
         };
         void loadHealth();
     }, [id]);
-
-    const loadFailures = async () => {
-        setLoadError(null);
-        try {
-            const response = await accountClient["my-models"][
-                ":id"
-            ].failures.$get({ param: { id } });
-            if (!response.ok) throw new Error(await readError(response));
-            setFailures((await response.json()).data);
-        } catch (error) {
-            setLoadError(error instanceof Error ? error.message : "Failed");
-        }
-    };
 
     const runTest = async () => {
         setTesting(true);
@@ -91,14 +82,11 @@ export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
                     <span className="text-sm font-medium text-theme-text-strong">
                         Health
                     </span>
-                    <HealthSummary health={health} proxy={proxy} />
+                    <HealthSummary health={health} listing={listing} />
                 </span>
             }
             expanded={expanded}
-            onToggle={() => {
-                if (!expanded && !failures) void loadFailures();
-                setExpanded(!expanded);
-            }}
+            onToggle={() => setExpanded(!expanded)}
             wrapperClassName="mt-4 border-theme-border"
         >
             <div className="grid gap-3 text-sm">
@@ -131,12 +119,12 @@ export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
                     </Alert>
                 )}
                 {loadError ? (
-                    <Alert intent="warning" title="Couldn’t load failures">
+                    <Alert intent="warning" title="Couldn’t load health">
                         {loadError}
                     </Alert>
-                ) : !failures ? (
+                ) : !health ? (
                     <p className="text-theme-text-muted">Loading…</p>
-                ) : failures.length === 0 ? (
+                ) : health.failures.length === 0 ? (
                     <p className="text-theme-text-muted">
                         No failed calls in the last 7 days.
                     </p>
@@ -147,7 +135,7 @@ export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
                             and lower your listing score. The rest were retried.
                         </p>
                         <ul className="grid gap-2">
-                            {failures.map((failure) => (
+                            {health.failures.map((failure) => (
                                 <FailureRow
                                     key={`${failure.status}-${failure.code}-${failure.host}`}
                                     failure={failure}
@@ -163,37 +151,45 @@ export function EndpointHealth({ id, proxy }: { id: string; proxy: boolean }) {
 
 function HealthSummary({
     health,
-    proxy,
+    listing,
 }: {
-    health: Health | "error" | null;
-    proxy: boolean;
+    health: Health | null;
+    listing?: ModelHealth;
 }) {
-    if (health === null) return null;
-    if (health === "error" || health.successRate === null) {
-        return (
-            <span className="text-xs text-theme-text-muted">
-                {health === "error"
-                    ? "Couldn’t load health"
-                    : "No calls in the last 7 days"}
-            </span>
-        );
-    }
-    const reliable = isModelReliable(health.successRate);
+    const sum = (key: "succeeded" | "failed") =>
+        health?.days.reduce((total, day) => total + day[key], 0) ?? 0;
+    const calls = sum("succeeded") + sum("failed");
+    const listingRate = listing?.success_rate ?? null;
+    const rate =
+        listingRate ?? (calls ? (sum("succeeded") / calls) * 100 : null);
+    const reliable = isModelReliable(rate);
     const Icon = reliable ? CheckIcon : XIcon;
     return (
         <>
-            <span
-                className={`inline-flex items-center gap-1 text-xs font-medium ${reliable ? "text-intent-success-text" : "text-intent-danger-text"}`}
-            >
-                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                {percent.format(health.successRate)}% success
-                {proxy &&
-                    ` · ${reliable ? "above" : "below"} the 80% listing bar`}
-            </span>
-            <span className="text-xs text-theme-text-muted">
-                last {health.requests} calls
-            </span>
-            <Sparkline days={health.days} />
+            {rate === null ? (
+                health && (
+                    <span className="text-xs text-theme-text-muted">
+                        No calls in the last 7 days
+                    </span>
+                )
+            ) : (
+                <>
+                    <span
+                        className={`inline-flex items-center gap-1 text-xs font-medium ${reliable ? "text-intent-success-text" : "text-intent-danger-text"}`}
+                    >
+                        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                        {percent.format(rate)}% success
+                        {listingRate !== null &&
+                            ` · ${reliable ? "above" : "below"} the 80% listing bar`}
+                    </span>
+                    <span className="text-xs text-theme-text-muted">
+                        {listingRate !== null
+                            ? `last ${listing?.requests} calls`
+                            : `${calls.toLocaleString()} calls in 7 days`}
+                    </span>
+                </>
+            )}
+            {health && <Sparkline days={health.days} />}
         </>
     );
 }
@@ -251,7 +247,7 @@ function Sparkline({ days }: { days: Health["days"] }) {
     );
 }
 
-function FailureRow({ failure }: { failure: Failure }) {
+function FailureRow({ failure }: { failure: Health["failures"][number] }) {
     return (
         <li className="grid gap-1 rounded-md bg-theme-bg-subtle px-3 py-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

@@ -59,7 +59,6 @@ import {
 import {
     assertValidUpdate,
     CommunityEndpointDeleteResponseSchema,
-    CommunityEndpointFailuresResponseSchema,
     CommunityEndpointHealthResponseSchema,
     CommunityEndpointListResponseSchema,
     CommunityEndpointModelsResponseSchema,
@@ -267,24 +266,19 @@ async function runEndpointTest(input: TestEndpointInput) {
     }
 }
 
-type FailureRow = {
+type HealthRow = {
+    day: string;
     status: number;
     code: string;
     host: string;
-    failures: number;
+    failure_group: number;
+    succeeded: number;
+    failed: number;
     counted: number;
     from_pollinations: number;
     from_owner: number;
     last_at: string;
     message: string;
-};
-
-type HealthRow = {
-    day: string;
-    succeeded: number;
-    failed: number;
-    sample_succeeded: number | null;
-    sample_failed: number | null;
 };
 
 type EndpointProbeKind = "models" | "test";
@@ -881,74 +875,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
         },
     )
     .get(
-        "/:id/failures",
-        describeRoute({
-            tags: ["🧩 Community Models"],
-            summary: "List Model Failures",
-            description:
-                "Failed calls to a model's own upstream in the last 7 days, grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
-            responses: {
-                200: {
-                    description: "Failure groups",
-                    content: {
-                        "application/json": {
-                            schema: resolver(
-                                CommunityEndpointFailuresResponseSchema,
-                            ),
-                        },
-                    },
-                },
-                401: { description: "Unauthorized" },
-                403: { description: "Permission denied" },
-                404: { description: "Community endpoint not found" },
-            },
-        }),
-        async (c) => {
-            const user = c.var.auth.requireUser();
-            const db = drizzle(c.env.DB, { schema });
-            requireAccountPermission(c.var.auth.apiKey, "keys");
-            const endpoint = await requireOwnedEndpoint(
-                db,
-                c.req.param("id"),
-                user.id,
-            );
-            const ownerGithubUsername = await requireOwnerGithubUsername(
-                db,
-                user.id,
-            );
-            const rows = await fetchTinybirdRows<FailureRow>(
-                new URL(c.env.TINYBIRD_INGEST_URL).origin,
-                "/v0/pipes/my_model_failures.json",
-                requireTinybirdReadToken(c.env),
-                {
-                    model: communityModelId(ownerGithubUsername, endpoint.name),
-                    owner_user_id: user.id,
-                },
-            );
-            return c.json({
-                data: rows.map((row) => ({
-                    status: row.status,
-                    code: row.code,
-                    host: row.host,
-                    failures: row.failures,
-                    counted: row.counted,
-                    fromPollinations: row.from_pollinations,
-                    fromOwner: row.from_owner,
-                    lastAt: new Date(
-                        `${row.last_at.replace(" ", "T")}Z`,
-                    ).toISOString(),
-                    message: row.message,
-                })),
-            });
-        },
-    )
-    .get(
         "/:id/health",
         describeRoute({
             tags: ["🧩 Community Models"],
             summary: "Get Model Health",
             description:
-                "Success rate in the sample the 80% listing rule uses (the latest 50 eligible final requests within seven days), plus final successes and 5xx per day for the last seven UTC days. API keys require `account:keys`.",
+                "Calls a model's own upstream answered in the last seven UTC days: 2xx and 5xx per day, and the 5xx grouped by status, error code and host, newest first, with the latest message of each group. Fallback attempts and caller identities are left out. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Model health",
@@ -982,12 +914,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 new URL(c.env.TINYBIRD_INGEST_URL).origin,
                 "/v0/pipes/my_model_health.json",
                 requireTinybirdReadToken(c.env),
-                { model: communityModelId(ownerGithubUsername, endpoint.name) },
+                {
+                    model: communityModelId(ownerGithubUsername, endpoint.name),
+                    owner_user_id: user.id,
+                },
             );
-            const succeeded = rows[0]?.sample_succeeded ?? 0;
-            const requests = succeeded + (rows[0]?.sample_failed ?? 0);
-            const byDay = new Map(rows.map((row) => [row.day, row]));
-            // The pipe's hour-aligned window can include part of an eighth day.
+            const byDay = new Map(
+                rows
+                    .filter((row) => !row.failure_group)
+                    .map((row) => [row.day, row]),
+            );
             const days = Array.from({ length: 7 }, (_, index) => {
                 const day = new Date(Date.now() - (6 - index) * 86_400_000)
                     .toISOString()
@@ -1000,9 +936,23 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 };
             });
             return c.json({
-                successRate: requests ? (succeeded / requests) * 100 : null,
-                requests,
                 days,
+                failures: rows
+                    .filter((row) => row.failure_group)
+                    .slice(0, 10)
+                    .map((row) => ({
+                        status: row.status,
+                        code: row.code,
+                        host: row.host,
+                        failures: row.failed,
+                        counted: row.counted,
+                        fromPollinations: row.from_pollinations,
+                        fromOwner: row.from_owner,
+                        lastAt: new Date(
+                            `${row.last_at.replace(" ", "T")}Z`,
+                        ).toISOString(),
+                        message: row.message,
+                    })),
             });
         },
     )

@@ -115,7 +115,7 @@ All generated content lives on the **`news` branch** under `operations/social/ne
 
 ### Model post: `models/`
 
-- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
+- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. An answer in which a category lost more than half its models is refused, so a half-empty `/models` is never announced as mass retirements; `overwrite` records it once a person has checked. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
 - `diffs/YYYY-MM-DD.json`, `YYYY-MM-DD/discord.json` — the comparison and the post, saved only after Discord confirms the send; a week without changes saves nothing
 - `YYYY-MM-DD/delivery.json` — written only by `deliver.py`
 - `models.md` — every model post, newest first

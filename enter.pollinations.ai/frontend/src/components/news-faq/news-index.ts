@@ -7,7 +7,7 @@ import type { BalanceAccess } from "../models/model-status-chips.tsx";
 import { formatPriceLine } from "../models/price-badge.tsx";
 
 const NEWS_INDEX_URL =
-    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/index.json";
+    "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/news/operations/social/news/data/index.json";
 
 type Change = { before: unknown; after: unknown };
 

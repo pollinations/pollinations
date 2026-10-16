@@ -64,7 +64,8 @@ function inlineMedia(src: string | undefined, label: string | undefined) {
     );
 }
 
-function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
+/** Fenced code as a labelled, copyable panel; Prose renders code the same way. */
+export function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
     const child = isValidElement<{
         children?: ReactNode;
         className?: string;

@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 import { Markdown } from "./Markdown.tsx";
+import { Prose } from "./Prose.tsx";
 
 describe("Markdown", () => {
     test.each([
@@ -95,5 +96,34 @@ describe("Markdown", () => {
 
         expect(html).toContain('<audio src="https://example.test/result.mp3"');
         expect(html).not.toContain("<img");
+    });
+});
+
+describe("Prose", () => {
+    test("renders document code like Markdown: copyable panels, quiet chips", () => {
+        const html = renderToStaticMarkup(
+            <Prose>
+                {
+                    "Use `pk_...` here.\n\n```bash\ncurl https://example.test\n```"
+                }
+            </Prose>,
+        );
+
+        expect(html).toContain(">bash<");
+        expect(html).toContain('aria-label="Copy code"');
+        expect(html).toContain("polli:bg-theme-bg-subtle");
+        expect(html).not.toContain("polli:bg-theme-bg-active");
+    });
+
+    test("scrolls wide tables inside their own box", () => {
+        const html = renderToStaticMarkup(
+            <Prose>
+                {"| Field | Type |\n| --- | --- |\n| `model` | string |"}
+            </Prose>,
+        );
+
+        expect(html).toMatch(
+            /<div class="[^"]*polli:overflow-x-auto[^"]*"><table/,
+        );
     });
 });

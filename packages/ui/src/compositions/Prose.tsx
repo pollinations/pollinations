@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
 import { InlineLink } from "../primitives/InlineLink.tsx";
 import { headingClassName } from "../primitives/Typography.tsx";
+import { MarkdownCodeBlock } from "./Markdown.tsx";
 
 export type ProseProps = {
     children: string;
@@ -51,23 +52,30 @@ const components: Components = {
             {...props}
         />
     ),
+    // Code reads like Markdown's: quiet inline chips and copyable panels.
     code: ({ node, ...props }) => (
         <code
-            className="polli:rounded polli:bg-theme-bg-active polli:px-1 polli:py-0.5 polli:font-pixel polli:text-sm"
+            className="polli:break-words polli:rounded polli:bg-theme-bg-subtle polli:px-1 polli:py-0.5 polli:font-mono polli:text-[0.875em]"
             {...props}
         />
     ),
-    pre: ({ node, ...props }) => (
-        <pre
-            className="polli:my-4 polli:overflow-x-auto polli:rounded-lg polli:bg-theme-bg-active polli:p-4"
+    pre: ({ children }) => <MarkdownCodeBlock>{children}</MarkdownCodeBlock>,
+    img: ({ node, alt, ...props }) => (
+        <img
+            alt={alt ?? ""}
+            loading="lazy"
+            className="polli:my-4 polli:max-w-full polli:rounded-lg"
             {...props}
         />
     ),
+    // Wide tables scroll inside their own box instead of widening the page.
     table: ({ node, ...props }) => (
-        <table
-            className="polli:my-4 polli:w-full polli:border-collapse polli:text-sm"
-            {...props}
-        />
+        <div className="polli:my-4 polli:max-w-full polli:overflow-x-auto">
+            <table
+                className="polli:w-full polli:border-collapse polli:text-sm"
+                {...props}
+            />
+        </div>
     ),
     th: ({ node, ...props }) => (
         <th

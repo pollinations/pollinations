@@ -8,6 +8,8 @@ export type BalanceAccess = "quest" | "paid" | "free";
 type ModelStatusChipsProps = {
     showNew: boolean;
     showAlpha: boolean;
+    retirementDays?: number | null;
+    retirementDate?: number;
     alphaTooltip?: boolean;
     health?: ModelHealth;
     communityProxy?: boolean;
@@ -103,11 +105,14 @@ export function ModelHealthIndicator({
 export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
     showNew,
     showAlpha,
+    retirementDays,
+    retirementDate,
     alphaTooltip = true,
     health,
     communityProxy = false,
 }) => {
-    if (!showNew && !showAlpha && !health) return null;
+    if (!showNew && !showAlpha && !health && retirementDays == null)
+        return null;
 
     const alphaTooltipLabel = "Alpha model — experimental, may be unstable";
 
@@ -149,6 +154,18 @@ export const ModelStatusChips: FC<ModelStatusChipsProps> = ({
                         Alpha
                     </Chip>
                 ))}
+            {retirementDays != null && retirementDate != null && (
+                <Tooltip
+                    content={`Scheduled retirement: ${new Date(retirementDate).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })} UTC`}
+                    ariaLabel={`Retires in ${retirementDays} ${retirementDays === 1 ? "day" : "days"}`}
+                    tapEnabled
+                    displayContents
+                >
+                    <Chip intent="warning" size="sm">
+                        Retires · {retirementDays}d
+                    </Chip>
+                </Tooltip>
+            )}
         </span>
     );
 };

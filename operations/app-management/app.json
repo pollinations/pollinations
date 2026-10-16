@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎮",
+    "name": "PolliCraft",
+    "url": "https://drjacky.github.io/PolliCraft",
+    "description": "A Minecraft server plugin (Paper, Folia, Spigot) that adds Pollinations to a server with one jar. The server owner pays with their own Pollen: one API key goes in plugins/PolliCraft/config.yml (or the",
+    "language": "en",
+    "category": "games",
+    "platform": "desktop",
+    "githubUsername": "Drjacky",
+    "githubUserId": "2296754",
+    "repositoryUrl": "https://github.com/Drjacky/PolliCraft",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-13",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17285",
+    "approvedDate": "2026-10-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/77cc7de5-ef85-4eea-95e1-51a929ee5801"
+  },
+  {
     "emoji": "🎬",
     "name": "Echo Island",
     "url": "https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space",

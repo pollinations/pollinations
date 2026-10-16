@@ -195,6 +195,41 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("answers the same decision on TypeSafe's /v1/systemone path", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/v1/systemone", apiKey, {
+        model: "typesafe/jev-1.13",
+        state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
+        questions,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "typesafe/jev-1.13",
+        provider: "TypeSafe",
+        answers,
+        usage: { input_tokens: 452, output_tokens: 73 },
+    });
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "typesafe/jev-1.13", questions },
+    });
+
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        requestPath: "/v1/systemone",
+        responseStatus: 200,
+        modelRequested: "typesafe/jev-1.13",
+        isBilledUsage: true,
+    });
+});
+
 test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     const { key, userId } = await createTestApiKey({
         user: { tierBalance: 1, packBalance: 1 },

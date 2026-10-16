@@ -10,17 +10,17 @@ An **App Key** (`pk_...`) is the publishable key your app sends users to Pollina
 
 To create one, go to [enter.pollinations.ai](https://enter.pollinations.ai/keys) → **Create app key**:
 
-<p align="left"><img src="https://media.pollinations.ai/28716f8fb8677eff" alt="Edit App Key" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/80a72314-b119-4017-a98d-17cd177802aa" alt="Create app key dialog with a name and redirect URL" width="560"></p>
 
 Set the **Name** (shows on the consent screen). For web apps, add at least one **Redirect URI** (your exact callback URL). The key you get back is your `client_id` (a `pk_...` publishable key; the legacy name `app_key` is still accepted).
 
 When a user lands on the consent screen signed-out, they're prompted to continue with GitHub:
 
-<p align="left"><img src="https://media.pollinations.ai/f9fd70e72156ddec" alt="Authorize — signed out" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/19c61852-9481-4ec8-a3e0-bb33911f2651" alt="Allow this app, signed out: sign in with GitHub" width="360"></p>
 
 Once signed in, they review the requested access and confirm:
 
-<p align="left"><img src="https://media.pollinations.ai/2ab9b5e0a2408e93" alt="Authorize — signed in" width="420"></p>
+<p align="left"><img src="https://media.pollinations.ai/90c355a1-e7f5-4187-ab78-9b06007bbdd9" alt="Allow this app, signed in: budget, expiry and permissions" width="560"></p>
 
 ## Developer Earnings
 

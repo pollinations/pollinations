@@ -1,9 +1,15 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+    mkdirSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { setKeyOverride } from "../../lib/config.js";
-import { setOutputMode } from "../../lib/output.js";
+import { ExitSignal, setOutputMode } from "../../lib/output.js";
 import { createTextCommand } from "./text.js";
 
 const completion = {
@@ -83,6 +89,39 @@ async function run(
 }
 
 describe("gen text output", () => {
+    it("rejects text output directories before paid generation", async () => {
+        // --output promises a file, and preflight promises bad folders cost nothing.
+        const folder = mkdtempSync(join(tmpdir(), "polli-text-test-"));
+        folders.push(folder);
+        const output = join(folder, "existing-directory");
+        mkdirSync(output);
+        Object.defineProperty(process.stdin, "isTTY", {
+            configurable: true,
+            value: true,
+        });
+        setKeyOverride("sk_test");
+        setOutputMode("json");
+        const errors: string[] = [];
+        vi.spyOn(process.stderr, "write").mockImplementation((value) => {
+            errors.push(String(value));
+            return true;
+        });
+        const requests: string[] = [];
+        vi.stubGlobal("fetch", async (url: string) => {
+            requests.push(String(url));
+            return Response.json(completion);
+        });
+
+        await expect(
+            createTextCommand().parseAsync(["hi", "--output", output], {
+                from: "user",
+            }),
+        ).rejects.toBeInstanceOf(ExitSignal);
+        expect(requests).toEqual([]);
+        expect(errors.join("")).toContain(`Not a file: ${output}`);
+        expect(readdirSync(output)).toEqual([]);
+    });
+
     it("buffers JSON by default when stdout is piped", async () => {
         const { request, output } = await run([], false);
         expect(request.stream).toBeUndefined();

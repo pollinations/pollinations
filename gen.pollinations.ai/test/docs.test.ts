@@ -519,7 +519,7 @@ describe("docs routes", () => {
         expect(body).toContain("POST /v1/embeddings");
     });
 
-    it("serves markdown table overflow styles in the API reference", async () => {
+    it("serves the docs app with the docs' social tags", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs"),
@@ -530,8 +530,10 @@ describe("docs routes", () => {
 
         expect(response.status).toBe(200);
         const html = await response.text();
-        expect(html).toContain(".scalar-app .markdown table");
-        expect(html).toContain("overflow-x: auto");
+        expect(html).toContain(
+            '<script type="module" src="/docs-app/docs.js">',
+        );
+        expect(html).toContain('href="/docs-app/docs.css"');
         expect(html).toContain(
             'property="og:title" content="Docs | pollinations.ai"',
         );
@@ -539,6 +541,21 @@ describe("docs routes", () => {
             'property="og:image" content="https://gen.pollinations.ai/og-image.png"',
         );
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
+    });
+
+    it("keeps the Scalar reference at /docs/explorer", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/explorer"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        const html = await response.text();
+        expect(html).toContain(".scalar-app .markdown table");
+        expect(html).toContain("overflow-x: auto");
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
     });

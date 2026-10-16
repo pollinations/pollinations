@@ -971,9 +971,37 @@ export async function buildMergedOpenApiSpec(
     };
 }
 
+// Shell for the docs app built into public/docs-app (npm run docs:app:build).
+// The colour mode follows Enter: the saved choice, else the system setting.
+const DOCS_APP_HTML = `<!doctype html>
+<html lang="en" class="polli-ui-root polli-ui-shell">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${SEO_TITLE}</title>
+    <link rel="icon" href="${FAVICON_DATA_URI}" />
+    <script>
+      (() => {
+        try {
+          let mode = localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+        } catch {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/docs-app/docs.css" />
+    <script type="module" src="/docs-app/docs.js"></script>
+  </head>
+  <body class="polli-ui-shell">
+    <div id="root"></div>
+  </body>
+</html>`;
+
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
-        .get("/", async (c, next) => {
+        .get("/", (c) => {
             c.header("Vary", "Accept", { append: true });
             if (c.req.header("accept")?.includes("text/markdown")) {
                 // Cloudflare ignores Vary on cached responses: keep it private.
@@ -982,6 +1010,11 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                     "Content-Type": "text/markdown; charset=utf-8",
                 });
             }
+            // The docs app renders the same merged schema in our UI; the Scalar
+            // reference stays at /docs/explorer for testing requests.
+            return c.html(injectDocsSocialHead(DOCS_APP_HTML, c));
+        })
+        .get("/explorer", async (c, next) => {
             const response = await Scalar<Env>({
                 // Pinned: the unversioned CDN URL serves every new release, and
                 // 1.74.0 broke the sidebar our CSS and nav script target.

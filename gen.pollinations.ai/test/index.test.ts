@@ -87,7 +87,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -114,7 +114,7 @@ describe("gen worker routing", () => {
             error: {
                 code: "UNAUTHORIZED",
                 message:
-                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys",
+                    "A valid API key is required. Get one at https://enter.pollinations.ai/keys, or buy one with USDC (x402) at https://enter.pollinations.ai/api/x402/keys",
             },
         });
         await waitOnExecutionContext(ctx);
@@ -350,6 +350,7 @@ describe("gen worker routing", () => {
             "/docs/llm.txt?section=coding-harnesses",
             "/docs/llm.txt?section=mcp",
             "/docs/llm.txt?section=cli",
+            "/docs/llm.txt?section=x402",
         ]) {
             expect(body).toContain(path);
             const response = await fetchWorker(path);

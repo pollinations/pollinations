@@ -407,6 +407,7 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
     sandboxes: SANDBOXES_SECTION,
+    x402: X402_PREPAID_KEYS_DOCS,
 };
 
 // llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that

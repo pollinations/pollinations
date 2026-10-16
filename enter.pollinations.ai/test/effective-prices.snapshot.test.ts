@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 import {
     getCostDefinition,
     getModels,
@@ -47,24 +47,32 @@ function normalizeSnapshotValue(value: unknown): unknown {
 // the snapshot — the reviewer sees the diff explicitly. To intentionally change
 // a rate, update the model and run `vitest --update`.
 test("effective cost and price per model — snapshot", () => {
-    const snapshot = Object.fromEntries(
-        getModels()
-            .sort()
-            .map((m) => {
-                const { costVariants } = getRegistryModelDefinition(m);
-                return [
-                    m,
-                    {
-                        cost: getCostDefinition(m),
-                        // Named alternate rate sheets (long-context tiers,
-                        // resolution variants) are money too — lock them.
-                        ...(costVariants ? { costVariants } : {}),
-                        price: getPriceDefinition(m),
-                    },
-                ];
-            }),
-    );
-    // Keep IEEE-754 noise out of the review artifact without rounding production
-    // registry rates just to make the snapshot prettier.
-    expect(normalizeSnapshotValue(snapshot)).toMatchSnapshot();
+    // Anchor dated promotions; their exact cutovers are tested separately.
+    const now = vi
+        .spyOn(Date, "now")
+        .mockReturnValue(Date.parse("2026-10-05T12:00:00Z"));
+    try {
+        const snapshot = Object.fromEntries(
+            getModels()
+                .sort()
+                .map((m) => {
+                    const { costVariants } = getRegistryModelDefinition(m);
+                    return [
+                        m,
+                        {
+                            cost: getCostDefinition(m),
+                            // Named alternate rate sheets (long-context tiers,
+                            // resolution variants) are money too — lock them.
+                            ...(costVariants ? { costVariants } : {}),
+                            price: getPriceDefinition(m),
+                        },
+                    ];
+                }),
+        );
+        // Keep IEEE-754 noise out of the review artifact without rounding production
+        // registry rates just to make the snapshot prettier.
+        expect(normalizeSnapshotValue(snapshot)).toMatchSnapshot();
+    } finally {
+        now.mockRestore();
+    }
 });

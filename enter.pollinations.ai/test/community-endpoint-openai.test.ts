@@ -95,115 +95,164 @@ describe("community endpoint test input", () => {
 });
 
 describe("community endpoint OpenAI service", () => {
-    it.each([
-        true,
-        false,
-    ])("probes Responses JSON and SSE at the exact URL (data type: %s)", async (includeType) => {
-        const usage = {
-            input_tokens: 12,
-            output_tokens: 3,
-            total_tokens: 15,
-            input_tokens_details: { cached_tokens: 4, cache_write_tokens: 2 },
-            output_tokens_details: { reasoning_tokens: 1 },
-        };
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            expect(request.url).toBe(
-                "https://api.example.com/custom/infer?version=1",
-            );
-            expect(request.headers.get("authorization")).toBe(
-                "Bearer test-provider-token",
-            );
-            const body = (await request.json()) as { stream: boolean };
-            expect(body).toMatchObject({
-                model: "test-model",
-                input: "Reply with OK.",
-                store: false,
+    it.each([true, false])(
+        "probes Responses JSON and SSE at the exact URL (data type: %s)",
+        async (includeType) => {
+            const usage = {
+                input_tokens: 12,
+                output_tokens: 3,
+                total_tokens: 15,
+                input_tokens_details: {
+                    cached_tokens: 4,
+                    cache_write_tokens: 2,
+                },
+                output_tokens_details: { reasoning_tokens: 1 },
+            };
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/custom/infer?version=1",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer test-provider-token",
+                );
+                const body = (await request.json()) as { stream: boolean };
+                expect(body).toMatchObject({
+                    model: "test-model",
+                    input: "Reply with OK.",
+                    store: false,
+                });
+                expect(body).not.toHaveProperty("messages");
+                const response = {
+                    id: "resp_1",
+                    object: "response",
+                    model: "test-model",
+                    status: "completed",
+                    output: [],
+                    usage,
+                };
+                return body.stream
+                    ? new Response(
+                          `event: response.completed\ndata: ${JSON.stringify({ ...(includeType ? { type: "response.completed" } : {}), response })}\n\ndata: [DONE]\n\n`,
+                          { headers: { "content-type": "text/event-stream" } },
+                      )
+                    : Response.json(response);
             });
-            expect(body).not.toHaveProperty("messages");
+            vi.stubGlobal("fetch", fetchMock);
+
+            await expect(
+                testCommunityEndpoint({
+                    api: "responses",
+                    url: "https://api.example.com/custom/infer?version=1",
+                    model: "test-model",
+                    bearerToken: "test-provider-token",
+                }),
+            ).resolves.toMatchObject({
+                usage,
+                billableUsage: {
+                    promptCachedTokens: 4,
+                    promptCacheWriteTokens: 2,
+                    completionReasoningTokens: 1,
+                },
+            });
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        },
+    );
+
+    it.each(["responses", "chat_completions"] as const)(
+        "rejects %s streams with missing or malformed usage",
+        async (api) => {
+            for (const usage of [
+                undefined,
+                { total_tokens: 3, input_tokens: "2", output_tokens: 1 },
+                { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 },
+            ]) {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async (_input, init) => {
+                        const { stream } = JSON.parse(init.body);
+                        if (!stream)
+                            return Response.json(
+                                api === "responses"
+                                    ? {
+                                          id: "resp_1",
+                                          object: "response",
+                                          model: "test-model",
+                                          status: "completed",
+                                          output: [],
+                                          usage: {
+                                              input_tokens: 2,
+                                              output_tokens: 1,
+                                              total_tokens: 3,
+                                          },
+                                      }
+                                    : {
+                                          choices: [
+                                              { message: { content: "OK" } },
+                                          ],
+                                          usage: {
+                                              prompt_tokens: 2,
+                                              completion_tokens: 1,
+                                              total_tokens: 3,
+                                          },
+                                      },
+                            );
+                        const terminal =
+                            api === "responses"
+                                ? {
+                                      type: "response.completed",
+                                      response: { usage },
+                                  }
+                                : { choices: [], usage };
+                        return new Response(
+                            `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
+                            {
+                                headers: {
+                                    "content-type": "text/event-stream",
+                                },
+                            },
+                        );
+                    }),
+                );
+                await expect(
+                    testCommunityEndpoint({
+                        api,
+                        url: "https://api.example.com/infer",
+                        model: "test-model",
+                        bearerToken: "test-provider-token",
+                    }),
+                ).rejects.toThrow("valid terminal streaming usage");
+            }
+        },
+    );
+
+    it.each(["responses", "chat_completions"] as const)(
+        "rejects a %s streaming probe with the wrong content type",
+        async (api) => {
             const response = {
                 id: "resp_1",
                 object: "response",
                 model: "test-model",
                 status: "completed",
                 output: [],
-                usage,
+                choices: [{ message: { content: "OK" } }],
+                usage: {
+                    input_tokens: 2,
+                    output_tokens: 1,
+                    prompt_tokens: 2,
+                    completion_tokens: 1,
+                    total_tokens: 3,
+                },
             };
-            return body.stream
-                ? new Response(
-                      `event: response.completed\ndata: ${JSON.stringify({ ...(includeType ? { type: "response.completed" } : {}), response })}\n\ndata: [DONE]\n\n`,
-                      { headers: { "content-type": "text/event-stream" } },
-                  )
-                : Response.json(response);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        await expect(
-            testCommunityEndpoint({
-                api: "responses",
-                url: "https://api.example.com/custom/infer?version=1",
-                model: "test-model",
-                bearerToken: "test-provider-token",
-            }),
-        ).resolves.toMatchObject({
-            usage,
-            billableUsage: {
-                promptCachedTokens: 4,
-                promptCacheWriteTokens: 2,
-                completionReasoningTokens: 1,
-            },
-        });
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-    });
-
-    it.each([
-        "responses",
-        "chat_completions",
-    ] as const)("rejects %s streams with missing or malformed usage", async (api) => {
-        for (const usage of [
-            undefined,
-            { total_tokens: 3, input_tokens: "2", output_tokens: 1 },
-            { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 },
-        ]) {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(async (_input, init) => {
                     const { stream } = JSON.parse(init.body);
-                    if (!stream)
-                        return Response.json(
-                            api === "responses"
-                                ? {
-                                      id: "resp_1",
-                                      object: "response",
-                                      model: "test-model",
-                                      status: "completed",
-                                      output: [],
-                                      usage: {
-                                          input_tokens: 2,
-                                          output_tokens: 1,
-                                          total_tokens: 3,
-                                      },
-                                  }
-                                : {
-                                      choices: [{ message: { content: "OK" } }],
-                                      usage: {
-                                          prompt_tokens: 2,
-                                          completion_tokens: 1,
-                                          total_tokens: 3,
-                                      },
-                                  },
-                        );
-                    const terminal =
-                        api === "responses"
-                            ? {
-                                  type: "response.completed",
-                                  response: { usage },
-                              }
-                            : { choices: [], usage };
-                    return new Response(
-                        `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
-                        { headers: { "content-type": "text/event-stream" } },
-                    );
+                    return stream
+                        ? new Response(
+                              `data: ${JSON.stringify({ type: "response.completed", response, usage: response.usage })}\n\ndata: [DONE]\n\n`,
+                          )
+                        : Response.json(response);
                 }),
             );
             await expect(
@@ -213,49 +262,9 @@ describe("community endpoint OpenAI service", () => {
                     model: "test-model",
                     bearerToken: "test-provider-token",
                 }),
-            ).rejects.toThrow("valid terminal streaming usage");
-        }
-    });
-
-    it.each([
-        "responses",
-        "chat_completions",
-    ] as const)("rejects a %s streaming probe with the wrong content type", async (api) => {
-        const response = {
-            id: "resp_1",
-            object: "response",
-            model: "test-model",
-            status: "completed",
-            output: [],
-            choices: [{ message: { content: "OK" } }],
-            usage: {
-                input_tokens: 2,
-                output_tokens: 1,
-                prompt_tokens: 2,
-                completion_tokens: 1,
-                total_tokens: 3,
-            },
-        };
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (_input, init) => {
-                const { stream } = JSON.parse(init.body);
-                return stream
-                    ? new Response(
-                          `data: ${JSON.stringify({ type: "response.completed", response, usage: response.usage })}\n\ndata: [DONE]\n\n`,
-                      )
-                    : Response.json(response);
-            }),
-        );
-        await expect(
-            testCommunityEndpoint({
-                api,
-                url: "https://api.example.com/infer",
-                model: "test-model",
-                bearerToken: "test-provider-token",
-            }),
-        ).rejects.toThrow("text/event-stream");
-    });
+            ).rejects.toThrow("text/event-stream");
+        },
+    );
 
     it("fetches model lists with Authorization", async () => {
         const fetchMock = vi.fn(async (input, init) => {
@@ -392,6 +401,136 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
+    describe("endpoints without SSE", () => {
+        const chatJson = {
+            choices: [{ message: { role: "assistant", content: "OK" } }],
+            usage: { prompt_tokens: 4, completion_tokens: 1, total_tokens: 5 },
+        };
+        const responseJson = {
+            id: "resp_1",
+            object: "response",
+            model: "test-model",
+            status: "completed",
+            output: [],
+            usage: { input_tokens: 4, output_tokens: 1, total_tokens: 5 },
+        };
+        const jsonFor = { chat_completions: chatJson, responses: responseJson };
+        const probe = (api: "chat_completions" | "responses") =>
+            testCommunityEndpoint({
+                api,
+                url: "https://api.example.com/v1/infer",
+                bearerToken: "test-provider-token",
+                model: "test-model",
+            });
+
+        it.each(["chat_completions", "responses"] as const)(
+            "registers a %s endpoint that answers stream: true with JSON",
+            async (api) => {
+                const fetchMock = vi.fn(async () =>
+                    Response.json(jsonFor[api]),
+                );
+                vi.stubGlobal("fetch", fetchMock);
+
+                const result = await probe(api);
+
+                expect(result).toMatchObject({
+                    usage: jsonFor[api].usage,
+                    streaming: false,
+                    streamingError:
+                        "Endpoint did not return a text/event-stream response",
+                });
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+            },
+        );
+
+        it.each([400, 422])(
+            "registers an endpoint that rejects stream: true with %i",
+            async (status) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async (_input, init) =>
+                        JSON.parse(init.body).stream
+                            ? Response.json(
+                                  {
+                                      error: {
+                                          message: "stream not supported",
+                                      },
+                                  },
+                                  { status },
+                              )
+                            : Response.json(chatJson),
+                    ),
+                );
+
+                await expect(probe("chat_completions")).resolves.toMatchObject({
+                    streaming: false,
+                    streamingError: `Endpoint responded ${status}: stream not supported`,
+                });
+            },
+        );
+
+        it.each([401, 429, 500])(
+            "still fails when the streaming request returns %i",
+            async (status) => {
+                vi.stubGlobal(
+                    "fetch",
+                    vi.fn(async (_input, init) =>
+                        JSON.parse(init.body).stream
+                            ? Response.json({}, { status })
+                            : Response.json(chatJson),
+                    ),
+                );
+
+                await expect(probe("chat_completions")).rejects.toThrow(
+                    `Endpoint responded ${status}`,
+                );
+            },
+        );
+
+        it("still requires terminal usage from an endpoint that streams", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) =>
+                    JSON.parse(init.body).stream
+                        ? new Response(
+                              'data: {"choices":[{"delta":{"content":"OK"}}]}\n\ndata: [DONE]\n\n',
+                              {
+                                  headers: {
+                                      "content-type": "text/event-stream",
+                                  },
+                              },
+                          )
+                        : Response.json(chatJson),
+                ),
+            );
+
+            await expect(probe("chat_completions")).rejects.toThrow(
+                "Endpoint omitted valid terminal streaming usage",
+            );
+        });
+
+        it("stores the flag only as advertised.streaming: false", () => {
+            const listing = {
+                name: "test-model",
+                title: "Test model",
+                api: "chat_completions",
+                url: "https://api.example.com/v1/chat/completions",
+                bearerToken: "test-provider-token",
+            };
+            for (const [streaming, valid] of [
+                [false, true],
+                [true, false],
+            ] as const) {
+                expect(
+                    CreateEndpointSchema.safeParse({
+                        ...listing,
+                        advertised: { streaming },
+                    }).success,
+                ).toBe(valid);
+            }
+        });
+    });
+
     it("detects token billing when image endpoints return OpenAI usage", async () => {
         let editRequested = false;
         const fetchMock = vi.fn(async (input, init) => {
@@ -471,60 +610,70 @@ describe("community endpoint OpenAI service", () => {
         [500, "Image edit failed"],
         [400, "Missing model parameter"],
         [429, "Quota exceeded"],
-    ])("preserves generation success and edit failure details for HTTP %i", async (status, message) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input) => {
-                if (String(input).endsWith("/images/edits")) {
-                    return Response.json({ error: { message } }, { status });
-                }
-                return Response.json({
-                    data: [{ b64_json: "iVBORw0KGgo=" }],
-                });
-            }),
-        );
+    ])(
+        "preserves generation success and edit failure details for HTTP %i",
+        async (status, message) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input) => {
+                    if (String(input).endsWith("/images/edits")) {
+                        return Response.json(
+                            { error: { message } },
+                            { status },
+                        );
+                    }
+                    return Response.json({
+                        data: [{ b64_json: "iVBORw0KGgo=" }],
+                    });
+                }),
+            );
 
-        await expect(
-            testCommunityImageEndpoint({
-                baseUrl: "https://api.example.com/v1",
-                bearerToken: "sk_saved_token",
-                model: "gpt-image-1",
-            }),
-        ).resolves.toEqual({
-            usage: { images: 1 },
-            billableUsage: { completionImageTokens: 1 },
-            imagePricing: "request",
-            inputModalities: ["text"],
-            imageEditError: `Endpoint responded ${status}: ${message}`,
-        });
-    });
+            await expect(
+                testCommunityImageEndpoint({
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    model: "gpt-image-1",
+                }),
+            ).resolves.toEqual({
+                usage: { images: 1 },
+                billableUsage: { completionImageTokens: 1 },
+                imagePricing: "request",
+                inputModalities: ["text"],
+                imageEditError: `Endpoint responded ${status}: ${message}`,
+            });
+        },
+    );
 
     it.each([
         ["missing image", { data: [] }],
         ["invalid image", { data: [{ b64_json: "bm90IGFuIGltYWdl" }] }],
-    ])("reports an editing response with %s without failing generation", async (_, editResponse) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input) =>
-                Response.json(
-                    String(input).endsWith("/images/edits")
-                        ? editResponse
-                        : { data: [{ b64_json: "iVBORw0KGgo=" }] },
+    ])(
+        "reports an editing response with %s without failing generation",
+        async (_, editResponse) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (input) =>
+                    Response.json(
+                        String(input).endsWith("/images/edits")
+                            ? editResponse
+                            : { data: [{ b64_json: "iVBORw0KGgo=" }] },
+                    ),
                 ),
-            ),
-        );
-        await expect(
-            testCommunityImageEndpoint({
-                baseUrl: "https://api.example.com/v1",
-                bearerToken: "sk_saved_token",
-                model: "gpt-image-1",
-            }),
-        ).resolves.toMatchObject({
-            billableUsage: { completionImageTokens: 1 },
-            inputModalities: ["text"],
-            imageEditError: "Editing endpoint did not return a supported image",
-        });
-    });
+            );
+            await expect(
+                testCommunityImageEndpoint({
+                    baseUrl: "https://api.example.com/v1",
+                    bearerToken: "sk_saved_token",
+                    model: "gpt-image-1",
+                }),
+            ).resolves.toMatchObject({
+                billableUsage: { completionImageTokens: 1 },
+                inputModalities: ["text"],
+                imageEditError:
+                    "Editing endpoint did not return a supported image",
+            });
+        },
+    );
 
     it("preserves generation success when the edit request times out", async () => {
         vi.stubGlobal(
@@ -690,63 +839,60 @@ describe("community endpoint OpenAI service", () => {
         });
     });
 
-    it.each([
-        undefined,
-        null,
-        {},
-        { duration: null },
-    ])("uses the probe duration when video usage is missing: %j", async (usage) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json({
-                    data: [
-                        {
-                            b64_json:
-                                "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
-                        },
-                    ],
-                    usage,
+    it.each([undefined, null, {}, { duration: null }])(
+        "uses the probe duration when video usage is missing: %j",
+        async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [
+                            {
+                                b64_json:
+                                    "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                            },
+                        ],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                testCommunityVideoEndpoint({
+                    baseUrl: "https://api.example.com/generate-video",
+                    bearerToken: "sk_saved_token",
                 }),
-            ),
-        );
-        await expect(
-            testCommunityVideoEndpoint({
-                baseUrl: "https://api.example.com/generate-video",
-                bearerToken: "sk_saved_token",
-            }),
-        ).resolves.toEqual({
-            usage: { duration: 5 },
-            billableUsage: { completionVideoSeconds: 5 },
-        });
-    });
+            ).resolves.toEqual({
+                usage: { duration: 5 },
+                billableUsage: { completionVideoSeconds: 5 },
+            });
+        },
+    );
 
-    it.each([
-        { duration: 0 },
-        { duration: -1 },
-        { duration: "5" },
-    ])("rejects registration when reported video usage is invalid: %j", async (usage) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json({
-                    data: [
-                        {
-                            b64_json:
-                                "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
-                        },
-                    ],
-                    usage,
+    it.each([{ duration: 0 }, { duration: -1 }, { duration: "5" }])(
+        "rejects registration when reported video usage is invalid: %j",
+        async (usage) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({
+                        data: [
+                            {
+                                b64_json:
+                                    "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                            },
+                        ],
+                        usage,
+                    }),
+                ),
+            );
+            await expect(
+                testCommunityVideoEndpoint({
+                    baseUrl: "https://api.example.com/generate-video",
+                    bearerToken: "sk_saved_token",
                 }),
-            ),
-        );
-        await expect(
-            testCommunityVideoEndpoint({
-                baseUrl: "https://api.example.com/generate-video",
-                bearerToken: "sk_saved_token",
-            }),
-        ).rejects.toThrow("usage.duration");
-    });
+            ).rejects.toThrow("usage.duration");
+        },
+    );
 
     it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {
         const fetchMock = vi.fn(async (input, init) => {

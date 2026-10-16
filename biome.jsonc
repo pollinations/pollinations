@@ -53,6 +53,18 @@
     },
     "overrides": [
         {
+            // SVG files are image assets shown through <img alt="…">, so a
+            // <title> in each file adds nothing
+            "includes": ["**/*.svg"],
+            "linter": {
+                "rules": {
+                    "a11y": {
+                        "noSvgWithoutTitle": "off"
+                    }
+                }
+            }
+        },
+        {
             "includes": ["apps/chat/**"],
             "linter": {
                 "rules": {

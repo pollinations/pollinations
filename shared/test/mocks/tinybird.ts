@@ -9,7 +9,14 @@ type TinybirdGenerationEvent = Omit<
     | "tinybirdDeliveredAt"
     | "createdAt"
     | "updatedAt"
->;
+    | "tokenCountPromptImage"
+    | "tokenCountCompletionImage"
+> & {
+    tokenCountPromptImage?: number;
+    tokenCountCompletionImage?: number;
+    usagePromptImageUnits: number;
+    usageCompletionImageUnits: number;
+};
 
 type UsageRow = Record<string, unknown>;
 

@@ -8,6 +8,8 @@ import type {
     AudioBinaryResponse,
     AudioGenerateOptions,
     AudioSpeechOptions,
+    AudioSpeechWithTimestampsOptions,
+    AudioSpeechWithTimestampsResponse,
     AudioTransformOptions,
     AuthorizeDeviceOptions,
     AuthorizeOptions,
@@ -18,6 +20,8 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DecisionOptions,
+    DecisionResponse,
     DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
@@ -32,10 +36,19 @@ import type {
     ImageResponse,
     KeyInfo,
     KeyUsageOptions,
+    MediaJobResult,
+    MediaJobStatus,
+    MediaJobSubmission,
     Message,
+    Model3dGenerateOptions,
+    Model3dResponse,
     ModelInfo,
+    ModelKind,
+    ModelStatusOptions,
+    ModelStatusResponse,
     PollinationsConfig,
     RequestOptions,
+    SpeechWordTiming,
     TextGenerateOptions,
     TranscribeOptions,
     TranscriptionResponse,
@@ -50,7 +63,7 @@ import type {
 } from "./types.js";
 import { PollinationsError } from "./types.js";
 
-const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
+export const DEFAULT_BASE_URL = "https://gen.pollinations.ai";
 export const AUTH_BASE_URL = "https://enter.pollinations.ai";
 const DEVICE_FLOW_CLIENT_ID = "pk_NgBAArhUeGvSRFba";
 const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
@@ -58,6 +71,43 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
 const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
+
+/** One item of an OpenAI-style image response */
+type ImageItem = { url?: string; b64_json?: string; media_type?: string };
+
+/** Adapt simple text input to the canonical chat request without SDK defaults. */
+export function buildTextRequest(
+    prompt: string,
+    options: TextGenerateOptions = {},
+): { messages: Message[]; options: ChatOptions } {
+    if (!prompt || typeof prompt !== "string") {
+        throw new PollinationsError(
+            "Prompt is required and must be a string",
+            "INVALID_INPUT",
+            400,
+        );
+    }
+
+    return {
+        messages: [
+            ...(options.systemPrompt
+                ? [{ role: "system" as const, content: options.systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ],
+        options: {
+            model: options.model,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
+            seed: options.seed,
+            private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
+            signal: options.signal,
+        },
+    };
+}
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -283,7 +333,12 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
-    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+    private async getJson<T>(
+        url: string,
+        signal?: AbortSignal,
+        read: (response: Response) => Promise<T> = (response) =>
+            response.json() as Promise<T>,
+    ): Promise<T> {
         return fetchWithTimeout(
             url,
             { headers: this.getHeaders() },
@@ -291,7 +346,7 @@ export class Pollinations {
             signal,
             async (response) => {
                 if (!response.ok) await this.handleErrorResponse(response);
-                return response.json() as Promise<T>;
+                return read(response);
             },
         );
     }
@@ -306,7 +361,15 @@ export class Pollinations {
             if (value === undefined || value === null) continue;
 
             if (Array.isArray(value)) {
-                searchParams.set(key, value.join(","));
+                const separator = [
+                    "image",
+                    "reference_images",
+                    "reference_videos",
+                    "reference_audios",
+                ].includes(key)
+                    ? "|"
+                    : ",";
+                searchParams.set(key, value.join(separator));
             } else if (typeof value === "boolean") {
                 searchParams.set(key, value ? "true" : "false");
             } else {
@@ -432,7 +495,7 @@ export class Pollinations {
      * ```ts
      * const result = await pollinations.imageEdit('Make the sky purple', {
      *   image: 'https://example.com/photo.jpg',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
      * ```
      */
@@ -454,7 +517,11 @@ export class Pollinations {
         };
 
         if (options.image) {
-            body.image = options.image;
+            // The JSON edits endpoint follows the OpenAI shape: a single URL
+            // string or an array of { image_url } objects.
+            body.image = Array.isArray(options.image)
+                ? options.image.map((image_url) => ({ image_url }))
+                : options.image;
         }
 
         const json = await fetchWithTimeout(
@@ -471,9 +538,7 @@ export class Pollinations {
                     await this.handleErrorResponse(response);
                 }
 
-                return (await response.json()) as {
-                    data: Array<{ url?: string; b64_json?: string }>;
-                };
+                return (await response.json()) as { data: ImageItem[] };
             },
         );
 
@@ -498,28 +563,22 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Generate image(s) via the OpenAI-compatible POST endpoint.
-     * Supports multi-image requests (`n > 1`) and both `url` / `b64_json`
-     * response formats.
-     *
-     * Returns a single `ImageResponse` when `n === 1`, or an array otherwise.
+     * Generate an image via the OpenAI-compatible POST endpoint.
+     * Supports both `url` / `b64_json` response formats.
      *
      * @example
      * ```ts
      * // Single image, size string (OpenAI style)
      * const img = await pollinations.imageGenerate('A cute robot', {
      *   size: '1024x1024',
-     *   model: 'flux',
+     *   model: 'black-forest-labs/flux.1-schnell',
      * });
-     *
-     * // Multiple images
-     * const imgs = await pollinations.imageGenerate('A cute robot', { n: 3 });
      * ```
      */
     async imageGenerate(
         prompt: string,
         options: ImageGenerateV1Options = {},
-    ): Promise<ImageResponse | ImageResponse[]> {
+    ): Promise<ImageResponse> {
         if (!prompt || typeof prompt !== "string") {
             throw new PollinationsError(
                 "Prompt is required and must be a string",
@@ -539,7 +598,6 @@ export class Pollinations {
             model: options.model,
         };
         if (size) body.size = size;
-        if (options.n !== undefined) body.n = options.n;
         if (options.responseFormat)
             body.response_format = options.responseFormat;
         if (options.reasoning !== undefined) body.reasoning = options.reasoning;
@@ -560,14 +618,12 @@ export class Pollinations {
                     await this.handleErrorResponse(response);
                 }
 
-                return (await response.json()) as {
-                    data: Array<{ url?: string; b64_json?: string }>;
-                };
+                return (await response.json()) as { data: ImageItem[] };
             },
         );
 
-        const items = json.data || [];
-        if (items.length === 0) {
+        const [item] = json.data || [];
+        if (!item) {
             throw new PollinationsError(
                 "No image data in response",
                 "NO_IMAGE",
@@ -575,21 +631,12 @@ export class Pollinations {
             );
         }
 
-        const results = await Promise.all(
-            items.map((item) => this.resolveImageItem(item, options.signal)),
-        );
-
-        // Unwrap when a single image was produced (most common case)
-        if (results.length === 1) {
-            const [single] = results;
-            if (single) return single;
-        }
-        return results;
+        return this.resolveImageItem(item, options.signal);
     }
 
     /** Fetch-or-decode a single OpenAI-style image item into an ImageResponse */
     private async resolveImageItem(
-        item: { url?: string; b64_json?: string },
+        item: ImageItem,
         signal?: AbortSignal,
         invalidResponseMessage = "Unexpected image item shape in response",
     ): Promise<ImageResponse> {
@@ -619,7 +666,7 @@ export class Pollinations {
             }
             return {
                 buffer: bytes.buffer as ArrayBuffer,
-                contentType: "image/png",
+                contentType: item.media_type || "image/png",
                 url: "",
             };
         }
@@ -647,6 +694,9 @@ export class Pollinations {
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
+            reference_images: options.referenceImages,
+            reference_videos: options.referenceVideos,
+            reference_audios: options.referenceAudios,
             safe: options.safe,
         };
 
@@ -662,7 +712,7 @@ export class Pollinations {
      *
      * @example
      * ```ts
-     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'veo', duration: 4 });
+     * const url = await pollinations.videoUrl('A cat playing piano', { model: 'google/veo-3.1-fast', duration: 4 });
      * ```
      */
     async videoUrl(
@@ -714,6 +764,220 @@ export class Pollinations {
         );
     }
 
+    async model3d(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<Model3dResponse> {
+        if (!prompt || typeof prompt !== "string") {
+            throw new PollinationsError(
+                "Prompt is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        const url = `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`;
+        return fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "model/gltf-binary",
+                    url,
+                };
+            },
+        );
+    }
+
+    // ============================================================================
+    // Asynchronous Media Jobs
+    // ============================================================================
+
+    /** Submit a media request without waiting for the provider to finish. */
+    private async submitMedia(
+        url: string,
+        signal?: AbortSignal,
+    ): Promise<MediaJobSubmission> {
+        return fetchWithTimeout(
+            url,
+            { headers: { ...this.getHeaders(), Prefer: "respond-async" } },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (response.status === 202) {
+                    const job = (await response.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    if (
+                        typeof job.id !== "string" ||
+                        !/^[0-9a-f]{64}$/.test(job.id) ||
+                        (job.status !== "pending" &&
+                            job.status !== "succeeded") ||
+                        typeof job.status_url !== "string"
+                    ) {
+                        throw new PollinationsError(
+                            "Invalid media job response",
+                            "INVALID_RESPONSE",
+                            502,
+                        );
+                    }
+                    return job as MediaJobSubmission;
+                }
+                if (!response.ok) await this.handleErrorResponse(response);
+                // The server may ignore Prefer when the media is already cached.
+                return {
+                    status: "succeeded",
+                    result: {
+                        buffer: await response.arrayBuffer(),
+                        contentType:
+                            response.headers.get("content-type") ||
+                            "application/octet-stream",
+                    },
+                };
+            },
+        );
+    }
+
+    async imageAsync(
+        prompt: string,
+        options: ImageGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildImageUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async videoAsync(
+        prompt: string,
+        options: VideoGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        return this.submitMedia(
+            stripKeyFromUrl(this.buildVideoUrl(prompt, options)),
+            options.signal,
+        );
+    }
+
+    async audioAsync(
+        text: string,
+        options: AudioGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!text)
+            throw new PollinationsError(
+                "Text is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                voice: options.voice,
+                model: options.model,
+                duration: options.duration,
+                seed: options.seed,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/audio/${encodeURIComponent(text)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    async model3dAsync(
+        prompt: string,
+        options: Model3dGenerateOptions = {},
+    ): Promise<MediaJobSubmission> {
+        if (!prompt)
+            throw new PollinationsError(
+                "Prompt is required",
+                "INVALID_INPUT",
+                400,
+            );
+        const query = this.buildQueryParams(
+            {
+                model: options.model,
+                image: options.referenceImage,
+                resolution: options.resolution,
+                seed: options.seed,
+                safe: options.safe,
+            },
+            false,
+        );
+        return this.submitMedia(
+            `${this.baseUrl}/3d/${encodeURIComponent(prompt)}${query ? `?${query}` : ""}`,
+            options.signal,
+        );
+    }
+
+    private jobPath(id: string): string {
+        if (!/^[0-9a-f]{64}$/.test(id)) {
+            throw new PollinationsError(
+                "Invalid media job id",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return `${this.baseUrl}/v1/jobs/${id}`;
+    }
+
+    /** Poll a submitted job until its status is succeeded or failed. */
+    async job(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobStatus> {
+        return this.getJson<MediaJobStatus>(this.jobPath(id), options.signal);
+    }
+
+    /** Download the completed result; rejects with 409 while still pending. */
+    async jobResult(
+        id: string,
+        options: RequestOptions = {},
+    ): Promise<MediaJobResult> {
+        return fetchWithTimeout(
+            `${this.jobPath(id)}/result`,
+            { headers: this.getHeaders() },
+            this.videoTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                return {
+                    buffer: await response.arrayBuffer(),
+                    contentType:
+                        response.headers.get("content-type") ||
+                        "application/octet-stream",
+                };
+            },
+        );
+    }
+
     // ============================================================================
     // Text Generation
     // ============================================================================
@@ -731,51 +995,9 @@ export class Pollinations {
         prompt: string,
         options: TextGenerateOptions = {},
     ): Promise<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        const response = await this.chat(
-            this.buildTextMessages(prompt, options.systemPrompt),
-            {
-                ...this.buildTextChatOptions(options),
-                signal: options.signal,
-            },
-        );
+        const request = buildTextRequest(prompt, options);
+        const response = await this.chat(request.messages, request.options);
         return response.choices[0]?.message?.content || "";
-    }
-
-    /** Adapt the simple text facade to the canonical chat-completions request. */
-    private buildTextMessages(
-        prompt: string,
-        systemPrompt?: string,
-    ): Message[] {
-        return [
-            ...(systemPrompt
-                ? [{ role: "system" as const, content: systemPrompt }]
-                : []),
-            { role: "user", content: prompt },
-        ];
-    }
-
-    /** Map simple text options without introducing SDK-owned defaults. */
-    private buildTextChatOptions(
-        options: Omit<TextGenerateOptions, "stream">,
-    ): Omit<ChatOptions, "stream" | "signal"> {
-        return {
-            model: options.model,
-            temperature: options.temperature,
-            maxTokens: options.maxTokens,
-            frequencyPenalty: options.frequencyPenalty,
-            presencePenalty: options.presencePenalty,
-            seed: options.seed,
-            private: options.private,
-            responseFormat: options.json ? { type: "json_object" } : undefined,
-        };
     }
 
     /**
@@ -792,21 +1014,8 @@ export class Pollinations {
         prompt: string,
         options: Omit<TextGenerateOptions, "stream"> = {},
     ): AsyncGenerator<string> {
-        if (!prompt || typeof prompt !== "string") {
-            throw new PollinationsError(
-                "Prompt is required and must be a string",
-                "INVALID_INPUT",
-                400,
-            );
-        }
-
-        const chunks = this.chatStream(
-            this.buildTextMessages(prompt, options.systemPrompt),
-            {
-                ...this.buildTextChatOptions(options),
-                signal: options.signal,
-            },
-        );
+        const request = buildTextRequest(prompt, options);
+        const chunks = this.chatStream(request.messages, request.options);
         for await (const chunk of chunks) {
             const content = chunk.choices[0]?.delta?.content;
             if (content) yield content;
@@ -823,10 +1032,15 @@ export class Pollinations {
         options: Omit<ChatOptions, "stream">,
         stream: boolean,
     ): Record<string, unknown> {
+        // Router agents read overrides from `metadata`, where `text` is `model`.
+        const { text, ...routing } = options.routing ?? {};
         return this.stripUndefined({
             messages,
             model: options.model,
-            routing: options.routing,
+            metadata: options.routing && {
+                ...(text !== undefined && { model: text }),
+                ...routing,
+            },
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -947,6 +1161,7 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
+        let completed = false;
         let events: string[] = [];
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
@@ -965,10 +1180,20 @@ export class Pollinations {
                 for (const data of events) {
                     options.signal?.throwIfAborted();
                     if (data.trim() === "[DONE]") return;
-                    if (data) yield parseChatStreamData(data);
+                    if (!data) continue;
+                    const chunk = parseChatStreamData(data);
+                    completed ||= chunk.choices.some((c) => c.finish_reason);
+                    yield chunk;
                 }
                 events = [];
-                if (done) return;
+                if (done) {
+                    if (completed) return;
+                    throw new PollinationsError(
+                        "Chat completion stream closed before completion",
+                        "INCOMPLETE_STREAM",
+                        502,
+                    );
+                }
             }
         } catch (error) {
             if (options.signal?.aborted) {
@@ -1000,7 +1225,7 @@ export class Pollinations {
      * const { buffer } = await pollinations.audio('Hello, how are you today?', { voice: 'nova' });
      *
      * // Music generation
-     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenmusic', duration: 30 });
+     * const { buffer } = await pollinations.audio('upbeat jazz', { model: 'elevenlabs/music-v2', duration: 30 });
      * ```
      */
     async audio(
@@ -1097,6 +1322,92 @@ export class Pollinations {
         );
     }
 
+    async audioSpeechWithTimestamps(
+        text: string,
+        options: AudioSpeechWithTimestampsOptions = {},
+    ): Promise<AudioSpeechWithTimestampsResponse> {
+        if (!text || typeof text !== "string") {
+            throw new PollinationsError(
+                "Text is required and must be a string",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+        return fetchWithTimeout(
+            `${this.baseUrl}/v1/audio/speech/with-timestamps`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({
+                    input: text,
+                    model: options.model,
+                    voice: options.voice,
+                    response_format: options.responseFormat,
+                    seed: options.seed,
+                }),
+            },
+            this.textTimeout,
+            options.signal,
+            async (response) => {
+                if (!response.ok) await this.handleErrorResponse(response);
+                const data =
+                    (await response.json()) as AudioSpeechWithTimestampsResponse;
+                const alignment = data?.normalized_alignment;
+                if (
+                    typeof data?.audio_base64 !== "string" ||
+                    (alignment != null &&
+                        (!Array.isArray(alignment.characters) ||
+                            !Array.isArray(
+                                alignment.character_start_times_seconds,
+                            ) ||
+                            !Array.isArray(
+                                alignment.character_end_times_seconds,
+                            ) ||
+                            alignment.characters.length !==
+                                alignment.character_start_times_seconds
+                                    .length ||
+                            alignment.characters.length !==
+                                alignment.character_end_times_seconds.length ||
+                            !alignment.characters.every(
+                                (c) => typeof c === "string",
+                            ) ||
+                            !alignment.character_start_times_seconds.every(
+                                Number.isFinite,
+                            ) ||
+                            !alignment.character_end_times_seconds.every(
+                                Number.isFinite,
+                            )))
+                ) {
+                    throw new PollinationsError(
+                        "Invalid timestamped speech response",
+                        "INVALID_RESPONSE",
+                        502,
+                    );
+                }
+                const words: SpeechWordTiming[] = [];
+                if (!alignment) return { ...data, words };
+                let current: SpeechWordTiming | undefined;
+                for (const [i, character] of alignment.characters.entries()) {
+                    if (/\s/u.test(character)) {
+                        current = undefined;
+                    } else {
+                        const start =
+                            alignment.character_start_times_seconds[i];
+                        const end = alignment.character_end_times_seconds[i];
+                        if (current) {
+                            current.word += character;
+                            current.end = end;
+                        } else {
+                            current = { word: character, start, end };
+                            words.push(current);
+                        }
+                    }
+                }
+                return { ...data, words };
+            },
+        );
+    }
+
     /** Transform uploaded audio, or isolate speech from audio/video. */
     async audioTransform(
         audio: Blob,
@@ -1134,41 +1445,30 @@ export class Pollinations {
     // ============================================================================
 
     /**
-     * Get available text models
+     * Get available models, or only one kind of them
      *
      * @example
      * ```ts
-     * const models = await pollinations.textModels();
-     * console.log(models.map(m => m.name));
+     * const all = await pollinations.models();
+     * const video = await pollinations.models("video");
      * ```
      */
-    async textModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
+    async models(kind?: ModelKind): Promise<ModelInfo[]> {
+        const path = kind ? `/${kind}/models` : "/models";
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}${path}`);
     }
 
-    /**
-     * Get available image models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.imageModels();
-     * console.log(models.map(m => m.name));
-     * ```
-     */
-    async imageModels(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
-    }
-
-    /**
-     * Get all available models
-     *
-     * @example
-     * ```ts
-     * const models = await pollinations.models();
-     * ```
-     */
-    async models(): Promise<ModelInfo[]> {
-        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    async modelStatus(
+        options: ModelStatusOptions = {},
+    ): Promise<ModelStatusResponse> {
+        const query = this.buildQueryParams(
+            { traffic: options.traffic, minutes: options.minutes },
+            false,
+        );
+        return this.getJson<ModelStatusResponse>(
+            `${this.baseUrl}/models/status${query ? `?${query}` : ""}`,
+            options.signal,
+        );
     }
 
     // ============================================================================
@@ -1183,7 +1483,7 @@ export class Pollinations {
      * // From a file (Node.js)
      * import fs from 'fs';
      * const audioBuffer = fs.readFileSync('speech.mp3');
-     * const result = await pollinations.transcribe(audioBuffer, { model: 'whisper-large-v3' });
+     * const result = await pollinations.transcribe(audioBuffer, { model: 'openai/whisper-large-v3' });
      * console.log(result.text);
      *
      * // From a Blob (browser)
@@ -1210,7 +1510,18 @@ export class Pollinations {
                 ? audio
                 : new Blob([audio], { type: "audio/mpeg" });
 
-        formData.append("file", blob, "audio.mp3");
+        // Some providers read the format from the extension. Keep File names,
+        // and derive unnamed Blob extensions from the MIME essence.
+        const mime = blob.type.split(";")[0].trim();
+        const subtype = mime.startsWith("audio/")
+            ? mime.slice(6).replace(/^x-/, "")
+            : "";
+        const extension = subtype === "mpeg" ? "mp3" : subtype || "mp3";
+        formData.append(
+            "file",
+            blob,
+            (blob as Partial<File>).name || `audio.${extension}`,
+        );
         if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
@@ -1310,6 +1621,48 @@ export class Pollinations {
     }
 
     // ============================================================================
+    // Decisions (TypeSafe / Jev)
+    // ============================================================================
+
+    /**
+     * Request typed decisions using TypeSafe / Jev models (POST /alpha/decisions).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.decision({
+     *   state: "My payouts have been failing for 3 days.",
+     *   questions: {
+     *     is_urgent: { type: "noul", instructions: "Does this convey urgency?" }
+     *   }
+     * });
+     * console.log(result.answers.is_urgent.noul);
+     * ```
+     */
+    async decision({
+        state,
+        questions,
+        model,
+        signal,
+    }: DecisionOptions): Promise<DecisionResponse> {
+        return fetchWithTimeout(
+            `${this.baseUrl}/alpha/decisions`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify({ state, questions, model }),
+            },
+            this.textTimeout,
+            signal,
+            async (response) => {
+                if (!response.ok) {
+                    await this.handleErrorResponse(response);
+                }
+                return response.json() as Promise<DecisionResponse>;
+            },
+        );
+    }
+
+    // ============================================================================
     // Media Upload
     // ============================================================================
 
@@ -1342,7 +1695,13 @@ export class Pollinations {
                       type: options.contentType || "application/octet-stream",
                   });
 
-        formData.append("file", blob, options.name || "upload");
+        // The media service detects the type from the filename when the part
+        // has none, so a File keeps its own name.
+        formData.append(
+            "file",
+            blob,
+            options.name || (blob as Partial<File>).name || "upload",
+        );
         if (options.tags?.length) {
             formData.append("tags", options.tags.join(","));
         }
@@ -1380,7 +1739,7 @@ export class Pollinations {
      * ```ts
      * const url = pollinations.authorizeUrl({
      *   redirectUrl: 'https://myapp.com/callback',
-     *   models: ['flux', 'openai'],
+     *   models: ['black-forest-labs/flux.1-schnell', 'openai/gpt-5.4-nano'],
      *   budget: 10,
      *   permissions: ['profile', 'usage'],
      * });
@@ -1510,7 +1869,7 @@ export class Pollinations {
                         body.error ||
                         "Device flow failed",
                     body.error || "DEVICE_FLOW_ERROR",
-                    400,
+                    tokenRes.status,
                 );
             }
             throw new PollinationsError(
@@ -1597,9 +1956,18 @@ export class Pollinations {
      * ```ts
      * const { usage } = await pollinations.accountUsage({ limit: 50 });
      * usage.forEach(r => console.log(r.model, r.cost_usd));
+     *
+     * // CSV export as text
+     * const csv = await pollinations.accountUsage({ format: 'csv' });
      * ```
      */
-    async accountUsage(options: UsageOptions = {}): Promise<UsageResponse> {
+    async accountUsage(
+        options: UsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsage(options?: UsageOptions): Promise<UsageResponse>;
+    async accountUsage(
+        options: UsageOptions = {},
+    ): Promise<UsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1611,6 +1979,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<UsageResponse>(url);
     }
 
@@ -1624,8 +1994,14 @@ export class Pollinations {
      * ```
      */
     async accountUsageDaily(
+        options: DailyUsageOptions & { format: "csv" },
+    ): Promise<string>;
+    async accountUsageDaily(
+        options?: DailyUsageOptions,
+    ): Promise<DailyUsageResponse>;
+    async accountUsageDaily(
         options: DailyUsageOptions = {},
-    ): Promise<DailyUsageResponse> {
+    ): Promise<DailyUsageResponse | string> {
         const params = new URLSearchParams();
         if (options.format) params.set("format", options.format);
         if (options.days) params.set("days", String(options.days));
@@ -1637,6 +2013,8 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
+        if (options.format === "csv")
+            return this.getJson(url, undefined, (response) => response.text());
         return this.getJson<DailyUsageResponse>(url);
     }
 
@@ -1759,6 +2137,8 @@ export class Pollinations {
             body.pollenBudget = options.pollenBudget;
         if (options.accountPermissions)
             body.accountPermissions = options.accountPermissions;
+        if (options.questPollenOnly !== undefined)
+            body.questPollenOnly = options.questPollenOnly;
         if (options.redirectUris) body.redirectUris = options.redirectUris;
         if (options.earningsEnabled !== undefined)
             body.earningsEnabled = options.earningsEnabled;

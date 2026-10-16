@@ -1,4 +1,5 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { ValidationError } from "@shared/http/validation-error.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
     CONTENT_POLICY_STATUS,
@@ -26,6 +27,9 @@ export function apiErrorStatus(details: unknown, status: number): number {
 
 export function throwTextError(error: ServiceError): never {
     if (error instanceof UpstreamError) throw error;
+    // Client-side validation is not an upstream failure: pass it through so the
+    // error handler keeps the 400 + ValidationError taxonomy.
+    if (error instanceof ValidationError) throw error;
     const status =
         typeof error.status === "number"
             ? error.status

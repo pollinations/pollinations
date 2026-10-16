@@ -1,7 +1,8 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { basename } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { basename, dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { requireFile } from "../../lib/input-file.js";
 import { mimeTypeFor } from "../../lib/mime.js";
 import { getOutputMode, printInfo, printMeta } from "../../lib/output.js";
 
@@ -21,6 +22,8 @@ export function createVoiceChangeCommand() {
             const isHuman = getOutputMode() === "human";
             const output = opts.output ?? `voice.${opts.format}`;
 
+            requireFile(file);
+
             const formData = new FormData();
             formData.append(
                 "audio",
@@ -32,6 +35,8 @@ export function createVoiceChangeCommand() {
             if (opts.format !== "mp3")
                 formData.append("response_format", opts.format);
 
+            // Before the paid request, so a bad --output folder costs nothing.
+            mkdirSync(dirname(output), { recursive: true });
             if (isHuman) printInfo("Transforming voice...");
 
             try {

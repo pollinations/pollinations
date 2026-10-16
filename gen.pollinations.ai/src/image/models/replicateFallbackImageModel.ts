@@ -20,7 +20,6 @@ type ReplicateFallbackModel =
     // Replicate is FLUX.2 Max's primary route (Azure has no Max deployment),
     // so this id carries no ":replicate" suffix, unlike every other case here.
     | "black-forest-labs/flux.2-max"
-    | "qwen/qwen-image-3:replicate"
     | "prunaai/p-image-edit:replicate"
     | "krea/krea-2-medium:replicate";
 
@@ -34,18 +33,6 @@ const COMMON_RATIOS = [
     "2:3",
     "4:5",
     "5:4",
-] as const;
-
-const QWEN_RATIOS = [
-    "1:1",
-    "16:9",
-    "9:16",
-    "4:3",
-    "3:4",
-    "3:2",
-    "2:3",
-    "2:1",
-    "1:2",
 ] as const;
 
 async function runReplicateImage(
@@ -105,11 +92,6 @@ export async function callReplicateFallbackImage(
 
     switch (model) {
         case "black-forest-labs/flux.2-pro:replicate": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Pro supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -129,11 +111,6 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "black-forest-labs/flux.2-max": {
-            if (params.image.length > 8) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "FLUX.2 Max supports at most 8 reference images",
-                });
-            }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
             completionImageTokens = (params.width * params.height) / 1_000_000;
@@ -153,7 +130,7 @@ export async function callReplicateFallbackImage(
             break;
         }
         case "black-forest-labs/flux.1-kontext-pro:replicate": {
-            const images = await prepareFluxImages(params.image.slice(0, 1));
+            const images = await prepareFluxImages(params.image);
             buffer = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
                 {
@@ -172,34 +149,10 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "qwen/qwen-image-3:replicate": {
-            const image = params.image[0]
-                ? await toDataUri(params.image[0])
-                : undefined;
-            promptImageTokens = params.image.length;
-            buffer = await runReplicateImage(
-                "alibaba/qwen-image-3",
-                {
-                    prompt,
-                    ...(image ? { image } : {}),
-                    aspect_ratio: closestRatio(params, QWEN_RATIOS),
-                    match_input_image: false,
-                    enable_prompt_expansion: false,
-                    seed: params.seed,
-                },
-                "Qwen Image 3",
-            );
-            break;
-        }
         case "prunaai/p-image-edit:replicate": {
             if (params.image.length === 0) {
                 throw UpstreamError.fromProvider(400, {
                     message: "p-image-edit requires at least one input image",
-                });
-            }
-            if (params.image.length > 5) {
-                throw UpstreamError.fromProvider(400, {
-                    message: "p-image-edit supports at most 5 input images",
                 });
             }
             buffer = await runReplicateImage(

@@ -1,6 +1,6 @@
 name: News / Build index
 
-# Rebuilds operations/social/news/index.json on the news branch: the feed Enter's
+# Rebuilds operations/social/news/data/index.json on the news branch: the feed Enter's
 # /news page reads. Runs after every News / Posts run (the day's PR notes, the
 # daily summary and the /models record).
 on:
@@ -35,9 +35,7 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/daily/*/summary.json
-            /operations/social/news/models/snapshots/
-            /operations/social/news/index.json
+            /operations/social/news/data/
 
       - name: Set up Python
         uses: actions/setup-python@v6

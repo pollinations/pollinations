@@ -1,7 +1,6 @@
 ---
 job: weekly
 tone: linkedin
-file: linkedin.json
 temperature: 0.7
 pictures: ["linkedin.jpg"]
 required: ["hook", "body", "closing"]

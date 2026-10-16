@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merged PRs per GitHub account for one month: the monthly job's contributors.json.
+"""Merged PRs per GitHub account for one month: the monthly job's data/contributors/<month>.json.
 
 Every PR merged into main or master counts once; its author and each noreply co-author
 get credit, keyed by GitHub account id so a rename never splits anyone's count.
@@ -183,7 +183,7 @@ def rank_contributors(prs: List[Dict], token: str) -> List[Dict]:
 
 
 def month_counts(month: str, token: str, repository: str) -> Dict:
-    """The month's merged PRs and who made them, as monthly/<month>/contributors.json."""
+    """The month's merged PRs and who made them, as data/contributors/<month>.json."""
     merged = merged_prs(month, token, repository)
     return {
         "month": month,

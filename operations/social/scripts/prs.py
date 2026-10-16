@@ -284,7 +284,7 @@ Description:
 Changed files and their diff:
 {changes}"""
     response = call_pollinations_api(
-        load_prompt("pr"), user_prompt, token, temperature=0.2, response_format={"type": "json_object"}
+        load_prompt("summaries/pr"), user_prompt, token, temperature=0.2, response_format={"type": "json_object"}
     )
     return parse_json_response(response) if response else None
 

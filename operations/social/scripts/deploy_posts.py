@@ -3,7 +3,7 @@
 
     python deploy_posts.py --production CHECKOUT [--preview]
 
-PRs reaching production are saved in discord/held.json with the scan cursor before
+PRs reaching production are saved in posts/discord/prs/held.json with the scan cursor before
 sending. Each stays held until every affected service has successfully deployed a
 commit containing it. A rerun skips sent PRs through the existing delivery record.
 Use --preview to inspect readiness without writing records or sending anything.
@@ -27,7 +27,8 @@ from common import (
     DISCORD_CHAR_LIMIT,
     GITHUB_API_BASE,
     NEWS_BRANCH,
-    NEWS_REL_DIR,
+    POSTS_REL_DIR,
+    PROMPTS_DIR,
     _github_headers,
     call_pollinations_api,
     generate_image,
@@ -40,7 +41,7 @@ from common import (
     safe_truncate,
 )
 from deliver import deliver, send_discord, read_news, github as write_news
-from posts import POSTS_DIR, fill, read_post
+from posts import fill, read_post
 from prs import app_for, fetch_pr_files
 
 # The PR that replaced the merge-time posts: PRs merged before it were posted when they merged.
@@ -52,9 +53,10 @@ WORKFLOWS = {
     "deploy-e2b-templates.yml": "build",
     "deploy-portkey-cloudflare.yml": "deploy",
 }
-HELD_PATH = f"{NEWS_REL_DIR}/discord/held.json"
+PRS_DIR = f"{POSTS_REL_DIR}/discord/prs"
+HELD_PATH = f"{PRS_DIR}/held.json"
 SQUASHED = re.compile(r"\(#(\d+)\)$")
-POST = read_post(POSTS_DIR / "discord-pr.md")
+POST = read_post(PROMPTS_DIR / "posts/discord/pr.md")
 
 
 def github(path: str, **params):
@@ -202,7 +204,7 @@ def prepare_post(pr: dict, token: str, webhook: str):
         f"\nChanged files and their diff:\n{changes}",
     ])
     reply = call_pollinations_api(
-        load_prompt(f"tone/{POST['tone']}"), fill(prompt_text(POST["text"]), pr=context),
+        load_prompt(f"posts/{POST['tone']}/tone"), fill(prompt_text(POST["text"]), pr=context),
         token, temperature=POST["temperature"], response_format={"type": "json_object"},
     )
     output = parse_json_response(reply) if reply else None
@@ -245,7 +247,7 @@ def main() -> None:
         if targets:
             continue
         pr = github(f"pulls/{number}")
-        folder = f"{NEWS_REL_DIR}/discord/{pr['merged_at'][:7]}"
+        folder = f"{PRS_DIR}/{pr['merged_at'][:7]}"
         outcome = deliver(folder, f"pr-{number}", lambda pr=pr: prepare_post(pr, token, webhook))
         print(f"  #{number}: {outcome}")
         if outcome in ("done", "already done"):

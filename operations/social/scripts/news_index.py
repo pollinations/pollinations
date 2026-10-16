@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build operations/social/news/index.json — the news feed Enter's News page reads.
+"""Build operations/social/news/data/index.json — the news feed Enter's News page reads.
 
 Reads the news branch checkout and keeps:
 - `models`: official model changes, from the daily /models record (dated when first seen
@@ -20,9 +20,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
 
-from common import NEWS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit_files_to_branch, get_env, get_repo_root
+from common import (DATA_REL_DIR, NEWS_BRANCH, NEWS_REL_DIR, OWNER, REPO, commit_files_to_branch, get_env,
+                    get_repo_root)
 
-INDEX_PATH = f"{NEWS_REL_DIR}/index.json"
+INDEX_PATH = f"{DATA_REL_DIR}/index.json"
 RECENT_DAYS = 30
 MIN_HIGHLIGHTS = 10
 # Changes the model cards show; everything else stays in the record.
@@ -156,11 +157,11 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
 
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
-    summaries = read_json(news_dir.glob("daily/*/summary.json"))
+    summaries = read_json(news_dir.glob("data/summaries/daily/*.json"))
     # The PRs whose API changes or announced retirements each daily recorded.
     notes = [entry for summary in summaries for entry in summary.get("changelog") or []]
     # The window's snapshots and the last one before it, the baseline of its first change.
-    paths = sorted(news_dir.glob("models/snapshots/*.json"))
+    paths = sorted(news_dir.glob("data/models/*.json"))
     first = max([i for i, path in enumerate(paths) if path.stem < since] or [0])
     snapshots = [(path.stem, json.loads(path.read_text(encoding="utf-8"))) for path in paths[first:]]
     return {
@@ -179,7 +180,7 @@ def main():
     parser.add_argument("--publish", action="store_true", help="commit to the news branch when changed")
     args = parser.parse_args()
 
-    index_file = args.news_dir / "index.json"
+    index_file = args.news_dir / "data" / "index.json"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     index = build_index(args.news_dir, today)
     print(f"Index: {len(index['models'])} model announcements, {len(index['highlights'])} highlights")

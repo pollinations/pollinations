@@ -1,9 +1,8 @@
 ---
 job: daily
-tone: twitter
-file: twitter.json
+tone: x
 temperature: 0.8
-pictures: ["twitter.jpg"]
+pictures: ["x.jpg"]
 required: ["tweet"]
 ---
 Write a tweet about today's shipped work.

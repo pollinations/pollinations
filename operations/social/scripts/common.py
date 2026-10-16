@@ -36,13 +36,15 @@ OWNER = "pollinations"
 REPO = "pollinations"
 NEWS_BRANCH = "news"  # Unprotected branch for news data (avoids main branch protection)
 NEWS_REL_DIR = "operations/social/news"
-DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
-WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
-MONTHLY_REL_DIR = f"{NEWS_REL_DIR}/monthly"
-
-
-# Models-weekly staging
-MODELS_NEWS_DIR = f"{NEWS_REL_DIR}/models"
+# What we keep and read back: the summaries, the /models record, the monthly
+# contributor counts and Enter's index.
+DATA_REL_DIR = f"{NEWS_REL_DIR}/data"
+SUMMARIES_REL_DIR = f"{DATA_REL_DIR}/summaries"
+MODELS_NEWS_DIR = f"{DATA_REL_DIR}/models"
+CONTRIBUTORS_REL_DIR = f"{DATA_REL_DIR}/contributors"
+# What each platform received: posts/<platform>/<job>/<date>.json, with the
+# folder's delivery.json next to them.
+POSTS_REL_DIR = f"{NEWS_REL_DIR}/posts"
 
 
 # Image generation
@@ -264,7 +266,7 @@ def load_prompt(name: str) -> str:
     - {links} -> content from brand/links.md
 
     Args:
-        name: 'tone/twitter', 'gist', 'highlights', etc.
+        name: 'posts/x/tone', 'summaries/pr', etc.
 
     Returns:
         The prompt content as a string with brand components injected
@@ -591,7 +593,7 @@ def normalize_platform_post(
     title = ""
     metadata = {}
 
-    if platform == "twitter":
+    if platform == "x":
         text = (raw_post.get("tweet") or "").strip()
     elif platform == "linkedin":
         text = (raw_post.get("full_post") or build_linkedin_post_text(raw_post)).strip()
@@ -801,7 +803,7 @@ def read_daily_summaries(start: str, end: str, news_root: Path) -> List[Dict]:
     summaries = []
     day = datetime.strptime(start, "%Y-%m-%d")
     while day <= datetime.strptime(end, "%Y-%m-%d"):
-        path = news_root / DAILY_REL_DIR / day.strftime("%Y-%m-%d") / "summary.json"
+        path = news_root / SUMMARIES_REL_DIR / "daily" / f"{day:%Y-%m-%d}.json"
         if path.exists():
             summary = json.loads(path.read_text(encoding="utf-8"))
             if summary.get("summary"):
@@ -1128,17 +1130,3 @@ def discord_payload(
         "generated_at": generated_at,
         "text": text,
     }
-
-
-def models_md(existing_md: str, section: str) -> str:
-    """models.md with the new section on top, under one changelog heading."""
-    # Strip any existing top-level changelog heading so we don't accumulate
-    # duplicates each week — the H1 is re-added below.
-    body = existing_md.lstrip()
-    if body.startswith("# Pollinations Model Changelog"):
-        body = body.split("\n", 1)[1].lstrip() if "\n" in body else ""
-    return (
-        "# Pollinations Model Changelog\n\n"
-        + section.rstrip()
-        + ("\n\n" + body if body else "\n")
-    )

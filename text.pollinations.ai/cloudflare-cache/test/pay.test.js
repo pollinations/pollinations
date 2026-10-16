@@ -269,7 +269,7 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     const [, price] = text.match(/([\d.]+) USD per reply with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "The Classic API makes 1 free reply every 30 seconds per IP. Please wait: this page reloads by itself when your next reply is ready.",
+        "1 free reply every 30 seconds. Please wait: this page reloads by itself when your next reply is ready.",
     );
     expect(text).toContain("Skip the wait");
     expect(text).not.toContain("undefined");

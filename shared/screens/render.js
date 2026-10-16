@@ -124,7 +124,7 @@ const page = h(
             h(
                 Text,
                 { tone: "soft" },
-                "The Classic API makes 1 free {{item}} every {{every}} seconds per IP. Please wait: this page reloads by itself when your next {{item}} is ready.",
+                "1 free {{item}} every {{every}} seconds. Please wait: this page reloads by itself when your next {{item}} is ready.",
             ),
         ),
         // The two ways past the limit, side by side and equally weighted

@@ -10,6 +10,7 @@ import {
     printInfo,
     printMeta,
 } from "../../lib/output.js";
+import { prepareOutputPath } from "../../lib/output-file.js";
 import { playAudio } from "../../lib/play.js";
 import { readStdin } from "../../lib/stdin.js";
 
@@ -106,6 +107,8 @@ export function createAudioCommand() {
 
             const isHuman = getOutputMode() === "human";
             let output = opts.output ?? `speech.${opts.format}`;
+            // Before the paid request, so a bad --output folder costs nothing.
+            if (opts.output) prepareOutputPath(opts.output);
             const inputText = textArg || (await readStdin()).trim();
             if (!inputText) {
                 printError(

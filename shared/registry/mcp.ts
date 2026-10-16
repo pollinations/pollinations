@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "OPENLIBRARY_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "openlibrary",
+        name: "Open Library",
+        description:
+            "Search books and read editions, authors and subjects from Open Library.",
+        binding: "OPENLIBRARY_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Open Library lookups are free. No additional MCP fee.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

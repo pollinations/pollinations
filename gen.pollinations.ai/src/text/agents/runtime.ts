@@ -104,7 +104,18 @@ async function createAgent(
                 runtime.apiKey,
                 signal,
                 runtime.fetcher,
-            ),
+            ).catch((error) => {
+                log.warn("MCP_SERVER_FAILED: name={name} error={error}", {
+                    name: serverId,
+                    error,
+                });
+                // The caller sees which server broke the run; the text is that
+                // server's reply to the caller's own key.
+                throw new Error(
+                    `MCP server ${serverId} failed: ${error instanceof Error ? error.message : String(error)}`,
+                    { cause: error },
+                );
+            }),
         ),
     );
     const loadedServers = serverResults.flatMap((result) =>

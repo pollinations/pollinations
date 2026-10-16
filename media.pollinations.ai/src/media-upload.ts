@@ -218,15 +218,13 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
      * 30 days. False when the file is gone.
      */
     async refresh(id: string, until: Date): Promise<boolean> {
-        const object = await this.env.MEDIA_BUCKET.get(id);
-        if (!object) return false;
-        if (
-            object.uploaded.getTime() + R2_LIFECYCLE_TTL_MS >=
-            until.getTime()
-        ) {
-            await object.body.cancel();
+        const head = await this.env.MEDIA_BUCKET.head(id);
+        if (!head) return false;
+        if (head.uploaded.getTime() + R2_LIFECYCLE_TTL_MS >= until.getTime()) {
             return true;
         }
+        const object = await this.env.MEDIA_BUCKET.get(id);
+        if (!object) return false;
         const stored = await rewriteR2Object(
             this.env.MEDIA_BUCKET,
             id,

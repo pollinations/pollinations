@@ -91,13 +91,11 @@ export async function settleMediaStorage(
                     .set({ paidUntil: renewTo, renewTo: null })
                     .where(unpaid);
                 if (!claimed.meta.changes) return c.body(null, 204);
-                if (lease.price > 0) {
-                    await charge(c, lease, startTime, {
-                        eventType: "media.storage",
-                        model: "media",
-                        provider: "r2",
-                    });
-                }
+                await charge(c, lease, startTime, {
+                    eventType: "media.storage",
+                    model: "media",
+                    provider: "r2",
+                });
                 return c.body(null, 204);
             })
             .fetch(
@@ -119,23 +117,26 @@ export async function settleMediaStorage(
         if ([402, 403].includes(response.status)) return end(why);
         log.info("Not renewing media {id} yet: {why}", { id: row.id, why });
     };
+    // Files that are paid for come before new uploads, so a flood of
+    // uploads can't hold their renewals back until R2 deletes them.
     const due = await db
         .select()
         .from(mediaStorage)
         .where(isNotNull(mediaStorage.renewTo))
-        .orderBy(asc(mediaStorage.paidUntil))
+        .orderBy(
+            lte(mediaStorage.paidUntil, new Date(now)),
+            asc(mediaStorage.paidUntil),
+        )
         .limit(ROWS_PER_RUN);
-    await Promise.all(
-        due.map((row) =>
-            renew(row).catch((error) =>
-                log.error("Renewing media {id} failed: {error}", {
-                    id: row.id,
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                }),
-            ),
-        ),
-    );
+    // One at a time, so each funds check sees the charge before it.
+    for (const row of due) {
+        await renew(row).catch((error) =>
+            log.error("Renewing media {id} failed: {error}", {
+                id: row.id,
+                error: error instanceof Error ? error.message : String(error),
+            }),
+        );
+    }
 
     // After the renewals, so a file whose first period could not be paid is
     // deleted in the same run.
@@ -153,8 +154,9 @@ export async function settleMediaStorage(
     await Promise.all(
         over.map(async (row) => {
             try {
-                await env.MEDIA.delete(row.id);
-                await db
+                // The row first: if it changed since it was read (a new
+                // upload under the same custom id), the file stays.
+                const deleted = await db
                     .delete(mediaStorage)
                     .where(
                         and(
@@ -163,6 +165,7 @@ export async function settleMediaStorage(
                             isNull(mediaStorage.renewTo),
                         ),
                     );
+                if (deleted.meta.changes) await env.MEDIA.delete(row.id);
             } catch (error) {
                 log.error("Deleting media {id} failed: {error}", {
                     id: row.id,

@@ -54,7 +54,7 @@ curl -X POST https://media.pollinations.ai/upload \
 ### Choose how long a file stays
 
 Storage is paid in advance at half of Cloudflare's price: 0.0075 pollen per
-GB-month (files under 128 KB count as 128 KB), shown in your usage as model
+GB-month (files under 128 KiB count as 128 KiB), shown in your usage as model
 `media`. The key that uploads a file pays each period up front, the first
 right after the upload, so a key that can't pay gets `402`. `expiresAfter`
 picks how the paid time runs, named after OpenAI's Files API:
@@ -64,6 +64,9 @@ picks how the paid time runs, named after OpenAI's Files API:
 | omitted | stays while it's used: a fetch in its last 15 paid days renews it for 30 days from then |
 | `expiresAfter[anchor]=created_at` and `expiresAfter[seconds]=N` | is deleted N seconds (3600 to 2592000) after the upload |
 | `never` | renews until you delete it; needs your secret (`sk_`) key |
+
+Any fetch renews a file in the default mode, including other people's, so
+give the key a budget or set a time to cap what a popular file costs.
 
 ```bash
 curl -X POST https://media.pollinations.ai/upload \
@@ -80,7 +83,7 @@ curl -X POST https://media.pollinations.ai/upload \
 ```
 
 If the key can't pay a renewal, is deleted, or its account is banned, the file
-is deleted when its paid time ends. Keys without an account, and files
+gets no more renewals, even after a top-up, and is deleted when its paid time ends. Keys without an account, and files
 uploaded before paid storage, stay free and follow the old 30-day lifecycle.
 
 ### Publish to a tag gallery (alpha)
@@ -281,8 +284,8 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 ## 📌 Retention Policy
 
-- **Paid storage:** Files uploaded with your account's keys are paid in advance. By default a fetch in a file's last 15 paid days renews it for 30 days from then; a file nobody fetches is deleted when its paid time ends. `expiresAfter[anchor]=created_at` deletes it a set time after the upload, and `expiresAfter=never` renews it until you delete it. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
-- **When a key can't pay:** If the key can't pay a renewal, is deleted, or its account is banned, the file is deleted when its paid time ends.
+- **Paid storage:** Files uploaded with your account's keys are paid in advance. By default a fetch in a file's last 15 paid days renews it for 30 days from then (anyone's fetch counts); a file nobody fetches is deleted when its paid time ends. `expiresAfter[anchor]=created_at` deletes it a set time after the upload, and `expiresAfter=never` renews it until you delete it. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
+- **When a key can't pay:** If the key can't pay a renewal, is deleted, or its account is banned, the file gets no more renewals, even after a top-up, and is deleted when its paid time ends.
 - **Free files:** Uploads with keys without an account, and files from before paid storage, follow R2's 30-day lifecycle: a GET refreshes an object once it is at least 15 days old.
 - **Delete (alpha):** Owners can delete any file uploaded with their account's keys via `DELETE /media/:id` (secret key). Untagged files from before October 2026 can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.

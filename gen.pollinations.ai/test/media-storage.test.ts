@@ -72,11 +72,20 @@ test("the cron charges each waiting period once even when runs overlap, renews n
 
     const size = 10_000_000;
     const start = new Date();
-    const [first, fixed, kept, keptLater, fetched, unpaid, unrenewed, over] =
-        await Promise.all([
-            upload(size),
-            ...Array.from({ length: 7 }, () => upload(1000)),
-        ]);
+    const [
+        first,
+        fixed,
+        hour,
+        kept,
+        keptLater,
+        fetched,
+        unpaid,
+        unrenewed,
+        over,
+    ] = await Promise.all([
+        upload(size),
+        ...Array.from({ length: 8 }, () => upload(1000)),
+    ]);
     const keptLaterPaidUntil = inDays(20);
     const row = (
         id: string,
@@ -98,6 +107,13 @@ test("the cron charges each waiting period once even when runs overlap, renews n
             "created_at",
             start,
             inDays(1, start.getTime()),
+        ),
+        row(
+            hour.id,
+            owner.id,
+            "created_at",
+            start,
+            inDays(1 / 24, start.getTime()),
         ),
         // Never files renew with 15 paid days left.
         row(kept.id, owner.id, "never", inDays(10), null),
@@ -127,6 +143,7 @@ test("the cron charges each waiting period once even when runs overlap, renews n
         [
             first.id,
             fixed.id,
+            hour.id,
             kept.id,
             keptLater.id,
             fetched.id,
@@ -150,13 +167,15 @@ test("the cron charges each waiting period once even when runs overlap, renews n
     expectAbout(rows.get(unrenewed.id)?.paidUntil, inDays(10));
 
     // Each period is charged once, in advance, at half of R2's price; the
-    // 1 KB files are billed as 128 KiB.
+    // 1 KB files are billed as 128 KiB, and the hour costs the ledger's
+    // smallest unit.
     const price = (bytes: number, days: number) =>
         (bytes / 1e9) * GB_MONTH * (days / 30);
     const prices = charges()
         .map((event) => Number(event.totalPrice))
         .sort((a, b) => a - b);
     const expected = [
+        1e-8,
         price(MIN_BILLED_BYTES, 1),
         price(MIN_BILLED_BYTES, 20),
         price(MIN_BILLED_BYTES, 20),
@@ -181,4 +200,41 @@ test("the cron charges each waiting period once even when runs overlap, renews n
     );
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(revoked.userId)).toBe(10);
+});
+
+test("renewals of paid files go before a backlog of new uploads", async () => {
+    const db = drizzle(env.DB);
+    const owner = await createTestApiKey({ user: { tierBalance: 10 } });
+    const kept = await upload(1000);
+    const start = new Date();
+    // A full run's worth of uploads waiting for their first period.
+    for (let i = 0; i < 50; i++) {
+        await db.insert(mediaStorage).values({
+            id: `new-${i}`,
+            apiKeyId: owner.id,
+            size: 1000,
+            expiresAfter: "last_active_at",
+            paidUntil: start,
+            renewTo: inDays(30, start.getTime()),
+        });
+    }
+    await db.insert(mediaStorage).values({
+        id: kept.id,
+        apiKeyId: owner.id,
+        size: 1000,
+        expiresAfter: "never",
+        paidUntil: inDays(10),
+        renewTo: inDays(30),
+    });
+
+    const ctx = createExecutionContext();
+    await worker.scheduled(createScheduledController(), env, ctx);
+    await waitOnExecutionContext(ctx);
+
+    const [row] = await db
+        .select()
+        .from(mediaStorage)
+        .where(eq(mediaStorage.id, kept.id));
+    expectAbout(row.paidUntil, inDays(30));
+    expect(row.renewTo).toBeNull();
 });

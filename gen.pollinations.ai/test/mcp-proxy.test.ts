@@ -137,6 +137,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "machines",
+                name: "Machines",
+                description:
+                    "Start, pause, resume, and run commands and file operations in Linux sandboxes.",
+                url: "https://gen.pollinations.ai/mcp/machines",
+                pricing: {
+                    description:
+                        "Sandboxes bill per running second while active; paused sandboxes cost nothing. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -215,7 +227,7 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for(["pollinations", "ask-jev"])(
+test.for(["pollinations", "ask-jev", "machines"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

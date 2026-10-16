@@ -1,0 +1,33 @@
+{
+  "pr_number": 17607,
+  "title": "fix(cli): keep nested sections in filtered docs",
+  "author": "guus6457",
+  "url": "https://github.com/pollinations/pollinations/pull/17607",
+  "merged_at": "2026-10-16T08:17:27Z",
+  "labels": [],
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Fixed `polli docs` heading filters so a matching section includes its nested subsections up to the next peer or ancestor heading, without duplicating nested matches. Queries such as `polli docs \"MCP Servers\"` now retain client setup and authentication guidance, including the Claude Code subsection. Preamble exclusion, fenced examples, and body-match fallback remain intact. Bumped `@pollinations/cli` from 0.1.50 to 0.1.51.",
+    "keywords": [
+      "polli CLI",
+      "docs",
+      "MCP",
+      "Claude Code",
+      "Markdown",
+      "heading filters"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17607.jpg",
+    "prompt": "In a cozy documentation garden, Polli wears tiny librarian glasses and helps a CRT monitor robot unfold nested MCP guide pages beside a lime green (#ecf874) terminal and flowering code-plants. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image, in strictly pixel art style, never realistic — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-16T08:18:50.861349+00:00",
+  "area": "Developer tools",
+  "type": "Bug",
+  "source": "Quests",
+  "merge_commit_sha": "9677d4e265c01c678cbf8b8621d2cd40337a31bf",
+  "announcements": []
+}

@@ -1,0 +1,35 @@
+{
+  "pr_number": 17740,
+  "title": "Add PolliCraft to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17740",
+  "merged_at": "2026-10-16T15:49:42Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added @Drjacky's PolliCraft to the games catalog and README's recent-apps list. It's a Minecraft server plugin for Paper, Folia and Spigot that connects a server to Pollinations with one jar; the server owner supplies an API key in plugins/PolliCraft/config.yml and pays with their own Pollen. Colmena rotated out of the README's recent-apps list; the diff does not remove it from the app catalog.",
+    "keywords": [
+      "PolliCraft",
+      "Minecraft",
+      "server plugin",
+      "games",
+      "community",
+      "app catalog"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17740.jpg",
+    "prompt": "In a cozy blocky Minecraft-inspired garden, Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on her cheeks, a small happy smile, and small rounded light blue translucent wings; small within the scene and wearing a tiny miner's helmet, she helps place a glowing lime green (#ecf874) code block beside a friendly server hut and pixel flowers. Strictly cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with chunky sprites, a warm cream background and dark purple (#110518) outlines."
+  },
+  "generated_at": "2026-10-16T15:50:49.463751+00:00",
+  "app_name": "PolliCraft",
+  "app_url": "https://drjacky.github.io/PolliCraft",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "45b1e9c69bf4718f8fc60b6a35baf0c1436fe9a2",
+  "announcements": []
+}

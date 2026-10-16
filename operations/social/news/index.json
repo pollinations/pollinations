@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-16T06:09:19.977531+00:00",
+  "generated_at": "2026-10-16T15:28:00.091098+00:00",
   "models": [
     {
       "id": "pr-15042:elevenlabs/music-v2.5",
@@ -7794,6 +7794,17 @@
       "date": "2026-10-15",
       "pr": 17641,
       "url": "https://github.com/pollinations/pollinations/pull/17641"
+    },
+    {
+      "id": "pr-17739:POST /v1/systemone",
+      "endpoint": "POST /v1/systemone",
+      "summary": "Create Decision (System One path)",
+      "action": "ADD",
+      "breaking": false,
+      "changes": [],
+      "date": "2026-10-16",
+      "pr": 17739,
+      "url": "https://github.com/pollinations/pollinations/pull/17739"
     }
   ],
   "highlights": [

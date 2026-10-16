@@ -143,7 +143,7 @@ ${icons}
 </tr></table>
 <div style="margin:24px 16px 0;border-top:1px solid #d9d1c3"></div>
 <img src="${image("mark")}" width="28" height="27" alt="" style="display:block;margin:20px auto 0">
-<p style="margin:12px 0 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center"><a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe from balance alerts</a><br>${ADDRESS}</p>
+<p style="margin:12px 0 0;font-size:12px;line-height:18px;color:#6b6359;text-align:center"><a href="${unsubscribeUrl}" style="color:#6b6359">Unsubscribe</a><br>${ADDRESS}</p>
 </div>
 </body></html>`;
 
@@ -160,7 +160,7 @@ ${icons}
         // "-- " with the space is the signature marker mail clients recognise.
         "-- ",
         ...links.map((link) => `${link.label}: ${link.href}`),
-        `Unsubscribe from balance alerts: ${unsubscribeUrl}`,
+        `Unsubscribe: ${unsubscribeUrl}`,
         ADDRESS,
     ].join("\n");
 

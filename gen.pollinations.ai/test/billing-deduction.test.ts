@@ -426,6 +426,49 @@ describe("billing deduction", () => {
         expect((await getUserBalance(db, payerId)).tierBalance).toBe(99);
     });
 
+    it("retries a transiently failed API key budget reconciliation after the committed debit", async () => {
+        const userId = await createUser({ tierBalance: 100, packBalance: 0 });
+        const { id: apiKeyId } = await createTestApiKey({
+            userId,
+            pollenBudget: 10,
+        });
+        const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 5);
+        expect(reserved).toBe(5);
+
+        // Fail the key-budget UPDATE once with a transient D1 error; the
+        // next attempt goes through. There is no later pass that corrects a
+        // dropped reconciliation, so the drift would be permanent.
+        let runAttempts = 0;
+        const realRun = db.run.bind(db);
+        const flaky = {
+            get: db.get.bind(db),
+            run: async (query: Parameters<typeof realRun>[0]) => {
+                runAttempts += 1;
+                if (runAttempts === 1) {
+                    throw new Error("D1 transient: network connection lost");
+                }
+                return realRun(query);
+            },
+        } as unknown as typeof db;
+
+        const result = await handleBalanceDeduction({
+            db: flaky,
+            isBilledUsage: true,
+            totalPrice: 3,
+            userId,
+            apiKeyId,
+            apiKeyPollenBalance: 10,
+            apiKeyReservedAmount: reserved,
+        });
+
+        // The wallet debit committed, and the key budget settled at spent
+        // (10 - 3 = 7) instead of staying at the reserved hold (5).
+        expect(result.billedPrice).toBe(3);
+        expect((await getUserBalance(db, userId)).tierBalance).toBe(97);
+        expect(await getApiKeyBalance(apiKeyId)).toBe(7);
+        expect(runAttempts).toBeGreaterThanOrEqual(2);
+    });
+
     it("throws when payer deduction fails (before any debit)", async () => {
         const { id: apiKeyId } = await createTestApiKey({ pollenBudget: 10 });
         const { reserved } = await atomicReserveApiKeyBalance(db, apiKeyId, 4);

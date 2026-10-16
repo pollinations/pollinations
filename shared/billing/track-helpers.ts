@@ -490,27 +490,55 @@ async function reconcileApiKeyBalance(
     }
 
     const adjustment = roundPollenLedgerAmount(billedAmount - reservedAmount);
-    try {
-        const { ok } = await atomicAdjustApiKeyBalance(
-            db,
-            apiKeyId,
-            adjustment,
-        );
-        if (!ok) {
+    // There is no later pass that corrects a dropped reconciliation: a failed
+    // adjustment permanently drifts the key budget by the unreconciled
+    // amount. One immediate retry closes transient D1 failures without
+    // making billing wait on a dead database.
+    const MAX_RECONCILE_ATTEMPTS = 2;
+    for (let attempt = 1; ; attempt++) {
+        let adjusted: { ok: boolean };
+        try {
+            adjusted = await atomicAdjustApiKeyBalance(
+                db,
+                apiKeyId,
+                adjustment,
+            );
+        } catch (error) {
+            if (attempt >= MAX_RECONCILE_ATTEMPTS) {
+                log.error(
+                    "Failed to reconcile API key budget for {keyId}: {error}",
+                    {
+                        keyId: apiKeyId,
+                        error: error instanceof Error ? error.message : error,
+                    },
+                );
+                throw error;
+            }
+            log.warn(
+                "Retrying API key budget reconciliation for {keyId} after: {error}",
+                {
+                    keyId: apiKeyId,
+                    error: error instanceof Error ? error.message : error,
+                },
+            );
+            continue;
+        }
+        if (!adjusted.ok) {
+            // Deterministic (row gone or budget removed) — a retry cannot
+            // change the outcome.
             throw new Error(
                 `API key budget reconciliation affected 0 rows for ${apiKeyId}`,
             );
         }
         log.debug(
             "Reconciled API key {keyId} budget from reserved={reserved} to billed={billed}",
-            { keyId: apiKeyId, reserved: reservedAmount, billed: billedAmount },
+            {
+                keyId: apiKeyId,
+                reserved: reservedAmount,
+                billed: billedAmount,
+            },
         );
-    } catch (error) {
-        log.error("Failed to reconcile API key budget for {keyId}: {error}", {
-            keyId: apiKeyId,
-            error: error instanceof Error ? error.message : error,
-        });
-        throw error;
+        return;
     }
 }
 

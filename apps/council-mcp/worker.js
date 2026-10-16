@@ -1,10 +1,18 @@
+import {
+    Client,
+    StreamableHTTPClientTransport,
+} from "@modelcontextprotocol/client";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import { COUNCIL_MCP_TIER_FEES } from "../../shared/registry/mcp.ts";
-import { TIERS } from "./tiers.js";
 
-const CHAT_URL = "https://api.inferenceport.ai/v1/chat/completions";
+// InferencePort's hosted Council of LLMs. It runs the council and bills the
+// key's wallet; this Worker forwards the call and bills the caller the same
+// amount from the usage InferencePort reports.
+const COUNCIL_URL = "https://api.inferenceport.ai/mcp/council/";
+// InferencePort stops a run after 600s.
+const RUN_TIMEOUT_MS = 610_000;
 
 class CouncilFailure extends Error {
     constructor(status, message, cost = 0) {
@@ -14,89 +22,58 @@ class CouncilFailure extends Error {
     }
 }
 
-const CALL_TIMEOUT_MS = 120_000;
-
-// One chat call. InferencePort reports the credits it charged for the call in
-// usage.payg_credits_charged; that is the amount we bill, never an estimate.
-// A call never throws: a failed call still carries any credits it was charged,
-// so the receipt covers everything InferencePort billed.
-async function chat(model, prompt, maxTokens, env, fetchImpl) {
-    try {
-        const response = await fetchImpl(CHAT_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${env.INFERENCEPORT_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model,
-                messages: [{ role: "user", content: prompt }],
-                max_tokens: maxTokens,
-                stream: false,
-            }),
-            signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-        });
-        const body = await response.json().catch(() => null);
-        const reported = body?.usage?.payg_credits_charged;
-        const hasCost = Number.isFinite(reported) && reported >= 0;
-        const text = body?.choices?.[0]?.message?.content;
-        if (!response.ok || !text || !hasCost) {
-            console.error(
-                `council call to ${model} failed: ${response.status}`,
-            );
-            return { model, cost: hasCost ? reported : 0 };
-        }
-        return { model, text, cost: reported };
-    } catch (error) {
-        console.error(`council call to ${model} failed: ${error.name}`);
-        return { model, cost: 0 };
-    }
-}
-
-async function runCouncil({ problem, tier }, env, fetchImpl) {
+async function runCouncil(args, env, fetchImpl) {
     if (!env.INFERENCEPORT_API_KEY) {
         throw new CouncilFailure(500, "InferencePort key is not configured");
     }
-    const { members, judge, maxTokens } = TIERS[tier];
-    const results = await Promise.all(
-        members.map((model) =>
-            chat(
-                model,
-                `You are one member of a council of LLMs. Give your best answer to the problem.\n\nPROBLEM:\n${problem}`,
-                maxTokens,
-                env,
-                fetchImpl,
-            ),
-        ),
+    const client = new Client(
+        { name: "pollinations-council-mcp", version: "0.1.0" },
+        { capabilities: {} },
     );
-    const answers = results.filter(({ text }) => text);
-    let cost = results.reduce((sum, { cost: c }) => sum + c, 0);
-    if (answers.length === 0) {
-        throw new CouncilFailure(502, "Every council member failed", cost);
+    try {
+        await client.connect(
+            new StreamableHTTPClientTransport(new URL(COUNCIL_URL), {
+                fetch: fetchImpl,
+                requestInit: {
+                    headers: {
+                        Authorization: `Bearer ${env.INFERENCEPORT_API_KEY}`,
+                    },
+                },
+            }),
+        );
+        const result = await client.callTool(
+            { name: "council_reason", arguments: args },
+            { timeout: RUN_TIMEOUT_MS },
+        );
+        const text = result.content?.[0]?.text;
+        if (result.isError) {
+            throw new CouncilFailure(
+                502,
+                text || "InferencePort council failed",
+            );
+        }
+        const run = JSON.parse(text);
+        // InferencePort reports the credits its model calls charged; the
+        // surcharge counts only when InferencePort actually charged it.
+        const { model_credits, surcharge_credits, charged } = run.billing;
+        if (!Number.isFinite(model_credits) || model_credits < 0) {
+            throw new CouncilFailure(
+                502,
+                "InferencePort council response is missing usage cost",
+            );
+        }
+        return {
+            cost: model_credits + (charged ? surcharge_credits : 0),
+            text: `${run.answer}\n\n(${run.council.tier_name}: ${run.council.models_used} models answered)`,
+        };
+    } catch (error) {
+        console.error(`council failed: ${error.name}: ${error.message}`);
+        throw error instanceof CouncilFailure
+            ? error
+            : new CouncilFailure(502, "Council request failed");
+    } finally {
+        await client.close().catch(() => {});
     }
-
-    const judged = await chat(
-        judge,
-        [
-            "You are the judge of a council of LLMs. Compare the members' answers, find agreements and mistakes, and write one final answer.",
-            `PROBLEM:\n${problem}`,
-            ...answers.map(({ model, text }) => `--- ${model} ---\n${text}`),
-        ].join("\n\n"),
-        maxTokens,
-        env,
-        fetchImpl,
-    );
-    cost += judged.cost;
-    if (!judged.text) {
-        throw new CouncilFailure(502, "The council judge failed", cost);
-    }
-
-    // The run fee applies only to a run that produced a final answer.
-    cost += COUNCIL_MCP_TIER_FEES[tier];
-    return {
-        cost,
-        text: `${judged.text}\n\n(${tier} council: ${answers.length}/${members.length} members answered)`,
-    };
 }
 
 function buildServer(env, fetchImpl, reportUsage) {
@@ -112,13 +89,14 @@ function buildServer(env, fetchImpl, reportUsage) {
         "council_reason",
         {
             description:
-                "Send a problem to a council of LLMs in parallel and get one answer synthesized by a judge model. Higher tiers use more and stronger models and cost more.",
+                "Send a problem to InferencePort's council of LLMs: models answer in parallel, review each other, and judge models synthesize one answer. Higher tiers use more and stronger models and cost more.",
             inputSchema: z.object({
                 problem: z.string().min(1).max(20000),
-                tier: z.enum(Object.keys(TIERS)).optional(),
+                tier: z.enum(Object.keys(COUNCIL_MCP_TIER_FEES)).optional(),
+                iteration_rounds: z.number().int().min(1).max(3).optional(),
             }),
         },
-        async ({ problem, tier = "basic" }) => {
+        async ({ problem, tier = "basic", iteration_rounds = 1 }) => {
             const receipt = {
                 tool: "council_reason",
                 adjustmentId: `inferenceport.council.${tier}.v1`,
@@ -126,21 +104,17 @@ function buildServer(env, fetchImpl, reportUsage) {
             };
             try {
                 const { cost, text } = await runCouncil(
-                    { problem, tier },
+                    { problem, tier, iteration_rounds },
                     env,
                     fetchImpl,
                 );
                 reportUsage({ ...receipt, cost, status: 200 });
                 return { content: [{ type: "text", text }] };
-            } catch (error) {
-                const failure =
-                    error instanceof CouncilFailure
-                        ? error
-                        : new CouncilFailure(502, "Council request failed");
+            } catch (failure) {
                 reportUsage({
                     ...receipt,
                     cost: failure.cost,
-                    // No run fee was charged, only spent model credits.
+                    // No run fee was charged.
                     adjustmentUnits: 0,
                     status: failure.status,
                     error: failure.message,

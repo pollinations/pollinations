@@ -161,10 +161,12 @@ path.
 
 ### Council MCP
 
-`council_reason` sends a problem to a tier's models in parallel, then a judge
-model synthesizes one answer. Tiers: `basic`, `standard`, `advanced`, `ultra`
-and `elite`. Each run bills the model calls at InferencePort rates plus a flat
-fee per tier; see the live catalog for the fees.
+`council_reason` runs [InferencePort's Council of LLMs](https://api.inferenceport.ai/mcp/council/):
+a tier's models answer in parallel, review each other over one to three
+`iteration_rounds`, and judge models synthesize one answer. Tiers: `basic`,
+`standard`, `advanced`, `ultra` and `elite`. Each run bills the credits
+InferencePort charges for its model calls plus a flat fee per tier; see the
+live catalog for the fees.
 
 ### Connectors MCP
 

@@ -1,41 +1,58 @@
 #!/usr/bin/env python3
 """Post each PR a production deploy shipped to Discord, once.
 
-    python deploy_posts.py SHA
+    python deploy_posts.py --production CHECKOUT [--preview]
 
-SHA is the production commit a successful deploy shipped. Its PRs are those merged
-into main since the previous successful deploy. Each post is recorded in
-news/discord/<merge month>/delivery.json, so a rerun or the next deploy never posts
-a PR twice. When a PR fails the run fails, and rerunning it tries that PR again.
+PRs reaching production are saved in discord/held.json with the scan cursor before
+sending. Each stays held until every affected service has successfully deployed a
+commit containing it. A rerun skips sent PRs through the existing delivery record.
+Use --preview to inspect readiness without writing records or sending anything.
 """
 
 import argparse
+import base64
+import json
 import re
+import subprocess
 import sys
 import time
 from datetime import datetime
+from fnmatch import fnmatchcase
+from functools import cache
+from pathlib import Path
+
+import yaml
 
 from common import (
     DISCORD_CHAR_LIMIT,
     GITHUB_API_BASE,
+    NEWS_BRANCH,
     NEWS_REL_DIR,
     _github_headers,
     call_pollinations_api,
     generate_image,
     get_env,
+    get_repo_root,
     github_api_request,
     load_prompt,
     parse_json_response,
     prompt_text,
     safe_truncate,
 )
-from deliver import deliver, send_discord
+from deliver import deliver, send_discord, read_news, github as write_news
 from posts import POSTS_DIR, fill, read_post
 from prs import app_for, fetch_pr_files
 
 # The PR that replaced the merge-time posts: PRs merged before it were posted when they merged.
 CUTOVER_PR = 17666
-DEPLOY_WORKFLOW = "deploy-cloudflare-production.yml"
+WORKFLOWS = {
+    "deploy-cloudflare-production.yml": None,
+    "deploy-website-cloudflare.yml": "deploy",
+    "deploy-applications.yml": None,
+    "deploy-e2b-templates.yml": "build",
+    "deploy-portkey-cloudflare.yml": "deploy",
+}
+HELD_PATH = f"{NEWS_REL_DIR}/discord/held.json"
 SQUASHED = re.compile(r"\(#(\d+)\)$")
 POST = read_post(POSTS_DIR / "discord-pr.md")
 
@@ -52,36 +69,110 @@ def github(path: str, **params):
     return response.json()
 
 
-def previous_deploy(sha: str) -> str:
-    """The production commit of the last successful deploy before SHA's."""
-    runs = github(f"actions/workflows/{DEPLOY_WORKFLOW}/runs", branch="production",
-                  status="success", per_page=50)["workflow_runs"]
-    shas = [run["head_sha"] for run in runs]  # newest first
-    if sha not in shas:
-        sys.exit(f"{sha} is not a successful production deploy")
-    earlier = [s for s in shas[shas.index(sha):] if s != sha]
-    if not earlier:
-        sys.exit(f"No successful deploy before {sha} in the last {len(shas)}")
-    return earlier[0]
-
-
-def shipped(since: str, sha: str) -> list[dict]:
-    """The PRs merged into main since the cutover that reached production between the two commits."""
-    start = github(f"pulls/{CUTOVER_PR}")["merged_at"]
-    if not start:
-        sys.exit(f"#{CUTOVER_PR} is not merged yet: PRs are still posted when they merge")
-    numbers, page = set(), 1
+def pages(path: str, key: str, **params):
+    page = 1
     while True:
-        commits = github(f"compare/{since}...{sha}", per_page=100, page=page)["commits"]
-        # A squash merge into main is titled "<PR title> (#N)"; promotions are merge commits.
-        for commit in commits:
-            if match := SQUASHED.search(commit["commit"]["message"].split("\n", 1)[0]):
-                numbers.add(int(match[1]))
-        if len(commits) < 100:
+        items = github(path, per_page=100, page=page, **params)[key]
+        yield from items
+        if len(items) < 100:
             break
         page += 1
-    prs = [github(f"pulls/{number}") for number in sorted(numbers)]
-    return [pr for pr in prs if pr["base"]["ref"] == "main" and (pr["merged_at"] or "") >= start]
+
+
+@cache
+def includes(commit: str, head: str) -> bool:
+    return commit == head or github(f"compare/{commit}...{head}")["status"] in ("ahead", "identical")
+
+
+def required_targets(files: list[str], root: Path | None = None) -> list[str]:
+    """Use the deployment workflows' filters and the applications' own discovery."""
+    root = root or Path(get_repo_root())
+    required = []
+    for workflow, job in WORKFLOWS.items():
+        config = yaml.load((root / ".github/workflows" / workflow).read_text(), Loader=yaml.BaseLoader)
+        filters = {job: config["on"]["push"]["paths"]} if job else {}
+        if workflow == "deploy-cloudflare-production.yml":
+            step = next(step for step in config["jobs"]["changes"]["steps"] if step.get("id") == "filter")
+            filters = {f"deploy-{service}": patterns for service, patterns in
+                       yaml.safe_load(step["with"]["filters"]).items()}
+        for target, patterns in filters.items():
+            if any(fnmatchcase(file, pattern) for file in files for pattern in patterns):
+                required.append(f"{workflow}:{target}")
+    # Reuse the exact manifest/watch matching that deploy-applications and Cloudflare run.
+    script = """const {discover, selectChanged} = require('./operations/deployment/discover.cjs');
+const files = JSON.parse(require('node:fs').readFileSync(0, 'utf8'));
+process.stdout.write(JSON.stringify(selectChanged(discover('all'), files)));"""
+    apps = json.loads(subprocess.run(["node", "-e", script], input=json.dumps(files),
+                                    text=True, capture_output=True, check=True, cwd=root).stdout)
+    for app in apps:
+        if app["path"] == "apps/polli":
+            continue  # deploys from main, outside the production workflows
+        workflow = ("deploy-cloudflare-production.yml" if app["name"].endswith("-mcp")
+                    else "deploy-applications.yml")
+        required.append(f"{workflow}:Deploy {app['path']}")
+    return sorted(required)
+
+
+def discover(state: dict, head: str, cutover: dict, rules: Path) -> None:
+    """Advance the cursor and hold new PRs atomically; failed sends never lose a PR."""
+    since = state.get("production") or cutover["merge_commit_sha"]
+    if not includes(since, head):
+        if not state.get("production"):
+            return  # the cutover is on main but hasn't reached production
+        raise ValueError("Production no longer contains the saved news cursor; inspect the rollback")
+    commits = pages(f"compare/{since}...{head}", "commits") if since != head else []
+    numbers = {int(match[1]) for commit in commits
+               if (match := SQUASHED.search(commit["commit"]["message"].split("\n", 1)[0]))}
+    for number in sorted(numbers):
+        pr = github(f"pulls/{number}")
+        if pr["base"]["ref"] != "main" or (pr["merged_at"] or "") < cutover["merged_at"]:
+            continue
+        _, files = fetch_pr_files(get_env("GITHUB_REPOSITORY"), str(number), get_env("GITHUB_TOKEN"))
+        state["held"][str(number)] = {
+            "merge_sha": pr["merge_commit_sha"], "merged_at": pr["merged_at"],
+            "required": required_targets(files, rules),
+        }
+    state["production"] = head
+
+
+def waiting_for(held: dict) -> dict[str, list[str]]:
+    """Find successful deployment jobs containing each held PR, without an age cutoff."""
+    waiting = {number: set(pr["required"]) for number, pr in held.items()}
+    for workflow in WORKFLOWS:
+        pending = {number for number, targets in waiting.items()
+                   if any(target.startswith(workflow + ":") for target in targets)}
+        if not pending:
+            continue
+        earliest = min(held[number]["merged_at"] for number in pending)
+        for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs",
+                         branch="production", status="success"):
+            # An older run's commit cannot contain a PR merged later. There is no age limit.
+            if run["created_at"] < earliest:
+                break
+            jobs = list(pages(f"actions/runs/{run['id']}/jobs", "jobs", filter="latest"))
+            targets = {f"{workflow}:{job['name']}" for job in jobs if job["conclusion"] == "success"}
+            targets.update(f"{workflow}:{step['name']}" for job in jobs if job["conclusion"] == "success"
+                           for step in job.get("steps", []) if step["conclusion"] == "success"
+                           and step["name"].startswith("Deploy "))
+            for number in list(pending):
+                if waiting[number] & targets and includes(held[number]["merge_sha"], run["head_sha"]):
+                    waiting[number] -= targets
+                if not any(target.startswith(workflow + ":") for target in waiting[number]):
+                    pending.remove(number)
+            if not pending:
+                break
+    return {number: sorted(targets) for number, targets in waiting.items()}
+
+
+def save_state(state: dict, sha: str | None) -> str:
+    """One queued workflow owns this file; a conflicting writer must not be overwritten."""
+    response = write_news("PUT", HELD_PATH, json={
+        "message": "news: update held deployment posts",
+        "content": base64.b64encode(json.dumps(state, indent=2).encode()).decode(),
+        "branch": NEWS_BRANCH, **({"sha": sha} if sha else {}),
+    })
+    response.raise_for_status()
+    return response.json()["content"]["sha"]
 
 
 def message(pr: dict, text: str, app: dict | None) -> dict:
@@ -115,7 +206,11 @@ def prepare_post(pr: dict, token: str, webhook: str):
         token, temperature=POST["temperature"], response_format={"type": "json_object"},
     )
     output = parse_json_response(reply) if reply else None
-    if not isinstance(output, dict) or not all(output.get(key) for key in POST["required"]):
+    if not isinstance(output, dict) or output.get("publish_tier") not in ("none", "discord_only", "daily"):
+        raise ValueError("the reply has no valid publish tier")
+    if output["publish_tier"] == "none":
+        return lambda: ("done", {"skipped": "none"})
+    if not all(output.get(key) for key in POST["required"]):
         raise ValueError("the reply has no text or picture prompt")
     picture, _ = generate_image(output["image_prompt"], token)
     if not picture:
@@ -126,26 +221,42 @@ def prepare_post(pr: dict, token: str, webhook: str):
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("sha", help="the production commit the deploy shipped")
-    sha = parser.parse_args().sha
+    parser.add_argument("--production", type=Path, required=True, help="checkout of production for deployment rules")
+    parser.add_argument("--preview", action="store_true", help="show held PR readiness; never write or send")
+    args = parser.parse_args()
+    cutover = github(f"pulls/{CUTOVER_PR}")
+    if not cutover["merged_at"]:
+        sys.exit(f"#{CUTOVER_PR} is not merged yet: PRs are still posted when they merge")
+    content, sha = read_news(HELD_PATH)
+    state = json.loads(content) if content else {"held": {}}
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.production, text=True).strip()
+    discover(state, head, cutover, args.production)
+    waiting = waiting_for(state["held"])
+    for number, targets in waiting.items():
+        print(f"  #{number}: waiting for {', '.join(targets) if targets else 'nothing; ready'}")
+    if args.preview:
+        return
+    for number, targets in waiting.items():
+        state["held"][number]["required"] = targets  # never forget a successful deployment while another is held
+    sha = save_state(state, sha)  # persist the cursor AND every pending PR before any send
     token, webhook = get_env("POLLINATIONS_TOKEN"), get_env("DISCORD_REALTIME_WEBHOOK_URL")
-    since = previous_deploy(sha)
-    prs = shipped(since, sha)
-    print(f"{len(prs)} PRs shipped from {since[:10]} to {sha[:10]}")
     problems = []
-    for index, pr in enumerate(prs):
-        if index:
-            time.sleep(2)  # one post at a time, well under Discord's webhook rate
+    for number, targets in waiting.items():
+        if targets:
+            continue
+        pr = github(f"pulls/{number}")
         folder = f"{NEWS_REL_DIR}/discord/{pr['merged_at'][:7]}"
-        outcome = deliver(folder, f"pr-{pr['number']}", lambda pr=pr: prepare_post(pr, token, webhook))
-        print(f"  #{pr['number']}: {outcome}")
-        if outcome in ("failed", "stuck"):
-            problems.append(f"#{pr['number']} ({outcome})")
+        outcome = deliver(folder, f"pr-{number}", lambda pr=pr: prepare_post(pr, token, webhook))
+        print(f"  #{number}: {outcome}")
+        if outcome in ("done", "already done"):
+            del state["held"][number]
+        else:
+            problems.append(f"#{number} ({outcome})")
+        time.sleep(2)
+    save_state(state, sha)
     if problems:
-        sys.exit(
-            f"Not posted: {', '.join(problems)}. A failed post is tried again by a rerun. A stuck "
-            "post may have gone out: check the channel, then set its entry in delivery.json to done."
-        )
+        sys.exit(f"Not posted: {', '.join(problems)}. Failed posts stay held for the next run. "
+                 "For stuck posts, check Discord before settling the delivery record.")
 
 
 if __name__ == "__main__":

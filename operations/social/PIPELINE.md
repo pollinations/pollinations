@@ -11,8 +11,8 @@ Each day's merged PRs are read from GitHub once, by the daily post: one **note**
 ## How it runs
 
 ```
-EACH PRODUCTION DEPLOY (news-deploy-posts.yml, after "Deploy / Cloudflare production" succeeds)
-  deploy_posts.py: the PRs merged into main since the previous deploy → one Discord post
+PRODUCTION PUSH / SUCCESSFUL DEPLOY (news-deploy-posts.yml, all five production workflows)
+  deploy_posts.py: new production PRs → held.json → check affected jobs → one Discord post
                    each, with a picture
 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
@@ -126,7 +126,9 @@ All generated content lives on the **`news` branch** under `operations/social/ne
 
 ### Deploy posts: `discord/YYYY-MM/delivery.json`
 
-One entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord.
+One entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. A `none` classification records `done` with `skipped: none` and generates no picture or message.
+
+`discord/held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Successful runs and jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
 
 ### Platform envelope
 
@@ -172,7 +174,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
-| `news-deploy-posts.yml` | after a successful `Deploy / Cloudflare production` run; by hand with the deploy's `sha` | `deploy_posts.py` |
+| `news-deploy-posts.yml` | production pushes and successful Cloudflare, website, Applications, E2B and Portkey runs; manual readiness preview by default | `deploy_posts.py` |
 | `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `index.json` |
 
 ### Manual runs of `news-posts.yml`
@@ -193,7 +195,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/pr.md`), with API changes and announced retirements; the daily keeps only those two in its `changelog` |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
-| `deploy_posts.py` | `SHA`: the PRs a production deploy shipped → `prompts/posts/discord-pr.md` → Discord webhook, recorded with `deliver.py`'s record |
+| `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → `prompts/posts/discord-pr.md` → Discord, recorded with `deliver.py` |
 | `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
 | `news_index.py` | `index.json`: model news, API changes and daily highlights for Enter `/news` |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, note helpers |
@@ -210,7 +212,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
 7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); `deploy_posts.py` skips PRs merged before the PR that introduced it (#17666), which were posted when they merged. Older posts went out with the previous senders.
-8. **A deploy post is written and pictured before it is claimed,** so a failed model or picture call leaves nothing behind: rerunning the run tries that PR again, and the PRs already posted are skipped.
+8. **A deploy post is written and pictured before it is claimed,** so a failed model or picture call leaves the PR held without claiming a send. The next deploy or rerun retries it; PRs already posted are skipped.
 
 ## Error handling
 

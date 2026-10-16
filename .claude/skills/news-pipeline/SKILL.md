@@ -48,11 +48,14 @@ A day is saved once its `summary.json` is; a daily rerun with `overwrite=true` r
 
 ## A missing deploy post
 
-Each successful `Deploy / Cloudflare production` run posts the PRs merged into `main` since the previous successful deploy, recorded as `pr-<number>` in `discord/<merge month>/delivery.json`.
+Production pushes discover new main PRs; successful Cloudflare, website, Applications, E2B and Portkey runs retry them. `discord/held.json` keeps the production scan cursor and pending PRs with their remaining deployment jobs. Each PR waits until every affected service/app has a successful deployment containing its merge commit. A PR with no deployment target can post at promotion. There is no age cutoff.
 
-- A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f sha=<production commit>`. PRs already `done` are skipped.
+Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. `none` posts are recorded as `done` with `skipped: none`, without a picture or Discord send. Delivery entries remain `pr-<number>` in `discord/<merge month>/delivery.json`.
+
+- Preview readiness first: `gh workflow run news-deploy-posts.yml -f preview=true` (the manual default). It reads live GitHub state but never saves or sends.
+- A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f preview=false`. PRs already `done` are skipped.
 - `attempt`: look in the Discord channel. Found it: set the entry's `state` to `done`. Not there: remove the entry, then rerun.
-- No post at all: a PR merged before #17666 was posted at merge; a `master` PR, or a promotion that touched no deployed path (so no deploy ran yet), gets no post until a deploy ships it.
+- No post at all: check `held.json` and the required deployment jobs, then the delivery record for a `none` skip. PRs merged before #17666 were posted at merge; `master` PRs get no deploy post. Never advance the scan cursor or delete a held PR to clear a failure.
 
 ## Settle a stuck send (`attempt`)
 

@@ -1000,43 +1000,169 @@ class DeliverTest(unittest.TestCase):
         self.assertEqual(self.record("community", "2026-10-16"), {"discord.json": "done"})
 
 
-    def test_each_pr_a_deploy_shipped_is_posted_once_with_its_picture(self):
+    def test_deploy_posts_hold_failures_until_their_service_deploys_and_never_send_twice(self):
         def pr(number, merged_at="2026-10-21T10:00:00Z", base="main"):
             return {"number": number, "title": f"PR {number}", "body": "", "merged_at": merged_at,
-                    "base": {"ref": base}, "head": {"ref": "feature"}, "user": {"login": "bee"},
+                    "merge_commit_sha": f"pr{number}", "base": {"ref": base},
+                    "head": {"ref": "feature"}, "user": {"login": "bee"},
                     "html_url": f"https://github.com/pollinations/pollinations/pull/{number}"}
-        github = {
-            f"actions/workflows/{deploy_posts.DEPLOY_WORKFLOW}/runs": {"workflow_runs": [
-                {"head_sha": "c"}, {"head_sha": "b"}, {"head_sha": "b"}, {"head_sha": "a"}]},
-            "compare/b...c": {"commits": [{"commit": {"message": message}} for message in (
-                "feat: faster images (#1)\n\nbody", "fix: retries (#2)", "Merge pull request #3 from pollinations/main",
-                "news: before the switch (#4)", "Promote main to production (#5)")]},
-            "pulls/1": pr(1), "pulls/2": pr(2), "pulls/4": pr(4, merged_at="2026-10-19T10:00:00Z"),
-            "pulls/5": pr(5, base="production"),
-            f"pulls/{deploy_posts.CUTOVER_PR}": {"merged_at": "2026-10-20T00:00:00Z"},
+        workflow = "deploy-cloudflare-production.yml"
+        api = {
+            f"pulls/{deploy_posts.CUTOVER_PR}": {"merged_at": "2026-10-20T00:00:00Z", "merge_commit_sha": "cutover"},
+            "git/ref/heads/production": {"object": {"sha": "production"}},
+            "compare/cutover...production": {"status": "ahead", "commits": [
+                {"commit": {"message": f"change (#{n})"}} for n in (1, 2, 3, 4, 5)]},
+            "pulls/1": pr(1, "2026-10-20T00:00:00Z"), "pulls/2": pr(2), "pulls/3": pr(3),
+            "pulls/4": pr(4, "2026-10-19T10:00:00Z"), "pulls/5": pr(5, base="production"),
+            f"actions/workflows/{workflow}/runs": {"workflow_runs": [
+                {"id": 1, "head_sha": "production", "created_at": "2026-10-21T11:00:00Z"}]},
+            "actions/runs/1/jobs": {"jobs": [{"name": "deploy-media", "conclusion": "success"},
+                                           {"name": "deploy-gen", "conclusion": "skipped"}]},
+            "compare/pr2...production": {"status": "ahead"},
+            "compare/pr3...production": {"status": "ahead"},
         }
-        reply_text = json.dumps({"text": "Faster images\n- 🐝 `flux` answers in half the time", "image_prompt": "bee"})
-        link = "https://media.pollinations.ai/abc"
-        pictures = [(b"jpeg", link), (None, None), (b"jpeg", link)]  # PR 2's first picture fails
+        changes = {"1": ("docs", ["README.md"]), "2": ("gen", ["gen.pollinations.ai/src/x.ts"]),
+                   "3": ("media", ["media.pollinations.ai/src/x.ts"])}
+        def write(method, path, **kwargs):
+            response = self.github(method, path, **kwargs)
+            if response.status_code >= 400:
+                raise requests.HTTPError(str(response.status_code))
+            response.raise_for_status = lambda: None
+            response.json = lambda: {"content": {"sha": hashlib.sha1(self.store[path]).hexdigest()}}
+            return response
+        def output(system, context, *args, **kwargs):
+            tier = "none" if "PR #3:" in context else "daily"
+            return json.dumps({"publish_tier": tier, "text": "Faster images", "image_prompt": "bee"})
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
         with patch.dict(os.environ, env), \
-             patch("deploy_posts.github", side_effect=lambda path, **params: github[path]), \
-             patch("deploy_posts.fetch_pr_files", return_value=("diff", ["gen.pollinations.ai/src/x.ts"])), \
-             patch("deploy_posts.call_pollinations_api", return_value=reply_text), \
-             patch("deploy_posts.generate_image", side_effect=lambda *args: pictures.pop(0)), \
-             patch("sys.argv", ["deploy_posts.py", "c"]):
-            with self.assertRaises(SystemExit):
+             patch("deploy_posts.github", side_effect=lambda path, **params: api[path]), \
+             patch("deploy_posts.write_news", side_effect=write), \
+             patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: changes[n]), \
+             patch("deploy_posts.call_pollinations_api", side_effect=output), \
+             patch("deploy_posts.generate_image", return_value=(b"jpeg", "https://media.pollinations.ai/abc")) as picture, \
+             patch("deploy_posts.subprocess.check_output", return_value="production"), \
+             patch("sys.argv", ["deploy_posts.py", "--production", deploy_posts.get_repo_root()]):
+            deploy_posts.includes.cache_clear()
+            # Preview discovers everything, but writes and sends nothing.
+            with patch("sys.argv", ["deploy_posts.py", "--production", deploy_posts.get_repo_root(), "--preview"]):
                 deploy_posts.main()
-            deploy_posts.main()  # the rerun posts only the PR that failed
+            self.assertEqual((self.store, self.calls), ({}, []))
+            # A failed durable queue write must prevent even docs-only PRs being sent.
+            with patch("deploy_posts.write_news", side_effect=requests.HTTPError("409")):
+                with self.assertRaises(requests.HTTPError):
+                    deploy_posts.main()
+            self.assertEqual(self.calls, [])
+            # A docs-only promotion can post; media's none-tier PR is recorded without a picture.
+            deploy_posts.main()
+            state = json.loads(self.store[deploy_posts.HELD_PATH])
+            self.assertEqual(list(state["held"]), ["2"])
+            self.assertEqual(state["production"], "production")
+            self.assertEqual(picture.call_count, 1)
+            record = json.loads(self.store[f"{NEWS_REL_DIR}/discord/2026-10/delivery.json"])
+            self.assertEqual(record["pr-3"]["skipped"], "none")
+            deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
+            # More than 14 days later, Gen succeeds at a descendant SHA.
+            api[f"actions/workflows/{workflow}/runs"]["workflow_runs"].insert(0,
+                {"id": 2, "head_sha": "later", "created_at": "2026-11-25T11:00:00Z"})
+            api["actions/runs/2/jobs"] = {"jobs": [{"name": "deploy-gen", "conclusion": "success"}]}
+            api["compare/pr2...later"] = {"status": "ahead"}
+            # A picture failure keeps the PR held, and the next run retries it.
+            with patch("deploy_posts.generate_image", return_value=(None, None)):
+                with self.assertRaisesRegex(SystemExit, "Not posted"):
+                    deploy_posts.main()
+            self.assertEqual(json.loads(self.store[deploy_posts.HELD_PATH])["held"]["2"]["required"], [])
+            # Once observed, successful deployment evidence survives even if Actions history disappears.
+            api[f"actions/workflows/{workflow}/runs"]["workflow_runs"] = []
+            deploy_posts.main()
+            deploy_posts.main()
+            self.assertEqual(json.loads(self.store[deploy_posts.HELD_PATH])["held"], {})
         sent = self.sent("https://discord.test/realtime?wait=true")
-        self.assertEqual(len(sent), 2)  # PRs 1 and 2; not the promotion, nor a PR merged before the cutover PR
+        self.assertEqual(len(sent), 2)
         payload = json.loads(sent[0][2]["payload_json"][1])
-        self.assertTrue(payload["content"].startswith("### Faster images\n\n- 🐝 `flux`"))
-        self.assertIn("[PR #1](<https://github.com/pollinations/pollinations/pull/1>) | By [bee]", payload["content"])
+        self.assertIn("[PR #1]", payload["content"])
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
-        record = json.loads(self.store[f"{NEWS_REL_DIR}/discord/2026-10/delivery.json"])
-        self.assertEqual({post: entry["state"] for post, entry in record.items()}, {"pr-1": "done", "pr-2": "done"})
+        deploy_posts.includes.cache_clear()
+
+
+class DeploymentReadinessTest(unittest.TestCase):
+    def tearDown(self):
+        deploy_posts.includes.cache_clear()
+
+    def test_requirements_come_from_the_scanned_production_checkout(self):
+        source = Path(deploy_posts.get_repo_root())
+        with tempfile.TemporaryDirectory() as directory:
+            production = Path(directory)
+            for name in deploy_posts.WORKFLOWS:
+                path = Path(".github/workflows") / name
+                (production / path).parent.mkdir(parents=True, exist_ok=True)
+                (production / path).write_bytes((source / path).read_bytes())
+            discovery = Path("operations/deployment/discover.cjs")
+            (production / discovery).parent.mkdir(parents=True)
+            (production / discovery).write_bytes((source / discovery).read_bytes())
+            app = production / "apps/still-live"
+            app.mkdir(parents=True)
+            (app / "deploy.json").write_text('{"target":"worker"}')
+            # The app is absent on main but remains deployed until production changes it.
+            self.assertEqual(deploy_posts.required_targets(["apps/still-live/src.ts"], production),
+                             ["deploy-applications.yml:Deploy apps/still-live"])
+
+    def test_targets_use_real_workflow_filters_and_application_discovery(self):
+        targets = deploy_posts.required_targets(["shared/registry/text.ts"])
+        for target in ("deploy-enter", "deploy-gen", "deploy-media"):
+            self.assertIn(f"deploy-cloudflare-production.yml:{target}", targets)
+        self.assertIn("deploy-website-cloudflare.yml:deploy", targets)
+        self.assertEqual(deploy_posts.required_targets(["operations/social/scripts/posts.py"]), [])
+        self.assertEqual(deploy_posts.required_targets(["apps/mcp/src/main.ts"]),
+                         ["deploy-applications.yml:Deploy apps/mcp"])
+        self.assertEqual(deploy_posts.required_targets(["apps/ask-jev-mcp/src/main.ts"]),
+                         ["deploy-cloudflare-production.yml:Deploy apps/ask-jev-mcp"])
+        self.assertEqual(deploy_posts.required_targets(["operations/infrastructure/e2b/Dockerfile"]),
+                         ["deploy-e2b-templates.yml:build"])
+        self.assertEqual(deploy_posts.required_targets(["gen.pollinations.ai/scripts/deploy-portkey.sh"]),
+                         ["deploy-cloudflare-production.yml:deploy-gen", "deploy-portkey-cloudflare.yml:deploy"])
+
+    def test_all_affected_jobs_must_succeed_at_commits_containing_the_pr(self):
+        cf, web, apps = "deploy-cloudflare-production.yml", "deploy-website-cloudflare.yml", "deploy-applications.yml"
+        targets = [f"{cf}:deploy-gen", f"{web}:deploy", f"{apps}:Deploy apps/mcp"]
+        held = {"7": {"merge_sha": "pr", "merged_at": "2026-01-01T00:00:00Z", "required": targets}}
+        runs = {cf: [{"id": 1, "head_sha": "new", "created_at": "2026-10-01T00:00:00Z"}],
+                web: [{"id": 2, "head_sha": "unrelated", "created_at": "2026-10-01T00:00:00Z"}],
+                apps: [{"id": 3, "head_sha": "new", "created_at": "2026-10-01T00:00:00Z"}]}
+        jobs = {1: [{"name": "deploy-gen", "conclusion": "success"}],
+                2: [{"name": "deploy", "conclusion": "success"}],
+                3: [{"name": "deploy (other)", "conclusion": "success", "steps": [
+                    {"name": "Deploy apps/other", "conclusion": "success"}]}]}
+        def api(path, **params):
+            if path.startswith("actions/workflows/"):
+                self.assertEqual(params["status"], "success")
+                return {"workflow_runs": runs[path.split("/")[2]]}
+            if path.startswith("actions/runs/"):
+                return {"jobs": jobs[int(path.split("/")[2])]}
+            return {"status": "diverged" if path.endswith("unrelated") else "ahead"}
+        with patch("deploy_posts.github", side_effect=api):
+            self.assertEqual(deploy_posts.waiting_for(held)["7"], sorted(targets[1:]))
+            runs[web][0]["head_sha"] = "new"
+            jobs[3][0]["steps"].append({"name": "Deploy apps/mcp", "conclusion": "success"})
+            self.assertEqual(deploy_posts.waiting_for(held)["7"], [])
+
+    def test_runs_and_jobs_are_paginated_without_expiring_held_prs(self):
+        workflow = "deploy-cloudflare-production.yml"
+        held = {"7": {"merge_sha": "pr", "merged_at": "2025-01-01T00:00:00Z",
+                      "required": [f"{workflow}:deploy-gen"]}}
+        def api(path, **params):
+            page = params.get("page")
+            if path.endswith("/runs"):
+                run = {"id": 1 if page == 1 else 2, "head_sha": "new", "created_at": "2026-10-01T00:00:00Z"}
+                return {"workflow_runs": [run] * (100 if page == 1 else 1)}
+            if path == "actions/runs/1/jobs":
+                return {"jobs": [{"name": "deploy-media", "conclusion": "success"}]}
+            if path.endswith("/jobs"):
+                return {"jobs": ([{"name": "deploy-media", "conclusion": "success"}] * 100 if page == 1
+                                 else [{"name": "deploy-gen", "conclusion": "success"}])}
+            return {"status": "ahead"}
+        with patch("deploy_posts.github", side_effect=api):
+            self.assertEqual(deploy_posts.waiting_for(held), {"7": []})
 
 
 if __name__ == "__main__":

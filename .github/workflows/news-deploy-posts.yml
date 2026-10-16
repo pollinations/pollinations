@@ -1,18 +1,25 @@
 name: News / Deploy posts
 
-# After each successful production deploy, posts every PR it shipped to Discord,
-# one message with a picture per PR. A rerun skips the PRs already posted.
+# Hold each promoted PR until its affected deployment jobs succeed. Docs-only
+# promotions need no deploy. The delivery record prevents duplicate sends.
 on:
+  push:
+    branches: [production]
   workflow_run:
-    workflows: ['Deploy / Cloudflare production']
+    workflows:
+      - 'Deploy / Cloudflare production'
+      - 'Deploy / pollinations.ai'
+      - 'Deploy / Applications'
+      - 'Deploy / E2B templates'
+      - 'Deploy / Portkey gateway'
     types: [completed]
     branches: [production]
   workflow_dispatch:
     inputs:
-      sha:
-        description: 'The production commit of a successful deploy'
-        required: true
-        type: string
+      preview:
+        description: 'Show held PRs and deployment readiness without saving or sending'
+        type: boolean
+        default: true
 
 permissions: {}
 
@@ -24,7 +31,7 @@ concurrency:
 
 jobs:
   posts:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write  # the delivery record on the news branch
@@ -34,6 +41,25 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || 'main' }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Checkout production deployment rules
+        uses: actions/checkout@v5
+        with:
+          ref: production
+          path: production-rules
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflows/
+            /operations/deployment/
+            /apps/*/deploy.json
+            /operations/*/deploy.json
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -41,15 +67,18 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests pyyaml
 
       - name: Post the shipped PRs
         env:
-          SHA: ${{ inputs.sha || github.event.workflow_run.head_sha }}
+          PREVIEW: ${{ inputs.preview || false }}
           GITHUB_TOKEN: ${{ github.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
           DISCORD_REALTIME_WEBHOOK_URL: ${{ secrets.DISCORD_REALTIME_WEBHOOK_URL }}
-        run: python operations/social/scripts/deploy_posts.py "$SHA"
+        run: |
+          flags=()
+          [ "$PREVIEW" = true ] && flags+=(--preview)
+          python operations/social/scripts/deploy_posts.py --production production-rules "${flags[@]}"
 
       - name: Report failure as an issue
         if: failure()

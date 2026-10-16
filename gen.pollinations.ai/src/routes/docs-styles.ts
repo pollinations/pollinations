@@ -3,34 +3,21 @@
 
 import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw";
 
-const POLLINATIONS_UI_CSS = `
+export const POLLINATIONS_DOCS_CSS = `
 ${POLLI_UI_TOKENS_CSS}
-`;
 
-export const POLLINATIONS_HEADER_CSS = `
-${POLLINATIONS_UI_CSS}
-
-.ph-bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
-    min-height: 48px; box-sizing: border-box;
-    background: var(--polli-color-brand-dark); border-bottom: 1px solid var(--polli-color-divider);
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: var(--polli-color-text-base);
-}
-.ph-bar .ph-brand {
+.ph-docs-brand {
+    display: flex; align-items: center; gap: 10px; padding: 12px;
+    flex-shrink: 0; font-size: 18px; font-weight: 600;
     color: var(--polli-color-text-strong); text-decoration: none;
-    display: inline-flex; align-items: center; flex-shrink: 0;
 }
-.ph-bar .ph-brand img { height: 18px; width: auto; display: block; }
-@media (min-width: 640px) { .ph-bar .ph-brand img { height: 20px; } }
-@media (max-width: 640px) {
-    .ph-bar { justify-content: center; padding: 8px 12px; }
-    .ph-bar .ph-brand img { height: 22px; }
+.ph-docs-brand svg { display: block; width: 28px; height: 28px; }
+.ph-docs-brand:focus-visible {
+    outline: 2px solid var(--polli-color-focus); outline-offset: -2px;
 }
 
 .ph-fab-cluster {
-    position: fixed; top: 64px; right: 18px; z-index: 9999;
+    position: fixed; top: 16px; right: 18px; z-index: 9999;
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
@@ -53,28 +40,13 @@ ${POLLINATIONS_UI_CSS}
     box-shadow: 0 0 0 2px var(--polli-color-border);
 }
 .ph-fab svg { width: 16px; height: 16px; }
-@media (max-width: 640px) {
+@media (width < 1000px) {
     .ph-fab-cluster { top: 60px; right: 12px; }
+    body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
+}
+@media (max-width: 640px) {
     .ph-fab { padding: 7px 11px; font-size: 12px; }
     .ph-fab svg { width: 14px; height: 14px; }
-}
-`;
-
-export const POLLINATIONS_HEADER_SCALAR_CSS = `
-/* Push Scalar's mount point down so its content (h1, version badges,
-   sidebar, mobile hamburger row) doesn't render under our fixed bar.
-   Body padding works because .ph-bar is position: fixed — it ignores
-   parent padding, so the bar stays at top while everything else shifts. */
-body { padding-top: 48px; }
-/* Match Scalar's mobile hamburger row background to our bar so the seam
-   between the two reads as one continuous header instead of a stripe. */
-@media (max-width: 1000px) {
-    .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
-        background: var(--polli-color-brand-dark) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-    }
 }
 `;
 
@@ -187,7 +159,7 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our header script — see scanScalarButtons).
+/* "Show more" buttons (tagged by our docs script — see scanScalarButtons).
    Use the same ambient Button recipe as packages/ui. */
 .scalar-app .ph-show-more {
     background: var(--polli-color-bg-active) !important;

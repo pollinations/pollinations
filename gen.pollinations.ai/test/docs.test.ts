@@ -7,6 +7,7 @@ import { parse as yamlParse } from "yaml";
 import {
     buildCurl,
     fetchOpenApiSpec,
+    renderEndpoint,
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
@@ -187,14 +188,9 @@ describe("docs routes", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        const schema = (await response.json()) as {
-            info: { description: string };
-            paths: Record<string, unknown>;
-            servers: { url: string }[];
+        const schema = (await response.json()) as Spec & {
             "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
-            components: { schemas: Record<string, unknown> };
-            "x-schema-sources": Record<string, boolean>;
         };
 
         expect(schema["x-schema-sources"]).toEqual({
@@ -270,19 +266,19 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        const integrations = schema["x-tagGroups"].find(
-            (group) => group.name === "Integrations",
+        const guides = schema["x-tagGroups"].find(
+            (group) => group.name === "Guides",
         );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Publish a Model");
-        expect(integrations?.tags).not.toContain("Community Models");
+        expect(guides?.tags).toContain("Publish a Model");
+        expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
-        expect(integrations?.tags).toContain("Publish an Agent");
-        expect(integrations?.tags).toContain("Coding Harnesses");
-        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(guides?.tags).toContain("Publish an Agent");
+        expect(guides?.tags).toContain("Coding Harnesses");
+        expect(guides?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -348,6 +344,9 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+        expect(
+            renderEndpoint(schema, "get", "/v1/realtime", realtimeGet ?? {}),
+        ).toContain("`101` — WebSocket connection established");
 
         const nativeRealtimeGet = (
             schema.paths["/realtime"] as Record<string, unknown>

@@ -47,6 +47,8 @@ export type BillingOverview = {
         packAmountUsd: number;
         lastIssue: AutoTopUpIssue | null;
     };
+    /** Pollen of the buyer's last checkout purchase; null before the first. */
+    lastPackAmountUsd: number | null;
     /** Every method Stripe saved for the buyer, default first. */
     paymentMethods: SavedPaymentMethod[];
     billingDetails: {

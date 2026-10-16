@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "OSV_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -123,6 +124,18 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "osv",
+        name: "OSV",
+        description:
+            "Check package versions for known vulnerabilities and read advisories from OSV.",
+        binding: "OSV_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free vulnerability lookups. No additional MCP fee.",
             rates: [],
         },
     },

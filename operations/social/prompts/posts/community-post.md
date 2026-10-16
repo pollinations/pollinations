@@ -102,7 +102,7 @@ Rules:
 
 - `date` — report date (YYYY-MM-DD).
 - `previous_date` — prior snapshot date or `null`.
-- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `video`, `audio`, `embeddings`).
+- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `video`, `audio`, `embeddings`, `3d`, `realtime`).
   - `added[cat]`: full model objects that are new.
   - `removed[cat]`: full model objects that were removed or made private.
   - `changed[cat]`: `[{before: {...}, after: {...}}]` pairs — compare them to find what changed.

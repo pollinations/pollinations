@@ -39,13 +39,24 @@ const failure = (message) => ({
     content: [{ type: "text", text: message }],
 });
 
+/** Removes tags until none are left, so nested input such as `<<b>b>` cannot leave one behind. */
+function stripTags(text) {
+    let previous;
+    do {
+        previous = text;
+        text = text.replace(/<[^>]*>/g, "");
+    } while (text !== previous);
+    return text;
+}
+
 /** HN comment HTML to plain text: paragraphs become blank lines, links keep their URL. */
 const htmlToText = (html = "") =>
-    html
-        .replace(/<a [^>]*href="([^"]*)"[^>]*>.*?<\/a>/gi, "$1")
-        .replace(/<p>/gi, "\n\n")
-        .replace(/<br\s*\/?>/gi, "\n")
-        .replace(/<[^>]+>/g, "")
+    stripTags(
+        html
+            .replace(/<a [^>]*href="([^"]*)"[^>]*>.*?<\/a>/gi, "$1")
+            .replace(/<p>/gi, "\n\n")
+            .replace(/<br\s*\/?>/gi, "\n"),
+    )
         .replace(
             /&(?:#x([0-9a-f]+)|#(\d+)|([a-z]+));/gi,
             (whole, hex, dec, name) => {

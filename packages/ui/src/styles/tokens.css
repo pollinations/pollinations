@@ -29,6 +29,7 @@
     --polli-font-subheading: "Fraunces", ui-serif, serif;
     --polli-font-body:       "Uncut Sans", ui-sans-serif, sans-serif;
     --polli-font-pixel:      "Geist Pixel Square", ui-monospace, monospace;
+    --polli-font-mono:       "JetBrains Mono", ui-monospace, monospace;
     --polli-text-micro:      10px;
     --polli-text-base:       16px;
     --polli-radius-block:    1.75rem;

@@ -10,6 +10,7 @@
     --font-subheading: var(--polli-font-subheading);
     --font-body: var(--polli-font-body);
     --font-pixel: var(--polli-font-pixel);
+    --font-mono: var(--polli-font-mono);
     --text-micro: var(--polli-text-micro);
     --text-base: var(--polli-text-base);
     --radius-block: var(--polli-radius-block);

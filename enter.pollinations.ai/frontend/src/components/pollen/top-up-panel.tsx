@@ -2,6 +2,7 @@ import {
     Button,
     CardIcon,
     cn,
+    IconButton,
     InlineLink,
     RefreshIcon,
     StableLabel,
@@ -9,6 +10,7 @@ import {
     Switch,
     Tooltip,
     WarningIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { WalletKindIcon } from "@pollinations/ui/wallet";
 import {
@@ -264,6 +266,143 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
         />
     );
 
+    // The label and switch, at the end of the buy row; while the offer
+    // shows they move into its part instead, so the switch is its one control.
+    // The second line is the one status slot (pack, problem, saving), sized
+    // for its widest content, so the switch never moves.
+    const autoTopUpLabel = (
+        <span className="flex flex-col items-start text-sm font-semibold leading-tight text-theme-text-strong sm:items-end">
+            <span>Auto top-up</span>
+            {/* It buys paid Pollen: the Paid card's icon and colour while on,
+                greyed while off. Same weight and icon both ways, so nothing
+                moves. */}
+            <span className="text-xs font-semibold tabular-nums">
+                <StableSlot
+                    active={refillStatus}
+                    items={{
+                        issue: (
+                            <>
+                                {/* The icon says something is
+                                wrong, the link what to do;
+                                the problem is read aloud.
+                                When the short text can't
+                                say what it means (off, but
+                                a payment still waits), the
+                                icon explains on hover or
+                                tap. */}
+                                {status?.detail ? (
+                                    <Tooltip
+                                        triggerAs="span"
+                                        tapEnabled
+                                        ariaLabel="What this means"
+                                        content={status.detail}
+                                    >
+                                        <WarningIcon
+                                            aria-hidden="true"
+                                            className="h-3.5 w-3.5 text-intent-danger-text"
+                                        />
+                                    </Tooltip>
+                                ) : (
+                                    <WarningIcon
+                                        aria-hidden="true"
+                                        className="h-3.5 w-3.5 text-intent-danger-text"
+                                    />
+                                )}
+                                <span className="sr-only">
+                                    {status?.detail ?? `${status?.text}:`}
+                                </span>
+                                {status?.action?.kind === "link" ? (
+                                    <InlineLink href={status.action.href}>
+                                        {status.action.label}
+                                    </InlineLink>
+                                ) : (
+                                    <InlineLink
+                                        as="button"
+                                        type="button"
+                                        // Portal home: pick another saved card or add one.
+                                        onClick={() => openPortal()}
+                                    >
+                                        {status?.action?.label ?? "Update card"}
+                                    </InlineLink>
+                                )}
+                            </>
+                        ),
+                        failed: (
+                            <span
+                                role="alert"
+                                className="inline-flex items-center gap-1 text-intent-danger-text"
+                            >
+                                <WarningIcon
+                                    aria-hidden="true"
+                                    className="h-3.5 w-3.5"
+                                />
+                                <StableLabel
+                                    text={slotError ?? SAVE_FAILED}
+                                    options={[SAVE_FAILED, PORTAL_FAILED]}
+                                    align="end"
+                                />
+                            </span>
+                        ),
+                        pack: (
+                            <span
+                                className={cn(
+                                    "transition-colors",
+                                    billing?.autoTopUp.enabled
+                                        ? "text-paid-deep"
+                                        : "text-theme-text-muted",
+                                )}
+                            >
+                                <StableLabel
+                                    prefix={
+                                        <span
+                                            className={cn(
+                                                "inline-flex",
+                                                !billing?.autoTopUp.enabled &&
+                                                    "opacity-60 grayscale",
+                                            )}
+                                        >
+                                            <WalletKindIcon kind="paid" />
+                                        </span>
+                                    }
+                                    text={refillLabel(
+                                        billing?.autoTopUp.enabled
+                                            ? billing.autoTopUp.packAmountUsd
+                                            : (selectedRefillPack?.amountUsd ??
+                                                  null),
+                                    )}
+                                    options={REFILL_LABELS}
+                                    align="end"
+                                />
+                            </span>
+                        ),
+                    }}
+                />
+            </span>
+        </span>
+    );
+    const autoTopUpControl = packTooSmall ? (
+        <Tooltip
+            triggerAs="span"
+            tapEnabled
+            // No inline wrapper: the switch stays put.
+            displayContents
+            ariaLabel="Why auto top-up is unavailable"
+            content="Choose 5 Pollen or more to enable auto top-up."
+        >
+            {autoTopUpSwitch}
+        </Tooltip>
+    ) : (
+        autoTopUpSwitch
+    );
+
+    // The switch leads on mobile; desktop keeps it after the label.
+    const autoTopUpBlock = (
+        <div className="inline-flex flex-row-reverse items-center gap-2 sm:flex-row">
+            {autoTopUpLabel}
+            {autoTopUpControl}
+        </div>
+    );
+
     return (
         <div className="flex flex-col gap-3">
             <section className="flex flex-col gap-3">
@@ -309,190 +448,71 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
                             </Tooltip>
                         )}
                     </div>
-                    {/* The switch leads on mobile; desktop keeps it after
-                        the label. The second line is the one
-                        status slot (pack, problem, saving), sized for its
-                        widest content, so the switch never moves. */}
-                    <div className="inline-flex flex-row-reverse items-center gap-2 text-sm font-semibold text-theme-text-strong sm:flex-row">
-                        <span className="flex flex-col items-start leading-tight sm:items-end">
-                            <span>Auto top-up</span>
-                            {/* It buys paid Pollen: the Paid card's icon and
-                                colour while on, greyed while off. Same weight
-                                and icon both ways, so nothing moves. */}
-                            <span className="text-xs font-semibold tabular-nums">
-                                <StableSlot
-                                    active={refillStatus}
-                                    items={{
-                                        issue: (
-                                            <>
-                                                {/* The icon says something is
-                                                    wrong, the link what to do;
-                                                    the problem is read aloud.
-                                                    When the short text can't
-                                                    say what it means (off, but
-                                                    a payment still waits), the
-                                                    icon explains on hover or
-                                                    tap. */}
-                                                {status?.detail ? (
-                                                    <Tooltip
-                                                        triggerAs="span"
-                                                        tapEnabled
-                                                        ariaLabel="What this means"
-                                                        content={status.detail}
-                                                    >
-                                                        <WarningIcon
-                                                            aria-hidden="true"
-                                                            className="h-3.5 w-3.5 text-intent-danger-text"
-                                                        />
-                                                    </Tooltip>
-                                                ) : (
-                                                    <WarningIcon
-                                                        aria-hidden="true"
-                                                        className="h-3.5 w-3.5 text-intent-danger-text"
-                                                    />
-                                                )}
-                                                <span className="sr-only">
-                                                    {status?.detail ??
-                                                        `${status?.text}:`}
-                                                </span>
-                                                {status?.action?.kind ===
-                                                "link" ? (
-                                                    <InlineLink
-                                                        href={
-                                                            status.action.href
-                                                        }
-                                                    >
-                                                        {status.action.label}
-                                                    </InlineLink>
-                                                ) : (
-                                                    <InlineLink
-                                                        as="button"
-                                                        type="button"
-                                                        // Portal home: pick another saved card or add one.
-                                                        onClick={() =>
-                                                            openPortal()
-                                                        }
-                                                    >
-                                                        {status?.action
-                                                            ?.label ??
-                                                            "Update card"}
-                                                    </InlineLink>
-                                                )}
-                                            </>
-                                        ),
-                                        failed: (
-                                            <span
-                                                role="alert"
-                                                className="inline-flex items-center gap-1 text-intent-danger-text"
-                                            >
-                                                <WarningIcon
-                                                    aria-hidden="true"
-                                                    className="h-3.5 w-3.5"
-                                                />
-                                                <StableLabel
-                                                    text={
-                                                        slotError ?? SAVE_FAILED
-                                                    }
-                                                    options={[
-                                                        SAVE_FAILED,
-                                                        PORTAL_FAILED,
-                                                    ]}
-                                                    align="end"
-                                                />
-                                            </span>
-                                        ),
-                                        pack: (
-                                            <span
-                                                className={cn(
-                                                    "transition-colors",
-                                                    billing?.autoTopUp.enabled
-                                                        ? "text-paid-deep"
-                                                        : "text-theme-text-muted",
-                                                )}
-                                            >
-                                                <StableLabel
-                                                    prefix={
-                                                        <span
-                                                            className={cn(
-                                                                "inline-flex",
-                                                                !billing
-                                                                    ?.autoTopUp
-                                                                    .enabled &&
-                                                                    "opacity-60 grayscale",
-                                                            )}
-                                                        >
-                                                            <WalletKindIcon kind="paid" />
-                                                        </span>
-                                                    }
-                                                    text={refillLabel(
-                                                        billing?.autoTopUp
-                                                            .enabled
-                                                            ? billing.autoTopUp
-                                                                  .packAmountUsd
-                                                            : (selectedRefillPack?.amountUsd ??
-                                                                  null),
-                                                    )}
-                                                    options={REFILL_LABELS}
-                                                    align="end"
-                                                />
-                                            </span>
-                                        ),
-                                    }}
-                                />
-                            </span>
-                        </span>
-                        {packTooSmall ? (
-                            <Tooltip
-                                triggerAs="span"
-                                tapEnabled
-                                // No inline wrapper: the switch stays put.
-                                displayContents
-                                ariaLabel="Why auto top-up is unavailable"
-                                content="Choose 5 Pollen or more to enable auto top-up."
+                    {/* Auto top-up keeps its place; right after a purchase
+                        the offer floats under it, pointing up at the switch,
+                        so the switch stays its one control and nothing moves. */}
+                    <div className="relative">
+                        {autoTopUpBlock}
+                        {offerPack && (
+                            <Surface
+                                variant="card-themed"
+                                className="absolute top-full left-0 z-20 mt-3 flex w-[min(24rem,calc(100vw-4rem))] flex-col items-start gap-2 pr-10 shadow-lg sm:right-0 sm:left-auto sm:items-end sm:text-right"
                             >
-                                {autoTopUpSwitch}
-                            </Tooltip>
-                        ) : (
-                            autoTopUpSwitch
+                                {/* The arrow sits under the switch: its
+                                        left end on phones, where the switch
+                                        leads, its right end from sm up. */}
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute -top-1.5 left-[26px] h-3 w-3 rotate-45 rounded-[2px] bg-theme-bg-pale sm:right-[26px] sm:left-auto"
+                                />
+                                <IconButton
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="Close"
+                                    className="absolute top-2 right-2"
+                                    onClick={() => setOfferDismissed(true)}
+                                >
+                                    <XIcon />
+                                </IconButton>
+                                {/* The icon flows with the first line, so it
+                                    stays beside the text when right-aligned. */}
+                                <p className="text-sm text-theme-text-muted">
+                                    <RefreshIcon
+                                        aria-hidden="true"
+                                        className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]"
+                                    />
+                                    <span>
+                                        <strong className="font-semibold text-theme-text-strong">
+                                            Never run out.
+                                        </strong>{" "}
+                                        {needsCard
+                                            ? "Add a card to buy"
+                                            : "Turn it on to buy"}{" "}
+                                        {formatPollenPackValue(
+                                            offerPack.amountUsd,
+                                        )}{" "}
+                                        pollen every time your paid balance
+                                        reaches {AUTO_TOP_UP_THRESHOLD_POLLEN}{" "}
+                                        pollen.
+                                    </span>
+                                </p>
+                                {/* Paid without a saved card (PayPal, crypto):
+                                        auto top-up needs one first. Opening Stripe is
+                                        navigation, so the filled button. */}
+                                {needsCard && (
+                                    <Button
+                                        size="sm"
+                                        icon={<CardIcon />}
+                                        className="self-start sm:self-end"
+                                        onClick={() => openPortal("card")}
+                                    >
+                                        Add a card
+                                    </Button>
+                                )}
+                            </Surface>
                         )}
                     </div>
                 </div>
-                {offerPack && (
-                    <Surface
-                        variant="card-themed"
-                        className="flex flex-wrap items-center justify-between gap-3"
-                    >
-                        <p className="min-w-64 flex-1 text-sm text-theme-text-muted">
-                            <strong className="font-semibold text-theme-text-strong">
-                                Never run out.
-                            </strong>{" "}
-                            Auto top-up buys{" "}
-                            {formatPollenPackValue(offerPack.amountUsd)} pollen
-                            when your paid balance reaches{" "}
-                            {AUTO_TOP_UP_THRESHOLD_POLLEN} pollen. Turn it off
-                            anytime.
-                        </p>
-                        <div className="flex shrink-0 items-center gap-3">
-                            <InlineLink
-                                as="button"
-                                type="button"
-                                size="sm"
-                                onClick={() => setOfferDismissed(true)}
-                            >
-                                Not now
-                            </InlineLink>
-                            <Button
-                                size="sm"
-                                intent="brand"
-                                icon={<RefreshIcon />}
-                                disabled={saving}
-                                onClick={() => changeAutoTopUp(true)}
-                            >
-                                Turn on auto top-up
-                            </Button>
-                        </div>
-                    </Surface>
-                )}
             </section>
 
             <PackCheckoutDialog

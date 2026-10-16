@@ -1,0 +1,8 @@
+#!/opt/homebrew/bin/python3
+# ssh with a non-system process in the foreground, so herdr can read
+# HERDR_AGENT from it (macOS hides the environment of /usr/bin/ssh).
+# Usage: HERDR_AGENT=claude herdr-ssh <ssh args...>
+import signal, subprocess, sys
+
+signal.signal(signal.SIGINT, signal.SIG_IGN)
+sys.exit(subprocess.call(["/usr/bin/ssh", *sys.argv[1:]]))

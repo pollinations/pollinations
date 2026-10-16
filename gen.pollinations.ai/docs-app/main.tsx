@@ -3,6 +3,7 @@ import {
     BookIcon,
     BotIcon,
     BrandMark,
+    BugIcon,
     ChatIcon,
     CheckIcon,
     Chip,
@@ -17,6 +18,8 @@ import {
     DiscordIcon,
     Drawer,
     ExternalLinkButton,
+    ExternalLinkIcon,
+    Eyebrow,
     GitHubIcon,
     Heading,
     IconButton,
@@ -242,7 +245,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                 className="hidden flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-72"
             >
                 <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1">
-                    <Brand />
+                    <Brand large />
                     <BrandLinks />
                 </div>
                 {rail()}
@@ -364,8 +367,9 @@ function useActiveAnchor(
     return active;
 }
 
-const Brand: FC = () => (
-    <span className="flex items-center gap-2">
+// The dashboard's lockup, then "Docs" in the package's pixel label.
+const Brand: FC<{ large?: boolean }> = ({ large = false }) => (
+    <span className="flex items-center gap-3">
         <a
             href="https://pollinations.ai"
             target="_blank"
@@ -373,11 +377,15 @@ const Brand: FC = () => (
             className="inline-flex items-center text-current"
             aria-label="Pollinations"
         >
-            <BrandMark variant="lockup" className="h-6 w-[162px]" />
+            <BrandMark
+                variant="lockup"
+                className={large ? "h-6 w-[195px]" : "h-5 w-[162px]"}
+            />
         </a>
-        <Chip intent="neutral" size="sm">
+        <span aria-hidden="true" className="h-4 w-px bg-theme-text-strong/20" />
+        <Eyebrow size="page" data-theme="accent">
             Docs
-        </Chip>
+        </Eyebrow>
     </span>
 );
 
@@ -395,6 +403,20 @@ const brandLinks = [
         icon: DiscordIcon,
         text: "discord",
         count: "19k",
+    },
+] as const;
+
+// The dashboard's help links: its support channel and the issue tracker.
+const helpLinks = [
+    {
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Need help?",
+        icon: DiscordIcon,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Found a bug?",
+        icon: BugIcon,
     },
 ] as const;
 
@@ -432,6 +454,7 @@ const Rail: FC<{
                 <NavItem
                     as="a"
                     href={`#${docs.introduction.id}`}
+                    data-theme="accent"
                     size="sm"
                     icon={BookIcon}
                     active={activePage === docs.introduction}
@@ -456,6 +479,7 @@ const Rail: FC<{
                                 <NavItem
                                     as="a"
                                     href={`#${page.id}`}
+                                    data-theme="accent"
                                     size="sm"
                                     icon={icons[page.title] ?? BookIcon}
                                     active={activePage === page}
@@ -507,14 +531,35 @@ const Rail: FC<{
                 ))}
             </nav>
         </ScrollArea>
-        <div
-            data-theme="accent"
-            className="flex shrink-0 items-center justify-between gap-2 border-t border-theme-text-strong/10 pt-4 pl-1"
-        >
-            <ExternalLinkButton href="https://enter.pollinations.ai" size="sm">
-                Dashboard
-            </ExternalLinkButton>
-            <ColorModeToggle />
+        <div className="flex shrink-0 flex-col gap-3 border-t border-theme-text-strong/10 pt-3">
+            <div className="flex flex-col gap-0.5">
+                {helpLinks.map(({ href, label, icon }) => (
+                    <NavItem
+                        key={href}
+                        as="a"
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="sm"
+                        icon={icon}
+                    >
+                        {label}
+                        <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 text-theme-text-muted" />
+                    </NavItem>
+                ))}
+            </div>
+            <div
+                data-theme="accent"
+                className="flex items-center justify-between gap-2 pl-1"
+            >
+                <ExternalLinkButton
+                    href="https://enter.pollinations.ai"
+                    size="sm"
+                >
+                    Dashboard
+                </ExternalLinkButton>
+                <ColorModeToggle />
+            </div>
         </div>
     </>
 );

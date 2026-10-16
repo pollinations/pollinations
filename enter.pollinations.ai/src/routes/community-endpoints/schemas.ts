@@ -531,6 +531,37 @@ export const CommunityEndpointHealthResponseSchema = z.object({
         )
         .describe("The last seven UTC days, oldest first."),
 });
+
+export const CommunityEndpointRunsResponseSchema = z.object({
+    data: z.array(
+        z.object({
+            id: z.string().describe("Request ID of the call."),
+            startedAt: z.string().describe("ISO 8601."),
+            status: z.number().describe("HTTP status returned to you."),
+            durationMs: z.number(),
+            keyName: z
+                .string()
+                .describe(
+                    "Name of the API key used, or empty for the dashboard.",
+                ),
+            cost: z
+                .number()
+                .describe("Pollen charged for the call and everything it ran."),
+            modelCalls: z
+                .number()
+                .describe("Text and media generations an agent made."),
+            toolCalls: z.number().describe("MCP tool calls an agent made."),
+            failedCalls: z
+                .number()
+                .describe("Generations and tool calls that failed."),
+            error: z
+                .string()
+                .describe(
+                    "The call's error, or else the latest failed step's, up to 300 characters.",
+                ),
+        }),
+    ),
+});
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });

@@ -633,4 +633,54 @@ describe("community endpoint configuration policy", () => {
         });
         expect(missing.status).toBe(404);
     });
+
+    test("lists the owner's own runs of an agent", async ({
+        accountToken,
+        mocks,
+    }) => {
+        const created = await postModel(accountToken, "/endpoint-agents", {
+            name: "runs-agent",
+            title: "Runs agent",
+            api: "responses",
+            url: "https://agent.example.com/v1/responses",
+        });
+        await mocks.enable("tinybird");
+        mocks.tinybird.state.modelRunsResponse = [
+            {
+                run_id: "run-1",
+                started_at: "2026-10-16 08:45:15",
+                status: 502,
+                duration_ms: 4000,
+                key_name: "undefined",
+                cost: 0.0021,
+                model_calls: 2,
+                tool_calls: 1,
+                failed_calls: 1,
+                error: "MCP server computer failed",
+            },
+        ];
+        const runs = await SELF.fetch(`${endpointUrl}/${created.id}/runs`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(runs.status).toBe(200);
+        expect(await runs.json()).toEqual({
+            data: [
+                {
+                    id: "run-1",
+                    startedAt: "2026-10-16T08:45:15.000Z",
+                    status: 502,
+                    durationMs: 4000,
+                    keyName: "",
+                    cost: 0.0021,
+                    modelCalls: 2,
+                    toolCalls: 1,
+                    failedCalls: 1,
+                    error: "MCP server computer failed",
+                },
+            ],
+        });
+        const query = mocks.tinybird.state.pipeCalls.at(-1)?.query;
+        expect(query?.model).toBe(created.modelId);
+        expect(query?.owner_user_id).toBeTruthy();
+    });
 });

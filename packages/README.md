@@ -12,6 +12,12 @@ A friendly toolkit for developers who want to add Pollinations to a website or a
 
 **Who it's for:** developers building apps, sites, or prototypes that need AI-generated media or text.
 
+### [roblox-sdk/](./roblox-sdk) — the Roblox NPC SDK
+
+A single Lua ModuleScript that gives any Roblox NPC the ability to hold a conversation, powered by Pollinations. No npm, no build step — copy one file into Studio.
+
+**Who it's for:** Roblox creators, including teenagers with no credit card, who want an AI NPC in a few lines of code.
+
 ### [mcp/](./mcp) — the MCP server
 
 A bridge that lets AI assistants (like Claude, Cursor, and other tools that speak the Model Context Protocol) use Pollinations directly. Once it's installed, the assistant can generate images, audio, video, or text on your behalf without you ever leaving the chat.

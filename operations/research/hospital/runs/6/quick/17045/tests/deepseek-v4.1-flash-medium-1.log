@@ -1,0 +1,28 @@
+$ cd /home/user/pollinations && npx vitest run test/image/inferencePortImageModel.test.ts
+
+ RUN  v3.2.4 /home/user/pollinations
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  gen.pollinations.ai/test/image/inferencePortImageModel.test.ts [ gen.pollinations.ai/test/image/inferencePortImageModel.test.ts ]
+Error: Cannot find package '@shared/error.ts' imported from '/home/user/pollinations/gen.pollinations.ai/src/image/models/inferencePortImageModel.ts'
+ ❯ gen.pollinations.ai/src/image/models/inferencePortImageModel.ts:1:1
+      1| import { collectUpstreamHeaders, UpstreamError } from "@shared/error.t…
+       | ^
+      2| import debug from "debug";
+      3| import type {
+
+Caused by: Error: Failed to load url @shared/error.ts (resolved id: @shared/error.ts) in /home/user/pollinations/gen.pollinations.ai/src/image/models/inferencePortImageModel.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22663:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  02:54:43
+   Duration  291ms (transform 62ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 57ms)
+
+
+exit 1

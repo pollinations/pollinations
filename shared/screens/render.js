@@ -153,6 +153,8 @@ const page = h(
                             href: "https://enter.pollinations.ai/sign-in?provider=github&ref=classic",
                             external: false,
                             size: "lg",
+                            // Bordered, as enter's own sign-in buttons are
+                            intent: "brand",
                             icon: h(GitHubIcon, {
                                 className: "polli:size-4 polli:shrink-0",
                             }),

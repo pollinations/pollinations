@@ -346,6 +346,66 @@ export default defineConfig(async ({ mode }) => {
                                     { headers },
                                 );
                             },
+                            WEFT_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller credentials reached MCP",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                    params?: { name?: string };
+                                };
+                                const headers = new Headers({
+                                    "Content-Type": "application/json",
+                                });
+                                if (
+                                    payload.method === "tools/call" &&
+                                    payload.params?.name === "weft_fetch"
+                                ) {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.002",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "weft_fetch",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "weft.fetch.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "weft proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
+                            },
                             COMPOSIO_MCP: async (request: Request) => {
                                 if (
                                     request.headers.has("authorization") ||

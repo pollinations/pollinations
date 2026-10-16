@@ -67,10 +67,14 @@ export async function checkBalance(
 export async function requireAccountFunds(
     c: Context<Env>,
     price: number,
+    paidOnly = false,
 ): Promise<void> {
     const userId = c.var.auth.requireUser().id;
-    await requireFunds(c, price, () =>
-        getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
+    await requireFunds(
+        c,
+        price,
+        () => getFundedUserBalance(drizzle(c.env.DB), c.env.DB, userId),
+        paidOnly,
     );
 }
 

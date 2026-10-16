@@ -1,0 +1,1 @@
+../../../.claude/skills/pollinations-sdk/SKILL.md

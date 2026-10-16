@@ -389,6 +389,8 @@ test("the VM's other routes: models, about, crossdomain, register, .well-known a
         ["/models/", "GET", "/models/"],
         // Changed: the public feed is gone
         ["/feed?past_results=20", "GET", "/feed"],
+        // Changed: browsers ask for it, and it made an image for "favicon.ico"
+        ["/favicon.ico", "GET", "/favicon.ico"],
         ["/delete/prompt/it's^", "GET", "/delete/prompt/it%27s%5E"],
     ]) {
         const { response, text } = await call(path, { method });
@@ -565,4 +567,17 @@ test("an exception on a miss path is Hono's 500", async () => {
     const huge = await call("/prompt/huge?width=9007199254740993");
     expect(huge.response.status).toBe(500);
     expect(huge.text).toBe("Internal Server Error");
+});
+
+test("a browser's /favicon.ico calls no gen and leaves the free image", async () => {
+    const gen = recordingGen();
+    const ip = nextIp();
+    const { response } = await call("/favicon.ico", {
+        ip,
+        testEnv: gen.testEnv,
+    });
+
+    expect(response.status).toBe(404);
+    expect(gen.requests).toHaveLength(0);
+    expect(await alarmOf(ip)).toBeNull();
 });

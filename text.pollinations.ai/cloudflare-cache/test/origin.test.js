@@ -7,7 +7,7 @@ import {
 import { Buffer } from "node:buffer";
 import { deflateSync, gzipSync } from "node:zlib";
 import { expect, test } from "vitest";
-import worker from "../src/index.js";
+import worker, { generateCacheKey } from "../src/index.js";
 import primeHeaders from "./fixtures/text.pollinations.ai-prime.headers?raw";
 import vmModels from "./fixtures/vm-models.body?raw";
 import vmRootRedirect from "./fixtures/vm-root-redirect.headers?raw";
@@ -580,6 +580,8 @@ test("bad bodies, malformed % and unknown routes get Express's HTML error page w
         // Changed: the public feed is gone, and "feed" is not generated
         [{}, "/feed?password=x", 404, "Cannot GET /feed", true],
         [{}, "/Feed/", 404, "Cannot GET /Feed/", true],
+        // Changed: browsers ask for it, and it was answered as a prompt
+        [{}, "/favicon.ico", 404, "Cannot GET /favicon.ico", true],
         [
             { method: "DELETE" },
             "/it's%",
@@ -1030,4 +1032,16 @@ test("a HEAD miss is not stored, so the next GET returns the full text", async (
     const hit = await call("/head%20then%20get");
     expect(hit.response.headers.get("x-cache")).toBe("HIT");
     expect(hit.text).toBe("ok");
+});
+
+test("a reply stored for /favicon.ico is no longer served", async () => {
+    const request = new Request("https://text.pollinations.ai/favicon.ico");
+    await env.TEXT_BUCKET.put(
+        await generateCacheKey(request),
+        "a stored reply",
+    );
+
+    const { response } = await call("/favicon.ico");
+
+    expect(response.status).toBe(404);
 });

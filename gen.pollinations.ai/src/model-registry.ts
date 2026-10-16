@@ -29,6 +29,7 @@ import {
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
     isUncachedOwnListing,
+    refreshCommunityModelRegistryEntries,
     resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -264,11 +265,12 @@ function buildRegistry(
 
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
+    loadCommunityEntries: typeof getCommunityModelRegistryEntries,
 ): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
     let communityEntries: GenerationModelEntry[] = [];
     let degraded = false;
     try {
-        communityEntries = (await getCommunityModelRegistryEntries(env)).map(
+        communityEntries = (await loadCommunityEntries(env)).map(
             communityEntryToGenerationEntry,
         );
     } catch (error) {
@@ -298,12 +300,22 @@ export async function getGenerationModelRegistry(
         return cachedRegistry.registry;
     }
 
+    return cacheGenerationModelRegistry(env, getCommunityModelRegistryEntries);
+}
+
+async function cacheGenerationModelRegistry(
+    env: CommunityModelEnv,
+    loadCommunityEntries: typeof getCommunityModelRegistryEntries,
+): Promise<GenerationModelRegistry> {
     // Deliberately no in-flight promise cache: sharing one pending promise
     // across requests hands request A's D1 I/O to requests B..N, and if A is
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const { registry, degraded } = await loadGenerationModelRegistry(env);
+    const { registry, degraded } = await loadGenerationModelRegistry(
+        env,
+        loadCommunityEntries,
+    );
     cachedRegistry = {
         dbBinding,
         expiresAt:
@@ -316,8 +328,8 @@ export async function getGenerationModelRegistry(
 
 /**
  * Resolves a model for a caller. A miss on a listing the caller has just saved
- * rebuilds the catalog once, so a new agent works for its owner straight away
- * instead of failing as an unknown model until the caches expire.
+ * rebuilds the catalog from D1 once, so a new agent works for its owner
+ * straight away instead of failing as an unknown model until the caches expire.
  */
 export async function resolveGenerationModel(
     env: CommunityModelEnv,
@@ -326,9 +338,16 @@ export async function resolveGenerationModel(
 ): Promise<GenerationModelEntry | null> {
     const entry = (await getGenerationModelRegistry(env)).resolve(model);
     if (entry || !callerUserId) return entry;
-    if (!(await isUncachedOwnListing(env.DB, callerUserId, model))) return null;
-    await resetGenerationModelRegistryCache(env);
-    return (await getGenerationModelRegistry(env)).resolve(model);
+    // Like the catalog itself, a D1 failure here leaves the miss a miss.
+    const isNew = await isUncachedOwnListing(env.DB, callerUserId, model).catch(
+        () => false,
+    );
+    if (!isNew) return null;
+    const registry = await cacheGenerationModelRegistry(
+        env,
+        refreshCommunityModelRegistryEntries,
+    );
+    return registry.resolve(model);
 }
 
 export async function resetGenerationModelRegistryCache(

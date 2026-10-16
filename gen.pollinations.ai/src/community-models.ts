@@ -16,7 +16,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { and, eq, gt, isNotNull } from "drizzle-orm";
+import { and, eq, gt, isNotNull, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
@@ -45,7 +45,13 @@ export async function getCommunityModelRegistryEntries(
         COMMUNITY_CATALOG_CACHE_KEY,
         "json",
     ).catch(() => null);
-    if (cached) return cached;
+    return cached ?? refreshCommunityModelRegistryEntries(env);
+}
+
+// Reads D1 directly, so a refresh never sees the old KV copy again.
+export async function refreshCommunityModelRegistryEntries(
+    env: CommunityModelEnv,
+): Promise<CommunityModelRegistryEntry[]> {
     const entries = await queryCommunityModelRegistryEntries(env.DB);
     await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
         expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
@@ -58,35 +64,30 @@ export async function getCommunityModelRegistryEntries(
 const CATALOG_MAX_STALENESS_SECONDS = 3 * COMMUNITY_CATALOG_CACHE_TTL_SECONDS;
 
 /**
- * Whether `model` names a listing the caller saved too recently for the cached
- * catalog to have it. Only listings the catalog would include count, so a
- * listing that can never resolve (such as a code agent still deploying)
- * doesn't rebuild the catalog on every call.
+ * Whether `model` is the id or alias of a listing the caller saved too
+ * recently for the cached catalog to have it. It goes through the catalog's
+ * own query and mapping, so it matches exactly what a refresh would add.
  */
 export async function isUncachedOwnListing(
     dbBinding: CloudflareBindings["DB"],
     ownerUserId: string,
     model: string,
 ): Promise<boolean> {
+    // Every community id and alias is "<owner>/<name>" or prefixed.
     if (!model.includes("/")) return false;
-    const name = model.slice(model.lastIndexOf("/") + 1);
     const savedAfter = new Date(
         Date.now() - CATALOG_MAX_STALENESS_SECONDS * 1000,
     );
-    const row = await drizzle(dbBinding, { schema })
-        .select({ id: schema.communityEndpoint.id })
-        .from(schema.communityEndpoint)
-        .where(
-            and(
-                eq(schema.communityEndpoint.ownerUserId, ownerUserId),
-                eq(schema.communityEndpoint.name, name),
-                gt(schema.communityEndpoint.updatedAt, savedAfter),
-                isNotNull(schema.communityEndpoint.baseUrl),
-                isNotNull(schema.communityEndpoint.upstreamModel),
-            ),
-        )
-        .get();
-    return row !== undefined;
+    const entries = await queryCommunityModelRegistryEntries(
+        dbBinding,
+        and(
+            eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+            gt(schema.communityEndpoint.updatedAt, savedAfter),
+        ),
+    );
+    return entries.some(
+        (entry) => entry.id === model || entry.aliases.includes(model),
+    );
 }
 
 export async function resetCommunityModelRegistryCache(
@@ -97,6 +98,7 @@ export async function resetCommunityModelRegistryCache(
 
 async function queryCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"],
+    filter?: SQL,
 ): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
     const rows = await db
@@ -129,7 +131,7 @@ async function queryCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .where(isNotNull(schema.user.githubUsername));
+        .where(and(isNotNull(schema.user.githubUsername), filter));
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername || isUserBanned(row)) return [];
         const baseUrl = row.baseUrl;

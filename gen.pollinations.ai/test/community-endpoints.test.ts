@@ -284,41 +284,49 @@ fixtureTest(
         expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
             null,
         );
-        const id = `fresh-${crypto.randomUUID()}`;
-        await insertCommunityEndpoints({
-            id,
-            ownerUserId,
-            name: "fresh-agent",
-            description: "Test",
-            type: "prompt_agent",
-            visibility: "private",
-            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-            upstreamModel: id,
-            payload: JSON.stringify({
-                prompt: "Test",
-                baseModel: DEFAULT_TEXT_MODEL,
-                mcpServers: [],
-            }),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        await expect(
+        const insertAgent = (name: string, updatedAt: Date) => {
+            const id = `${name}-${crypto.randomUUID()}`;
+            return insertCommunityEndpoints({
+                id,
+                ownerUserId,
+                name,
+                description: "Test",
+                type: "prompt_agent",
+                visibility: "private",
+                baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+                upstreamModel: id,
+                payload: JSON.stringify({
+                    prompt: "Test",
+                    baseModel: DEFAULT_TEXT_MODEL,
+                    mcpServers: [],
+                }),
+                createdAt: updatedAt,
+                updatedAt,
+            }).then(() => id);
+        };
+        const id = await insertAgent("fresh-agent", new Date());
+        await insertAgent("old-agent", new Date(Date.now() - 4 * 60_000));
+        const resolve = (model: string, callerUserId: string) =>
             resolveModelDefinition(
-                modelId,
+                model,
                 "generate.text",
                 env,
-                otherUserId,
+                callerUserId,
                 "/v1/chat/completions",
-            ),
-        ).rejects.toThrow("Invalid model or alias");
-        const resolved = await resolveModelDefinition(
-            modelId,
-            "generate.text",
-            env,
-            ownerUserId,
-            "/v1/chat/completions",
-        );
+            );
+
+        // Only the owner's exact model id counts, and only while the cached
+        // catalog can still be missing it.
+        for (const [model, callerUserId] of [
+            [modelId, otherUserId],
+            ["someone-else/fresh-agent", ownerUserId],
+            [communityModelId(ownerGithubUsername, "old-agent"), ownerUserId],
+        ]) {
+            await expect(resolve(model, callerUserId)).rejects.toThrow(
+                "Invalid model or alias",
+            );
+        }
+        const resolved = await resolve(modelId, ownerUserId);
         expect(resolved.communityEndpoint?.id).toBe(id);
     },
 );

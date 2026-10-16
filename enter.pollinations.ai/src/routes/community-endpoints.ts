@@ -64,6 +64,7 @@ import {
     CommunityEndpointListResponseSchema,
     CommunityEndpointModelsResponseSchema,
     CommunityEndpointResponseSchema,
+    CommunityEndpointRunsResponseSchema,
     CommunityEndpointTestResponseSchema,
     CommunityProviderProfileInputSchema,
     CommunityProviderProfileResponseSchema,
@@ -286,6 +287,23 @@ type HealthRow = {
     sample_succeeded: number | null;
     sample_failed: number | null;
 };
+
+type RunRow = {
+    run_id: string;
+    started_at: string;
+    status: number;
+    duration_ms: number;
+    key_name: string;
+    cost: number;
+    model_calls: number;
+    tool_calls: number;
+    failed_calls: number;
+    error: string;
+};
+
+// Tinybird returns DateTime as "YYYY-MM-DD hh:mm:ss" in UTC.
+const tinybirdTimeToIso = (value: string) =>
+    new Date(`${value.replace(" ", "T")}Z`).toISOString();
 
 type EndpointProbeKind = "models" | "test";
 
@@ -934,9 +952,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     counted: row.counted,
                     fromPollinations: row.from_pollinations,
                     fromOwner: row.from_owner,
-                    lastAt: new Date(
-                        `${row.last_at.replace(" ", "T")}Z`,
-                    ).toISOString(),
+                    lastAt: tinybirdTimeToIso(row.last_at),
                     message: row.message,
                 })),
             });
@@ -1003,6 +1019,67 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 successRate: requests ? (succeeded / requests) * 100 : null,
                 requests,
                 days,
+            });
+        },
+    )
+    .get(
+        "/:id/runs",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "List My Runs",
+            description:
+                "Your own calls to a model in the last 7 days, newest first, up to 50. For an agent, each run includes the generations and tool calls it made, with their total cost and the error if one failed. Other callers' runs are left out. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Runs",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityEndpointRunsResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Community endpoint not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const endpoint = await requireOwnedEndpoint(
+                db,
+                c.req.param("id"),
+                user.id,
+            );
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const rows = await fetchTinybirdRows<RunRow>(
+                new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                "/v0/pipes/my_model_runs.json",
+                requireTinybirdReadToken(c.env),
+                {
+                    model: communityModelId(ownerGithubUsername, endpoint.name),
+                    owner_user_id: user.id,
+                },
+            );
+            return c.json({
+                data: rows.map((row) => ({
+                    id: row.run_id,
+                    startedAt: tinybirdTimeToIso(row.started_at),
+                    status: row.status,
+                    durationMs: row.duration_ms,
+                    keyName: row.key_name === "undefined" ? "" : row.key_name,
+                    cost: row.cost,
+                    modelCalls: row.model_calls,
+                    toolCalls: row.tool_calls,
+                    failedCalls: row.failed_calls,
+                    error: row.error === "undefined" ? "" : row.error,
+                })),
             });
         },
     )

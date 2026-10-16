@@ -217,7 +217,7 @@ export const MCP_SERVERS = [
         id: "openlibrary",
         name: "Open Library",
         description:
-            "Search books and read editions, authors and subjects from Open Library.",
+            "Search books and read works, authors and subjects from Open Library.",
         binding: "OPENLIBRARY_MCP",
         billing: "downstream",
         pricing: {

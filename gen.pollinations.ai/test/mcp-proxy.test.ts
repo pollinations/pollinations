@@ -141,7 +141,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "openlibrary",
                 name: "Open Library",
                 description:
-                    "Search books and read editions, authors and subjects from Open Library.",
+                    "Search books and read works, authors and subjects from Open Library.",
                 url: "https://gen.pollinations.ai/mcp/openlibrary",
                 pricing: {
                     description:

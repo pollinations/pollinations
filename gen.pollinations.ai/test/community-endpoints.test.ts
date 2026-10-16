@@ -3612,9 +3612,6 @@ fixtureTest(
             }),
         );
         expect(otherResponse.status).toBe(400);
-        await expect(otherResponse.text()).resolves.toContain(
-            "New models can take a minute or two to become callable.",
-        );
 
         // The owner reaches their own private model.
         const ownerResponse = await fetchGen(

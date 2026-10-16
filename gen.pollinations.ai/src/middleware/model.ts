@@ -81,17 +81,6 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
-// Community models ("<owner>/<name>") are served from a catalog cached for
-// about a minute, so a model created just now is still unknown here.
-function unknownModel(model: string): HTTPException {
-    const newModelNote = model.includes("/")
-        ? " New models can take a minute or two to become callable."
-        : "";
-    return new HTTPException(400, {
-        message: `Invalid model or alias: "${model}". Must be a valid model name or alias.${newModelNote}`,
-    });
-}
-
 export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
@@ -101,7 +90,11 @@ export async function resolveModelDefinition(
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
-    if (!entry) throw unknownModel(model);
+    if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
 
     // Provider routes are registry entries so fallback linking and billing can
     // use them, but callers must select the public model they belong to.
@@ -120,7 +113,9 @@ export async function resolveModelDefinition(
         community.visibility !== "public" &&
         community.ownerUserId !== callerUserId
     ) {
-        throw unknownModel(model);
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
     }
 
     if (entry.eventType !== eventType) {

@@ -1,0 +1,34 @@
+{
+  "pr_number": 17719,
+  "title": "Add Echo Island to video_audio",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17719",
+  "merged_at": "2026-10-16T11:10:42Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added @xiaotian1171’s Echo Island to the video_audio app catalog and README showcase. The static Hugging Face Space turns a character idea into an illustrated story and voice note; users can duplicate it and sign in with their own Pollen. Narration falls back when timestamped voice is unavailable.",
+    "keywords": [
+      "Echo Island",
+      "community app",
+      "Hugging Face Spaces",
+      "illustrated stories",
+      "voice notes"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17719.jpg",
+    "prompt": "On a cozy pixel-art island, Polli wears tiny storyteller glasses and helps arrange illustrated story pages beside a glowing voice-note recorder, with flowers and code-plants along the shore. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she is small-to-medium in the scene, strictly pixel art, never realistic, against a prominent lime green (#ecf874) and soft pastel gradient background with dark purple (#110518) outlines — cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-16T11:12:01.611486+00:00",
+  "app_name": "Echo Island",
+  "app_url": "https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "22da5f035c18b319485f150711f5f19eae9888b0",
+  "announcements": []
+}

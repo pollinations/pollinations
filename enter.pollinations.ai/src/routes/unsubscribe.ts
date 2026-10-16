@@ -29,7 +29,7 @@ export const unsubscribeRoutes = new Hono<Env>()
         if (!signedUserId(c)) return invalid(c);
         return c.html(
             page(
-                "Stop all emails from Pollinations, including balance warnings?",
+                "Stop balance alerts from Pollinations?",
                 `<form method="post"><button style="padding:12px 24px;border:0;border-radius:999px;background:#ffd76d;color:#1d1420;font-size:16px;font-weight:600;cursor:pointer">Unsubscribe</button></form>`,
             ),
         );
@@ -43,5 +43,9 @@ export const unsubscribeRoutes = new Hono<Env>()
         )
             .bind(Date.now(), userId)
             .run();
-        return c.html(page("You're unsubscribed. We won't email you again."));
+        return c.html(
+            page(
+                "You're unsubscribed. We won't send you balance alerts again.",
+            ),
+        );
     });

@@ -19,21 +19,28 @@ export function withInlineGenerationCoordinator(
                 ) {
                     let execution = active.get(name);
                     if (!execution) {
-                        const job: GenerationJob = body
-                            ? {
-                                  ...head,
-                                  request: {
-                                      ...head.request,
-                                      body: new Uint8Array(
-                                          await new Response(
-                                              body,
-                                          ).arrayBuffer(),
-                                      ),
-                                  },
-                              }
-                            : head;
-                        execution = executeGeneration(job, coordinated);
-                        active.set(name, execution);
+                        // Register synchronously, mirroring the real
+                        // coordinator's blockConcurrencyWhile: a concurrent
+                        // caller with the same name must join this execution,
+                        // not start a duplicate while the body is being read.
+                        const run = (async () => {
+                            const job: GenerationJob = body
+                                ? {
+                                      ...head,
+                                      request: {
+                                          ...head.request,
+                                          body: new Uint8Array(
+                                              await new Response(
+                                                  body,
+                                              ).arrayBuffer(),
+                                          ),
+                                      },
+                                  }
+                                : head;
+                            return executeGeneration(job, coordinated);
+                        })();
+                        active.set(name, run);
+                        execution = run;
                     } else {
                         await body?.cancel();
                     }

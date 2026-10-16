@@ -5,7 +5,10 @@ import type { Env } from "@/env.ts";
 import { handleRegisterServer } from "@/image/handler.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import {
+    prepareGenerationRequest,
+    prepareValidatedBodyCacheIdentity,
+} from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import {
     audioCache,
@@ -233,6 +236,10 @@ const chatCompletionHandlers = factory.createHandlers(
 const decisionHandlers = factory.createHandlers(
     textBodyLimit,
     validator("json", CreateDecisionRequestSchema),
+    // The decisions handler consumes only the schema's fields, so the
+    // validated body is the request's complete identity: unknown fields the
+    // schema strips (a stray `stream`) must not fragment the cache entry.
+    prepareValidatedBodyCacheIdentity,
     resolveModel("generate.text", {
         defaultModel: DEFAULT_DECISION_MODEL,
         supportedEndpoint: "/alpha/decisions",

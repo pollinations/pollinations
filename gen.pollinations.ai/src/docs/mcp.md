@@ -15,6 +15,7 @@ then choose a server:
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
+| Council of LLMs | `https://gen.pollinations.ai/mcp/council` | Ask several models in parallel and get one judged answer | [Source](https://github.com/pollinations/pollinations/tree/main/apps/council-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
@@ -157,6 +158,13 @@ path.
   highlights.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
+
+### Council MCP
+
+`council_reason` sends a problem to a tier's models in parallel, then a judge
+model synthesizes one answer. Tiers: `basic`, `standard`, `advanced`, `ultra`
+and `elite`. Each run bills the model calls at InferencePort rates plus a flat
+fee per tier; see the live catalog for the fees.
 
 ### Connectors MCP
 

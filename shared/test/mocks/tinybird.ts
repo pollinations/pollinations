@@ -36,6 +36,7 @@ export type MockTinybirdState = {
     earningsResponse: UsageRow[];
     earningsTransactionsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
+    appDirectoryFails: boolean;
     appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
     agentUsageResponse: UsageRow[];
@@ -54,6 +55,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         earningsResponse: [],
         earningsTransactionsResponse: [],
         appDirectoryResponse: [],
+        appDirectoryFails: false,
         appUsageResponse: [],
         modelModalitiesResponse: [],
         agentUsageResponse: [],
@@ -118,6 +120,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         })
         .get("/v0/pipes/app_directory_public.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
+            if (state.appDirectoryFails) {
+                return c.json({ error: "app directory unavailable" }, 500);
+            }
             return c.json({ data: state.appDirectoryResponse }, 200);
         })
         .get("/v0/pipes/quest_app_usage.json", (c) => {
@@ -154,6 +159,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.earningsResponse = [];
         state.earningsTransactionsResponse = [];
         state.appDirectoryResponse = [];
+        state.appDirectoryFails = false;
         state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
         state.agentUsageResponse = [];

@@ -1,6 +1,6 @@
 # Service Providers
 
-**Last updated: 2026-10-15**
+**Last updated: 2026-10-16**
 
 These providers process personal data for us. Some process it outside the EEA, including in the United States; see the [Privacy Policy](/privacy) for transfer safeguards.
 
@@ -16,6 +16,13 @@ These providers process personal data for us. Some process it outside the EEA, i
 | E2B | Code sandboxes |
 | Exa | Web search |
 | Composio | Connected-account tools |
+
+## Public data services
+
+When you use the OSV tools, [OSV.dev](https://osv.dev/) receives the package
+ecosystem, name and version, or the advisory ID you request. Pagination tokens
+are sent back to OSV when you continue a query. Pollinations API keys and
+account cookies are not forwarded.
 
 ## Model providers
 

@@ -1,7 +1,7 @@
 # KPI Dashboard
 
-Weekly KPIs for pollinations.ai — `kpi.pollinations.ai` (origin
-`kpi.myceli.ai`), Worker `myceli-kpi` on the Myceli Cloudflare account.
+Weekly KPIs for pollinations.ai — `kpi.pollinations.ai`, Worker `myceli-kpi`
+on the Myceli Cloudflare account.
 
 The public app shell shows “Sign in with Pollinations.” The app uses OAuth
 with PKCE to check identity and admin access, then creates its own signed,

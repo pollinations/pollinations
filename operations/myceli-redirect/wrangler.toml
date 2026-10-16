@@ -1,0 +1,30 @@
+name = "myceli-redirect"
+main = "worker.js"
+# account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
+compatibility_date = "2026-10-01"
+workers_dev = false
+preview_urls = false
+
+# Former myceli.ai aliases of Workers that now serve only pollinations.ai.
+# portkey, image and text are not listed: portkey.myceli.ai is retired with
+# the gateway move, and the legacy caches still attach their own aliases.
+routes = [
+    { pattern = "economics.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "enter.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "floret.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "gen.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "kpi.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "mcp.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "media.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "observability.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "openwebui.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "pollinations.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.enter.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.ffmpeg.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.gen.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.mcp.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "staging.pollinations.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "weaver.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
+    { pattern = "websim.myceli.ai", zone_name = "myceli.ai", custom_domain = true }
+]

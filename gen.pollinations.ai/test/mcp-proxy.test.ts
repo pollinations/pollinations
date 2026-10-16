@@ -294,7 +294,8 @@ test("catalog-diff is registered as a downstream server like ask-jev", () => {
         billing: "downstream",
     });
     expect(catalogDiff?.pricing.rates).toEqual([]);
-    expect(getMcpPricingInfo(catalogDiff!)).toEqual({
+    if (!catalogDiff) throw new Error("catalog-diff must be registered");
+    expect(getMcpPricingInfo(catalogDiff)).toEqual({
         description:
             "Catalog tools use the caller's key with no additional MCP fee.",
         rates: [],

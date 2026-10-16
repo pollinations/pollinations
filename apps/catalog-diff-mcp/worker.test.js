@@ -538,7 +538,11 @@ test("arrays nested inside object fields stay order-sensitive", () => {
         ...currentBase,
         models: [reordered],
     });
-    assert.deepEqual(nestedReorder.counts, { added: 0, removed: 0, changed: 1 });
+    assert.deepEqual(nestedReorder.counts, {
+        added: 0,
+        removed: 0,
+        changed: 1,
+    });
     assert.deepEqual(
         nestedReorder.changed[0].changes.map((c) => c.field),
         ["pricing"],

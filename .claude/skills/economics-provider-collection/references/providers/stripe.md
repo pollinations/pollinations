@@ -98,11 +98,14 @@ Economics use:
 
 - Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
-- Reviewed account-month-currency sales belong in `economics_stripe_sales`.
-  Reuse `stripe:<account_id>:<month>:<currency>` as `entry_id` for updates.
+- Staging financial facts belong in `economics_stripe_transactions`, keyed by
+  account and balance-transaction ID. Use `operations/economics/ingest/stripe-sync.mjs`
+  to refresh complete UTC ranges idempotently. Do not append monthly sales summaries.
+  Enter `stripe_event` supplies charge identity, not a second revenue amount.
+  Production still uses the legacy summaries until separately migrated.
 - Set `revenue_stream` to `pollen` or `kofi` from the verified account identity.
 - Set `coverage_end` to the verified exclusive UTC export boundary and
-  `expected_accounts` to the required account count for that month. Record zero
+  `expected_account_ids` in the sync receipt to the required account IDs. Record zero
   activity explicitly; a missing account/export is not a zero. Forecasts require
   complete coverage for every required account through the following month start.
 - Runway revenue separates Pollen/Ko-fi gross sales, fees, refunds and reversals.
@@ -110,8 +113,11 @@ Economics use:
 - For an underlying-performance comparison, classify only explicitly fraudulent
   refunds/disputes of earlier-month charges and their dispute fees. Keep ordinary
   fees, current-month fraud and unclassified reversals included. Archive the
-  transaction IDs, reasons and original charge dates; save reviewed native-currency
-  components as private `salesAdjustments` through the named-batch approval gate.
+  transaction IDs, reasons and original charge dates; mark the existing
+  `economics_stripe_transactions` rows with `classification=prior_period_fraud`
+  and archived `evidence` links through the named-batch approval gate. Never save
+  a second monthly fraud amount in private configuration. Sync preserves these
+  reviewed fields by account and transaction ID.
   Sales shows this classification; Trends adds it back without changing actuals.
 - Do not write Stripe activity to `economics_vendor_ledger`.
 

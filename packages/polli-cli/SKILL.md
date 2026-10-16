@@ -54,7 +54,7 @@ For agent-assisted login, use `polli --json auth login --no-browser`. Read stder
 | Update the CLI | `polli update` (global installs only; npx/local get instructions) |
 | Connect a coding harness to Pollinations | `polli harness <bloom\|dsh\|hermes\|opencode\|openclaw\|pi\|prime\|tgpt> on` (available adapters: `polli harness --help`) |
 | Start a Linux sandbox (alpha) | `polli sandbox create` (`--timeout <seconds>` to keep it running without ssh, `0` until you pause or kill it; `pollinations-large` as the template for 4 vCPU and 8 GB; then `list`, `logs <id>`, `timeout <id> <seconds>`, `pause <id>`, `kill <id>`); the default template comes logged in, with the coding harnesses |
-| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli` |
+| ssh / scp / rsync into a sandbox | `ssh <sandbox-id>.polli`. Port forwarding (`ssh -L 3000:localhost:3000 <sandbox-id>.polli`) and VS Code Remote-SSH work. An open connection keeps the sandbox running and paid; it pauses 15–20 minutes after the last one closes (5–10 on Windows) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup

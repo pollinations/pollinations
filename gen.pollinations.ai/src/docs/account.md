@@ -62,7 +62,7 @@ Create and manage managed agents and their callable `community/owner/name` model
 - run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
 ```
 
-See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
+See [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 

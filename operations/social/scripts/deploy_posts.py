@@ -114,16 +114,11 @@ def prepare_post(pr: dict, token: str, webhook: str):
     output = parse_json_response(reply) if reply else None
     if not isinstance(output, dict) or not all(output.get(key) for key in POST["required"]):
         raise ValueError("the reply has no text or picture prompt")
-    picture, links = generate_image(output["image_prompt"], token)
+    picture, _ = generate_image(output["image_prompt"], token)
     if not picture:
         raise ValueError("the picture failed")
     post = message(pr, output["text"], app)
-
-    def send():
-        state, detail = send_discord(webhook, [post], picture)
-        return state, {**detail, "picture": links}
-
-    return send
+    return lambda: send_discord(webhook, [post], picture)
 
 
 def main() -> None:

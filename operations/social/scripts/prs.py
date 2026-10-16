@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The day's merged PRs, read from GitHub: one note per PR, summarized from its diff.
 
-The daily post writes its summary from these notes and saves them as daily/<day>/prs.json;
-the weekly reads those files back. A note also carries the API changes a docs PR makes and
-the model retirements a PR description schedules, for Enter's News page.
+The daily post writes its summary from these notes, which are not saved. A note also carries
+the API changes a docs PR makes and the model retirements a PR description schedules: the
+daily keeps those in its summary's `changelog`, for Enter's News page.
 """
 
 import json

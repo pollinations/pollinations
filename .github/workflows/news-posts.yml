@@ -131,7 +131,6 @@ jobs:
           filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            operations/social/news/daily/*/prs.json
             operations/social/news/*/*/summary.json
             ${{ steps.posts.outputs.folders }}
 
@@ -163,7 +162,6 @@ jobs:
           while [ $# -gt 0 ]; do
             saved="news/operations/social/news/$1/$2/summary.json"
             commands="write save"
-            [ "$1" = daily ] && saved="news/operations/social/news/daily/$2/prs.json"  # a quiet day has no summary
             [ "$1" = catalog ] && saved="news/operations/social/news/models/snapshots/$2.json"
             if [ "$1" = models ] || [ "$1" = community ]; then
               saved="news/operations/social/news/$1/$2/discord.json"

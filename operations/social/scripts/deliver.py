@@ -411,10 +411,12 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
             sys.exit(f"{job} {date} isn't recorded as sent with this WORK's text")
         outcomes = {"discord.json": outcome}
     else:
-        # A date counts as empty only when none of its files exist; a saved post is
-        # delivered even without its summary, and an expected post that is missing fails.
+        # A date counts as empty only when it has no post and no summary text (a quiet
+        # day keeps only Enter's changelog); a saved post is delivered even without its
+        # summary, and an expected post that is missing fails.
         files = {post: read_news(f"{folder}/{post}")[0] for post in POSTS[job]}
-        if read_news(f"{folder}/summary.json")[0] is None and not any(files.values()):
+        summary = read_news(f"{folder}/summary.json")[0]
+        if not (summary and json.loads(summary).get("summary")) and not any(files.values()):
             print(f"Nothing saved for {job} {date}: nothing to deliver")
             return
         outcomes = {}

@@ -3,8 +3,8 @@
 
 Reads the news branch checkout and keeps:
 - `models`: official model changes, from the daily /models record (dated when first seen
-  live), and the retirements PR descriptions schedule, from the daily PR notes
-- `api`: API changes from the post-deploy docs PRs, from the daily PR notes
+  live), and the retirements PR descriptions schedule, from each daily's `changelog`
+- `api`: API changes from the post-deploy docs PRs, from each daily's `changelog`
 - `highlights`: the items each daily summary picked for users
 
     python news_index.py --news-dir <checkout>/operations/social/news [--publish]
@@ -156,7 +156,9 @@ def highlight_entries(summaries: List[Dict], since: str) -> List[Dict]:
 
 def build_index(news_dir: Path, today: str) -> Dict:
     since = (datetime.fromisoformat(today) - timedelta(days=RECENT_DAYS)).strftime("%Y-%m-%d")
-    notes = [note for day in read_json(news_dir.glob("daily/*/prs.json")) for note in day]
+    summaries = read_json(news_dir.glob("daily/*/summary.json"))
+    # The PRs whose API changes or announced retirements each daily recorded.
+    notes = [entry for summary in summaries for entry in summary.get("changelog") or []]
     # The window's snapshots and the last one before it, the baseline of its first change.
     paths = sorted(news_dir.glob("models/snapshots/*.json"))
     first = max([i for i, path in enumerate(paths) if path.stem < since] or [0])
@@ -166,7 +168,7 @@ def build_index(news_dir: Path, today: str) -> Dict:
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "models": model_entries(snapshots, notes, since, today),
         "api": api_entries(notes, since),
-        "highlights": highlight_entries(read_json(news_dir.glob("daily/*/summary.json")), since),
+        "highlights": highlight_entries(summaries, since),
     }
 
 

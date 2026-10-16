@@ -10,7 +10,6 @@ import json
 import calendar
 import random
 import requests
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -394,17 +393,14 @@ def generate_image(prompt: str, token: str, width: int = 2048, height: int = 204
         print("  Invalid image format")
         return None, None
 
-    # The image service keeps the picture: posts save its link, never the file. The recipe
-    # (the request without our key) makes it again with any key.
+    # The image service keeps the picture for 30 days: posts save its link, never the file.
     media = response.links.get("enclosure", {}).get("url")
     if not media:
         print("  No media link in the response")
         return None, None
     img_format = "JPEG" if is_jpeg else ("PNG" if is_png else "WebP")
     print(f"  Image generated successfully ({img_format}, {len(image_bytes):,} bytes): {media}")
-    public_params = {k: v for k, v in params.items() if k != "key"}
-    recipe = base_url + "?" + "&".join(f"{k}={v}" for k, v in public_params.items())
-    return image_bytes, {"url": media, "recipe": recipe}
+    return image_bytes, media
 
 
 def _github_headers(token: str) -> Dict:
@@ -475,26 +471,14 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
     return ""
 
 
-# ── Merged PR notes (daily/<day>/prs.json) ───────────────────────────
+# ── Merged PR notes, read during the daily ─────────────────────────────
 
 def pr_context(note: Dict) -> Dict:
-    """The facts the daily and weekly read about one merged PR."""
+    """The facts the daily summary reads about one merged PR."""
     return {key: note.get(key) for key in (
         "pr_number", "title", "author", "url", "area", "type", "source", "app_name", "app_url",
         "summary", "category", "importance", "user_facing", "keywords",
     )}
-
-
-def read_notes(start: str, end: str, news_root: Path) -> List[Dict]:
-    """The notes the daily saved for each day from start to end, in date then PR order."""
-    notes = []
-    day = datetime.strptime(start, "%Y-%m-%d")
-    while day <= datetime.strptime(end, "%Y-%m-%d"):
-        path = news_root / DAILY_REL_DIR / day.strftime("%Y-%m-%d") / "prs.json"
-        if path.exists():
-            notes.extend(json.loads(path.read_text(encoding="utf-8")))
-        day += timedelta(days=1)
-    return notes
 
 
 def daily_summary_input(notes: List[Dict], date_str: str) -> str:
@@ -506,21 +490,28 @@ PRs:
 {chr(10).join(json.dumps(pr_context(note), indent=2) for note in notes)}"""
 
 
-def weekly_digest_input(notes: List[Dict], week_start: str, week_end: str) -> str:
-    """The weekly digest call's user message: the week's selected PRs, grouped by date."""
-    by_date = defaultdict(list)
-    for note in notes:
-        by_date[note["merged_at"][:10]].append(pr_context(note))
-    sections = [
-        json.dumps({"date": date, "pr_count": len(prs), "prs": prs}, indent=2)
-        for date, prs in sorted(by_date.items())
+def weekly_digest_input(daily_summaries: List[Dict], week_start: str, week_end: str) -> str:
+    """The weekly digest call's user message: the week's daily summaries and highlights."""
+    context = [
+        {
+            "date": summary.get("date"),
+            "title": summary.get("title"),
+            "summary": summary.get("summary"),
+            "highlights": [
+                {"title": item.get("title"), "text": item.get("text")}
+                for item in summary.get("highlights") or []
+            ],
+            "pr_count": summary.get("pr_count", 0),
+        }
+        for summary in daily_summaries
     ]
-    return f"""Week: {week_start} to {week_end}
-Total PRs: {len(notes)}
-Days with PRs: {len(by_date)}
-
-PRs by date:
-{chr(10).join(sections)}"""
+    pr_count = sum(int(summary.get("pr_count") or 0) for summary in daily_summaries)
+    return (
+        f"Week: {week_start} to {week_end}\n"
+        f"PRs selected for daily recaps: {pr_count}\n"
+        f"Active days: {len(daily_summaries)}\n\n"
+        f"Daily summaries:\n{json.dumps(context, indent=2, ensure_ascii=False)}"
+    )
 
 
 def post_recap(summary: Dict) -> str:
@@ -566,12 +557,12 @@ def build_instagram_post_text(post_data: Dict) -> str:
 
 
 def generated_post_images(post_data: Dict) -> List[Dict]:
-    """A generated post's pictures, each as its link and recipe."""
+    """A generated post's picture links."""
     images = []
     for image in [*(post_data.get("images") or []), post_data.get("image") or {}]:
         url = str(image.get("url") or "").strip()
         if url and url not in [known["url"] for known in images]:
-            images.append({"url": url, "recipe": image.get("recipe")})
+            images.append({"url": url})
     return images
 
 
@@ -696,7 +687,7 @@ def build_canonical_summary(
 
 
 def build_daily_summary_artifact(
-    summary: Dict, gists: List[Dict], date_str: str, generated_at: str
+    summary: Dict, notes: List[Dict], date_str: str, generated_at: str
 ) -> Dict:
     """Build the canonical daily summary stored on the news branch."""
     arcs = summary.get("arcs") or []
@@ -717,7 +708,7 @@ def build_daily_summary_artifact(
     if not summary_text:
         summary_text = one_liner or title
 
-    prs = [{"number": gist.get("pr_number"), "date": date_str} for gist in gists]
+    prs = [{"number": note.get("pr_number"), "date": date_str} for note in notes]
     artifact = build_canonical_summary(
         date=date_str,
         period_start=date_str,
@@ -760,7 +751,7 @@ def get_week_dates(override_start: Optional[str] = None):
 
 def build_weekly_summary_artifact(
     digest: Dict,
-    gists: List[Dict],
+    daily_summaries: List[Dict],
     publish_date: str,
     week_start: str,
     week_end: str,
@@ -785,10 +776,7 @@ def build_weekly_summary_artifact(
     if not summary_text:
         summary_text = theme or title
 
-    prs = [
-        {"number": gist.get("pr_number"), "date": (gist.get("merged_at") or "")[:10]}
-        for gist in gists
-    ]
+    prs = [pr for daily in daily_summaries for pr in daily.get("prs") or []]
 
     return build_canonical_summary(
         date=publish_date,
@@ -807,19 +795,18 @@ def month_dates(month: str) -> tuple[str, str]:
     return f"{month}-01", f"{month}-{final_day:02d}"
 
 
-def read_daily_summaries(month: str, repo_root: Optional[str] = None) -> List[Dict]:
-    """Read valid canonical daily summaries for a calendar month."""
-    root = Path(repo_root or get_repo_root())
-    daily_root = root / DAILY_REL_DIR
+def read_daily_summaries(start: str, end: str, news_root: Path) -> List[Dict]:
+    """The daily summaries from start to end that have a text; a day that only
+    records Enter's changelog has none."""
     summaries = []
-    for path in sorted(daily_root.glob(f"{month}-*/summary.json")):
-        try:
+    day = datetime.strptime(start, "%Y-%m-%d")
+    while day <= datetime.strptime(end, "%Y-%m-%d"):
+        path = news_root / DAILY_REL_DIR / day.strftime("%Y-%m-%d") / "summary.json"
+        if path.exists():
             summary = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError) as error:
-            print(f"  Warning: skipping malformed daily summary {path}: {error}")
-            continue
-        if str(summary.get("date") or "").startswith(month):
-            summaries.append(summary)
+            if summary.get("summary"):
+                summaries.append(summary)
+        day += timedelta(days=1)
     return summaries
 
 

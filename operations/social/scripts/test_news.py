@@ -125,15 +125,21 @@ class NotesAndIndexTest(unittest.TestCase):
                          [("old/model", "scheduled")])
         self.assertNotIn("image_prompt", note)
 
-    def test_the_daily_and_weekly_read_the_same_facts_about_a_pr(self):
+    def test_the_daily_reads_each_pr_and_the_weekly_reads_the_dailies(self):
         pr = {**note(1, "2026-10-07T00:00:00Z"), "app_name": "Example app", "app_url": "https://example.com/app",
               "api_changes": [{"endpoint": "GET /secret-detail"}]}
-        for prompt in (daily_summary_input([pr], "2026-10-07"),
-                       weekly_digest_input([pr], "2026-10-01", "2026-10-07")):
-            for fact in ("Change 1 ships.", '"area": "Models"', '"type": "Feature"', '"source": "Team"'):
-                self.assertIn(fact, prompt)
-            self.assertEqual(prompt.count("https://example.com/app"), 1)
-            self.assertNotIn("secret-detail", prompt)  # API changes reach Enter, not the posts
+        daily = daily_summary_input([pr], "2026-10-07")
+        for fact in ("Change 1 ships.", '"area": "Models"', '"type": "Feature"', '"source": "Team"'):
+            self.assertIn(fact, daily)
+        self.assertEqual(daily.count("https://example.com/app"), 1)
+        self.assertNotIn("secret-detail", daily)  # API changes reach Enter, not the posts
+        summary = {"date": "2026-10-07", "title": "Speech", "summary": "Eleven v4 added.", "pr_count": 2,
+                   "highlights": [{"title": "Eleven v4", "text": "Generate speech.", "kind": "model"}],
+                   "changelog": [{"pr_number": 1, "api_changes": [{"endpoint": "GET /secret-detail"}]}]}
+        weekly = weekly_digest_input([summary], "2026-10-01", "2026-10-07")
+        for fact in ("Eleven v4 added.", "Generate speech.", "PRs selected for daily recaps: 2"):
+            self.assertIn(fact, weekly)
+        self.assertNotIn("secret-detail", weekly)
 
     def test_daily_summary_stores_its_highlights_for_the_index(self):
         summary = {"arcs": [{"headline": "New speech", "summary": "Eleven v4 added."}],
@@ -320,9 +326,16 @@ class NotesAndIndexTest(unittest.TestCase):
             news = Path(directory)
             (news / "daily/2026-09-12").mkdir(parents=True)
             (news / "daily/2026-09-12/summary.json").write_text(json.dumps(summaries[-1]))
+            # A day without posts keeps only what Enter's Changelog reads.
+            (news / "daily/2026-09-11").mkdir(parents=True)
+            (news / "daily/2026-09-11/summary.json").write_text(json.dumps({"date": "2026-09-11", "changelog": [
+                {"pr_number": 9, "url": "https://github.com/pollinations/pollinations/pull/9",
+                 "merged_at": "2026-09-11T10:00:00Z", "api_changes": [{"endpoint": "GET /v1/x", "action": "ADD"}]}]}))
             index = build_index(news, "2026-09-13")
         self.assertEqual(index["models"], [])
         self.assertEqual(index["highlights"][0]["title"], "Item 12")
+        self.assertEqual([(entry["endpoint"], entry["date"], entry["pr"]) for entry in index["api"]],
+                         [("GET /v1/x", "2026-09-11", 9)])
 
     def test_platform_posts_keep_arc_facts_and_distinguish_selected_counts(self):
         digest = {
@@ -482,8 +495,7 @@ class PostsTest(unittest.TestCase):
             return json.dumps(reply)
         def image(prompt, token, width=2048, height=2048, index=0, model=None):
             images.append((prompt, width, height, index))
-            return prompt.encode() + b" picture", {"url": f"https://media.pollinations.ai/p{len(images)}",
-                                                    "recipe": f"https://gen.pollinations.ai/image/{prompt}"}
+            return prompt.encode() + b" picture", f"https://media.pollinations.ai/p{len(images)}"
         return calls, images, model, image
 
     def new(self, job, date, overwrite=False, **options):
@@ -495,26 +507,31 @@ class PostsTest(unittest.TestCase):
         return calls, images, {path: data for path, data in self.files().items() if before.get(path) != data}
 
     def assertDeliverable(self, job, base, saved):
-        """Each file deliver.py sends is saved with its text and its pictures' links and recipes;
+        """Each file deliver.py sends is saved with its text and its pictures' links;
         the pictures themselves stay with the image service."""
         for name in deliver.POSTS[job]:
             post = json.loads(saved[f"{base}/{name}"])
             self.assertTrue(post["text"].strip())
             self.assertTrue(deliver.get_post_image_urls(post))
             for image in post["images"]:
+                self.assertEqual(list(image), ["url"])
                 self.assertTrue(image["url"].startswith("https://media.pollinations.ai/"))
-                self.assertTrue(image["recipe"].startswith("https://gen.pollinations.ai/image/"))
         self.assertFalse([path for path in saved if "/images/" in path])
 
     def test_daily(self):
+        api = [{"endpoint": "GET /v1/x", "action": "ADD"}]
+        retiring = [{"model_id": "old/model", "action": "RETIRE", "effective_status": "scheduled"}]
         self.notes["2026-10-06"] = [note(1, "2026-10-06T10:00:00Z"), note(2, "2026-10-06T10:00:00Z"),
-                                    note(3, "2026-10-06T11:00:00Z", tier="discord_only")]
-        self.notes["2026-10-07"] = [note(4, "2026-10-07T11:00:00Z", tier="discord_only")]
+                                    {**note(3, "2026-10-06T11:00:00Z", tier="discord_only"), "api_changes": api}]
+        self.notes["2026-10-07"] = [{**note(4, "2026-10-07T11:00:00Z", tier="discord_only"), "announcements": retiring}]
+        self.notes["2026-10-08"] = [note(5, "2026-10-08T11:00:00Z", tier="discord_only")]
         calls, images, saved = self.new("daily", "2026-10-06")
         base = f"{NEWS_REL_DIR}/daily/2026-10-06"
-        self.assertEqual(sorted(saved), [f"{base}/{name}" for name in ("prs.json", "summary.json", "twitter.json")])
-        # Every merged PR's note is kept for the weekly, the daily-tier ones and the rest.
-        self.assertEqual([n["pr_number"] for n in json.loads(saved[f"{base}/prs.json"])], [1, 2, 3])
+        self.assertEqual(sorted(saved), [f"{base}/{name}" for name in ("summary.json", "twitter.json")])
+        # Enter's Changelog keeps every PR's API changes, posted or not; the PR notes themselves are not saved.
+        self.assertEqual(json.loads(saved[f"{base}/summary.json"])["changelog"], [
+            {"pr_number": 3, "url": "https://github.com/pollinations/pollinations/pull/3",
+             "merged_at": "2026-10-06T11:00:00Z", "api_changes": api}])
         self.assertDeliverable("daily", base, saved)
         # The summary, then the X post, from the day's daily-tier PRs only.
         self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.8])
@@ -525,11 +542,14 @@ class PostsTest(unittest.TestCase):
         self.assertEqual((twitter["text"], twitter["images"][0]["url"]), (
             "Uploads now take 100 MiB.", "https://media.pollinations.ai/p1"))
         self.assertEqual(json.loads(saved[f"{base}/summary.json"])["pr_count"], 2)
-        # A day without daily-tier PRs writes nothing and keeps only its notes.
+        # A day without daily-tier PRs writes no post; it keeps only Enter's Changelog, if any.
         calls, images, saved = self.new("daily", "2026-10-07")
-        self.assertEqual((calls, images, list(saved)), ([], [], [f"{NEWS_REL_DIR}/daily/2026-10-07/prs.json"]))
-        with self.assertRaisesRegex(SystemExit, "already saved"):  # its notes alone mark it saved
-            self.new("daily", "2026-10-07")
+        self.assertEqual((calls, images), ([], []))
+        self.assertEqual({path: json.loads(data) for path, data in saved.items()}, {
+            f"{NEWS_REL_DIR}/daily/2026-10-07/summary.json": {"date": "2026-10-07", "changelog": [
+                {"pr_number": 4, "url": "https://github.com/pollinations/pollinations/pull/4",
+                 "merged_at": "2026-10-07T11:00:00Z", "announcements": retiring}]}})
+        self.assertEqual(self.new("daily", "2026-10-08"), ([], [], {}))
         # A post whose text is missing stops the run instead of being saved empty.
         with self.assertRaisesRegex(SystemExit, "missing tweet"):
             self.new("daily", "2026-10-06", overwrite=True, tweet=None)
@@ -540,8 +560,10 @@ class PostsTest(unittest.TestCase):
             with self.subTest(long_linkedin=long_linkedin):
                 self.checkout(f"news-{long_linkedin}")
                 for number, day in ((1, "2026-09-27"), (2, "2026-09-30"), (3, "2026-10-03"), (4, "2026-10-04")):
-                    self.put(f"daily/{day}/prs.json", [note(number, f"{day}T10:00:00Z"),
-                                                       note(number + 10, f"{day}T11:00:00Z", tier="discord_only")])
+                    self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {number}", "pr_count": 1,
+                                                           "summary": f"PR {number} shipped.",
+                                                           "prs": [{"number": number, "date": day}]})
+                self.put("daily/2026-10-01/summary.json", {"date": "2026-10-01", "changelog": [{"pr_number": 21}]})
                 calls, images, saved = self.new("weekly", "2026-10-04", long_linkedin=long_linkedin)
                 base = f"{NEWS_REL_DIR}/weekly/2026-10-04"
                 self.assertEqual(len(saved), 5)  # the summary and four posts; pictures stay links
@@ -550,10 +572,12 @@ class PostsTest(unittest.TestCase):
                 self.assertEqual([temperature for _, _, temperature in calls], temperatures)
                 summary = json.loads(saved[f"{base}/summary.json"])
                 self.assertEqual((summary["period_start"], summary["period_end"]), ("2026-09-27", "2026-10-03"))
-                # The week reads the notes each daily kept; the Sunday's own PRs belong to the next week.
-                self.assertIn("PR 3", calls[0][1])
-                self.assertNotIn("PR 11", calls[0][1])  # not picked for the daily
+                self.assertEqual(summary["pr_count"], 3)
+                # The week reads its dailies' summaries; the Sunday's own PRs belong to the next week,
+                # and a day that only keeps Enter's Changelog has no summary to read.
+                self.assertIn("PR 3 shipped.", calls[0][1])
                 self.assertNotIn("PR 4", "".join(user for _, user, _ in calls))
+                self.assertNotIn('"2026-10-01"', calls[0][1])
                 self.assertEqual([image for image in images if image[0].startswith("Bee scene")],
                                  [(f"Bee scene {n}", 2048, 2048, n - 1) for n in (1, 2, 3)])
                 self.assertEqual(len(json.loads(saved[f"{base}/instagram.json"])["images"]), 3)
@@ -575,7 +599,7 @@ class PostsTest(unittest.TestCase):
                 base = f"{NEWS_REL_DIR}/monthly/2026-09"
                 self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/monthly-cover.json",
                                                  f"{base}/summary.json"])
-                # The cover stays with the image service: its link and recipe are kept.
+                # The cover stays with the image service: its link is kept.
                 cover = json.loads(saved[f"{base}/monthly-cover.json"])["image"]
                 self.assertEqual((cover["url"], cover["prompt"]), ("https://media.pollinations.ai/p1", picture))
                 self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
@@ -784,7 +808,7 @@ class DeliverTest(unittest.TestCase):
     def save(self, job, date, posts, summary=True):
         folder = f"{deliver.JOB_DIRS[job]}/{date}"
         if summary:
-            self.store[f"{folder}/summary.json"] = b"{}"
+            self.store[f"{folder}/summary.json"] = b'{"summary": "Things shipped."}'
         for name, post in posts.items():
             self.store[f"{folder}/{name}"] = json.dumps(post).encode()
 
@@ -891,7 +915,9 @@ class DeliverTest(unittest.TestCase):
     def test_only_saved_dates_from_the_start_date_are_delivered(self):
         self.save("daily", "2026-10-10", {"twitter.json": {"text": "Saturday"}})        # never delivered
         self.save("weekly", "2026-10-04", {"twitter.json": {"text": "Week"}})           # discord.json missing
-        for date in ("2026-10-10", "2026-10-07"):                                       # 10-07: nothing saved
+        self.save("daily", "2026-10-06", {}, summary=False)
+        self.store[f"{deliver.JOB_DIRS['daily']}/2026-10-06/summary.json"] = b'{"date": "2026-10-06", "changelog": []}'
+        for date in ("2026-10-10", "2026-10-07", "2026-10-06"):     # 10-07: nothing saved; 10-06: no post
             deliver.run("schedule", "daily", date)
         with self.assertRaisesRegex(SystemExit, "discord.json"):
             deliver.run("send", "weekly", "2026-10-04")
@@ -977,8 +1003,8 @@ class DeliverTest(unittest.TestCase):
             "pulls/5": pr(5, base="production"),
         }
         reply_text = json.dumps({"text": "Faster images\n- 🐝 `flux` answers in half the time", "image_prompt": "bee"})
-        links = {"url": "https://media.pollinations.ai/abc", "recipe": "https://gen.pollinations.ai/image/bee?seed=1"}
-        pictures = [(b"jpeg", links), (None, None), (b"jpeg", links)]  # PR 2's first picture fails
+        link = "https://media.pollinations.ai/abc"
+        pictures = [(b"jpeg", link), (None, None), (b"jpeg", link)]  # PR 2's first picture fails
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
         with patch.dict(os.environ, env), patch("deploy_posts.START", "2026-10-20T00:00:00Z"), \
@@ -997,8 +1023,7 @@ class DeliverTest(unittest.TestCase):
         self.assertIn("[PR #1](<https://github.com/pollinations/pollinations/pull/1>) | By [bee]", payload["content"])
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
         record = json.loads(self.store[f"{NEWS_REL_DIR}/discord/2026-10/delivery.json"])
-        self.assertEqual({post: (entry["state"], entry["picture"]) for post, entry in record.items()},
-                         {"pr-1": ("done", links), "pr-2": ("done", links)})
+        self.assertEqual({post: entry["state"] for post, entry in record.items()}, {"pr-1": "done", "pr-2": "done"})
 
 
 if __name__ == "__main__":

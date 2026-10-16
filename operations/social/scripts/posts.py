@@ -59,7 +59,6 @@ from common import (
     post_recap,
     prompt_text,
     read_daily_summaries,
-    read_notes,
     weekly_digest_input,
 )
 from contributors import month_counts
@@ -170,10 +169,7 @@ def check(job: str, date: str, news: Path, overwrite: bool) -> None:
         if (news / JOB_DIRS[job] / date / "discord.json").exists():
             post = "model" if job == "models" else job
             sys.exit(f"{job} {date} has a saved {post} post; it is never replaced")
-    elif not overwrite and any(
-        # A quiet day saves only its notes.
-        (news / JOB_DIRS[job] / date / name).exists() for name in ("summary.json", "prs.json")
-    ):
+    elif (news / JOB_DIRS[job] / date / "summary.json").exists() and not overwrite:
         sys.exit(f"{job} {date} is already saved; pass --overwrite to replace it")
 
 
@@ -298,8 +294,18 @@ def covered(job: str, snapshot: dict | None) -> dict | None:
 
 
 def daily_notes(notes: list[dict]) -> list[dict]:
-    """The PRs the writer chose for the daily and weekly posts."""
+    """The PRs the writer chose for the daily post."""
     return [note for note in notes if note["publish_tier"] == "daily"]
+
+
+def changelog(notes: list[dict]) -> list[dict]:
+    """What Enter's Changelog reads from the day's PRs: API changes and announced retirements."""
+    keys = ("pr_number", "url", "merged_at", "api_changes", "announcements")
+    return [
+        {key: note[key] for key in keys if key in note}
+        for note in notes
+        if note.get("api_changes") or note.get("announcements")
+    ]
 
 
 def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
@@ -321,7 +327,7 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
         )
         return user, {"diff": diff.to_json(), "previous_date": previous_date}
     if job == "monthly":
-        summaries = read_daily_summaries(date, news)
+        summaries = read_daily_summaries(*month_dates(date), news)
         repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
         counts = month_counts(date, get_env("GITHUB_TOKEN"), repository)
         print(
@@ -332,14 +338,15 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
             "counts": counts,
         }
     if job == "weekly":
-        # The PRs each day's daily selected, from the notes it saved.
+        # The week's daily summaries, as the monthly reads the month's.
         start, end = period(job, date)
-        notes = daily_notes(read_notes(start, end, news))
-        return (weekly_digest_input(notes, start, end) if notes else None), {
-            "inputs": notes
+        summaries = read_daily_summaries(start, end, news)
+        return (weekly_digest_input(summaries, start, end) if summaries else None), {
+            "inputs": summaries
         }
-    # The day's merged PRs from GitHub; announced retirements are checked against
-    # the models recorded that day.
+    # The day's merged PRs from GitHub, each read from its diff; nothing of that reading
+    # is saved but Enter's changelog. Announced retirements are checked against the
+    # models recorded that day.
     repository = os.environ.get("GITHUB_REPOSITORY", f"{OWNER}/{REPO}")
     snapshot = read_snapshot(news, snapshot_date(news, date)) or {}
     catalog = [model for models in snapshot.values() for model in models]
@@ -349,7 +356,7 @@ def job_input(job: str, date: str, news: Path) -> tuple[str | None, dict]:
     selected = daily_notes(notes)
     return (daily_summary_input(selected, date) if selected else None), {
         "inputs": selected,
-        "notes": notes,
+        "changelog": changelog(notes),
     }
 
 
@@ -385,11 +392,11 @@ def write(job: str, date: str, news: Path, work: Path, overwrite: bool = False) 
             ):
                 if index:
                     time.sleep(3)
-                image, links = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
+                image, url = generate_image(prompt, token, IMAGE_SIZE, IMAGE_SIZE, index)
                 if not image:
                     sys.exit(f"{post['name']}: picture {name} failed")
                 (work / "images" / name).write_bytes(image)  # for a preview to show
-                raw.setdefault("pictures", {})[name] = links
+                raw.setdefault("pictures", {})[name] = url
     else:
         print("  Nothing new to write")
     (work / "raw.json").write_bytes(json_file(raw))
@@ -402,10 +409,12 @@ def json_file(data) -> bytes:
 def post_files(raw: dict) -> dict[str, bytes]:
     """The summary, each post and its pictures."""
     job, date, outputs = raw["job"], raw["date"], raw["outputs"]
-    if not outputs:
-        return {}
-    summary, *posts = job_posts(job)
     base = f"{JOB_DIRS[job]}/{date}"
+    if not outputs:
+        # A day without posts still keeps what Enter's Changelog reads.
+        entries = raw.get("changelog")
+        return {f"{base}/summary.json": json_file({"date": date, "changelog": entries})} if entries else {}
+    summary, *posts = job_posts(job)
     start, end = period(job, date)
     generated_at = raw["generated_at"]
     digest = outputs[summary["name"]]
@@ -413,6 +422,7 @@ def post_files(raw: dict) -> dict[str, bytes]:
         artifact = build_daily_summary_artifact(
             digest, raw["inputs"], date, generated_at
         )
+        artifact["changelog"] = raw["changelog"]
     elif job == "weekly":
         artifact = build_weekly_summary_artifact(
             digest, raw["inputs"], date, start, end, generated_at
@@ -425,7 +435,7 @@ def post_files(raw: dict) -> dict[str, bytes]:
     for post in posts:
         output = outputs[post["name"]]
         for index, (name, prompt) in enumerate(pictures(post, output)):
-            picture = {**raw["pictures"][name], "prompt": prompt}
+            picture = {"url": raw["pictures"][name], "prompt": prompt}
             if len(post["pictures"]) == 1:
                 output["image"] = picture
             else:
@@ -514,8 +524,6 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
         files = post_files(raw)
     if job == "monthly":  # every month has its counts, even one with nothing to write
         files[f"{MONTHLY_REL_DIR}/{date}/contributors.json"] = json_file(raw["counts"])
-    if job == "daily":  # every day keeps its notes, for the weekly to read
-        files[f"{DAILY_REL_DIR}/{date}/prs.json"] = json_file(raw["notes"])
     for path, content in files.items():
         (news / path).parent.mkdir(parents=True, exist_ok=True)
         (news / path).write_bytes(content)

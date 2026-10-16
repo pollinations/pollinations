@@ -40,13 +40,13 @@ function KeysPage() {
     const router = useRouter();
     const { apiKeys, user } = useDeferredValue(DashboardRoute.useLoaderData());
 
-    async function refreshKeys(): Promise<void> {
+    async function refreshKeys(): Promise<ApiKey[] | null | undefined> {
         await router.invalidate({
             filter: (match) => match.routeId === DashboardRoute.id,
             sync: true,
         });
         // The dashboard returns this promise without awaiting it.
-        await router.state.matches.find(
+        return await router.state.matches.find(
             (match) => match.routeId === DashboardRoute.id,
         )?.loaderData?.apiKeys;
     }
@@ -105,6 +105,7 @@ function KeysPage() {
                     onCreate={handleCreateApiKey}
                     onUpdate={handleUpdateApiKey}
                     onDelete={handleDeleteApiKey}
+                    onRefresh={refreshKeys}
                     onRetry={refreshKeys}
                 />
             )}
@@ -118,7 +119,7 @@ function KeysContent({
     ...actions
 }: Omit<ApiKeyManagerProps, "apiKeys"> & {
     apiKeys: ApiKey[] | null;
-    onRetry: () => Promise<void>;
+    onRetry: () => Promise<unknown>;
 }) {
     const [lastKeys, setLastKeys] = useState(apiKeys);
     // A failed refresh must not unmount the dialog holding a newly created secret.

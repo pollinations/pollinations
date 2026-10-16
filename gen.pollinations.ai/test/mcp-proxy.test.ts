@@ -99,7 +99,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "composio",
                 name: "Connectors",
                 description:
-                    "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+                    "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
                 url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     description: "Launch price",
@@ -120,7 +120,7 @@ test("lists the MCP servers exposed through Gen", async () => {
                 id: "computer",
                 name: "Computer",
                 description:
-                    "A private persistent computer: files and a bash shell that survive between runs.",
+                    "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
                 url: "https://gen.pollinations.ai/mcp/computer",
                 pricing: {
                     description: "Preview price",

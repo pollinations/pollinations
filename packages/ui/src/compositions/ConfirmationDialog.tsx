@@ -77,7 +77,7 @@ export function ConfirmationDialog({
     return (
         <Dialog
             open={open}
-            onOpenChange={(next) => !next && onCancel()}
+            onOpenChange={(next) => !next && !cancelDisabled && onCancel()}
             size={size}
             contentClassName="polli:overflow-hidden"
         >

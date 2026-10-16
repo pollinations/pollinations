@@ -1,114 +1,49 @@
 ---
 name: pollinations-sdk
-description: Use the official @pollinations/sdk npm package to generate images, text, audio and video from code in one line, with API-key or OAuth device auth. Use when you must write or run an app, script, or test that calls Pollinations.
+description: Use the official @pollinations/sdk npm package when writing JavaScript apps or scripts that call Pollinations. Covers installation, API-key authentication, and a first text or image request.
 ---
 
-# pollinations-sdk — Pollinations from code
+# Pollinations SDK quickstart
 
-The official npm SDK for https://pollinations.ai. Use it when the agent must
-**write and run real code** (an app, a script, a test, a build step). For a
-single curl-style call with nothing installed, prefer the `pollinations-api`
-skill; for the CLI, prefer the `polli` skill.
+These examples use the published stable SDK 5.0.0, not the repository's
+in-progress alpha API. Check the installed version's types before using other
+helpers; methods on `main` may not exist in the published package.
 
-## Install
+## Install and authenticate
 
 ```bash
-npm install @pollinations/sdk        # stable release line (5.x)
+npm install @pollinations/sdk@5.0.0
 ```
 
-Works in Node ESM/CJS, in the browser via `esm.sh`, and as a browser IIFE
-(`https://cdn.jsdelivr.net/npm/@pollinations/sdk`) that exposes the API
-client under the global `Pollinations`.
+Get a key at https://enter.pollinations.ai/keys and set
+`POLLINATIONS_API_KEY` in the process environment. Never print it or commit it.
+Requests spend Pollen: confirm the intended model and budget before running.
 
-## Authenticate
-
-An API key is required. Get one at https://enter.pollinations.ai/keys
+Save this as `example.mjs` and run `node example.mjs`:
 
 ```js
-import { configure } from "@pollinations/sdk";
+import { configure, generateText, generateImage } from "@pollinations/sdk";
+
 configure({ apiKey: process.env.POLLINATIONS_API_KEY });
-```
 
-or just export the env var — the SDK reads it automatically:
-
-```bash
-export POLLINATIONS_API_KEY=your_api_key
-```
-
-Headless/CLI: use the OAuth device flow so the user approves in their own
-browser and no key ever lands in a chat, log, or repo:
-
-```js
-import { authorizeDevice, configure, userInfo } from "@pollinations/sdk";
-const auth = await authorizeDevice();
-console.log(`Open ${auth.verificationUri} and enter code: ${auth.userCode}`);
-const accessToken = await auth.poll();      // blocks until approved
-configure({ apiKey: accessToken });
-const me = await userInfo();
-```
-
-## Quick start
-
-```js
-import { generateText, generateImage } from "@pollinations/sdk";
-
-const text = await generateText("explain quantum computing in simple terms");
+const text = await generateText("Write a short haiku about a garden.");
 console.log(text);
 
-const image = await generateImage("a futuristic cityscape");
-await image.saveToFile("cityscape.png");
+const image = await generateImage("A small garden in watercolor.");
+await image.saveToFile("garden.png");
 ```
 
-## Media
+Check that text is nonempty and `garden.png` is readable. The helpers return a
+single result by default; `n` requests multiple results. `saveToFile` is Node-only.
 
-- **Image:** `generateImage(prompt, opts)` returns an object with
-  `saveToFile(path)`, `toDataURL()`, `writeTo` and `bytes` helpers.
-  `editImage(image, instruction, opts)` edits an existing image;
-  `imageUrl(prompt, opts)` returns a plain URL.
-- **Audio:** `generateAudio(text, { voice })` for TTS;
-  `transcribe(audio, { model: "whisper-large-v3" })` for speech-to-text.
-- **Video:** `generateVideo(prompt, { duration })`; build the download URL with
-  `videoUrl(...)`.
-- **Text:** `generateText`, `generateTextStream`, `chat`, `chatStream`
-  (OpenAI-compatible `/v1/responses`), `embeddings`, and `decision` for
-  structured decisions.
+## Beyond the quickstart
 
-## Accounts and keys
-
-`getBalance()`, `getDailyUsage()`, `getUsage()`, `getKeyUsage()`, `getProfile()`,
-`userInfo()`, `createKey()`, `listKeys()`, `revokeKey()`, `validateKey()`,
-`getModels()`/`fetchModelCatalog()`, `upload()`.
-
-## Browser and React
-
-```html
-<script type="module">
-  import { configure, generateText, generateImage } from "https://esm.sh/@pollinations/sdk";
-  configure({ apiKey: "..." });
-  const text = await generateText("write a haiku");
-  const image = await generateImage("a cute robot");
-  const p = document.createElement("p");   // build nodes, do NOT interpolate
-  p.textContent = text;                    // model output into innerHTML
-  const img = document.createElement("img");
-  img.src = image.toDataURL();
-  document.body.replaceChildren(p, img);
-</script>
-```
-
-React: `@pollinations/sdk/react` provides `PolliProvider`, `useAuth`,
-`useAccountProfile`, `useAccountBalance`, `useAccountKey`, `useAccountKeyUsage`,
-generation hooks (`useImageGeneration`, `useTextGeneration`,
-`useAudioGeneration`, `useVideoGeneration`, `useTranscription` — each returns
-`{ data, isLoading, error, run, rerun, cancel }`; call `run` from an event
-handler, not during render), and `usePollinationsChatTransport` for the Vercel
-AI SDK `useChat`. In Next.js wrap it in a `"use client"` component.
-The React subpath ships ESM/CJS only — bundle it.
-
-## Pitfalls
-
-- `authorizeDevice()` does not need a key — it is how you obtain one.
-- Build DOM nodes with `textContent`/`createElement` instead of interpolating
-  model output into `innerHTML`; model output can carry markup.
-- Revoke object URLs when regenerating: `URL.revokeObjectURL(src)`.
-- Do not pin `@pollinations/sdk@alpha` unless you specifically need the
-  in-progress rebuild; the stable line is the release `5.x`.
+- For current model IDs, query https://gen.pollinations.ai/models. Pass a chosen
+  ID through the helper's `{ model }` option; do not invent model names.
+- For browser apps, use a publishable app key and user-paid sign-in rather than
+  embedding a secret key. See the [BYOP guide](https://gen.pollinations.ai/docs/llm.txt?section=byop).
+- For device sign-in, React, streaming, editing, and other media, consult the
+  [5.0.0 package docs](https://www.npmjs.com/package/@pollinations/sdk/v/5.0.0)
+  and its installed type declarations. Verify signatures before copying examples
+  from a newer release.
+- If no npm package is needed, use the [REST API guide](https://gen.pollinations.ai/docs/llm.txt).

@@ -140,8 +140,12 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const cryptoCheckoutParams = new URLSearchParams(checkoutParams);
     cryptoCheckoutParams.set("payment_method", "crypto");
     const status = billing ? autoTopUpStatus(billing) : null;
+    // Returning buyers mostly buy the same pack again.
     const selectedPack =
         chosenPack ??
+        POLLEN_PACKS.find(
+            (pack) => pack.amountUsd === billing?.lastPackAmountUsd,
+        ) ??
         POLLEN_PACKS.find(
             (pack) => pack.amountUsd === billing?.autoTopUp.packAmountUsd,
         ) ??

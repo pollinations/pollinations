@@ -289,6 +289,18 @@ test("create pays the lease up front and hides the sandbox from other users", as
     expect(e2b.sandboxes).toEqual([]);
 });
 
+test("a lease that runs out pauses the sandbox unless the caller asks E2B to kill it", async () => {
+    const e2b = stubE2b();
+    const owner = await sandboxKey();
+
+    // E2B's SDKs omit autoPause unless told `lifecycle.onTimeout`.
+    expect((await createSandbox(owner.key)).status).toBe(201);
+    expect((await createSandbox(owner.key, { autoPause: false })).status).toBe(
+        201,
+    );
+    expect(e2b.sandboxes.map((s) => s.autoPause)).toEqual([true, false]);
+});
+
 test("a running sandbox pays only past its lease; pausing gives up the rest", async () => {
     const e2b = stubE2b();
     const owner = await sandboxKey();
@@ -683,10 +695,13 @@ test("the account owner's session token runs sandboxes without a key scope", asy
     expect((await createSandbox(token)).status).toBe(201);
 });
 
-test("the dashboard prices a lease as gen charges it", async () => {
+test("anyone can read the prices, and they match what gen charges", async () => {
     stubE2b();
-    const owner = await sandboxKey();
-    const pricing = await (await call(owner.key, "/pricing")).json<{
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/alpha/e2b/pricing",
+    );
+    expect(response.status).toBe(200);
+    const pricing = await response.json<{
         maxRunning: number;
         vcpuSecond: number;
         gibSecond: number;

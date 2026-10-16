@@ -1,7 +1,10 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
-import { ModelHealthSchema } from "../registry/model-info.ts";
+import {
+    AGENT_FIELD_DESCRIPTIONS,
+    ModelHealthSchema,
+} from "../registry/model-info.ts";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
@@ -313,6 +316,12 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        system: z
+            .string()
+            .nullish()
+            .describe(
+                "Optional system prompt prepended before `messages` (same extension as GET /text).",
+            ),
         metadata: z
             .record(z.string(), z.string())
             .nullish()
@@ -753,14 +762,20 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
-        agent: z.boolean().optional(),
-        base_model: z.string().optional(),
+        agent: z.boolean().optional().describe(AGENT_FIELD_DESCRIPTIONS.agent),
+        base_model: z
+            .string()
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.base_model),
         paid_only: z
             .boolean()
             .describe(
                 "True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`.",
             ),
-        pricing: z.record(z.string(), z.string()).optional(),
+        pricing: z
+            .record(z.string(), z.string())
+            .optional()
+            .describe(AGENT_FIELD_DESCRIPTIONS.pricing),
         capabilities: z.array(z.string()).optional(),
         supported_parameters: z
             .array(z.string())
@@ -822,6 +837,20 @@ const imageSizeField = z
     .default("1024x1024")
     .meta(imageSizeMeta);
 const imageEditSizeField = z.string().optional().meta(imageSizeMeta);
+// Same bounds as the GET image route and the chat route: out-of-range seeds
+// are rejected here instead of being silently replaced with seed 42 by the
+// generation pipeline.
+const imageSeedField = z
+    .number()
+    .int()
+    .min(-1)
+    .max(2147483647)
+    .nullable()
+    .optional()
+    .meta({
+        description:
+            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+    });
 const imageQualityField = z
     .enum(["standard", "hd", "low", "medium", "high"])
     .optional()
@@ -855,6 +884,7 @@ export const CreateImageRequestSchema = z
         n: imageNField,
         size: imageSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -935,6 +965,7 @@ export const CreateImageEditRequestSchema = z
         n: imageNField,
         size: imageEditSizeField,
         quality: imageQualityField,
+        seed: imageSeedField,
         response_format: imageResponseFormatField,
         resolution: imageResolutionField,
         safe: SafeSchema,

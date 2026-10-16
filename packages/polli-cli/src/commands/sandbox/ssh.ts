@@ -2,10 +2,14 @@ import { execFileSync } from "node:child_process";
 import {
     chmodSync,
     existsSync,
+    fstatSync,
     mkdirSync,
+    openSync,
     readFileSync,
     realpathSync,
+    statSync,
     writeFileSync,
+    writeSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -22,6 +26,32 @@ const INCLUDE = "Include ~/.pollinations/ssh/config";
 const SSH_PORT = 8022;
 // Renews the lease well before it runs out while a connection is open.
 const RENEW_MS = 300_000;
+// Windows' ssh can't share a connection between ssh, scp and rsync. Elsewhere
+// its socket path must stay under 104 bytes, and OpenSSH adds 17 to %C's 40.
+const SHARES_CONNECTIONS =
+    process.platform !== "win32" &&
+    Buffer.byteLength(join(homedir(), ".ssh", "polli-")) + 57 < 104;
+
+// With ControlPersist, ssh sends the proxy's stderr to /dev/null (OpenSSH's
+// sshconnect.c), so the proxy writes to the terminal instead. VS Code runs ssh
+// without one and only says the connection closed.
+export function stderrToTerminal() {
+    let tty: number;
+    try {
+        if (fstatSync(2).rdev !== statSync("/dev/null").rdev) return;
+        tty = openSync("/dev/tty", "w");
+    } catch {
+        return;
+    }
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+        try {
+            writeSync(tty, Buffer.from(chunk));
+        } catch {
+            // The terminal closed while ssh kept the connection.
+        }
+        return true;
+    }) as typeof process.stderr.write;
+}
 
 const sandboxUrl = (s: Connection, port: number, scheme = "https") =>
     `${scheme}://${port}-${s.sandboxID}.${s.domain || "e2b.app"}`;
@@ -157,6 +187,15 @@ export function setupSsh() {
             `    UserKnownHostsFile "${join(SSH_DIR, "known_hosts")}"`,
             "    StrictHostKeyChecking accept-new",
             `    ProxyCommand ${polli} sandbox proxy %h`,
+            // Later ssh, scp and rsync reuse the first connection, up to 10
+            // minutes after it ends.
+            ...(SHARES_CONNECTIONS
+                ? [
+                      "    ControlMaster auto",
+                      `    ControlPath "${join(homedir(), ".ssh", "polli-%C")}"`,
+                      "    ControlPersist 10m",
+                  ]
+                : []),
             "",
         ].join("\n"),
     );

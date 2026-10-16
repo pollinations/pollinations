@@ -23,11 +23,11 @@ import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
+import BRAND_MARK_SVG from "../../../packages/ui/src/brand/mark.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
-    POLLINATIONS_HEADER_CSS,
-    POLLINATIONS_HEADER_SCALAR_CSS,
+    POLLINATIONS_DOCS_CSS,
 } from "./docs-styles.ts";
 import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
@@ -46,6 +46,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -231,6 +232,7 @@ const AUTHENTICATION_DOCS = AUTHENTICATION_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
@@ -330,6 +332,7 @@ const GEN_API_DOCS = [
     REALTIME_DOCS,
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
+    ASYNC_JOBS_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
@@ -391,12 +394,12 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsHeaderHtml(): string {
+function pollinationsDocsHtml(): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
-    return `<style>${POLLINATIONS_HEADER_CSS}${POLLINATIONS_HEADER_SCALAR_CSS}</style>
-<header class="ph-bar">
-  <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
-</header>
+    const sidebarBrand = JSON.stringify(
+        `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span aria-hidden="true">${BRAND_MARK_SVG}</span><span>Docs</span></a>`,
+    );
+    return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
   <button class="ph-fab ph-fab-copy" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -434,6 +437,12 @@ function pollinationsHeaderHtml(): string {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
   }
   function scanScalarButtons() {
+    var sidebars = document.querySelectorAll('.scalar-app .t-doc__sidebar');
+    for (var s = 0; s < sidebars.length; s++) {
+      if (!sidebars[s].querySelector('.ph-docs-brand')) {
+        sidebars[s].insertAdjacentHTML('afterbegin', ${sidebarBrand});
+      }
+    }
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
@@ -493,15 +502,15 @@ function generationDocumentation(): OpenApiSchema {
                 tags: [DOC_TAGS.quickStart, DOC_TAGS.authentication],
             },
             {
-                name: "Integrations",
+                name: "Guides",
                 tags: [
                     DOC_TAGS.userWallets,
-                    DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
+                    DOC_TAGS.publishModel,
+                    DOC_TAGS.sandboxes,
+                    DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
-                    DOC_TAGS.codingHarnesses,
-                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -601,8 +610,7 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: DOC_TAGS.jobs,
-                description:
-                    "Submit, poll and download asynchronous image, video, audio and 3D jobs.",
+                description: stripLeadingHeading(ASYNC_JOBS_DOCS),
             },
             {
                 name: DOC_TAGS.realtime,
@@ -989,6 +997,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                onSidebarClick: () => {
+                    // Let Scalar finish navigation before closing a guide's drawer.
+                    requestAnimationFrame(() => {
+                        const close = document.querySelector<HTMLButtonElement>(
+                            '.references-sidebar-mobile-open .t-doc__header button[aria-label="Close Menu"]',
+                        );
+                        close?.click();
+                        close?.focus({ preventScroll: true });
+                    });
+                },
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },
                 ],
@@ -1014,7 +1032,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsHeaderHtml() +
+                    pollinationsDocsHtml() +
                     htmlWithMeta.slice(insertAt),
             );
         })

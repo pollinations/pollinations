@@ -78,18 +78,24 @@ describe("RunwayTab labels", () => {
         for (const row of revenue) {
             expect(
                 row.details?.reduce((sum, d) => sum + d.values[actual.id], 0),
-            ).toBeCloseTo(row.values[actual.id], 8);
+            ).toBeCloseTo(row.values[actual.id] ?? Number.NaN, 8);
             expect(
                 row.details?.reduce((sum, d) => sum + d.values[forecast.id], 0),
-            ).toBeCloseTo(row.values[forecast.id], 8);
+            ).toBeCloseTo(row.values[forecast.id] ?? Number.NaN, 8);
         }
         expect(
-            revenue.reduce((sum, r) => sum + r.values[actual.id], 0),
+            revenue.reduce(
+                (sum, r) => sum + (r.values[actual.id] ?? Number.NaN),
+                0,
+            ),
         ).toBeCloseTo(892.104, 8);
         expect(
-            revenue.reduce((sum, r) => sum + r.values[forecast.id], 0),
+            revenue.reduce(
+                (sum, r) => sum + (r.values[forecast.id] ?? Number.NaN),
+                0,
+            ),
         ).toBeCloseTo(892.104, 8);
-        expect(actual.netUsd).toBe(0); // No Wise movement, despite Stripe revenue.
+        expect(actual.netUsd).toBeNull(); // No Bank coverage in this fixture.
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
                 data: { stripeSales: sales },
@@ -293,6 +299,12 @@ describe("RunwayTab labels", () => {
         expect(html).toContain("5,678");
         expect(html).toContain("full catalog");
         expect(html).toContain("restricted catalog");
+        expect(cards).toContain("Snapshot · Sep 3");
+        expect(cards).toContain('aria-label="Paid 17.85% · Quest 82.15%"');
+        expect(cards).toContain(">18%</span>");
+        expect(cards).toContain(">82%</span>");
+        expect(cards).not.toContain("users ·");
+        expect(cards).not.toContain("03:00:00");
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
@@ -434,10 +446,11 @@ describe("RunwayTab labels", () => {
 
         expect(html).toContain("Recorded bank cash");
         expect(html).not.toContain("Cash now");
-        expect(html).toContain("August month-end cash");
+        expect(html).toContain("Forecast · Aug 31");
         expect(html).toContain("September cash change");
-        expect(html).toContain("forecast line");
-        expect(html).toContain("no bank movements");
+        expect(html).not.toContain("forecast line");
+        expect(html).toContain("Recorded · Jan 1");
+        expect(html).toContain("Based on bank entries through January 1, 26.");
         expect(html).not.toContain("opening balance missing");
     });
 });

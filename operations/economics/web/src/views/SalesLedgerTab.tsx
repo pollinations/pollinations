@@ -12,6 +12,7 @@ import {
     useSortableRows,
 } from "../components/DataTable";
 import { EvidenceAction } from "../components/Evidence";
+import { fmtExactNumber as fmtNumber } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -31,10 +32,6 @@ const amounts = [
     ["stripe_fees", "Fees"],
     ["net_after_fees", "Net after fees"],
 ] as const;
-const money = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
 const columns: SortColumn<StripeSalesRow>[] = [
     { key: "month", value: (row) => row.month },
     { key: "stream", value: (row) => row.revenue_stream },
@@ -103,11 +100,11 @@ export function SalesLedgerTab({
                             <TableCell>{monthLabel(row.month)}</TableCell>
                             <TableCell>{row.currency}</TableCell>
                             <TableCell align="right" numeric>
-                                <FraudDetail data={data} sale={row} />
+                                <FraudDetail sale={row} />
                             </TableCell>
                             {amounts.map(([key]) => (
                                 <TableCell key={key} align="right" numeric>
-                                    {money.format(row[key])}
+                                    {fmtNumber(row[key])}
                                 </TableCell>
                             ))}
                         </TableRow>
@@ -132,8 +129,8 @@ export function SalesLedgerTab({
     );
 }
 
-function FraudDetail({ data, sale }: { data: Data; sale: StripeSalesRow }) {
-    const adjustment = salesFraudAdjustment(data, sale);
+function FraudDetail({ sale }: { sale: StripeSalesRow }) {
+    const adjustment = salesFraudAdjustment(sale);
     if (!adjustment) return <span>–</span>;
     const labels = {
         refunds: "Refunds",
@@ -143,12 +140,12 @@ function FraudDetail({ data, sale }: { data: Data; sale: StripeSalesRow }) {
     return (
         <details className="min-w-36">
             <summary className="cursor-pointer">
-                {money.format(adjustment.total)}
+                {fmtNumber(adjustment.total)}
             </summary>
             <ul className="mt-2 space-y-1 text-left text-xs">
                 {FRAUD_COMPONENTS.map((key) => (
                     <li key={key}>
-                        {labels[key]}: {money.format(adjustment[key])}
+                        {labels[key]}: {fmtNumber(adjustment[key])}
                     </li>
                 ))}
                 <li>Earlier sales · actual deductions unchanged</li>

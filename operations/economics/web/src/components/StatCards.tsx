@@ -50,7 +50,13 @@ export type StatPair = {
     items: (StatItem & { valueClassName?: string })[];
 };
 
-export function PairedStatCards({ cards }: { cards: StatPair[] }) {
+export function PairedStatCards({
+    cards,
+    layout = "columns",
+}: {
+    cards: StatPair[];
+    layout?: "columns" | "rows";
+}) {
     return (
         <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]">
             {cards.map((card) => (
@@ -63,26 +69,55 @@ export function PairedStatCards({ cards }: { cards: StatPair[] }) {
                             </span>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 divide-x divide-theme-text-muted/20">
-                        {card.items.map((item, index) => (
-                            <StatCard
-                                key={
-                                    typeof item.label === "string"
-                                        ? item.label
-                                        : index
-                                }
-                                label={item.label}
-                                value={item.value}
-                                detail={item.detail}
-                                valueClassName={
-                                    item.valueClassName ??
-                                    TONE_CLASS[item.tone ?? "base"]
-                                }
-                                className="min-w-0 first:pr-3 last:pl-3"
-                                labelClassName="polli:normal-case polli:tracking-normal polli:min-h-10"
-                            />
-                        ))}
-                    </div>
+                    {layout === "rows" ? (
+                        <div className="space-y-3 tabular-nums">
+                            {card.items.map((item, index) => (
+                                <div
+                                    key={
+                                        typeof item.label === "string"
+                                            ? item.label
+                                            : index
+                                    }
+                                    className={`grid items-baseline gap-x-3 ${card.items.some((entry) => entry.detail != null) ? "grid-cols-[1fr_auto_3rem]" : "grid-cols-[1fr_auto]"}`}
+                                >
+                                    <span className="text-sm">
+                                        {item.label}
+                                    </span>
+                                    <strong
+                                        className={`text-xl sm:text-2xl ${item.valueClassName ?? TONE_CLASS[item.tone ?? "base"]}`}
+                                    >
+                                        {item.value}
+                                    </strong>
+                                    {item.detail != null && (
+                                        <span className="text-right text-sm text-theme-text-soft">
+                                            {item.detail}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 divide-x divide-theme-text-muted/20">
+                            {card.items.map((item, index) => (
+                                <StatCard
+                                    key={
+                                        typeof item.label === "string"
+                                            ? item.label
+                                            : index
+                                    }
+                                    label={item.label}
+                                    value={item.value}
+                                    detail={item.detail}
+                                    valueClassName={
+                                        item.valueClassName ??
+                                        TONE_CLASS[item.tone ?? "base"]
+                                    }
+                                    className="min-w-0 first:pr-3 last:pl-3"
+                                    labelClassName="polli:normal-case polli:tracking-normal polli:min-h-10"
+                                />
+                            ))}
+                        </div>
+                    )}
                     {card.detail && (
                         <div className="mt-2 text-xs text-theme-text-soft">
                             {card.detail}

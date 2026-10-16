@@ -20,6 +20,7 @@ import {
     useState,
 } from "react";
 import { DataTable, TableScroller } from "../components/DataTable";
+import { Gauge, gaugeParts } from "../components/EconomicsGauge";
 import {
     PairedStatCards,
     type StatPair,
@@ -27,7 +28,13 @@ import {
 } from "../components/StatCards";
 import { categoryLabel, pnlSource } from "../lib/categories";
 import type { ForecastPaymentTiming } from "../lib/forecastTerms";
-import { fmtPeriod } from "../lib/format";
+import {
+    fmtMonthDay,
+    fmtNumber,
+    fmtPeriod,
+    fmtUnsignedPct,
+    fmtUsd,
+} from "../lib/format";
 import { monthName } from "../lib/months";
 import {
     buildRunway,
@@ -69,19 +76,11 @@ export function runwayPeriodText({
 }
 
 export function fmtRunwayUsd(value: number | null | undefined): string {
-    if (value == null || !Number.isFinite(value)) return "–";
-    const amount = new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 0,
-    }).format(Math.abs(value));
-    return value < 0 ? `−$${amount}` : `$${amount}`;
+    return fmtUsd(value);
 }
 
 export function fmtRunwayTableValue(value: number | null | undefined): string {
-    if (value == null || !Number.isFinite(value)) return "–";
-    const amount = new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 0,
-    }).format(Math.abs(value));
-    return value < 0 ? `−${amount}` : amount;
+    return fmtNumber(value);
 }
 
 export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
@@ -262,15 +261,10 @@ function ForecastValue({
     issue,
 }: {
     assumptions: RunwayAssumption[] | undefined;
-    value: number;
+    value: number | null;
     issue?: string;
 }) {
-    if (issue)
-        return (
-            <Tooltip triggerAs="span" content={issue}>
-                <span>—</span>
-            </Tooltip>
-        );
+    if (issue) return "–";
     if (!assumptions?.length) return fmtRunwayTableValue(value);
     return (
         <Tooltip
@@ -309,7 +303,7 @@ function CreditAmount({ value }: { value: number | null | undefined }) {
 }
 
 function showCash(cash: number | null, credit: number | null | undefined) {
-    return hasAmount(cash) || !hasAmount(credit);
+    return cash == null || hasAmount(cash) || !hasAmount(credit);
 }
 
 const MONTH_COLUMN_CLASS = "min-w-28 whitespace-nowrap";
@@ -359,6 +353,15 @@ function groupRows(
             Number(b.vendor === "stripe sales") -
             Number(a.vendor === "stripe sales"),
     );
+    for (const group of groups.values()) {
+        for (const column of columns) {
+            if (
+                column.kind !== "forecast" &&
+                group.rows.every((row) => row.values[column.id] == null)
+            )
+                group.values[column.id] = null;
+        }
+    }
     return [...groups.values()];
 }
 
@@ -459,6 +462,18 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
         nextPlanFacts > 0 && next?.forecastComplete !== false
             ? (next?.netUsd ?? null)
             : null;
+    const recordedDate =
+        runway.latestTransactionDate ?? runway.openingBalanceDate;
+    const [cashYear, cashMonth] = runway.currentMonth.split("-").map(Number);
+    const monthEnd = new Date(Date.UTC(cashYear, cashMonth, 0))
+        .toISOString()
+        .slice(0, 10);
+    const balances = data.userBalances?.[0];
+    const balanceSplit = balances
+        ? gaugeParts(balances.paid_balance, balances.quest_balance)
+        : null;
+    const percent = (value: number | undefined) =>
+        fmtUnsignedPct(value == null ? null : Math.round(value));
     const last = runway.columns.at(-1);
     const runwayTone: StatTone =
         runway.runwayMonths == null
@@ -472,6 +487,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
     return (
         <div className="flex flex-col gap-4">
             <PairedStatCards
+                layout="rows"
                 cards={[
                     {
                         label: "Cash",
@@ -479,12 +495,17 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             {
                                 label: (
                                     <span>
-                                        Recorded bank cash
+                                        Recorded
+                                        {recordedDate
+                                            ? ` · ${fmtMonthDay(recordedDate)}`
+                                            : ""}
                                         <CalculationInfo
                                             label="Recorded bank cash"
                                             lines={[
                                                 "All bank currencies combined in USD.",
-                                                "Based on imported entries, not a live bank connection.",
+                                                recordedDate
+                                                    ? `Based on bank entries through ${fmtPeriod(recordedDate.slice(0, 10))}.`
+                                                    : "Based on imported entries, not a live bank connection.",
                                             ]}
                                         />
                                     </span>
@@ -495,23 +516,21 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     runway.currentCashUsd < 0
                                         ? "neg"
                                         : "base",
-                                detail:
-                                    runway.openingBalanceDate == null
-                                        ? ""
-                                        : runway.latestTransactionDate
-                                          ? `Latest bank entry: ${fmtPeriod(runway.latestTransactionDate)}`
-                                          : `anchored ${fmtPeriod(runway.openingBalanceDate)} · no bank movements`,
                             },
                             {
                                 label: (
                                     <span>
-                                        {monthName(runway.currentMonth)}{" "}
-                                        month-end cash
+                                        Forecast · {fmtMonthDay(monthEnd)}
                                         <CalculationInfo
                                             label="Month-end cash"
                                             lines={[
-                                                "Expected cash at the END of this month.",
+                                                `Expected cash at the END of ${fmtPeriod(monthEnd)}.`,
                                                 "Recorded bank cash plus remaining planned movements.",
+                                                ...(runway.forecastTimingNote
+                                                    ? [
+                                                          runway.forecastTimingNote,
+                                                      ]
+                                                    : []),
                                             ]}
                                         />
                                     </span>
@@ -524,10 +543,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     runway.projectedMonthEndCashUsd < 0
                                         ? "neg"
                                         : "base",
-                                detail:
-                                    runway.remainingCurrentPlanUsd == null
-                                        ? "plan unavailable"
-                                        : `${fmtRunwayUsd(runway.remainingCurrentPlanUsd)} remaining plan`,
                             },
                         ],
                     },
@@ -551,15 +566,13 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                 ),
                                 value: fmtRunwayUsd(nextChange),
                                 tone: valueTone(nextChange),
-                                detail:
-                                    nextChange != null
-                                        ? `${nextPlanFacts} forecast line${nextPlanFacts === 1 ? "" : "s"}`
-                                        : "plan unavailable",
                             },
                             {
                                 label: (
                                     <span>
-                                        Cash runway
+                                        {runway.runwayExhaustedMonth
+                                            ? "Cash runs out"
+                                            : "Cash runway"}
                                         <CalculationInfo
                                             label="Cash runway"
                                             lines={[
@@ -575,18 +588,25 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     lastMonth: last?.month ?? null,
                                 }),
                                 tone: runwayTone,
-                                detail: runway.runwayExhaustedMonth
-                                    ? "cash becomes negative during this month"
-                                    : runway.runwayCapped && last
-                                      ? `${runway.runwayMonths}+ forecast months · still positive at horizon`
-                                      : "forecast unavailable",
                             },
                         ],
                     },
-                    ...(data.userBalances?.[0]
+                    ...(balances
                         ? [
                               {
                                   label: "Pollen balance",
+                                  total: balances.synced_at
+                                      ? `Snapshot · ${fmtMonthDay(balances.synced_at)}`
+                                      : "Snapshot date unavailable",
+                                  detail: (
+                                      <Gauge
+                                          className="mt-4 w-full"
+                                          left={balances.paid_balance}
+                                          leftLabel="Paid"
+                                          right={balances.quest_balance}
+                                          rightLabel="Quest"
+                                      />
+                                  ),
                                   items: [
                                       {
                                           label: (
@@ -605,9 +625,11 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                           valueClassName:
                                               "polli:text-paid-deep",
                                           value: fmtRunwayTableValue(
-                                              data.userBalances[0].paid_balance,
+                                              balances.paid_balance,
                                           ),
-                                          detail: `${fmtRunwayTableValue(data.userBalances[0].paid_users)} users · full catalog`,
+                                          detail: percent(
+                                              balanceSplit?.leftPct,
+                                          ),
                                       },
                                       {
                                           label: (
@@ -626,10 +648,16 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                           valueClassName:
                                               "polli:text-tier-deep",
                                           value: fmtRunwayTableValue(
-                                              data.userBalances[0]
-                                                  .quest_balance,
+                                              balances.quest_balance,
                                           ),
-                                          detail: `${fmtRunwayTableValue(data.userBalances[0].quest_users)} users · restricted catalog`,
+                                          detail: percent(
+                                              balanceSplit
+                                                  ? 100 -
+                                                        Math.round(
+                                                            balanceSplit.leftPct,
+                                                        )
+                                                  : undefined,
+                                          ),
                                       },
                                   ],
                               } satisfies StatPair,

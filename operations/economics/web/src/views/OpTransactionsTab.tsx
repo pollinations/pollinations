@@ -18,7 +18,7 @@ import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
 import { categoryLabel } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtExactNumber as fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,

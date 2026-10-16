@@ -1,12 +1,17 @@
 import { Heading, Surface, TabButton } from "@pollinations/ui";
 import { useMemo, useState } from "react";
 import { ProductMixCard } from "../components/ProductMixCard";
-import { categoryLabel, EXPENSE_CATEGORY_ORDER } from "../lib/categories";
+import { TrendPlot } from "../components/TrendPlot";
+import {
+    categoryLabel,
+    EXPENSE_CATEGORY_ORDER,
+    isComputeOrInfrastructureCategory,
+} from "../lib/categories";
 import { fmtUsd as axisUsd, fmtNumber } from "../lib/format";
 import { monthLabel, monthName, monthShift } from "../lib/months";
 import { monthlyProductMix } from "../lib/productMix";
+import type { ReconciliationIssue } from "../lib/reconciliation";
 import {
-    isTrendExpense,
     monthlyPollenTrends,
     monthlyTrends,
     type PollenTrendMonth,
@@ -15,11 +20,17 @@ import {
     trendPercentChange,
     trendPeriod,
 } from "../lib/trends";
+import { unitEconomicsReport } from "../lib/unitEconomics";
 import type { Data } from "../types";
 import { fmtRunwayUsd as usd } from "./RunwayTab";
 
 type ExpenseCategory = (typeof EXPENSE_CATEGORY_ORDER)[number];
-type TrendRow = TrendMonth & PollenTrendMonth;
+type TrendRow = TrendMonth &
+    PollenTrendMonth & {
+        overhead: number | null;
+        salesProvisional: boolean;
+        pollenProvisional: boolean;
+    };
 type Series = {
     key:
         | "gross"
@@ -32,7 +43,8 @@ type Series = {
         | "questPollen"
         | "questCash"
         | "questCredits"
-        | ExpenseCategory;
+        | ExpenseCategory
+        | "overhead";
     label: string;
     color: string;
     dashed?: boolean;
@@ -60,21 +72,15 @@ const QUEST_FUNDING_SERIES: Series[] = [
         dashed: true,
     },
 ];
-const EXPENSE_COLORS = [
-    "#fbbf24",
-    "#2dd4bf",
-    "#c084fc",
-    "#fb7185",
-    "#60a5fa",
-    "#fb923c",
-    "#a3e635",
-    "#e879f9",
+const EXPENSE_SERIES: Series[] = [
+    { key: "compute", label: categoryLabel("compute"), color: "#fbbf24" },
+    {
+        key: "infrastructure",
+        label: categoryLabel("infrastructure"),
+        color: "#2dd4bf",
+    },
+    { key: "overhead", label: "Company overhead", color: "#c084fc" },
 ];
-const EXPENSE_SERIES: Series[] = EXPENSE_CATEGORY_ORDER.map((key, i) => ({
-    key,
-    label: categoryLabel(key),
-    color: EXPENSE_COLORS[i],
-}));
 const RESULT_SERIES: Series[] = [
     {
         key: "result",
@@ -133,6 +139,13 @@ function TrendChart({
         [...rows]
             .reverse()
             .find((row) => visibleSeries.some((s) => row[s.key] != null));
+    const provisional = (row: TrendRow | undefined) =>
+        row &&
+        (series.every((s) => s.key === "gross" || s.key === "revenue")
+            ? row.salesProvisional
+            : unit === "Pollen"
+              ? row.pollenProvisional
+              : row.provisional);
     const format = unit === "Pollen" ? fmtNumber : usd;
     const funded = active && creditKey ? active[creditKey] : null;
     const total =
@@ -221,9 +234,11 @@ function TrendChart({
                             {active ? monthName(active.month) : "Months"}
                         </h4>
                         <span className="text-xs text-theme-text-soft">
-                            {active
-                                ? `vs ${monthName(monthShift(active.month, -1))}`
-                                : ""}
+                            {provisional(active) || provisional(previousRow)
+                                ? "Provisional · comparison pending"
+                                : active
+                                  ? `vs ${monthName(monthShift(active.month, -1))}`
+                                  : ""}
                         </span>
                     </div>
                     <div
@@ -231,10 +246,13 @@ function TrendChart({
                         aria-live="polite"
                     >
                         {series.map((s) => {
-                            const change = trendPercentChange(
-                                active?.[s.key],
-                                previousRow?.[s.key],
-                            );
+                            const change =
+                                provisional(active) || provisional(previousRow)
+                                    ? null
+                                    : trendPercentChange(
+                                          active?.[s.key],
+                                          previousRow?.[s.key],
+                                      );
                             const rounded =
                                 change == null
                                     ? null
@@ -329,188 +347,138 @@ function TrendChart({
                     </div>
                 </div>
             </div>
-            <div className="mt-2 overflow-x-auto">
-                <svg
-                    viewBox="0 0 620 246"
-                    className="mx-auto w-full max-w-3xl"
-                    aria-label={`${title}. ${unit} by month; select a month to inspect values.`}
-                >
-                    <title>{title}</title>
-                    {ticks.map((value) => (
-                        <g key={value}>
-                            <line
-                                x1="64"
-                                x2="592"
-                                y1={y(value)}
-                                y2={y(value)}
-                                stroke="currentColor"
-                                opacity={value === 0 ? 0.45 : 0.1}
-                            />
-                            <text
-                                x="55"
-                                y={y(value) + 4}
-                                textAnchor="end"
-                                fill="currentColor"
-                                fontSize="16"
-                            >
-                                {unit === "Pollen"
-                                    ? fmtNumber(value)
-                                    : axisUsd(value)}
-                            </text>
-                        </g>
-                    ))}
-                    {rows.map((row, i) => (
-                        <g key={row.month}>
-                            {row.month === activeMonth && (
-                                <rect
-                                    x={x(i) - slot / 2}
-                                    y="16"
-                                    width={slot}
-                                    height="199"
-                                    fill="currentColor"
-                                    opacity="0.04"
-                                />
-                            )}
-                            <text
-                                x={x(i)}
-                                y="235"
-                                textAnchor="middle"
-                                fill="currentColor"
-                                fontSize="16"
-                            >
-                                {monthName(row.month).slice(0, 3)}
-                            </text>
-                        </g>
-                    ))}
-                    {visibleSeries.map((s, j) => (
-                        <g key={s.key}>
-                            {rows.map((row, i) => {
-                                const value = row[s.key],
-                                    previous = rows[i - 1];
-                                if (value == null) return null;
-                                if (kind === "line")
-                                    return (
-                                        <g key={row.month}>
-                                            {previous?.[s.key] != null && (
-                                                <line
-                                                    x1={x(i - 1)}
-                                                    x2={x(i)}
-                                                    y1={y(
-                                                        previous[
-                                                            s.key
-                                                        ] as number,
-                                                    )}
-                                                    y2={y(value)}
-                                                    stroke={s.color}
-                                                    strokeWidth="2.5"
-                                                    strokeDasharray={
-                                                        s.dashed
-                                                            ? "6 4"
-                                                            : undefined
-                                                    }
-                                                />
-                                            )}
-                                            <circle
-                                                cx={x(i)}
-                                                cy={y(value)}
-                                                r={
-                                                    row.month === activeMonth
-                                                        ? 5
-                                                        : 3
-                                                }
-                                                fill={s.color}
-                                                opacity={1}
-                                            />
-                                        </g>
-                                    );
-                                const base =
-                                    kind === "stacked"
-                                        ? visibleSeries
-                                              .slice(0, j)
-                                              .reduce((sum, prior) => {
-                                                  const n = row[prior.key] ?? 0;
-                                                  return (
-                                                      sum +
-                                                      (value >= 0
-                                                          ? Math.max(0, n)
-                                                          : Math.min(0, n))
-                                                  );
-                                              }, 0)
-                                        : 0;
-                                const left =
-                                    kind === "stacked"
-                                        ? x(i) - barWidth
-                                        : x(i) +
-                                          (j - visibleSeries.length / 2) *
-                                              (barWidth + 2);
-                                const adjusted = s.adjustedKey
-                                    ? row[s.adjustedKey]
-                                    : null;
+            <TrendPlot
+                rows={rows}
+                activeMonth={activeMonth}
+                onInspect={onInspect}
+                label={`${title}. ${unit} by month; select a month to inspect values.`}
+            >
+                {ticks.map((value) => (
+                    <g key={value}>
+                        <line
+                            x1="64"
+                            x2="592"
+                            y1={y(value)}
+                            y2={y(value)}
+                            stroke="currentColor"
+                            opacity={value === 0 ? 0.45 : 0.1}
+                        />
+                        <text
+                            x="55"
+                            y={y(value) + 4}
+                            textAnchor="end"
+                            fill="currentColor"
+                            fontSize="16"
+                        >
+                            {unit === "Pollen"
+                                ? fmtNumber(value)
+                                : axisUsd(value)}
+                        </text>
+                    </g>
+                ))}
+                {visibleSeries.map((s, j) => (
+                    <g key={s.key}>
+                        {rows.map((row, i) => {
+                            const value = row[s.key],
+                                previous = rows[i - 1];
+                            if (value == null) return null;
+                            if (kind === "line")
                                 return (
                                     <g key={row.month}>
-                                        <rect
-                                            x={left}
-                                            y={Math.min(
-                                                y(base),
-                                                y(base + value),
-                                            )}
-                                            width={
-                                                kind === "stacked"
-                                                    ? barWidth * 2
-                                                    : barWidth
-                                            }
-                                            height={Math.max(
-                                                1,
-                                                Math.abs(
-                                                    y(base + value) - y(base),
-                                                ),
-                                            )}
-                                            fill={
-                                                s.dashed && kind === "bar"
-                                                    ? "none"
-                                                    : s.color
-                                            }
-                                            stroke={s.color}
-                                            strokeWidth="1.5"
-                                            strokeDasharray={
-                                                s.dashed ? "4 2" : undefined
-                                            }
-                                            opacity={1}
-                                        />
-                                        {kind === "bar" && adjusted != null && (
-                                            <path
-                                                d={`M ${left + barWidth / 2} ${y(adjusted) - 5} l 5 5 l -5 5 l -5 -5 Z`}
-                                                fill={s.color}
-                                                stroke="var(--color-surface-opaque, #242321)"
-                                                strokeWidth="1.5"
-                                                aria-label={`${monthName(row.month)} ${s.label}, excluding identified fraud costs: ${usd(adjusted)}`}
+                                        {previous?.[s.key] != null && (
+                                            <line
+                                                x1={x(i - 1)}
+                                                x2={x(i)}
+                                                y1={y(
+                                                    previous[s.key] as number,
+                                                )}
+                                                y2={y(value)}
+                                                stroke={s.color}
+                                                strokeWidth="2.5"
+                                                strokeDasharray={
+                                                    s.dashed ? "6 4" : undefined
+                                                }
                                             />
                                         )}
+                                        <circle
+                                            cx={x(i)}
+                                            cy={y(value)}
+                                            r={
+                                                row.month === activeMonth
+                                                    ? 5
+                                                    : 3
+                                            }
+                                            fill={s.color}
+                                            opacity={
+                                                provisional(row) ? 0.65 : 1
+                                            }
+                                        />
                                     </g>
                                 );
-                            })}
-                        </g>
-                    ))}
-                    {rows.map((row, i) => (
-                        <foreignObject
-                            key={row.month}
-                            x={x(i) - slot / 2}
-                            y="16"
-                            width={slot}
-                            height="201"
-                        >
-                            <button
-                                type="button"
-                                aria-label={`Inspect ${monthName(row.month)} ${row.month.slice(0, 4)}`}
-                                className="block h-full w-full cursor-crosshair border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-1 focus-visible:outline-current"
-                                onMouseEnter={() => onInspect(row.month)}
-                                onFocus={() => onInspect(row.month)}
-                                onClick={() => onInspect(row.month)}
-                            />
-                        </foreignObject>
-                    ))}
-                </svg>
-            </div>
+                            const base =
+                                kind === "stacked"
+                                    ? visibleSeries
+                                          .slice(0, j)
+                                          .reduce((sum, prior) => {
+                                              const n = row[prior.key] ?? 0;
+                                              return (
+                                                  sum +
+                                                  (value >= 0
+                                                      ? Math.max(0, n)
+                                                      : Math.min(0, n))
+                                              );
+                                          }, 0)
+                                    : 0;
+                            const left =
+                                kind === "stacked"
+                                    ? x(i) - barWidth
+                                    : x(i) +
+                                      (j - visibleSeries.length / 2) *
+                                          (barWidth + 2);
+                            const adjusted = s.adjustedKey
+                                ? row[s.adjustedKey]
+                                : null;
+                            return (
+                                <g key={row.month}>
+                                    <rect
+                                        x={left}
+                                        y={Math.min(y(base), y(base + value))}
+                                        width={
+                                            kind === "stacked"
+                                                ? barWidth * 2
+                                                : barWidth
+                                        }
+                                        height={Math.max(
+                                            1,
+                                            Math.abs(y(base + value) - y(base)),
+                                        )}
+                                        fill={
+                                            s.dashed && kind === "bar"
+                                                ? "none"
+                                                : s.color
+                                        }
+                                        stroke={s.color}
+                                        strokeWidth="1.5"
+                                        strokeDasharray={
+                                            s.dashed ? "4 2" : undefined
+                                        }
+                                        opacity={provisional(row) ? 0.65 : 1}
+                                    />
+                                    {kind === "bar" && adjusted != null && (
+                                        <path
+                                            d={`M ${left + barWidth / 2} ${y(adjusted) - 5} l 5 5 l -5 5 l -5 -5 Z`}
+                                            fill={s.color}
+                                            stroke="var(--color-surface-opaque, #242321)"
+                                            strokeWidth="1.5"
+                                            aria-label={`${monthName(row.month)} ${s.label}, excluding identified fraud costs: ${usd(adjusted)}`}
+                                        />
+                                    )}
+                                </g>
+                            );
+                        })}
+                    </g>
+                ))}
+            </TrendPlot>
         </Surface>
     );
 }
@@ -519,16 +487,21 @@ export function TrendsTab({
     data,
     period,
     onPeriodChange,
+    issues = [],
+    initialMonth,
 }: {
     data: Data;
+    issues?: ReconciliationIssue[];
+    initialMonth?: string;
     period: 3 | 6 | 12;
     onPeriodChange: (period: 3 | 6 | 12) => void;
 }) {
     const [resultScope, setResultScope] = useState<TrendScope>("company");
-    const [expenseScope, setExpenseScope] = useState<TrendScope>("company");
     const [fundingScope, setFundingScope] = useState<TrendScope>("company");
     const [hiddenSeries, setHiddenSeries] = useState<Series["key"][]>([]);
-    const [activeMonth, setActiveMonth] = useState<string | null>(null);
+    const [activeMonth, setActiveMonth] = useState<string | null>(
+        initialMonth ?? null,
+    );
     const months = useMemo(() => {
         const now = new Date();
         const company = monthlyTrends(data, "company", now).months;
@@ -537,22 +510,68 @@ export function TrendsTab({
             data,
             company.map((row) => row.month),
         );
+        const missingUsageMonths = new Set(
+            company
+                .filter((row) =>
+                    unitEconomicsReport(
+                        data,
+                        row.month,
+                        "vendors",
+                    ).blockers.some((blocker) => blocker.kind === "usage"),
+                )
+                .map((row) => row.month),
+        );
         const withPollen = (rows: TrendMonth[]): TrendRow[] =>
-            rows.map((row, i) => ({ ...row, ...pollen[i] }));
+            rows.map((row, i) => {
+                const overhead = EXPENSE_CATEGORY_ORDER.filter(
+                    (category) => !isComputeOrInfrastructureCategory(category),
+                ).map((category) => row[category]);
+                return {
+                    ...row,
+                    ...pollen[i],
+                    salesProvisional:
+                        row.issues.some((message) =>
+                            message.includes("Stripe"),
+                        ) ||
+                        issues.some(
+                            (issue) =>
+                                issue.month === row.month &&
+                                issue.group === "financial" &&
+                                issue.affects.includes("sales"),
+                        ),
+                    pollenProvisional:
+                        missingUsageMonths.has(row.month) ||
+                        issues.some(
+                            (issue) =>
+                                issue.month === row.month &&
+                                issue.group === "financial" &&
+                                issue.affects.includes("op-pollen"),
+                        ),
+                    provisional:
+                        row.provisional ||
+                        issues.some(
+                            (issue) =>
+                                issue.month === row.month &&
+                                issue.group === "financial" &&
+                                issue.affects.includes("trends"),
+                        ),
+                    overhead: overhead.every((cost) => cost != null)
+                        ? overhead.reduce<number>(
+                              (sum, cost) => sum + (cost ?? 0),
+                              0,
+                          )
+                        : null,
+                };
+            });
         return {
             company: withPollen(company),
             product: withPollen(product),
-            questMix: monthlyProductMix(
-                data,
-                company.map((row) => row.month),
-                "quest",
-            ),
             mix: monthlyProductMix(
                 data,
                 company.map((row) => row.month),
             ),
         };
-    }, [data]);
+    }, [data, issues]);
     const { start, end } = trendPeriod(period);
     const scopeRows = {
         company: months.company.filter(
@@ -574,9 +593,6 @@ export function TrendsTab({
         activeMonth: selected?.month ?? null,
         onInspect: setActiveMonth,
     };
-    const selectedExpenses = EXPENSE_SERIES.filter((s) =>
-        isTrendExpense(s.key, expenseScope),
-    );
     return (
         <section className="@container flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-3">
@@ -613,7 +629,7 @@ export function TrendsTab({
                 />
                 <TrendChart
                     title="Expenses before credits"
-                    series={selectedExpenses}
+                    series={EXPENSE_SERIES}
                     hiddenSeries={hiddenSeries}
                     onToggleSeries={(key) =>
                         setHiddenSeries((hidden) =>
@@ -623,10 +639,6 @@ export function TrendsTab({
                         )
                     }
                     {...chartProps}
-                    rows={scopeRows[expenseScope]}
-                    previousRow={previousRow(expenseScope)}
-                    scope={expenseScope}
-                    onScopeChange={setExpenseScope}
                 />
                 <TrendChart
                     title="Cost funding"
@@ -645,9 +657,6 @@ export function TrendsTab({
                     {...chartProps}
                 />
                 <ProductMixCard
-                    questRows={months.questMix.filter(
-                        (row) => row.month >= start && row.month <= end,
-                    )}
                     rows={months.mix.filter(
                         (row) => row.month >= start && row.month <= end,
                     )}

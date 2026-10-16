@@ -17,7 +17,7 @@ import {
     withUniqueRowKeys,
 } from "../components/DataTable";
 import { StatCards } from "../components/StatCards";
-import { fmtPeriod, fmtUsd } from "../lib/format";
+import { fmtExactUsd, fmtPeriod, fmtUsd } from "../lib/format";
 import {
     type ProviderAccountBalanceRow,
     providerAccountBalanceRows,
@@ -53,7 +53,7 @@ function balanceTone(value: number | null) {
 }
 
 function optionalUsd(value: number | null) {
-    return value == null ? "–" : fmtUsd(value);
+    return fmtExactUsd(value);
 }
 
 export function BalancesTab({ data }: { data: Data }) {
@@ -173,8 +173,9 @@ export function BalancesTab({ data }: { data: Data }) {
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("creditDepletionDate")}
+                                title="Projection from checked balances; unknown when evidence is missing or the balance lasts beyond ten years."
                             >
-                                Runs out
+                                Projected end
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -267,6 +268,18 @@ export function BalancesTab({ data }: { data: Data }) {
                                               })
                                             : "–"}
                                     </span>
+                                    {row.expiryAssumed && (
+                                        <span className="block text-xs text-theme-text-muted">
+                                            Expiry ignored by agreement
+                                        </span>
+                                    )}
+                                    {!row.creditTermsKnown &&
+                                        !row.expiryAssumed &&
+                                        (row.creditBalanceUsd ?? 0) > 0 && (
+                                            <span className="block text-xs text-theme-text-muted">
+                                                Expiry unverified
+                                            </span>
+                                        )}
                                 </TableCell>
                                 <TableCell
                                     align="right"

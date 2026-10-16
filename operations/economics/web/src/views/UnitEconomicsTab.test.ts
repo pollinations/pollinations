@@ -47,7 +47,7 @@ it("counts known Paid usage even without current costs and withholds incomplete 
         createElement(ManagedInferenceTab, { data, month: "2026-09" }),
     );
     expect(html).not.toContain("Usage included; provider costs missing.");
-    expect(html).toContain("$190");
+    expect(html).toContain("$200");
     expect(html).toContain("aws");
     expect(html).toContain("Retained");
     expect(html).not.toContain("classified only");
@@ -64,7 +64,7 @@ it("counts known Paid usage even without current costs and withholds incomplete 
     // Both result headlines must remain unknown, not Google's matched subtotal.
     const cards = html.slice(0, html.indexOf("<table"));
     expect(cards.match(/>Unknown</g)).toHaveLength(2);
-    expect(cards).toContain("Actual Unknown");
+    expect(cards).not.toContain("Actual Unknown");
     expect(cards).not.toContain("recorded so far");
     expect(cards).toContain('aria-label="Provider costs"');
 });
@@ -96,13 +96,17 @@ it("pairs usage, funding and complete results in three cards without repeating Q
     expect(cards).toContain("$260 total");
     expect(cards).not.toContain("Free usage");
     expect(cards).not.toContain("Retained Paid");
-    expect(cards).toContain("Retained $190");
+    expect(cards).not.toContain("Retained");
     expect(cards).toContain(">$60<");
     expect(cards).toContain("$130 total");
     expect(cards).toContain(">$100<");
     expect(cards).toContain(">$30<");
     expect(cards).toContain("+$90");
-    expect(cards).toContain("Actual +$90");
+    expect(cards).not.toContain("Actual +$90");
+    expect(cards.match(/>77%</g)).toHaveLength(2);
+    expect(cards.match(/>23%</g)).toHaveLength(2);
+    const result = cards.slice(cards.indexOf('aria-label="Result"'));
+    expect(result).not.toContain("%");
     expect(cards).toContain("+$60");
     expect(html).not.toContain("awaiting complete evidence");
     expect(html).not.toContain("provider costs missing");
@@ -138,7 +142,7 @@ it("includes unmatched provider costs while leaving status details to reconcilia
     );
     const cards = html.slice(0, html.indexOf("<table"));
     expect(cards).toContain('aria-label="Result"');
-    expect(cards).not.toContain("provisional");
+    expect(cards).not.toMatch(/provisional/i);
     expect(cards).toContain(">With credits<");
     expect(cards).toContain(">Without credits<");
     expect(cards).toContain("+$42");

@@ -21,16 +21,13 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("gaps mean missing data");
     expect(html).not.toContain("September*");
     expect(html).not.toContain('aria-label="Cost scope"');
-    for (const chart of [
-        "Monthly result",
-        "Expenses before credits",
-        "Cost funding",
-    ]) {
+    for (const chart of ["Monthly result", "Cost funding"]) {
         expect(html).toContain(`aria-label="${chart} scope"`);
     }
-    expect(html.match(/aria-label="[^"]+ scope"/g)).toHaveLength(3);
+    expect(html.match(/aria-label="[^"]+ scope"/g)).toHaveLength(2);
+    expect(html).not.toContain('aria-label="Expenses before credits scope"');
     expect(html).not.toContain("Company performance");
-    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(9);
+    expect(html.match(/<svg[^>]+aria-label=/g)).toHaveLength(7);
     expect(html).not.toContain("Retained over time · Pollen");
     expect(html).not.toContain("Monthly details");
     expect(html).not.toContain("Provider credit dates &amp; limits");
@@ -56,9 +53,9 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("<select");
     expect(html).not.toContain("Expense categories");
     expect(html).toContain('aria-label="Toggle Compute"');
-    expect(html).toContain('aria-label="Toggle Revenue Share"');
-    expect(html).toContain('aria-label="Toggle Payroll"');
-    expect(html.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(8);
+    expect(html).toContain('aria-label="Toggle Company overhead"');
+    expect(html).not.toContain('aria-label="Toggle Payroll"');
+    expect(html.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(3);
     expect(html).toContain("Product");
     expect(
         /<button[^>]*aria-pressed="true"[^>]*>Whole company<\/button>/.test(
@@ -71,7 +68,7 @@ it("renders charts and unknown values without repeating the reconciliation messa
     expect(html).not.toContain("API + GPU margin");
     expect(html).toContain("Expenses before credits");
     expect(html).toContain("Infrastructure");
-    expect(html).toContain('aria-label="Toggle Development"');
+    expect(html).not.toContain('aria-label="Toggle Development"');
     expect(html).toContain('aria-label="Whole company"');
     expect(html).not.toContain("Overhead");
     expect(html).not.toContain("September · USD");
@@ -178,22 +175,11 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
         })),
         privateConfig: {
             forecastRules: {},
-            reconciliation: {
+            reviewNotes: {
                 providerCheckExplanations: [],
                 meterDriftExplanations: [],
                 pollenWitnessExplanations: [],
             },
-            salesAdjustments: [
-                {
-                    month: "2026-09",
-                    revenue_stream: "pollen",
-                    currency: "USD",
-                    refunds: 80,
-                    reversals: 0,
-                    stripe_fees: 0,
-                    evidence: ["https://drive.google.com/file/d/review/view"],
-                },
-            ],
         },
     };
     const render = (period: 3 | 6) =>
@@ -204,6 +190,17 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
                 onPeriodChange: () => {},
             }),
         );
+    const septemberSale = data.stripeSales?.find(
+        (row) => row.month === "2026-09",
+    );
+    if (!septemberSale) throw new Error("Missing fixture");
+    Object.assign(septemberSale, {
+        fraud_refunds: 80,
+        fraud_reversals: 0,
+        fraud_fees: 0,
+        fraud_transactions: 1,
+        fraud_evidence: ["https://drive.google.com/file/d/review/view"],
+    });
     const html = render(3);
     expect(html).toContain("July 26 – September 26");
     expect(html).not.toContain("Period results comparison");
@@ -227,4 +224,61 @@ it("keeps monthly actual and fraud-adjusted results within the selected period",
     expect(longer).toContain("$2,400");
     expect(longer).toContain("$2,480");
     expect(longer).not.toContain("NaN");
+});
+
+it("groups all non-product expenses while keeping compute and infrastructure separate", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-16T12:00:00Z"));
+    const categories = [
+        "development",
+        "operations",
+        "revenue_share",
+        "office",
+        "admin",
+        "payroll",
+    ];
+    const data: Data = {
+        opTransactions: categories.map((category, i) => ({
+            entry_id: category,
+            kind: "transaction",
+            source: "wise",
+            date: "2026-09-15",
+            vendor: `test-${category}`,
+            category,
+            amount: -(i + 1) * 10,
+            currency: "USD",
+            description: category,
+            evidence: "Statement",
+            recorded_at: "2026-10-16 00:00:00",
+        })),
+        vendorLedger: ["inference", "infra"].map((type) => ({
+            entry_id: type,
+            source: "dashboard",
+            vendor: "google",
+            type,
+            start: "2026-09-01",
+            end: "2026-09-30",
+            paid: -100,
+            credit: -50,
+            currency: "USD",
+            resource_id: type,
+            resource_name: type,
+            resource_sku: "usage",
+            resource_count: 1,
+            model: "gemini",
+            evidence: "Statement",
+            recorded_at: "2026-10-16 00:00:00",
+        })),
+    };
+    const html = renderToStaticMarkup(
+        createElement(TrendsTab, { data, period: 3, onPeriodChange: () => {} }),
+    );
+    const expenses = html
+        .split('aria-label="Expenses before credits"')[1]
+        .split("</section>")[0];
+    expect(expenses.match(/aria-label="Toggle [^"]+"/g)).toHaveLength(3);
+    const labels = expenses.replace(/<[^>]*>/g, "");
+    expect(labels).toContain("Company overhead$210");
+    expect(labels).toContain("Compute$150");
+    expect(labels).toContain("Infrastructure$150");
 });

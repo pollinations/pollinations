@@ -529,7 +529,7 @@ describe("gpuWorkloadSummary", () => {
     });
 });
 
-it("pairs GPU usage, funding and results while preserving the GPU count", () => {
+it("pairs GPU usage and funding with shares and keeps results as amounts", () => {
     const html = renderToStaticMarkup(
         createElement(GpuTab, {
             month: "2026-06",
@@ -546,10 +546,17 @@ it("pairs GPU usage, funding and results while preserving the GPU count", () => 
     expect(cards).toContain('aria-label="GPU costs"');
     expect(cards).toContain('aria-label="Result"');
     expect(cards).toContain("$200 total");
-    expect(cards).toContain("Retained $130");
+    expect(cards).not.toContain("Retained");
+    expect(cards).toContain("$160");
+    expect(cards).toContain("$40");
+    expect(cards).toContain('aria-label="Paid 80% · Quest 20%"');
+    expect(cards).toContain('aria-label="Cash 76.92% · Credits 23.08%"');
     expect(cards).toContain("$130 total");
-    expect(cards).toContain("1 GPU");
-    expect(cards).toContain("Actual +$30");
+    expect(cards).not.toContain("Actual");
+    expect(cards).toContain("+$30");
+    expect(cards.slice(cards.indexOf('aria-label="Result"'))).not.toContain(
+        "%",
+    );
     expect(cards).toContain(">$0<");
     expect(cards.match(/>Quest</g)).toHaveLength(1);
     expect(cards).toContain("polli:text-paid-deep");

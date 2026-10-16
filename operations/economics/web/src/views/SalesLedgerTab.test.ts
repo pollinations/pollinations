@@ -64,41 +64,38 @@ it("keeps coverage diagnostics in reconciliation while retaining sales facts", (
 it("keeps missing data distinct from confirmed zero sales", () => {
     const html = render([]);
     expect(html).toContain("No sales data recorded");
-    expect(html).not.toContain("0.00");
+    expect(html).not.toContain(">0<");
     expect(html).not.toContain(">Complete<");
     expect(render([], "2026-10")).toContain("month in progress");
 });
 
 it("shows the reviewed fraud breakdown alongside unchanged sales facts", () => {
     const data: Data = {
-        stripeSales: [row],
+        stripeSales: [{ ...row }],
         privateConfig: {
             forecastRules: {},
-            reconciliation: {
+            reviewNotes: {
                 providerCheckExplanations: [],
                 meterDriftExplanations: [],
                 pollenWitnessExplanations: [],
             },
-            salesAdjustments: [
-                {
-                    month: row.month,
-                    revenue_stream: row.revenue_stream,
-                    currency: row.currency,
-                    refunds: 10,
-                    reversals: 5,
-                    stripe_fees: 20,
-                    evidence: ["https://drive.google.com/file/d/source/view"],
-                },
-            ],
         },
     };
+    if (!data.stripeSales) throw new Error("Missing fixture");
+    Object.assign(data.stripeSales[0], {
+        fraud_refunds: 10,
+        fraud_reversals: 5,
+        fraud_fees: 20,
+        fraud_transactions: 1,
+        fraud_evidence: ["https://drive.google.com/file/d/source/view"],
+    });
     const html = renderToStaticMarkup(
         createElement(SalesLedgerTab, { data, now }),
     );
     expect(html).toContain("Identified fraud costs");
-    expect(html).toContain("35.00");
+    expect(html).toContain(">35<");
     expect(html).toContain("Dispute fees: ");
-    expect(html).toContain("20.00");
+    expect(html.replace(/<[^>]+>/g, "")).toContain("Dispute fees: 20");
     expect(html).toContain("7,860.25");
     expect(html).toContain("https://drive.google.com/file/d/source/preview");
 });

@@ -18,8 +18,15 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { Gauge, gaugeParts } from "../components/EconomicsGauge";
 import { PairedStatCards } from "../components/StatCards";
-import { fmtMarginPct, fmtNumber, fmtUsd, fmtUsd4 } from "../lib/format";
+import {
+    fmtMarginPct,
+    fmtNumber,
+    fmtRateUsd,
+    fmtUnsignedPct,
+    fmtUsd,
+} from "../lib/format";
 import {
     type GpuResourceRow,
     type GpuWorkloadRow,
@@ -187,7 +194,7 @@ function GpuInstanceTable({ rows }: { rows: GpuResourceRow[] }) {
                                 {fmtUsd(row.totalCostUsd)}
                             </TableCell>
                             <TableCell align="right" numeric>
-                                {fmtUsd4(row.costPerGpuHour)}
+                                {fmtRateUsd(row.costPerGpuHour)}
                             </TableCell>
                         </TableRow>
                     ))}
@@ -219,13 +226,10 @@ export function GpuTab({
         () => gpuResourceSummary(resourceRows),
         [resourceRows],
     );
-    const unassignedCostUsd = useMemo(
-        () =>
-            rows
-                .filter((row) => row.kind === "unassigned")
-                .reduce((sum, row) => sum + row.totalCostUsd, 0),
-        [rows],
-    );
+    const usageSplit = gaugeParts(stats.paidUsd, stats.questUsd);
+    const fundingSplit = gaugeParts(stats.paidCostUsd, stats.creditCostUsd);
+    const percent = (value: number | undefined) =>
+        fmtUnsignedPct(value == null ? null : Math.round(value));
     const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
     const sortColumns = useMemo<SortColumn<GpuWorkloadRow>[]>(
         () => [
@@ -269,10 +273,13 @@ export function GpuTab({
     return (
         <div className="flex flex-col gap-4">
             <PairedStatCards
+                layout="rows"
                 cards={[
                     {
                         label: "Pollen used",
-                        total: `${fmtUsd(stats.paidUsd + stats.questUsd)} total`,
+                        total: rows.length
+                            ? `${fmtUsd(stats.paidUsd + stats.questUsd)} total`
+                            : "No data",
                         items: [
                             {
                                 label: (
@@ -281,9 +288,11 @@ export function GpuTab({
                                         Paid
                                     </span>
                                 ),
-                                value: fmtUsd(stats.paidUsd),
+                                value: fmtUsd(
+                                    rows.length ? stats.paidUsd : null,
+                                ),
                                 valueClassName: "polli:text-paid-deep",
-                                detail: `Retained ${fmtUsd(stats.retainedUsd)}`,
+                                detail: percent(usageSplit?.leftPct),
                             },
                             {
                                 label: (
@@ -292,35 +301,69 @@ export function GpuTab({
                                         Quest
                                     </span>
                                 ),
-                                value: fmtUsd(stats.questUsd),
+                                value: fmtUsd(
+                                    rows.length ? stats.questUsd : null,
+                                ),
                                 valueClassName: "polli:text-tier-deep",
+                                detail: percent(
+                                    usageSplit
+                                        ? 100 - Math.round(usageSplit.leftPct)
+                                        : undefined,
+                                ),
                             },
                         ],
+                        detail: (
+                            <Gauge
+                                className="mt-4 w-full"
+                                left={stats.paidUsd}
+                                leftLabel="Paid"
+                                right={stats.questUsd}
+                                rightLabel="Quest"
+                            />
+                        ),
                     },
                     {
                         label: "GPU costs",
-                        total: `${fmtUsd(resourceStats.totalCostUsd)} total`,
+                        total: resourceRows.length
+                            ? `${fmtUsd(resourceStats.totalCostUsd)} total`
+                            : "No recorded costs",
                         items: [
-                            { label: "Cash", value: fmtUsd(stats.paidCostUsd) },
+                            {
+                                label: "Cash",
+                                value: fmtUsd(
+                                    resourceRows.length
+                                        ? stats.paidCostUsd
+                                        : null,
+                                ),
+                                detail: percent(fundingSplit?.leftPct),
+                            },
                             {
                                 label: "Credits",
-                                value: fmtUsd(stats.creditCostUsd),
+                                value: fmtUsd(
+                                    resourceRows.length
+                                        ? stats.creditCostUsd
+                                        : null,
+                                ),
+                                detail: percent(
+                                    fundingSplit
+                                        ? 100 - Math.round(fundingSplit.leftPct)
+                                        : undefined,
+                                ),
                             },
                         ],
-                        detail: `${fmtNumber(resourceStats.gpuCount)} GPU${resourceStats.gpuCount === 1 ? "" : "s"}${
-                            unassignedCostUsd > 0
-                                ? ` · ${fmtUsd(unassignedCostUsd)} unassigned`
-                                : resourceStats.overheadCostUsd !== 0
-                                  ? ` · ${fmtUsd(resourceStats.overheadCostUsd)} overhead & adjustments`
-                                  : ""
-                        }`,
+                        detail: (
+                            <Gauge
+                                className="mt-4 w-full"
+                                palette="neutral"
+                                left={stats.paidCostUsd}
+                                leftLabel="Cash"
+                                right={stats.creditCostUsd}
+                                rightLabel="Credits"
+                            />
+                        ),
                     },
                     {
                         label: "Result",
-                        total:
-                            stats.currentResultUsd == null
-                                ? "Actual Unknown"
-                                : `Actual ${fmtSignedUsd(stats.currentResultUsd)}`,
                         items: [
                             {
                                 label: "With credits",
@@ -334,12 +377,6 @@ export function GpuTab({
                                         : signedToneOrSoft(
                                               stats.currentResultUsd,
                                           ),
-                                detail:
-                                    stats.currentResultUsd == null
-                                        ? undefined
-                                        : fmtMarginPct(
-                                              stats.currentPerformancePct,
-                                          ),
                             },
                             {
                                 label: "Without credits",
@@ -352,12 +389,6 @@ export function GpuTab({
                                         ? undefined
                                         : signedToneOrSoft(
                                               stats.fullCostResultUsd,
-                                          ),
-                                detail:
-                                    stats.fullCostResultUsd == null
-                                        ? undefined
-                                        : fmtMarginPct(
-                                              stats.fullCostPerformancePct,
                                           ),
                             },
                         ],
@@ -521,29 +552,23 @@ export function GpuTab({
                                             </TableCell>
                                             <TableCell align="right" numeric>
                                                 {fmtUsd(
-                                                    row.flags.includes(
-                                                        "missing GPU cost",
-                                                    )
-                                                        ? null
-                                                        : row.paidCostUsd,
+                                                    row.resources.length
+                                                        ? row.paidCostUsd
+                                                        : null,
                                                 )}
                                             </TableCell>
                                             <TableCell align="right" numeric>
                                                 {fmtUsd(
-                                                    row.flags.includes(
-                                                        "missing GPU cost",
-                                                    )
-                                                        ? null
-                                                        : row.creditCostUsd,
+                                                    row.resources.length
+                                                        ? row.creditCostUsd
+                                                        : null,
                                                 )}
                                             </TableCell>
                                             <TableCell align="right" numeric>
                                                 {fmtUsd(
-                                                    row.flags.includes(
-                                                        "missing GPU cost",
-                                                    )
-                                                        ? null
-                                                        : row.totalCostUsd,
+                                                    row.resources.length
+                                                        ? row.totalCostUsd
+                                                        : null,
                                                 )}
                                             </TableCell>
                                             <TableCell

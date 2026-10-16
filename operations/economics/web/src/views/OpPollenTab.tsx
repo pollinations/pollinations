@@ -13,7 +13,7 @@ import {
     TableScroller,
     useSortableRows,
 } from "../components/DataTable";
-import { fmtNumber } from "../lib/format";
+import { fmtExactNumber as fmtNumber } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,

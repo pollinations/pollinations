@@ -17,13 +17,17 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { Gauge, type GaugePalette } from "../components/EconomicsGauge";
+import {
+    Gauge,
+    type GaugePalette,
+    gaugeParts,
+} from "../components/EconomicsGauge";
 import { PairedStatCards } from "../components/StatCards";
 import {
     type ComputeMode,
     providerMonthComputeMode,
 } from "../lib/computeModes";
-import { fmtMarginPct, fmtUsd } from "../lib/format";
+import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import { signedToneOrSoft } from "../lib/tone";
 import {
     type UnitEconomicsGrain,
@@ -228,14 +232,16 @@ function UnitEconomicsTable({
         sortColumns,
         DEFAULT_SORT,
     );
-    const currentPerformancePct =
-        currentResultUsd == null
-            ? null
-            : unitPerformancePct(currentResultUsd, summary.retainedPaidUsd);
-    const fullCostPerformancePct =
-        fullCostResultUsd == null
-            ? null
-            : unitPerformancePct(fullCostResultUsd, summary.retainedPaidUsd);
+    const usageSplit = gaugeParts(
+        summary.paidPollenUsd,
+        summary.questPollenUsd,
+    );
+    const fundingSplit = gaugeParts(
+        summary.providerCashUsd,
+        summary.providerCreditUsd,
+    );
+    const percent = (value: number | undefined) =>
+        fmtUnsignedPct(value == null ? null : Math.round(value));
     const stats = [
         {
             label: "Pollen used",
@@ -250,7 +256,7 @@ function UnitEconomicsTable({
                     ),
                     value: fmtUsd(summary.paidPollenUsd),
                     valueClassName: "polli:text-paid-deep",
-                    detail: `Retained ${fmtUsd(summary.retainedPaidUsd)}`,
+                    detail: percent(usageSplit?.leftPct),
                 },
                 {
                     label: (
@@ -261,23 +267,55 @@ function UnitEconomicsTable({
                     ),
                     value: fmtUsd(summary.questPollenUsd),
                     valueClassName: "polli:text-tier-deep",
+                    detail: percent(
+                        usageSplit
+                            ? 100 - Math.round(usageSplit.leftPct)
+                            : undefined,
+                    ),
                 },
             ],
+            detail: (
+                <Gauge
+                    className="mt-4 w-full"
+                    left={summary.paidPollenUsd}
+                    leftLabel="Paid"
+                    right={summary.questPollenUsd}
+                    rightLabel="Quest"
+                />
+            ),
         },
         {
             label: "Provider costs",
             total: `${fmtUsd(summary.providerUsageUsd)} total`,
             items: [
-                { label: "Cash", value: fmtUsd(summary.providerCashUsd) },
-                { label: "Credits", value: fmtUsd(summary.providerCreditUsd) },
+                {
+                    label: "Cash",
+                    value: fmtUsd(summary.providerCashUsd),
+                    detail: percent(fundingSplit?.leftPct),
+                },
+                {
+                    label: "Credits",
+                    value: fmtUsd(summary.providerCreditUsd),
+                    detail: percent(
+                        fundingSplit
+                            ? 100 - Math.round(fundingSplit.leftPct)
+                            : undefined,
+                    ),
+                },
             ],
+            detail: (
+                <Gauge
+                    className="mt-4 w-full"
+                    palette="neutral"
+                    left={summary.providerCashUsd}
+                    leftLabel="Cash"
+                    right={summary.providerCreditUsd}
+                    rightLabel="Credits"
+                />
+            ),
         },
         {
             label: "Result",
-            total:
-                currentResultUsd == null
-                    ? "Actual Unknown"
-                    : `Actual ${fmtSignedUsd(currentResultUsd)}`,
             items: [
                 {
                     label: "With credits",
@@ -285,10 +323,6 @@ function UnitEconomicsTable({
                         currentResultUsd == null
                             ? "Unknown"
                             : fmtSignedUsd(currentResultUsd),
-                    detail:
-                        currentResultUsd == null
-                            ? undefined
-                            : fmtMarginPct(currentPerformancePct),
                     valueClassName:
                         currentResultUsd == null
                             ? undefined
@@ -300,10 +334,6 @@ function UnitEconomicsTable({
                         fullCostResultUsd == null
                             ? "Unknown"
                             : fmtSignedUsd(fullCostResultUsd),
-                    detail:
-                        fullCostResultUsd == null
-                            ? undefined
-                            : fmtMarginPct(fullCostPerformancePct),
                     valueClassName:
                         fullCostResultUsd == null
                             ? undefined
@@ -315,7 +345,7 @@ function UnitEconomicsTable({
 
     return (
         <div className="flex flex-col gap-4">
-            <PairedStatCards cards={stats} />
+            <PairedStatCards cards={stats} layout="rows" />
 
             <TableScroller>
                 <DataTable className="min-w-[1420px]">

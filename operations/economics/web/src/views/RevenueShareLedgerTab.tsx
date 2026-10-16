@@ -16,7 +16,7 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
-import { fmtNumber } from "../lib/format";
+import { fmtExactNumber as fmtNumber } from "../lib/format";
 import type { MonthFilterValue } from "../lib/months";
 import {
     type RevenueShareLedgerRow,

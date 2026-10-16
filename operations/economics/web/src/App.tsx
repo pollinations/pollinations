@@ -17,6 +17,7 @@ import {
     RocketIcon,
     ScrollArea,
     SproutIcon,
+    Switch,
     Text,
     Tooltip,
     UsageIcon,
@@ -66,6 +67,7 @@ import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import { trendPeriod } from "./lib/trends";
 import { unitEconomicsReport } from "./lib/unitEconomics";
 import type { Data } from "./types";
+import { AssumptionsTab } from "./views/AssumptionsTab";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
 import { OpPollenTab } from "./views/OpPollenTab";
@@ -94,6 +96,7 @@ type InsightTab =
     | "inference"
     | "revenue-share"
     | "balances"
+    | "assumptions"
     | "gpu";
 type ActiveView = InsightTab | LedgerTab;
 
@@ -105,6 +108,7 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     "revenue-share-ledger": ["revenueShare"],
     "revenue-share": ["revenueShare", "opTransactions"],
     balances: ["vendorLedger", "opTransactions"],
+    assumptions: ["privateConfig"],
     trends: [
         "opTransactions",
         "vendorLedger",
@@ -125,11 +129,32 @@ const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
 
+const RECONCILE_MODE_KEY = "economics.reconcile";
+
+function readReconcileMode() {
+    try {
+        return window.localStorage.getItem(RECONCILE_MODE_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function isReconcileView(view: ActiveView) {
+    return (
+        isLedgerTab(view) ||
+        view === "close" ||
+        view === "balances" ||
+        view === "assumptions"
+    );
+}
+
 function initialView(): ActiveView {
     const requested = new URLSearchParams(window.location.search).get("view");
-    return requested && Object.hasOwn(VIEW_SOURCES, requested)
-        ? (requested as ActiveView)
-        : "runway";
+    const view =
+        requested && Object.hasOwn(VIEW_SOURCES, requested)
+            ? (requested as ActiveView)
+            : "runway";
+    return isReconcileView(view) && !readReconcileMode() ? "runway" : view;
 }
 
 type DrawerItem<Id extends string> = {
@@ -189,6 +214,13 @@ const INSIGHT_TABS = [
 
 const LEDGER_INSIGHT_TABS = [
     {
+        id: "assumptions",
+        label: "Planning & review",
+        note: "Planning assumptions and source review notes. Financial facts live in the ledgers; reconciliation is derived.",
+        icon: DatabaseIcon,
+        source: "privateConfig",
+    },
+    {
         id: "balances",
         label: "Balances",
         note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
@@ -219,7 +251,7 @@ const TABS = [
         label: "Sales",
         codes: ["ST"],
         pipe: "economics_stripe_sales_api",
-        note: "Monthly Stripe sales by stream and settlement currency. Net after fees subtracts refunds, reversals and fees from gross sales; bank payouts remain in Bank. Coverage is confirmed only when all required accounts cover the full month.",
+        note: "Monthly Stripe sales by stream and settlement currency. Net after fees subtracts refunds, reversals and fees from gross sales; bank payouts remain in Bank. Coverage is confirmed only when all required accounts cover the full month. Fraud classifications are attached to their original Stripe transactions; they do not change actual deductions.",
         icon: DatabaseIcon,
         rows: (data) =>
             (data.stripeSales ?? []).filter((row) => row.month >= WINDOW_START)
@@ -247,8 +279,14 @@ const TABS = [
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>
-            (data.vendorLedger ?? []).filter(
-                (row) => row.start.slice(0, 7) >= WINDOW_START,
+            [
+                ...(data.vendorLedger ?? []),
+                ...(data.vendorStatements ?? []),
+                ...(data.vendorPlans ?? []),
+            ].filter(
+                (row) =>
+                    row.type === "planned" ||
+                    row.start.slice(0, 7) >= WINDOW_START,
             ).length,
     },
     {
@@ -362,10 +400,12 @@ function DrawerGroup({
 }
 
 function EconomicsNav({
+    reconcileMode,
     activeView,
     data,
     onViewChange,
 }: {
+    reconcileMode: boolean;
     activeView: ActiveView;
     data: Data | null;
     onViewChange: (value: ActiveView) => void;
@@ -428,23 +468,29 @@ function EconomicsNav({
     return (
         <nav className="flex flex-col gap-5 pr-2" aria-label="Economics views">
             <DrawerGroup label="Insights">
-                {INSIGHT_TABS.map(insightItem)}
+                {INSIGHT_TABS.filter(
+                    (item) => reconcileMode || !isReconcileView(item.id),
+                ).map(insightItem)}
             </DrawerGroup>
-            <DrawerGroup label="Ledgers">
-                {LEDGER_INSIGHT_TABS.map(insightItem)}
-                {TABS.map(rawItem)}
-            </DrawerGroup>
+            {reconcileMode && (
+                <DrawerGroup label="Ledgers">
+                    {LEDGER_INSIGHT_TABS.map(insightItem)}
+                    {TABS.map(rawItem)}
+                </DrawerGroup>
+            )}
         </nav>
     );
 }
 
 function EconomicsDrawer({
+    reconcileMode,
     activeView,
     data,
     footer,
     onCollapse,
     onViewChange,
 }: {
+    reconcileMode: boolean;
     activeView: ActiveView;
     data: Data | null;
     footer: ReactNode;
@@ -472,6 +518,7 @@ function EconomicsDrawer({
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <EconomicsNav
+                    reconcileMode={reconcileMode}
                     activeView={activeView}
                     data={data}
                     onViewChange={onViewChange}
@@ -485,12 +532,14 @@ function EconomicsDrawer({
 }
 
 function EconomicsShell({
+    reconcileMode,
     activeView,
     children,
     data,
     footer,
     onViewChange,
 }: {
+    reconcileMode: boolean;
     activeView: ActiveView;
     children: ReactNode;
     data: Data | null;
@@ -528,6 +577,7 @@ function EconomicsShell({
 
     const drawer = (
         <EconomicsDrawer
+            reconcileMode={reconcileMode}
             activeView={activeView}
             data={data}
             footer={footer}
@@ -542,6 +592,7 @@ function EconomicsShell({
         >
             <div className={collapsed ? "hidden" : "hidden md:block"}>
                 <EconomicsDrawer
+                    reconcileMode={reconcileMode}
                     activeView={activeView}
                     data={data}
                     footer={footer}
@@ -837,7 +888,20 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const fixtures = fixturesMode();
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
+    const [reconcileMode, setReconcileMode] = useState(readReconcileMode);
     const [activeView, setActiveView] = useState<ActiveView>(initialView);
+    const toggleReconcileMode = (enabled: boolean) => {
+        setReconcileMode(enabled);
+        if (!enabled && isReconcileView(activeView)) setActiveView("runway");
+        try {
+            window.localStorage.setItem(
+                RECONCILE_MODE_KEY,
+                enabled ? "1" : "0",
+            );
+        } catch {
+            // The toggle still works when browser storage is unavailable.
+        }
+    };
     const [loadedView, setLoadedView] = useState<ActiveView | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -970,6 +1034,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
         isLedgerTab(activeView) && rawFacets.vendors.length > 0;
     const showPeriodFilter =
         activeView !== "balances" &&
+        activeView !== "assumptions" &&
         activeView !== "runway" &&
         activeView !== "trends" &&
         activeView !== "close";
@@ -984,6 +1049,15 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
 
     const drawerFooter = (
         <>
+            <div className="flex items-center justify-between gap-3 px-2 text-sm text-theme-text-soft">
+                <span>Reconcile mode</span>
+                <Switch
+                    size="sm"
+                    ariaLabel="Reconcile mode"
+                    checked={reconcileMode}
+                    onChange={toggleReconcileMode}
+                />
+            </div>
             {accountUser && (
                 <DashboardAccountMenu
                     user={accountUser}
@@ -1140,12 +1214,16 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <ReconciliationTab
                         key={`${selectedYear}:${reconciliationFrom}`}
                         issues={reconciliation?.issues ?? []}
+                        acceptedExceptions={
+                            reconciliation?.acceptedExceptions ?? []
+                        }
                         year={selectedYear}
                         initialPage={reconciliationFrom}
                         onOpen={(page, month) => {
                             setSelectedMonth(month);
                             if (page === "runway")
                                 setRunwayYear(month.slice(0, 4));
+                            if (page === "trends") setTrendMonths(12);
                             setActiveView(page);
                         }}
                     />
@@ -1154,6 +1232,8 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <TrendsTab
                         data={viewData}
                         period={trendMonths}
+                        initialMonth={monthFilter}
+                        issues={reconciliation?.issues ?? []}
                         onPeriodChange={setTrendMonths}
                     />
                 )}
@@ -1165,6 +1245,9 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                 )}
                 {viewData && activeView === "inference" && (
                     <ManagedInferenceTab data={viewData} month={monthFilter} />
+                )}
+                {viewData && activeView === "assumptions" && (
+                    <AssumptionsTab config={viewData.privateConfig} />
                 )}
                 {viewData && activeView === "balances" && (
                     <BalancesTab data={viewData} />
@@ -1184,6 +1267,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     return (
         <ErrorBoundary resetKey={String(attempt)}>
             <EconomicsShell
+                reconcileMode={reconcileMode}
                 activeView={activeView}
                 data={data}
                 footer={drawerFooter}
@@ -1198,7 +1282,8 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                     <section className="flex flex-col gap-5">
                         <header className="flex shrink-0 justify-end px-1">
                             <div className="flex min-w-0 flex-wrap items-center justify-end gap-3">
-                                {viewData &&
+                                {reconcileMode &&
+                                    viewData &&
                                     Object.hasOwn(
                                         RECONCILIATION_PAGES,
                                         activeView,
@@ -1219,7 +1304,7 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
                                                 <WarningIcon className="h-3.5 w-3.5" />
                                             )}
                                             {relevantIssues.length
-                                                ? `${relevantIssues.length} ${relevantIssues.length === 1 ? "item" : "items"} to reconcile`
+                                                ? relevantIssues.length
                                                 : confidence.status}
                                         </button>
                                     )}

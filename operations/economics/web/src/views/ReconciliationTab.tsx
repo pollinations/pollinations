@@ -16,13 +16,14 @@ import {
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { StatCards } from "../components/StatCards";
 import { dataConfidence } from "../lib/dataConfidence";
-import type { DriveDocumentLink } from "../lib/documents";
-import { fmtUsd } from "../lib/format";
+import { type DriveDocumentLink, driveDocumentLink } from "../lib/documents";
+import { fmtExactUsd as fmtUsd } from "../lib/format";
 import { monthName } from "../lib/months";
 import {
     RECONCILIATION_GROUPS,
     RECONCILIATION_PAGES,
     RECONCILIATION_TYPES,
+    type ReconciliationException,
     type ReconciliationGroup,
     type ReconciliationIssue,
     type ReconciliationPage,
@@ -46,8 +47,10 @@ export function ReconciliationTab({
     year,
     onOpen,
     initialPage = null,
+    acceptedExceptions = [],
 }: {
     issues: ReconciliationIssue[];
+    acceptedExceptions?: ReconciliationException[];
     year: string;
     initialPage?: ReconciliationPage | null;
     onOpen: (page: ReconciliationPage, month: string) => void;
@@ -60,6 +63,11 @@ export function ReconciliationTab({
     const [type, setType] = useState<ReconciliationType | "">("");
     const [section, setSection] = useState<ReconciliationGroup>("financial");
     const scoped = issues.filter(
+        (row) =>
+            row.month.startsWith(`${year}-`) &&
+            (!page || row.affects.includes(page)),
+    );
+    const accepted = acceptedExceptions.filter(
         (row) =>
             row.month.startsWith(`${year}-`) &&
             (!page || row.affects.includes(page)),
@@ -269,6 +277,10 @@ export function ReconciliationTab({
                                                         {message}
                                                     </p>
                                                 ))}
+                                            <ReviewDetails
+                                                issue={issue}
+                                                onPreview={setPreviewDocument}
+                                            />
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
                                             {monthName(issue.month)}
@@ -289,6 +301,7 @@ export function ReconciliationTab({
                                                     Unknown
                                                 </span>
                                             )}
+                                            <RelatedAmounts issue={issue} />
                                         </TableCell>
                                         <TableCell className="min-w-40 max-w-60">
                                             <div className="flex flex-wrap gap-x-2 gap-y-1">
@@ -337,10 +350,125 @@ export function ReconciliationTab({
                     </DataTable>
                 </TableScroller>
             )}
+            {accepted.length > 0 && (
+                <details className="rounded-lg border border-theme-border p-3">
+                    <summary className="cursor-pointer font-semibold">
+                        Known limitations · {accepted.length}
+                    </summary>
+                    <p className="mt-2 text-sm text-theme-text-soft">
+                        Reviewed gaps retained for transparency; excluded from
+                        open-check counts.
+                    </p>
+                    <div className="mt-3 space-y-3">
+                        {accepted.map((exception) => (
+                            <article key={exception.id}>
+                                <p className="font-semibold">
+                                    {exception.vendor} ·{" "}
+                                    {monthName(exception.month)}
+                                </p>
+                                {exception.messages.map((message) => (
+                                    <p key={message} className="text-sm">
+                                        {message}
+                                    </p>
+                                ))}
+                                <div className="flex flex-wrap gap-2">
+                                    {supportingDocuments(
+                                        exception.evidence,
+                                    ).map((document, i) => (
+                                        <EvidenceAction
+                                            key={document.previewHref}
+                                            evidence={document.href}
+                                            onPreview={setPreviewDocument}
+                                            previewLabel={`Preview exception source ${i + 1} for ${exception.vendor}`}
+                                            openDocumentLabel={`exception source ${i + 1} for ${exception.vendor}`}
+                                        />
+                                    ))}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </details>
+            )}
             <EvidencePreview
                 documentLink={previewDocument}
                 onClose={() => setPreviewDocument(null)}
             />
         </section>
+    );
+}
+
+function supportingDocuments(evidence: string[], invoices: string[] = []) {
+    const invoiceIds = new Set(
+        invoices.map((value) => driveDocumentLink(value)?.previewHref),
+    );
+    const documents = new Map<string, DriveDocumentLink>();
+    for (const value of evidence) {
+        const document = driveDocumentLink(value);
+        if (document?.previewHref && !invoiceIds.has(document.previewHref))
+            documents.set(document.previewHref, document);
+    }
+    return [...documents.values()];
+}
+
+function ReviewDetails({
+    issue,
+    onPreview,
+}: {
+    issue: ReconciliationIssue;
+    onPreview: (document: DriveDocumentLink) => void;
+}) {
+    const documents = supportingDocuments(issue.evidence, issue.invoices);
+    if (!documents.length && !issue.reviewedNotes?.length) return null;
+    return (
+        <details className="mt-2 text-xs text-theme-text-soft">
+            <summary className="cursor-pointer">Sources and review</summary>
+            {issue.reviewedNotes?.map((note) => (
+                <p key={note.message} className="mt-2">
+                    {note.message}
+                </p>
+            ))}
+            <div className="mt-1 flex flex-wrap gap-2">
+                {documents.map((document, i) => (
+                    <EvidenceAction
+                        key={document.previewHref}
+                        evidence={document.href}
+                        onPreview={onPreview}
+                        previewLabel={`Preview source ${i + 1} for ${issue.vendor}`}
+                        openDocumentLabel={`source ${i + 1} for ${issue.vendor}`}
+                    />
+                ))}
+            </div>
+        </details>
+    );
+}
+
+function RelatedAmounts({ issue }: { issue: ReconciliationIssue }) {
+    const amounts = (issue.relatedAmounts ?? []).filter(
+        (amount) =>
+            amount.group !== issue.group ||
+            amount.amountLabel !== issue.amountLabel,
+    );
+    if (!amounts.length) return null;
+    return (
+        <details className="mt-2 text-xs text-theme-text-soft">
+            <summary className="cursor-pointer">
+                Other amounts · {amounts.length}
+            </summary>
+            {amounts.map((amount) => (
+                <p
+                    key={`${amount.group}|${amount.amountLabel}`}
+                    className="mt-2"
+                >
+                    {amount.amountUsd == null
+                        ? "Unknown"
+                        : fmtUsd(amount.amountUsd)}{" "}
+                    · {amount.amountLabel}
+                </p>
+            ))}
+            <p className="mt-2">
+                Different checks can overlap; these amounts are not added
+                together.
+            </p>
+        </details>
     );
 }

@@ -276,7 +276,7 @@ it("keeps the overview across issue groups while respecting year and affected pa
     const overview = html
         .split('aria-label="Reconciliation overview"')[1]
         .split("</section>")[0];
-    expect(overview).toContain("Needs review");
+    expect(overview).toContain("Incomplete");
     expect(overview).toContain("3 open checks");
     expect(overview).toContain("Financial gaps");
     expect(overview).toContain("1 with unknown amounts");

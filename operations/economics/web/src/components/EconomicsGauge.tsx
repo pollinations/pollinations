@@ -35,12 +35,14 @@ export function gaugeParts(left: number, right: number) {
 }
 
 export function Gauge({
+    className = "w-24",
     left,
     leftLabel,
     palette = "wallet",
     right,
     rightLabel,
 }: {
+    className?: string;
     left: number;
     leftLabel: string;
     palette?: GaugePalette;
@@ -53,7 +55,7 @@ export function Gauge({
     const label = `${leftLabel} ${fmtUnsignedPct(parts.leftPct)} · ${rightLabel} ${fmtUnsignedPct(parts.rightPct)}`;
     return (
         <div
-            className="flex h-2 w-24 overflow-hidden rounded-sm"
+            className={`flex h-2 overflow-hidden rounded-sm ${className}`}
             role="img"
             aria-label={label}
             title={label}

@@ -28,13 +28,17 @@ import {
     mediaResponseHeaders,
 } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
+import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "@/env.ts";
 import { auth } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
-import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import {
+    normalizedJsonBody,
+    prepareGenerationRequest,
+} from "@/middleware/generation-cache.ts";
 import { deduplicateGeneration } from "@/middleware/generation-deduplication.ts";
 import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
@@ -2269,6 +2273,30 @@ async function parseSpeechRequest(
     }
     return parseCreateSpeechRequest(body);
 }
+
+/**
+ * Speech responses are files, never SSE streams: a stray `stream` body
+ * field must not fragment the cache identity. Rebuild the identity from the
+ * validated request (zod strips unknown fields, so the fields that actually
+ * shape the audio are the only ones left), mirroring the image generation
+ * routes. Called after prepareGenerationRequest so the replayable body stays
+ * exactly what the caller sent.
+ */
+export const prepareSpeechCacheIdentity = createMiddleware<Env>(
+    async (c, next) => {
+        const request = await parseSpeechRequest(c);
+        c.set(
+            "generationCacheBody",
+            normalizedJsonBody(
+                JSON.stringify({
+                    ...request,
+                    model: c.var.model.resolved,
+                }),
+            ),
+        );
+        await next();
+    },
+);
 
 export async function generateQwenTts(opts: {
     modelName: QwenTtsModelName;
@@ -4512,6 +4540,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         track("generate.audio"),
         prepareGenerationRequest,
+        prepareSpeechCacheIdentity,
         audioCache,
         generationAccess,
         deduplicateGeneration,
@@ -4636,6 +4665,7 @@ export const audioRoutes = new Hono<Env>()
         }),
         track("generate.audio"),
         prepareGenerationRequest,
+        prepareSpeechCacheIdentity,
         textCache,
         generationAccess,
         deduplicateGeneration,

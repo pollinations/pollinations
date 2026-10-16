@@ -11,7 +11,8 @@ type Run = InferResponseType<
 >["data"][number];
 
 // The owner's own recent calls to an agent, each with the generations and tool
-// calls it made. Loads on first expand so closed cards cost nothing.
+// calls it made. Loads on each expand so closed cards cost nothing and a
+// reopened list shows calls made since.
 export function EndpointRuns({ id }: { id: string }) {
     const [expanded, setExpanded] = useState(false);
     const [runs, setRuns] = useState<Run[] | null>(null);
@@ -42,7 +43,7 @@ export function EndpointRuns({ id }: { id: string }) {
             }
             expanded={expanded}
             onToggle={() => {
-                if (!expanded && !runs) void loadRuns();
+                if (!expanded) void loadRuns();
                 setExpanded(!expanded);
             }}
             wrapperClassName="mt-4 border-theme-border"

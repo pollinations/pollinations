@@ -17,7 +17,7 @@ SQL >
         anyIf(response_time, parent_request_id = '') AS duration_ms,
         anyIf(api_key_name, parent_request_id = '') AS key_name,
         sum(total_price) AS cost,
-        countIf(parent_request_id != '' AND event_type != 'mcp.call') AS model_calls,
+        countIf(parent_request_id != '' AND startsWith(event_type, 'generate.')) AS model_calls,
         countIf(event_type = 'mcp.call') AS tool_calls,
         countIf(parent_request_id != '' AND response_status >= 400) AS failed_calls,
         substring(
@@ -35,7 +35,7 @@ SQL >
         AND is_final
         AND (parent_request_id != '' OR resolved_model_requested = {{String(model, required=True)}})
     GROUP BY run_id
-    HAVING countIf(parent_request_id = '') = 1
+    HAVING countIf(parent_request_id = '') > 0
     ORDER BY started_at DESC
     LIMIT 50
 

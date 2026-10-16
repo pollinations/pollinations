@@ -3,3 +3,5 @@ node_modules/
 dist/
 .dev.vars
 .replicate-test-output/
+# Built by `npm run docs:app:build`; served at /docs-app/.
+public/docs-app/

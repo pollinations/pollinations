@@ -5,10 +5,10 @@
     "description": "Simplified API gateway for pollinations.ai",
     "scripts": {
         "decrypt-vars": "node scripts/decrypt-dev-vars.mjs",
-        "dev": "npm run decrypt-vars && vite build --mode=development && wrangler dev --port 8788 --local --persist-to ../enter.pollinations.ai/.wrangler/state --show-interactive-dev-session false",
+        "dev": "npm run decrypt-vars && npm run docs:app:build && vite build --mode=development && wrangler dev --port 8788 --local --persist-to ../enter.pollinations.ai/.wrangler/state --show-interactive-dev-session false",
         "seed:local": "node scripts/seed-local-key.mjs",
-        "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
-        "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
+        "build:staging": "npm run docs:app:build && CLOUDFLARE_ENV=staging vite build --mode=staging",
+        "build:production": "npm run docs:app:build && CLOUDFLARE_ENV=production vite build --mode=production",
         "deploy:staging": "npm run build:staging && wrangler deploy --env staging",
         "deploy:production": "npm run build:production && wrangler deploy --env production",
         "apply-lifecycle:production": "wrangler r2 bucket lifecycle set pollinations-text-enter --file r2-lifecycle.json --force",
@@ -18,8 +18,7 @@
         "typecheck": "tsc --noEmit",
         "docs:generate": "tsx scripts/generate-apidocs.ts",
         "docs:validate": "tsx scripts/validate-apidocs.ts",
-        "docs:preview": "npm run build --workspace @pollinations/ui && vite --config docs-preview/vite.config.ts",
-        "docs:preview:build": "npm run build --workspace @pollinations/ui && tsc --project docs-preview/tsconfig.json && vite build --config docs-preview/vite.config.ts"
+        "docs:app:build": "npm run build --workspace @pollinations/ui && tsc --project docs-app/tsconfig.json && vite build --config docs-app/vite.config.ts"
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.62.5",
@@ -27,7 +26,10 @@
         "@cloudflare/workers-types": "^4.20251202.0",
         "@hono/node-server": "^1.19.14",
         "@pollinations/ui": "*",
+        "@scalar/oas-utils": "0.6.20",
+        "@scalar/openapi-parser": "0.24.1",
         "@scalar/openapi-to-markdown": "0.3.23",
+        "@scalar/snippetz": "0.6.5",
         "@tailwindcss/vite": "^4.1.17",
         "@types/debug": "^4.1.13",
         "@types/node": "24.10.1",

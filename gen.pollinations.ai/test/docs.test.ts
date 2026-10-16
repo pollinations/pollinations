@@ -7,6 +7,7 @@ import { parse as yamlParse } from "yaml";
 import {
     buildCurl,
     fetchOpenApiSpec,
+    renderEndpoint,
     type Spec,
 } from "../scripts/generate-apidocs.ts";
 import { requestExampleErrors } from "../scripts/validate-request-examples.ts";
@@ -187,14 +188,9 @@ describe("docs routes", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        const schema = (await response.json()) as {
-            info: { description: string };
-            paths: Record<string, unknown>;
-            servers: { url: string }[];
+        const schema = (await response.json()) as Spec & {
             "x-tagGroups": { name: string; tags: string[] }[];
             tags: { name: string; description?: string }[];
-            components: { schemas: Record<string, unknown> };
-            "x-schema-sources": Record<string, boolean>;
         };
 
         expect(schema["x-schema-sources"]).toEqual({
@@ -209,6 +205,15 @@ describe("docs routes", () => {
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
         expect(schema.paths["/realtime"]).toBeDefined();
         expect(schema.paths["/v1/realtime"]).toBeDefined();
+        expect(schema).toHaveProperty([
+            "paths",
+            "/v1/systemone",
+            "post",
+            "requestBody",
+            "content",
+            "application/json",
+            "schema",
+        ]);
         const jobStatusGet = (
             schema.paths["/v1/jobs/{id}"] as Record<string, unknown>
         )?.get as { tags?: string[] } | undefined;
@@ -270,19 +275,19 @@ describe("docs routes", () => {
         expect(schema.paths["/{id}/metadata"]).toBeDefined();
         expect(schema.paths["/media"]).toBeDefined();
         expect(schema.paths["/media/{id}"]).toBeDefined();
-        const integrations = schema["x-tagGroups"].find(
-            (group) => group.name === "Integrations",
+        const guides = schema["x-tagGroups"].find(
+            (group) => group.name === "Guides",
         );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
-        expect(integrations?.tags).toContain("Publish a Model");
-        expect(integrations?.tags).not.toContain("Community Models");
+        expect(guides?.tags).toContain("Publish a Model");
+        expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
-        expect(integrations?.tags).toContain("Publish an Agent");
-        expect(integrations?.tags).toContain("Coding Harnesses");
-        expect(integrations?.tags).not.toContain("Community Agents");
+        expect(guides?.tags).toContain("Publish an Agent");
+        expect(guides?.tags).toContain("Coding Harnesses");
+        expect(guides?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
         expect(schema.tags.map((tag) => tag.name)).toContain(
@@ -348,6 +353,9 @@ describe("docs routes", () => {
             | undefined;
         expect(realtimeResponses?.["426"]).toBeDefined();
         expect(realtimeResponses?.["503"]).toBeDefined();
+        expect(
+            renderEndpoint(schema, "get", "/v1/realtime", realtimeGet ?? {}),
+        ).toContain("`101` — WebSocket connection established");
 
         const nativeRealtimeGet = (
             schema.paths["/realtime"] as Record<string, unknown>
@@ -542,6 +550,25 @@ describe("docs routes", () => {
         expect(html).toContain('rel="manifest" href="/manifest.webmanifest"');
         expect(html).toContain("window.location.hash === '#tag/byop'");
         expect(html).toContain("#tag/connect-user-wallets");
+    });
+
+    it("puts the dashboard and help links in the docs drawer", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        const html = await response.text();
+        for (const href of [
+            "https://enter.pollinations.ai",
+            "https://discord.com/channels/885844321461485618/889573359111774329",
+            "https://github.com/pollinations/pollinations/issues",
+        ]) {
+            expect(html).toContain(`href=\\"${href}\\"`);
+        }
     });
 
     it("serves the guide as Markdown when an agent prefers it", async () => {

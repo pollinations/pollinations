@@ -477,7 +477,10 @@ def catalog_files(raw: dict, news: Path) -> dict[str, bytes]:
     """The day's snapshot, when the catalog differs from the latest recorded one."""
     date, current = raw["date"], raw["snapshot"]
     latest = snapshot_date(news, date)
-    if latest and diff_models(read_snapshot(news, latest), current).is_empty():
+    previous = read_snapshot(news, latest)
+    # A category the record didn't have yet is a change too: the comparison skips it.
+    unchanged = previous and set(previous) == set(current)
+    if unchanged and diff_models(previous, current).is_empty():
         print(f"  The catalog is unchanged since {latest}")
         return {}
     return {f"{MODELS_NEWS_DIR}/snapshots/{date}.json": json_file(current)}

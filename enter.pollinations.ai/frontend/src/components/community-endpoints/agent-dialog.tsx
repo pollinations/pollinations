@@ -153,7 +153,8 @@ export function AgentDialog({
                         description={
                             <>
                                 Choose a prompt and model, or deploy code from
-                                GitHub.{" "}
+                                GitHub. Saved changes take a minute or two to
+                                become callable.{" "}
                                 {!agent && (
                                     <InlineLink
                                         href={genDocsUrl(

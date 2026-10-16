@@ -18,7 +18,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).parent))
 import deliver
 import posts
-from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
+from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input, fetch_all_snapshots,
                     filter_daily_gists, monthly_digest_input, post_recap, validate_gist, weekly_digest_input)
 from contributors import github_account, rank_contributors
 from discord_pr import generate_snippet
@@ -263,6 +263,25 @@ class GistEnrichmentTest(unittest.TestCase):
             {"number": 8})
         self.assertEqual(gap, [])
 
+    def test_api_surface_does_not_flatten_alternative_body_requirements(self):
+        docs = """#### `POST` `/models` — Create a model
+⚙️ **Parameters**
+| `debug` | `query` | `boolean` | Debug |
+📥 **Request body** · `application/json`
+| `name` * | `string` | Shared field |
+**Alternative 1** · `modality`: `"text"`
+| `url` * | `string` | Text endpoint |
+**Alternative 2** · `modality`: `"image"`
+| `baseUrl` * | `string` | Media endpoint |
+📤 **Response**
+"""
+        surface = api_surface(docs)
+        self.assertEqual(surface["POST /models"], {
+            "summary": "Create a model",
+            "parameters": {"query:debug": {"type": "boolean", "required": False}},
+            "body": {},
+        })
+
     def test_docs_pr_reports_api_changes_from_apidocs(self):
         docs = """## 🛠️ Endpoints
 
@@ -463,7 +482,7 @@ class GistEnrichmentTest(unittest.TestCase):
                 pr_comparison_refs(pr, root)
 
 
-EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": []}
+EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": [], "3d": [], "realtime": []}
 
 # One reply carrying every field any post reads.
 REPLY = {
@@ -722,6 +741,24 @@ class PostsTest(unittest.TestCase):
                 self.new("catalog", today)
             self.assertEqual(list(self.new("catalog", yesterday, overwrite=True)[2]),
                              [f"{NEWS_REL_DIR}/models/snapshots/{yesterday}.json"])
+
+    def test_the_catalog_keeps_3d_and_realtime_models(self):
+        models = [{"name": "a", "category": "3d"}, {"name": "b", "category": "realtime"},
+                  {"name": "c", "category": "embedding"}]
+        with patch("common.requests.get", return_value=SimpleNamespace(json=lambda: models,
+                                                                       raise_for_status=lambda: None)):
+            snapshot = fetch_all_snapshots()
+        self.assertEqual((snapshot["3d"], snapshot["realtime"], snapshot["embeddings"]),
+                         ([models[0]], [models[1]], [models[2]]))
+
+    def test_catalog_records_a_new_category_even_without_model_changes(self):
+        today = str(datetime.now(UTC).date())
+        self.put("models/snapshots/2026-10-01.json",
+                 {"text": [{"name": "kept"}], "image": [], "video": [], "audio": [], "embeddings": []})
+        current = {**EMPTY_CATALOG, "text": [{"name": "kept"}], "3d": [{"name": "microsoft/trellis-2"}]}
+        with patch("posts.fetch_all_snapshots", return_value=current):
+            saved = self.new("catalog", today)[2]
+        self.assertEqual(list(saved), [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
 
     def test_model_post_compares_the_recorded_catalog_a_week_apart(self):
         last_week = {**EMPTY_CATALOG, "text": [{"name": "kept", "paid_only": False}]}

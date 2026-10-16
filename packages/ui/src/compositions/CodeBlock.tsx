@@ -7,6 +7,12 @@ type CodeBlockOwnProps = {
     code: string;
     codeClassName?: string;
     language?: string;
+    /**
+     * `framed` (default): bordered panel with a language bar. `plain`: a soft
+     * filled box with only a copy button in its corner, for reading pages
+     * such as docs.
+     */
+    variant?: "framed" | "plain";
 };
 
 export type CodeBlockProps = CodeBlockOwnProps &
@@ -16,10 +22,46 @@ export const CodeBlock: FC<CodeBlockProps> = ({
     code,
     codeClassName,
     language,
+    variant = "framed",
     className,
     ...rest
 }) => {
     const label = language || "Code";
+
+    if (variant === "plain") {
+        return (
+            <div
+                {...rest}
+                className={cn(
+                    "polli:group polli:relative polli:min-w-0 polli:max-w-full polli:overflow-hidden polli:rounded-lg polli:bg-surface-block",
+                    className,
+                )}
+            >
+                <CopyButton
+                    value={code}
+                    tooltip={null}
+                    aria-label={`Copy ${label}`}
+                    className="polli:absolute polli:top-1.5 polli:right-1.5 polli:flex polli:size-7 polli:items-center polli:justify-center polli:rounded-md polli:bg-surface-block polli:text-theme-text-muted polli:opacity-0 polli:transition polli:group-hover:opacity-100 polli:hover:text-theme-text-strong polli:focus-visible:opacity-100 polli:[@media(hover:none)]:opacity-100"
+                >
+                    {(copied) =>
+                        copied ? (
+                            <CheckIcon className="polli:size-3.5" />
+                        ) : (
+                            <ClipboardIcon className="polli:size-3.5" />
+                        )
+                    }
+                </CopyButton>
+                <pre
+                    className={cn(
+                        "polli:m-0 polli:min-w-0 polli:whitespace-pre-wrap polli:break-words polli:[overflow-wrap:anywhere] polli:[tab-size:4] polli:px-3.5 polli:py-3 polli:font-mono polli:text-xs polli:leading-6 polli:text-theme-text-strong",
+                        codeClassName,
+                    )}
+                >
+                    <code>{code}</code>
+                </pre>
+            </div>
+        );
+    }
 
     return (
         <div

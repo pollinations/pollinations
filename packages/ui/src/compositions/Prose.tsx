@@ -12,8 +12,12 @@ import { MarkdownCodeBlock } from "./Markdown.tsx";
 
 export type ProseProps = {
     children: string;
-    /** `plain` sets headings in the body face, one size smaller, for reading pages such as docs. */
-    face?: HeadingFace;
+    /**
+     * `page` (default) uses the brand headings and framed code. `docs` is
+     * quieter for long reading: body-face headings one size smaller, grey
+     * quotes and borderless code.
+     */
+    variant?: "page" | "docs";
     className?: string;
 };
 
@@ -114,12 +118,27 @@ const components: Components = {
     ),
 };
 
-const componentsByFace: Record<HeadingFace, Components> = {
-    brand: { ...components, ...headingsFor("brand") },
-    plain: { ...components, ...headingsFor("plain") },
+const componentsByVariant: Record<
+    NonNullable<ProseProps["variant"]>,
+    Components
+> = {
+    page: { ...components, ...headingsFor("brand") },
+    docs: {
+        ...components,
+        ...headingsFor("plain"),
+        blockquote: ({ node, ...props }) => (
+            <blockquote
+                className="polli:my-4 polli:border-l-2 polli:border-theme-text-strong/20 polli:pl-4 polli:text-theme-text-base"
+                {...props}
+            />
+        ),
+        pre: ({ children }) => (
+            <MarkdownCodeBlock variant="plain">{children}</MarkdownCodeBlock>
+        ),
+    },
 };
 
-export function Prose({ children, face = "brand", className }: ProseProps) {
+export function Prose({ children, variant = "page", className }: ProseProps) {
     return (
         <div
             className={cn(
@@ -130,7 +149,7 @@ export function Prose({ children, face = "brand", className }: ProseProps) {
             <Markdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSlug]}
-                components={componentsByFace[face]}
+                components={componentsByVariant[variant]}
             >
                 {children}
             </Markdown>

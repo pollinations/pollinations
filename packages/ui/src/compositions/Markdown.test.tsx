@@ -127,14 +127,18 @@ describe("Prose", () => {
         );
     });
 
-    test("keeps brand headings unless a page asks for plain ones", () => {
-        const brand = renderToStaticMarkup(<Prose>{"## Pricing"}</Prose>);
-        const plain = renderToStaticMarkup(
-            <Prose face="plain">{"## Pricing"}</Prose>,
+    test("keeps brand headings and framed code unless a page asks for docs", () => {
+        const markdown =
+            "## Pricing\n\n```bash\ncurl https://example.test\n```";
+        const page = renderToStaticMarkup(<Prose>{markdown}</Prose>);
+        const docs = renderToStaticMarkup(
+            <Prose variant="docs">{markdown}</Prose>,
         );
 
-        expect(brand).toMatch(/<h2 class="[^"]*polli:font-subheading/);
-        expect(plain).toMatch(/<h2 class="[^"]*polli:font-body/);
-        expect(plain).not.toContain("polli:font-subheading");
+        expect(page).toMatch(/<h2 class="[^"]*polli:font-subheading/);
+        expect(page).toContain(">bash<");
+        expect(docs).toMatch(/<h2 class="[^"]*polli:font-body/);
+        expect(docs).not.toContain("polli:border-theme-border");
+        expect(docs).toContain('aria-label="Copy bash"');
     });
 });

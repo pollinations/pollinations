@@ -107,7 +107,6 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
-import { resolveModelDefinition } from "../src/middleware/model.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
@@ -264,75 +263,6 @@ fixtureTest(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,
             ),
         ).toHaveLength(2);
-    },
-);
-
-fixtureTest(
-    "a new agent works for its owner before the catalog cache expires",
-    async () => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const { key: ownerApiKey, userId: ownerUserId } =
-            await createTestApiKey({
-                user: {
-                    githubId: nextAllowedGithubId(),
-                    githubUsername: ownerGithubUsername,
-                },
-            });
-        const otherUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: `other-${crypto.randomUUID().slice(0, 8)}`,
-        });
-        const modelId = communityModelId(ownerGithubUsername, "fresh-agent");
-        // Cache the catalog before the agent exists.
-        expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
-            null,
-        );
-        const id = `fresh-agent-${crypto.randomUUID()}`;
-        await insertCommunityEndpoints({
-            id,
-            ownerUserId,
-            name: "fresh-agent",
-            description: "Test",
-            type: "prompt_agent",
-            visibility: "private",
-            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-            upstreamModel: id,
-            payload: JSON.stringify({
-                prompt: "Test",
-                baseModel: DEFAULT_TEXT_MODEL,
-                mcpServers: [],
-            }),
-        });
-        const resolve = (model: string, callerUserId: string) =>
-            resolveModelDefinition(
-                model,
-                "generate.text",
-                env,
-                callerUserId,
-                "/v1/chat/completions",
-            );
-
-        // Only the owner's exact model id counts.
-        for (const [model, callerUserId] of [
-            [modelId, otherUserId],
-            ["someone-else/fresh-agent", ownerUserId],
-        ]) {
-            await expect(resolve(model, callerUserId)).rejects.toThrow(
-                "Invalid model or alias",
-            );
-        }
-        const resolved = await resolve(modelId, ownerUserId);
-        expect(resolved.communityEndpoint?.id).toBe(id);
-        const modelResponse = await fetchGen(
-            new Request(`https://gen.pollinations.ai/v1/models/${modelId}`, {
-                headers: { Authorization: `Bearer ${ownerApiKey}` },
-            }),
-        );
-        expect(modelResponse.status).toBe(200);
-        // Other callers keep the cached catalog until it expires.
-        expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
-            null,
-        );
     },
 );
 
@@ -3682,6 +3612,9 @@ fixtureTest(
             }),
         );
         expect(otherResponse.status).toBe(400);
+        await expect(otherResponse.text()).resolves.toContain(
+            "New models can take a minute or two to become callable.",
+        );
 
         // The owner reaches their own private model.
         const ownerResponse = await fetchGen(

@@ -16,7 +16,7 @@ import {
     responsesToChatStream,
 } from "@/text/responses/chatResponse.ts";
 import { generationAccess } from "@/utils/generation-access.ts";
-import { resolveGenerationModel } from "../model-registry.ts";
+import { getGenerationModelRegistry } from "../model-registry.ts";
 import { prepareImageEditRequest } from "../routes/images.ts";
 import { mediaPromptRoute } from "./prompt-route.ts";
 import { createMediaResponse, textResponseStream } from "./response-output.ts";
@@ -86,13 +86,10 @@ export function mediaPrompt(input: unknown): MediaInput {
 export function mediaResponses(protocol: MediaProtocol) {
     return createMiddleware<Env>(async (c, next) => {
         const body = c.req.valid("json" as never) as Record<string, unknown>;
+        const registry = await getGenerationModelRegistry(c.env);
         const entry =
             typeof body.model === "string"
-                ? await resolveGenerationModel(
-                      c.env,
-                      body.model,
-                      c.var.auth?.user?.id,
-                  )
+                ? registry.resolve(body.model)
                 : null;
         const route = entry && mediaPromptRoute(entry);
         if (!entry || !route) return next();

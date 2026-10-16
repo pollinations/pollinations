@@ -15,7 +15,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
     type GenerationModelEntry,
-    resolveGenerationModel,
+    getGenerationModelRegistry,
 } from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
@@ -81,6 +81,17 @@ function getValidatedJsonBody<T>(req: {
     }
 }
 
+// Community models ("<owner>/<name>") are served from a catalog cached for
+// about a minute, so a model created just now is still unknown here.
+function unknownModel(model: string): HTTPException {
+    const newModelNote = model.includes("/")
+        ? " New models can take a minute or two to become callable."
+        : "";
+    return new HTTPException(400, {
+        message: `Invalid model or alias: "${model}". Must be a valid model name or alias.${newModelNote}`,
+    });
+}
+
 export async function resolveModelDefinition(
     model: string,
     eventType: EventType,
@@ -88,12 +99,9 @@ export async function resolveModelDefinition(
     callerUserId?: string,
     supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
-    const entry = await resolveGenerationModel(env, model, callerUserId);
-    if (!entry) {
-        throw new HTTPException(400, {
-            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
-        });
-    }
+    const registry = await getGenerationModelRegistry(env);
+    const entry = registry.resolve(model);
+    if (!entry) throw unknownModel(model);
 
     // Provider routes are registry entries so fallback linking and billing can
     // use them, but callers must select the public model they belong to.
@@ -112,9 +120,7 @@ export async function resolveModelDefinition(
         community.visibility !== "public" &&
         community.ownerUserId !== callerUserId
     ) {
-        throw new HTTPException(400, {
-            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
-        });
+        throw unknownModel(model);
     }
 
     if (entry.eventType !== eventType) {

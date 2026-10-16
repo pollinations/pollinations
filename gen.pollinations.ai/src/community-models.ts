@@ -16,7 +16,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { and, eq, isNotNull, type SQL } from "drizzle-orm";
+import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
@@ -53,27 +53,6 @@ export async function getCommunityModelRegistryEntries(
     return entries;
 }
 
-/**
- * The caller's own listing with `model` as its id or alias. It goes through
- * the catalog's own query and mapping, so it is exactly the entry the next
- * catalog refresh adds.
- */
-export async function findOwnListing(
-    dbBinding: CloudflareBindings["DB"],
-    ownerUserId: string,
-    model: string,
-): Promise<CommunityModelRegistryEntry | undefined> {
-    // Every community id and alias is "<owner>/<name>" or prefixed.
-    if (!model.includes("/")) return undefined;
-    const entries = await queryCommunityModelRegistryEntries(
-        dbBinding,
-        eq(schema.communityEndpoint.ownerUserId, ownerUserId),
-    );
-    return entries.find(
-        (entry) => entry.id === model || entry.aliases.includes(model),
-    );
-}
-
 export async function resetCommunityModelRegistryCache(
     env: CommunityModelEnv,
 ): Promise<void> {
@@ -82,7 +61,6 @@ export async function resetCommunityModelRegistryCache(
 
 async function queryCommunityModelRegistryEntries(
     dbBinding: CloudflareBindings["DB"],
-    filter?: SQL,
 ): Promise<CommunityModelRegistryEntry[]> {
     const db = drizzle(dbBinding, { schema });
     const rows = await db
@@ -115,7 +93,7 @@ async function queryCommunityModelRegistryEntries(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         )
-        .where(and(isNotNull(schema.user.githubUsername), filter));
+        .where(isNotNull(schema.user.githubUsername));
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername || isUserBanned(row)) return [];
         const baseUrl = row.baseUrl;

@@ -27,7 +27,6 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
-    findOwnListing,
     getCommunityModelRegistryEntries,
     resetCommunityModelRegistryCache,
 } from "./community-models.ts";
@@ -84,8 +83,6 @@ export type GenerationModelEntry = {
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
     visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
-    // A registry with entries added, leaving this one and its cache untouched.
-    with: (entries: GenerationModelEntry[]) => GenerationModelRegistry;
 };
 
 type CachedRegistry = {
@@ -250,7 +247,6 @@ function buildRegistry(
 
     return {
         resolve: (model) => byIdOrAlias.get(model) ?? null,
-        with: (extra) => buildRegistry([...sourceEntries, ...extra]),
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
@@ -315,32 +311,6 @@ export async function getGenerationModelRegistry(
         registry,
     };
     return registry;
-}
-
-/**
- * Resolves one model for a caller. The catalog is cached for up to a minute
- * in KV and again in each isolate, so on a miss the caller's own listings are
- * read from D1: a new agent works for its owner straight away. New listings
- * stay private until review, so their owner is the only one who can call
- * them. The shared caches are left as they are; until they refresh, each such
- * call builds its own registry.
- */
-export async function resolveGenerationModel(
-    env: CommunityModelEnv,
-    model: string,
-    callerUserId: string | undefined,
-): Promise<GenerationModelEntry | null> {
-    const registry = await getGenerationModelRegistry(env);
-    const entry = registry.resolve(model);
-    if (entry || !callerUserId) return entry;
-    // Like the catalog itself, a D1 failure here leaves the miss a miss.
-    const listing = await findOwnListing(env.DB, callerUserId, model).catch(
-        () => undefined,
-    );
-    if (!listing) return null;
-    return registry
-        .with([communityEntryToGenerationEntry(listing)])
-        .resolve(model);
 }
 
 export async function resetGenerationModelRegistryCache(

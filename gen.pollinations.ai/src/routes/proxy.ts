@@ -105,7 +105,6 @@ import {
 import {
     type GenerationModelEntry,
     getGenerationModelRegistry,
-    resolveGenerationModel,
 } from "../model-registry.ts";
 import { handleSimpleAudio } from "./audio.ts";
 import {
@@ -399,11 +398,7 @@ async function resolveVisibleModelEntry(
     c: Context<Env>,
     modelId: string,
 ): Promise<GenerationModelEntry | null> {
-    const entry = await resolveGenerationModel(
-        c.env,
-        modelId,
-        c.var.auth?.user?.id,
-    );
+    const entry = (await getGenerationModelRegistry(c.env)).resolve(modelId);
     if (!entry) return null;
     if (!entry.visible) {
         const endpoint = entry.communityEndpoint;

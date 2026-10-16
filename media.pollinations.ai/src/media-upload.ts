@@ -16,6 +16,7 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    cacheControl?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -79,7 +80,7 @@ export async function uploadUnlistedMedia(
             env.MEDIA_BUCKET.put(id, upload.readable, {
                 httpMetadata: {
                     contentType,
-                    cacheControl: IMMUTABLE_CACHE_CONTROL,
+                    cacheControl: input.cacheControl ?? IMMUTABLE_CACHE_CONTROL,
                 },
                 customMetadata: {
                     uploadedAt: new Date().toISOString(),

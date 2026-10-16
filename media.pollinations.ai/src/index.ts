@@ -1,7 +1,7 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import {
     describeRoute,
@@ -19,7 +19,7 @@ import {
     getDb,
     insertUploadCatalogItem,
     listMedia,
-    listUserMedia,
+    listOwnerMedia,
     MAX_LIMIT,
     normalizeTags,
     TagError,
@@ -43,8 +43,9 @@ const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
-// Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
-// IDs can be reused after expiry; neither should remain in downstream caches.
+// Uploads without a user-owned key are immutable. User uploads can be deleted,
+// and custom IDs can be reused after expiry; neither should remain in
+// downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 const MAX_BUFFERED_SIZE = 104857600; // JSON base64 uploads still buffer in memory
@@ -104,6 +105,43 @@ function extractApiKey(req: Request): string | null {
         ?.match(/^Bearer (.+)$/)?.[1];
     if (bearer) return bearer;
     return new URL(req.url).searchParams.get("key");
+}
+
+/**
+ * Owner-only routes (list mine, delete) need a secret key attached to a user:
+ * publishable keys ship inside public clients, so anyone holding one could
+ * read or delete the owner's media. Returns the error response on failure.
+ */
+async function verifyOwnerKey(
+    c: Context<{ Bindings: Env }>,
+    action: string,
+): Promise<(AuthResult & { userId: string }) | Response> {
+    const apiKey = extractApiKey(c.req.raw);
+    if (!apiKey) {
+        return c.json(
+            {
+                error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
+            },
+            401,
+        );
+    }
+    const auth = await verifyApiKey(apiKey);
+    if (!auth) {
+        return c.json({ error: "Invalid or expired API key" }, 401);
+    }
+    if (auth.userId === null) {
+        return c.json(
+            { error: "This API key is not attached to a user account" },
+            403,
+        );
+    }
+    if (auth.type !== "secret") {
+        return c.json(
+            { error: `${action} requires a secret (sk_) API key` },
+            403,
+        );
+    }
+    return { ...auth, userId: auth.userId };
 }
 
 function fileTooLargeError(maxSize: number): { error: string } {
@@ -284,24 +322,28 @@ const MediaListQuerySchema = z.object({
         ),
 });
 
-// Query-param schema for GET /media/mine: same paging shape as
-// MediaListQuerySchema, minus `tag` — the private list is scoped to the
-// authenticated caller, not a tag.
-const MyMediaListQuerySchema = z.object({
-    limit: z.coerce
-        .number()
-        .int()
-        .min(1)
-        .max(MAX_LIMIT)
-        .optional()
-        .describe(`Page size, 1–${MAX_LIMIT}. Omitted → ${DEFAULT_LIMIT}.`),
-    cursor: z
-        .string()
-        .optional()
-        .describe(
-            "Opaque pagination cursor from a previous response's nextCursor.",
-        ),
-});
+const OwnerMediaQuerySchema = MediaListQuerySchema.omit({ tag: true });
+
+// Emit query validation failures in the same {error} shape as every other
+// error response instead of the validator's default body.
+function validateQuery<T extends z.ZodType>(schema: T) {
+    return validator("query", schema, (result, c) => {
+        if (!result.success) {
+            const issue = result.error[0];
+            const path = issue?.path
+                ?.map((p) =>
+                    typeof p === "object" ? String(p.key) : String(p),
+                )
+                .join(".");
+            return c.json(
+                {
+                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
+                },
+                400,
+            );
+        }
+    });
+}
 
 const api = new Hono<{ Bindings: Env }>();
 
@@ -311,7 +353,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable.\n\n**Private list.** With a user-owned API key, every upload (tagged or not) is added to your private list (GET /media/mine). Anonymous or app-only keys are not tracked. **Alpha:** the publish tagging and private list are new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Uploads made with a user-owned key are listed privately for you (GET /media/mine) and can be deleted (DELETE /media/:id). Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -472,8 +514,21 @@ api.post(
                         size,
                         uploadedBy: authResult.name || "unknown",
                         keyType: authResult.type,
+                        ...(authResult.userId !== null && {
+                            cacheControl: UNCACHED_CACHE_CONTROL,
+                        }),
                     },
                 );
+                if (authResult.userId !== null) {
+                    await insertUploadCatalogItem(getDb(c.env.DB), {
+                        id: upload.id,
+                        ownerUserId: authResult.userId,
+                        appKeyId: authResult.byopClientKeyId,
+                        contentType: upload.contentType,
+                        size: upload.size,
+                        tags: [],
+                    });
+                }
                 return c.json(upload);
             } catch (error) {
                 console.error("Upload error:", error);
@@ -602,15 +657,14 @@ api.post(
                 );
                 id = `u_${namespace}_${requestedId}`;
                 // An expired published file still has a gallery entry. Do not
-                // attach a new upload to that old entry, even without new tags.
-                if (
-                    (await catalogItemOwner(getDb(c.env.DB), id)) !== undefined
-                ) {
+                // attach a new upload to it. An expired unpublished upload's
+                // catalog row is replaced by the insert below.
+                if ((await tagsForItems(getDb(c.env.DB), [id])).has(id)) {
                     return c.json({ error: "Media ID already exists" }, 409);
                 }
             }
             const cacheControl =
-                tags.length > 0 || requestedId !== undefined
+                authResult.userId !== null
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
@@ -650,12 +704,12 @@ api.post(
                 return c.json({ error: "Media ID already exists" }, 409);
             }
 
-            // Every user-owned upload gets a catalog row, tagged or not, so
-            // it can appear in the owner's private list (GET /media/mine).
-            // Tags remain the *publish* action — they're what makes an item
-            // additionally visible in a public tag gallery. The write is
-            // awaited inline (not waitUntil): a D1 failure must surface as a
-            // 500, not be silently swallowed.
+            // Every user upload gets a catalog row so its owner can list and
+            // delete it; tags additionally publish it. Keys without a user
+            // can't tag (rejected above), so their uploads stay uncataloged
+            // blobs behind an unguessable id. The write is awaited inline
+            // (not waitUntil): a D1 failure must surface as a 500, not be
+            // silently swallowed.
             if (authResult.userId !== null) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
@@ -733,24 +787,7 @@ api.get(
             },
         },
     }),
-    validator("query", MediaListQuerySchema, (result, c) => {
-        // Emit validation failures in the same {error} shape as every other
-        // error response instead of the validator's default body.
-        if (!result.success) {
-            const issue = result.error[0];
-            const path = issue?.path
-                ?.map((p) =>
-                    typeof p === "object" ? String(p.key) : String(p),
-                )
-                .join(".");
-            return c.json(
-                {
-                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
-                },
-                400,
-            );
-        }
-    }),
+    validateQuery(MediaListQuerySchema),
     async (c) => {
         const query = c.req.valid("query");
         const limit = query.limit ?? DEFAULT_LIMIT;
@@ -783,9 +820,9 @@ api.get(
     "/media/mine",
     describeRoute({
         tags: ["media.pollinations.ai"],
-        summary: "List your private media",
+        summary: "List your uploads",
         description:
-            "List every upload associated with you, tagged or not, newest first — including items you've never published. Tags still control what's *additionally* visible in a public gallery; this list is independent of that and requires your **secret (`sk_`)** API key. This does not change the visibility of existing retrieval URLs: an untagged item stays reachable by anyone who has (or guesses) its URL. **Alpha:** this endpoint is new and its API may still change.",
+            "List every file you uploaded with a user-owned API key, tagged or not, newest first. Generations are not included. Requires your **secret (`sk_`)** API key. A key an app received through sign-in lists only that app's uploads. Listing does not change visibility: every retrieval URL stays public. Expired items keep their entry, but their url 404s. **Alpha:** this endpoint is new and its API may still change.",
         responses: {
             200: {
                 description: "Page of your media items",
@@ -816,57 +853,12 @@ api.get(
             },
         },
     }),
-    validator("query", MyMediaListQuerySchema, (result, c) => {
-        if (!result.success) {
-            const issue = result.error[0];
-            const path = issue?.path
-                ?.map((p) =>
-                    typeof p === "object" ? String(p.key) : String(p),
-                )
-                .join(".");
-            return c.json(
-                {
-                    error: `Invalid query${path ? ` (${path})` : ""}: ${issue?.message ?? "validation failed"}`,
-                },
-                400,
-            );
-        }
-    }),
+    validateQuery(OwnerMediaQuerySchema),
     async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const auth = await verifyApiKey(apiKey);
-        if (!auth) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-        if (auth.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
-        }
-        // Private-list contents (including unpublished items) are only as
-        // safe as the key that can read them — a leaked publishable key
-        // ships inside public clients, so reading the list is secret-key
-        // only, same as deleting.
-        if (auth.type !== "secret") {
-            return c.json(
-                {
-                    error: "Listing your media requires a secret (sk_) API key",
-                },
-                403,
-            );
-        }
+        const auth = await verifyOwnerKey(c, "Listing your media");
+        if (auth instanceof Response) return auth;
 
         const query = c.req.valid("query");
-        const limit = query.limit ?? DEFAULT_LIMIT;
         let cursor: { createdAt: Date; id: string } | undefined;
         if (query.cursor) {
             try {
@@ -877,9 +869,12 @@ api.get(
         }
 
         const db = getDb(c.env.DB);
-        const page = await listUserMedia(db, {
-            userId: auth.userId,
-            limit,
+        const page = await listOwnerMedia(db, {
+            ownerUserId: auth.userId,
+            // A key an app received through sign-in (BYOP) sees only that
+            // app's uploads, not the user's whole library.
+            appKeyId: auth.byopClientKeyId,
+            limit: query.limit ?? DEFAULT_LIMIT,
             cursor,
         });
         return c.json(await toPageResponse(db, page));
@@ -892,14 +887,14 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Delete media",
         description:
-            "Permanently delete a media item you uploaded: the file, its catalog entry, and all its tags are removed, so it disappears from your private list and any gallery, and its URL 404s. Requires your **secret (`sk_`)** API key. Anonymous uploads (no user-owned key at upload time) have no catalog entry and can't be deleted this way — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
+            "Delete a file you uploaded with a user-owned API key: the file, its catalog entry, and all its tags are removed, so it disappears from your list and any galleries, and its URL 404s. Requires your **secret (`sk_`)** API key. A key an app received through sign-in deletes only that app's uploads. Uploads made without a user-owned key have no catalog entry and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
         parameters: [
             {
                 name: "id",
                 in: "path",
                 required: true,
                 description:
-                    "Media id (from the upload response or GET /media).",
+                    "Media id (from the upload response, GET /media/mine, or GET /media).",
                 schema: { type: "string" },
             },
         ],
@@ -920,7 +915,7 @@ api.delete(
             },
             403: {
                 description:
-                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else",
+                    "Key is not a secret (`sk_`) key, is not attached to a user account, or the item belongs to someone else or another app",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -934,46 +929,31 @@ api.delete(
         },
     }),
     async (c) => {
-        const apiKey = extractApiKey(c.req.raw);
-        if (!apiKey) {
-            return c.json(
-                {
-                    error: "API key required. Pass via Authorization: Bearer <key> or ?key=<key>",
-                },
-                401,
-            );
-        }
-        const auth = await verifyApiKey(apiKey);
-        if (!auth) {
-            return c.json({ error: "Invalid or expired API key" }, 401);
-        }
-        if (auth.userId === null) {
-            return c.json(
-                { error: "This API key is not attached to a user account" },
-                403,
-            );
-        }
-        // Publishable keys ship inside public clients — anyone holding one
-        // could delete the owner's published media, so deletion is
-        // secret-key only.
-        if (auth.type !== "secret") {
-            return c.json(
-                { error: "Deleting media requires a secret (sk_) API key" },
-                403,
-            );
-        }
+        const auth = await verifyOwnerKey(c, "Deleting media");
+        if (auth instanceof Response) return auth;
 
         const id = c.req.param("id");
         const db = getDb(c.env.DB);
-        // Only cataloged user uploads are deletable: an uncataloged id
-        // has no owner record to authorize against, so it answers 404 just
-        // like an unknown id.
-        const owner = await catalogItemOwner(db, id);
-        if (owner === undefined) {
+        // Only cataloged items (user uploads) are deletable: an uncataloged
+        // id has no owner record to authorize against, so it answers 404
+        // just like an unknown id.
+        const item = await catalogItemOwner(db, id);
+        if (item === undefined) {
             return c.json({ error: "Media item not found" }, 404);
         }
-        if (owner !== auth.userId) {
+        if (item.ownerUserId !== auth.userId) {
             return c.json({ error: "You do not own this media item" }, 403);
+        }
+        // A key an app received through sign-in (BYOP) deletes only what
+        // that app uploaded.
+        if (
+            auth.byopClientKeyId !== null &&
+            item.appKeyId !== auth.byopClientKeyId
+        ) {
+            return c.json(
+                { error: "This media item was uploaded by another app" },
+                403,
+            );
         }
 
         // Blob first, then catalog rows: if either step fails the item is
@@ -1122,8 +1102,7 @@ app.get("/", (c) => {
             retrieve: "GET /:id",
             metadata: "GET /:id/metadata",
             listMedia: "GET /media?tag=<tag> (public tag gallery; no auth)",
-            listMyMedia:
-                "GET /media/mine (owner's secret sk_ API key required)",
+            listMyMedia: "GET /media/mine (your uploads; secret sk_ API key)",
             deleteMedia:
                 "DELETE /media/:id (owner's secret sk_ API key required)",
             docs: "GET /openapi.json",
@@ -1141,7 +1120,7 @@ app.get("/openapi.json", async (c, next) => {
                 title: "media.pollinations.ai",
                 version: "1.0.0",
                 description:
-                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Tagging publishes an upload to a public gallery; authenticated users can list their uploads privately. The catalog features are **alpha** and may still change.",
+                    "Media storage for Pollinations. Upload images, audio, and video and get back a unique id and URL. Uploads require a pollinations.ai API key (`pk_` or `sk_`). Retrieval is public. Uploads made with a user-owned key are listed privately for their owner and can be deleted; tagging an upload also publishes it to that tag's public gallery. The catalog features (tags, listing, delete) are **alpha** — their API may still change.",
             },
             servers: [{ url: `https://${DOMAIN}` }],
             components: {

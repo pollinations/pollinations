@@ -1,3 +1,4 @@
+import { OAUTH_SCOPES } from "@shared/auth/authorize-config.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { Hono } from "hono";
@@ -148,7 +149,9 @@ export const wellKnownRoutes = new Hono<Env>()
             authorization_servers: [
                 origin.replace("gen.pollinations.ai", "enter.pollinations.ai"),
             ],
+            scopes_supported: [...OAUTH_SCOPES],
             bearer_methods_supported: ["header"],
+            resource_name: "Pollinations API",
             resource_documentation: `${origin}/docs/llm.txt`,
         });
     });

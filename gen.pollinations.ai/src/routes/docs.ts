@@ -234,8 +234,6 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
         ),
     ]),
 );
-DOC_TAG_NAV_ICON_HTML[`${DOC_TAGS.userWallets} (BYOP)`] =
-    DOC_TAG_NAV_ICON_HTML[DOC_TAGS.userWallets];
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
@@ -465,7 +463,22 @@ function pollinationsDocsHtml(): string {
   function normalizeScalarNavLabel(text) {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
   }
+  // Scalar 1.74 folds the drawer's groups (Get Started, Guides, ...). Open
+  // each once on load so every page is listed, as before; readers can still
+  // fold them.
+  var openedGroups = {};
+  function openDrawerGroups() {
+    var groups = document.querySelectorAll('.scalar-app [data-sidebar-id^="api/tag-group/"]');
+    for (var g = 0; g < groups.length; g++) {
+      var id = groups[g].getAttribute('data-sidebar-id');
+      if (openedGroups[id]) continue;
+      var toggle = groups[g].firstElementChild && groups[g].firstElementChild.querySelector('button[aria-expanded="false"]');
+      openedGroups[id] = true;
+      if (toggle) toggle.click();
+    }
+  }
   function scanScalarButtons() {
+    openDrawerGroups();
     var sidebars = document.querySelectorAll('.scalar-app .t-doc__sidebar');
     for (var s = 0; s < sidebars.length; s++) {
       if (!sidebars[s].querySelector('.ph-docs-brand')) {

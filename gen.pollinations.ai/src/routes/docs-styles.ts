@@ -127,14 +127,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
   color: var(--polli-color-text-soft);
 }
 
+/* Amber group titles (Get Started, Guides, ...) split the drawer into its
+   parts. In Scalar 1.74 the title is the link in each group's first row. */
+.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child > a {
+  color: var(--polli-color-text-soft);
+}
+
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
 
-/* Hide Scalar's SDK/MCP promotion and footer attribution. */
+/* Hide Scalar's SDK/MCP promotion, its "Ask AI Agent" form beside Test
+   Request, and the footer attribution. */
 .scalar-app .explore-scalar,
 .scalar-app .selected-client-action,
-.scalar-app .generate-sdk-button { display: none !important; }
+.scalar-app .generate-sdk-button,
+.scalar-app .agent-button-container { display: none !important; }
 .scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).

@@ -279,7 +279,7 @@ test("browsers get the free limit's page, which reloads when the wait is over, a
     );
     // Straight to GitHub's sign-in, tagged as a Classic visit
     expect(text).toContain(
-        'href="https://enter.pollinations.ai/sign-in?ref=classic"',
+        'href="https://enter.pollinations.ai/sign-in?ref=legacy-text"',
     );
     expect(text).not.toContain("{{");
     const vm = capturedHeaders(browserHeaders);

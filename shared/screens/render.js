@@ -150,7 +150,7 @@ const page = h(
                     h(
                         ExternalLinkButton,
                         {
-                            href: "https://enter.pollinations.ai/sign-in?ref=classic",
+                            href: "https://enter.pollinations.ai/sign-in?ref={{ref}}",
                             external: false,
                             size: "lg",
                             // Bordered, as enter's own sign-in buttons are
@@ -246,7 +246,7 @@ const CARDS = {
     limit: {
         tone: "polli:bg-theme-bg-active",
         title: "Free limit reached",
-        body: "The Classic API makes 1 free image every 45 seconds.",
+        body: "1 free image every 45 seconds.",
         cta: "Unlimited images: enter.pollinations.ai",
     },
     busy: {
@@ -264,7 +264,7 @@ const CARDS = {
     enter: {
         tone: "polli:bg-theme-bg-active",
         title: "This model runs on enter",
-        body: "It isn’t part of the Classic API. Sign in to use it.",
+        body: "Sign in to use it.",
         cta: "enter.pollinations.ai",
     },
     refused: {

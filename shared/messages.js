@@ -34,7 +34,9 @@ const limitNotice = (every, wait) =>
 function page(kind, every, wait) {
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];
-    const values = { item, items, every, wait, price: PRICE_USD };
+    // ref tells enter's analytics which page a visitor came from
+    const ref = kind === "image" ? "legacy-image" : "legacy-text";
+    const values = { item, items, every, wait, ref, price: PRICE_USD };
     return PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]);
 }
 

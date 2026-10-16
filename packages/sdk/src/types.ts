@@ -1139,6 +1139,7 @@ export const MODEL_CATEGORIES = [
     "image",
     "video",
     "text",
+    "decision",
     "audio",
     "3d",
     "embedding",

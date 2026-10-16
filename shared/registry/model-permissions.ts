@@ -20,15 +20,27 @@ import {
  * whose registry `category` matches, so models join and leave a key's reach as
  * the registry changes; a model ID allows exactly that model. Matching aliases
  * keeps a stored ID working after its model is renamed.
+ *
+ * `endpoint` is the generation endpoint being called. Decision models also
+ * answer on chat endpoints, where `text` still allows them; only
+ * `/alpha/decisions` needs `decision`. Catalog listings pass no endpoint and
+ * show each model under its own category only.
  */
 export function keyAllowsModel(
     models: readonly string[] | null | undefined,
     id: string,
     { category, aliases }: Pick<ModelDefinition, "category" | "aliases">,
+    endpoint?: string,
 ): boolean {
-    return (
-        !models ||
-        [category, id, ...aliases].some((value) => models.includes(value))
+    if (!models) return true;
+    const categories =
+        category === "decision" &&
+        endpoint !== undefined &&
+        endpoint !== "/alpha/decisions"
+            ? [category, "text"]
+            : [category];
+    return [...categories, id, ...aliases].some((value) =>
+        models.includes(value),
     );
 }
 

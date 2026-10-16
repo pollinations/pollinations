@@ -181,23 +181,14 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our docs script — see scanScalarButtons).
-   Use the same ambient Button recipe as packages/ui. */
+/* Keep section expansion quiet and aligned with the content. */
 .scalar-app .ph-show-more {
-    background: var(--polli-color-bg-active) !important;
-    color: var(--polli-color-text-strong) !important;
-    border-color: var(--polli-color-bg-active) !important;
+    margin-inline: 0 auto;
+    background: var(--scalar-background-2);
+    color: var(--scalar-color-2);
 }
 .scalar-app .ph-show-more:hover {
-    background: var(--polli-color-bg-hover) !important;
-    border-color: var(--polli-color-bg-hover) !important;
-}
-/* Force the chevron/triangle SVG inside the button to match text color
-   (otherwise it inherits Scalar's dim color and disappears on amber). */
-.scalar-app .ph-show-more svg,
-.scalar-app .ph-show-more svg * {
-    color: var(--polli-color-text-strong) !important;
-    fill: currentColor !important;
-    stroke: currentColor !important;
+    background: var(--scalar-background-3);
+    color: var(--scalar-color-1);
 }
 `;

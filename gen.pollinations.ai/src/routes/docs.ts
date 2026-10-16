@@ -234,6 +234,8 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
         ),
     ]),
 );
+DOC_TAG_NAV_ICON_HTML[`${DOC_TAGS.userWallets} (BYOP)`] =
+    DOC_TAG_NAV_ICON_HTML[DOC_TAGS.userWallets];
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
@@ -458,7 +460,7 @@ function pollinationsDocsHtml(): string {
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
-  // hide ("Ask AI") or style ("Show more") them in amber.
+  // hide ("Ask AI") or style ("Show more") them.
   var navIcons = ${navIcons};
   function normalizeScalarNavLabel(text) {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();

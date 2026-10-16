@@ -15,6 +15,7 @@ SCHEMA >
     `meter_source` LowCardinality(String),
     `input_text_tokens` UInt32,
     `input_cached_tokens` UInt32,
+    `input_cache_write_tokens` UInt32 DEFAULT 0,
     `input_audio_tokens` UInt32,
     `input_audio_seconds` Float64,
     `input_image_tokens` UInt32,

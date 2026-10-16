@@ -74,31 +74,39 @@ async function editFormData(
     userInfo: AuthResult,
     route: MaiRoute,
 ): Promise<FormData> {
-    const { buffer, mimeType } = await downloadUserImage(safeParams.image[0]);
-    const imageSafetyResult = await analyzeImageSafety(buffer);
-    if (!imageSafetyResult.safe) {
-        const error = UpstreamError.fromProvider(400, {
-            message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
-        });
-        await logGptImageError(
-            prompt,
-            safeParams,
-            userInfo,
-            error,
-            imageSafetyResult,
-        );
-        throw error;
-    }
+    const images = await Promise.all(
+        safeParams.image.map(async (imageUrl) => {
+            const image = await downloadUserImage(imageUrl);
+            const imageSafetyResult = await analyzeImageSafety(image.buffer);
+            if (!imageSafetyResult.safe) {
+                const error = UpstreamError.fromProvider(400, {
+                    message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+                });
+                await logGptImageError(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    error,
+                    imageSafetyResult,
+                );
+                throw error;
+            }
+            return image;
+        }),
+    );
 
-    // Edits take the reference as multipart; Azure rejects width/height here.
+    // Edits take references as repeated multipart `image` fields (up to 5);
+    // Azure rejects width/height here.
     const formData = new FormData();
     formData.append("model", route.deployment);
     formData.append("prompt", sanitizeString(prompt));
-    formData.append(
-        "image",
-        new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
-        `image.${mimeType.split("/")[1] || "png"}`,
-    );
+    for (const { buffer, mimeType } of images) {
+        formData.append(
+            "image",
+            new Blob([bufferToUint8Array(buffer)], { type: mimeType }),
+            `image.${mimeType.split("/")[1] || "png"}`,
+        );
+    }
     return formData;
 }
 
@@ -111,12 +119,6 @@ export async function callAzureMaiImage(
     if (!route) {
         throw new Error(`Unknown Azure MAI image route: ${safeParams.model}`);
     }
-    if (safeParams.transparent) {
-        throw UpstreamError.fromProvider(400, {
-            message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
-        });
-    }
-    // MAI edits take one reference image; extra images are ignored.
     const isEdit = safeParams.image.length > 0;
     if (!isEdit) {
         validateMaiDimensions(safeParams.width, safeParams.height, route);

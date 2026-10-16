@@ -1,9 +1,15 @@
 import type { Logger } from "@logtape/logtape";
 import {
+    hasAccountPermission,
+    requireAccountPermission,
+} from "@shared/auth/account-permissions.ts";
+import { verifyGrantAgent } from "@shared/auth/agent-run-token.ts";
+import {
     type ApiKeyType,
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { apiKeyExpiresInSchema } from "@shared/auth/api-key-expires-in.ts";
 import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import { getAvailableBalance } from "@shared/billing/balance.ts";
@@ -17,7 +23,7 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import { toModelCategories } from "@shared/registry/model-permissions.ts";
+import { toModelPermissions } from "@shared/registry/model-permissions.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -39,12 +45,9 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import { captureFromRequest } from "../utils/product-analytics.ts";
-import {
-    hasAccountPermission,
-    requireAccountPermission,
-} from "./account-permissions.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
+import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -106,17 +109,7 @@ const CreateKeySchema = z.object({
         .describe(
             "Key type: secret (sk_) or publishable app key (pk_). Use publishable to create an app key.",
         ),
-    expiresIn: z
-        .number()
-        .int()
-        .positive()
-        .refine(
-            (seconds) =>
-                Number.isFinite(
-                    new Date(Date.now() + seconds * 1000).getTime(),
-                ),
-            "Expiry is outside the supported date range",
-        )
+    expiresIn: apiKeyExpiresInSchema
         .optional()
         .describe("Expiry in seconds from now"),
     allowedModels: z
@@ -124,7 +117,7 @@ const CreateKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Model categories this key can use: text, image, video, audio, 3d, embedding, realtime. A model ID from /models allows its whole category. null = all models",
+            "Models this key can use. A category (text, image, video, audio, 3d, embedding, realtime) allows every model in it, including models added later; a model ID or alias from /models allows only that model and is stored as its canonical ID. null = all models",
         ),
     pollenBudget: z
         .number()
@@ -185,12 +178,23 @@ const UpdateKeySchema = CreateKeySchema.pick({
     name: CreateKeySchema.shape.name.optional(),
     expiresAt: z
         .string()
-        .datetime()
+        .datetime({ offset: true })
         .nullable()
         .optional()
         .transform((val) => (val == null ? val : new Date(val)))
         .describe("Expiry as an ISO 8601 timestamp. null = never expires"),
 });
+
+// A grant link from an agent run names the agent, signed by gen over the key
+// and the one category, model or account permission it asks for.
+const GrantAgentSchema = z.intersection(
+    z.union([
+        z.object({ category: z.string().min(1) }),
+        z.object({ model: z.string().min(1) }),
+        z.object({ permission: z.string().min(1) }),
+    ]),
+    z.object({ agent: z.string().min(1), sig: z.string().min(1) }),
+);
 
 function parsePermissions(
     raw: string | null | undefined,
@@ -424,6 +428,7 @@ const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
     limit: z.coerce
         .number()
+        .int()
         .min(1)
         .max(MAX_USAGE_EXPORT_ROWS)
         .optional()
@@ -499,7 +504,11 @@ const earningsTransactionsQuerySchema = usageQuerySchema
 
 // Response schema for daily usage OpenAPI documentation
 const dailyUsageRecordSchema = z.object({
-    date: z.string().describe("Date (YYYY-MM-DD format)"),
+    date: z
+        .string()
+        .describe(
+            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+        ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
         .string()
@@ -534,6 +543,7 @@ const USAGE_CSV_COLUMNS = [
     "meter_source",
     "input_text_tokens",
     "input_cached_tokens",
+    "input_cache_write_tokens",
     "input_audio_tokens",
     "input_audio_seconds",
     "input_image_tokens",
@@ -770,14 +780,14 @@ const profileResponseSchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "User's display name (only returned when the key has `account:profile` or `account:keys`)",
+            "User's display name (only returned when the key has `account:profile`)",
         ),
     email: z
         .email()
         .nullable()
         .optional()
         .describe(
-            "User's email address (only returned when the key has `account:profile` or `account:keys`)",
+            "User's email address (only returned when the key has `account:profile`)",
         ),
 });
 
@@ -891,7 +901,14 @@ const usageRecordSchema = z.object({
             "Billing source: 'tier' = Quest Pollen balance, 'pack' = paid balance",
         ),
     input_text_tokens: z.number().describe("Number of input text tokens"),
-    input_cached_tokens: z.number().describe("Number of cached input tokens"),
+    input_cached_tokens: z
+        .number()
+        .describe("Number of input tokens read from the prompt cache"),
+    input_cache_write_tokens: z
+        .number()
+        .describe(
+            "Number of input tokens written to the prompt cache (billed at the cache-write rate)",
+        ),
     input_audio_tokens: z.number().describe("Number of input audio tokens"),
     input_audio_seconds: z
         .number()
@@ -936,11 +953,12 @@ const usageResponseSchema = z.object({
 });
 
 /**
- * Account routes - profile, balance and usage endpoints.
- * Supports both session cookies and API keys with permission checks.
+ * Account routes - profile, balance and usage endpoints, served publicly as
+ * gen.pollinations.ai/account. Bearer-only: apps use API keys with permission
+ * checks; the dashboard uses a session token minted from its cookie.
  */
 export const accountRoutes = new Hono<Env>()
-    .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    .use(auth({ allowSessionCookie: false, allowApiKey: true }))
     // Account responses are per-user and must never be cached by browsers or
     // intermediary proxies. Applied once here so nested routes (agents,
     // my-models, keys, ...) inherit it without repeating it per handler.
@@ -951,6 +969,7 @@ export const accountRoutes = new Hono<Env>()
     })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",
         describeRoute({
@@ -1769,7 +1788,7 @@ export const accountRoutes = new Hono<Env>()
             const permissions = parsePermissions(key.permissions) ?? {};
             if (allowedModels !== undefined) {
                 if (allowedModels) {
-                    permissions.models = await toModelCategories(
+                    permissions.models = await toModelPermissions(
                         c.env.DB,
                         allowedModels,
                     );
@@ -1817,6 +1836,32 @@ export const accountRoutes = new Hono<Env>()
                 .returning();
 
             return c.json(formatKey(updated));
+        },
+    )
+    .get(
+        "/keys/:id/grant-agent",
+        describeRoute({
+            tags: ["👤 Account"],
+            description:
+                "Confirm which agent a grant link says asked for the grant.",
+            hide: ({ c }) => c?.env.ENVIRONMENT !== "development",
+        }),
+        validator("query", GrantAgentSchema),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            c.var.auth.requireUser();
+            const { agent, sig, ...grant } = c.req.valid("query");
+            // The link reached the owner through the agent, so only gen's
+            // signature makes the name trustworthy. This reads nothing from
+            // the key, so it needs no ownership check.
+            const signed = verifyGrantAgent({
+                secret: c.env.BETTER_AUTH_SECRET,
+                apiKeyId: c.req.param("id"),
+                grant,
+                agent,
+                sig,
+            });
+            return c.json({ agent: signed ? agent : null });
         },
     )
     .post(
@@ -1942,7 +1987,7 @@ export const accountRoutes = new Hono<Env>()
                                                 .array(z.string())
                                                 .nullable()
                                                 .describe(
-                                                    "Model categories this key can use (text, image, video, audio, 3d, embedding, realtime), null = all models allowed",
+                                                    "Model categories (text, image, video, audio, 3d, embedding, realtime) and model IDs this key can use, null = all models allowed",
                                                 ),
                                             account: z
                                                 .array(z.string())

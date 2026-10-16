@@ -1,7 +1,7 @@
 export const SOCIAL_LINKS = {
     discord: {
         label: "Discord",
-        url: "https://discord.gg/pollinations-ai-885844321461485618",
+        url: "https://discord.gg/k9F7SyTgqn",
     },
     github: {
         label: "GitHub",
@@ -51,8 +51,6 @@ export const LINKS = {
     docsImage: "https://gen.pollinations.ai/docs#tag/%EF%B8%8F-image",
     docsAudio: "https://gen.pollinations.ai/docs#tag/-audio",
     docsAuth: "https://gen.pollinations.ai/docs#tag/-authentication",
-    highlightsSource:
-        "https://github.com/pollinations/pollinations/blob/news/operations/social/news/highlights.md",
     polliCli:
         "https://github.com/pollinations/pollinations/tree/main/packages/polli-cli",
 };

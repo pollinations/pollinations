@@ -15,7 +15,7 @@ import {
 } from "@shared/db/media-catalog.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
-import { test } from "../fixtures.ts";
+import { mintAccountToken, test } from "../fixtures.ts";
 
 describe("POST /api/auth/delete-user", () => {
     test("deletes the account while preserving GitHub-scoped reward protection", async ({
@@ -178,7 +178,7 @@ describe("POST /api/auth/delete-user", () => {
             "http://localhost:3000/api/account/quests",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${replacementSessionToken}`,
+                    Authorization: `Bearer ${await mintAccountToken(replacementSessionToken)}`,
                 },
             },
         );

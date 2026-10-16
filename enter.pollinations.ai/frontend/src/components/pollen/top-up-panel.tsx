@@ -3,6 +3,7 @@ import {
     CardIcon,
     cn,
     InlineLink,
+    StableLabel,
     Switch,
     Tooltip,
     WarningIcon,
@@ -74,42 +75,6 @@ const BUY_LABELS = [
 ].map(buyLabel);
 
 /**
- * Text that changes without moving anything: every option is stacked in one
- * grid cell, the unused ones invisible, so the widest sets the size.
- */
-const StableLabel: FC<{
-    text: string;
-    options: readonly string[];
-    align?: "center" | "end";
-    /** Drawn before the text in every option, so it stays beside it. */
-    prefix?: ReactNode;
-}> = ({ text, options, align = "center", prefix }) => (
-    <span
-        className={cn(
-            "inline-grid",
-            align === "center"
-                ? "justify-items-center"
-                : "justify-items-start sm:justify-items-end",
-        )}
-    >
-        {options.map((option) => (
-            <span
-                key={option}
-                aria-hidden="true"
-                className="invisible col-start-1 row-start-1 inline-flex items-center gap-1"
-            >
-                {prefix}
-                {option}
-            </span>
-        ))}
-        <span className="col-start-1 row-start-1 inline-flex items-center gap-1">
-            {prefix}
-            {text}
-        </span>
-    </span>
-);
-
-/**
  * One of several contents in a fixed slot: all stacked in one grid cell, only
  * `active` shown, so the widest sets the size and switching moves nothing.
  * Hidden ones are `invisible`, which also takes their links out of tab order.
@@ -175,8 +140,12 @@ export const TopUpPanel: FC<TopUpPanelProps> = ({
     const cryptoCheckoutParams = new URLSearchParams(checkoutParams);
     cryptoCheckoutParams.set("payment_method", "crypto");
     const status = billing ? autoTopUpStatus(billing) : null;
+    // Returning buyers mostly buy the same pack again.
     const selectedPack =
         chosenPack ??
+        POLLEN_PACKS.find(
+            (pack) => pack.amountUsd === billing?.lastPackAmountUsd,
+        ) ??
         POLLEN_PACKS.find(
             (pack) => pack.amountUsd === billing?.autoTopUp.packAmountUsd,
         ) ??

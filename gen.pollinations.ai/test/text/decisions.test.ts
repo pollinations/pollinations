@@ -148,10 +148,8 @@ function post(path: string, key: string, body: unknown) {
     });
 }
 
-// A Quest-Pollen-only key: jev is deliberately not paid-only, so the free tier
-// must reach the decisions route.
 test("answers a decision, forwards the native body, and bills input tokens", async ({
-    apiKey,
+    paidApiKey: apiKey,
     mocks,
 }) => {
     const { response, wait } = await post("/alpha/decisions", apiKey, {
@@ -197,9 +195,44 @@ test("answers a decision, forwards the native body, and bills input tokens", asy
     });
 });
 
+test("answers the same decision on TypeSafe's /v1/systemone path", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
+    const { response, wait } = await post("/v1/systemone", apiKey, {
+        model: "typesafe/jev-1.13",
+        state: "Invoice issued 2026-08-01, net-30. Today is 2026-09-19.",
+        questions,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+        model: "typesafe/jev-1.13",
+        provider: "TypeSafe",
+        answers,
+        usage: { input_tokens: 452, output_tokens: 73 },
+    });
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.decisions.state.requests[0]).toMatchObject({
+        pathname: "/api/alpha/decisions",
+        body: { model: "typesafe/jev-1.13", questions },
+    });
+
+    await wait();
+    expect(mocks.decisions.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        eventType: "generate.text",
+        requestPath: "/v1/systemone",
+        responseStatus: 200,
+        modelRequested: "typesafe/jev-1.13",
+        isBilledUsage: true,
+    });
+});
+
 test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     const { key, userId } = await createTestApiKey({
-        user: { tierBalance: 1, packBalance: 0 },
+        user: { tierBalance: 1, packBalance: 1 },
     });
     const { response, wait } = await post("/alpha/decisions", key, {
         model: "jaredpalmer/kev-4b",
@@ -231,8 +264,8 @@ test("routes Kev 4B under its own id and publisher", async ({ mocks }) => {
     expect(event.totalCost).toBeCloseTo((452 * 0.042 * 1.055) / 1_000_000, 12);
     expect(event.totalPrice).toBe(0.00002003);
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
-        tierBalance: 0.99997997,
-        packBalance: 0,
+        tierBalance: 1,
+        packBalance: 0.99997997,
     });
 });
 
@@ -409,7 +442,10 @@ test("rejects Quest-only Liquid D1 calls before reaching the provider", async ({
     expect(mocks.decisions.state.requests).toHaveLength(0);
 });
 
-test("defaults to jev and accepts the alias", async ({ apiKey, mocks }) => {
+test("defaults to jev and accepts the alias", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
     const withoutModel = await post("/alpha/decisions", apiKey, {
         state: "Disk at 91%.",
         questions: { act: { type: "noul", instructions: "Act now?" } },
@@ -439,7 +475,7 @@ test("a text key reaches Jev by its canonical ID and both aliases", async ({
 }) => {
     const { key } = await createTestApiKey({
         allowedModels: ["text"],
-        user: { tierBalance: 100 },
+        user: { tierBalance: 100, packBalance: 1 },
     });
 
     for (const model of ["typesafe/jev-1.13", "typesafe/jev", "jev"]) {
@@ -497,7 +533,10 @@ test("a chat model cannot be used on the decisions route", async ({
 
 // The registry now pins jev to two endpoints, so the chat adapter that shipped
 // first must keep working.
-test("jev still answers on chat completions", async ({ apiKey, mocks }) => {
+test("jev still answers on chat completions", async ({
+    paidApiKey: apiKey,
+    mocks,
+}) => {
     const { response, wait } = await post("/v1/chat/completions", apiKey, {
         model: "jev",
         messages: [
@@ -518,7 +557,7 @@ test("jev still answers on chat completions", async ({ apiKey, mocks }) => {
 
 for (const stream of [false, true]) {
     test(`Kev answers on chat completions with stream=${stream}`, async ({
-        apiKey,
+        paidApiKey: apiKey,
         mocks,
     }) => {
         mocks.decisions.state.response = Response.json({
@@ -620,7 +659,7 @@ for (const { code, tierBalance, pollenBudget } of [
 }
 
 test("returns an upstream HTTP 502 when Jev omits usage", async ({
-    apiKey,
+    paidApiKey: apiKey,
     mocks,
 }) => {
     mocks.decisions.state.response = Response.json({ answers });

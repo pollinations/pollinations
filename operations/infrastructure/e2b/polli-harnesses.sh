@@ -1,7 +1,8 @@
 # Sourced by login shells in the `pollinations` template. Gen writes polli's
 # login into each new sandbox (gen.pollinations.ai/src/routes/e2b.ts), a
 # staging gen a staging one; the first interactive login then connects the
-# coding harnesses to Pollinations with that key.
+# coding harnesses to Pollinations with that key. The login can't create keys,
+# so every harness shares it.
 
 if [ ! -f ~/.pollinations/credentials.json ] &&
     [ -f ~/.pollinations/credentials.staging.json ]; then
@@ -19,7 +20,7 @@ if [ "$(id -u)" != 0 ] &&
     mkdir ~/.pollinations/harnesses 2>/dev/null; then
     chmod 600 ~/.pollinations/credentials*.json
     echo "Connecting the coding harnesses to Pollinations (first login only)..."
-    for harness in opencode pi hermes openclaw claude-code; do
+    for harness in opencode pi openclaw claude-code; do
         (
             log=~/.pollinations/harnesses/$harness.log
             if polli harness "$harness" on >"$log" 2>&1; then

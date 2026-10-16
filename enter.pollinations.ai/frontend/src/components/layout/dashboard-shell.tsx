@@ -37,7 +37,7 @@ import type {
     SetStateAction,
 } from "react";
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
-import { apiClient } from "../../api.ts";
+import { accountClient, apiClient } from "../../api.ts";
 import { genDocsUrl } from "../../config.ts";
 import {
     QUEST_STATUS_UPDATED_EVENT,
@@ -119,7 +119,7 @@ const brandLinks: readonly BrandLink[] = [
         count: "5k",
     },
     {
-        href: "https://discord.gg/pollinations-ai-885844321461485618",
+        href: "https://discord.gg/k9F7SyTgqn",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
@@ -417,7 +417,7 @@ function useQuestNavStatus(enabled: boolean): string | null {
             try {
                 const [catalogResponse, rewardsResponse] = await Promise.all([
                     apiClient.quests.catalog.$get(),
-                    apiClient.account.quests.rewards.$get(),
+                    accountClient.quests.rewards.$get(),
                 ]);
                 if (!catalogResponse.ok || !rewardsResponse.ok) {
                     throw new Error("Quest status unavailable");
@@ -513,7 +513,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {(item.id === "my-models" ||
+                        {(item.id === "sandboxes" ||
                             (item.id === "quests" && questStatus)) && (
                             <Chip
                                 intent="neutral"

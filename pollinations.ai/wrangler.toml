@@ -39,6 +39,12 @@ custom_domain = true
 pattern = "old.pollinations.ai/*"
 zone_name = "pollinations.ai"
 
+# The retired playground app (Pages project apps-playground) answered here; the
+# Worker takes the hostname over and redirects it to the site's /play page.
+[[env.production.routes]]
+pattern = "playground.pollinations.ai/*"
+zone_name = "pollinations.ai"
+
 [env.staging]
 
 [[env.staging.routes]]

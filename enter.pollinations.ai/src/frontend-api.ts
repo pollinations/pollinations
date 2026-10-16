@@ -9,6 +9,7 @@ import { oauthRoutes } from "./routes/oauth.ts";
 import { productAnalyticsRoutes } from "./routes/product-analytics.ts";
 import { questsRoutes } from "./routes/quests.ts";
 import { referralRoutes } from "./routes/referral.ts";
+import { sessionTokenRoutes } from "./routes/session-token.ts";
 import { statusNoticeRoutes } from "./routes/status-notice.ts";
 import { stripeRoutes } from "./routes/stripe.ts";
 import { x402KeysRoutes } from "./routes/x402-keys.ts";
@@ -20,6 +21,7 @@ export const frontendApi = new Hono<Env>()
     .route("/account/integrations", integrationsRoutes)
     .route("/account/agents", publicAgentSyncRoutes)
     .route("/account", accountRoutes)
+    .route("/session-token", sessionTokenRoutes)
     .route("/device", deviceRoutes)
     .route("/oauth", oauthRoutes)
     .route("/referral", referralRoutes)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiClient } from "../api.ts";
+import { accountClient } from "../api.ts";
 
 export type AccountBalance = {
     tierBalance: number;
@@ -7,7 +7,7 @@ export type AccountBalance = {
 };
 
 export async function fetchAccountBalance(): Promise<AccountBalance> {
-    const response = await apiClient.account.balance.$get();
+    const response = await accountClient.balance.$get();
     if (!response.ok) throw new Error("Failed to load wallet");
     const data = await response.json();
     if (!("accountBalance" in data)) throw new Error("Failed to load wallet");

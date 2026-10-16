@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname } from "node:path";
 import { Command } from "commander";
 import { exitWithError, fetchGen } from "../../lib/errors.js";
+import { requireFile } from "../../lib/input-file.js";
 import { mimeTypeFor } from "../../lib/mime.js";
 import { getOutputMode, printInfo, printMeta } from "../../lib/output.js";
 
@@ -15,6 +16,8 @@ export function createIsolateCommand() {
         .option("--output <path>", "Save to file", "isolated.mp3")
         .action(async (file, opts) => {
             const isHuman = getOutputMode() === "human";
+
+            requireFile(file);
 
             const formData = new FormData();
             formData.append(

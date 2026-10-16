@@ -12,17 +12,23 @@ import {
     getVisibleImageModels,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
+import {
+    isPublicEnterPath,
+    isPublicQuestCatalogPath,
+    isX402KeyPath,
+    publicEnterPath,
+} from "@shared/utils/public-docs.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
-    POLLINATIONS_HEADER_CSS,
-    POLLINATIONS_HEADER_SCALAR_CSS,
+    POLLINATIONS_DOCS_CSS,
 } from "./docs-styles.ts";
 import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
@@ -41,6 +47,7 @@ import CLI_SKILL from "../../../packages/polli-cli/SKILL.md?raw";
 import CLI_TASKS from "../../../packages/polli-cli/TASKS.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
+import ASYNC_JOBS_MD from "../docs/async-jobs.md?raw";
 import AUDIO_GENERATION_MD from "../docs/audio-generation.md?raw";
 import AUTHENTICATION_MD from "../docs/authentication.md?raw";
 import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
@@ -78,6 +85,7 @@ const DOC_TAGS = {
     text: "Text",
     image: "Image",
     video: "Video",
+    jobs: "Jobs",
     realtime: "Realtime",
     model3d: "3D",
     audio: "Audio",
@@ -93,8 +101,6 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
     "🌸 BYOP": DOC_TAGS.userWallets,
-    "🧩 Community Models": DOC_TAGS.communityModels,
-    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
     "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
@@ -102,14 +108,13 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "✍️ Text": DOC_TAGS.text,
     "🖼️ Image": DOC_TAGS.image,
     "🎬 Video": DOC_TAGS.video,
+    "🧰 Jobs": DOC_TAGS.jobs,
     "🎙️ Realtime": DOC_TAGS.realtime,
     "🧊 3D": DOC_TAGS.model3d,
     "🔊 Audio": DOC_TAGS.audio,
     "🔢 Embeddings": DOC_TAGS.embeddings,
     "🤖 Models": DOC_TAGS.models,
-    "✨ Quests": DOC_TAGS.quests,
     "📦 Media Storage": DOC_TAGS.mediaStorage,
-    "👤 Account": DOC_TAGS.account,
     "📊 Public Stats": DOC_TAGS.publicStats,
     "media.pollinations.ai": DOC_TAGS.mediaStorage,
 };
@@ -165,6 +170,9 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.video]: docsIcon(
         '<path d="m22 8-6 4 6 4V8z" /><rect x="2" y="6" width="14" height="12" rx="2" />',
     ),
+    [DOC_TAGS.jobs]: docsIcon(
+        '<path d="M3 6h18v15H3z" /><path d="M8 6V3h8v3" /><path d="M3 12h18" />',
+    ),
     [DOC_TAGS.realtime]: docsIcon(
         '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><path d="M12 19v3" />',
     ),
@@ -193,6 +201,35 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
         '<polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />',
     ),
 };
+
+// The dashboard's own links, as quiet rows at the foot of the drawer. Icons
+// are packages/ui's AppIcon, DiscordIcon and BugIcon.
+const DOCS_SIDEBAR_LINKS = [
+    {
+        href: "https://enter.pollinations.ai",
+        label: "Dashboard",
+        icon: docsIcon(
+            '<rect x="2" y="4" width="20" height="14" rx="2" /><path d="M2 20h20" />',
+        ),
+    },
+    {
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Need help?",
+        icon: `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z" /></svg>`,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Found a bug?",
+        icon: docsIcon(
+            '<path d="m8 2 1.9 1.9M14.1 3.9 16 2" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" /><path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />',
+        ),
+    },
+];
+
+const DOCS_SIDEBAR_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Pollinations">${DOCS_SIDEBAR_LINKS.map(
+    ({ href, label, icon }) =>
+        `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${icon}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
+).join("")}</nav>`;
 
 const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
@@ -231,6 +268,7 @@ const X402_PREPAID_KEYS_DOCS = X402_PREPAID_KEYS_MD.trim();
 const MODELS_DOCS = MODELS_MD.trim();
 const MEDIA_STORAGE_DOCS = MEDIA_STORAGE_MD.trim();
 const ACCOUNT_DOCS = ACCOUNT_MD.trim();
+const ASYNC_JOBS_DOCS = ASYNC_JOBS_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
@@ -289,7 +327,7 @@ const REALTIME_DOCS = [
     `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
-    "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
+    "Use a secret key with positive balance. Server clients can use `Authorization: Bearer <key>`. Browser WebSocket clients pass their user-authorized secret key (`sk_`) in `?key=`.",
     "",
     "The WebSocket settles one billing event when the session closes. Selecting `elevenlabs/scribe-v2-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
@@ -298,7 +336,6 @@ const REALTIME_DOCS = [
     "```js",
     'import WebSocket from "ws";',
     "",
-    "// Server: Bearer auth. Browser: append `&key=pk_...` instead (headers aren't settable).",
     "const ws = new WebSocket(",
     `    "wss://gen.pollinations.ai/v1/realtime?model=${DEFAULT_REALTIME_MODEL}",`,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal JS snippet shown in docs
@@ -312,7 +349,7 @@ const REALTIME_DOCS = [
     'ws.on("message", (m) => console.log(JSON.parse(m.toString())));',
     "```",
     "",
-    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself. The WebRTC transport handles this automatically; on the WebSocket transport it's the client's responsibility.",
+    "**Browser audio:** play the model's audio through an `<audio>` element (e.g. a Web Audio `MediaStreamDestination` set as the element's `srcObject`), not straight to the Web Audio output. The browser only uses audio-element output as the echo-cancellation reference, so without it the mic re-captures the model's voice and it starts replying to itself.",
     "",
     `**Realtime models:** ${realtimeModelDisplayNames}`,
 ].join("\n");
@@ -332,6 +369,7 @@ const GEN_API_DOCS = [
     REALTIME_DOCS,
     MODEL3D_GENERATION_DOCS,
     AUDIO_GENERATION_DOCS,
+    ASYNC_JOBS_DOCS,
     EMBEDDINGS_DOCS,
     MODELS_DOCS,
     MEDIA_STORAGE_DOCS,
@@ -371,6 +409,17 @@ const LLM_DOC_SECTIONS: Record<string, string> = {
     sandboxes: SANDBOXES_SECTION,
 };
 
+// llms-full.txt: a common companion to llms.txt (https://llmstxt.org) that
+// inlines the docs so an agent gets them in one request instead of following
+// the index. The llms.txt spec itself doesn't define it.
+export const LLMS_FULL_TEXT = [
+    "# Pollinations",
+    "> Full Pollinations docs for agents in one file: the API guide, the polli CLI skill, and the CLI task recipes. Index: /llms.txt",
+    LLM_DOC_TEXT,
+    `## Polli CLI Skill\n\n${stripLeadingHeading(CLI_SKILL.replace(/^---\n[\s\S]*?\n---\n+/, ""))}`,
+    `## Polli CLI Tasks\n\n${stripLeadingHeading(CLI_TASKS)}`,
+].join("\n\n");
+
 // Scalar tag anchors for the retired /docs/guides/:id pages.
 const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     byop: "connect-user-wallets",
@@ -382,16 +431,17 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     mcp: "mcp-servers",
 };
 
-function pollinationsHeaderHtml(): string {
+function pollinationsDocsHtml(): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
-    return `<style>${POLLINATIONS_HEADER_CSS}${POLLINATIONS_HEADER_SCALAR_CSS}</style>
-<header class="ph-bar">
-  <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
-</header>
+    const sidebarBrand = JSON.stringify(
+        `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
+    );
+    const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
+    return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    <span>Copy for LLMs</span>
+  <button class="ph-fab ph-fab-copy" type="button" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
+    <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
+    <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
 </div>
 <script>
@@ -407,14 +457,11 @@ function pollinationsHeaderHtml(): string {
   // Copy for LLMs — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
-    var label = copy.querySelector('span');
     copy.addEventListener('click', async function () {
       var res = await fetch('/docs/llm.txt');
-      var text = await res.text();
-      await navigator.clipboard.writeText(text);
-      var prev = label.textContent;
-      label.textContent = 'Copied';
-      setTimeout(function () { label.textContent = prev; }, 1200);
+      await navigator.clipboard.writeText(await res.text());
+      copy.classList.add('is-copied');
+      setTimeout(function () { copy.classList.remove('is-copied'); }, 1500);
     });
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
@@ -425,6 +472,15 @@ function pollinationsHeaderHtml(): string {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
   }
   function scanScalarButtons() {
+    var sidebars = document.querySelectorAll('.scalar-app .t-doc__sidebar');
+    for (var s = 0; s < sidebars.length; s++) {
+      if (!sidebars[s].querySelector('.ph-docs-brand')) {
+        sidebars[s].insertAdjacentHTML('afterbegin', ${sidebarBrand});
+      }
+      if (!sidebars[s].querySelector('.ph-docs-links')) {
+        sidebars[s].insertAdjacentHTML('beforeend', ${sidebarLinks});
+      }
+    }
     var nodes = document.querySelectorAll('button, a, [role="button"]');
     for (var i = 0; i < nodes.length; i++) {
       var text = (nodes[i].textContent || '').trim();
@@ -471,9 +527,9 @@ function generationDocumentation(): OpenApiSchema {
                 bearerAuth: {
                     type: "http",
                     scheme: "bearer",
-                    bearerFormat: "API Key",
+                    bearerFormat: "Secret key",
                     description:
-                        "API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
+                        "Secret key from [enter.pollinations.ai](https://enter.pollinations.ai/keys)",
                 },
             },
         },
@@ -488,15 +544,15 @@ function generationDocumentation(): OpenApiSchema {
                 ],
             },
             {
-                name: "Integrations",
+                name: "Guides",
                 tags: [
                     DOC_TAGS.userWallets,
-                    DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
+                    DOC_TAGS.publishModel,
+                    DOC_TAGS.sandboxes,
+                    DOC_TAGS.codingHarnesses,
                     DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
-                    DOC_TAGS.codingHarnesses,
-                    DOC_TAGS.sandboxes,
                 ],
             },
             {
@@ -505,6 +561,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.text,
                     DOC_TAGS.image,
                     DOC_TAGS.video,
+                    DOC_TAGS.jobs,
                     DOC_TAGS.realtime,
                     DOC_TAGS.model3d,
                     DOC_TAGS.audio,
@@ -598,6 +655,10 @@ function generationDocumentation(): OpenApiSchema {
                 description: stripLeadingHeading(VIDEO_GENERATION_DOCS),
             },
             {
+                name: DOC_TAGS.jobs,
+                description: stripLeadingHeading(ASYNC_JOBS_DOCS),
+            },
+            {
                 name: DOC_TAGS.realtime,
                 description: stripLeadingHeading(REALTIME_DOCS),
             },
@@ -648,17 +709,6 @@ function getGenerationSchema(genApp: Hono<Env>): Promise<OpenApiSchema> {
 
 function normalizeDocTagName(tag: string): string {
     return LEGACY_DOC_TAGS[tag] ?? tag;
-}
-
-function normalizeDocTagObjects(tags: OpenApiSchema[]): OpenApiSchema[] {
-    return mergeTags(
-        tags.map((tag) =>
-            typeof tag.name === "string"
-                ? { ...tag, name: normalizeDocTagName(tag.name) }
-                : tag,
-        ),
-        [],
-    );
 }
 
 function normalizeOperationTags(paths: OpenApiSchema): void {
@@ -749,100 +799,67 @@ function isPublicMediaRead(method: string, path: string): boolean {
     return path === "/{id}" || path === "/{id}/metadata" || path === "/media";
 }
 
+// gen owns every docs tag. enter operations get their sidebar tag from their
+// public path, so a tag string written in enter can never split a group.
 function transformEnterSchema(schema: OpenApiSchema): OpenApiSchema {
     const paths: OpenApiSchema = {};
     for (const [path, value] of Object.entries(asRecord(schema.paths))) {
         if (!isPublicEnterPath(path)) continue;
-        if (isX402KeyPath(path)) {
-            const item = asRecord(value);
-            paths[publicEnterPath(path)] = {
-                ...item,
-                servers: [{ url: "https://enter.pollinations.ai" }],
-                ...Object.fromEntries(
-                    ["get", "post"]
-                        .filter((method) => item[method])
-                        .map((method) => [
-                            method,
-                            {
-                                ...asRecord(item[method]),
-                                tags: [DOC_TAGS.x402PrepaidKeys],
-                                security: [],
-                            },
-                        ]),
-                ),
-            };
-        } else {
-            paths[publicEnterPath(path)] = value;
+        const publicPath = publicEnterPath(path);
+        paths[publicPath] = isX402KeyPath(path)
+            ? x402KeyPathItem(value)
+            : withOperationTag(value, enterDocTag(publicPath));
+    }
+    return { ...schema, paths };
+}
+
+// x402 key purchases are served by enter itself and need no API key.
+function x402KeyPathItem(pathItem: unknown): unknown {
+    const tagged = asRecord(
+        withOperationTag(pathItem, DOC_TAGS.x402PrepaidKeys),
+    );
+    for (const operation of Object.values(tagged)) {
+        if (
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+        ) {
+            (operation as OpenApiSchema).security = [];
         }
     }
-    normalizeOperationTags(paths);
-    return {
-        ...schema,
-        tags: tagsForPaths(
-            {
-                ...schema,
-                tags: normalizeDocTagObjects(asRecordArray(schema.tags)),
-            },
-            paths,
-        ),
-        paths,
-    };
+    return { ...tagged, servers: [{ url: "https://enter.pollinations.ai" }] };
 }
 
-function isPublicEnterPath(path: string): boolean {
-    return (
-        isPublicAccountPath(path) ||
-        isPublicQuestCatalogPath(path) ||
-        isX402KeyPath(path)
-    );
-}
-
-function isX402KeyPath(path: string): boolean {
-    return path === "/x402/keys" || path.startsWith("/x402/keys/");
-}
-
-function isPublicAccountPath(path: string): boolean {
-    return (
-        path === "/account" ||
-        path.startsWith("/account/") ||
-        path === "/api/account" ||
-        path.startsWith("/api/account/")
-    );
-}
-
-// Only the catalog is part of the public gen API. Session-only dashboard quest
-// actions stay on enter and are omitted from the merged gen docs.
-function isPublicQuestCatalogPath(path: string): boolean {
-    return path === "/quests/catalog" || path === "/api/quests/catalog";
-}
-
-function publicEnterPath(path: string): string {
-    return path
-        .replace(/^\/api\/account(?=\/|$)/, "/account")
-        .replace(/^\/api\/quests(?=\/|$)/, "/quests")
-        .replace(/^\/x402\/keys(?=\/|$)/, "/api/x402/keys");
-}
-
-function tagsForPaths(
-    schema: OpenApiSchema,
-    paths: OpenApiSchema,
-): OpenApiSchema[] {
-    const usedTags = new Set<string>();
-    for (const pathItem of Object.values(paths)) {
-        if (!pathItem || typeof pathItem !== "object") continue;
-        for (const operation of Object.values(pathItem as OpenApiSchema)) {
-            if (!operation || typeof operation !== "object") continue;
-            const tags = (operation as { tags?: unknown }).tags;
-            if (!Array.isArray(tags)) continue;
-            for (const tag of tags) {
-                if (typeof tag === "string") usedTags.add(tag);
-            }
-        }
+function enterDocTag(path: string): string {
+    if (isPublicQuestCatalogPath(path)) return DOC_TAGS.quests;
+    if (
+        path === "/account/agents" ||
+        path.startsWith("/account/agents/") ||
+        path === "/account/my-models/endpoint-agents"
+    ) {
+        return DOC_TAGS.communityAgents;
     }
+    if (
+        path === "/account/my-models" ||
+        path.startsWith("/account/my-models/")
+    ) {
+        return DOC_TAGS.communityModels;
+    }
+    return DOC_TAGS.account;
+}
 
-    return asRecordArray(schema.tags).filter(
-        (tag) => typeof tag.name === "string" && usedTags.has(tag.name),
-    );
+function withOperationTag(pathItem: unknown, tag: string): unknown {
+    if (!pathItem || typeof pathItem !== "object") return pathItem;
+    const tagged: OpenApiSchema = {};
+    for (const [key, operation] of Object.entries(pathItem as OpenApiSchema)) {
+        tagged[key] =
+            operation &&
+            typeof operation === "object" &&
+            !Array.isArray(operation)
+                ? { ...(operation as OpenApiSchema), tags: [tag] }
+                : operation;
+    }
+    return tagged;
 }
 
 function stripGenerationPaths(schema: OpenApiSchema): OpenApiSchema {
@@ -926,10 +943,7 @@ function mergeSchemas(
         info: generationSchema.info,
         servers: generationSchema.servers,
         security: generationSchema.security,
-        tags: mergeTags(
-            asRecordArray(generationSchema.tags),
-            asRecordArray(enterSchema?.tags),
-        ),
+        tags: generationSchema.tags,
         components: mergeComponents(
             asRecord(enterSchema?.components),
             asRecord(generationSchema.components),
@@ -953,16 +967,6 @@ function mergeSchemas(
             ...asRecord(mediaSchema.paths),
         },
     };
-}
-
-function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {
-    const tags = new Map<string, OpenApiSchema>();
-    for (const tag of [...primary, ...secondary]) {
-        if (typeof tag.name === "string" && !tags.has(tag.name)) {
-            tags.set(tag.name, tag);
-        }
-    }
-    return [...tags.values()];
 }
 
 function mergeComponents(base: OpenApiSchema, overrides: OpenApiSchema) {
@@ -990,11 +994,17 @@ function asRecord(value: unknown): OpenApiSchema {
     return value as OpenApiSchema;
 }
 
-function asRecordArray(value: unknown): OpenApiSchema[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter(
-        (item): item is OpenApiSchema =>
-            !!item && typeof item === "object" && !Array.isArray(item),
+function hasPublicOperations(schema?: OpenApiSchema): boolean {
+    return Object.values(asRecord(schema?.paths)).some((pathItem) =>
+        Object.entries(asRecord(pathItem)).some(
+            ([method, operation]) =>
+                /^(get|put|post|delete|patch|options|head|trace)$/.test(
+                    method,
+                ) &&
+                operation !== null &&
+                typeof operation === "object" &&
+                !Array.isArray(operation),
+        ),
     );
 }
 
@@ -1012,15 +1022,35 @@ export async function buildMergedOpenApiSpec(
         fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
-    return injectSamples(
-        mergeSchemas(generationSchema, enterSchema, mediaSchema),
-    );
+    return {
+        ...injectSamples(
+            mergeSchemas(generationSchema, enterSchema, mediaSchema),
+        ),
+        // Keep contributor identity after merging so publication can reject a
+        // partial reference without changing the live endpoint's availability.
+        "x-schema-sources": {
+            gen: hasPublicOperations(generationSchema),
+            enter: hasPublicOperations(enterSchema),
+            media: hasPublicOperations(mediaSchema),
+        },
+    };
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
     const routes = new Hono<Env>()
         .get("/", async (c, next) => {
+            c.header("Vary", "Accept", { append: true });
+            if (c.req.header("accept")?.includes("text/markdown")) {
+                // Cloudflare ignores Vary on cached responses: keep it private.
+                c.header("Cache-Control", "private, max-age=3600");
+                return c.body(LLM_DOC_TEXT, 200, {
+                    "Content-Type": "text/markdown; charset=utf-8",
+                });
+            }
             const response = await Scalar<Env>({
+                // Pinned: the unversioned CDN URL serves every new release, and
+                // 1.74.0 broke the sidebar our CSS and nav script target.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,
@@ -1032,6 +1062,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                onSidebarClick: () => {
+                    // Let Scalar finish navigation before closing a guide's drawer.
+                    requestAnimationFrame(() => {
+                        const close = document.querySelector<HTMLButtonElement>(
+                            '.references-sidebar-mobile-open .t-doc__header button[aria-label="Close Menu"]',
+                        );
+                        close?.click();
+                        close?.focus({ preventScroll: true });
+                    });
+                },
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },
                 ],
@@ -1057,7 +1097,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsHeaderHtml() +
+                    pollinationsDocsHtml() +
                     htmlWithMeta.slice(insertAt),
             );
         })

@@ -65,6 +65,8 @@ function sanitize(obj: unknown): unknown {
             result[key] = typeof value === "object" ? sanitize(value) : value;
         }
     }
+    // Vertex requires `items` on arrays; `{}` keeps JSON Schema's "any item".
+    if (result.type === "array" && !("items" in result)) result.items = {};
     return result;
 }
 

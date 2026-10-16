@@ -3,78 +3,80 @@
 
 import POLLI_UI_TOKENS_CSS from "../../../packages/ui/src/styles/tokens.css?raw";
 
-const POLLINATIONS_UI_CSS = `
+export const POLLINATIONS_DOCS_CSS = `
 ${POLLI_UI_TOKENS_CSS}
-`;
 
-export const POLLINATIONS_HEADER_CSS = `
-${POLLINATIONS_UI_CSS}
+/* The dashboard's lockup, a thin rule, then "Docs": the drawer is the only
+   header. */
+.ph-docs-brand {
+    display: flex; align-items: center; gap: 12px; padding: 16px 14px 8px;
+    flex-shrink: 0; color: var(--scalar-sidebar-color-1); text-decoration: none;
+}
+.ph-docs-lockup svg { display: block; height: 20px; width: auto; }
+.ph-docs-divider {
+    width: 1px; height: 16px; background: var(--scalar-sidebar-border-color);
+}
+.ph-docs-label {
+    font-size: 13px; font-weight: 500; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--scalar-sidebar-color-2);
+}
+.ph-docs-brand:focus-visible {
+    outline: 2px solid var(--polli-color-focus); outline-offset: -2px;
+}
 
-.ph-bar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
-    min-height: 48px; box-sizing: border-box;
-    background: var(--polli-color-brand-dark); border-bottom: 1px solid var(--polli-color-divider);
-    display: flex; align-items: center; gap: 10px; padding: 8px 14px;
-    font: 13px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    color: var(--polli-color-text-base);
+/* Dashboard, account and help links: Scalar's own row colours, so they read
+   like the rest of the drawer; the arrow says they open another site. */
+.ph-docs-links {
+    display: flex; flex-direction: column; gap: 1px; flex-shrink: 0;
+    padding: 8px var(--scalar-sidebar-padding, 9px) 12px;
+    border-top: 1px solid var(--scalar-sidebar-border-color);
 }
-.ph-bar .ph-brand {
-    color: var(--polli-color-text-strong); text-decoration: none;
-    display: inline-flex; align-items: center; flex-shrink: 0;
+.ph-docs-link {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    border-radius: var(--scalar-radius, 6px);
+    font-size: var(--scalar-font-size-3, 14px);
+    color: var(--scalar-sidebar-color-2); text-decoration: none;
 }
-.ph-bar .ph-brand img { height: 18px; width: auto; display: block; }
-@media (min-width: 640px) { .ph-bar .ph-brand img { height: 20px; } }
-@media (max-width: 640px) {
-    .ph-bar { justify-content: center; padding: 8px 12px; }
-    .ph-bar .ph-brand img { height: 22px; }
+.ph-docs-link:hover {
+    background: var(--scalar-sidebar-item-hover-background);
+    color: var(--scalar-sidebar-item-hover-color, var(--scalar-sidebar-color-1));
 }
+.ph-docs-link .ph-doc-icon { width: 14px; height: 14px; flex: 0 0 14px; }
+.ph-docs-link .ph-docs-link-arrow { margin-left: auto; opacity: 0.6; }
 
 .ph-fab-cluster {
-    position: fixed; top: 64px; right: 18px; z-index: 9999;
+    position: fixed; top: 16px; right: 18px; z-index: 9999;
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
+/* Bright brand amber with dark text: the page's one primary action, with the
+   contrast of Scalar's own "Test Request" button. Both faces share one grid
+   cell, so "Copied" never changes the button's width. */
 .ph-fab {
-    padding: 10px 14px; border-radius: 999px;
-    border: 0; background: var(--polli-color-bg-active); color: var(--polli-color-text-strong);
-    font: 500 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    box-shadow: none;
-    cursor: pointer; text-decoration: none;
-    transition: background .15s, color .15s, filter .15s, transform .1s;
-    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+    display: inline-grid; height: 38px; padding: 0 16px; border-radius: 999px;
+    border: 0; background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+    font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    cursor: pointer; transition: filter .15s, transform .1s;
 }
-.ph-fab:hover {
-    background: var(--polli-color-bg-hover); color: var(--polli-color-text-strong);
-    filter: brightness(1.05);
-}
+.ph-fab:hover { filter: brightness(1.06); }
 .ph-fab:active { transform: translateY(1px); }
 .ph-fab:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
 }
+.ph-fab-face {
+    grid-area: 1 / 1; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px;
+}
+.ph-fab-done, .ph-fab.is-copied .ph-fab-idle { visibility: hidden; }
+.ph-fab.is-copied .ph-fab-done { visibility: visible; }
 .ph-fab svg { width: 16px; height: 16px; }
-@media (max-width: 640px) {
+@media (width < 1000px) {
     .ph-fab-cluster { top: 60px; right: 12px; }
-    .ph-fab { padding: 7px 11px; font-size: 12px; }
-    .ph-fab svg { width: 14px; height: 14px; }
+    body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
 }
-`;
-
-export const POLLINATIONS_HEADER_SCALAR_CSS = `
-/* Push Scalar's mount point down so its content (h1, version badges,
-   sidebar, mobile hamburger row) doesn't render under our fixed bar.
-   Body padding works because .ph-bar is position: fixed — it ignores
-   parent padding, so the bar stays at top while everything else shifts. */
-body { padding-top: 48px; }
-/* Match Scalar's mobile hamburger row background to our bar so the seam
-   between the two reads as one continuous header instead of a stripe. */
-@media (max-width: 1000px) {
-    .scalar-app [class*="lg:hidden"][class*="grid-area:header"] {
-        background: var(--polli-color-brand-dark) !important;
-        border: 0 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-    }
+@media (max-width: 640px) {
+    .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
+    .ph-fab svg { width: 14px; height: 14px; }
 }
 `;
 
@@ -144,7 +146,7 @@ export const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app .download-container { display: none !important; }
 
 /* Hide "Powered by Scalar" sidebar footer link. */
-.scalar-app a[href="https://www.scalar.com"] { display: none !important; }
+.scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
    These render in the sidebar regardless of showDeveloperTools. We target
@@ -156,7 +158,8 @@ export const API_REFERENCE_CUSTOM_CSS = `
 .scalar-app a[href^="cursor:"],
 .scalar-app a[href*="mcp.scalar.com"],
 .scalar-app a[href*="generate-mcp"],
-.scalar-app a[href*="modelcontextprotocol"] { display: none !important; }
+.scalar-app a[href*="modelcontextprotocol"],
+.scalar-app .scalar-mcp-layer { display: none !important; }
 .scalar-app section:has(> a[href^="vscode:"]),
 .scalar-app section:has(> a[href^="cursor:"]) { display: none !important; }
 
@@ -186,7 +189,7 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our header script — see scanScalarButtons).
+/* "Show more" buttons (tagged by our docs script — see scanScalarButtons).
    Use the same ambient Button recipe as packages/ui. */
 .scalar-app .ph-show-more {
     background: var(--polli-color-bg-active) !important;

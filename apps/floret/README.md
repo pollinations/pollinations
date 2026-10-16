@@ -58,7 +58,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-Users authenticate to `gen.pollinations.ai` with a `pk_` or `sk_` key that has the `machines` account permission. Each run pays for its own E2B lease from that caller's wallet; at most three VMs may run per account. Gateway `ag_` tokens need the permissions inheritance change in #16413 deployed. The gateway usually calls Floret with a short-lived internal `ag_` token; Floret also accepts those user keys directly and lets gen authenticate them.
+Users authenticate to `gen.pollinations.ai` with a `pk_` or `sk_` key that has the `machines` account permission. Each run pays for its own E2B lease from that caller's wallet; at most three VMs may run per account. The gateway usually calls Floret with a short-lived internal `ag_` token; Floret also accepts those user keys directly and lets gen authenticate them.
 
 Non-streaming responses keep `choices[0].message.content` as Markdown text. Ordered typed media attachments are available in `message.content_blocks`. Set `stream_options: {"include_usage": true}` to receive a terminal usage chunk before `[DONE]`; Floret reports zero wrapper usage because downstream generation is accounted for separately.
 

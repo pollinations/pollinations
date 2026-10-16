@@ -10,19 +10,20 @@ const CORS = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Cache-Control": "no-store",
 };
-const INSTALL =
-    "sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg curl nodejs npm && python3 -m venv /home/user/floret/.venv && /home/user/floret/.venv/bin/pip install -q /home/user/floret";
-const START =
-    "/home/user/floret/.venv/bin/python -m uvicorn floret.api:app --host 0.0.0.0 --port 8000";
+// e2b.Dockerfile: ffmpeg and Floret's dependencies, so a run only adds its source.
+const TEMPLATE = "floret";
+const START = "python3 -m uvicorn floret.api:app --host 0.0.0.0 --port 8000";
 const READY =
     "for i in $(seq 1 100); do curl -sf http://127.0.0.1:8000/health >/dev/null && exit 0; sleep 0.1; done; exit 1";
 
 // Only this run's files and caller credential enter the VM. No operator key.
 export async function startRun(apiKey, snapshot, signal) {
-    const sandbox = await Sandbox.create("base", {
+    const sandbox = await Sandbox.create(TEMPLATE, {
         apiUrl: API_URL,
         apiKey,
         timeoutMs: LEASE_MS,
+        // Gen pauses an expired lease unless told otherwise; an orphaned run must die.
+        lifecycle: { onTimeout: "kill" },
         network: { allowPublicTraffic: false },
         metadata: { app: "floret" },
         // An ambiguous create must not buy a second VM.
@@ -42,12 +43,12 @@ export async function startRun(apiKey, snapshot, signal) {
             ],
             { signal },
         );
-        await sandbox.commands.run(INSTALL, { timeoutMs: 180_000, signal });
         await sandbox.commands.run(START, {
             background: true,
             timeoutMs: 0,
             signal,
             envs: {
+                PYTHONPATH: "/home/user/floret/src",
                 POLLI_TEMP_DIR: "/home/user/workspace",
                 POLLI_CATALOG_ENDPOINT: "file:///home/user/floret/catalog.json",
                 POLLI_ALLOW_OPERATOR_KEY: "false",

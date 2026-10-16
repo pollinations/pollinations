@@ -17,11 +17,6 @@ async function collect(directory) {
     }
 }
 await collect("src/");
-for (const path of ["pyproject.toml", "README.md"])
-    files.push({
-        path: `/home/user/floret/${path}`,
-        data: await readFile(new URL(path, root), "utf8"),
-    });
 await writeFile(
     new URL("source-bundle.js", root),
     `export default ${JSON.stringify(files)};\n`,

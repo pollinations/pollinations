@@ -995,6 +995,16 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 customCss: API_REFERENCE_CUSTOM_CSS,
                 hideModels: true,
                 hideClientButton: true,
+                onSidebarClick: () => {
+                    // Let Scalar finish navigation before closing a guide's drawer.
+                    requestAnimationFrame(() => {
+                        const close = document.querySelector<HTMLButtonElement>(
+                            '.references-sidebar-mobile-open .t-doc__header button[aria-label="Close Menu"]',
+                        );
+                        close?.click();
+                        close?.focus({ preventScroll: true });
+                    });
+                },
                 sources: [
                     { url: "/docs/open-api/generate-schema", title: "API" },
                 ],

@@ -1,6 +1,27 @@
 [
   {
     "emoji": "🎮",
+    "name": "Trolley Match",
+    "url": "https://patbing.github.io/trolley-match",
+    "description": "Choose first in five trolley dilemmas, then compare your answers with live Jev decisions. Includes an order-swap experiment and session-only Bring Your Own Pollen sign-in.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "patbing",
+    "githubUserId": "188037210",
+    "repositoryUrl": "https://github.com/patbing/trolley-match",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17654",
+    "approvedDate": "2026-10-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/2a34bbcc-62ed-42dd-9309-7b5a6408c27f"
+  },
+  {
+    "emoji": "🎮",
     "name": "Switchyard",
     "url": "https://saauf.github.io/switchyard",
     "description": "Choose first in six trolley dilemmas, compare with Jev, and reverse the description order. Includes free practice, exact prompts, probabilities, and session export.",

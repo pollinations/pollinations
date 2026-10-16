@@ -517,7 +517,7 @@ describe("community endpoint configuration policy", () => {
         expect(after?.payload).toBe(before?.payload);
     });
 
-    test("tests a saved model with its stored token and lists its failures", async ({
+    test("tests a saved model with its stored token and reports its health", async ({
         accountToken,
         mocks,
     }) => {
@@ -600,6 +600,33 @@ describe("community endpoint configuration policy", () => {
         expect(mocks.tinybird.state.pipeCalls.at(-1)?.query).toMatchObject({
             model: created.modelId,
         });
+
+        const daysAgo = (days: number) =>
+            new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+        const sample = { sample_succeeded: 15, sample_failed: 35 };
+        mocks.tinybird.state.modelHealthResponse = [
+            { day: daysAgo(7), succeeded: 0, failed: 12, ...sample },
+            { day: daysAgo(0), succeeded: 15, failed: 2, ...sample },
+        ];
+        const health = await SELF.fetch(`${endpointUrl}/${id}/health`, {
+            headers: { Authorization: `Bearer ${accountToken}` },
+        });
+        expect(health.status).toBe(200);
+        const body = (await health.json()) as {
+            successRate: number;
+            requests: number;
+            days: { day: string; succeeded: number; failed: number }[];
+        };
+        expect(body).toMatchObject({ successRate: 30, requests: 50 });
+        expect(body.days.map((day) => day.day)).toEqual(
+            [6, 5, 4, 3, 2, 1, 0].map(daysAgo),
+        );
+        expect(body.days.at(-1)).toEqual({
+            day: daysAgo(0),
+            succeeded: 15,
+            failed: 2,
+        });
+        expect(body.days[0]).toMatchObject({ succeeded: 0, failed: 0 });
 
         const missing = await SELF.fetch(`${endpointUrl}/missing/failures`, {
             headers: { Authorization: `Bearer ${accountToken}` },

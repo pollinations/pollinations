@@ -1,0 +1,33 @@
+TOKEN tinybird_read READ
+
+DESCRIPTION >
+One community model's health, for its owner. Returns final 2xx and 5xx per day
+over the last seven days, with the listing sample repeated on every row. The
+sample is the latest 50 eligible final requests within seven days, computed as
+in model_catalog_health, so the owner sees the number the 80% listing rule uses.
+Reads the hourly rollup, not events. No rows means no calls in the window.
+
+NODE listing_sample
+SQL >
+    %
+    SELECT groupArraySortedMerge(50)(recent) AS recent
+    FROM model_health_hourly
+    WHERE model = {{String(model, required=True)}}
+        AND hour >= toStartOfHour(now() - INTERVAL 7 DAY)
+
+NODE endpoint
+SQL >
+    %
+    SELECT
+        toDate(hour) AS day,
+        sumMerge(status_2xx) AS succeeded,
+        sumMerge(errors_5xx) AS failed,
+        (SELECT arrayCount(row -> row.3 >= 200 AND row.3 < 300, recent) FROM listing_sample) AS sample_succeeded,
+        (SELECT arrayCount(row -> row.3 >= 500, recent) FROM listing_sample) AS sample_failed
+    FROM model_health_hourly
+    WHERE model = {{String(model, required=True)}}
+        AND hour >= toStartOfHour(now() - INTERVAL 7 DAY)
+    GROUP BY day
+    ORDER BY day
+
+TYPE endpoint

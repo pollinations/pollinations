@@ -251,7 +251,7 @@ export function CommunityEndpointCard({
 
             <EndpointHealth
                 id={endpoint.id}
-                testable={endpoint.type === "proxy"}
+                proxy={endpoint.type === "proxy"}
             />
         </Surface>
     );

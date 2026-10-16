@@ -509,6 +509,28 @@ export const CommunityEndpointFailuresResponseSchema = z.object({
         }),
     ),
 });
+export const CommunityEndpointHealthResponseSchema = z.object({
+    successRate: z
+        .number()
+        .nullable()
+        .describe(
+            "Percent of 2xx in the sample the 80% listing rule uses, or null without requests.",
+        ),
+    requests: z
+        .number()
+        .describe(
+            "Eligible final requests in that sample: the latest 50 within seven days.",
+        ),
+    days: z
+        .array(
+            z.object({
+                day: z.string().describe("UTC date, YYYY-MM-DD."),
+                succeeded: z.number(),
+                failed: z.number().describe("Final 5xx."),
+            }),
+        )
+        .describe("The last seven UTC days, oldest first."),
+});
 export const CommunityEndpointDeleteResponseSchema = z.object({
     id: z.string(),
 });

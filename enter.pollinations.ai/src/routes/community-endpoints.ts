@@ -60,6 +60,7 @@ import {
     assertValidUpdate,
     CommunityEndpointDeleteResponseSchema,
     CommunityEndpointFailuresResponseSchema,
+    CommunityEndpointHealthResponseSchema,
     CommunityEndpointListResponseSchema,
     CommunityEndpointModelsResponseSchema,
     CommunityEndpointResponseSchema,
@@ -276,6 +277,14 @@ type FailureRow = {
     from_owner: number;
     last_at: string;
     message: string;
+};
+
+type HealthRow = {
+    day: string;
+    succeeded: number;
+    failed: number;
+    sample_succeeded: number | null;
+    sample_failed: number | null;
 };
 
 type EndpointProbeKind = "models" | "test";
@@ -930,6 +939,70 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ).toISOString(),
                     message: row.message,
                 })),
+            });
+        },
+    )
+    .get(
+        "/:id/health",
+        describeRoute({
+            tags: ["🧩 Community Models"],
+            summary: "Get Model Health",
+            description:
+                "Success rate in the sample the 80% listing rule uses (the latest 50 eligible final requests within seven days), plus final successes and 5xx per day for the last seven UTC days. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Model health",
+                    content: {
+                        "application/json": {
+                            schema: resolver(
+                                CommunityEndpointHealthResponseSchema,
+                            ),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+                404: { description: "Community endpoint not found" },
+            },
+        }),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const endpoint = await requireOwnedEndpoint(
+                db,
+                c.req.param("id"),
+                user.id,
+            );
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            const rows = await fetchTinybirdRows<HealthRow>(
+                new URL(c.env.TINYBIRD_INGEST_URL).origin,
+                "/v0/pipes/my_model_health.json",
+                requireTinybirdReadToken(c.env),
+                { model: communityModelId(ownerGithubUsername, endpoint.name) },
+            );
+            const succeeded = rows[0]?.sample_succeeded ?? 0;
+            const requests = succeeded + (rows[0]?.sample_failed ?? 0);
+            const byDay = new Map(rows.map((row) => [row.day, row]));
+            // The pipe's hour-aligned window can include part of an eighth day.
+            const days = Array.from({ length: 7 }, (_, index) => {
+                const day = new Date(Date.now() - (6 - index) * 86_400_000)
+                    .toISOString()
+                    .slice(0, 10);
+                const row = byDay.get(day);
+                return {
+                    day,
+                    succeeded: row?.succeeded ?? 0,
+                    failed: row?.failed ?? 0,
+                };
+            });
+            return c.json({
+                successRate: requests ? (succeeded / requests) * 100 : null,
+                requests,
+                days,
             });
         },
     )

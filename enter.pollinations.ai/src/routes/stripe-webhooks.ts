@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
+import { recordCryptoTopUpReward } from "../services/quests/groups/account-setup.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -616,6 +617,14 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                     charge,
                     snapshot,
                 });
+                const userId = charge.metadata?.userId;
+                if (
+                    snapshot.paymentMethodRaw === "crypto" &&
+                    userId &&
+                    getPollenPackByKey(charge.metadata?.packKey ?? "")
+                ) {
+                    await recordCryptoTopUpReward(drizzle(c.env.DB), userId);
+                }
                 c.executionCtx.waitUntil(
                     sendStripeEventToTinybird(c.env, {
                         eventType: event.type,

@@ -54,19 +54,24 @@ function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
-function prepareRequestParameters(
+export function prepareRequestParameters(
     requestParams: RequestData,
     modelDefinition: ModelDefinition,
 ): RequestData {
     const isAudioModel =
         modelDefinition.outputModalities?.includes("audio") ?? false;
-    if (!isAudioModel) return requestParams;
+    // `voice` is an audio-output control (documented on GET /text). Fold it
+    // into `audio.voice` for the models that use it and drop it everywhere
+    // else, so it never travels to providers as a stray body field — and is
+    // never sent twice (top level + audio.voice) for audio models.
+    const { voice: _voice, ...rest } = requestParams;
+    if (!isAudioModel) return rest;
 
     const voice = requestParams.voice || requestParams.audio?.voice || "alloy";
     const audioFormat = requestParams.stream ? "pcm16" : "mp3";
 
     return {
-        ...requestParams,
+        ...rest,
         modalities: requestParams.modalities || ["text", "audio"],
         audio: requestParams.audio
             ? {

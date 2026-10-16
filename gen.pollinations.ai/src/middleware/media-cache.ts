@@ -40,14 +40,38 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         label: config.label,
         async getKey(c) {
             const variables = c.var as typeof c.var & Partial<ModelVariables>;
+            const resolvedModel = variables.model?.resolved;
             const cacheUrl = new URL(c.var.generationRequestUrl ?? c.req.url);
+            // The resolved canonical model id is the identity: every alias of
+            // the same model must share one entry. Rewriting the value in
+            // place keeps the key format stable for already-canonical
+            // requests, and URLs without a model param (body-carried model)
+            // keep their key untouched.
+            if (resolvedModel && cacheUrl.searchParams.has("model")) {
+                cacheUrl.searchParams.set("model", resolvedModel);
+            }
             if (c.var.generationCacheBody) {
+                let identity = c.var.generationCacheBody;
+                if (resolvedModel) {
+                    try {
+                        const parsed = JSON.parse(identity) as unknown;
+                        if (
+                            parsed &&
+                            typeof parsed === "object" &&
+                            !Array.isArray(parsed) &&
+                            "model" in parsed
+                        ) {
+                            (parsed as Record<string, unknown>).model =
+                                resolvedModel;
+                            identity = JSON.stringify(parsed);
+                        }
+                    } catch {
+                        // Non-JSON bodies keep their identity as-is.
+                    }
+                }
                 cacheUrl.searchParams.set(
                     "__request_body",
-                    await hashGenerationCacheIdentity(
-                        "media",
-                        c.var.generationCacheBody,
-                    ),
+                    await hashGenerationCacheIdentity("media", identity),
                 );
             }
             return generateCacheKey(

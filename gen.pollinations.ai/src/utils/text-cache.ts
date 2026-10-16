@@ -122,8 +122,14 @@ export async function generateCacheKey(
     bodyText?: string,
     partition?: string,
     requiredSafetyFeatures: readonly SafetyFeature[] = [],
+    resolvedModel?: string,
 ): Promise<string> {
     const url = new URL(request.url);
+
+    // Normalize HEAD requests to GET for cache key generation
+    // since HEAD should return the same headers as GET
+    const normalizedMethod = request.method === "HEAD" ? "GET" : request.method;
+    const isBodyMethod = request.method === "POST" || request.method === "PUT";
 
     // Filter query parameters, excluding auth params, and sort by key so
     // equivalent URLs reuse the same cache entry regardless of parameter order.
@@ -132,12 +138,18 @@ export async function generateCacheKey(
         .filter(([key]) => !EXCLUDED_PARAMS.includes(key.toLowerCase()))
         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
     for (const [key, value] of queryParams) {
+        // The resolved canonical model id is the identity: every alias of the
+        // same model must share one entry. A POST body never reads the query
+        // for its model (resolution reads the body only), so an alias
+        // spelling there is dead weight that only fragments the cache.
+        // Rewriting the value in place (instead of dropping it) keeps the
+        // key format stable for already-canonical requests.
+        if (resolvedModel && key.toLowerCase() === "model") {
+            filteredParams.append(key, resolvedModel);
+            continue;
+        }
         filteredParams.append(key, value);
     }
-
-    // Normalize HEAD requests to GET for cache key generation
-    // since HEAD should return the same headers as GET
-    const normalizedMethod = request.method === "HEAD" ? "GET" : request.method;
 
     const parts = [
         normalizedMethod,
@@ -150,10 +162,25 @@ export async function generateCacheKey(
     let streams = parseBooleanLike(url.searchParams.get("stream")) === true;
 
     // Add filtered body for POST/PUT requests
-    if (bodyText && (request.method === "POST" || request.method === "PUT")) {
+    if (bodyText && isBodyMethod) {
         try {
             // Try to parse as JSON and filter auth fields
             const bodyObj = JSON.parse(bodyText);
+            // The model field is rewritten to the resolved canonical id so
+            // aliases of the same model share one entry. Without this, the
+            // same generation is spread across one cache entry per spelling,
+            // and a retargeted alias would keep replaying the old model's
+            // entry forever. Only requests that carry a model spelling are
+            // rewritten, so default-model keys keep their format.
+            if (
+                resolvedModel &&
+                bodyObj &&
+                typeof bodyObj === "object" &&
+                !Array.isArray(bodyObj) &&
+                "model" in bodyObj
+            ) {
+                (bodyObj as Record<string, unknown>).model = resolvedModel;
+            }
             hasBodySafe = Object.hasOwn(bodyObj, "safe");
             usesSafety ||= hasActiveSafety(bodyObj.safe);
             streams ||= parseBooleanLike(bodyObj.stream) === true;

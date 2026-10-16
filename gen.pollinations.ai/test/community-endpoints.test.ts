@@ -3116,7 +3116,7 @@ fixtureTest(
                 expect(request.redirect).toBe("manual");
                 await expect(request.json()).resolves.toMatchObject({
                     model: "gpt-4.1-mini",
-                    messages: [{ role: "user", content: "hello" }],
+                    messages: [{ role: "user", content: expect.any(String) }],
                     max_tokens: 5,
                     stream: false,
                 });
@@ -3192,7 +3192,12 @@ fixtureTest(
                         ownerGithubUsername,
                         modelName,
                     ),
-                    messages: [{ role: "user", content: "hello" }],
+                    // Distinct content: the legacy spelling must reach the
+                    // upstream itself rather than reuse the canonical
+                    // spelling's cache entry (both resolve to one identity).
+                    messages: [
+                        { role: "user", content: "hello legacy spelling" },
+                    ],
                     max_tokens: 5,
                 }),
             }),
@@ -3214,7 +3219,9 @@ fixtureTest(
                 body: JSON.stringify({
                     model: modelId,
                     metadata: { model: "test/brain" },
-                    messages: [{ role: "user", content: "hello" }],
+                    messages: [
+                        { role: "user", content: "hello metadata override" },
+                    ],
                     max_tokens: 5,
                 }),
             }),
@@ -3233,7 +3240,7 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    input: "hello",
+                    input: "hello through responses",
                     max_output_tokens: 5,
                 }),
             }),
@@ -5822,7 +5829,17 @@ fixtureTest(
                     },
                     body: JSON.stringify({
                         model: requestedModel,
-                        messages: [{ role: "user", content: "hello" }],
+                        // The content varies per spelling so each request
+                        // independently reaches the upstream instead of the
+                        // second spelling being served the first one's cache
+                        // entry (the cache identity resolves both spellings
+                        // to the same canonical model).
+                        messages: [
+                            {
+                                role: "user",
+                                content: `hello ${requestedModel}`,
+                            },
+                        ],
                         stream: false,
                     }),
                 },

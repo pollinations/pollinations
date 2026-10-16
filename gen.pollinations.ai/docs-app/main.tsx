@@ -37,7 +37,6 @@ import {
     SparklesIcon,
     SpeakerIcon,
     SproutIcon,
-    Surface,
     TabButton,
     TerminalIcon,
     TokensIcon,
@@ -242,7 +241,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
             <aside
                 data-theme="neutral"
                 aria-label="Documentation"
-                className="hidden flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-72"
+                className="hidden flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-72 lg:border-r lg:border-theme-text-strong/10"
             >
                 <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1">
                     <Brand large />
@@ -292,15 +291,11 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                 {/* relative: hidden tab labels stay inside the scroll area. */}
                 <ScrollArea
                     ref={scrollRef}
-                    className="relative min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10"
+                    className="relative min-h-0 min-w-0 flex-1 overscroll-contain px-4 pb-8 sm:px-6 lg:px-10 lg:pt-6"
                 >
-                    <div className="mx-auto flex w-full max-w-[1280px] gap-6">
-                        {/* One reading sheet; lines, not cards, split it. */}
-                        <Surface
-                            as="main"
-                            variant="panel"
-                            className="flex min-w-0 flex-1 flex-col divide-y divide-theme-text-strong/10"
-                        >
+                    <div className="mx-auto flex w-full max-w-[1280px] gap-10">
+                        {/* The page itself is the surface; lines split it. */}
+                        <main className="flex min-w-0 flex-1 flex-col divide-y divide-theme-text-strong/10">
                             {pages.map((page) => (
                                 <PageView
                                     key={page.id}
@@ -308,7 +303,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                                     copyForLlms={page === docs.introduction}
                                 />
                             ))}
-                        </Surface>
+                        </main>
                         <OnThisPage page={activePage} active={active} />
                     </div>
                 </ScrollArea>
@@ -598,7 +593,7 @@ const Blocks: FC<{ blocks: Block[] }> = ({ blocks }) => (
                     className="w-full max-w-[720px] rounded-lg"
                 />
             ) : (
-                <Prose key={index} face="plain" className={proseClass}>
+                <Prose key={index} variant="docs" className={proseClass}>
                     {block.text}
                 </Prose>
             ),
@@ -790,11 +785,17 @@ const OperationView: FC<{ op: Operation }> = ({ op }) => (
             <div className="flex min-w-0 flex-col gap-3 xl:sticky xl:top-4 xl:self-start">
                 <Samples op={op} />
                 {op.responseExample && (
-                    <CodeBlock
-                        code={op.responseExample}
-                        language="Response"
-                        codeClassName={exampleClass}
-                    />
+                    <div className="flex min-w-0 flex-col gap-2">
+                        <Heading as="h3" size="card" face="plain">
+                            Response
+                        </Heading>
+                        <CodeBlock
+                            code={op.responseExample}
+                            language="Response"
+                            variant="plain"
+                            codeClassName={exampleClass}
+                        />
+                    </div>
                 )}
             </div>
         </div>
@@ -808,7 +809,11 @@ const Samples: FC<{ op: Operation }> = ({ op }) => {
     return (
         <div className="flex min-w-0 flex-col gap-2">
             {op.samples.length > 1 && (
-                <fieldset className="m-0 flex min-w-0 flex-wrap gap-1 border-0 p-0">
+                // Grey tabs: the page keeps amber for links and actions.
+                <fieldset
+                    data-theme="neutral"
+                    className="m-0 flex min-w-0 flex-wrap gap-1 border-0 p-0"
+                >
                     <legend className="sr-only">Example language</legend>
                     {op.samples.map((s, index) => (
                         <TabButton
@@ -824,6 +829,7 @@ const Samples: FC<{ op: Operation }> = ({ op }) => {
             <CodeBlock
                 code={sample.source}
                 language={sample.label}
+                variant="plain"
                 codeClassName={exampleClass}
             />
         </div>

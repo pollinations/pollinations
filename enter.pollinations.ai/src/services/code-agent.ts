@@ -156,10 +156,26 @@ function scriptUrl(env: CodeAgentDeploymentEnv, namespace: string, id: string) {
     return `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/workers/dispatch/namespaces/${encodeURIComponent(namespace)}/scripts/${encodeURIComponent(id)}`;
 }
 
-async function requireCloudflareSuccess(response: Response) {
+async function requireCloudflareSuccess(
+    env: CodeAgentDeploymentEnv,
+    response: Response,
+) {
     if (response.ok) return;
-    throw new HTTPException(502, {
-        message: `Code agent deployment failed (${response.status})`,
+    // Cloudflare's v4 envelope names the reason, e.g. an agent that throws at
+    // startup. A 400 is the owner's code; anything else is ours.
+    const body = (await response.json().catch(() => null)) as {
+        errors?: { message?: string }[];
+    } | null;
+    const reason = body?.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join("; ")
+        .replaceAll(env.CLOUDFLARE_ACCOUNT_ID, "<account>")
+        .slice(0, 1000);
+    throw new HTTPException(response.status === 400 ? 400 : 502, {
+        message: reason
+            ? `Code agent deployment failed: ${reason}`
+            : `Code agent deployment failed (${response.status})`,
     });
 }
 
@@ -218,7 +234,7 @@ export async function deployCodeAgent(
         headers: { Authorization: `Bearer ${token}` },
         body: form,
     });
-    await requireCloudflareSuccess(response);
+    await requireCloudflareSuccess(env, response);
 }
 
 export async function deleteCodeAgent(env: CodeAgentDeploymentEnv, id: string) {
@@ -227,5 +243,5 @@ export async function deleteCodeAgent(env: CodeAgentDeploymentEnv, id: string) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
     });
-    if (response.status !== 404) await requireCloudflareSuccess(response);
+    if (response.status !== 404) await requireCloudflareSuccess(env, response);
 }

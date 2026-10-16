@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| arXiv | `https://gen.pollinations.ai/mcp/arxiv` | Search arXiv for papers and read abstracts, authors, and links | [Source](https://github.com/pollinations/pollinations/tree/main/apps/arxiv-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,15 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### arXiv MCP
+
+`arxiv_search` searches arXiv papers by relevance or date, and `arxiv_paper`
+fetches papers by arXiv id or abstract URL. Both return each paper's title,
+authors, abstract, dates, categories, and abstract and PDF links. Plain words
+match every field; field queries such as `ti:transformer AND cat:cs.CL` narrow
+the search. Lookups are free and require a Pollinations key. The key is not
+sent to arXiv.
 
 ### Billing and permissions
 

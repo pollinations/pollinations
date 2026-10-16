@@ -18,7 +18,7 @@ import deliver
 import deploy_posts
 import posts
 from common import (NEWS_REL_DIR, build_daily_summary_artifact, call_pollinations_api, daily_summary_input,
-                    monthly_digest_input, post_recap, weekly_digest_input)
+                    fetch_all_snapshots, monthly_digest_input, post_recap, weekly_digest_input)
 from contributors import github_account, rank_contributors
 from news_index import api_entries, build_index, highlight_entries, model_changes, model_entries
 from prs import announced_retirements, api_changes, api_changes_for_pr, api_surface, changes_text
@@ -356,7 +356,7 @@ class NotesAndIndexTest(unittest.TestCase):
         self.assertNotIn("Merged PRs:", month)
 
 
-EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": []}
+EMPTY_CATALOG = {"text": [], "image": [], "video": [], "audio": [], "embeddings": [], "3d": [], "realtime": []}
 
 # One reply carrying every field any post reads.
 REPLY = {
@@ -650,6 +650,24 @@ class PostsTest(unittest.TestCase):
             # A person who checked /models records it anyway.
             self.assertEqual(list(self.new("catalog", today, overwrite=True)[2]),
                              [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
+
+    def test_the_catalog_keeps_3d_and_realtime_models(self):
+        models = [{"name": "a", "category": "3d"}, {"name": "b", "category": "realtime"},
+                  {"name": "c", "category": "embedding"}]
+        with patch("common.requests.get", return_value=SimpleNamespace(json=lambda: models,
+                                                                       raise_for_status=lambda: None)):
+            snapshot = fetch_all_snapshots()
+        self.assertEqual((snapshot["3d"], snapshot["realtime"], snapshot["embeddings"]),
+                         ([models[0]], [models[1]], [models[2]]))
+
+    def test_catalog_records_a_new_category_even_without_model_changes(self):
+        today = str(datetime.now(UTC).date())
+        self.put("models/snapshots/2026-10-01.json",
+                 {"text": [{"name": "kept"}], "image": [], "video": [], "audio": [], "embeddings": []})
+        current = {**EMPTY_CATALOG, "text": [{"name": "kept"}], "3d": [{"name": "microsoft/trellis-2"}]}
+        with patch("posts.fetch_all_snapshots", return_value=current):
+            saved = self.new("catalog", today)[2]
+        self.assertEqual(list(saved), [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
 
     def test_model_post_compares_the_recorded_catalog_a_week_apart(self):
         last_week = {**EMPTY_CATALOG, "text": [{"name": "kept", "paid_only": False}]}

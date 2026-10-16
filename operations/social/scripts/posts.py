@@ -504,8 +504,10 @@ def catalog_files(raw: dict, news: Path, overwrite: bool = False) -> dict[str, b
     """The day's snapshot, when the catalog differs from the latest recorded one."""
     date, current = raw["date"], raw["snapshot"]
     latest = snapshot_date(news, date)
-    recorded = read_snapshot(news, latest) if latest else None
-    if recorded and diff_models(recorded, current).is_empty():
+    recorded = read_snapshot(news, latest)
+    # A category the record didn't have yet is a change too: the comparison skips it.
+    unchanged = recorded and set(recorded) == set(current)
+    if unchanged and diff_models(recorded, current).is_empty():
         print(f"  The catalog is unchanged since {latest}")
         return {}
     # A half-empty answer from /models would be announced as mass retirements.

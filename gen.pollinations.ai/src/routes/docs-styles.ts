@@ -108,9 +108,6 @@ export const API_REFERENCE_CUSTOM_CSS = `
   text-decoration-color: var(--polli-color-text-soft);
 }
 
-.scalar-app .ph-doc-nav-item {
-  align-items: center;
-}
 .ph-doc-nav-icon {
   display: inline-block !important;
   width: 14px !important;
@@ -130,22 +127,22 @@ export const API_REFERENCE_CUSTOM_CSS = `
   color: var(--polli-color-text-soft);
 }
 
-/* Make each drawer section easy to scan. Scalar renders section labels as
-   tag-group rows and inserts a small spacer immediately before each one. */
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child {
-  height: 12px !important;
-  min-height: 12px !important;
-  flex-shrink: 0;
-}
-.scalar-app [data-sidebar-id^="api/tag-group/"] > div:nth-child(2) {
-  color: var(--polli-color-text-soft) !important;
+/* Amber group titles (Get Started, Guides, ...) split the drawer into its
+   parts. In Scalar 1.74 the title is the link in each group's first row. */
+.scalar-app [data-sidebar-id^="api/tag-group/"] > div:first-child > a {
+  color: var(--polli-color-text-soft);
 }
 
 /* Hide Scalar's native download UI — we surface it via the floating
    action cluster (see .ph-fab-cluster below) for layout consistency. */
 .scalar-app .download-container { display: none !important; }
 
-/* Hide "Powered by Scalar" sidebar footer link. */
+/* Hide Scalar's SDK/MCP promotion, its "Ask AI Agent" form beside Test
+   Request, and the footer attribution. */
+.scalar-app .explore-scalar,
+.scalar-app .selected-client-action,
+.scalar-app .generate-sdk-button,
+.scalar-app .agent-button-container { display: none !important; }
 .scalar-app a[href*="utm_source=powered-by"] { display: none !important; }
 
 /* Hide Scalar's IDE/MCP quick-launch buttons (VS Code, Cursor, Generate MCP).
@@ -189,23 +186,14 @@ export const API_REFERENCE_CUSTOM_CSS = `
     grid-template-columns: 1fr !important;
 }
 
-/* "Show more" buttons (tagged by our docs script — see scanScalarButtons).
-   Use the same ambient Button recipe as packages/ui. */
+/* Keep section expansion quiet and aligned with the content. */
 .scalar-app .ph-show-more {
-    background: var(--polli-color-bg-active) !important;
-    color: var(--polli-color-text-strong) !important;
-    border-color: var(--polli-color-bg-active) !important;
+    margin-inline: 0 auto;
+    background: var(--scalar-background-2);
+    color: var(--scalar-color-2);
 }
 .scalar-app .ph-show-more:hover {
-    background: var(--polli-color-bg-hover) !important;
-    border-color: var(--polli-color-bg-hover) !important;
-}
-/* Force the chevron/triangle SVG inside the button to match text color
-   (otherwise it inherits Scalar's dim color and disappears on amber). */
-.scalar-app .ph-show-more svg,
-.scalar-app .ph-show-more svg * {
-    color: var(--polli-color-text-strong) !important;
-    fill: currentColor !important;
-    stroke: currentColor !important;
+    background: var(--scalar-background-3);
+    color: var(--scalar-color-1);
 }
 `;

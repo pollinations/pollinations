@@ -458,12 +458,27 @@ function pollinationsDocsHtml(): string {
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed
   // by the CDN bundle — we tag them by their stable label so our CSS can
-  // hide ("Ask AI") or style ("Show more") them in amber.
+  // hide ("Ask AI") or style ("Show more") them.
   var navIcons = ${navIcons};
   function normalizeScalarNavLabel(text) {
     return text.replace(/\\s+/g, ' ').trim().replace(/\\s*(Open|Close)\\s*Group$/i, '').trim();
   }
+  // Scalar 1.74 folds the drawer's groups (Get Started, Guides, ...). Open
+  // each once on load so every page is listed, as before; readers can still
+  // fold them.
+  var openedGroups = {};
+  function openDrawerGroups() {
+    var groups = document.querySelectorAll('.scalar-app [data-sidebar-id^="api/tag-group/"]');
+    for (var g = 0; g < groups.length; g++) {
+      var id = groups[g].getAttribute('data-sidebar-id');
+      if (openedGroups[id]) continue;
+      var toggle = groups[g].firstElementChild && groups[g].firstElementChild.querySelector('button[aria-expanded="false"]');
+      openedGroups[id] = true;
+      if (toggle) toggle.click();
+    }
+  }
   function scanScalarButtons() {
+    openDrawerGroups();
     var sidebars = document.querySelectorAll('.scalar-app .t-doc__sidebar');
     for (var s = 0; s < sidebars.length; s++) {
       if (!sidebars[s].querySelector('.ph-docs-brand')) {
@@ -481,7 +496,9 @@ function pollinationsDocsHtml(): string {
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
       else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {
         nodes[i].classList.add('ph-doc-nav-item');
-        nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
+        var indent = nodes[i].querySelector('.scalar-sidebar-indent');
+        if (indent) indent.insertAdjacentHTML('afterend', navIcons[navText]);
+        else nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
       }
     }
   }
@@ -1013,9 +1030,8 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
                 });
             }
             const response = await Scalar<Env>({
-                // Pinned: the unversioned CDN URL serves every new release, and
-                // 1.74.0 broke the sidebar our CSS and nav script target.
-                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.73.1",
+                // Pin the CDN bundle so sidebar changes are verified before upgrading.
+                cdn: "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.74.0",
                 pageTitle: SEO_TITLE,
                 title: SEO_TITLE,
                 favicon: FAVICON_DATA_URI,

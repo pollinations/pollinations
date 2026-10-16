@@ -25,7 +25,7 @@ import { useResetWhenShownAgain } from "../../lib/billing-portal.ts";
 import { CheckoutConfirmation } from "./checkout-confirmation.tsx";
 import { formatCard } from "./payment-method-format.ts";
 
-/** A Checkout Session shown in the pay modal (`ui_mode: custom`). */
+/** A Checkout Session shown in the pay modal (`ui_mode: elements`). */
 type WalletCheckout = {
     clientSecret: string;
     sessionId: string;

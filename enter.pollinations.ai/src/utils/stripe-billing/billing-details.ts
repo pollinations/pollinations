@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import type { BillingOverview } from "./types.ts";
+import { type BillingOverview, toTaxIdVerification } from "./types.ts";
 
 export function isBillingDetailsComplete(
     customer: Stripe.Customer,
@@ -46,7 +46,7 @@ export function getBillingDetailsSummary(
         taxIds: taxIds.map((taxId) => ({
             type: taxId.type,
             value: taxId.value,
-            verification: taxId.verification?.status ?? null,
+            verification: toTaxIdVerification(taxId.verification?.status),
         })),
         email: firstString(
             customer.email,

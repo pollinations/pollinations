@@ -16,7 +16,7 @@ import {
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { eq, isNotNull } from "drizzle-orm";
+import { and, eq, gt, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
 
@@ -51,6 +51,42 @@ export async function getCommunityModelRegistryEntries(
         expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
     }).catch(() => {});
     return entries;
+}
+
+// The KV copy, its edge cache and each isolate's registry can each be up to
+// one TTL old, so a listing saved this recently may be missing from them.
+const CATALOG_MAX_STALENESS_SECONDS = 3 * COMMUNITY_CATALOG_CACHE_TTL_SECONDS;
+
+/**
+ * Whether `model` names a listing the caller saved too recently for the cached
+ * catalog to have it. Only listings the catalog would include count, so a
+ * listing that can never resolve (such as a code agent still deploying)
+ * doesn't rebuild the catalog on every call.
+ */
+export async function isUncachedOwnListing(
+    dbBinding: CloudflareBindings["DB"],
+    ownerUserId: string,
+    model: string,
+): Promise<boolean> {
+    if (!model.includes("/")) return false;
+    const name = model.slice(model.lastIndexOf("/") + 1);
+    const savedAfter = new Date(
+        Date.now() - CATALOG_MAX_STALENESS_SECONDS * 1000,
+    );
+    const row = await drizzle(dbBinding, { schema })
+        .select({ id: schema.communityEndpoint.id })
+        .from(schema.communityEndpoint)
+        .where(
+            and(
+                eq(schema.communityEndpoint.ownerUserId, ownerUserId),
+                eq(schema.communityEndpoint.name, name),
+                gt(schema.communityEndpoint.updatedAt, savedAfter),
+                isNotNull(schema.communityEndpoint.baseUrl),
+                isNotNull(schema.communityEndpoint.upstreamModel),
+            ),
+        )
+        .get();
+    return row !== undefined;
 }
 
 export async function resetCommunityModelRegistryCache(

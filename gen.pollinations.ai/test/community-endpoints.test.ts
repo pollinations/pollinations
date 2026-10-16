@@ -107,6 +107,7 @@ import {
     callCommunityVideoEndpoint,
 } from "../src/image/communityEndpoint.ts";
 import worker from "../src/index.ts";
+import { resolveModelDefinition } from "../src/middleware/model.ts";
 import { TEXT_BALANCE_NOTICE_ENABLED } from "../src/middleware/text-balance-notice.ts";
 import {
     getGenerationModelRegistry,
@@ -263,6 +264,62 @@ fixtureTest(
                 (row) => row.communityEndpoint.ownerUserId === ownerUserId,
             ),
         ).toHaveLength(2);
+    },
+);
+
+fixtureTest(
+    "a new agent works for its owner before the catalog cache expires",
+    async () => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const otherUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: `other-${crypto.randomUUID().slice(0, 8)}`,
+        });
+        const modelId = communityModelId(ownerGithubUsername, "fresh-agent");
+        // Cache the catalog before the agent exists.
+        expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
+            null,
+        );
+        const id = `fresh-${crypto.randomUUID()}`;
+        await insertCommunityEndpoints({
+            id,
+            ownerUserId,
+            name: "fresh-agent",
+            description: "Test",
+            type: "prompt_agent",
+            visibility: "private",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: id,
+            payload: JSON.stringify({
+                prompt: "Test",
+                baseModel: DEFAULT_TEXT_MODEL,
+                mcpServers: [],
+            }),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await expect(
+            resolveModelDefinition(
+                modelId,
+                "generate.text",
+                env,
+                otherUserId,
+                "/v1/chat/completions",
+            ),
+        ).rejects.toThrow("Invalid model or alias");
+        const resolved = await resolveModelDefinition(
+            modelId,
+            "generate.text",
+            env,
+            ownerUserId,
+            "/v1/chat/completions",
+        );
+        expect(resolved.communityEndpoint?.id).toBe(id);
     },
 );
 

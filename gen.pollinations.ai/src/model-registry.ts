@@ -28,6 +28,7 @@ import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
     getCommunityModelRegistryEntries,
+    isUncachedOwnListing,
     resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -311,6 +312,23 @@ export async function getGenerationModelRegistry(
         registry,
     };
     return registry;
+}
+
+/**
+ * Resolves a model for a caller. A miss on a listing the caller has just saved
+ * rebuilds the catalog once, so a new agent works for its owner straight away
+ * instead of failing as an unknown model until the caches expire.
+ */
+export async function resolveGenerationModel(
+    env: CommunityModelEnv,
+    model: string,
+    callerUserId: string | undefined,
+): Promise<GenerationModelEntry | null> {
+    const entry = (await getGenerationModelRegistry(env)).resolve(model);
+    if (entry || !callerUserId) return entry;
+    if (!(await isUncachedOwnListing(env.DB, callerUserId, model))) return null;
+    await resetGenerationModelRegistryCache(env);
+    return (await getGenerationModelRegistry(env)).resolve(model);
 }
 
 export async function resetGenerationModelRegistryCache(

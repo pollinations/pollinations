@@ -15,7 +15,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
     type GenerationModelEntry,
-    getGenerationModelRegistry,
+    resolveGenerationModel,
 } from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
@@ -88,8 +88,7 @@ export async function resolveModelDefinition(
     callerUserId?: string,
     supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
-    const registry = await getGenerationModelRegistry(env);
-    const entry = registry.resolve(model);
+    const entry = await resolveGenerationModel(env, model, callerUserId);
     if (!entry) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,

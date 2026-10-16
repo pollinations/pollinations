@@ -57,7 +57,10 @@ async function pollForToken(
     const pollMs = Math.max(interval, 5) * 1000;
 
     while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, pollMs));
+        await new Promise((r) =>
+            setTimeout(r, Math.min(pollMs, deadline - Date.now())),
+        );
+        if (Date.now() >= deadline) break;
 
         const res = await fetch(`${ENTER_URL}/api/device/token`, {
             method: "POST",

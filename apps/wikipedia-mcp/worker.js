@@ -30,9 +30,18 @@ const failure = (message) => ({
     content: [{ type: "text", text: message }],
 });
 
-const stripTags = (html) =>
-    html
-        .replace(/<[^>]+>/g, "")
+/** Removes tags until none are left, so nested input such as `<<b>b>` cannot leave one behind. */
+function stripTags(text) {
+    let previous;
+    do {
+        previous = text;
+        text = text.replace(/<[^>]*>/g, "");
+    } while (text !== previous);
+    return text;
+}
+
+const excerptText = (html) =>
+    stripTags(html)
         .replace(/&quot;/g, '"')
         .replace(/&amp;/g, "&");
 
@@ -62,7 +71,7 @@ function buildServer() {
                 found.pages.map((page) => ({
                     title: page.title,
                     description: page.description,
-                    snippet: stripTags(page.excerpt ?? ""),
+                    snippet: excerptText(page.excerpt ?? ""),
                     url: `https://${language}.wikipedia.org/wiki/${encodeURIComponent(page.key)}`,
                 })),
             );

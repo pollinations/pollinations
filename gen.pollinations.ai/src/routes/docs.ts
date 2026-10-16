@@ -483,7 +483,9 @@ function pollinationsDocsHtml(): string {
       else if (/^show more\\b/i.test(text)) nodes[i].classList.add('ph-show-more');
       else if (navIcons[navText] && !nodes[i].querySelector('.ph-doc-icon')) {
         nodes[i].classList.add('ph-doc-nav-item');
-        nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
+        var indent = nodes[i].querySelector('.scalar-sidebar-indent');
+        if (indent) indent.insertAdjacentHTML('afterend', navIcons[navText]);
+        else nodes[i].insertAdjacentHTML('afterbegin', navIcons[navText]);
       }
     }
   }

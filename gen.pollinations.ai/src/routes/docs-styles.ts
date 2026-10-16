@@ -108,9 +108,6 @@ export const API_REFERENCE_CUSTOM_CSS = `
   text-decoration-color: var(--polli-color-text-soft);
 }
 
-.scalar-app .ph-doc-nav-item {
-  align-items: center;
-}
 .ph-doc-nav-icon {
   display: inline-block !important;
   width: 14px !important;

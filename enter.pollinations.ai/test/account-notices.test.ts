@@ -87,7 +87,8 @@ test("running-low email goes out once per pack below 20% of the last pack", asyn
     }
     expect(sent.map((email) => email.to)).toEqual(["low@example.com"]);
     expect(sent[0].subject).toBe("Your paid balance is running low");
-    expect(sent[0].text).toContain("💳 3.99 pollen left");
+    expect(sent[0].text).toMatch(/^💳 3\.99 pollen left\n/);
+    expect(sent[0].text).toContain("\n-- \n");
     expect(sent[0].html).toContain("turn on <strong>auto top-up</strong>");
     expect(sent[0].text).toContain("turn on auto top-up so");
     expect(sent[0].html).toMatch(

@@ -147,9 +147,9 @@ ${icons}
 </div>
 </body></html>`;
 
+    // Text clients already show the subject, so the text starts with the
+    // content.
     const text = [
-        notice.subject,
-        "",
         ...(notice.intro ? [notice.intro, ""] : []),
         `💳 ${amount(notice.balance)} pollen left`,
         "",
@@ -157,7 +157,8 @@ ${icons}
         "",
         `${notice.button.label}: ${url(notice.button.path)}`,
         "",
-        "--",
+        // "-- " with the space is the signature marker mail clients recognise.
+        "-- ",
         ...links.map((link) => `${link.label}: ${link.href}`),
         "Questions? Reply to this email.",
         `Unsubscribe: ${unsubscribeUrl}`,

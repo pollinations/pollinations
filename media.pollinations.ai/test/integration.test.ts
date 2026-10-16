@@ -1778,9 +1778,9 @@ describe("media.pollinations.ai", () => {
             );
             expect(unknown.status).toBe(404);
 
-            // Untagged and kept, uploaded with a publishable key: the
-            // account's secret key deletes it, nobody else's does.
-            const { status, body } = await uploadViaForm("pk_alice", {
+            // Untagged and kept: the account's secret key deletes it,
+            // nobody else's does.
+            const { status, body } = await uploadViaForm("sk_alice", {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
                 extraFields: { expiresAfter: "never" },
@@ -1849,7 +1849,7 @@ describe("media.pollinations.ai", () => {
     describe("expiresAfter=never", () => {
         it("keeps multipart and JSON uploads, billed to the uploading key after 30 free days", async () => {
             const before = Date.now();
-            const form = await uploadViaForm("pk_alice", {
+            const form = await uploadViaForm("sk_alice", {
                 bytes: variant(50),
                 extraFields: { expiresAfter: "never" },
             });
@@ -1859,7 +1859,7 @@ describe("media.pollinations.ai", () => {
 
             const keep = await keepOf(kept.id);
             expect(keep).toMatchObject({
-                apiKeyId: keyId("pk_alice"),
+                apiKeyId: keyId("sk_alice"),
                 size: TINY_PNG.length,
             });
             const freeDays = (keep.paidUntil.getTime() - before) / 86_400_000;
@@ -1895,7 +1895,7 @@ describe("media.pollinations.ai", () => {
             expect(await keepOf(free.id)).toBeUndefined();
         });
 
-        it("rejects other values and keys without a user account", async () => {
+        it("rejects other values, publishable keys and keys without a user account", async () => {
             const keeps = () => drizzle(env.DB).select().from(mediaKeep);
             const before = (await keeps()).length;
             const form = await uploadViaForm("pk_alice", {
@@ -1923,14 +1923,16 @@ describe("media.pollinations.ai", () => {
             );
             expect(jsonRes.status).toBe(400);
 
-            const noUser = await uploadViaForm("pk_nouser", {
-                bytes: variant(55),
-                extraFields: { expiresAfter: "never" },
-            });
-            expect(noUser.status).toBe(400);
-            expect((noUser.body as { error: string }).error).toContain(
-                "user-owned API key",
-            );
+            for (const key of ["pk_alice", "pk_nouser", "sk_legacy"]) {
+                const res = await uploadViaForm(key, {
+                    bytes: variant(55),
+                    extraFields: { expiresAfter: "never" },
+                });
+                expect(res.status).toBe(400);
+                expect((res.body as { error: string }).error).toBe(
+                    "Keeping files (expiresAfter) requires a user-owned secret (sk_) API key",
+                );
+            }
 
             expect(await keeps()).toHaveLength(before);
         });

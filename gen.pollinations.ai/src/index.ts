@@ -309,6 +309,13 @@ export default {
     fetch: app.fetch,
     // The only cron, every 5 minutes (wrangler.toml).
     scheduled: async (_controller, env, ctx) => {
-        await Promise.all([keepSandboxes(env, ctx), keepMedia(env, ctx)]);
+        // One keeper failing must not cut the other short.
+        const results = await Promise.allSettled([
+            keepSandboxes(env, ctx),
+            keepMedia(env, ctx),
+        ]);
+        for (const result of results) {
+            if (result.status === "rejected") throw result.reason;
+        }
     },
 } satisfies ExportedHandler<CloudflareBindings>;

@@ -16,6 +16,8 @@ import worker from "../src/index.ts";
 const DAY_MS = 86_400_000;
 // R2's storage price, in pollen per GB-month.
 const GB_MONTH = 0.015;
+// Smaller files are billed as this size.
+const MIN_BILLED_BYTES = 128 * 1024;
 
 // Records the media keep charges sent to Tinybird; everything else goes to
 // the real fetch.
@@ -49,7 +51,7 @@ afterEach(() => {
     vi.unstubAllGlobals();
 });
 
-test("the cron renews kept media with 15 paid days left at R2's price, and ends a keep its key can't pay or whose file is gone", async () => {
+test("the cron renews kept media with 15 paid days left at R2's price, once even when runs overlap, and ends a keep its key can't pay or whose file is gone", async () => {
     const charges = stubTinybird();
     const db = drizzle(env.DB);
     const owner = await createTestApiKey({ user: { tierBalance: 10 } });
@@ -62,12 +64,14 @@ test("the cron renews kept media with 15 paid days left at R2's price, and ends 
 
     const size = 10_000_000;
     const due = await upload(size);
+    const small = await upload(1000);
     const later = await upload(1000);
     const unpaid = await upload(1000);
     const orphaned = await upload(1000);
     const laterPaidUntil = inDays(20);
     await db.insert(mediaKeep).values([
         { id: due.id, apiKeyId: owner.id, size, paidUntil: inDays(10) },
+        { id: small.id, apiKeyId: owner.id, size: 1000, paidUntil: inDays(10) },
         {
             id: later.id,
             apiKeyId: owner.id,
@@ -89,8 +93,12 @@ test("the cron renews kept media with 15 paid days left at R2's price, and ends 
         },
     ]);
 
+    // Two overlapping runs read the same due rows.
     const ctx = createExecutionContext();
-    await worker.scheduled(createScheduledController(), env, ctx);
+    await Promise.all([
+        worker.scheduled(createScheduledController(), env, ctx),
+        worker.scheduled(createScheduledController(), env, ctx),
+    ]);
     await waitOnExecutionContext(ctx);
 
     // Kept on: the renewed and the not yet due; ended: the gone file, and
@@ -98,7 +106,9 @@ test("the cron renews kept media with 15 paid days left at R2's price, and ends 
     const keeps = new Map(
         (await db.select().from(mediaKeep)).map((keep) => [keep.id, keep]),
     );
-    expect([...keeps.keys()].sort()).toEqual([due.id, later.id].sort());
+    expect([...keeps.keys()].sort()).toEqual(
+        [due.id, small.id, later.id].sort(),
+    );
     expect(
         (keeps.get(due.id)?.paidUntil.getTime() ?? 0) - Date.now(),
     ).toBeGreaterThan(29.99 * DAY_MS);
@@ -110,17 +120,27 @@ test("the cron renews kept media with 15 paid days left at R2's price, and ends 
     ).toBeLessThan(1000);
     expect(await env.MEDIA.has(due.id)).toBe(true);
 
-    // The renewal pays for the 20 days it adds to 10 MB.
-    const price = (size / 1e9) * GB_MONTH * (20 / 30);
-    expect(charges()).toHaveLength(1);
-    expect(charges()[0]).toMatchObject({
-        userId: owner.userId,
-        apiKeyId: owner.id,
-        modelUsed: "media",
-        modelProviderUsed: "r2",
-    });
-    expect(charges()[0].totalPrice).toBeCloseTo(price, 6);
-    expect(await questPollen(owner.userId)).toBeCloseTo(10 - price, 6);
+    // Each renewal is charged once, for the 20 days it adds; the 1 KB file
+    // is billed as 128 KiB.
+    const price = (bytes: number) => (bytes / 1e9) * GB_MONTH * (20 / 30);
+    const prices = charges()
+        .map((event) => Number(event.totalPrice))
+        .sort((a, b) => a - b);
+    expect(prices).toHaveLength(2);
+    expect(prices[0]).toBeCloseTo(price(MIN_BILLED_BYTES), 8);
+    expect(prices[1]).toBeCloseTo(price(size), 6);
+    for (const event of charges()) {
+        expect(event).toMatchObject({
+            userId: owner.userId,
+            apiKeyId: owner.id,
+            modelUsed: "media",
+            modelProviderUsed: "r2",
+        });
+    }
+    expect(await questPollen(owner.userId)).toBeCloseTo(
+        10 - price(size) - price(MIN_BILLED_BYTES),
+        6,
+    );
     expect(await questPollen(broke.userId)).toBe(0);
     expect(await questPollen(revoked.userId)).toBe(10);
 });

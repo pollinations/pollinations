@@ -54,12 +54,15 @@ curl -X POST https://media.pollinations.ai/upload \
 ### Keep a file until you delete it
 
 Files expire after 30 days. Add `expiresAfter=never` to keep one until you
-delete it. The first 30 days are free; after that the key that uploaded it
-pays R2's storage price, 0.015 pollen per GB-month, 15 days in advance.
+delete it. It needs your secret (`sk_`) key. The first 30 days are free; after
+that the key that uploaded it pays R2's storage price, 0.015 pollen per
+GB-month (files under 128 KB count as 128 KB), 15 days in advance. The first
+charge comes on day 15, for days 30–45, and shows in your usage as model
+`media`.
 
 ```bash
 curl -X POST https://media.pollinations.ai/upload \
-  -H "Authorization: Bearer <your-api-key>" \
+  -H "Authorization: Bearer <your-secret-key>" \
   -F "file=@image.jpg" \
   -F "expiresAfter=never"
 
@@ -126,8 +129,8 @@ each `lowercase letters, digits, and _.:- (not leading), max 128 chars`.
 Publishing requires a key attached to a user account.
 
 `expiresAfter: "never"` keeps the file until you delete it (see Retention
-Policy). It also requires a key attached to a user account. Raw uploads can't
-be kept.
+Policy). It requires a secret (`sk_`) key attached to a user account. Raw
+uploads can't be kept.
 
 **Response:**
 ```json
@@ -145,7 +148,7 @@ be kept.
 file is kept.
 
 **Errors:**
-- `400` - No file provided, empty file, invalid JSON/base64, invalid tags or `expiresAfter`
+- `400` - No file provided, empty file, invalid JSON/base64, invalid tags or `expiresAfter`, or `expiresAfter` without a user-owned secret key
 - `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
 
 ### `GET /:id`
@@ -263,7 +266,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 ## 📌 Retention Policy
 
 - **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
-- **Keep:** `expiresAfter=never` keeps a file until you delete it. The first 30 days are free. After that the key that uploaded it pays R2's storage price, 0.015 pollen per GB-month, 15 days in advance. If the key can't pay, is deleted, or its account is banned, the file expires as usual, at least 15 days later.
+- **Keep:** `expiresAfter=never` keeps a file until you delete it. The first 30 days are free. After that the key that uploaded it pays R2's storage price, 0.015 pollen per GB-month (files under 128 KB count as 128 KB), 15 days in advance, so the first charge comes on day 15. If the key can't pay, is deleted, or its account is banned, the keep ends and the file expires like any other upload, normally 15 to 30 days later. Topping up doesn't restart a keep; upload the file again.
 - **Delete (alpha):** Owners can delete any file uploaded with their account's keys via `DELETE /media/:id` (secret key). Untagged files from before October 2026 can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

@@ -4,7 +4,8 @@ import { mediaKeep } from "@shared/db/media-keep.ts";
 import { ensureConfigured } from "@shared/logger.ts";
 import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
-import { asc, eq, lte } from "drizzle-orm";
+import { R2_LIFECYCLE_TTL_MS } from "@shared/r2-storage.ts";
+import { and, asc, eq, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
@@ -15,12 +16,12 @@ import { charge, loadPayer } from "./routes/e2b.ts";
 
 // R2's storage price, in pollen (1 pollen ≈ $1) per GB-month.
 const GB_MONTH = 0.015;
-const DAY_MS = 24 * 60 * 60 * 1000;
-// R2 deletes a media file 30 days after it was last written.
-const LIFETIME_MS = 30 * DAY_MS;
+// Smaller files are billed as this size, like S3's infrequent-access classes,
+// so tiny files are not kept for free.
+const MIN_BILLED_BYTES = 128 * 1024;
 // Renew once 15 paid days are left, so missed cron runs have time to retry.
-const RENEW_WITHIN_MS = 15 * DAY_MS;
-// About 10 subrequests each, well under a cron run's limit.
+const RENEW_WITHIN_MS = R2_LIFECYCLE_TTL_MS / 2;
+// About 10 subrequests each; the sandbox keeper shares the run's limit.
 const RENEWALS_PER_RUN = 50;
 
 /**
@@ -28,8 +29,8 @@ const RENEWALS_PER_RUN = 50;
  * Once 15 of a file's paid days are left, rewrites it so R2's 30 days start
  * over, and charges the key that uploaded it for the days that adds, like
  * the key's own request. The keep ends when the file is gone, or the key is
- * or can no longer pay; the file then expires like any other upload, 15 or
- * more days later.
+ * or can no longer pay; the file then expires like any other upload,
+ * normally 15 to 30 days later.
  */
 export async function keepMedia(
     env: CloudflareBindings,
@@ -42,7 +43,7 @@ export async function keepMedia(
     const log = getLogger(["gen", "media-keeper"]);
     const db = drizzle(env.DB);
     const now = Date.now();
-    const paidUntil = new Date(now + LIFETIME_MS);
+    const paidUntil = new Date(now + R2_LIFECYCLE_TTL_MS);
     const end = async (id: string, why: string) => {
         log.info("Ending the keep of media {id}: {why}", { id, why });
         await db.delete(mediaKeep).where(eq(mediaKeep.id, id));
@@ -51,9 +52,10 @@ export async function keepMedia(
         const payer = await loadPayer(env, row.apiKeyId);
         if (!payer) return end(row.id, "its key is gone");
         const months =
-            (paidUntil.getTime() - row.paidUntil.getTime()) / LIFETIME_MS;
+            (paidUntil.getTime() - row.paidUntil.getTime()) /
+            R2_LIFECYCLE_TTL_MS;
         const price = roundPollenLedgerAmount(
-            (row.size / 1e9) * GB_MONTH * months,
+            (Math.max(row.size, MIN_BILLED_BYTES) / 1e9) * GB_MONTH * months,
         );
         const response = await new Hono<Env>()
             .use("*", requestId())
@@ -64,10 +66,19 @@ export async function keepMedia(
                 if (!(await c.env.MEDIA.refresh(row.id))) {
                     return c.text("The file is gone", 404);
                 }
-                await db
+                // Only one renewal is charged: an overlapping cron run may
+                // have renewed the row, or a DELETE removed it, since it was
+                // read.
+                const claimed = await db
                     .update(mediaKeep)
                     .set({ paidUntil })
-                    .where(eq(mediaKeep.id, row.id));
+                    .where(
+                        and(
+                            eq(mediaKeep.id, row.id),
+                            eq(mediaKeep.paidUntil, row.paidUntil),
+                        ),
+                    );
+                if (!claimed.meta.changes) return c.body(null, 204);
                 if (price > 0) {
                     await charge(c, { cost: price, price }, startTime, {
                         eventType: "media.keep",

@@ -1,4 +1,5 @@
-const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+// R2 deletes a media file 30 days after it was last written.
+export const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 

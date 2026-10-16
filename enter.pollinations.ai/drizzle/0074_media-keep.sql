@@ -7,3 +7,4 @@ CREATE TABLE `media_keep` (
     `paid_until` integer NOT NULL
 );
 CREATE INDEX `idx_media_keep_paid_until` ON `media_keep` (`paid_until`);
+CREATE INDEX `idx_media_keep_api_key_id` ON `media_keep` (`api_key_id`);

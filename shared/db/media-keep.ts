@@ -18,5 +18,9 @@ export const mediaKeep = sqliteTable(
         // Storage is paid up to here. The first 30 days are free.
         paidUntil: integer("paid_until", { mode: "timestamp" }).notNull(),
     },
-    (table) => [index("idx_media_keep_paid_until").on(table.paidUntil)],
+    (table) => [
+        index("idx_media_keep_paid_until").on(table.paidUntil),
+        // Deleting a key cascades here.
+        index("idx_media_keep_api_key_id").on(table.apiKeyId),
+    ],
 );

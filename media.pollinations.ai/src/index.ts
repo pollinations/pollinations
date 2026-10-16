@@ -1,6 +1,7 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { mediaKeep } from "@shared/db/media-keep.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { R2_LIFECYCLE_TTL_MS } from "@shared/r2-storage.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -49,8 +50,6 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 const MAX_BUFFERED_SIZE = 104857600; // JSON base64 uploads still buffer in memory
-// Kept files are free for their first 30 days, like every upload.
-const KEEP_FREE_MS = 30 * 24 * 60 * 60 * 1000;
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -203,7 +202,7 @@ const ExpiresAfterSchema = z
     .literal("never", { error: 'expiresAfter must be "never"' })
     .optional()
     .describe(
-        '"never" keeps the file until you delete it. The first 30 days are free; after that the uploading key pays R2\'s storage price, 0.015 pollen per GB-month, 15 days in advance. Requires a user-owned API key.',
+        '"never" keeps the file until you delete it. The first 30 days are free; after that the uploading key pays R2\'s storage price, 0.015 pollen per GB-month (files under 128 KB count as 128 KB), 15 days in advance, so the first charge comes on day 15. Requires a user-owned secret (sk_) API key.',
     );
 
 const JsonUploadRequestSchema = z.object({
@@ -310,7 +309,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Keep.** Send `expiresAfter=never` (multipart or JSON) to keep a file until you delete it. The first 30 days are free. After that the key that uploaded it pays R2's storage price, 0.015 pollen per GB-month, 15 days in advance. If the key can't pay, is deleted, or its account is banned, the file expires as usual, at least 15 days later. Your secret key deletes any file uploaded with your account's keys (DELETE /media/:id).\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Keep.** Send `expiresAfter=never` (multipart or JSON) to keep a file until you delete it. It needs your secret (sk_) key. The first 30 days are free. After that the key that uploaded it pays R2's storage price, 0.015 pollen per GB-month (files under 128 KB count as 128 KB), 15 days in advance: the first charge comes on day 15, for days 30–45, and shows in your usage as model `media`. If the key can't pay, is deleted, or its account is banned, the keep ends and the file expires like any other upload, normally 15 to 30 days later; topping up doesn't restart it. Your secret key deletes any file uploaded with your account's keys (DELETE /media/:id).\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -363,7 +362,7 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid ID/tags/expiresAfter, or custom ID/tags/expiresAfter on a key with no user account",
+                    "No/empty file, invalid JSON/base64, invalid ID/tags/expiresAfter, custom ID/tags/expiresAfter on a key with no user account, or expiresAfter without a secret key",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -603,11 +602,15 @@ api.post(
 
             if (
                 expiresAfter !== undefined &&
-                (authResult.userId === null || authResult.keyId === null)
+                // Publishable keys ship inside public clients; anyone holding
+                // one could commit its owner to paying for storage.
+                (authResult.userId === null ||
+                    authResult.keyId === null ||
+                    authResult.type !== "secret")
             ) {
                 return c.json(
                     {
-                        error: "Keeping files (expiresAfter) requires a user-owned API key",
+                        error: "Keeping files (expiresAfter) requires a user-owned secret (sk_) API key",
                     },
                     400,
                 );
@@ -704,7 +707,8 @@ api.post(
                 const keep = {
                     apiKeyId: authResult.keyId,
                     size: fileSize,
-                    paidUntil: new Date(Date.now() + KEEP_FREE_MS),
+                    // Free for the first 30 days, like every upload.
+                    paidUntil: new Date(Date.now() + R2_LIFECYCLE_TTL_MS),
                 };
                 await getDb(c.env.DB)
                     .insert(mediaKeep)

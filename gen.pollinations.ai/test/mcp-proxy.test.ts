@@ -1,7 +1,12 @@
 import { env, SELF } from "cloudflare:test";
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
+import {
+    getMcpPricingInfo,
+    getMcpServerDefinition,
+    MCP_SERVERS,
+    MCP_USAGE_HEADERS,
+} from "@shared/registry/mcp.ts";
 import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
@@ -272,6 +277,35 @@ test("routes Machines with caller authorization without an extra MCP debit", asy
         tierBalance: 1,
         packBalance: 0,
     });
+});
+
+test("catalog-diff is registered as a downstream server like ask-jev", () => {
+    // Registry resolvability proof: the id the proxy looks up must resolve
+    // to the deployed binding with downstream billing and zero MCP rates —
+    // the exact ask-jev shape. Proxy dispatch (registry id → binding fetch),
+    // auth passthrough, and the no-debit assertion are covered by the
+    // "routes Catalog Diff" test below; worker dispatch → tool result is
+    // covered by apps/catalog-diff-mcp/worker.test.js.
+    const catalogDiff = getMcpServerDefinition("catalog-diff");
+    const askJev = getMcpServerDefinition("ask-jev");
+    expect(catalogDiff).toMatchObject({
+        id: "catalog-diff",
+        binding: "CATALOG_DIFF_MCP",
+        billing: "downstream",
+    });
+    expect(catalogDiff?.pricing.rates).toEqual([]);
+    expect(getMcpPricingInfo(catalogDiff!)).toEqual({
+        description:
+            "Catalog tools use the caller's key with no additional MCP fee.",
+        rates: [],
+    });
+    // Precedent citation: ask-jev carries the same billing + empty rates,
+    // so "rates []" is the established downstream pattern, not an omission.
+    expect(askJev?.billing).toBe("downstream");
+    expect(askJev?.pricing.rates).toEqual([]);
+    // Selectable in the agent schema, which derives from MCP_SERVER_IDS.
+    expect(MCP_SERVERS.map((server) => server.id)).toContain("catalog-diff");
+    expect(getMcpServerDefinition("no-such-server")).toBeUndefined();
 });
 
 test("routes Catalog Diff with caller authorization without an extra MCP debit", async () => {

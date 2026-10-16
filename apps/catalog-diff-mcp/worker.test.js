@@ -507,6 +507,79 @@ test("reordered object arrays do not manufacture changes", () => {
     assert.deepEqual(diff.counts, { added: 0, removed: 0, changed: 0 });
 });
 
+test("arrays nested inside object fields stay order-sensitive", () => {
+    // Pins the documented canonicalize scope: top-level field arrays are
+    // order-normalized, but lists nested inside an object-valued field are
+    // compared in order (order may be meaningful there; never blind-sorted).
+    const left = normalizeModel({
+        id: "m",
+        pricing: { currency: "pollen", tiers: ["a", "b"] },
+    });
+    const reordered = normalizeModel({
+        id: "m",
+        pricing: { currency: "pollen", tiers: ["b", "a"] },
+    });
+    const keyReordered = normalizeModel({
+        id: "m",
+        pricing: { tiers: ["a", "b"], currency: "pollen" },
+    });
+    const base = {
+        snapshot_id: "l",
+        observed_at: "2026-10-10T00:00:00.000Z",
+        models: [left],
+    };
+    const currentBase = {
+        snapshot_id: "r",
+        observed_at: "2026-10-11T00:00:00.000Z",
+        source: "s",
+        model_count: 1,
+    };
+    const nestedReorder = diffSnapshots(base, {
+        ...currentBase,
+        models: [reordered],
+    });
+    assert.deepEqual(nestedReorder.counts, { added: 0, removed: 0, changed: 1 });
+    assert.deepEqual(
+        nestedReorder.changed[0].changes.map((c) => c.field),
+        ["pricing"],
+    );
+    // Object key order is still insignificant (stableStringify sorts keys).
+    const keyOrder = diffSnapshots(base, {
+        ...currentBase,
+        models: [keyReordered],
+    });
+    assert.deepEqual(keyOrder.counts, { added: 0, removed: 0, changed: 0 });
+});
+
+test("catalog retrieval is downstream passthrough, not billed generation", async (t) => {
+    // The caller key flows to exactly one GET on the public catalog surface.
+    // No generation endpoint is touched, so the gateway has nothing billable
+    // to account (mirrors the ask-jev downstream shape minus a model call).
+    const seen = [];
+    t.mock.method(globalThis, "fetch", async (input, init) => {
+        seen.push({
+            url: String(input),
+            method: init?.method ?? "GET",
+            authorization: new Headers(init?.headers).get("authorization"),
+            body: init?.body === undefined ? null : String(init.body),
+        });
+        return Response.json({ object: "list", data: [{ id: "only/model" }] });
+    });
+    await withClient(async (client) => {
+        const result = await client.callTool({
+            name: "get_catalog",
+            arguments: {},
+        });
+        assert.notEqual(result.isError, true);
+        assert.equal(toolText(result).model_count, 1);
+    });
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].url, "https://gen.pollinations.ai/v1/models");
+    assert.equal(seen[0].method, "GET");
+    assert.equal(seen[0].authorization, `Bearer ${TOKEN}`);
+    assert.equal(seen[0].body, null);
+});
+
 test("diffSnapshots is empty when nothing changed", async (t) => {
     mockCatalogFetch(t);
     await withClient(async (client) => {

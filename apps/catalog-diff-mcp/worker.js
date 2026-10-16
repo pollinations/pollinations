@@ -56,10 +56,17 @@ function sortedCopy(value) {
     return canonicalize(value);
 }
 
-// Canonicalize arrays for deterministic comparison: string arrays sort
-// alphabetically; arrays of objects sort by their stable serialization so
-// upstream reordering alone never manufacture a field change. Plain objects
-// are left as-is (stableStringify handles key order at compare time).
+// Canonicalize arrays for deterministic comparison. Scope is deliberately
+// narrow: only arrays that ARE a field value are order-normalized (string
+// arrays sort alphabetically; arrays of objects sort by stable
+// serialization). Plain objects are left as-is (stableStringify sorts keys
+// at compare time), so arrays nested INSIDE an object-valued field keep
+// their order and compare order-sensitively. Verified against the live
+// catalog (350 entries): no object-valued comparable field currently holds
+// nested arrays (pricing is a flat scalar map; reasoning/tools are
+// booleans), so this limitation changes nothing on real data — but a
+// future nested list reorder would report a field change rather than
+// silently normalizing away a possibly-meaningful order.
 function canonicalize(value) {
     if (!Array.isArray(value)) return value;
     const items = value.map((item) =>

@@ -363,7 +363,11 @@ function buildUsageWindowFromPeriod({
 const toTinybirdDateTime = (date: Date) =>
     date.toISOString().slice(0, 19).replace("T", " ");
 
-function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
+function resolveUsageWindow(
+    days: number,
+    period: UsagePeriod,
+    timezone = "UTC",
+): UsageWindow {
     const hasPeriodParam = period.granularity || period.period;
     const periodWindow = buildUsageWindowFromPeriod(period);
     if (hasPeriodParam && !periodWindow) {
@@ -373,11 +377,22 @@ function resolveUsageWindow(days: number, period: UsagePeriod): UsageWindow {
         });
     }
 
-    const now = new Date();
+    // These dates carry wall-calendar values; Tinybird interprets the bounds
+    // in the requested zone, including its offset at each midnight.
+    const calendar = Object.fromEntries(
+        new Intl.DateTimeFormat("en-US", {
+            timeZone: timezone,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        })
+            .formatToParts(new Date())
+            .map(({ type, value }) => [type, value]),
+    );
     const today = startOfUtcDay(
-        now.getUTCFullYear(),
-        now.getUTCMonth(),
-        now.getUTCDate(),
+        Number(calendar.year),
+        Number(calendar.month) - 1,
+        Number(calendar.day),
     );
     if (periodWindow) {
         const minDate = new Date(`${USAGE_MIN_DATE}T00:00:00.000Z`);
@@ -423,6 +438,29 @@ const commaSeparatedQueryList = z
     .string()
     .optional()
     .transform(parseCommaSeparatedQueryList);
+
+const timezoneQuerySchema = z
+    .string()
+    .regex(/^[A-Za-z][A-Za-z0-9_./+-]*$/)
+    .refine((timezone) => {
+        try {
+            new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+            return true;
+        } catch {
+            return false;
+        }
+    }, "Invalid IANA time zone")
+    .transform(
+        (timezone) =>
+            new Intl.DateTimeFormat("en-US", {
+                timeZone: timezone,
+            }).resolvedOptions().timeZone,
+    )
+    .default("UTC")
+    .describe(
+        "IANA time zone for calendar windows and daily buckets. Defaults to UTC. Hourly buckets and request timestamps remain UTC.",
+    );
+
 // Query params schema for usage
 const usageQuerySchema = z.object({
     format: z.enum(["json", "csv"]).optional().default("json"),
@@ -455,6 +493,7 @@ const usageQuerySchema = z.object({
         .default(DEFAULT_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    timezone: timezoneQuerySchema,
     api_key_ids: commaSeparatedQueryList,
     models: commaSeparatedQueryList,
 });
@@ -471,6 +510,7 @@ const usageDailyQuerySchema = z.object({
         .default(DEFAULT_DAILY_USAGE_DAYS),
     granularity: z.enum(PERIOD_GRANULARITIES).optional(),
     period: z.string().optional(),
+    timezone: timezoneQuerySchema,
     api_key_ids: commaSeparatedQueryList,
 });
 
@@ -491,6 +531,7 @@ const earningsTransactionsQuerySchema = usageQuerySchema
         limit: true,
         granularity: true,
         period: true,
+        timezone: true,
     })
     .extend({
         days: z.coerce
@@ -507,7 +548,7 @@ const dailyUsageRecordSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket: YYYY-MM-DD, or hourly YYYY-MM-DD HH:MM:SS (UTC) when `granularity=day`",
+            "Date bucket in the requested timezone (YYYY-MM-DD), or UTC hourly bucket start (YYYY-MM-DD HH:MM:SS) when `granularity=day`. Hourly buckets are anchored at local midnight and last up to 3600 seconds.",
         ),
     api_key_id: z.string().describe("API key id used for these requests"),
     api_key: z
@@ -585,7 +626,7 @@ const developerEarningsRowSchema = z.object({
     date: z
         .string()
         .describe(
-            "Date bucket (YYYY-MM-DD or hourly); empty string on rollup rows",
+            "Date bucket in the requested timezone (YYYY-MM-DD), or UTC hourly bucket start (YYYY-MM-DD HH:MM:SS) when `granularity=day`. Hourly buckets are anchored at local midnight and last up to 3600 seconds. Empty string on rollup rows.",
         ),
     entity_id: z
         .string()
@@ -635,7 +676,7 @@ const developerEarningsResponseSchema = z.object({
 const developerEarningsTransactionSchema = z.object({
     timestamp: z
         .string()
-        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+        .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z.string().describe("Stable event id"),
     entity_name: z.string().describe("Earning entity display name"),
     model: z.string().nullable().describe("Model used for generation"),
@@ -715,6 +756,7 @@ async function respondDetailedUsage(
         until: string;
         before?: string;
         beforeEventId?: string;
+        timezone: string;
     },
 ): Promise<Response> {
     const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
@@ -738,6 +780,7 @@ async function respondDetailedUsage(
                 limit: params.limit.toString(),
                 since: params.since,
                 until: params.until,
+                timezone: params.timezone,
                 before: params.before,
                 before_event_id: params.beforeEventId,
             },
@@ -877,7 +920,7 @@ function formatReward(
 const usageRecordSchema = z.object({
     timestamp: z
         .string()
-        .describe("Request timestamp (YYYY-MM-DD HH:mm:ss format)"),
+        .describe("Request timestamp in UTC (YYYY-MM-DD HH:mm:ss format)"),
     cursor_event_id: z
         .string()
         .describe("Event id used with `before_event_id` for stable pagination"),
@@ -1301,15 +1344,17 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 api_key_ids: apiKeyIds,
                 models,
             } = c.req.valid("query");
             const { userId: usageUserId, overridden: usageUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             log.debug(
                 "Fetching usage: requesterUserId={requesterUserId} targetUserId={targetUserId} override={override} format={format} limit={limit} before={before} beforeEventId={beforeEventId} days={days}",
@@ -1335,6 +1380,7 @@ export const accountRoutes = new Hono<Env>()
                 models,
                 since: usageWindow.since,
                 until: usageWindow.until,
+                timezone,
                 before,
                 beforeEventId,
             });
@@ -1382,6 +1428,7 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 api_key_ids: apiKeyIds,
             } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
@@ -1389,7 +1436,11 @@ export const accountRoutes = new Hono<Env>()
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             try {
                 const usage = await fetchTinybirdRows<DailyUsageRecord>(
@@ -1400,6 +1451,7 @@ export const accountRoutes = new Hono<Env>()
                         user_id: usageUserId,
                         since: window.since,
                         until: window.until,
+                        timezone,
                         grain,
                         api_key_ids:
                             apiKeyIds.length > 0
@@ -1479,13 +1531,18 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(apiKey, "usage");
 
-            const { limit, days, granularity, period } = c.req.valid("query");
+            const { limit, days, granularity, period, timezone } =
+                c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
                 c.env,
                 user.id,
                 apiKey,
             );
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
 
@@ -1500,6 +1557,7 @@ export const accountRoutes = new Hono<Env>()
                             limit: limit.toString(),
                             since: window.since,
                             until: window.until,
+                            timezone,
                         },
                     );
 
@@ -1551,13 +1609,18 @@ export const accountRoutes = new Hono<Env>()
 
             requireAccountPermission(apiKey, "usage");
 
-            const { format, days, granularity, period } = c.req.valid("query");
+            const { format, days, granularity, period, timezone } =
+                c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
             const { userId: devUserId, overridden: devUserOverridden } =
                 resolveUsageTargetUserId(c.env, user.id, apiKey);
             const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
             const tinybirdToken = requireTinybirdReadToken(c.env);
-            const window = resolveUsageWindow(days, { granularity, period });
+            const window = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             try {
                 const daily = await fetchTinybirdRows<DeveloperEarningsRow>(
@@ -1568,6 +1631,7 @@ export const accountRoutes = new Hono<Env>()
                         dev_user_id: devUserId,
                         since: window.since,
                         until: window.until,
+                        timezone,
                         grain,
                     },
                 );
@@ -2179,12 +2243,14 @@ export const accountRoutes = new Hono<Env>()
                 days,
                 granularity,
                 period,
+                timezone,
                 models,
             } = c.req.valid("query");
-            const usageWindow = resolveUsageWindow(days, {
-                granularity,
-                period,
-            });
+            const usageWindow = resolveUsageWindow(
+                days,
+                { granularity, period },
+                timezone,
+            );
 
             log.debug(
                 "Fetching key usage: userId={userId} keyId={keyId} days={days}",
@@ -2201,6 +2267,7 @@ export const accountRoutes = new Hono<Env>()
                 models,
                 since: usageWindow.since,
                 until: usageWindow.until,
+                timezone,
                 before,
                 beforeEventId,
             });

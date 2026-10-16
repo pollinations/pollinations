@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { activityCsv } from "../frontend/src/components/activity/activity-csv";
 import {
     activityDate,
+    activityTimezone,
     changeActivityPeriod,
     isActivitySelectable,
     isInActivityBucket,
@@ -41,7 +42,7 @@ it("keeps unknown usage in totals without labeling it as Paid or Quest", () => {
         cost_usd: 2 * (i + 1),
     }));
     vi.mocked(React.useState).mockReturnValueOnce([
-        { key: "day:2026-08-08", rows },
+        { key: `${activityTimezone()}:day:2026-08-08`, rows },
         vi.fn(),
     ]);
     function Summary() {
@@ -216,9 +217,16 @@ it("groups usage with consistent labels, complete totals, filters and metric sor
     // The existing server-render harness seeds the hook's fetched rows.
     for (let i = 0; i < 5; i++) {
         vi.mocked(React.useState)
-            .mockReturnValueOnce([{ key: "month:2026-08", rows }, vi.fn()])
             .mockReturnValueOnce([
-                { key: "month:2026-08", pending: false, error: null },
+                { key: `${activityTimezone()}:month:2026-08`, rows },
+                vi.fn(),
+            ])
+            .mockReturnValueOnce([
+                {
+                    key: `${activityTimezone()}:month:2026-08`,
+                    pending: false,
+                    error: null,
+                },
                 vi.fn(),
             ]);
     }
@@ -242,14 +250,15 @@ describe("activity period and bar selection", () => {
             "2026-09-08",
         );
         expect(
-            parseActivityPeriod("day", "2026-09-08", "2026-09-08 13").bucket,
+            parseActivityPeriod("day", "2026-09-08", "2026-09-08 13:00:00")
+                .bucket,
         ).toBeUndefined();
     });
     it("selects an hour without changing the day and toggles it off", () => {
         const day = { granularity: "day" as const, period: "2026-08-31" };
         const date = new Date("2026-08-31T23:00:00Z");
         const selected = toggleActivityBucket(day, date);
-        expect(selected).toEqual({ ...day, bucket: "2026-08-31 23" });
+        expect(selected).toEqual({ ...day, bucket: "2026-08-31 23:00:00" });
         expect(toggleActivityBucket(selected, date)).toEqual({
             ...day,
             bucket: undefined,
@@ -271,7 +280,7 @@ describe("activity period and bar selection", () => {
                 {
                     granularity: "day",
                     period: "2026-08-31",
-                    bucket: "2026-08-31 23",
+                    bucket: "2026-08-31 23:00:00",
                 },
                 1,
             ),
@@ -356,16 +365,17 @@ describe("activity period and bar selection", () => {
             parseActivityPeriod("week", "2026-W37", undefined).granularity,
         ).toBe("day");
         expect(
-            parseActivityPeriod("day", "2026-08-08", "2026-08-08 24"),
+            parseActivityPeriod("day", "2026-08-08", "2026-08-08 24:00:00"),
         ).toEqual({ granularity: "day", period: "2026-08-08" });
         expect(
             parseActivityPeriod("month", "2026-08", "2026-09-01").bucket,
         ).toBeUndefined();
         expect(
-            parseActivityPeriod("day", "2026-08-08", "2026-08-08 04").bucket,
-        ).toBe("2026-08-08 04");
+            parseActivityPeriod("day", "2026-08-08", "2026-08-08 04:00:00")
+                .bucket,
+        ).toBe("2026-08-08 04:00:00");
     });
-    it("bounds navigation and uses UTC dates", () => {
+    it("bounds navigation using the browser's calendar dates", () => {
         const now = new Date("2026-09-08T12:15:00Z");
         expect(
             isActivitySelectable(
@@ -389,14 +399,14 @@ describe("activity period and bar selection", () => {
             activityDate({
                 granularity: "day",
                 period: "2026-08-08",
-            }).toISOString(),
-        ).toBe("2026-08-08T00:00:00.000Z");
+            }),
+        ).toEqual(new Date(2026, 7, 8));
     });
     it("filters the selected hour without adjacent hours or dates", () => {
         const period = {
             granularity: "day" as const,
             period: "2026-08-08",
-            bucket: "2026-08-08 04",
+            bucket: "2026-08-08 04:00:00",
         };
         expect(
             [

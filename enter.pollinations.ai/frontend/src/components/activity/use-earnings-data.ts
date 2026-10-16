@@ -1,8 +1,13 @@
-import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { accountClient } from "../../api.ts";
-import { formatActivityChartDate } from "./activity-helpers";
-import { type ActivityPeriod, isInActivityBucket } from "./activity-period";
+import {
+    type ActivityPeriod,
+    activityBucketKeyToDate,
+    activityTimezone,
+    getActivityBucketKeys,
+    isInActivityBucket,
+} from "./activity-period";
+import { formatActivityChartDate } from "./format-activity-date";
 import type { DataPoint, Metric } from "./types";
 
 export type EarningsSource = "byop_markup" | "community_model";
@@ -85,7 +90,8 @@ export function useEarningsData(
     filters: EarningsFilterState,
 ): EarningsDataResult {
     const { granularity, period } = filters.period;
-    const requestKey = `${granularity}:${period}`;
+    const timezone = activityTimezone();
+    const requestKey = `${timezone}:${granularity}:${period}`;
     const [result, setResult] = useState<{
         key: string;
         rows: DeveloperEarningsRow[];
@@ -110,7 +116,7 @@ export function useEarningsData(
         setStatus({ key: requestKey, pending: true, error: null });
         return accountClient.earnings
             .$get(
-                { query: { granularity, period } },
+                { query: { granularity, period, timezone } },
                 { init: { signal: controller.signal } },
             )
             .then((r) => {
@@ -131,7 +137,7 @@ export function useEarningsData(
                         error: err.message || "Couldn’t load earnings.",
                     });
             });
-    }, [granularity, period, requestKey]);
+    }, [granularity, period, timezone, requestKey]);
 
     useEffect(() => {
         fetchEarnings();
@@ -230,10 +236,10 @@ export function useEarningsData(
         }
 
         const isHourly = filters.period.granularity === "day";
-        const bucketKeys = getPeriodBucketKeys(filters.period);
+        const bucketKeys = getActivityBucketKeys(filters.period);
 
         return bucketKeys.map((bucketKey) => {
-            const date = periodBucketKeyToDate(
+            const date = activityBucketKeyToDate(
                 bucketKey,
                 filters.period.granularity,
             );

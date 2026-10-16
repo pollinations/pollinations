@@ -2,13 +2,18 @@ DESCRIPTION >
     Activity developer earnings chart data grouped by date, entity, and source
     from materialized earning events.
     Use 'since' and 'until' for date range filtering.
-    Use 'grain=hour' to group daily buckets by hour; defaults to daily.
+    Use 'timezone' for calendar bounds and daily buckets; defaults to UTC.
+    Hourly buckets are UTC instants, anchored at 'since' in the chosen timezone.
 
 TOKEN "tinybird_read" READ
 
 NODE activity_earnings_chart_node
 SQL >
     %
+    WITH
+        {% if defined(since) %}
+            toUnixTimestamp(toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }}))
+        {% else %} 0 {% end %} AS bucket_origin
     -- Inner scope uses *_sum aliases so aggregate aliases never shadow the
     -- source columns (ClickHouse rejects a shadowed alias inside sumIf).
     SELECT
@@ -29,8 +34,11 @@ SQL >
         SELECT
             if(
                 {{ String(grain, 'day') }} = 'hour',
-                    formatDateTime(toStartOfHour(event_timestamp), '%F %T'),
-                    formatDateTime(toStartOfDay(event_timestamp), '%F')
+                formatDateTime(
+                    toDateTime(bucket_origin + intDiv(toUnixTimestamp(event_timestamp) - bucket_origin, 3600) * 3600, 'UTC'),
+                    '%F %T', 'UTC'
+                ),
+                formatDateTime(event_timestamp, '%F', {{ String(timezone, 'UTC') }})
             ) AS date,
             entity_id,
             entity_name,
@@ -58,8 +66,8 @@ SQL >
             FROM activity_earnings_events
             WHERE
                 dev_user_id = {{ String(dev_user_id, '') }}
-                {% if defined(since) %} AND timestamp >= {{ DateTime(since) }} {% end %}
-                {% if defined(until) %} AND timestamp < {{ DateTime(until) }} {% end %}
+                {% if defined(since) %} AND timestamp >= toDateTime({{ String(since) }}, {{ String(timezone, 'UTC') }}) {% end %}
+                {% if defined(until) %} AND timestamp < toDateTime({{ String(until) }}, {{ String(timezone, 'UTC') }}) {% end %}
             GROUP BY dev_user_id, source, entity_id, event_id
         )
         GROUP BY date, entity_id, entity_name, source

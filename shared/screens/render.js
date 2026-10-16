@@ -150,7 +150,7 @@ const page = h(
                     h(
                         ExternalLinkButton,
                         {
-                            href: "https://enter.pollinations.ai/sign-in?provider=github&ref=classic",
+                            href: "https://enter.pollinations.ai/sign-in?ref=classic",
                             external: false,
                             size: "lg",
                             // Bordered, as enter's own sign-in buttons are

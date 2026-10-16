@@ -1,6 +1,6 @@
 # Accounting Drive archive
 
-Verified — 2026-10-15 (business Finance root and filing locations).
+Verified — 2026-10-16 (business Finance root and filing locations).
 
 ## Layout
 
@@ -13,8 +13,10 @@ and current parents before moving files; do not create a parallel Finance tree.
 |---|---|
 | `00 Inbox` | Unsorted new material, pending validation and filing |
 | `01 Corporate` | Company registration and corporate records |
-| `02 Banking` | Original bank statements and settlement exports |
-| `03 Revenue` | Sales, payout and revenue-source records |
+| `02 Banking/Wise/<YYYY>/<MM Month>` | Original Wise statements and bank activity exports, filed by the covered period |
+| `03 Revenue/Stripe/<YYYY>/Balance Transactions/<MM Month>` | Original Stripe balance-activity exports, preserving account and period |
+| `03 Revenue/Stripe/<YYYY>/Payouts & Settlements/<MM Month>` | Original Stripe payout and settlement records |
+| `03 Revenue/Other Revenue` | Other sales and revenue-source records |
 | `04 Expenses/<YYYY>/<MM Month>/Invoices` | Original supplier invoices, credit notes and separate payment receipts, preserving each document's purpose |
 | `04 Expenses/<YYYY>/<MM Month>/Supporting Evidence` | Usage exports, billing observations and other supporting evidence |
 | `05 Payroll & Contractors` | Employment, payroll and contractor records |
@@ -22,21 +24,33 @@ and current parents before moving files; do not create a parallel Finance tree.
 | `07 Contracts` | Original contracts and recurring payment schedules |
 | `08 Credits & Grants` | Credit awards, grant terms and expiry evidence |
 | `09 Accounting` | Accounting ledgers, statements, backups and management planning |
-| `09 Accounting/Monthly Close` | The stable Economics source register, close reviews, exact batches and verified results |
+| `09 Accounting/Monthly Close` | The stable Economics source register and year folders |
+| `09 Accounting/Monthly Close/<YYYY>/<MM Month>` | Close reviews, exact batches and verified results for an explicit close period; general collection/deployment audits use their review month |
+| `09 Accounting/Monthly Close/<YYYY>/Historical backfill` | Cross-month historical matching and backfill reviews, batches and results |
 | `10 Enty Handover/Original Exports` | Original ENTY ZIP exports, preserving their period and components |
 | `98 Reconciliation` | Existing reconciliation working material; reuse its retained sources, not new copies |
 | `99 Restricted Raw Imports` | Existing restricted raw imports; preserve access restrictions |
 
 `09 Accounting/Monthly Close` is `1oO7nzUUiTgc_kD2hPoSqDSBgxhZXc1HL`;
 `10 Enty Handover/Original Exports` is `1s9rpzzo3M2UNu6_rwkjvzCvt1cWuFwoQ`.
+The stable source register is `Economics-source-register.json`
+(`1fmQLPaYysZRLIbpt7xBYL7UdAYoHK4LO`) at the Monthly Close root. Update this
+file in place; its ID and source links must remain stable. Monthly Close/2026 is
+`1ViPJBo8G9oRNLdns_GgYySSj6BBKo_vz`, with `09 September`, `10 October` and
+`Historical backfill` subfolders. Do not leave each new review at the root.
+
 Keep reports, exports, close-review files and source registers out of `Invoices`.
 An existing standalone invoice has one canonical file ID; link to it from
 Economics and working papers instead of uploading another copy. Original ZIPs
 remain distinct source containers even when they include a retained invoice.
 
 In the monthly expense folders, `Invoices` holds original supplier documents;
-`Supporting Evidence` holds exports, bank statements, payment summaries, and
-JSON evidence that are not supplier invoices. When a billing email has no PDF attachment,
+`Supporting Evidence` holds supplier usage exports, billing observations,
+payment summaries, and JSON evidence that are not supplier invoices. Original
+bank statements belong in `02 Banking/Wise`; original Stripe transaction and
+payout exports belong in `03 Revenue/Stripe`, using the section and month
+folders above. Link their existing IDs instead of keeping copies under Expenses.
+When a billing email has no PDF attachment,
 save its original RFC822 `.eml`; if it links to a provider-hosted receipt,
 save that original HTML response too. File these in Supporting Evidence and
 keep a missing-invoice entry until the supplier's invoice is obtained or its
@@ -71,9 +85,10 @@ Vendor spellings in use: `Anthropic`, `Automat-it`, `BytePlus`, `Cloudflare`,
 The October 2026 `Supporting Evidence` folder is
 `1WJuT599iJV5Klh6aVeb9zT_Lf_2Gh0Rc`.
 
-The `2026` folder is `1t4Fpuf_3ga4mb2kIVe9JkZT43W0geFYO`; create a new month
-with the Drive connector (`create_file` with the folder MIME type), then an
-`Invoices` subfolder inside it.
+The Expenses `2026` folder is `1t4Fpuf_3ga4mb2kIVe9JkZT43W0geFYO`.
+Check for an existing month before creating one with
+`gog --account elliot@myceli.ai drive mkdir <name> --parent <folderId>`, then
+create the missing `Invoices` or `Supporting Evidence` child only as needed.
 
 ## Commands
 
@@ -85,10 +100,9 @@ with the Drive connector (`create_file` with the folder MIME type), then an
   do not create or rotate credentials to work around that limitation.
 - Upload: `gog --account elliot@myceli.ai drive upload <file> --parent <folderId> --json --results-only`
   (the local file name becomes the Drive title, so rename before uploading).
-- List a folder: Drive connector `search_files` with
-  `parentId = '<folderId>' and mimeType = 'application/pdf'`
-  (`pageSize` 200). `gog drive search` works for name searches;
-  `gog drive ls --query` does not filter by folder.
+- List a folder: `gog --account elliot@myceli.ai drive ls --parent <folderId> --max 100 --json`. Follow `nextPageToken` with `--page`; include every file type.
+  Do not rely on `ls --query` without an explicit parent. The raw-query
+  search below is an equivalent precise parent lookup.
 - Record every upload as one JSON line in the collection's
   `<collection-dir>/evidence/drive-uploads.jsonl`, then link the exact Drive URL from the ledger
   row's `evidence` field.
@@ -117,7 +131,10 @@ active staging and production reference uses the retained copy; preserve an
 existing linked ID where possible. If both copies are referenced, prepare the
 URL redirects through the named batch/environment gate before removing either.
 Keep one stable Drive ID for the register and update it in place rather than
-publishing competing indexes.
+publishing competing indexes. Before filing moves, record the current parent,
+file ID and permissions, check for an existing same-name target, and preserve
+access and IDs. Verify the new parent and unchanged access after each move;
+update current register locations without rewriting earlier audit snapshots.
 
 After an approved append is read back, update the same checkpoint and register
 to `applied — verified` before starting another item. A stale pending status
@@ -143,7 +160,8 @@ after recording which business folders and references were checked; an access
 error means `archive check blocked`.
 
 For an open dashboard item, carry the reviewed archive check into
-`economics_private_config.reconciliation.archiveChecks` through the normal
+the single private [Economics Planning & review document](https://drive.google.com/file/d/1r9n-RL1B-s6BhcvaTUT_Oj_toFimnmal/view)
+under `reviewNotes.archiveChecks` through the normal
 named-batch/environment approval gate. Store `month` (service month), canonical
 `provider`, exact `account`, `checkedAt` (ISO timestamp), `status`, short `note`
 (next action/limitation), and exact Drive file links in `evidence`. Use `found`

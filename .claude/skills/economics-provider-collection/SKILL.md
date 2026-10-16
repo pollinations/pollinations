@@ -264,9 +264,13 @@ name or an undocumented ratio.
   original receipt can support a payment, but label a blocked or absent supplier
   PDF explicitly instead of implying that it was archived.
   A split-currency card payment has multiple Bank rows but one supplier invoice.
-- `economics_stripe_sales` stores reviewed Stripe account-month-currency sales,
-  refunds, reversals, fees, stream, and coverage. It never stores customer or
-  payment payloads.
+- In staging, `economics_stripe_transactions` stores one financial fact per
+  Stripe account/transaction ID. `economics_stripe_sync` records export coverage
+  and row counts. Sales and reconciliation derive from these facts live, using
+  Enter `stripe_event` only for payment identity. Do not append monthly summaries
+  to legacy `economics_stripe_sales`; its staging rows were archived and removed.
+  Production retains the old source until separately migrated. Use the validated
+  collector in `operations/economics/ingest/stripe-sync.mjs`.
 - `economics_pollen_usage` stores internal Paid and Quest consumption. Reconcile
   it at provider-month grain. Pollen model ids are accounting identities as
   recorded: today's registry aliases never merge them. A provider label joins

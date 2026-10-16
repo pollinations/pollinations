@@ -92,11 +92,11 @@ breakdown rows rather than spread across models.
 Collection and correction conventions live in
 `.claude/skills/economics-provider-collection/SKILL.md` at the repository root.
 Collection retains reviewed business Drive checks in
-`economics_private_config.reconciliation.archiveChecks`, scoped by provider,
+the private [Planning & review Drive document](https://drive.google.com/file/d/1r9n-RL1B-s6BhcvaTUT_Oj_toFimnmal/view) (`reviewNotes.archiveChecks`), scoped by provider,
 account and service month. Each check records `checkedAt`, `status` (`found`,
 `partial`, `not_found` or `blocked`), a short `note`, and exact archived
 `evidence` links. Collection updates these through the normal named-batch
-approval flow; there is no live Drive sync. The reconciliation table shows only compact preview/download actions for the
+approval flow. The app reads this single document; it does not scan or synchronize the rest of Drive. The reconciliation table shows only compact preview/download actions for the
 verified supplier invoices already linked to the records. Receipts, exports and
 account/date/status notes stay in private collection metadata.
 These observations annotate open issues only and never change financial
@@ -116,8 +116,27 @@ Runway reconstructs cash from one statement-backed opening-balance row in
 `economics_bank_ledger` plus later bank movements. Closed months are actuals. The
 open month shows actual cash to date beside the calculated full-month plan;
 month-end cash applies only its unspent/unreceived remainder. Forecast rules
-come from authenticated `economics_private_config_api`; there is no stored
-OP Forecast ledger. Usage-based projections consume each account's checked
+combine non-posting `type=planned` Vendor rows with the private Drive document.
+`plan_amount` is signed cash, `plan_category` selects the Runway line, and
+`plan_cadence` is `monthly` or `once`. `start`/`end` are month bounds;
+`settled_by_entry_ids` must match Bank before a one-off is treated as settled.
+Plans always have zero `paid` and `credit` and are excluded from actual usage,
+provider coverage and cash. Forecast amounts are never duplicated in Drive.
+The document holds sales stop dates, review explanations and explicit
+`known_limitation` decisions. These do not verify missing costs or usage.
+
+The protected `/api/economics/planning` route reads one fixed
+`ECONOMICS_PLANNING_FILE_ID` with an approved server-only
+`ECONOMICS_GOOGLE_DRIVE_CREDENTIALS` binding (existing service-account JSON with
+`client_email` and `private_key`). Reads are private/no-store; failed access or malformed data
+blocks dependent views rather than silently losing rules. Credential setup
+requires separate approval. Local `decrypt-vars` preserves an already-approved
+connection; it never creates credentials or copies production secrets.
+The old `economics_private_config` datasource and endpoint were removed from
+staging after the authenticated reader and unchanged totals were verified.
+Production migration is separate and has not been authorized.
+
+Usage-based projections consume each account's checked
 prepaid/credit balance and each funding lot's verified expiry. A scoped
 user-approved ignore-expiry assumption remains visibly distinct from verified
 terms. Unknown credit terms, incomplete

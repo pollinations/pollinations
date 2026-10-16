@@ -1292,16 +1292,18 @@ async function extractStreamRequested(request: HonoRequest): Promise<boolean> {
             return false;
         }
         try {
-            const stream = (
-                request.valid("json" as never) as
-                    | { stream?: unknown }
-                    | undefined
-            )?.stream;
-            if (stream !== undefined) {
-                return parseBooleanLike(stream) ?? false;
+            const validated = request.valid("json" as never) as
+                | { stream?: unknown }
+                | undefined;
+            // The validated body is the route's semantic truth: a field its
+            // schema strips (a stray `stream` on /alpha/decisions) is not part
+            // of the request, so it must never mark the request as streaming —
+            // that skips the Generation Coordinator for identical requests.
+            if (validated !== undefined && typeof validated === "object") {
+                return parseBooleanLike(validated.stream) ?? false;
             }
         } catch {
-            // Fall back to parsing a cloned raw body for routes without JSON validation.
+            // No JSON validator on this route: fall back to the raw body.
         }
         try {
             const stream = (

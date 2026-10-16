@@ -16,8 +16,11 @@ import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 import { parseBooleanLike } from "@/util.ts";
 
-// Parameters to exclude from cache key (auth + cache control)
-const EXCLUDED_PARAMS = ["key", "no-cache"];
+// Parameters to exclude from cache key (auth + cache control). "stream" is
+// excluded because its semantics are carried by the STREAM_CACHE_VERSION key
+// part (see below): spellings like ?stream=false, ?stream=1 or a body
+// `"stream": 1` must not fragment the entry the flag resolves to.
+const EXCLUDED_PARAMS = ["key", "no-cache", "stream"];
 const CACHED_HEADER_NAMES = new Set([
     "x-fallback-target",
     "x-model-used",
@@ -147,7 +150,12 @@ export async function generateCacheKey(
     const hasQuerySafe = url.searchParams.has("safe");
     let hasBodySafe = false;
     let usesSafety = hasActiveSafety(url.searchParams.get("safe"));
-    let streams = parseBooleanLike(url.searchParams.get("stream")) === true;
+    // The query stream flag is a GET-route affordance (the simple text
+    // route); POST/PUT routes decide streaming from the body field only, so
+    // a query flag there is dead weight that must not fork the identity.
+    let streams =
+        normalizedMethod === "GET" &&
+        parseBooleanLike(url.searchParams.get("stream")) === true;
 
     // Add filtered body for POST/PUT requests
     if (bodyText && (request.method === "POST" || request.method === "PUT")) {

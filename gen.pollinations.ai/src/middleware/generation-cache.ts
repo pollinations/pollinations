@@ -109,6 +109,26 @@ async function normalizedFormData(formData: FormData): Promise<{
     };
 }
 
+/**
+ * Rebuilds the cache identity from the route's validated (whitelisted) body.
+ *
+ * Use only on routes whose handler consumes nothing beyond the schema: the
+ * zod output is the request's complete semantic truth there, so fields the
+ * schema strips — a stray `stream`, client junk — must not fragment the
+ * identity and fork one generation across several cache entries.
+ */
+export const prepareValidatedBodyCacheIdentity =
+    createMiddleware<GenerationCacheEnv>(async (c, next) => {
+        if (c.req.method === "GET" || c.req.method === "HEAD") {
+            return next();
+        }
+        const validated = c.req.valid("json" as never) as unknown;
+        if (validated !== undefined && typeof validated === "object") {
+            c.set("generationCacheBody", JSON.stringify(validated));
+        }
+        return next();
+    });
+
 /** Captures one replayable body and one stable identity for every POST route. */
 export const prepareGenerationRequest = createMiddleware<GenerationCacheEnv>(
     async (c, next) => {

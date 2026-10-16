@@ -4,13 +4,13 @@ import { test } from "../fixtures.ts";
 
 describe("GET /api/account/profile", () => {
     test("session auth returns githubUsername, image, name, email", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const response = await SELF.fetch(
             "http://localhost:3000/api/account/profile",
             {
                 headers: {
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
             },
         );
@@ -18,10 +18,12 @@ describe("GET /api/account/profile", () => {
         expect(response.status).toBe(200);
         const data = (await response.json()) as Record<string, unknown>;
         expect(data).toHaveProperty("githubUsername");
+        expect(data).toHaveProperty("githubId");
         expect(data).toHaveProperty("image");
         expect(data).not.toHaveProperty("tier");
         expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
+        expect(data.discordAvailable).toBe(true);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
@@ -41,12 +43,13 @@ describe("GET /api/account/profile", () => {
         expect(data).not.toHaveProperty("tier");
         expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
+        expect(data.discordAvailable).toBe(true);
         expect(data).not.toHaveProperty("name");
         expect(data).not.toHaveProperty("email");
     });
 
     test("api key with profile scope also returns name + email", async ({
-        sessionToken,
+        accountToken,
     }) => {
         const createResponse = await SELF.fetch(
             "http://localhost:3000/api/account/keys",
@@ -54,7 +57,7 @@ describe("GET /api/account/profile", () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Cookie: `better-auth.session_token=${sessionToken}`,
+                    Authorization: `Bearer ${accountToken}`,
                 },
                 body: JSON.stringify({
                     name: "profile-scoped-key",

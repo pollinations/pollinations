@@ -27,9 +27,8 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
+    findUncachedOwnListing,
     getCommunityModelRegistryEntries,
-    isUncachedOwnListing,
-    refreshCommunityModelRegistryEntries,
     resetCommunityModelRegistryCache,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -85,6 +84,8 @@ export type GenerationModelEntry = {
 export type GenerationModelRegistry = {
     resolve: (model: string) => GenerationModelEntry | null;
     visibleEntries: (callerUserId?: string) => GenerationModelEntry[];
+    // A registry with entries added, leaving this one and its cache untouched.
+    with: (entries: GenerationModelEntry[]) => GenerationModelRegistry;
 };
 
 type CachedRegistry = {
@@ -249,6 +250,7 @@ function buildRegistry(
 
     return {
         resolve: (model) => byIdOrAlias.get(model) ?? null,
+        with: (extra) => buildRegistry([...sourceEntries, ...extra]),
         visibleEntries: (callerUserId) =>
             entries.filter((entry) => {
                 if (entry.visible) return true;
@@ -265,12 +267,11 @@ function buildRegistry(
 
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
-    loadCommunityEntries: typeof getCommunityModelRegistryEntries,
 ): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
     let communityEntries: GenerationModelEntry[] = [];
     let degraded = false;
     try {
-        communityEntries = (await loadCommunityEntries(env)).map(
+        communityEntries = (await getCommunityModelRegistryEntries(env)).map(
             communityEntryToGenerationEntry,
         );
     } catch (error) {
@@ -300,22 +301,12 @@ export async function getGenerationModelRegistry(
         return cachedRegistry.registry;
     }
 
-    return cacheGenerationModelRegistry(env, getCommunityModelRegistryEntries);
-}
-
-async function cacheGenerationModelRegistry(
-    env: CommunityModelEnv,
-    loadCommunityEntries: typeof getCommunityModelRegistryEntries,
-): Promise<GenerationModelRegistry> {
     // Deliberately no in-flight promise cache: sharing one pending promise
     // across requests hands request A's D1 I/O to requests B..N, and if A is
     // cancelled the promise can never settle, wedging the isolate for good.
     // Racing a few cheap SELECTs on cache expiry is the better trade.
     const dbBinding = env.DB;
-    const { registry, degraded } = await loadGenerationModelRegistry(
-        env,
-        loadCommunityEntries,
-    );
+    const { registry, degraded } = await loadGenerationModelRegistry(env);
     cachedRegistry = {
         dbBinding,
         expiresAt:
@@ -327,27 +318,30 @@ async function cacheGenerationModelRegistry(
 }
 
 /**
- * Resolves a model for a caller. A miss on a listing the caller has just saved
- * rebuilds the catalog from D1 once, so a new agent works for its owner
- * straight away instead of failing as an unknown model until the caches expire.
+ * Resolves a model for a caller. A listing the caller saved too recently for
+ * the cached catalog resolves from D1 for that caller alone, so a new agent
+ * works for its owner straight away instead of failing as an unknown model
+ * until the caches expire. The shared caches are left as they are, so each
+ * such call rebuilds a registry until they catch up, within three minutes.
  */
 export async function resolveGenerationModel(
     env: CommunityModelEnv,
     model: string,
     callerUserId: string | undefined,
 ): Promise<GenerationModelEntry | null> {
-    const entry = (await getGenerationModelRegistry(env)).resolve(model);
+    const registry = await getGenerationModelRegistry(env);
+    const entry = registry.resolve(model);
     if (entry || !callerUserId) return entry;
     // Like the catalog itself, a D1 failure here leaves the miss a miss.
-    const isNew = await isUncachedOwnListing(env.DB, callerUserId, model).catch(
-        () => false,
-    );
-    if (!isNew) return null;
-    const registry = await cacheGenerationModelRegistry(
-        env,
-        refreshCommunityModelRegistryEntries,
-    );
-    return registry.resolve(model);
+    const listing = await findUncachedOwnListing(
+        env.DB,
+        callerUserId,
+        model,
+    ).catch(() => undefined);
+    if (!listing) return null;
+    return registry
+        .with([communityEntryToGenerationEntry(listing)])
+        .resolve(model);
 }
 
 export async function resetGenerationModelRegistryCache(

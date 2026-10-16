@@ -328,6 +328,10 @@ fixtureTest(
         }
         const resolved = await resolve(modelId, ownerUserId);
         expect(resolved.communityEndpoint?.id).toBe(id);
+        // Other callers keep the cached catalog until it expires.
+        expect((await getGenerationModelRegistry(env)).resolve(modelId)).toBe(
+            null,
+        );
     },
 );
 

@@ -45,13 +45,7 @@ export async function getCommunityModelRegistryEntries(
         COMMUNITY_CATALOG_CACHE_KEY,
         "json",
     ).catch(() => null);
-    return cached ?? refreshCommunityModelRegistryEntries(env);
-}
-
-// Reads D1 directly, so a refresh never sees the old KV copy again.
-export async function refreshCommunityModelRegistryEntries(
-    env: CommunityModelEnv,
-): Promise<CommunityModelRegistryEntry[]> {
+    if (cached) return cached;
     const entries = await queryCommunityModelRegistryEntries(env.DB);
     await env.KV.put(COMMUNITY_CATALOG_CACHE_KEY, JSON.stringify(entries), {
         expirationTtl: COMMUNITY_CATALOG_CACHE_TTL_SECONDS,
@@ -64,17 +58,17 @@ export async function refreshCommunityModelRegistryEntries(
 const CATALOG_MAX_STALENESS_SECONDS = 3 * COMMUNITY_CATALOG_CACHE_TTL_SECONDS;
 
 /**
- * Whether `model` is the id or alias of a listing the caller saved too
+ * The caller's listing with `model` as its id or alias, if they saved it too
  * recently for the cached catalog to have it. It goes through the catalog's
- * own query and mapping, so it matches exactly what a refresh would add.
+ * own query and mapping, so it is exactly the entry the next refresh adds.
  */
-export async function isUncachedOwnListing(
+export async function findUncachedOwnListing(
     dbBinding: CloudflareBindings["DB"],
     ownerUserId: string,
     model: string,
-): Promise<boolean> {
+): Promise<CommunityModelRegistryEntry | undefined> {
     // Every community id and alias is "<owner>/<name>" or prefixed.
-    if (!model.includes("/")) return false;
+    if (!model.includes("/")) return undefined;
     const savedAfter = new Date(
         Date.now() - CATALOG_MAX_STALENESS_SECONDS * 1000,
     );
@@ -85,7 +79,7 @@ export async function isUncachedOwnListing(
             gt(schema.communityEndpoint.updatedAt, savedAfter),
         ),
     );
-    return entries.some(
+    return entries.find(
         (entry) => entry.id === model || entry.aliases.includes(model),
     );
 }

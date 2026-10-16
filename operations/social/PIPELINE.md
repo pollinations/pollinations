@@ -18,8 +18,7 @@ PRODUCTION PUSH / SUCCESSFUL DEPLOY (news-deploy-posts.yml, all five production 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
   06:00 daily        /models recorded when it changed; yesterday's merged PRs → notes
                      → the daily (X); Sunday also the week from its dailies (X,
-                     LinkedIn, Instagram, Discord); the 1st also last month (summary
-                     + cover). Then Buffer schedules X, LinkedIn and Instagram at
+                     LinkedIn, Instagram, Discord); the 1st also last month (summary). Then Buffer schedules X, LinkedIn and Instagram at
                      today's slots.
   18:00 Sunday       Discord for the week
   14:00 Wednesday    model post: official models in the recorded catalog against a
@@ -110,7 +109,6 @@ All generated content lives on the **`news` branch** under `operations/social/ne
 ### Monthly: `monthly/YYYY-MM/`
 
 - `summary.json` — the month's summary, from its daily summaries
-- `monthly-cover.json` — the month's cover: its link and prompt
 - `contributors.json` — every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it
 
 ### Model post: `models/`
@@ -248,7 +246,6 @@ A preview is the before/after check for any change to a prompt or a script: run 
 | Per-PR | `deploy_posts.py` | 1 per shipped PR | its Discord post |
 | Daily | `posts.py` | 1 (X) | the daily post |
 | Weekly | `posts.py` | 6 (X, LinkedIn, 3 Instagram, Discord) | the weekly posts |
-| Monthly cover | `posts.py` | 1 | the monthly page |
 
 Every picture uses `nanobanana-2-lite` with the character reference `prompts/brand/characters-ref.jpg` (one Polli, one monitor robot, one Nomnom) and the shared style text in `common.IMAGE_STYLE_SUFFIX`, which also says each character appears at most once. The model and community posts have no picture.
 
@@ -263,7 +260,7 @@ No picture file is committed. Each post keeps its picture's `url`: the `media.po
 | Deploy posts (5×) | 5 | 5 |
 | **Total** | **12** | **6** |
 
-Sunday adds 5 calls and 6 pictures, the 1st 2 calls and 1 picture, Wednesday 2 calls.
+Sunday adds 5 calls and 6 pictures, the 1st 1 call, Wednesday 2 calls.
 
 ---
 
@@ -282,7 +279,7 @@ operations/social/prompts/
   posts/                    one file per post: settings between --- lines, then the task
     discord-pr.md  daily-summary.md  daily-x.md
     weekly-summary.md  weekly-x.md  weekly-linkedin.md  weekly-instagram.md  weekly-discord.md
-    monthly-summary.md  monthly-cover.md  model-post.md  community-post.md
+    monthly-summary.md  model-post.md  community-post.md
 ```
 
 A post file's settings say its `job`, its `tone` (the system prompt; a summary has none and is its own system prompt), its `temperature`, the `file` it is saved as, its `pictures` and the fields its reply must have. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR filled in.

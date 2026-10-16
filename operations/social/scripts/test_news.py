@@ -587,27 +587,18 @@ class PostsTest(unittest.TestCase):
                                  [False, True] if long_linkedin else [False])
 
     def test_monthly(self):
-        # The cover's picture prompt is trimmed; the other posts' prompts never are.
-        for reply, picture in (({}, "Bee carrying a big box"), ({"image_prompt": "  Bee at a desk \n"}, "Bee at a desk")):
-            with self.subTest(reply=reply):
-                self.checkout(f"news-{len(reply)}")
-                for day in ("2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
-                    self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {day}", "pr_count": 2,
-                                                           "summary": "Things shipped.",
-                                                           "prs": [{"number": 1, "date": day}]})
-                calls, images, saved = self.new("monthly", "2026-09", **reply)
-                base = f"{NEWS_REL_DIR}/monthly/2026-09"
-                self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/monthly-cover.json",
-                                                 f"{base}/summary.json"])
-                # The cover stays with the image service: its link is kept.
-                cover = json.loads(saved[f"{base}/monthly-cover.json"])["image"]
-                self.assertEqual((cover["url"], cover["prompt"]), ("https://media.pollinations.ai/p1", picture))
-                self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
-                                 {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
-                self.assertEqual([temperature for _, _, temperature in calls], [0.3, 0.7])
-                self.assertIn("Day 2026-09-30", calls[0][1])
-                self.assertNotIn("Day 2026-10-01", calls[0][1])
-                self.assertEqual([image[0] for image in images], [picture])
+        for day in ("2026-09-01", "2026-09-15", "2026-09-30", "2026-10-01"):
+            self.put(f"daily/{day}/summary.json", {"date": day, "title": f"Day {day}", "pr_count": 2,
+                                                   "summary": "Things shipped.", "prs": [{"number": 1, "date": day}]})
+        calls, images, saved = self.new("monthly", "2026-09")
+        base = f"{NEWS_REL_DIR}/monthly/2026-09"
+        self.assertEqual(sorted(saved), [f"{base}/contributors.json", f"{base}/summary.json"])
+        self.assertEqual(json.loads(saved[f"{base}/contributors.json"]),
+                         {"month": "2026-09", "merged_prs": 3, "contributors": [{"id": 1, "login": "a", "prs": 3}]})
+        # One call writes the month's summary from its dailies; no cover, no picture.
+        self.assertEqual(([temperature for _, _, temperature in calls], images), ([0.3], []))
+        self.assertIn("Day 2026-09-30", calls[0][1])
+        self.assertNotIn("Day 2026-10-01", calls[0][1])
         # A month without daily summaries writes no page but still has its counts.
         self.assertEqual(sorted(self.new("monthly", "2026-08")[2]), [f"{NEWS_REL_DIR}/monthly/2026-08/contributors.json"])
 

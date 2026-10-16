@@ -218,10 +218,7 @@ def pictures(post: dict, output: dict) -> list[tuple[str, str]]:
     """(file name, prompt) for each picture: one from image_prompt, several from images[i].prompt."""
     names = post["pictures"]
     if len(names) == 1:
-        prompt = output.get("image_prompt")
-        if post.get("strip_picture_prompt"):
-            prompt = str(prompt or "").strip()
-        return [(names[0], prompt)]
+        return [(names[0], output.get("image_prompt"))]
     return [
         (name, image.get("prompt"))
         for name, image in zip(names, output.get("images") or [])
@@ -440,9 +437,6 @@ def post_files(raw: dict) -> dict[str, bytes]:
                 output["image"] = picture
             else:
                 output["images"][index].update(picture)
-        if "file" not in post:  # a picture-only post (the monthly cover) keeps its links here
-            files[f"{base}/{post['name']}.json"] = json_file(output)
-            continue
         if (
             "max_chars" in post
             and len(build_linkedin_post_text(output)) > post["max_chars"]

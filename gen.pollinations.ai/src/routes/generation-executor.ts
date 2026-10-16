@@ -23,6 +23,7 @@ import {
 import { resolveModel } from "@/middleware/model.ts";
 import { textExecutionCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
+import { generateOcrResponse } from "@/ocr/handler.ts";
 import { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import {
     GenerateImageRequestQueryParamsSchema,
@@ -32,6 +33,7 @@ import {
     Generate3dRequestBodySchema,
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
+import { CreateOcrRequestSchema } from "@/schemas/ocr.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
 import { generateDecision } from "@/text/decisions/handler.ts";
 import { generateCreateResponse } from "@/text/responses/handler.ts";
@@ -141,6 +143,18 @@ generationExecutorRoutes.post(
     textExecutionCache,
     apiKeyBudgetReservation,
     generateEmbeddingsResponse,
+);
+
+generationExecutorRoutes.post(
+    "/alpha/ocr",
+    textBodyLimit,
+    validator("json", CreateOcrRequestSchema),
+    resolveModel("generate.ocr", { supportedEndpoint: "/alpha/ocr" }),
+    track("generate.ocr"),
+    prepareGenerationRequest,
+    textExecutionCache,
+    apiKeyBudgetReservation,
+    generateOcrResponse,
 );
 
 generationExecutorRoutes.post(

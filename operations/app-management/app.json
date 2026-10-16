@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "🎬",
+    "name": "Echo Island",
+    "url": "https://huggingface.co/spaces/xiaotian1171/echo-island-pollinations-space",
+    "description": "Turn a character idea into an illustrated story and voice note. Duplicate this static Hugging Face Space and sign in with your own Pollen; narration falls back when timestamped voice is unavailable.",
+    "language": "en",
+    "category": "video_audio",
+    "platform": "web",
+    "githubUsername": "xiaotian1171",
+    "githubUserId": "63298614",
+    "repositoryUrl": "https://github.com/xiaotian1171/echo-island-pollinations-space",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-14",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17393",
+    "approvedDate": "2026-10-16",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/9f5f32b6-fba9-41c6-996c-e3f50c13170f"
+  },
+  {
     "emoji": "🛠️",
     "name": "Pollinations Blocks",
     "url": "https://github.com/Saauf/pollinations-blocks",

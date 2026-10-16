@@ -9,12 +9,17 @@ type EdgeRateLimiterEnv = {
 };
 
 /**
- * Edge rate limiter: ~10 req/s per IP (100 requests per 10 seconds)
+ * Edge rate limiter: 1,000 req/s per IP (10,000 requests per 10 seconds)
+ *
+ * The limit is set per deploy environment in wrangler.toml
+ * ([[env.<name>.ratelimits]] EDGE_RATE_LIMITER); keep this comment in sync.
  *
  * First line of defense before cache/tracking/auth.
  * Uses Cloudflare native rate limiting for zero-overhead protection.
  *
  * Rate limits by IP address to protect backend services from traffic spikes.
+ * It is a flood shield, not a user quota: per-key Pollen limits live in the
+ * PollenRateLimiter durable object.
  */
 export const edgeRateLimit = createMiddleware<EdgeRateLimiterEnv>(
     async (c, next) => {

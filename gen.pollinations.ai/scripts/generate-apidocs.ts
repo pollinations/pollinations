@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUTPUT_PATH = join(__dirname, "..", "..", "APIDOCS.md");
+// The README's guide table; the docs website lists guides in its sidebar.
+const README_PATH = join(__dirname, "..", "..", "README.md");
 const INTRODUCTION_PATH = join(
     __dirname,
     "..",
@@ -789,12 +791,11 @@ function loadIntroductionTagline(): string {
 }
 
 function renderGettingStarted(): string {
-    const guides = readFileSync(INTRODUCTION_PATH, "utf8")
+    const guides = readFileSync(README_PATH, "utf8")
         .split("\n## Guides\n")[1]
         ?.split("\n## ")[0]
         .trim();
-    if (!guides)
-        throw new Error(`Missing Guides section in ${INTRODUCTION_PATH}`);
+    if (!guides) throw new Error(`Missing Guides section in ${README_PATH}`);
     return `## ${sectionHeading(SECTIONS.start)}
 
 **1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:

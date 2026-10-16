@@ -5,15 +5,3 @@
 **Get your secret key:** [enter.pollinations.ai](https://enter.pollinations.ai/keys)
 
 **Model catalog migration:** model IDs now use `publisher/model` names. Existing aliases remain valid in requests; match catalog entries against both their canonical ID and `aliases` when restoring saved selections. Catalog metadata uses `publisher` (for example, `OpenAI`) instead of `brand`; update clients reading that field. `publisher` identifies the model publisher, not the inference provider. The existing `brand_url` logo field is unchanged. See the [live model catalog](https://gen.pollinations.ai/models) for current IDs and aliases.
-
-## Guides
-
-| Guide | Purpose |
-| --- | --- |
-| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
-| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
-| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
-| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
-| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
-| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
-| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |

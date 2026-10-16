@@ -46,10 +46,12 @@ import {
 } from "@pollinations/ui";
 import { Prose } from "@pollinations/ui/markdown";
 import {
+    type ComponentProps,
     type ComponentType,
     type FC,
     type RefObject,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -111,23 +113,47 @@ const compactProse = "min-w-0 [&_p]:my-0";
 const exampleClass =
     "overflow-x-auto whitespace-pre [overflow-wrap:normal] break-normal";
 
-type Route = { page: Page; target?: string };
+/** Every page in menu order: they all render, one after another. */
+const allPages = (docs: Docs): Page[] => [
+    docs.introduction,
+    ...docs.groups.flatMap((group) => group.pages),
+];
 
-function readRoute(docs: Docs): Route {
+/** The page an anchor belongs to: its own id, or one nested under it. */
+const pageOfAnchor = (pages: Page[], id?: string) =>
+    pages.find((page) => id === page.id || id?.startsWith(`${page.id}/`));
+
+/**
+ * Scrolls to the linked card. Cards around it take their real height only
+ * once they are drawn, which moves it, so it repeats until nothing moves.
+ */
+function scrollToHash() {
     const hash = decodeURIComponent(window.location.hash.slice(1));
-    const id = aliases[hash] ?? hash;
-    const pages = docs.groups.flatMap((group) => group.pages);
-    const page =
-        pages.find((p) => id === p.id || id.startsWith(`${p.id}/`)) ??
-        docs.introduction;
-    // An operation id or a section id inside the page.
-    const target = id.startsWith(`${page.id}/`)
-        ? page.operations.some((op) => op.id === id)
-            ? id
-            : id.slice(page.id.length + 1)
-        : undefined;
-    return { page, target };
+    const target = document.getElementById(aliases[hash] ?? hash);
+    if (!target) return;
+    let settled = Number.NaN;
+    let frames = 0;
+    const step = () => {
+        if (target.getBoundingClientRect().top === settled) return;
+        target.scrollIntoView({ block: "start" });
+        settled = target.getBoundingClientRect().top;
+        if (++frames < 30) requestAnimationFrame(step);
+    };
+    step();
 }
+
+// Methods keep the current docs' colours: GET blue, POST green, DELETE red.
+const methodIntent: Record<string, ComponentProps<typeof Chip>["intent"]> = {
+    GET: "info",
+    POST: "success",
+    PUT: "warning",
+    PATCH: "warning",
+    DELETE: "danger",
+};
+
+// Off-screen cards skip layout and paint until they scroll near.
+const lazyCard =
+    "[content-visibility:auto] [contain-intrinsic-size:auto_640px]";
 
 function App() {
     const [docs, setDocs] = useState<Docs>();
@@ -165,28 +191,37 @@ const Loading: FC<{ failed: boolean }> = ({ failed }) => (
 );
 
 const Shell: FC<{ docs: Docs }> = ({ docs }) => {
-    const [route, setRoute] = useState(() => readRoute(docs));
     const [menuOpen, setMenuOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const anchors = useMemo(() => pageAnchors(route.page), [route.page]);
+    const pages = useMemo(() => allPages(docs), [docs]);
+    const anchors = useMemo(() => pages.flatMap(pageAnchors), [pages]);
+
+    // A layout effect runs before the scroll spy's first reading, so a shared
+    // link opens in place instead of reporting the top of the page.
+    useLayoutEffect(() => {
+        scrollToHash();
+        window.addEventListener("hashchange", scrollToHash);
+        return () => window.removeEventListener("hashchange", scrollToHash);
+    }, []);
+
     const active = useActiveAnchor(scrollRef, anchors);
+    const activePage = pageOfAnchor(pages, active) ?? docs.introduction;
 
+    // The address follows the reader, so any spot can be shared.
     useEffect(() => {
-        const onHashChange = () => setRoute(readRoute(docs));
-        window.addEventListener("hashchange", onHashChange);
-        return () => window.removeEventListener("hashchange", onHashChange);
-    }, [docs]);
-
-    useEffect(() => {
-        const target = route.target && document.getElementById(route.target);
-        if (target) target.scrollIntoView({ block: "start" });
-        else scrollRef.current?.scrollTo({ top: 0 });
-    }, [route]);
+        if (!active) return;
+        const { pathname, search } = window.location;
+        window.history.replaceState(
+            null,
+            "",
+            active === docs.introduction.id ? pathname + search : `#${active}`,
+        );
+    }, [active, docs]);
 
     const rail = (onNavigate?: () => void) => (
         <Rail
             docs={docs}
-            route={route}
+            activePage={activePage}
             active={active}
             onNavigate={onNavigate}
         />
@@ -197,7 +232,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
             <aside
                 data-theme="neutral"
                 aria-label="Documentation"
-                className="hidden flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-60"
+                className="hidden flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:w-72"
             >
                 <div className="flex shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1">
                     <Brand />
@@ -231,7 +266,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                     {rail(() => setMenuOpen(false))}
                 </div>
             </Drawer>
-            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-72">
                 {/* Outside the scroll area, so the button never covers the text. */}
                 <header className="flex shrink-0 items-center gap-2 px-3 py-3 lg:hidden">
                     <button
@@ -249,11 +284,18 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                     ref={scrollRef}
                     className="relative min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
-                    <PageView
-                        page={route.page}
-                        anchors={anchors}
-                        active={active}
-                    />
+                    <div className="mx-auto flex w-full max-w-[1280px] gap-6">
+                        <main className="flex min-w-0 flex-1 flex-col gap-12">
+                            {pages.map((page) => (
+                                <PageView
+                                    key={page.id}
+                                    page={page}
+                                    copyForLlms={page === docs.introduction}
+                                />
+                            ))}
+                        </main>
+                        <OnThisPage page={activePage} active={active} />
+                    </div>
                 </ScrollArea>
             </div>
         </div>
@@ -264,13 +306,13 @@ type Anchor = { id: string; title: string };
 
 function pageAnchors(page: Page): Anchor[] {
     return [
-        { id: "overview", title: "Overview" },
+        { id: page.id, title: "Overview" },
         ...page.sections.map(({ id, title }) => ({ id, title })),
         ...page.operations.map(({ id, summary }) => ({ id, title: summary })),
     ];
 }
 
-/** The section or operation nearest the top of the scrolled content. */
+/** The last anchor above a line near the top of the scrolled content. */
 function useActiveAnchor(
     scrollRef: RefObject<HTMLDivElement | null>,
     anchors: Anchor[],
@@ -280,20 +322,31 @@ function useActiveAnchor(
     useEffect(() => {
         const scroller = scrollRef.current;
         if (!scroller) return;
+        let frame = 0;
         const update = () => {
+            frame = 0;
             const line = scroller.getBoundingClientRect().top + 96;
             let current = anchors[0]?.id;
+            // Anchors are in page order, so stop at the first one below.
             for (const { id } of anchors) {
                 const top = document
                     .getElementById(id)
                     ?.getBoundingClientRect().top;
-                if (top !== undefined && top <= line) current = id;
+                if (top === undefined) continue;
+                if (top > line) break;
+                current = id;
             }
             setActive(current);
         };
+        const onScroll = () => {
+            frame ||= requestAnimationFrame(update);
+        };
         update();
-        scroller.addEventListener("scroll", update, { passive: true });
-        return () => scroller.removeEventListener("scroll", update);
+        scroller.addEventListener("scroll", onScroll, { passive: true });
+        return () => {
+            cancelAnimationFrame(frame);
+            scroller.removeEventListener("scroll", onScroll);
+        };
     }, [scrollRef, anchors]);
 
     return active;
@@ -357,10 +410,10 @@ const BrandLinks: FC = () => (
 
 const Rail: FC<{
     docs: Docs;
-    route: Route;
+    activePage: Page;
     active?: string;
     onNavigate?: () => void;
-}> = ({ docs, route, active, onNavigate }) => (
+}> = ({ docs, activePage, active, onNavigate }) => (
     <>
         <ScrollArea className="-mr-2 min-h-0 flex-1 pt-1">
             <nav className="flex flex-col gap-1">
@@ -369,14 +422,18 @@ const Rail: FC<{
                     href={`#${docs.introduction.id}`}
                     data-theme="accent"
                     icon={BookIcon}
-                    active={route.page === docs.introduction}
+                    active={activePage === docs.introduction}
                     onClick={onNavigate}
                 >
                     Introduction
                 </NavItem>
                 {docs.groups.map((group) => (
                     <div key={group.name} className="flex flex-col gap-1">
-                        <span className="px-3 pt-3 pb-1 text-xs font-medium text-theme-text-muted">
+                        {/* Amber group names split the menu into its parts. */}
+                        <span
+                            data-theme="accent"
+                            className="px-3 pt-4 pb-1 text-xs font-semibold text-theme-text-soft"
+                        >
                             {group.name}
                         </span>
                         {group.pages.map((page) => (
@@ -389,12 +446,12 @@ const Rail: FC<{
                                     href={`#${page.id}`}
                                     data-theme="accent"
                                     icon={icons[page.title] ?? BookIcon}
-                                    active={route.page === page}
+                                    active={activePage === page}
                                     onClick={onNavigate}
                                 >
                                     {page.title}
                                 </NavItem>
-                                {route.page === page &&
+                                {activePage === page &&
                                     page.operations.length > 0 && (
                                         <div className="ml-5 flex flex-col gap-0.5 border-l border-theme-text-strong/10 py-1 pl-2">
                                             {page.operations.map((op) => (
@@ -417,9 +474,17 @@ const Rail: FC<{
                                                     <span className="min-w-0">
                                                         {op.summary}
                                                     </span>
-                                                    <span className="shrink-0 font-mono text-micro">
+                                                    <Chip
+                                                        intent={
+                                                            methodIntent[
+                                                                op.method
+                                                            ] ?? "neutral"
+                                                        }
+                                                        size="sm"
+                                                        className="font-mono"
+                                                    >
                                                         {op.method}
-                                                    </span>
+                                                    </Chip>
                                                 </a>
                                             ))}
                                         </div>
@@ -430,18 +495,14 @@ const Rail: FC<{
                 ))}
             </nav>
         </ScrollArea>
-        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-theme-text-strong/10 pt-4 pl-3 text-xs text-theme-text-muted">
-            <a
-                href="https://enter.pollinations.ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="transition-colors hover:text-theme-text-strong"
-            >
+        <div
+            data-theme="accent"
+            className="flex shrink-0 items-center justify-between gap-2 border-t border-theme-text-strong/10 pt-4 pl-1"
+        >
+            <ExternalLinkButton href="https://enter.pollinations.ai" size="sm">
                 Dashboard
-            </a>
-            <span data-theme="accent">
-                <ColorModeToggle />
-            </span>
+            </ExternalLinkButton>
+            <ColorModeToggle />
         </div>
     </>
 );
@@ -488,38 +549,51 @@ const Blocks: FC<{ blocks: Block[] }> = ({ blocks }) => (
     </>
 );
 
-const PageView: FC<{ page: Page; anchors: Anchor[]; active?: string }> = ({
+const PageView: FC<{ page: Page; copyForLlms: boolean }> = ({
     page,
-    anchors,
-    active,
+    copyForLlms,
 }) => (
-    <div className="mx-auto flex w-full max-w-[1280px] gap-6">
-        <main className="flex min-w-0 flex-1 flex-col gap-3">
-            <Section id="overview" title={page.title} action={<CopyForLlms />}>
-                <Blocks blocks={page.intro} />
-            </Section>
-            {page.sections.map((section) => (
-                <Section key={section.id} id={section.id} title={section.title}>
-                    <Blocks blocks={section.blocks} />
-                </Section>
-            ))}
-            {page.operations.map((op) => (
-                <OperationView key={op.id} op={op} />
-            ))}
-        </main>
-        {anchors.length > 1 && (
-            <aside
-                aria-label="On this page"
-                className="hidden w-52 shrink-0 2xl:block"
+    <div className="flex flex-col gap-3">
+        <Section
+            id={page.id}
+            title={page.title}
+            action={copyForLlms ? <CopyForLlms /> : undefined}
+        >
+            <Blocks blocks={page.intro} />
+        </Section>
+        {page.sections.map((section) => (
+            <Section
+                key={section.id}
+                id={section.id}
+                title={section.title}
+                className={lazyCard}
             >
-                <nav className="sticky top-0 flex flex-col gap-0.5">
+                <Blocks blocks={section.blocks} />
+            </Section>
+        ))}
+        {page.operations.map((op) => (
+            <OperationView key={op.id} op={op} />
+        ))}
+    </div>
+);
+
+/** The sections of the page being read, beside it on wide screens. */
+const OnThisPage: FC<{ page: Page; active?: string }> = ({ page, active }) => {
+    const anchors = pageAnchors(page);
+    return (
+        <aside
+            aria-label="On this page"
+            className="hidden w-52 shrink-0 2xl:block"
+        >
+            {anchors.length > 1 && (
+                <nav className="sticky top-0 flex max-h-dvh flex-col gap-0.5 overflow-y-auto pb-10">
                     <span className="px-3 pb-1 text-xs font-medium text-theme-text-muted">
                         On this page
                     </span>
                     {anchors.map(({ id, title }) => (
                         <a
                             key={id}
-                            href={`#${id.startsWith(`${page.id}/`) ? id : `${page.id}/${id}`}`}
+                            href={`#${id}`}
                             aria-current={
                                 active === id ? "location" : undefined
                             }
@@ -534,15 +608,16 @@ const PageView: FC<{ page: Page; anchors: Anchor[]; active?: string }> = ({
                         </a>
                     ))}
                 </nav>
-            </aside>
-        )}
-    </div>
-);
+            )}
+        </aside>
+    );
+};
 
 const OperationView: FC<{ op: Operation }> = ({ op }) => (
     <Section
         id={op.id}
         title={op.summary}
+        className={lazyCard}
         action={
             <ExternalLinkButton href={`/docs/explorer#${op.id}`} size="sm">
                 Test Request
@@ -550,7 +625,11 @@ const OperationView: FC<{ op: Operation }> = ({ op }) => (
         }
         intro={
             <span className="flex flex-wrap items-center gap-2">
-                <Chip intent="info" size="sm">
+                <Chip
+                    intent={methodIntent[op.method] ?? "neutral"}
+                    size="sm"
+                    className="font-mono"
+                >
                     {op.method}
                 </Chip>
                 <code className="font-mono text-sm break-all text-theme-text-strong">

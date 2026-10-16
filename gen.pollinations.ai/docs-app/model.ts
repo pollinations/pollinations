@@ -91,7 +91,7 @@ function splitOnce(text: string, separator: string): [string, string] {
 }
 
 /** Splits a description at its `## ` headings, outside fenced code. */
-function sections(markdown: string) {
+function sections(markdown: string, pageId: string) {
     const parts = [{ title: "", lines: [] as string[] }];
     let fenced = false;
     for (const line of markdown.split("\n")) {
@@ -110,7 +110,12 @@ function sections(markdown: string) {
             let id = slug(title).replace(/^-+/, "") || "section";
             while (seen.has(id)) id += "-2";
             seen.add(id);
-            return { id, title, blocks: blocks(lines.join("\n")) };
+            // Unique across the whole page: every guide renders on it.
+            return {
+                id: `${pageId}/${id}`,
+                title,
+                blocks: blocks(lines.join("\n")),
+            };
         }),
     };
 }
@@ -349,7 +354,7 @@ export function buildDocs(raw: Json): Docs {
     const pageOf = (name: string): Page => ({
         id: tagId(name),
         title: name,
-        ...sections(tags.get(name) ?? ""),
+        ...sections(tags.get(name) ?? "", tagId(name)),
         operations: operationsByTag.get(name) ?? [],
     });
     const groups = asArr((raw as Json)["x-tagGroups"]).map((group) => ({
@@ -360,7 +365,7 @@ export function buildDocs(raw: Json): Docs {
         introduction: {
             id: "introduction",
             title: spec.info.title,
-            ...sections(spec.info.description),
+            ...sections(spec.info.description, "introduction"),
             operations: [],
         },
         groups,

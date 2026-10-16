@@ -983,6 +983,17 @@ export function simplifyModelEnums(spec: Spec): void {
     }
 }
 
+// `/alpha/decisions` and its alias `/v1/systemone` take the same body.
+const DECISION_EXAMPLE: Json = {
+    state: "My payouts have been failing for 3 days.",
+    questions: {
+        is_urgent: {
+            type: "noul",
+            instructions: "Does this convey urgency?",
+        },
+    },
+};
+
 /**
  * Curated request-body examples for operations whose schemas are too complex
  * to synthesize a meaningful sample from (deeply nested unions, oneOf variants).
@@ -1002,15 +1013,8 @@ const CURATED_BODIES: Record<string, Json> = {
         max_tokens: 1024,
         messages: [{ role: "user", content: "Hello" }],
     },
-    postAlphaDecisions: {
-        state: "My payouts have been failing for 3 days.",
-        questions: {
-            is_urgent: {
-                type: "noul",
-                instructions: "Does this convey urgency?",
-            },
-        },
-    },
+    postAlphaDecisions: DECISION_EXAMPLE,
+    postV1Systemone: DECISION_EXAMPLE,
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "black-forest-labs/flux.1-schnell",

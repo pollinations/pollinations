@@ -34,6 +34,7 @@ import {
     SparklesIcon,
     SpeakerIcon,
     SproutIcon,
+    Surface,
     TabButton,
     TerminalIcon,
     TokensIcon,
@@ -124,20 +125,26 @@ const pageOfAnchor = (pages: Page[], id?: string) =>
     pages.find((page) => id === page.id || id?.startsWith(`${page.id}/`));
 
 /**
- * Scrolls to the linked card. Cards around it take their real height only
- * once they are drawn, which moves it, so it repeats until nothing moves.
+ * Scrolls to the linked card. Cards around it take their real height a frame
+ * or two after they come near, which moves it, so it realigns until it has
+ * stayed put for three frames.
  */
 function scrollToHash() {
     const hash = decodeURIComponent(window.location.hash.slice(1));
     const target = document.getElementById(aliases[hash] ?? hash);
     if (!target) return;
     let settled = Number.NaN;
+    let still = 0;
     let frames = 0;
     const step = () => {
-        if (target.getBoundingClientRect().top === settled) return;
-        target.scrollIntoView({ block: "start" });
-        settled = target.getBoundingClientRect().top;
-        if (++frames < 30) requestAnimationFrame(step);
+        if (target.getBoundingClientRect().top === settled) {
+            still++;
+        } else {
+            target.scrollIntoView({ block: "start" });
+            settled = target.getBoundingClientRect().top;
+            still = 0;
+        }
+        if (still < 3 && ++frames < 60) requestAnimationFrame(step);
     };
     step();
 }
@@ -285,7 +292,12 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                     className="relative min-h-0 min-w-0 flex-1 overscroll-contain px-0 pb-8 sm:px-4 lg:px-6 lg:pt-10"
                 >
                     <div className="mx-auto flex w-full max-w-[1280px] gap-6">
-                        <main className="flex min-w-0 flex-1 flex-col gap-12">
+                        {/* One reading sheet; lines, not cards, split it. */}
+                        <Surface
+                            as="main"
+                            variant="panel"
+                            className="flex min-w-0 flex-1 flex-col divide-y divide-theme-text-strong/10"
+                        >
                             {pages.map((page) => (
                                 <PageView
                                     key={page.id}
@@ -293,7 +305,7 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                                     copyForLlms={page === docs.introduction}
                                 />
                             ))}
-                        </main>
+                        </Surface>
                         <OnThisPage page={activePage} active={active} />
                     </div>
                 </ScrollArea>
@@ -416,11 +428,11 @@ const Rail: FC<{
 }> = ({ docs, activePage, active, onNavigate }) => (
     <>
         <ScrollArea className="-mr-2 min-h-0 flex-1 pt-1">
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-0.5">
                 <NavItem
                     as="a"
                     href={`#${docs.introduction.id}`}
-                    data-theme="accent"
+                    size="sm"
                     icon={BookIcon}
                     active={activePage === docs.introduction}
                     onClick={onNavigate}
@@ -428,7 +440,7 @@ const Rail: FC<{
                     Introduction
                 </NavItem>
                 {docs.groups.map((group) => (
-                    <div key={group.name} className="flex flex-col gap-1">
+                    <div key={group.name} className="flex flex-col gap-0.5">
                         {/* Amber group names split the menu into its parts. */}
                         <span
                             data-theme="accent"
@@ -444,7 +456,7 @@ const Rail: FC<{
                                 <NavItem
                                     as="a"
                                     href={`#${page.id}`}
-                                    data-theme="accent"
+                                    size="sm"
                                     icon={icons[page.title] ?? BookIcon}
                                     active={activePage === page}
                                     onClick={onNavigate}
@@ -541,7 +553,7 @@ const Blocks: FC<{ blocks: Block[] }> = ({ blocks }) => (
                     className="w-full max-w-[720px] rounded-lg"
                 />
             ) : (
-                <Prose key={index} className={proseClass}>
+                <Prose key={index} face="plain" className={proseClass}>
                     {block.text}
                 </Prose>
             ),
@@ -549,26 +561,41 @@ const Blocks: FC<{ blocks: Block[] }> = ({ blocks }) => (
     </>
 );
 
+// Flat blocks with room above and below; the sheet draws a line between them.
+const block = "py-10 first:pt-2";
+// Guide text keeps a readable line length.
+const reading = "flex max-w-3xl min-w-0 flex-col";
+
 const PageView: FC<{ page: Page; copyForLlms: boolean }> = ({
     page,
     copyForLlms,
 }) => (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col divide-y divide-theme-text-strong/10">
         <Section
             id={page.id}
             title={page.title}
+            framed={false}
+            face="plain"
+            className={block}
             action={copyForLlms ? <CopyForLlms /> : undefined}
         >
-            <Blocks blocks={page.intro} />
+            <div className={reading}>
+                <Blocks blocks={page.intro} />
+            </div>
         </Section>
         {page.sections.map((section) => (
             <Section
                 key={section.id}
                 id={section.id}
                 title={section.title}
-                className={lazyCard}
+                framed={false}
+                face="plain"
+                titleSize="subsection"
+                className={cn(block, lazyCard)}
             >
-                <Blocks blocks={section.blocks} />
+                <div className={reading}>
+                    <Blocks blocks={section.blocks} />
+                </div>
             </Section>
         ))}
         {page.operations.map((op) => (
@@ -617,7 +644,10 @@ const OperationView: FC<{ op: Operation }> = ({ op }) => (
     <Section
         id={op.id}
         title={op.summary}
-        className={lazyCard}
+        framed={false}
+        face="plain"
+        titleSize="subsection"
+        className={cn(block, lazyCard)}
         action={
             <ExternalLinkButton href={`/docs/explorer#${op.id}`} size="sm">
                 Test Request
@@ -682,7 +712,7 @@ const OperationView: FC<{ op: Operation }> = ({ op }) => (
                 )}
                 {op.responses.length > 0 && (
                     <div className="flex flex-col gap-3">
-                        <Heading as="h3" size="card">
+                        <Heading as="h3" size="card" face="plain">
                             Responses
                         </Heading>
                         <ul className="flex flex-col divide-y divide-theme-text-strong/10 border-y border-theme-text-strong/10">
@@ -762,7 +792,7 @@ const FieldGroup: FC<{ title: string; type?: string; fields: Field[] }> = ({
 }) => (
     <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-            <Heading as="h3" size="card">
+            <Heading as="h3" size="card" face="plain">
                 {title}
             </Heading>
             {type && (

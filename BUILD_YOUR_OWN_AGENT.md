@@ -102,6 +102,25 @@ Fork an example, then enter **your fork's URL** when creating a code agent in th
 
 Edit `agent.ts` in your fork to customize it. For automatic sync after a push, enable GitHub Actions and set the repository variable `POLLINATIONS_SYNC_URL` to `https://gen.pollinations.ai/account/agents/YOUR_AGENT_ID/sync` (use `https://staging.gen.pollinations.ai` for staging). Without the variable, the example workflows skip deployment.
 
+## Tooling and sandbox limits
+
+Measured limits to design around (verified 15 October 2026, see #17528):
+
+The `computer` sandbox:
+
+| Limit | What happens | Working path |
+| --- | --- | --- |
+| Git is collective-only | A push authenticates only against [collective memory](https://github.com/pollinations/collective-memory); pushing to a caller's own repository fails with `HTTP 401 discovering refs` | For GitHub writes, enable `composio` and let the caller connect GitHub under **Account -> Connected apps** |
+| GitHub REST API | Anonymous `api.github.com` calls return `403 API rate limit exceeded` on the shared egress IP | Use `https://github.com/<owner>/<repo>/pull/<n>.diff` URLs and `raw.githubusercontent.com`, which are not limited the same way |
+| Cloning this repository | `git clone` of pollinations/pollinations fails with `refusing to create symlink with unsafe target` | Read individual files through `raw.githubusercontent.com` |
+| Shell | No Node.js; every `bash` command is limited to 60 seconds | Keep commands short and stateless |
+
+Code agents:
+
+| Limit | What happens | Working path |
+| --- | --- | --- |
+| Request headers | The agent callback receives only the `Content-Type` header; caller credentials never reach the code | Never ask users to paste tokens into messages. Use `mcp.tools("composio")`, which runs on the caller's connected apps |
+
 ## Create with the CLI
 
 Create a prompt agent and its callable model listing in one command:

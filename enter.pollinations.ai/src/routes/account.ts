@@ -789,6 +789,25 @@ const profileResponseSchema = z.object({
         .describe(
             "User's email address (only returned when the key has `account:profile`)",
         ),
+    githubId: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("GitHub user ID (only when linked)"),
+});
+
+const accountAppsResponseSchema = z.object({
+    apps: z
+        .array(
+            z.object({
+                name: z.string(),
+                description: z.string().nullable(),
+                url: z.string().nullable(),
+                image: z.string().nullable(),
+                approved_date: z.string().nullable(),
+            }),
+        )
+        .describe("Listed apps owned by the authenticated user"),
 });
 
 const accountBalanceSchema = z.object({
@@ -1014,6 +1033,8 @@ export const accountRoutes = new Hono<Env>()
             }
 
             return c.json({
+                githubId:
+                    profile.githubId === null ? null : String(profile.githubId),
                 githubUsername: profile.githubUsername ?? null,
                 image: profile.image ?? null,
                 communityEndpointsAllowed:
@@ -1024,6 +1045,68 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get Listed Apps",
+            description:
+                "Returns the listed apps owned by the authenticated user. Queries the `listed_apps` Tinybird pipe filtered by the user's GitHub ID. Returns an empty array on any error so the dashboard is never blocked.",
+            responses: {
+                200: {
+                    description: "Listed apps for the authenticated account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            await c.var.auth.requireAuthorization();
+            const user = c.var.auth.requireUser();
+            const log = c.get("log").getChild("apps");
+
+            const db = drizzle(c.env.DB);
+            const users = await db
+                .select({ githubId: userTable.githubId })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+
+            const githubId = users[0]?.githubId ?? null;
+
+            if (githubId === null) {
+                return c.json({ apps: [] });
+            }
+
+            try {
+                const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL)
+                    .origin;
+                const tinybirdToken = requireTinybirdReadToken(c.env);
+
+                const apps = await fetchTinybirdRows<{
+                    name: string;
+                    description: string | null;
+                    url: string | null;
+                    image: string | null;
+                    approved_date: string | null;
+                }>(
+                    tinybirdOrigin,
+                    "/v0/pipes/listed_apps.json",
+                    tinybirdToken,
+                    { github_user_id: String(githubId) },
+                );
+
+                return c.json({ apps });
+            } catch (error) {
+                log.error("Error fetching listed apps: {error}", { error });
+                return c.json({ apps: [] });
+            }
         },
     )
     .get(

@@ -23,7 +23,6 @@ import {
     InlineLink,
     SparklesIcon,
     SproutIcon,
-    StableLabel,
     Surface,
     Text,
     WalletIcon,
@@ -47,9 +46,6 @@ const css =
                 ? `url(data:font/woff2;base64,${base64(`${ui}fonts/${font}.woff2`)})`
                 : url,
         );
-
-const clock = (seconds) => `0:${String(seconds).padStart(2, "0")}`;
-const CLOCKS = Array.from({ length: 46 }, (_, seconds) => clock(seconds));
 
 // A footnote line, led by its icon as Enter's are
 const footnote = (Icon, ...children) =>
@@ -124,20 +120,11 @@ const page = h(
         h(
             "div",
             { className: "polli:flex polli:flex-col polli:gap-2" },
-            h(
-                Heading,
-                { as: "h1", size: "title" },
-                "Next free {{item}} in ",
-                h(
-                    "span",
-                    { "data-clock": "" },
-                    h(StableLabel, { text: "{{clock}}", options: CLOCKS }),
-                ),
-            ),
+            h(Heading, { as: "h1", size: "title" }, "Free limit reached"),
             h(
                 Text,
                 { tone: "soft" },
-                "1 free {{item}} every {{every}} seconds per IP. This page reloads when it’s ready.",
+                "The Classic API makes 1 free {{item}} every {{every}} seconds per IP. Please wait: this page reloads by itself when your next {{item}} is ready.",
             ),
         ),
         // The two ways past the limit, side by side and equally weighted
@@ -226,23 +213,9 @@ const page = h(
     ),
 );
 
-// The countdown, the reload when it ends, and CodeBlock's copy button. The
-// countdown runs to an end time: browsers slow down timers in hidden tabs
+// The reload when the wait is over, and CodeBlock's copy button
 const script = `
-const end = Date.now() + {{wait}} * 1000;
-const label = document.querySelector("[data-clock] > span > span:last-child");
-function tick() {
-    const left = Math.ceil((end - Date.now()) / 1000);
-    if (left > 0) {
-        label.textContent = "0:" + String(left).padStart(2, "0");
-        return;
-    }
-    clearInterval(timer);
-    document.removeEventListener("visibilitychange", tick);
-    location.reload();
-}
-const timer = setInterval(tick, 250);
-document.addEventListener("visibilitychange", tick);
+setTimeout(() => location.reload(), {{wait}} * 1000);
 for (const button of document.querySelectorAll("button[aria-label='Copy code']")) {
     button.onclick = () =>
         navigator.clipboard?.writeText(button.parentElement.nextElementSibling.textContent);

@@ -244,7 +244,7 @@ test("the facilitator sees the VM's seller identity, once per isolate", async ()
     );
 });
 
-test("browsers get the free limit's page with the time left and the VM's headers", async () => {
+test("browsers get the free limit's page, which reloads when the wait is over, and the VM's headers", async () => {
     const { response, text } = await call(`${CAPTURED_BROWSER}${QUERY}`, {
         ip: await limitedIp(),
         headers: BROWSER,
@@ -252,7 +252,7 @@ test("browsers get the free limit's page with the time left and the VM's headers
 
     expect(response.status).toBe(402);
     const wait = response.headers.get("retry-after") ?? "";
-    expect(text).toContain("Next free image in");
+    expect(text).toContain("Free limit reached");
     // The page names the price the challenge asks, in USDC's 6 decimals
     const { accepts } = JSON.parse(
         atob(response.headers.get("payment-required") ?? ""),
@@ -260,7 +260,7 @@ test("browsers get the free limit's page with the time left and the VM's headers
     const [, price] = text.match(/([\d.]+) USD per image with Weft/) ?? [];
     expect(Math.round(Number(price) * 1e6)).toBe(Number(accepts[0].amount));
     expect(text).toContain(
-        "1 free image every 45 seconds per IP. This page reloads when it’s ready.",
+        "The Classic API makes 1 free image every 45 seconds per IP. Please wait: this page reloads by itself when your next image is ready.",
     );
     expect(text).toContain("Skip the wait");
     expect(text).not.toContain("undefined");
@@ -268,8 +268,10 @@ test("browsers get the free limit's page with the time left and the VM's headers
     expect(text).toContain(
         'href="https://enter.pollinations.ai/sign-in?provider=github&amp;ref=classic"',
     );
-    // The countdown runs to an end time, so a slowed-down tab stays exact
-    expect(text).toContain(`const end = Date.now() + ${wait} * 1000;`);
+    // No clock to watch: the page reloads by itself when the wait is over
+    expect(text).toContain(
+        `setTimeout(() => location.reload(), ${wait} * 1000);`,
+    );
     expect(text).not.toContain("{{");
     // The live page's headers, plus the Retry-After and the page's length
     const headers = Object.fromEntries(response.headers);
@@ -308,7 +310,7 @@ test("a browser sending a broken payment header still gets the page, not the pay
         });
 
         expect(response.status, header).toBe(402);
-        expect(text, header).toContain("Next free image in");
+        expect(text, header).toContain("Free limit reached");
     }
 });
 

@@ -34,8 +34,7 @@ const limitNotice = (every, wait) =>
 function page(kind, every, wait) {
     const [item, items] =
         kind === "image" ? ["image", "images"] : ["reply", "replies"];
-    const clock = `0:${String(wait).padStart(2, "0")}`;
-    const values = { item, items, every, wait, clock, price: PRICE_USD };
+    const values = { item, items, every, wait, price: PRICE_USD };
     return PAGE.replace(/\{\{(\w+)\}\}/g, (_, key) => values[key]);
 }
 

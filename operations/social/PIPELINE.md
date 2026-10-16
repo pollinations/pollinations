@@ -4,7 +4,7 @@
 
 ## Context
 
-Each day's merged PRs are read from GitHub once, by the daily post: one **note** per PR, written from its diff, saved as `daily/<day>/prs.json`. The weekly reads those day files back, and the monthly reads the days' summaries. Scheduled posts are written by `posts.py` from one prompt file per post and delivered by `deliver.py`; each PR a production deploy ships gets its own Discord post from `deploy_posts.py`. Both keep a record so nothing is sent twice.
+Each day's merged PRs are read from GitHub once, by the daily post: one **note** per PR, written from its diff and used only during that run. The daily saves its summary and post; the weekly and the monthly read the daily summaries. Scheduled posts are written by `posts.py` from one prompt file per post and delivered by `deliver.py`; each PR a production deploy ships gets its own Discord post from `deploy_posts.py`. Both keep a record so nothing is sent twice.
 
 ---
 
@@ -17,7 +17,7 @@ EACH PRODUCTION DEPLOY (news-deploy-posts.yml, after "Deploy / Cloudflare produc
 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
   06:00 daily        /models recorded when it changed; yesterday's merged PRs → notes
-                     → the daily (X); Sunday also the week from its day files (X,
+                     → the daily (X); Sunday also the week from its dailies (X,
                      LinkedIn, Instagram, Discord); the 1st also last month (summary
                      + cover). Then Buffer schedules X, LinkedIn and Instagram at
                      today's slots.
@@ -33,7 +33,7 @@ AFTER THOSE (news-build-index.yml)
 | Time (UTC) | Posts | Delivery |
 |---|---|---|
 | Each production deploy | — | Discord, one post per shipped PR |
-| Daily 06:00 | `daily/<yesterday>/` with its `prs.json` | X in Buffer for the next Mon–Sat 15:00 |
+| Daily 06:00 | `daily/<yesterday>/` | X in Buffer for the next Mon–Sat 15:00 |
 | Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
 | Daily 06:00 | `models/snapshots/<today>.json` when `/models` changed | — |
@@ -45,7 +45,7 @@ The Saturday daily is written on Sunday and never delivered: the week replaces i
 ### Branch Strategy
 
 - **`main` branch** — source code only.
-- **`news` branch** — all generated content: PR notes, posts, picture links, delivery records, `index.json`. Unprotected (direct commits).
+- **`news` branch** — all generated content: summaries, posts, picture links, delivery records, the `/models` record, `index.json`. Unprotected (direct commits).
 
 ---
 
@@ -55,16 +55,15 @@ All generated content lives on the **`news` branch** under `operations/social/ne
 
 ### Daily: `daily/YYYY-MM-DD/`
 
-- `prs.json` — a note for every PR merged into `main` or `master` that day (UTC), in PR order, whatever its tier
-- `summary.json` — the day's summary from the `daily`-tier notes; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) feed `index.json`
+- `summary.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) and its `changelog` feed `index.json`
 - `twitter.json` — platform envelope
 - `delivery.json` — written only by `deliver.py`: one entry per post sent
 
-A day without `daily`-tier notes saves only `prs.json`.
+`changelog` lists every PR of the day, posted or not, that changed the API (`api_changes`) or scheduled a model retirement (`announcements`): what Enter's Changelog reads. A day without `daily`-tier notes writes no post and saves a `summary.json` holding only its `date` and `changelog`, or nothing when that is empty.
 
-### PR notes: `daily/YYYY-MM-DD/prs.json`
+### PR notes (not saved)
 
-`prs.py` finds the day's merged PRs with one GitHub search, reads each PR's Area, Work type and Source from the Dev project, and asks `prompts/pr.md` for the note from the PR's title, description and diff. The diff decides: a claim from the description stays only when the diff supports it.
+`prs.py` finds the day's merged PRs into `main` or `master` (UTC day) with one GitHub search, reads each PR's Area, Work type and Source from the Dev project, and asks `prompts/pr.md` for the note from the PR's title, description and diff. The diff decides: a claim from the description stays only when the diff supports it. A day can have 80 PRs, too many diffs for one call, so each PR is read on its own; the daily summary is written from the notes, and only the `changelog` is saved.
 
 ```json
 {
@@ -90,7 +89,7 @@ A day without `daily`-tier notes saves only `prs.json`.
 | Field | Purpose |
 |---|---|
 | `summary` | One neutral account of the PR's meaningful changes and their practical effect, from the diff. Provider costs stay out. |
-| `publish_tier` | `"none"` / `"discord_only"` / `"daily"`: only `daily` notes reach the daily and weekly posts. |
+| `publish_tier` | `"none"` / `"discord_only"` / `"daily"`: only `daily` notes reach the daily, and through it the weekly and monthly. |
 | `importance` | `"major"` (headline-worthy) or `"minor"` (everything else). The daily uses `major` PRs as headline arcs. |
 | `user_facing` | Whether people using the tools would notice. |
 | `area`, `type`, `source` | The Dev project's classification; null when unknown. |
@@ -102,7 +101,7 @@ A day without `daily`-tier notes saves only `prs.json`.
 
 ### Weekly: `weekly/YYYY-MM-DD/`
 
-`YYYY-MM-DD` is the Sunday publish date; the content covers the previous Sun→Sat window, read from those days' `prs.json`.
+`YYYY-MM-DD` is the Sunday publish date; the content covers the previous Sun→Sat window, read from those days' daily summaries and highlights. Saturday's daily is written just before it, in the same run.
 
 - `summary.json` — the week's summary
 - `twitter.json`, `linkedin.json`, `instagram.json`, `discord.json` — platform envelopes
@@ -111,7 +110,7 @@ A day without `daily`-tier notes saves only `prs.json`.
 ### Monthly: `monthly/YYYY-MM/`
 
 - `summary.json` — the month's summary, from its daily summaries
-- `monthly-cover.json` — the month's cover: its link, recipe and prompt
+- `monthly-cover.json` — the month's cover: its link and prompt
 - `contributors.json` — every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it
 
 ### Model post: `models/`
@@ -127,7 +126,7 @@ A day without `daily`-tier notes saves only `prs.json`.
 
 ### Deploy posts: `discord/YYYY-MM/delivery.json`
 
-One entry per PR (`pr-<number>`), in the month it merged: its state, the Discord message id and the picture's link and recipe. The post text itself is only in Discord.
+One entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord.
 
 ### Platform envelope
 
@@ -140,7 +139,7 @@ One entry per PR (`pr-<number>`), in the month it merged: its state, the Discord
   "period_end": "YYYY-MM-DD",
   "generated_at": "ISO-8601 timestamp",
   "text": "final publish-ready text",
-  "images": [{"url": "https://media.pollinations.ai/…", "recipe": "https://gen.pollinations.ai/image/…"}],
+  "images": [{"url": "https://media.pollinations.ai/…"}],
   "metadata": {"post_type": "post|carousel"}
 }
 ```
@@ -152,8 +151,8 @@ One entry per PR (`pr-<number>`), in the month it merged: its state, the Discord
 | Section | Source | Dated |
 |---|---|---|
 | `models` | The `/models` record: a model added, removed, or its price, Quest/Paid access or capabilities changed between two recorded days. Official models only | the day the record first saw it |
-| `models` (retiring) | A `RETIRE` row in a PR description (below), from the notes' `announcements` | its `Effective` date |
-| `api` | The notes' `api_changes` | the docs PR's merge day |
+| `models` (retiring) | A `RETIRE` row in a PR description (below), from the dailies' `changelog` | its `Effective` date |
+| `api` | The dailies' `changelog` (the docs PR's `api_changes`) | the docs PR's merge day |
 | `highlights` | Each daily summary's `highlights` | the day |
 
 Announce a decided retirement with a row in the PR description. Registry comments are never read: a provider's deadline (`// Provider retires this route on …`) is an internal reminder, and most end in a reroute.
@@ -191,7 +190,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 | Script | Purpose |
 |---|---|
-| `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/pr.md`), with API changes and announced retirements |
+| `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/pr.md`), with API changes and announced retirements; the daily keeps only those two in its `changelog` |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
 | `deploy_posts.py` | `SHA`: the PRs a production deploy shipped → `prompts/posts/discord-pr.md` → Discord webhook, recorded with `deliver.py`'s record |
@@ -206,7 +205,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 1. **One run at a time.** `news-posts.yml` and `news-deploy-posts.yml` runs queue; none is cancelled.
 2. **Writing and delivering are separate jobs.** Rerunning a delivery never writes new posts; a failed post never stops the others' delivery.
-3. **Save once.** Each post is one commit to `news`; a saved date (for a day, its `prs.json`) is skipped unless `overwrite` is set.
+3. **Save once.** Each post is one commit to `news`; a saved date (its `summary.json`) is skipped unless `overwrite` is set.
 4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed` (for a deploy post, sets its entry to `done` or removes it).
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
@@ -223,15 +222,15 @@ A preview is the before/after check for any change to a prompt or a script: run 
 ## Concurrency
 
 - **`news` moves often:** the posts job fetches, rebases and pushes again, up to three times. Its paths never overlap another writer's.
-- **The day is read once:** the daily reads its PRs at 06:00 the next day, so every PR merged that day (UTC) is in its `prs.json`. Rewriting a day (`overwrite`) reads GitHub again.
+- **The day is read once:** the daily reads its PRs at 06:00 the next day, so every PR merged that day (UTC) is read. Rewriting a day (`overwrite`) reads GitHub again; the full list of merged PRs stays on GitHub.
 
 ---
 
 ## Key Design Decisions
 
-1. **The daily reads GitHub, everything else reads the daily.** One note per PR, written once; the weekly, Enter `/news` and the monthly reuse it.
+1. **The daily reads GitHub, everything else reads the daily.** The weekly and monthly read its summaries, Enter `/news` its highlights and `changelog`.
 2. **The diff decides.** Notes are written from the diff; titles and descriptions only add what the diff supports.
-3. **Notes hold facts; summaries and posts hold presentation** — headlines and platform wording are written downstream.
+3. **Notes hold facts; summaries and posts hold presentation** — notes are read once and not kept; headlines and platform wording are written from them.
 4. **`publish_tier` gates what reaches the daily and weekly posts** — non-user-facing PRs stay out.
 5. **Model news comes from the live catalog.** The `/models` record dates a change when it is seen in production, not when its PR merged.
 6. **A PR is announced on Discord when it ships,** after the production deploy, not at merge.
@@ -251,7 +250,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 Every picture uses `nanobanana-2-lite` with the character reference `prompts/brand/characters-ref.jpg` (one Polli, one monitor robot, one Nomnom) and the shared style text in `common.IMAGE_STYLE_SUFFIX`, which also says each character appears at most once. The model and community posts have no picture.
 
-No picture file is committed. Each picture keeps two links: `url`, the `media.pollinations.ai` copy the image API returns in its `Link` header (kept 30 days, refreshed by reads after day 15), and `recipe`, the keyless `gen.pollinations.ai/image/…` request with its seed, which makes the picture again with any key. Buffer and Discord receive the picture when the post is sent.
+No picture file is committed. Each post keeps its picture's `url`: the `media.pollinations.ai` copy the image API returns in its `Link` header, kept 30 days (refreshed by reads after day 15), long enough to be posted. Once posted, the picture lives on the platform it went to: Discord, X, LinkedIn or Instagram.
 
 ## Cost (a day with 5 merged PRs, all deployed)
 

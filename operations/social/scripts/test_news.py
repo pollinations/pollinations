@@ -639,6 +639,18 @@ class PostsTest(unittest.TestCase):
             self.assertEqual(list(self.new("catalog", yesterday, overwrite=True)[2]),
                              [f"{NEWS_REL_DIR}/models/snapshots/{yesterday}.json"])
 
+    def test_a_half_empty_catalog_is_not_recorded(self):
+        today, day_before = (str(datetime.now(UTC).date() - timedelta(days=n)) for n in (0, 2))
+        recorded = {**EMPTY_CATALOG, "text": [{"name": f"m{n}"} for n in range(4)]}
+        self.put(f"models/snapshots/{day_before}.json", recorded)
+        half_empty = {**recorded, "text": recorded["text"][:1]}
+        with patch("posts.fetch_all_snapshots", return_value=copy.deepcopy(half_empty)):
+            with self.assertRaisesRegex(SystemExit, "text lost more than half its models"):
+                self.new("catalog", today)
+            # A person who checked /models records it anyway.
+            self.assertEqual(list(self.new("catalog", today, overwrite=True)[2]),
+                             [f"{NEWS_REL_DIR}/models/snapshots/{today}.json"])
+
     def test_model_post_compares_the_recorded_catalog_a_week_apart(self):
         last_week = {**EMPTY_CATALOG, "text": [{"name": "kept", "paid_only": False}]}
         this_week = {**EMPTY_CATALOG, "text": [{"name": "kept", "paid_only": True}, {"name": "new", "title": "Nëw"},

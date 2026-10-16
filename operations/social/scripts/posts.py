@@ -500,13 +500,20 @@ def model_files(raw: dict, news: Path) -> dict[str, bytes]:
     return files
 
 
-def catalog_files(raw: dict, news: Path) -> dict[str, bytes]:
+def catalog_files(raw: dict, news: Path, overwrite: bool = False) -> dict[str, bytes]:
     """The day's snapshot, when the catalog differs from the latest recorded one."""
     date, current = raw["date"], raw["snapshot"]
     latest = snapshot_date(news, date)
-    if latest and diff_models(read_snapshot(news, latest), current).is_empty():
+    recorded = read_snapshot(news, latest) if latest else None
+    if recorded and diff_models(recorded, current).is_empty():
         print(f"  The catalog is unchanged since {latest}")
         return {}
+    # A half-empty answer from /models would be announced as mass retirements.
+    shrunk = [category for category, models in (recorded or {}).items()
+              if len(current.get(category) or []) < len(models) / 2]
+    if shrunk and not overwrite:
+        sys.exit(f"catalog {date}: {', '.join(shrunk)} lost more than half its models since {latest}; "
+                 "check /models, and record it with --overwrite if the removals are real")
     return {f"{MODELS_NEWS_DIR}/snapshots/{date}.json": json_file(current)}
 
 
@@ -517,7 +524,7 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
     if (raw["job"], raw["date"]) != (job, date):
         sys.exit(f"{work} holds {raw['job']} {raw['date']}, not {job} {date}")
     if job == "catalog":
-        files = catalog_files(raw, news)
+        files = catalog_files(raw, news, overwrite)
     elif job in CATALOG_JOBS:
         files = model_files(raw, news)
     else:

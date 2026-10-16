@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // Calls one model through gen and checks everything its /models entry
 // advertises: streaming, tools, JSON, reasoning, vision, caching and aliases
-// for text; sizes, resolutions, edits and cache for images. Every response's
-// x-usage-* units must have a price, or gen bills that line at 0. Prints a
-// markdown table for the PR and exits 1 when a check fails.
+// for text; sizes, resolutions, edits and cache for images. Every billable
+// response must report x-usage-* units. Prints a markdown table for the PR and
+// exits 1 when a check fails. Every call is a real, paid generation; the
+// default base is local gen.
 //
 //   POLLINATIONS_TOKEN_LOCAL=sk_... node operations/model-agent/probe.mjs <model> [--base http://localhost:8788]
 
 import { parseArgs } from "node:util";
-import { crc32, deflateSync } from "node:zlib";
 import { USAGE_TYPE_HEADERS } from "../../shared/registry/usage-headers.ts";
 
 const { values, positionals } = parseArgs({
@@ -68,13 +68,10 @@ const billed = (res) => {
         .map(([type, header]) => [type, Number(res.headers.get(header) ?? 0)])
         .filter(([, amount]) => amount > 0);
     assert(usage.length, "no x-usage-* headers");
-    const unpriced = usage.filter(([type]) => rateFor(type) === undefined);
-    assert(
-        !unpriced.length,
-        `no price for ${unpriced.map(([type]) => type).join(", ")}: gen bills it at 0`,
-    );
+    // /models leaves out zero rates; "Missing conversion rate" in gen.log is
+    // the check for a real gap.
     const price = usage.reduce(
-        (sum, [type, n]) => sum + n * Number(rateFor(type)),
+        (sum, [type, n]) => sum + n * Number(rateFor(type) ?? 0),
         0,
     );
     return `${usage.map(([type, n]) => `${type}=${n}`).join(" ")} → ${price.toPrecision(3)} pollen`;
@@ -93,7 +90,11 @@ const ask = (content, extra = {}) => ({
     ],
     ...extra,
 });
-const message = async (res) => (await (await expectOk(res)).json()).choices[0];
+// The first choice of a non-streamed answer, plus its billing note.
+const reply = async (res) => {
+    const body = await (await expectOk(res)).json();
+    return { ...body.choices[0], usage: body.usage, bill: billed(res) };
+};
 const sse = async (res) => {
     const data = (await (await expectOk(res)).text())
         .split("\n")
@@ -128,44 +129,22 @@ const toolArgs = (name, args) => {
 };
 
 // A 64×64 solid red PNG: the vision answer must name the colour.
-const redPng = () => {
-    const chunk = (type, data) => {
-        const body = Buffer.concat([Buffer.from(type), data]);
-        const out = Buffer.alloc(8 + body.length);
-        out.writeUInt32BE(data.length);
-        body.copy(out, 4);
-        out.writeUInt32BE(crc32(body), 4 + body.length);
-        return out;
-    };
-    const header = Buffer.alloc(13);
-    header.writeUInt32BE(64, 0);
-    header.writeUInt32BE(64, 4);
-    header.set([8, 2], 8); // 8-bit RGB
-    const row = Buffer.concat([
-        Buffer.from([0]),
-        Buffer.alloc(64 * 3, Buffer.from([255, 0, 0])),
-    ]);
-    return Buffer.concat([
-        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-        chunk("IHDR", header),
-        chunk("IDAT", deflateSync(Buffer.concat(Array(64).fill(row)))),
-        chunk("IEND", Buffer.alloc(0)),
-    ]).toString("base64");
-};
+const redPng =
+    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAS0lEQVR42u3PQQkAAAgAsetfWiP4FgYrsKZeS0BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEDgsqnc8OJg6Ln3AAAAAElFTkSuQmCC";
 
 const probeText = async () => {
     await check("non-streaming", async () => {
-        const res = await expectOk(
-            await chat(ask("Reply with the single word pong.")),
-        );
-        const { message: msg, finish_reason } = (await res.clone().json())
-            .choices[0];
+        const {
+            message: msg,
+            finish_reason,
+            bill,
+        } = await reply(await chat(ask("Reply with the single word pong.")));
         assert(
             /pong/i.test(msg.content ?? ""),
             `answered ${JSON.stringify(msg.content)}`,
         );
         assert(finish_reason === "stop", `finish_reason ${finish_reason}`);
-        return billed(res);
+        return bill;
     });
 
     await check("streaming", async () => {
@@ -196,14 +175,18 @@ const probeText = async () => {
             assert(res.status < 500, `${res.status} ${body}`);
             return { warn: `${res.status} ${body}` };
         }
-        return `finish_reason ${(await message(res)).finish_reason}`;
+        const { finish_reason, usage, bill } = await reply(res);
+        const note = `finish_reason ${finish_reason}, ${usage.completion_tokens} completion tokens; ${bill}`;
+        return finish_reason === "length" && usage.completion_tokens <= 16
+            ? note
+            : { warn: `limit not applied: ${note}` };
     });
 
     if (entry.tools) {
         await check("tool call", async () => {
-            const { message: msg } = await message(await chat(askWeather));
+            const { message: msg, bill } = await reply(await chat(askWeather));
             const [call] = msg.tool_calls ?? [];
-            return toolArgs(call?.function?.name, call?.function?.arguments);
+            return `${toolArgs(call?.function?.name, call?.function?.arguments)}; ${bill}`;
         });
 
         await check("streaming tool call", async () => {
@@ -222,7 +205,7 @@ const probeText = async () => {
 
     if (entry.supported_parameters?.includes("response_format")) {
         await check("JSON mode", async () => {
-            const { message: msg } = await message(
+            const { message: msg, bill } = await reply(
                 await chat(
                     ask(
                         'Return the JSON object {"ok": true} and nothing else.',
@@ -236,7 +219,7 @@ const probeText = async () => {
                 JSON.parse(msg.content).ok === true,
                 `returned ${msg.content}`,
             );
-            return msg.content;
+            return `${msg.content}; ${bill}`;
         });
     }
 
@@ -262,7 +245,7 @@ const probeText = async () => {
 
     if (entry.input_modalities.includes("image")) {
         await check("image input", async () => {
-            const res = await expectOk(
+            const { message: msg, bill } = await reply(
                 await chat({
                     messages: [
                         {
@@ -275,7 +258,7 @@ const probeText = async () => {
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        url: `data:image/png;base64,${redPng()}`,
+                                        url: `data:image/png;base64,${redPng}`,
                                     },
                                 },
                             ],
@@ -283,12 +266,11 @@ const probeText = async () => {
                     ],
                 }),
             );
-            const { message: msg } = (await res.clone().json()).choices[0];
             assert(
                 /red/i.test(msg.content ?? ""),
                 `answered ${JSON.stringify(msg.content)}`,
             );
-            return billed(res);
+            return bill;
         });
     }
 
@@ -325,13 +307,13 @@ const probeText = async () => {
 
     for (const alias of entry.aliases ?? []) {
         await check(`alias ${alias}`, async () => {
-            await message(
+            const { bill } = await reply(
                 await chat(
                     ask("Reply with the single word pong.", { max_tokens: 64 }),
                     alias,
                 ),
             );
-            return "200";
+            return bill;
         });
     }
 };
@@ -414,24 +396,43 @@ const probeImage = async () => {
         });
     }
 
+    // "2k" sets the long side to about 2048 pixels, "720p" the short side to 720.
     for (const resolution of entry.resolutions ?? []) {
-        await check(
-            `resolution ${resolution}`,
-            async () => (await generated({ resolution }))[0],
-        );
+        await check(`resolution ${resolution}`, async () => {
+            const [note, [w, h]] = await generated({ resolution });
+            const n = Number.parseInt(resolution, 10);
+            const [side, target] = resolution.endsWith("k")
+                ? [Math.max(w, h), n * 1024]
+                : [Math.min(w, h), n];
+            assert(
+                Math.abs(side / target - 1) <= 0.2,
+                `${resolution} returned ${w}×${h}`,
+            );
+            return note;
+        });
     }
 
-    await check("unsupported resolution is 4xx", async () => {
-        const unsupported = ["4k", "360p"].find(
-            (r) => !entry.resolutions?.includes(r),
-        );
-        const [res] = await image({ resolution: unsupported });
-        assert(
-            res.status >= 400 && res.status < 500,
-            `${unsupported} returned ${res.status}`,
-        );
-        return `${unsupported} → ${res.status}`;
-    });
+    // gen's resolution enum (gen.pollinations.ai/src/image/params.ts).
+    const unsupported = [
+        "4k",
+        "1k",
+        "2k",
+        "360p",
+        "480p",
+        "720p",
+        "768p",
+        "1080p",
+    ].find((r) => !entry.resolutions?.includes(r));
+    if (unsupported) {
+        await check("unsupported resolution is 4xx", async () => {
+            const [res] = await image({ resolution: unsupported });
+            assert(
+                res.status >= 400 && res.status < 500,
+                `${unsupported} returned ${res.status}`,
+            );
+            return `${unsupported} → ${res.status}`;
+        });
+    }
 
     if (entry.input_modalities.includes("image")) {
         await check(

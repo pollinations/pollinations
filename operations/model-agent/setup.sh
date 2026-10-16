@@ -25,6 +25,7 @@ set -euo pipefail
 git clone --quiet --filter=blob:none https://github.com/pollinations/pollinations.git ~/pollinations
 cd ~/pollinations
 npm ci --no-audit --no-fund --loglevel=error
+npm ci --prefix media.pollinations.ai --no-audit --no-fund --loglevel=error
 (cd enter.pollinations.ai && npm run --silent migrate:development >/dev/null)
 (cd gen.pollinations.ai && npm run --silent seed:local >/dev/null)
 curl -fsSL -o /tmp/gh.tar.gz https://github.com/cli/cli/releases/download/v2.101.0/gh_2.101.0_linux_amd64.tar.gz
@@ -58,9 +59,17 @@ polli harness claude-code on --model "$model"
 cd ~/pollinations
 setsid nohup bash -c "claude --settings ~/.pollinations/claude-code.json --dangerously-skip-permissions \
     --output-format stream-json --verbose \
-    -p 'Read operations/model-agent/AGENTS.md and do one run as it describes.' > ~/agent.jsonl 2>&1
+    -p 'Read operations/model-agent/AGENTS.md and do one run as it describes.' > ~/agent.jsonl 2>&1; echo \$? > ~/agent.exit
     polli sandbox pause $id" </dev/null >/dev/null 2>&1 &
 RUN
+
+# A run that dies at once pauses the sandbox; ssh resumes it to show why.
+sleep 20
+if ssh "$host" test -e agent.exit; then
+    ssh "$host" tail -20 agent.jsonl
+    polli sandbox kill "$id" >/dev/null
+    exit 1
+fi
 
 echo "Agent running. Watch: ssh $host tail -f agent.jsonl"
 echo "It pauses when done; polli sandbox kill $id deletes it."

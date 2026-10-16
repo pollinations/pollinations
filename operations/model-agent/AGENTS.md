@@ -11,15 +11,30 @@ approval. You never merge, deploy, or touch secrets.
 
 ## What is set up
 
-- This checkout, with `npm ci` done, the local D1 migrated, and
-  `POLLINATIONS_TOKEN_LOCAL` in `_local/.env` (`set -a; . _local/.env; set +a`).
+- This checkout, with `npm ci` done here and in `media.pollinations.ai`, the
+  local D1 migrated, and `POLLINATIONS_TOKEN_LOCAL` in `_local/.env`
+  (`set -a; . _local/.env; set +a`).
 - `gen.pollinations.ai/.dev.vars` holds the production provider keys, so local
   gen calls the real providers. Its billing events go to staging Tinybird.
-  Never print, copy, or commit these values.
+  Never read, print, copy, or commit these values. To call a provider directly,
+  load them in a subshell (`set -a; . gen.pollinations.ai/.dev.vars; set +a`)
+  and use them by variable name.
 - `gh` is logged in with a token that can push branches and open PRs.
-- Start local gen once, in the background, and wait until
-  `http://localhost:8788/models` answers:
-  `(cd gen.pollinations.ai && npm run dev > ~/gen.log 2>&1 &)`
+- The skill's `temp/manage_*.md` plans don't exist here; work from
+  `operating-policy.md`.
+
+Start the media worker (gen's image, audio and video cache) and gen in the
+background, then wait until `http://localhost:8788/models` answers. Both must
+run the root wrangler; gen can't reach a worker on another version.
+
+```bash
+(cd media.pollinations.ai && ../node_modules/.bin/wrangler dev --persist-to ../enter.pollinations.ai/.wrangler/state > ~/media.log 2>&1 &)
+(cd gen.pollinations.ai && npm run dev > ~/gen.log 2>&1 &)
+```
+
+gen builds once when it starts and doesn't watch files. After every code
+change or branch switch, restart it: `pkill -f "wrangler dev --port 8788"`,
+then run the gen line again.
 
 ## 1. Find
 
@@ -51,8 +66,10 @@ Test through local gen, never production:
   models. Fix what fails, or explain each remaining `FAIL` and `warn`.
 - Everything else in `change-and-test-matrix.md` that applies, including other
   modalities and any fallback, by hand with curl.
-- `billing-verification.md`, and `grep "Missing conversion rate" ~/gen.log`
-  must print nothing.
+- `billing-verification.md` as far as this sandbox reaches: response usage,
+  headers and price, and `grep "Missing conversion rate" ~/gen.log` must print
+  nothing. The Tinybird row, the provider's billing records and production
+  load are out of reach; list them in the PR body as not verified.
 - The focused tests and type checks the skill names, then
   `npx @biomejs/biome check --write` on the changed files.
 

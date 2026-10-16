@@ -121,21 +121,26 @@ function extractApiKey(req: Request): string | null {
     return new URL(req.url).searchParams.get("key");
 }
 
-// How a user upload's storage is paid: the key that pays, the expiry mode,
-// and the length of the first period.
+// Uploads and deletes need a key that belongs to an account: the account
+// pays for the storage and owns the file.
+type AccountAuth = AuthResult & { keyId: string; userId: string };
+
+function hasAccount(auth: AuthResult): auth is AccountAuth {
+    return auth.keyId !== null && auth.userId !== null;
+}
+
+// How an upload's storage is paid: the key that pays, the expiry mode, and
+// the length of the first period.
 type PaidStorage = {
     apiKeyId: string;
     expiresAfter: MediaExpiry;
     ms: number;
 };
 
-// Every upload with an account's key is paid storage; keys without an
-// account still upload for free.
 function paidStorage(
-    auth: AuthResult,
+    auth: AccountAuth,
     expiresAfter: ExpiresAfter,
-): PaidStorage | undefined {
-    if (auth.userId === null || auth.keyId === null) return undefined;
+): PaidStorage {
     const apiKeyId = auth.keyId;
     if (expiresAfter === undefined) {
         return {
@@ -159,11 +164,10 @@ function paidStorage(
 // check as gen's before a request.
 async function canPayForStorage(
     db: D1Database,
-    auth: AuthResult,
-    storage: PaidStorage | undefined,
+    auth: AccountAuth,
+    storage: PaidStorage,
     size: number,
 ): Promise<boolean> {
-    if (!storage || auth.userId === null) return true;
     const { price } = mediaStorageLease(size, storage.ms);
     if (auth.pollenBudget !== null && auth.pollenBudget < price) return false;
     const balance = await getFundedUserBalance(getDb(db), db, auth.userId);
@@ -424,7 +428,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            'Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries.\n\n**Storage is paid in advance.** Files uploaded with your account\'s keys cost half of Cloudflare\'s storage price, 0.0075 pollen per GB-month (files under 128 KiB count as 128 KiB), and show in your usage as model `media`. The key that uploaded a file pays each period up front, the first right after the upload, so a key that can\'t pay gets 402. By default a file stays while it is used: a fetch in its last 15 paid days renews it for 30 days from then. Anyone\'s fetch counts, so give the key a budget or set a time to cap what a popular file costs. `expiresAfter[anchor]=created_at` with `expiresAfter[seconds]` (3600 to 2592000) deletes it that long after the upload. `expiresAfter=never` renews it until you delete it (secret sk_ key only). JSON takes the same as `"never"` or `{ "anchor": "created_at", "seconds": N }`. If the key can\'t pay a renewal, is deleted, or its account is banned, the file gets no more renewals, even after a top-up, and is deleted when its paid time ends. Your secret key deletes any file uploaded with your account\'s keys (DELETE /media/:id). Keys without an account, and files uploaded before paid storage, stay free: they expire after 30 days, and a GET refreshes them once they are at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag\'s public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.',
+            'Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries.\n\n**Storage is paid in advance.** Files uploaded with your account\'s keys cost half of Cloudflare\'s storage price, 0.0075 pollen per GB-month (files under 128 KiB count as 128 KiB), and show in your usage as model `media`. The key that uploaded a file pays each period up front, the first right after the upload, so a key that can\'t pay gets 402. By default a file stays while it is used: a fetch in its last 15 paid days renews it for 30 days from then. Anyone\'s fetch counts, so give the key a budget or set a time to cap what a popular file costs. `expiresAfter[anchor]=created_at` with `expiresAfter[seconds]` (3600 to 2592000) deletes it that long after the upload. `expiresAfter=never` renews it until you delete it (secret sk_ key only). JSON takes the same as `"never"` or `{ "anchor": "created_at", "seconds": N }`. If the key can\'t pay a renewal, is deleted, or its account is banned, the file gets no more renewals, even after a top-up, and is deleted when its paid time ends. Your secret key deletes any file uploaded with your account\'s keys (DELETE /media/:id). Files uploaded before paid storage stay free: they expire after 30 days, and a GET refreshes them once they are at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag\'s public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.',
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -489,7 +493,7 @@ api.post(
             },
             400: {
                 description:
-                    'No/empty file, invalid JSON/base64, invalid ID/tags/expiresAfter, custom ID/tags/expiresAfter on a key with no user account, or expiresAfter "never" without a secret key',
+                    'No/empty file, invalid JSON/base64, invalid ID/tags/expiresAfter, or expiresAfter "never" without a secret key',
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -503,6 +507,12 @@ api.post(
             },
             401: {
                 description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "API key not attached to a user account",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -542,6 +552,12 @@ api.post(
         const authResult = await verifyApiKey(apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        if (!hasAccount(authResult)) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
         }
 
         const uploadMaxSize =
@@ -617,19 +633,17 @@ api.post(
                         size,
                         uploadedBy: authResult.name || "unknown",
                         keyType: authResult.type,
-                        ownerUserId: authResult.userId ?? undefined,
-                        expiresAfter: storage?.expiresAfter,
+                        ownerUserId: authResult.userId,
+                        expiresAfter: storage.expiresAfter,
                     },
                 );
-                if (storage) {
-                    await startPaidStorage(
-                        c.env.DB,
-                        upload.id,
-                        size,
-                        start,
-                        storage,
-                    );
-                }
+                await startPaidStorage(
+                    c.env.DB,
+                    upload.id,
+                    size,
+                    start,
+                    storage,
+                );
                 return c.json(upload);
             } catch (error) {
                 console.error("Upload error:", error);
@@ -742,24 +756,6 @@ api.post(
                 throw error;
             }
 
-            if (authResult.userId === null && tags.length > 0) {
-                return c.json(
-                    {
-                        error: "publishing (tags) requires a user-owned API key",
-                    },
-                    400,
-                );
-            }
-
-            if (
-                expiresAfter !== undefined &&
-                (authResult.userId === null || authResult.keyId === null)
-            ) {
-                return c.json(
-                    { error: "expiresAfter requires a user-owned API key" },
-                    400,
-                );
-            }
             // Publishable keys ship inside public clients; anyone holding one
             // could commit its owner to paying for storage forever.
             if (expiresAfter === "never" && authResult.type !== "secret") {
@@ -776,12 +772,6 @@ api.post(
             // and (for user uploads) the catalog row id.
             let id: string = crypto.randomUUID();
             if (requestedId !== undefined) {
-                if (authResult.userId === null) {
-                    return c.json(
-                        { error: "Custom IDs require a user-owned API key" },
-                        400,
-                    );
-                }
                 const namespace = bytesToHex(
                     await crypto.subtle.digest(
                         "SHA-256",
@@ -827,11 +817,9 @@ api.post(
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
                     // Lets the owner delete untagged files too.
-                    ...(authResult.userId !== null && {
-                        ownerUserId: authResult.userId,
-                    }),
+                    ownerUserId: authResult.userId,
                     // Tells GET whether to renew the paid storage.
-                    ...(storage && { expiresAfter: storage.expiresAfter }),
+                    expiresAfter: storage.expiresAfter,
                 },
             };
             let stored: R2Object | null;
@@ -859,9 +847,7 @@ api.post(
             // rows (untagged uploads stay uncataloged blobs behind their
             // unguessable id). The write is awaited inline (not waitUntil):
             // a D1 failure must surface as a 500, not be silently swallowed.
-            // `tags` non-empty implies a user-attached key (rejected above
-            // otherwise), so ownerUserId is always real here.
-            if (tags.length > 0 && authResult.userId !== null) {
+            if (tags.length > 0) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
                     id,
@@ -872,9 +858,7 @@ api.post(
                     tags,
                 });
             }
-            if (storage) {
-                await startPaidStorage(c.env.DB, id, fileSize, start, storage);
-            }
+            await startPaidStorage(c.env.DB, id, fileSize, start, storage);
 
             console.log(
                 JSON.stringify({
@@ -1049,7 +1033,7 @@ api.delete(
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
-        if (auth.userId === null) {
+        if (!hasAccount(auth)) {
             return c.json(
                 { error: "This API key is not attached to a user account" },
                 403,

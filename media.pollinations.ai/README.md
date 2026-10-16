@@ -83,8 +83,8 @@ curl -X POST https://media.pollinations.ai/upload \
 ```
 
 If the key can't pay a renewal, is deleted, or its account is banned, the file
-gets no more renewals, even after a top-up, and is deleted when its paid time ends. Keys without an account, and files
-uploaded before paid storage, stay free and follow the old 30-day lifecycle.
+gets no more renewals, even after a top-up, and is deleted when its paid time ends. Files
+uploaded before paid storage stay free and follow the old 30-day lifecycle.
 
 ### Publish to a tag gallery (alpha)
 
@@ -286,7 +286,7 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 
 - **Paid storage:** Files uploaded with your account's keys are paid in advance. By default a fetch in a file's last 15 paid days renews it for 30 days from then (anyone's fetch counts); a file nobody fetches is deleted when its paid time ends. `expiresAfter[anchor]=created_at` deletes it a set time after the upload, and `expiresAfter=never` renews it until you delete it. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
 - **When a key can't pay:** If the key can't pay a renewal, is deleted, or its account is banned, the file gets no more renewals, even after a top-up, and is deleted when its paid time ends.
-- **Free files:** Uploads with keys without an account, and files from before paid storage, follow R2's 30-day lifecycle: a GET refreshes an object once it is at least 15 days old.
+- **Free files:** Files from before paid storage follow R2's 30-day lifecycle: a GET refreshes an object once it is at least 15 days old.
 - **Delete (alpha):** Owners can delete any file uploaded with their account's keys via `DELETE /media/:id` (secret key). Untagged files from before October 2026 can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.

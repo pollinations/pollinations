@@ -824,13 +824,17 @@ describe("media.pollinations.ai", () => {
         }
     });
 
-    it("requires account identity for custom IDs", async () => {
+    it("refuses uploads from keys without an account", async () => {
+        // sk_legacy's /account/key response predates the identity fields.
         for (const key of ["pk_nouser", "sk_legacy"]) {
-            expect(
-                (await uploadViaForm(key, { extraFields: { id: "cover" } }))
-                    .status,
-            ).toBe(400);
-            expect((await uploadViaForm(key)).status).toBe(200);
+            for (const options of [
+                {},
+                { extraFields: { id: "cover" } },
+                { tags: ["should-fail"] },
+            ]) {
+                const res = await uploadViaForm(key, options);
+                expect(res.status).toBe(403);
+            }
         }
     });
 
@@ -1186,32 +1190,18 @@ describe("media.pollinations.ai", () => {
         expect(badJson.status).toBe(400);
     });
 
-    it("refreshes free uploads' TTL on aged GET", async () => {
+    it("refreshes files from before paid storage on aged GET", async () => {
         const bucket = createTestR2Bucket();
         const mediaEnv = createMediaEnv(bucket);
-        const uploadCtx = createExecutionContext();
-
-        // Keys without an account upload for free.
-        const uploadForm = new FormData();
-        uploadForm.append("file", pngFile("ttl.png"));
-        const uploadRes = await app.fetch(
-            new Request("https://media.pollinations.ai/upload", {
-                method: "POST",
-                body: uploadForm,
-                headers: { Authorization: "Bearer pk_nouser" },
-            }),
-            mediaEnv,
-            uploadCtx,
-        );
-        await waitOnExecutionContext(uploadCtx);
-
-        expect(uploadRes.status).toBe(200);
-        const upload = (await uploadRes.json()) as UploadResponse;
-        expect(bucket.putCount).toBe(1);
+        // Those files have no expiresAfter.
+        const id = crypto.randomUUID();
+        await bucket.put(id, TINY_PNG, {
+            httpMetadata: { contentType: "image/png" },
+        });
 
         const getCtx = createExecutionContext();
         const getRes = await app.fetch(
-            new Request(`https://media.pollinations.ai/${upload.id}`),
+            new Request(`https://media.pollinations.ai/${id}`),
             mediaEnv,
             getCtx,
         );
@@ -1459,48 +1449,6 @@ describe("media.pollinations.ai", () => {
             tags,
         });
         expect(res.status).toBe(400);
-    });
-
-    it("keys without a user can't publish, but plain uploads still work", async () => {
-        const withTag = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-tagged.png",
-            bytes: variant(8),
-            tags: ["should-fail"],
-        });
-        expect(withTag.status).toBe(400);
-        expect((withTag.body as { error: string }).error).toMatch(
-            /requires a user-owned API key/,
-        );
-
-        const plain = await uploadViaForm("pk_nouser", {
-            fileName: "nouser-plain.png",
-            bytes: variant(9),
-        });
-        expect(plain.status).toBe(200);
-        const upload = plain.body as UploadResponse;
-        expect(upload.tags).toBeUndefined();
-
-        // An /account/key response predating the identity fields (userId
-        // absent, not null) must read as not-user-attached: same behavior.
-        const legacyTagged = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-tagged.png",
-            bytes: variant(11),
-            tags: ["should-fail"],
-        });
-        expect(legacyTagged.status).toBe(400);
-
-        const legacyPlain = await uploadViaForm("sk_legacy", {
-            fileName: "legacy-plain.png",
-            bytes: variant(12),
-        });
-        expect(legacyPlain.status).toBe(200);
-        const legacyUpload = legacyPlain.body as UploadResponse;
-        const db = drizzle(env.DB);
-        const rows = await db
-            .select({ id: mediaItem.id })
-            .from(mediaItem)
-            .where(eq(mediaItem.id, legacyUpload.id));
-        expect(rows).toHaveLength(0);
     });
 
     it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
@@ -1975,17 +1923,9 @@ describe("media.pollinations.ai", () => {
                 const object = await env.MEDIA_BUCKET.head(id);
                 expect(object?.customMetadata?.expiresAfter).toBe(expiresAfter);
             }
-
-            // Keys without an account upload for free.
-            const free = (
-                await uploadViaForm("pk_nouser", { bytes: variant(55) })
-            ).body as UploadResponse;
-            expect(await storageOf(free.id)).toBeUndefined();
-            const freeObject = await env.MEDIA_BUCKET.head(free.id);
-            expect(freeObject?.customMetadata?.expiresAfter).toBeUndefined();
         });
 
-        it("rejects other expiresAfter values, never without a secret key, and expiresAfter on keys without an account", async () => {
+        it("rejects other expiresAfter values, and never without a secret key", async () => {
             const before = await storageRows();
             for (const extraFields of [
                 { expiresAfter: "30d" },
@@ -2017,17 +1957,6 @@ describe("media.pollinations.ai", () => {
             expect((publishable.body as { error: string }).error).toBe(
                 'expiresAfter "never" requires a secret (sk_) API key',
             );
-
-            for (const key of ["pk_nouser", "sk_legacy"]) {
-                const res = await uploadViaForm(key, {
-                    bytes: variant(59),
-                    extraFields: fixedHour,
-                });
-                expect(res.status).toBe(400);
-                expect((res.body as { error: string }).error).toBe(
-                    "expiresAfter requires a user-owned API key",
-                );
-            }
 
             expect(await storageRows()).toBe(before);
         });

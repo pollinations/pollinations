@@ -1,37 +1,4 @@
-/* Page layout only. Components, typography, colors and focus styles come from UI. */
-body {
-    margin: 0;
-    background: var(--polli-color-app-bg);
-    color: var(--polli-color-text-base);
-    font-family: var(--polli-font-body);
-}
+/* Enter's stylesheet: package components, tokens and Tailwind utilities. */
+@import "@pollinations/ui/app.css";
 
-.preview-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); }
-.preview-sidebar {
-    position: sticky;
-    top: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100dvh;
-    border-right: 1px solid var(--polli-color-divider);
-}
-.preview-navigation { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.preview-brand { display: flex; align-items: center; justify-content: space-between; padding: 24px 20px; }
-.preview-nav { min-height: 0; flex: 1; padding: 0 16px; }
-.preview-links { display: grid; gap: 12px; }
-.preview-chapters { display: grid; gap: 16px; padding: 8px 12px 24px; font-size: 13px; }
-.preview-note { padding: 20px; }
-.preview-content { min-width: 0; max-width: 920px; padding: 24px 48px 80px; margin: 0 auto; }
-.preview-content :is(section, h2[id]) { scroll-margin-top: 24px; }
-.preview-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 32px; }
-.preview-video { margin-top: 32px; max-width: 560px; }
-.preview-operation { margin-top: 72px; padding-top: 32px; border-top: 1px solid var(--polli-color-divider); }
-.preview-mobile-menu { display: none; }
-
-@media (width < 960px) {
-    .preview-layout { display: block; }
-    .preview-sidebar { display: none; }
-    .preview-mobile-menu { display: block; position: sticky; top: 0; z-index: 10; width: fit-content; padding: 8px; background: var(--polli-color-app-bg); }
-    .preview-content { padding: 8px 20px 48px; }
-    .preview-content :is(section, h2[id]) { scroll-margin-top: 64px; }
-}
+@source "./";

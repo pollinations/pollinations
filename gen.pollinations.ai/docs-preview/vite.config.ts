@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
+import { loadGuide, loadOperation } from "./content.ts";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const guidePath = fileURLToPath(
@@ -9,36 +10,6 @@ const guidePath = fileURLToPath(
 const referencePath = fileURLToPath(
     new URL("../../APIDOCS.md", import.meta.url),
 );
-
-// This preview reads the committed generated reference; it never regenerates it.
-// Content selection stays in Node, outside the browser and the UI package.
-function content() {
-    const guide = readFileSync(guidePath, "utf8");
-    const reference = readFileSync(referencePath, "utf8");
-    const operation = reference
-        .split("\n---\n")
-        .find((section) =>
-            section
-                .trimStart()
-                .startsWith("#### `POST` `/v1/chat/completions` —"),
-        )
-        ?.trim();
-    if (!operation)
-        throw new Error("Chat Completions is missing from APIDOCS.md");
-    const request = operation.match(/```bash\n([\s\S]*?)\n```/)?.[1];
-    if (!request) throw new Error("Chat Completions has no request example");
-    return {
-        guide,
-        // The prototype includes one operation, so schema links use the full reference.
-        operation: operation
-            .replace(/^#### /, "## ")
-            .replace(
-                /\]\(#([^)]+)\)/g,
-                "](https://github.com/pollinations/pollinations/blob/main/APIDOCS.md#$1)",
-            ),
-        request,
-    };
-}
 
 export default defineConfig({
     root,
@@ -50,16 +21,26 @@ export default defineConfig({
     resolve: { dedupe: ["react", "react-dom"] },
     esbuild: { jsx: "automatic" },
     plugins: [
+        // Same Tailwind entry as Enter (`@pollinations/ui/app.css`).
+        tailwindcss(),
         {
             name: "docs-preview-content",
             resolveId(id) {
                 if (id === "virtual:docs-preview") return `\0${id}`;
             },
+            // Reads the committed sources and reference; never regenerates them.
             load(id) {
                 if (id !== "\0virtual:docs-preview") return;
                 this.addWatchFile(guidePath);
                 this.addWatchFile(referencePath);
-                return `export default ${JSON.stringify(content())}`;
+                return `export default ${JSON.stringify({
+                    guide: loadGuide(guidePath),
+                    operation: loadOperation(
+                        referencePath,
+                        "POST",
+                        "/v1/chat/completions",
+                    ),
+                })}`;
             },
         },
     ],

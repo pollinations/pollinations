@@ -1,0 +1,35 @@
+{
+  "pr_number": 17746,
+  "title": "Add Switchyard to games",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/17746",
+  "merged_at": "2026-10-16T17:26:59Z",
+  "labels": [],
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "summary": "Added @Saauf’s Switchyard to the games catalog and README’s recent-apps list. The web game has players choose first in six trolley dilemmas, compare their choices with Jev, then reverse the description order; it also offers free practice, exact prompts, probabilities, and session export. Model Match moved out of the limited recent-apps list.",
+    "keywords": [
+      "Switchyard",
+      "community app",
+      "games",
+      "trolley dilemmas",
+      "Jev",
+      "app catalog"
+    ]
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-10-16/PR-17746.jpg",
+    "prompt": "At a cozy pixel-art garden railway, Polli wears a tiny conductor’s cap and studies a track switch beside six little dilemma cards, while a single CRT monitor robot holds two cards in reversed order; lime green (#ecf874) flowers glow around them against a warm cream and pastel background. Polli, the main character, is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings. She is small-to-medium sized within the scene, sharing the frame with other elements, never oversized or dominating the image; strictly pixel art style, never realistic. Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-10-16T17:28:13.354074+00:00",
+  "app_name": "Switchyard",
+  "app_url": "https://saauf.github.io/switchyard",
+  "area": "App catalog & showcase",
+  "type": "Feature",
+  "source": "Apps",
+  "merge_commit_sha": "7fc1a3ad50bc36096d822ac3f253daebb537ed48",
+  "announcements": []
+}

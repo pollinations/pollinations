@@ -131,12 +131,12 @@ Retrieve a media file by its id.
 
 **Response:**
 - Binary file with correct `Content-Type`
-- Untagged uploads: `Cache-Control: public, max-age=31536000, immutable`
-- Published (tagged) uploads: `Cache-Control: no-store` so deletion takes effect immediately
+- Uploads made without a user-owned key: `Cache-Control: public, max-age=31536000, immutable`
+- Uploads made with a user-owned key: `Cache-Control: no-store` so deletion takes effect immediately
 
 **Headers:**
 - `Content-Type` - MIME type
-- `Cache-Control` - immutable for untagged uploads; `no-store` for published uploads
+- `Cache-Control` - immutable without a user-owned key; `no-store` for user uploads
 - `X-Content-Id` - Media id
 - `X-Content-Size` - File size in bytes
 
@@ -163,22 +163,39 @@ owner, newest first. Fully public — no API key.
 **Errors:**
 - `400` - Missing/empty `tag`, or invalid `limit`/`cursor`
 
+### `GET /media/mine` (alpha)
+
+List every file you uploaded with a user-owned API key, tagged or not, newest
+first. Generations are not included. **Requires your secret (`sk_`) API key.**
+A key an app received through sign-in lists only that app's uploads. Listing
+doesn't change visibility: retrieval URLs stay public.
+
+**Query params:** `limit` (1–100, default 20), `cursor` (opaque, from a prior response's `nextCursor`).
+
+**Response:** `{ items, nextCursor, hasMore }`, same item shape as the tag gallery.
+
+**Errors:**
+- `400` - Invalid `limit`/`cursor`
+- `401` - Missing or invalid API key
+- `403` - Not a secret key, or key has no user account
+
 ### `DELETE /media/:id` (alpha)
 
-Delete a published item you own: removes the file, its catalog entry, and all
-its tags — it disappears from galleries and its URL 404s. **Requires your
-secret (`sk_`) API key**; publishable (`pk_`) keys are rejected since anyone
-can read them out of a public client.
+Delete a file you uploaded with a user-owned key: removes the file, its catalog
+entry, and all its tags — it disappears from your list and any galleries, and
+its URL 404s. **Requires your secret (`sk_`) API key**; publishable (`pk_`)
+keys are rejected since anyone can read them out of a public client. A key an
+app received through sign-in deletes only that app's uploads.
 
-Untagged uploads were never published and can't be deleted — they expire on
-their own (see Retention Policy).
+Uploads made without a user-owned key have no owner and can't be deleted —
+they expire on their own (see Retention Policy).
 
 **Response:** `{ "deleted": true, "id": "<id>" }`
 
 **Errors:**
 - `401` - Missing or invalid API key
-- `403` - Not a secret key, key has no user account, or you don't own the item
-- `404` - Unknown id, or an untagged (never published) upload
+- `403` - Not a secret key, key has no user account, or you (or this app) didn't upload the item
+- `404` - Unknown id, or an upload made without a user-owned key
 
 ### `GET /`
 
@@ -230,14 +247,14 @@ npm run deploy:production
 
 ## 🆔 Identifiers
 
-Each upload gets a unique id. That single id is the storage key, the retrieval id (`GET /:id`), and — for published uploads — the catalog id you list and delete by. Re-uploading the same bytes yields a new id (no content deduplication).
+Each upload gets a unique id. That single id is the storage key, the retrieval id (`GET /:id`), and — for uploads made with a user-owned key — the catalog id you list and delete by. Re-uploading the same bytes yields a new id (no content deduplication).
 
-- **Immutable bytes:** an id is never reused for other content. Untagged uploads use long-lived immutable caching; published uploads use `no-store` because owners can delete them.
+- **Immutable bytes:** an id is never reused for other content. Uploads without a user-owned key use long-lived immutable caching; user uploads use `no-store` because owners can delete them.
 
 ## 📌 Retention Policy
 
 - **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
-- **Delete (alpha):** Owners can delete their published items via `DELETE /media/:id` (secret key). Untagged uploads can't be deleted — they expire on their own.
+- **List and delete (alpha):** Owners list their uploads with `GET /media/mine` and delete them via `DELETE /media/:id` (secret key). Uploads made without a user-owned key can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 

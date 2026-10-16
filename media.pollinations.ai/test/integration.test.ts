@@ -100,6 +100,14 @@ const KEY_IDENTITIES: Record<
         userId: "user_bob",
         byopApp: null,
     },
+    // A secret key another app received through Alice's sign-in (BYOP).
+    sk_alice_app2: {
+        valid: true,
+        type: "secret",
+        name: "alice-app2",
+        userId: "user_alice",
+        byopApp: { clientKeyId: "pk_app_2" },
+    },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
     sk_legacy: {
@@ -489,9 +497,8 @@ describe("media.pollinations.ai", () => {
         );
         expect(getRes.status).toBe(200);
         expect(getRes.headers.get("content-type")).toBe("image/png");
-        expect(getRes.headers.get("cache-control")).toBe(
-            "public, max-age=31536000, immutable",
-        );
+        // A user upload can be deleted, so it must not linger in caches.
+        expect(getRes.headers.get("cache-control")).toBe("no-store");
         expect(getRes.headers.get("content-disposition")).toContain("test.png");
         const body = new Uint8Array(await getRes.arrayBuffer());
         expect(body.length).toBe(TINY_PNG.length);
@@ -776,8 +783,9 @@ describe("media.pollinations.ai", () => {
         });
         const uploaded = first.body as UploadResponse;
         await env.MEDIA_BUCKET.delete(uploaded.id);
+        const replacement = new Uint8Array([...TINY_PNG, 9]);
         const second = await uploadViaForm("pk_alice", {
-            bytes: variant(9),
+            bytes: replacement,
             extraFields: { id: "expiring" },
         });
         expect(second.status).toBe(200);
@@ -785,8 +793,14 @@ describe("media.pollinations.ai", () => {
         const retrieved = await SELF.fetch(uploaded.url);
         expect(retrieved.headers.get("cache-control")).toBe("no-store");
         expect(new Uint8Array(await retrieved.arrayBuffer())).toEqual(
-            variant(9),
+            replacement,
         );
+        // The stale catalog row was replaced, not kept beside or under it.
+        const rows = await drizzle(env.DB)
+            .select({ size: mediaItem.size })
+            .from(mediaItem)
+            .where(eq(mediaItem.id, uploaded.id));
+        expect(rows).toEqual([{ size: replacement.byteLength }]);
     });
 
     it("reserves published custom IDs until their gallery entries are deleted", async () => {
@@ -1261,7 +1275,7 @@ describe("media.pollinations.ai", () => {
         expect(upperGallery.items.map((i) => i.url)).toContain(upload.url);
     });
 
-    it("untagged upload is not cataloged: unlisted but retrievable", async () => {
+    it("untagged upload is cataloged for its owner but in no gallery", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
@@ -1270,14 +1284,13 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        // No catalog row at all — untagged means unpublished, not "cataloged
-        // but hidden".
+        // A catalog row without tags: listed for its owner, published nowhere.
         const db = drizzle(env.DB);
         const rows = await db
-            .select({ id: mediaItem.id })
+            .select({ ownerUserId: mediaItem.ownerUserId })
             .from(mediaItem)
             .where(eq(mediaItem.id, upload.id));
-        expect(rows).toHaveLength(0);
+        expect(rows).toEqual([{ ownerUserId: "user_alice" }]);
 
         const galleryRes = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=some-other-tag",
@@ -1414,6 +1427,12 @@ describe("media.pollinations.ai", () => {
         expect(plain.status).toBe(200);
         const upload = plain.body as UploadResponse;
         expect(upload.tags).toBeUndefined();
+        // Nobody can delete it, so it stays cacheable forever.
+        const plainRes = await SELF.fetch(upload.url);
+        expect(plainRes.headers.get("cache-control")).toBe(
+            "public, max-age=31536000, immutable",
+        );
+        await plainRes.arrayBuffer();
 
         // An /account/key response predating the identity fields (userId
         // absent, not null) must read as not-user-attached: same behavior.
@@ -1625,6 +1644,89 @@ describe("media.pollinations.ai", () => {
         expect(publicGallery.status).toBe(200);
     });
 
+    it("GET /media/mine lists all of the owner's uploads with a secret key", async () => {
+        const untagged = (
+            await uploadViaForm("pk_alice", { bytes: variant(50) })
+        ).body as UploadResponse;
+        const tagged = (
+            await uploadViaForm("pk_alice", {
+                bytes: variant(51),
+                tags: ["mine-tag"],
+            })
+        ).body as UploadResponse;
+        const rawRes = await SELF.fetch(
+            "https://media.pollinations.ai/upload",
+            {
+                method: "POST",
+                body: variant(52),
+                headers: {
+                    Authorization: "Bearer pk_alice",
+                    "Content-Type": "image/png",
+                    "Content-Length": String(TINY_PNG.length),
+                },
+            },
+        );
+        const raw = (await rawRes.json()) as UploadResponse;
+        const rawGet = await SELF.fetch(raw.url);
+        expect(rawGet.headers.get("cache-control")).toBe("no-store");
+        await rawGet.arrayBuffer();
+        await uploadViaForm("pk_bob", { bytes: variant(53) });
+
+        const listMine = async (query: string) => {
+            const res = await SELF.fetch(
+                `https://media.pollinations.ai/media/mine${query}`,
+                { headers: { Authorization: "Bearer sk_alice" } },
+            );
+            expect(res.status).toBe(200);
+            return (await res.json()) as MediaPageResponse;
+        };
+        const first = await listMine("?limit=2");
+        expect(first.items).toHaveLength(2);
+        expect(first.hasMore).toBe(true);
+        const second = await listMine(`?limit=2&cursor=${first.nextCursor}`);
+        expect(second.hasMore).toBe(false);
+        const items = [...first.items, ...second.items];
+        expect(items.map((item) => item.id).sort()).toEqual(
+            [untagged.id, tagged.id, raw.id].sort(),
+        );
+        expect(items.find((item) => item.id === tagged.id)?.tags).toEqual([
+            "mine-tag",
+        ]);
+        expect(items.find((item) => item.id === raw.id)?.tags).toEqual([]);
+
+        // A key another app received through Alice's sign-in sees and
+        // deletes only that app's uploads (these came from pk_app_1).
+        const otherApp = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer sk_alice_app2" } },
+        );
+        expect(((await otherApp.json()) as MediaPageResponse).items).toEqual(
+            [],
+        );
+        const otherAppDelete = await SELF.fetch(
+            `https://media.pollinations.ai/media/${untagged.id}`,
+            {
+                method: "DELETE",
+                headers: { Authorization: "Bearer sk_alice_app2" },
+            },
+        );
+        expect(otherAppDelete.status).toBe(403);
+
+        // Publishable keys ship inside public clients: they can't read the
+        // list. Keys without a user have no list.
+        for (const key of ["pk_alice", "pk_nouser"]) {
+            const res = await SELF.fetch(
+                "https://media.pollinations.ai/media/mine",
+                { headers: { Authorization: `Bearer ${key}` } },
+            );
+            expect(res.status).toBe(403);
+        }
+        expect(
+            (await SELF.fetch("https://media.pollinations.ai/media/mine"))
+                .status,
+        ).toBe(401);
+    });
+
     describe("DELETE /media/:id", () => {
         it("owner deletes with a secret key: unpublished and gone", async () => {
             const { status, body } = await uploadViaForm("pk_alice", {
@@ -1742,7 +1844,26 @@ describe("media.pollinations.ai", () => {
             await getRes.arrayBuffer();
         });
 
-        it("unknown and uncataloged (untagged) ids answer 404", async () => {
+        it("owner deletes an untagged upload", async () => {
+            const { status, body } = await uploadViaForm("pk_alice", {
+                fileName: "delete-untagged.png",
+                bytes: variant(42),
+            });
+            expect(status).toBe(200);
+            const upload = body as UploadResponse;
+
+            const res = await SELF.fetch(
+                `https://media.pollinations.ai/media/${upload.id}`,
+                {
+                    method: "DELETE",
+                    headers: { Authorization: "Bearer sk_alice" },
+                },
+            );
+            expect(res.status).toBe(200);
+            expect((await SELF.fetch(upload.url)).status).toBe(404);
+        });
+
+        it("unknown and uncataloged (no user) ids answer 404", async () => {
             const unknown = await SELF.fetch(
                 `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
                 {
@@ -1752,11 +1873,11 @@ describe("media.pollinations.ai", () => {
             );
             expect(unknown.status).toBe(404);
 
-            // An untagged upload was never published: no catalog row, no
-            // owner record to authorize a delete against → 404, blob stays.
-            const { status, body } = await uploadViaForm("pk_alice", {
-                fileName: "delete-untagged.png",
-                bytes: variant(42),
+            // An upload from a key without a user has no owner record to
+            // authorize a delete against → 404, blob stays.
+            const { status, body } = await uploadViaForm("pk_nouser", {
+                fileName: "delete-nouser.png",
+                bytes: variant(43),
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;

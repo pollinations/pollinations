@@ -4384,7 +4384,22 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
                 wallet: { type: "apple_pay" },
             },
         },
-        mockCardPaymentMethod("pm_default", customer.id),
+        {
+            ...mockCardPaymentMethod("pm_default", customer.id),
+            // Portal profile updates leave the saved card's address unchanged.
+            billing_details: {
+                name: "Anna Schmidt",
+                email: "anna@example.com",
+                address: {
+                    line1: "10 Old Street",
+                    line2: "Apartment 9",
+                    city: "New York",
+                    state: "NY",
+                    postal_code: "10001",
+                    country: "US",
+                },
+            },
+        },
     );
     mocks.stripe.state.taxIds.push({
         id: "txi_1",
@@ -4426,7 +4441,12 @@ test("GET /api/stripe/billing lists saved payment methods and the customer's bil
         taxIds: [
             { type: "eu_vat", value: "EE102030405", verification: "verified" },
         ],
+        email: "anna@example.com",
+        line1: "Tartu mnt 1",
+        line2: null,
         city: "Tallinn",
+        state: null,
+        postalCode: "10115",
         country: "EE",
     });
 });

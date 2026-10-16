@@ -72,7 +72,9 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     248852494, // floxygit
     50811139, // KT-Society
     197048004, // sonofstrange
-    
+    125762682, // connor11016
+    197126260, // Maliot100X
+    337741234, // papa-pichita
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

@@ -144,7 +144,8 @@ test("lists the MCP servers exposed through Gen", async () => {
                     "Search arXiv for papers and read abstracts, authors, and links.",
                 url: "https://gen.pollinations.ai/mcp/arxiv",
                 pricing: {
-                    description: "arXiv lookups are free. No additional MCP fee.",
+                    description:
+                        "arXiv lookups are free. No additional MCP fee.",
                     rates: [],
                 },
             },
@@ -239,18 +240,15 @@ test("routes arXiv with caller authorization without an extra MCP debit", async 
             arguments: { query: "cat:cs.CL" },
         },
     };
-    const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/arxiv",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${key}`,
-                Cookie: "session=private",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/arxiv", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
         },
-    );
+        body: JSON.stringify(payload),
+    });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
         pathname: "/",

@@ -192,10 +192,10 @@ test("searches without forwarding caller credentials and returns parsed papers",
 test("fetches by arXiv id or URL and keeps single values as arrays", async (t) => {
     const upstream = t.mock.method(globalThis, "fetch", async (input) => {
         const url = new URL(input);
-        assert.deepEqual([...url.searchParams.keys()], [
-            "id_list",
-            "max_results",
-        ]);
+        assert.deepEqual(
+            [...url.searchParams.keys()],
+            ["id_list", "max_results"],
+        );
         assert.equal(
             url.searchParams.get("id_list"),
             "2312.10793v3,2402.11651",

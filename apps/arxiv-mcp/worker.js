@@ -66,9 +66,9 @@ function parseEntry(entry) {
         authors: [
             ...entry.matchAll(/<author>[\s\S]*?<name>([\s\S]*?)<\/name>/g),
         ].map(([, name]) => decodeXml(name).trim()),
-        categories: [
-            ...entry.matchAll(/<category\s[^>]*term="([^"]*)"/g),
-        ].map(([, term]) => decodeXml(term)),
+        categories: [...entry.matchAll(/<category\s[^>]*term="([^"]*)"/g)].map(
+            ([, term]) => decodeXml(term),
+        ),
         primaryCategory: tagAttributes(
             entry.match(/<arxiv:primary_category\s([^>]*?)\/?>/)?.[1] ?? "",
         ).term,
@@ -127,7 +127,9 @@ const searchSchema = z.object({
     sortBy: z
         .enum(["relevance", "lastUpdatedDate", "submittedDate"])
         .default("relevance")
-        .describe("Sort order: relevance (default), lastUpdatedDate, submittedDate."),
+        .describe(
+            "Sort order: relevance (default), lastUpdatedDate, submittedDate.",
+        ),
 });
 
 const paperSchema = z.object({

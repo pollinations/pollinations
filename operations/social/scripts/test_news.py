@@ -1013,13 +1013,14 @@ class DeliverTest(unittest.TestCase):
                 "news: before the switch (#4)", "Promote main to production (#5)")]},
             "pulls/1": pr(1), "pulls/2": pr(2), "pulls/4": pr(4, merged_at="2026-10-19T10:00:00Z"),
             "pulls/5": pr(5, base="production"),
+            f"pulls/{deploy_posts.CUTOVER_PR}": {"merged_at": "2026-10-20T00:00:00Z"},
         }
         reply_text = json.dumps({"text": "Faster images\n- 🐝 `flux` answers in half the time", "image_prompt": "bee"})
         link = "https://media.pollinations.ai/abc"
         pictures = [(b"jpeg", link), (None, None), (b"jpeg", link)]  # PR 2's first picture fails
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
-        with patch.dict(os.environ, env), patch("deploy_posts.START", "2026-10-20T00:00:00Z"), \
+        with patch.dict(os.environ, env), \
              patch("deploy_posts.github", side_effect=lambda path, **params: github[path]), \
              patch("deploy_posts.fetch_pr_files", return_value=("diff", ["gen.pollinations.ai/src/x.ts"])), \
              patch("deploy_posts.call_pollinations_api", return_value=reply_text), \
@@ -1029,7 +1030,7 @@ class DeliverTest(unittest.TestCase):
                 deploy_posts.main()
             deploy_posts.main()  # the rerun posts only the PR that failed
         sent = self.sent("https://discord.test/realtime?wait=true")
-        self.assertEqual(len(sent), 2)  # PRs 1 and 2; not the promotion, nor a PR merged before the switch
+        self.assertEqual(len(sent), 2)  # PRs 1 and 2; not the promotion, nor a PR merged before the cutover PR
         payload = json.loads(sent[0][2]["payload_json"][1])
         self.assertTrue(payload["content"].startswith("### Faster images\n\n- 🐝 `flux`"))
         self.assertIn("[PR #1](<https://github.com/pollinations/pollinations/pull/1>) | By [bee]", payload["content"])

@@ -52,7 +52,7 @@ Each successful `Deploy / Cloudflare production` run posts the PRs merged into `
 
 - A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f sha=<production commit>`. PRs already `done` are skipped.
 - `attempt`: look in the Discord channel. Found it: set the entry's `state` to `done`. Not there: remove the entry, then rerun.
-- No post at all: a PR merged before `deploy_posts.py`'s `START` was posted at merge; a `master` PR, or a promotion that touched no deployed path (so no deploy ran yet), gets no post until a deploy ships it.
+- No post at all: a PR merged before #17666 was posted at merge; a `master` PR, or a promotion that touched no deployed path (so no deploy ran yet), gets no post until a deploy ships it.
 
 ## Settle a stuck send (`attempt`)
 

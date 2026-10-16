@@ -209,7 +209,7 @@ A preview is the before/after check for any change to a prompt or a script: run 
 4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed` (for a deploy post, sets its entry to `done` or removes it).
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
-7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); `deploy_posts.py` skips PRs merged before its `START`, which were posted when they merged. Older posts went out with the previous senders.
+7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); `deploy_posts.py` skips PRs merged before the PR that introduced it (#17666), which were posted when they merged. Older posts went out with the previous senders.
 8. **A deploy post is written and pictured before it is claimed,** so a failed model or picture call leaves nothing behind: rerunning the run tries that PR again, and the PRs already posted are skipped.
 
 ## Error handling

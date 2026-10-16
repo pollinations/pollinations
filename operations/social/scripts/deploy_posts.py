@@ -33,8 +33,8 @@ from deliver import deliver, send_discord
 from posts import POSTS_DIR, fill, read_post
 from prs import app_for, fetch_pr_files
 
-# The merge-time posts stopped here; PRs merged earlier were posted when they merged.
-START = "2026-10-20T00:00:00Z"
+# The PR that replaced the merge-time posts: PRs merged before it were posted when they merged.
+CUTOVER_PR = 17666
 DEPLOY_WORKFLOW = "deploy-cloudflare-production.yml"
 SQUASHED = re.compile(r"\(#(\d+)\)$")
 POST = read_post(POSTS_DIR / "discord-pr.md")
@@ -66,7 +66,10 @@ def previous_deploy(sha: str) -> str:
 
 
 def shipped(since: str, sha: str) -> list[dict]:
-    """The PRs merged into main from START that reached production between the two commits."""
+    """The PRs merged into main since the cutover that reached production between the two commits."""
+    start = github(f"pulls/{CUTOVER_PR}")["merged_at"]
+    if not start:
+        sys.exit(f"#{CUTOVER_PR} is not merged yet: PRs are still posted when they merge")
     numbers, page = set(), 1
     while True:
         commits = github(f"compare/{since}...{sha}", per_page=100, page=page)["commits"]
@@ -78,7 +81,7 @@ def shipped(since: str, sha: str) -> list[dict]:
             break
         page += 1
     prs = [github(f"pulls/{number}") for number in sorted(numbers)]
-    return [pr for pr in prs if pr["base"]["ref"] == "main" and (pr["merged_at"] or "") >= START]
+    return [pr for pr in prs if pr["base"]["ref"] == "main" and (pr["merged_at"] or "") >= start]
 
 
 def message(pr: dict, text: str, app: dict | None) -> dict:

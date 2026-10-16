@@ -1,12 +1,19 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
+import type { MediaExpiry } from "@shared/db/media-storage.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import {
+    DEFAULT_R2_TTL_REFRESH_AGE_MS,
+    R2_LIFECYCLE_TTL_MS,
+    refreshR2ObjectTtl,
+    rewriteR2Object,
+} from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    DB: D1Database;
 };
 
 export type UnlistedMediaUpload = {
@@ -16,6 +23,10 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    // The account that may delete the file (DELETE /media/:id).
+    ownerUserId?: string;
+    // A paid upload's expiry mode, which tells GET whether to renew it.
+    expiresAfter?: MediaExpiry;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -86,6 +97,12 @@ export async function uploadUnlistedMedia(
                     originalName: input.fileName?.slice(0, 253) || "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
+                    ...(input.ownerUserId && {
+                        ownerUserId: input.ownerUserId,
+                    }),
+                    ...(input.expiresAfter && {
+                        expiresAfter: input.expiresAfter,
+                    }),
                 },
             }),
             pipe,
@@ -139,14 +156,45 @@ export async function readMedia(
         headers.set("Content-Length", object.size.toString());
         return new Response(null, { headers });
     }
-    const body = refreshR2ObjectTtl(
-        env.MEDIA_BUCKET,
-        id,
-        object as R2ObjectBody,
-        (promise) => ctx.waitUntil(promise),
-        (error) => console.error("Media TTL refresh failed", error),
-    );
-    return new Response(body, { headers });
+    const expiresAfter = object.customMetadata?.expiresAfter;
+    if (expiresAfter === undefined) {
+        // Free storage: generated media, uploads with keys that have no
+        // account, and files uploaded before storage was paid.
+        const body = refreshR2ObjectTtl(
+            env.MEDIA_BUCKET,
+            id,
+            object as R2ObjectBody,
+            (promise) => ctx.waitUntil(promise),
+            (error) => console.error("Media TTL refresh failed", error),
+        );
+        return new Response(body, { headers });
+    }
+    const now = Date.now();
+    if (
+        expiresAfter === "last_active_at" &&
+        now - object.uploaded.getTime() >= DEFAULT_R2_TTL_REFRESH_AGE_MS
+    ) {
+        // Fetched in its last 15 paid days: gen's cron renews it for 30 days
+        // from now and charges the key, or lets its paid time end.
+        // Plain SQL: media's drizzle is older than the schema's.
+        ctx.waitUntil(
+            env.DB.prepare(
+                `UPDATE media_storage SET renew_to = ?1
+                WHERE id = ?2 AND expires_after = 'last_active_at'
+                    AND renew_to IS NULL AND paid_until > ?3`,
+            )
+                .bind(
+                    Math.floor((now + R2_LIFECYCLE_TTL_MS) / 1000),
+                    id,
+                    Math.floor(now / 1000),
+                )
+                .run()
+                .catch((error) =>
+                    console.error("Media renewal mark failed", error),
+                ),
+        );
+    }
+    return new Response((object as R2ObjectBody).body, { headers });
 }
 
 export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
@@ -163,6 +211,34 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
 
     async has(id: string): Promise<boolean> {
         return (await this.env.MEDIA_BUCKET.head(id)) !== null;
+    }
+
+    /**
+     * Rewrites a file that R2 would delete before `until`, which restarts its
+     * 30 days. False when the file is gone.
+     */
+    async refresh(id: string, until: Date): Promise<boolean> {
+        const object = await this.env.MEDIA_BUCKET.get(id);
+        if (!object) return false;
+        if (
+            object.uploaded.getTime() + R2_LIFECYCLE_TTL_MS >=
+            until.getTime()
+        ) {
+            await object.body.cancel();
+            return true;
+        }
+        const stored = await rewriteR2Object(
+            this.env.MEDIA_BUCKET,
+            id,
+            object,
+            object.body,
+        );
+        return stored !== null;
+    }
+
+    /** Deletes a file whose paid time is over. */
+    async delete(id: string): Promise<void> {
+        await this.env.MEDIA_BUCKET.delete(id);
     }
 
     /** Trusted generation write; the caller selects headers safe for public replay. */

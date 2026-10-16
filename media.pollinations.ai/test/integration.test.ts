@@ -5,8 +5,9 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import { apikey, user as userTable } from "@shared/db/better-auth.ts";
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
+import { type MediaExpiry, mediaStorage } from "@shared/db/media-storage.ts";
 import { createTestR2Bucket } from "@shared/test/mocks/r2.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -15,6 +16,7 @@ import app from "../src/index";
 import {
     MediaUpload,
     rawUploadFileName,
+    readMedia,
     uploadUnlistedMedia,
 } from "../src/media-upload.ts";
 
@@ -34,6 +36,7 @@ interface UploadResponse {
     contentType: string;
     size: number;
     tags?: string[];
+    expiresAfter?: "never" | { anchor: "created_at"; seconds: number };
 }
 
 interface MediaItemResponse {
@@ -62,6 +65,8 @@ const KEY_IDENTITIES: Record<
         name?: string | null;
         userId?: string | null;
         byopApp?: { clientKeyId: string } | null;
+        pollenBudget?: number | null;
+        questPollenOnly?: boolean;
     }
 > = {
     pk_alice: {
@@ -99,6 +104,34 @@ const KEY_IDENTITIES: Record<
         name: "bob-secret",
         userId: "user_bob",
         byopApp: null,
+    },
+    // Keys that can't pay for storage.
+    pk_broke: {
+        valid: true,
+        type: "publishable",
+        name: "broke-key",
+        userId: "user_broke",
+    },
+    pk_nobudget: {
+        valid: true,
+        type: "publishable",
+        name: "spent-key",
+        userId: "user_alice",
+        pollenBudget: 0,
+    },
+    pk_questonly: {
+        valid: true,
+        type: "publishable",
+        name: "quest-only-key",
+        userId: "user_paid",
+        questPollenOnly: true,
+    },
+    // The same paid-only balance, spendable.
+    pk_paid: {
+        valid: true,
+        type: "publishable",
+        name: "paid-key",
+        userId: "user_paid",
     },
     // The response shape of an enter deployment that predates the identity
     // fields — userId/byopApp entirely absent, not null.
@@ -140,7 +173,7 @@ function mockAuth() {
             }
             return {
                 statusCode: 200,
-                data: JSON.stringify(identity),
+                data: JSON.stringify({ id: keyId(key), ...identity }),
                 responseOptions: {
                     headers: { "content-type": "application/json" },
                 },
@@ -149,10 +182,19 @@ function mockAuth() {
         .persist();
 }
 
+// The id /account/key reports for a key, which its uploads are billed to.
+const keyId = (key: string) => `id_${key}`;
+
 async function seedUsers() {
     const db = drizzle(env.DB);
     const now = new Date();
-    for (const id of ["user_alice", "user_bob"]) {
+    const balances = {
+        user_alice: { tierBalance: 10 },
+        user_bob: { tierBalance: 10 },
+        user_broke: {},
+        user_paid: { packBalance: 5 },
+    };
+    for (const [id, balance] of Object.entries(balances)) {
         await db
             .insert(userTable)
             .values({
@@ -161,10 +203,32 @@ async function seedUsers() {
                 email: `${id}@test.com`,
                 createdAt: now,
                 updatedAt: now,
+                ...balance,
             })
             .onConflictDoNothing({ target: userTable.id });
     }
+    for (const [key, { userId }] of Object.entries(KEY_IDENTITIES)) {
+        if (!userId) continue;
+        await db
+            .insert(apikey)
+            .values({
+                id: keyId(key),
+                key,
+                referenceId: userId,
+                createdAt: now,
+                updatedAt: now,
+            })
+            .onConflictDoNothing({ target: apikey.id });
+    }
 }
+
+const storageOf = async (id: string) =>
+    (
+        await drizzle(env.DB)
+            .select()
+            .from(mediaStorage)
+            .where(eq(mediaStorage.id, id))
+    )[0];
 
 function pngFile(name: string, bytes: Uint8Array = TINY_PNG): File {
     return new File([bytes], name, { type: "image/png" });
@@ -1122,18 +1186,19 @@ describe("media.pollinations.ai", () => {
         expect(badJson.status).toBe(400);
     });
 
-    it("refreshes uploaded media TTL on aged GET", async () => {
+    it("refreshes free uploads' TTL on aged GET", async () => {
         const bucket = createTestR2Bucket();
         const mediaEnv = createMediaEnv(bucket);
         const uploadCtx = createExecutionContext();
 
+        // Keys without an account upload for free.
         const uploadForm = new FormData();
         uploadForm.append("file", pngFile("ttl.png"));
         const uploadRes = await app.fetch(
             new Request("https://media.pollinations.ai/upload", {
                 method: "POST",
                 body: uploadForm,
-                headers: { Authorization: `Bearer ${VALID_KEY}` },
+                headers: { Authorization: "Bearer pk_nouser" },
             }),
             mediaEnv,
             uploadCtx,
@@ -1742,7 +1807,7 @@ describe("media.pollinations.ai", () => {
             await getRes.arrayBuffer();
         });
 
-        it("unknown and uncataloged (untagged) ids answer 404", async () => {
+        it("the owner deletes untagged uploads too, and their paid storage with them", async () => {
             const unknown = await SELF.fetch(
                 `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
                 {
@@ -1752,14 +1817,55 @@ describe("media.pollinations.ai", () => {
             );
             expect(unknown.status).toBe(404);
 
-            // An untagged upload was never published: no catalog row, no
-            // owner record to authorize a delete against → 404, blob stays.
+            // Untagged: the account's secret key deletes it, nobody else's
+            // does.
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
             });
             expect(status).toBe(200);
             const upload = body as UploadResponse;
+            const remove = (key: string, id = upload.id) =>
+                SELF.fetch(`https://media.pollinations.ai/media/${id}`, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${key}` },
+                });
+
+            expect((await remove("sk_bob")).status).toBe(403);
+            expect((await remove("pk_alice")).status).toBe(403);
+            expect(await storageOf(upload.id)).toBeDefined();
+
+            expect((await remove("sk_alice")).status).toBe(200);
+            const getRes = await SELF.fetch(
+                `https://media.pollinations.ai/${upload.id}`,
+            );
+            expect(getRes.status).toBe(404);
+            expect(await storageOf(upload.id)).toBeUndefined();
+
+            // Raw uploads record their owner as well.
+            const rawRes = await SELF.fetch(
+                "https://media.pollinations.ai/upload",
+                {
+                    method: "POST",
+                    body: variant(43),
+                    headers: {
+                        Authorization: "Bearer pk_alice",
+                        "Content-Type": "image/png",
+                        "Content-Length": String(TINY_PNG.length),
+                    },
+                },
+            );
+            const raw = (await rawRes.json()) as UploadResponse;
+            expect((await remove("sk_alice", raw.id)).status).toBe(200);
+        });
+
+        it("untagged files without a recorded owner answer 404 and stay", async () => {
+            // Uploaded before owners were recorded, or by a service.
+            const ctx = createExecutionContext();
+            const upload = await new MediaUpload(ctx, env).upload(
+                new Blob([variant(44)]).stream(),
+                { contentType: "image/png", size: TINY_PNG.length },
+            );
 
             const res = await SELF.fetch(
                 `https://media.pollinations.ai/media/${upload.id}`,
@@ -1775,6 +1881,269 @@ describe("media.pollinations.ai", () => {
             );
             expect(getRes.status).toBe(200);
             await getRes.arrayBuffer();
+        });
+    });
+
+    describe("paid storage", () => {
+        const DAY_MS = 86_400_000;
+        const daysFromNow = (date: Date | null | undefined) =>
+            ((date?.getTime() ?? 0) - Date.now()) / DAY_MS;
+        const fixedHour = {
+            "expiresAfter[anchor]": "created_at",
+            "expiresAfter[seconds]": "3600",
+        };
+        const uploadJson = (
+            key: string,
+            seed: number,
+            fields: Record<string, unknown> = {},
+        ) =>
+            SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    data: btoa(String.fromCharCode(...variant(seed))),
+                    contentType: "image/png",
+                    ...fields,
+                }),
+            });
+        const uploadRaw = (key: string, seed: number) =>
+            SELF.fetch("https://media.pollinations.ai/upload", {
+                method: "POST",
+                body: variant(seed),
+                headers: {
+                    Authorization: `Bearer ${key}`,
+                    "Content-Type": "image/png",
+                    "Content-Length": String(TINY_PNG.length),
+                },
+            });
+        const storageRows = async () =>
+            (await drizzle(env.DB).select().from(mediaStorage)).length;
+
+        it("every upload with an account's key waits for gen's cron to pay its first period: kept while used, for a fixed time, or never deleted", async () => {
+            const used = (
+                await uploadViaForm("pk_alice", { bytes: variant(50) })
+            ).body as UploadResponse;
+            expect(used.expiresAfter).toBeUndefined();
+
+            const hour = await uploadViaForm("pk_alice", {
+                bytes: variant(51),
+                extraFields: fixedHour,
+            });
+            expect(hour.status).toBe(200);
+            const fixed = hour.body as UploadResponse;
+            expect(fixed.expiresAfter).toEqual({
+                anchor: "created_at",
+                seconds: 3600,
+            });
+
+            const never = (await (
+                await uploadJson("sk_bob", 52, { expiresAfter: "never" })
+            ).json()) as UploadResponse;
+            expect(never.expiresAfter).toBe("never");
+
+            const dayRes = await uploadJson("pk_bob", 53, {
+                expiresAfter: { anchor: "created_at", seconds: 86400 },
+            });
+            expect(dayRes.status).toBe(200);
+            const day = (await dayRes.json()) as UploadResponse;
+
+            const rawRes = await uploadRaw("pk_alice", 54);
+            expect(rawRes.status).toBe(200);
+            const raw = (await rawRes.json()) as UploadResponse;
+
+            const expected = [
+                [used.id, "pk_alice", "last_active_at", 30],
+                [fixed.id, "pk_alice", "created_at", 1 / 24],
+                [never.id, "sk_bob", "never", 30],
+                [day.id, "pk_bob", "created_at", 1],
+                [raw.id, "pk_alice", "last_active_at", 30],
+            ] as const;
+            for (const [id, key, expiresAfter, days] of expected) {
+                const row = await storageOf(id);
+                expect(row).toMatchObject({
+                    apiKeyId: keyId(key),
+                    size: TINY_PNG.length,
+                    expiresAfter,
+                });
+                // Nothing is paid yet; the cron charges up to renewTo.
+                expect(daysFromNow(row.paidUntil)).toBeCloseTo(0, 3);
+                expect(daysFromNow(row.renewTo)).toBeCloseTo(days, 3);
+                // GET reads the mode from the file.
+                const object = await env.MEDIA_BUCKET.head(id);
+                expect(object?.customMetadata?.expiresAfter).toBe(expiresAfter);
+            }
+
+            // Keys without an account upload for free.
+            const free = (
+                await uploadViaForm("pk_nouser", { bytes: variant(55) })
+            ).body as UploadResponse;
+            expect(await storageOf(free.id)).toBeUndefined();
+            const freeObject = await env.MEDIA_BUCKET.head(free.id);
+            expect(freeObject?.customMetadata?.expiresAfter).toBeUndefined();
+        });
+
+        it("rejects other expiresAfter values, never without a secret key, and expiresAfter on keys without an account", async () => {
+            const before = await storageRows();
+            for (const extraFields of [
+                { expiresAfter: "30d" },
+                { ...fixedHour, "expiresAfter[seconds]": "60" },
+                { ...fixedHour, "expiresAfter[anchor]": "last_active_at" },
+            ]) {
+                const res = await uploadViaForm("sk_alice", {
+                    bytes: variant(56),
+                    extraFields,
+                });
+                expect(res.status).toBe(400);
+                expect((res.body as { error: string }).error).toBe(
+                    'expiresAfter must be "never" or { anchor: "created_at", seconds: 3600 to 2592000 }',
+                );
+            }
+            for (const expiresAfter of [
+                "forever",
+                { anchor: "created_at", seconds: 2592001 },
+            ]) {
+                const res = await uploadJson("sk_alice", 57, { expiresAfter });
+                expect(res.status).toBe(400);
+            }
+
+            const publishable = await uploadViaForm("pk_alice", {
+                bytes: variant(58),
+                extraFields: { expiresAfter: "never" },
+            });
+            expect(publishable.status).toBe(400);
+            expect((publishable.body as { error: string }).error).toBe(
+                'expiresAfter "never" requires a secret (sk_) API key',
+            );
+
+            for (const key of ["pk_nouser", "sk_legacy"]) {
+                const res = await uploadViaForm(key, {
+                    bytes: variant(59),
+                    extraFields: fixedHour,
+                });
+                expect(res.status).toBe(400);
+                expect((res.body as { error: string }).error).toBe(
+                    "expiresAfter requires a user-owned API key",
+                );
+            }
+
+            expect(await storageRows()).toBe(before);
+        });
+
+        it("refuses with 402, storing nothing, an upload the key can't pay for", async () => {
+            const before = await storageRows();
+            // No balance, no budget left, and only paid Pollen for a key
+            // that spends Quest Pollen only.
+            for (const key of ["pk_broke", "pk_nobudget", "pk_questonly"]) {
+                const form = await uploadViaForm(key, { bytes: variant(60) });
+                expect(form.status).toBe(402);
+                expect((form.body as { error: string }).error).toContain(
+                    "https://enter.pollinations.ai/top-up",
+                );
+                expect((await uploadJson(key, 61)).status).toBe(402);
+                expect((await uploadRaw(key, 62)).status).toBe(402);
+            }
+            expect(await storageRows()).toBe(before);
+
+            // The same paid balance pays through a key allowed to spend it.
+            expect((await uploadRaw("pk_paid", 63)).status).toBe(200);
+        });
+
+        it("a GET in a used file's last 15 paid days marks it for renewal; fixed, never, ended and free files are not marked", async () => {
+            const bucket = createTestR2Bucket();
+            const mediaEnv = createMediaEnv(bucket);
+            const put = async (expiresAfter?: MediaExpiry, paidDays = 10) => {
+                const { id } = await uploadUnlistedMedia(
+                    mediaEnv,
+                    new Blob([TINY_PNG]).stream(),
+                    {
+                        contentType: "image/png",
+                        size: TINY_PNG.length,
+                        expiresAfter,
+                    },
+                );
+                if (expiresAfter) {
+                    await drizzle(env.DB)
+                        .insert(mediaStorage)
+                        .values({
+                            id,
+                            apiKeyId: keyId("pk_alice"),
+                            size: TINY_PNG.length,
+                            expiresAfter,
+                            paidUntil: new Date(Date.now() + paidDays * DAY_MS),
+                        });
+                }
+                return id;
+            };
+            // The mock bucket dates its files from 1970: all are old enough.
+            const used = await put("last_active_at");
+            const ended = await put("last_active_at", -1);
+            const fixed = await put("created_at");
+            const never = await put("never");
+            const free = await put();
+            const puts = bucket.putCount;
+
+            for (const id of [used, ended, fixed, never, free]) {
+                const ctx = createExecutionContext();
+                const res = await readMedia(mediaEnv, id, ctx);
+                expect(
+                    new Uint8Array(await (res as Response).arrayBuffer()),
+                ).toEqual(TINY_PNG);
+                await waitOnExecutionContext(ctx);
+            }
+
+            expect(daysFromNow((await storageOf(used)).renewTo)).toBeCloseTo(
+                30,
+                3,
+            );
+            for (const id of [ended, fixed, never]) {
+                expect((await storageOf(id)).renewTo).toBeNull();
+            }
+            // Only the free file is rewritten here; gen's cron rewrites paid
+            // files as it renews them.
+            expect(bucket.putCount).toBe(puts + 1);
+        });
+
+        it("refresh rewrites a file only if R2 would delete it before the given time, and delete removes it", async () => {
+            const bucket = createTestR2Bucket();
+            const mediaEnv = createMediaEnv(bucket);
+            const upload = await uploadUnlistedMedia(
+                mediaEnv,
+                new Blob([TINY_PNG]).stream(),
+                {
+                    contentType: "image/png",
+                    fileName: "kept.png",
+                    size: TINY_PNG.length,
+                    ownerUserId: "user_alice",
+                    expiresAfter: "never",
+                },
+            );
+            const stored = bucket.getObject(upload.id);
+            const storage = new MediaUpload(createExecutionContext(), mediaEnv);
+            const r2Deletes = (stored?.uploaded.getTime() ?? 0) + 30 * DAY_MS;
+
+            expect(await storage.refresh(upload.id, new Date(r2Deletes))).toBe(
+                true,
+            );
+            expect(bucket.putCount).toBe(1);
+
+            expect(
+                await storage.refresh(upload.id, new Date(r2Deletes + 1)),
+            ).toBe(true);
+            expect(bucket.putCount).toBe(2);
+            const refreshed = bucket.getObject(upload.id);
+            expect(refreshed?.body).toEqual(TINY_PNG);
+            expect(refreshed?.httpMetadata).toEqual(stored?.httpMetadata);
+            expect(refreshed?.customMetadata).toEqual(stored?.customMetadata);
+            expect(refreshed?.uploaded.getTime()).toBeGreaterThan(
+                stored?.uploaded.getTime() ?? Number.POSITIVE_INFINITY,
+            );
+
+            expect(await storage.refresh("missing", new Date())).toBe(false);
+            await storage.delete(upload.id);
+            expect(bucket.getObject(upload.id)).toBeUndefined();
         });
     });
 

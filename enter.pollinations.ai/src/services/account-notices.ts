@@ -94,7 +94,7 @@ const FOOTER_LINKS = [
     {
         label: "Discord",
         icon: "discord",
-        href: "https://discord.gg/k9F7SyTgqn",
+        href: "https://discord.gg/pollinations",
     },
 ];
 

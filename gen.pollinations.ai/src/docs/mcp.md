@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Machines | `https://gen.pollinations.ai/mcp/machines` | Start, run commands in, and stop Pollinations sandboxes | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,24 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Machines MCP
+
+The Machines server runs Linux sandboxes for builds, tests, and scripts. A
+sandbox bills your Pollen from the moment it starts and pauses automatically
+when its lease ends.
+
+| Tool | Purpose |
+| --- | --- |
+| `list_sandboxes` | List your sandboxes with state, size, and expiry |
+| `create_sandbox` | Start a sandbox and return its ID; `pollinations` (2 vCPU, 2 GB) or `pollinations-large` (4 vCPU, 8 GB) |
+| `run_command` | Run a shell command and return its exit code, stdout, and stderr |
+| `read_file` / `write_file` | Read a file as text, or write text to a file |
+| `pause_sandbox` | Stop billing; the next command resumes the sandbox |
+| `kill_sandbox` | Delete the sandbox and its files |
+
+The key needs the `account:machines` permission, and a key without it gets the
+permission error back as the tool result.
 
 ### Billing and permissions
 

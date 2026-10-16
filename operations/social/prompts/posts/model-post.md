@@ -26,9 +26,10 @@ For each `{before, after}` pair, identify what actually changed:
 
 1. **Access change** — `paid_only` flipped `false→true` → 🔒 going paid-only. `true→false` → 🔓 going free.
 2. **Price cut** — any numeric pricing token value decreased. Compute the primary token % drop:
-   - Image/video: `completionImageTokens`
+   - Image/video/3D: `completionImageTokens`
    - Text: `completionTextTokens`
    - Audio: `completionAudioTokens` or `completionAudioSeconds`
+   - Realtime: `completionAudioTokens`, else `promptAudioSeconds`
    - Embeddings: `completionEmbeddingTokens`
    Round to nearest 5%. Group these under ⬇️ by category.
 3. **Price increase** — any pricing token value increased. Same calculation. Group under ⬆️.
@@ -41,7 +42,7 @@ For each `{before, after}` pair, identify what actually changed:
 6. If multiple change types apply to one model, list it only in the most prominent section
    (access > price > capability).
 
-Category emojis: 🎨 image · 🎬 video · 🧠 text · 🔊 audio · 🔢 embeddings
+Category emojis: 🎨 image · 🎬 video · 🧠 text · 🔊 audio · 🔢 embeddings · 🧊 3D · 🎙️ realtime
 
 ## discord_text format
 
@@ -110,7 +111,7 @@ Order within Changed: access changes first, then pricing, then capability. Skip 
 
 - `date` — report date (YYYY-MM-DD).
 - `previous_date` — prior snapshot date or `null`.
-- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `audio`, `embeddings`).
+- `diff` — `{added, removed, changed}` keyed by category (`text`, `image`, `video`, `audio`, `embeddings`, `3d`, `realtime`).
   - `added[cat]`: full model objects that are new.
   - `removed[cat]`: full model objects that were removed.
   - `changed[cat]`: `[{before: {...}, after: {...}}]` pairs — compare them to find what changed.

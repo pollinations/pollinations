@@ -1129,7 +1129,9 @@ def commit_files_to_branch(
 
 # ── Model post ───────────────────────────────────────────────────────
 
-CATEGORIES: tuple[str, ...] = ("text", "image", "video", "audio", "embeddings")
+CATEGORIES: tuple[str, ...] = (
+    "text", "image", "video", "audio", "embeddings", "3d", "realtime"
+)
 
 
 @dataclass(frozen=True)

@@ -53,6 +53,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
             bodyText,
             partition,
             getRequiredSafetyFeatures(variables.model),
+            variables.model?.resolved,
         );
     },
     get: getCachedResponse,

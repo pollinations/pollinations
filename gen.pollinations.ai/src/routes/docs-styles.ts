@@ -49,31 +49,33 @@ ${POLLI_UI_TOKENS_CSS}
     display: flex; gap: 8px; align-items: center;
     justify-content: flex-end; max-width: calc(100vw - 36px);
 }
+/* Bright brand amber with dark text: the page's one primary action, with the
+   contrast of Scalar's own "Test Request" button. Both faces share one grid
+   cell, so "Copied" never changes the button's width. */
 .ph-fab {
-    padding: 12px 20px; border-radius: 999px;
-    border: 0; background: var(--polli-color-bg-active); color: var(--polli-color-text-strong);
-    font: 600 15px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    box-shadow: none;
-    cursor: pointer; text-decoration: none;
-    transition: background .15s, color .15s, filter .15s, transform .1s;
-    display: inline-flex; align-items: center; gap: 6px; line-height: 1;
+    display: inline-grid; height: 38px; padding: 0 16px; border-radius: 999px;
+    border: 0; background: var(--polli-color-brand-accent); color: oklch(0.2 0.02 80);
+    font: 600 14px/1 var(--scalar-font, system-ui, sans-serif);
+    cursor: pointer; transition: filter .15s, transform .1s;
 }
-.ph-fab:hover {
-    background: var(--polli-color-bg-hover); color: var(--polli-color-text-strong);
-    filter: brightness(1.05);
-}
+.ph-fab:hover { filter: brightness(1.06); }
 .ph-fab:active { transform: translateY(1px); }
 .ph-fab:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--polli-color-border);
+    outline: 2px solid var(--polli-color-brand-accent); outline-offset: 2px;
 }
-.ph-fab svg { width: 18px; height: 18px; }
+.ph-fab-face {
+    grid-area: 1 / 1; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px;
+}
+.ph-fab-done, .ph-fab.is-copied .ph-fab-idle { visibility: hidden; }
+.ph-fab.is-copied .ph-fab-done { visibility: visible; }
+.ph-fab svg { width: 16px; height: 16px; }
 @media (width < 1000px) {
     .ph-fab-cluster { top: 60px; right: 12px; }
     body:has(.references-sidebar-mobile-open) .ph-fab-cluster { display: none; }
 }
 @media (max-width: 640px) {
-    .ph-fab { padding: 7px 11px; font-size: 12px; }
+    .ph-fab { height: 34px; padding: 0 12px; font-size: 13px; }
     .ph-fab svg { width: 14px; height: 14px; }
 }
 `;

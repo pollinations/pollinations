@@ -197,21 +197,13 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
 };
 
 // The dashboard's own links, as quiet rows at the foot of the drawer. Icons
-// are packages/ui's AppIcon, AccountIcon, DiscordIcon and BugIcon.
+// are packages/ui's AppIcon, DiscordIcon and BugIcon.
 const DOCS_SIDEBAR_LINKS = [
     {
         href: "https://enter.pollinations.ai",
         label: "Dashboard",
         icon: docsIcon(
             '<rect x="2" y="4" width="20" height="14" rx="2" /><path d="M2 20h20" />',
-        ),
-    },
-    {
-        // Signed-out visitors are sent to sign in, then back to their account.
-        href: "https://enter.pollinations.ai/account",
-        label: "Account",
-        icon: docsIcon(
-            '<circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" />',
         ),
     },
     {
@@ -439,9 +431,9 @@ function pollinationsDocsHtml(): string {
     const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
-  <button class="ph-fab ph-fab-copy" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-    <span>Copy for LLMs</span>
+  <button class="ph-fab ph-fab-copy" type="button" title="Copy the full docs as Markdown, ready to paste into an AI assistant">
+    <span class="ph-fab-face ph-fab-idle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy for LLMs</span>
+    <span class="ph-fab-face ph-fab-done" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Copied</span>
   </button>
 </div>
 <script>
@@ -457,14 +449,11 @@ function pollinationsDocsHtml(): string {
   // Copy for LLMs — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
-    var label = copy.querySelector('span');
     copy.addEventListener('click', async function () {
       var res = await fetch('/docs/llm.txt');
-      var text = await res.text();
-      await navigator.clipboard.writeText(text);
-      var prev = label.textContent;
-      label.textContent = 'Copied';
-      setTimeout(function () { label.textContent = prev; }, 1200);
+      await navigator.clipboard.writeText(await res.text());
+      copy.classList.add('is-copied');
+      setTimeout(function () { copy.classList.remove('is-copied'); }, 1500);
     });
   }
   // Text-based DOM scan for Scalar buttons whose class names get hashed

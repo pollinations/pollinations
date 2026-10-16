@@ -180,6 +180,8 @@ def main():
     parser.add_argument("--publish", action="store_true", help="commit to the news branch when changed")
     args = parser.parse_args()
 
+    if not (args.news_dir / "data").is_dir():
+        sys.exit(f"{args.news_dir} has no data/: not a checkout of the converted news branch")
     index_file = args.news_dir / "data" / "index.json"
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     index = build_index(args.news_dir, today)

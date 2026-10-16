@@ -484,7 +484,7 @@ def main() -> None:
     command.add_argument("state", choices=("done", "failed"))
     args = parser.parse_args()
     if args.command == "mark":
-        mark(args.job, args.date, args.post, args.state)
+        mark(args.job, args.date, args.platform, args.state)
     else:
         run(args.command, args.job, args.date, args.work)
 

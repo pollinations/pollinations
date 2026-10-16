@@ -29,9 +29,9 @@ from pathlib import Path
 
 from common import (
     CONTRIBUTORS_REL_DIR,
+    DATA_REL_DIR,
     IMAGE_SIZE,
     MODELS_NEWS_DIR,
-    NEWS_REL_DIR,
     OWNER,
     POSTS_REL_DIR,
     PROMPTS_DIR,
@@ -159,8 +159,8 @@ def check_date(job: str, date: str) -> None:
 
 def check(job: str, date: str, news: Path, overwrite: bool) -> None:
     check_date(job, date)
-    if not (news / NEWS_REL_DIR).is_dir():
-        sys.exit(f"{news} is not a checkout of the news branch")
+    if not (news / DATA_REL_DIR).is_dir():
+        sys.exit(f"{news} has no {DATA_REL_DIR}: not a checkout of the converted news branch")
     if job == "catalog" and not overwrite:
         # /models is recorded as it is now, and a recorded day is kept.
         if date != datetime.now(UTC).strftime("%Y-%m-%d"):

@@ -474,7 +474,7 @@ class PostsTest(unittest.TestCase):
 
     def checkout(self, name):
         self.news, self.work = self.root / name, self.root / f"{name}-work"
-        (self.news / NEWS_REL_DIR).mkdir(parents=True)
+        (self.news / NEWS_REL_DIR / "data").mkdir(parents=True)
 
     def put(self, path, data):
         file = self.news / NEWS_REL_DIR / path
@@ -750,7 +750,7 @@ class PostsTest(unittest.TestCase):
             for job, date in (("weekly", "2026-10-05"), ("daily", "2026-10-6"), ("monthly", "2026-10-06")):
                 with self.assertRaisesRegex(SystemExit, "is not a"):
                     posts.write(job, date, self.news, self.work)
-            with self.assertRaisesRegex(SystemExit, "not a checkout"):
+            with self.assertRaisesRegex(SystemExit, "not a checkout of the converted news branch"):
                 posts.write("daily", "2026-10-06", self.root, self.work)
         self.assertEqual(delivery.read_text(), '{"2026-10-06.json": "done"}')
 
@@ -912,7 +912,8 @@ class DeliverTest(unittest.TestCase):
             "discord": "attempt"})
         self.assertEqual(len(self.sent(deliver.BUFFER_URL)), 3)
         # A person found the X post and the Discord message missing: one is done, one goes again.
-        deliver.mark("weekly", "2026-10-11", "x", "done")
+        with patch("sys.argv", ["deliver.py", "mark", "weekly", "2026-10-11", "x", "done"]):
+            deliver.main()  # the command a person runs
         deliver.mark("weekly", "2026-10-11", "discord", "failed")
         deliver.run("schedule", "weekly", "2026-10-11")
         deliver.run("send", "weekly", "2026-10-11")

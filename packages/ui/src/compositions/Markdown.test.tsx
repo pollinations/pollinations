@@ -126,4 +126,15 @@ describe("Prose", () => {
             /<div class="[^"]*polli:overflow-x-auto[^"]*"><table/,
         );
     });
+
+    test("keeps brand headings unless a page asks for plain ones", () => {
+        const brand = renderToStaticMarkup(<Prose>{"## Pricing"}</Prose>);
+        const plain = renderToStaticMarkup(
+            <Prose face="plain">{"## Pricing"}</Prose>,
+        );
+
+        expect(brand).toMatch(/<h2 class="[^"]*polli:font-subheading/);
+        expect(plain).toMatch(/<h2 class="[^"]*polli:font-body/);
+        expect(plain).not.toContain("polli:font-subheading");
+    });
 });

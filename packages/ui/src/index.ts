@@ -205,7 +205,9 @@ export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export {
     Heading,
+    type HeadingFace,
     type HeadingProps,
+    type HeadingSize,
     Text,
     type TextProps,
 } from "./primitives/Typography.tsx";

@@ -1,12 +1,20 @@
 import type { FC, ReactNode } from "react";
 import { cn } from "../lib/cn.ts";
 import { Surface } from "../primitives/Surface.tsx";
-import { Heading, Text } from "../primitives/Typography.tsx";
+import {
+    Heading,
+    type HeadingFace,
+    type HeadingSize,
+    Text,
+} from "../primitives/Typography.tsx";
 
 export type SectionProps = {
     title: string;
     id?: string;
     framed?: boolean;
+    /** Title size; `section` by default. */
+    titleSize?: HeadingSize;
+    face?: HeadingFace;
     intro?: ReactNode;
     action?: ReactNode;
     actionClassName?: string;
@@ -20,6 +28,8 @@ export const Section: FC<SectionProps> = ({
     title,
     id,
     framed = true,
+    titleSize = "section",
+    face = "brand",
     intro,
     action,
     actionClassName,
@@ -44,7 +54,8 @@ export const Section: FC<SectionProps> = ({
             <header className="polli:flex polli:flex-wrap polli:items-center polli:justify-between polli:gap-3">
                 <Heading
                     as="h2"
-                    size="section"
+                    size={titleSize}
+                    face={face}
                     className={cn("polli:text-left", titleClassName)}
                 >
                     {title}

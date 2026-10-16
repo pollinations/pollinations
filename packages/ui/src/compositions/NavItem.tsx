@@ -6,13 +6,19 @@ type BaseNavItemProps = {
     active?: boolean;
     /** Optional leading icon. */
     icon?: ComponentType<{ className?: string }>;
+    /** `sm` packs long menus such as docs; `md` by default. */
+    size?: "md" | "sm";
     className?: string;
 };
 
 // Neutral/quiet when inactive; filled with the accent when active. The leading
 // icon is the section marker.
 const base =
-    "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:px-3 polli:py-2 polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
+    "polli-control polli:flex polli:items-center polli:gap-2 polli:rounded-full polli:text-left polli:text-sm polli:font-medium polli:whitespace-nowrap polli:transition-colors";
+const sizeClasses = {
+    md: "polli:px-3 polli:py-2",
+    sm: "polli:px-3 polli:py-1.5",
+} as const;
 const activeClasses = "polli:bg-theme-bg-active polli:text-theme-text-strong";
 const inactiveClasses =
     "polli:text-ink-800 polli:hover:bg-surface-opaque/60 polli:hover:text-ink-950";
@@ -32,6 +38,7 @@ export function NavItem<T extends React.ElementType = "button">({
     as,
     active = false,
     icon: Icon,
+    size = "md",
     className,
     children,
     ...rest
@@ -42,6 +49,7 @@ export function NavItem<T extends React.ElementType = "button">({
             aria-current={active ? "page" : undefined}
             className={cn(
                 base,
+                sizeClasses[size],
                 active ? activeClasses : inactiveClasses,
                 className,
             )}

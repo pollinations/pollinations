@@ -3,33 +3,53 @@ import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
 import { InlineLink } from "../primitives/InlineLink.tsx";
-import { headingClassName } from "../primitives/Typography.tsx";
+import {
+    type HeadingFace,
+    type HeadingSize,
+    headingClassName,
+} from "../primitives/Typography.tsx";
 import { MarkdownCodeBlock } from "./Markdown.tsx";
 
 export type ProseProps = {
     children: string;
+    /** `plain` sets headings in the body face, one size smaller, for reading pages such as docs. */
+    face?: HeadingFace;
     className?: string;
 };
 
+const headingSizes: Record<
+    HeadingFace,
+    [HeadingSize, HeadingSize, HeadingSize]
+> = {
+    brand: ["title", "section", "subsection"],
+    plain: ["section", "subsection", "card"],
+};
+
+const headingsFor = (face: HeadingFace): Components => {
+    const [h1, h2, h3] = headingSizes[face];
+    return {
+        h1: ({ node, ...props }) => (
+            <h1
+                className={headingClassName(h1, "polli:mt-0 polli:mb-5", face)}
+                {...props}
+            />
+        ),
+        h2: ({ node, ...props }) => (
+            <h2
+                className={headingClassName(h2, "polli:mt-8 polli:mb-3", face)}
+                {...props}
+            />
+        ),
+        h3: ({ node, ...props }) => (
+            <h3
+                className={headingClassName(h3, "polli:mt-6 polli:mb-2", face)}
+                {...props}
+            />
+        ),
+    };
+};
+
 const components: Components = {
-    h1: ({ node, ...props }) => (
-        <h1
-            className={headingClassName("title", "polli:mt-0 polli:mb-5")}
-            {...props}
-        />
-    ),
-    h2: ({ node, ...props }) => (
-        <h2
-            className={headingClassName("section", "polli:mt-8 polli:mb-3")}
-            {...props}
-        />
-    ),
-    h3: ({ node, ...props }) => (
-        <h3
-            className={headingClassName("subsection", "polli:mt-6 polli:mb-2")}
-            {...props}
-        />
-    ),
     p: ({ node, ...props }) => (
         <p className="polli:my-4 polli:leading-relaxed" {...props} />
     ),
@@ -94,7 +114,12 @@ const components: Components = {
     ),
 };
 
-export function Prose({ children, className }: ProseProps) {
+const componentsByFace: Record<HeadingFace, Components> = {
+    brand: { ...components, ...headingsFor("brand") },
+    plain: { ...components, ...headingsFor("plain") },
+};
+
+export function Prose({ children, face = "brand", className }: ProseProps) {
     return (
         <div
             className={cn(
@@ -105,7 +130,7 @@ export function Prose({ children, className }: ProseProps) {
             <Markdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSlug]}
-                components={components}
+                components={componentsByFace[face]}
             >
                 {children}
             </Markdown>

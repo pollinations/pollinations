@@ -5,19 +5,37 @@ import type {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-type HeadingSize = "display" | "title" | "section" | "subsection" | "card";
+export type HeadingSize =
+    | "display"
+    | "title"
+    | "section"
+    | "subsection"
+    | "card";
+/** `brand` sets headings in the display faces; `plain` in the body face, for reading pages such as docs. */
+export type HeadingFace = "brand" | "plain";
 
 type TextSize = "body" | "sm" | "xs" | "micro";
 type TextTone = "base" | "strong" | "soft" | "muted";
 type TextWeight = "normal" | "medium" | "semibold" | "bold";
 
 const headingSizeClasses: Record<HeadingSize, string> = {
-    display: "polli:font-heading polli:text-5xl polli:leading-none",
-    title: "polli:font-heading polli:text-4xl polli:leading-none",
-    section: "polli:font-subheading polli:text-2xl polli:leading-tight",
-    subsection: "polli:font-subheading polli:text-xl polli:leading-tight",
-    card: "polli:font-subheading polli:text-lg polli:leading-tight",
+    display: "polli:text-5xl polli:leading-none",
+    title: "polli:text-4xl polli:leading-none",
+    section: "polli:text-2xl polli:leading-tight",
+    subsection: "polli:text-xl polli:leading-tight",
+    card: "polli:text-lg polli:leading-tight",
 };
+
+const brandFaceClasses: Record<HeadingSize, string> = {
+    display: "polli:font-heading",
+    title: "polli:font-heading",
+    section: "polli:font-subheading",
+    subsection: "polli:font-subheading",
+    card: "polli:font-subheading",
+};
+
+const plainFaceClass =
+    "polli:font-body polli:font-semibold polli:tracking-tight";
 
 const textSizeClasses: Record<TextSize, string> = {
     body: "polli:text-base polli:leading-relaxed",
@@ -40,10 +58,15 @@ const textWeightClasses: Record<TextWeight, string> = {
     bold: "polli:font-bold",
 };
 
-export function headingClassName(size: HeadingSize, className?: string) {
+export function headingClassName(
+    size: HeadingSize,
+    className?: string,
+    face: HeadingFace = "brand",
+) {
     return cn(
         "polli:break-words polli:text-theme-text-strong",
         headingSizeClasses[size],
+        face === "plain" ? plainFaceClass : brandFaceClasses[size],
         className,
     );
 }
@@ -71,6 +94,7 @@ function textClassName({
 type HeadingOwnProps<T extends ElementType> = PropsWithChildren<{
     as?: T;
     size?: HeadingSize;
+    face?: HeadingFace;
     className?: string;
 }>;
 
@@ -80,13 +104,17 @@ export type HeadingProps<T extends ElementType = "h2"> = HeadingOwnProps<T> &
 export function Heading<T extends ElementType = "h2">({
     as,
     size = "section",
+    face = "brand",
     className,
     children,
     ...rest
 }: HeadingProps<T>) {
     const Component = as || "h2";
     return (
-        <Component {...rest} className={headingClassName(size, className)}>
+        <Component
+            {...rest}
+            className={headingClassName(size, className, face)}
+        >
             {children}
         </Component>
     );

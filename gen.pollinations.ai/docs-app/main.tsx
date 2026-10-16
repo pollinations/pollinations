@@ -51,6 +51,7 @@ import { Prose } from "@pollinations/ui/markdown";
 import {
     type ComponentProps,
     type ComponentType,
+    type CSSProperties,
     type FC,
     type RefObject,
     useEffect,
@@ -213,6 +214,20 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
         return () => window.removeEventListener("hashchange", scrollToHash);
     }, []);
 
+    // Built once: the scroll spy re-renders the shell on every step, and
+    // rebuilding 152 sections of markdown each time stalls scrolling.
+    const content = useMemo(
+        () =>
+            pages.map((page) => (
+                <PageView
+                    key={page.id}
+                    page={page}
+                    copyForLlms={page === docs.introduction}
+                />
+            )),
+        [pages, docs],
+    );
+
     const active = useActiveAnchor(scrollRef, anchors);
     const activePage = pageOfAnchor(pages, active) ?? docs.introduction;
 
@@ -292,17 +307,17 @@ const Shell: FC<{ docs: Docs }> = ({ docs }) => {
                 <ScrollArea
                     ref={scrollRef}
                     className="relative min-h-0 min-w-0 flex-1 overscroll-contain px-4 pb-8 sm:px-6 lg:px-10 lg:pt-6"
+                    style={
+                        {
+                            "--polli-color-scrollbar-thumb":
+                                "color-mix(in oklab, var(--polli-color-text-muted) 65%, transparent)",
+                        } as CSSProperties
+                    }
                 >
                     <div className="mx-auto flex w-full max-w-[1280px] gap-10">
                         {/* The page itself is the surface; lines split it. */}
                         <main className="flex min-w-0 flex-1 flex-col divide-y divide-theme-text-strong/10">
-                            {pages.map((page) => (
-                                <PageView
-                                    key={page.id}
-                                    page={page}
-                                    copyForLlms={page === docs.introduction}
-                                />
-                            ))}
+                            {content}
                         </main>
                         <OnThisPage page={activePage} active={active} />
                     </div>
@@ -364,7 +379,7 @@ function useActiveAnchor(
 
 // The dashboard's lockup, then "Docs" in the package's pixel label.
 const Brand: FC<{ large?: boolean }> = ({ large = false }) => (
-    <span className="flex items-center gap-3">
+    <span data-theme="neutral" className="flex items-center gap-3">
         <a
             href="https://pollinations.ai"
             target="_blank"
@@ -378,9 +393,7 @@ const Brand: FC<{ large?: boolean }> = ({ large = false }) => (
             />
         </a>
         <span aria-hidden="true" className="h-4 w-px bg-theme-text-strong/20" />
-        <Eyebrow size="page" data-theme="accent">
-            Docs
-        </Eyebrow>
+        <Eyebrow size="page">Docs</Eyebrow>
     </span>
 );
 
@@ -449,7 +462,6 @@ const Rail: FC<{
                 <NavItem
                     as="a"
                     href={`#${docs.introduction.id}`}
-                    data-theme="accent"
                     size="sm"
                     icon={BookIcon}
                     active={activePage === docs.introduction}
@@ -474,7 +486,6 @@ const Rail: FC<{
                                 <NavItem
                                     as="a"
                                     href={`#${page.id}`}
-                                    data-theme="accent"
                                     size="sm"
                                     icon={icons[page.title] ?? BookIcon}
                                     active={activePage === page}
@@ -650,6 +661,7 @@ const OnThisPage: FC<{ page: Page; active?: string }> = ({ page, active }) => {
     return (
         <aside
             aria-label="On this page"
+            data-theme="neutral"
             className="hidden w-52 shrink-0 2xl:block"
         >
             {anchors.length > 1 && (
@@ -689,8 +701,13 @@ const OperationView: FC<{ op: Operation }> = ({ op }) => (
         titleSize="subsection"
         className={cn(block, lazyCard)}
         action={
-            <ExternalLinkButton href={`/docs/explorer#${op.id}`} size="sm">
-                Test Request
+            <ExternalLinkButton
+                href={`/docs/explorer#${op.id}`}
+                size="sm"
+                external
+                title="Send a real request from the API explorer"
+            >
+                Try it
             </ExternalLinkButton>
         }
         intro={
@@ -882,7 +899,11 @@ const FieldList: FC<{ fields: Field[] }> = ({ fields }) => (
                         </Chip>
                     )}
                     {field.required && (
-                        <Chip intent="warning" size="sm">
+                        <Chip
+                            intent="warning"
+                            size="sm"
+                            className="bg-transparent px-0"
+                        >
                             required
                         </Chip>
                     )}

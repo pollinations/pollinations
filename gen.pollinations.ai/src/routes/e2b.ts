@@ -1,8 +1,10 @@
 import { getLogger } from "@logtape/logtape";
 import { hasAccountPermission } from "@shared/auth/account-permissions.ts";
 import {
+    BannedAccountError,
     extractApiKey,
     loadActiveApiKeyAuthResult,
+    StagingAccessDeniedError,
 } from "@shared/auth/api-key.ts";
 import { isUserBanned } from "@shared/auth/ban.ts";
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
@@ -17,6 +19,7 @@ import { requestId } from "@shared/middleware/request-id.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     priceToEventParams,
+    type TinybirdEventType,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import { eq, inArray, lte } from "drizzle-orm";
@@ -209,6 +212,19 @@ async function requireCapacity(c: E2bContext) {
 
 type Lease = { cost: number; price: number };
 
+// What a charge pays for, as its Tinybird event names it.
+type Charged = {
+    eventType: TinybirdEventType;
+    model: string;
+    provider: string;
+};
+
+const SANDBOX_LEASE: Charged = {
+    eventType: "sandbox.lease",
+    model: "sandbox",
+    provider: "e2b",
+};
+
 // E2B's list cost for `seconds` of this sandbox, and what the caller pays.
 function lease(sandbox: SandboxDetail, seconds: number): Lease {
     const cost =
@@ -221,7 +237,12 @@ function lease(sandbox: SandboxDetail, seconds: number): Lease {
     };
 }
 
-async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
+export async function charge(
+    c: E2bContext,
+    { cost, price }: Lease,
+    startTime: Date,
+    charged = SANDBOX_LEASE,
+) {
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
     try {
@@ -241,7 +262,8 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
             questPollenOnly: c.var.auth.apiKey?.questPollenOnly,
         });
     } catch (error) {
-        c.var.log.error("Sandbox lease charge failed: {error}", {
+        c.var.log.error("{eventType} charge failed: {error}", {
+            eventType: charged.eventType,
             error: error instanceof Error ? error.message : String(error),
         });
     }
@@ -257,15 +279,15 @@ async function charge(c: E2bContext, { cost, price }: Lease, startTime: Date) {
                 responseTime: endTime.getTime() - startTime.getTime(),
                 responseStatus: 200,
                 environment: c.env.ENVIRONMENT,
-                eventType: "sandbox.lease",
+                eventType: charged.eventType,
                 ...requestIdentity(c.var.auth),
                 ...(deduction?.payerBucket
                     ? payerBucketToMeter(deduction.payerBucket)
                     : {}),
-                modelRequested: "sandbox",
-                resolvedModelRequested: "sandbox",
-                modelUsed: "sandbox",
-                modelProviderUsed: "e2b",
+                modelRequested: charged.model,
+                resolvedModelRequested: charged.model,
+                modelUsed: charged.model,
+                modelProviderUsed: charged.provider,
                 fallbackUsed: false,
                 isFinal: true,
                 isBilledUsage: true,
@@ -639,7 +661,7 @@ export const e2bRoutes = new Hono<Env>()
 // Read again for every renewal, so deleting the key, letting it expire,
 // removing its machines permission or banning the account ends them. A keep
 // set from the dashboard has no key: its owner pays, until banned.
-async function loadPayer(
+export async function loadPayer(
     env: CloudflareBindings,
     apiKeyId: string | null,
     ownerId = "",
@@ -657,7 +679,17 @@ async function loadPayer(
         apiKeyId,
         rawApiKey: "",
         env,
-    }).catch(() => null);
+    }).catch((error) => {
+        // A banned account can't pay; anything else (a D1 hiccup) is tried
+        // again next run rather than ending the keep.
+        if (
+            error instanceof BannedAccountError ||
+            error instanceof StagingAccessDeniedError
+        ) {
+            return null;
+        }
+        throw error;
+    });
     if (!result?.user) return null;
     const { rawKey: _rawKey, ...apiKey } = result.apiKey;
     return { user: { id: result.user.id, tier: result.user.tier }, apiKey };

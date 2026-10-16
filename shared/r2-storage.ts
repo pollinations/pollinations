@@ -1,4 +1,5 @@
-const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+// R2 deletes a media file 30 days after it was last written.
+export const R2_LIFECYCLE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const DEFAULT_R2_TTL_REFRESH_AGE_MS = R2_LIFECYCLE_TTL_MS / 2;
 
@@ -30,6 +31,33 @@ async function writeReadableToWritable(
     }
 }
 
+/**
+ * Writes an object's own bytes back to it, which restarts its lifecycle age.
+ * Resolves to null when the object changed or was deleted meanwhile.
+ */
+export async function rewriteR2Object(
+    bucket: R2Bucket,
+    key: string,
+    object: R2Object,
+    body: ReadableStream<Uint8Array>,
+): Promise<R2Object | null> {
+    const fixedLengthStream = new FixedLengthStream(object.size);
+    const [stored] = await Promise.all([
+        bucket.put(key, fixedLengthStream.readable, {
+            httpMetadata: object.httpMetadata,
+            customMetadata: object.customMetadata,
+            storageClass: object.storageClass,
+            // Rewrite only while the object is still these exact bytes:
+            // a concurrent delete (or replacement) must win, or the
+            // refresh would silently resurrect an object that can no
+            // longer be deleted through any API.
+            onlyIf: { etagMatches: object.etag },
+        }),
+        writeReadableToWritable(body, fixedLengthStream.writable),
+    ]);
+    return stored;
+}
+
 export function refreshR2ObjectTtl(
     bucket: R2Bucket,
     key: string,
@@ -50,25 +78,13 @@ export function refreshR2ObjectTtl(
     }
 
     const [responseBody, refreshBody] = object.body.tee();
-    const fixedLengthStream = new FixedLengthStream(object.size);
-
     waitUntil(
-        Promise.all([
-            writeReadableToWritable(
-                refreshBody as ReadableStream<Uint8Array>,
-                fixedLengthStream.writable,
-            ),
-            bucket.put(key, fixedLengthStream.readable, {
-                httpMetadata: object.httpMetadata,
-                customMetadata: object.customMetadata,
-                storageClass: object.storageClass,
-                // Rewrite only while the object is still these exact bytes:
-                // a concurrent delete (or replacement) must win, or the
-                // refresh would silently resurrect an object that can no
-                // longer be deleted through any API.
-                onlyIf: { etagMatches: object.etag },
-            }),
-        ])
+        rewriteR2Object(
+            bucket,
+            key,
+            object,
+            refreshBody as ReadableStream<Uint8Array>,
+        )
             .then(() => undefined)
             .catch(onError),
     );

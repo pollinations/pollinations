@@ -6,6 +6,7 @@ export default defineConfig({
     schema: [
         "../shared/db/better-auth.ts",
         "../shared/db/media-catalog.ts",
+        "../shared/db/media-storage.ts",
         "../shared/db/sandbox.ts",
     ],
     dialect: "sqlite",

@@ -1,6 +1,12 @@
+import { canCoverEstimatedCharge } from "@shared/billing/bucket-selection.ts";
+import { getFundedUserBalance } from "@shared/billing/internal-automation.ts";
+import { mediaStorageLease } from "@shared/billing/media-storage.ts";
 import { bytesToHex } from "@shared/client-ip.ts";
+import { type MediaExpiry, mediaStorage } from "@shared/db/media-storage.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { R2_LIFECYCLE_TTL_MS } from "@shared/r2-storage.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -42,6 +48,7 @@ const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
+const TOP_UP_URL = "https://enter.pollinations.ai/top-up";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
 const UNCACHED_CACHE_CONTROL = "no-store";
@@ -59,19 +66,25 @@ interface Env {
  * `byopApp`, which is null for keys not minted through the BYOP flow.
  */
 interface KeyVerifyResponse {
+    id: string;
     valid: boolean;
     type: string;
     name: string | null;
     userId: string | null;
     byopApp: { clientKeyId: string } | null;
+    pollenBudget: number | null;
+    questPollenOnly: boolean;
 }
 
 interface AuthResult {
+    keyId: string | null;
     valid: boolean;
     type: string;
     name: string | null;
     userId: string | null;
     byopClientKeyId: string | null;
+    pollenBudget: number | null;
+    questPollenOnly: boolean;
 }
 
 async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
@@ -86,11 +99,14 @@ async function verifyApiKey(apiKey: string): Promise<AuthResult | null> {
         // omits them, and `undefined` would slip past the `=== null` guards
         // downstream — never treat an unattested key as user-attached.
         return {
+            keyId: data.id ?? null,
             valid: true,
             type: data.type,
             name: data.name ?? null,
             userId: data.userId ?? null,
             byopClientKeyId: data.byopApp?.clientKeyId ?? null,
+            pollenBudget: data.pollenBudget ?? null,
+            questPollenOnly: data.questPollenOnly ?? false,
         };
     } catch {
         return null;
@@ -104,6 +120,93 @@ function extractApiKey(req: Request): string | null {
     if (bearer) return bearer;
     return new URL(req.url).searchParams.get("key");
 }
+
+// Uploads and deletes need a key that belongs to an account: the account
+// pays for the storage and owns the file.
+type AccountAuth = AuthResult & { keyId: string; userId: string };
+
+function hasAccount(auth: AuthResult): auth is AccountAuth {
+    return auth.keyId !== null && auth.userId !== null;
+}
+
+// How an upload's storage is paid: the key that pays, the expiry mode, and
+// the length of the first period.
+type PaidStorage = {
+    apiKeyId: string;
+    expiresAfter: MediaExpiry;
+    ms: number;
+};
+
+function paidStorage(
+    auth: AccountAuth,
+    expiresAfter: ExpiresAfter,
+): PaidStorage {
+    const apiKeyId = auth.keyId;
+    if (expiresAfter === undefined) {
+        return {
+            apiKeyId,
+            expiresAfter: "last_active_at",
+            ms: R2_LIFECYCLE_TTL_MS,
+        };
+    }
+    if (expiresAfter === "never") {
+        return { apiKeyId, expiresAfter: "never", ms: R2_LIFECYCLE_TTL_MS };
+    }
+    return {
+        apiKeyId,
+        expiresAfter: "created_at",
+        ms: expiresAfter.seconds * 1000,
+    };
+}
+
+// Storage is paid in advance, so refuse what the key can't pay for now
+// rather than store a file that gen's cron deletes minutes later. The same
+// check as gen's before a request.
+async function canPayForStorage(
+    db: D1Database,
+    auth: AccountAuth,
+    storage: PaidStorage,
+    size: number,
+): Promise<boolean> {
+    const { price } = mediaStorageLease(size, storage.ms);
+    if (auth.pollenBudget !== null && auth.pollenBudget < price) return false;
+    const balance = await getFundedUserBalance(getDb(db), db, auth.userId);
+    return canCoverEstimatedCharge(
+        // A Quest Pollen only key can never draw on the paid balance.
+        auth.questPollenOnly ? { ...balance, packBalance: 0 } : balance,
+        price,
+    );
+}
+
+/**
+ * Starts a paid upload's first period at `start`, taken just before the
+ * upload, so R2 keeps the file at least that long. Gen's cron charges the
+ * period within minutes, or deletes the file if the key can't pay.
+ */
+async function startPaidStorage(
+    d1: D1Database,
+    id: string,
+    size: number,
+    start: Date,
+    { apiKeyId, expiresAfter, ms }: PaidStorage,
+): Promise<void> {
+    const row = {
+        apiKeyId,
+        size,
+        expiresAfter,
+        paidUntil: start,
+        renewTo: new Date(start.getTime() + ms),
+    };
+    // A custom id can be reused once R2 has deleted its file.
+    await getDb(d1)
+        .insert(mediaStorage)
+        .values({ id, ...row })
+        .onConflictDoUpdate({ target: mediaStorage.id, set: row });
+}
+
+const PAYMENT_REQUIRED = {
+    error: `Not enough pollen to store this file. Top up at ${TOP_UP_URL}, or raise this key's budget.`,
+};
 
 function fileTooLargeError(maxSize: number): { error: string } {
     return { error: `File too large. Max size: ${maxSize / 1024 / 1024}MB` };
@@ -175,6 +278,13 @@ const UploadResponseSchema = z.object({
         .describe(
             "Tags the upload was published with; present only when tagged",
         ),
+    expiresAfter: z
+        .union([
+            z.literal("never"),
+            z.object({ anchor: z.literal("created_at"), seconds: z.number() }),
+        ])
+        .optional()
+        .describe("The expiresAfter you sent, if any"),
 });
 
 const UploadIdSchema = z
@@ -188,8 +298,35 @@ const UploadIdSchema = z
         "Optional case-sensitive ID, scoped to your account. The returned id includes an opaque account prefix. Existing IDs return 409; omit for a random ID.",
     );
 
+// Named after OpenAI's `expires_after` (Files API). Omitted, the file stays
+// while it is used, like OpenAI's "last_active_at" anchor.
+const EXPIRES_AFTER_ERROR =
+    'expiresAfter must be "never" or { anchor: "created_at", seconds: 3600 to 2592000 }';
+const ExpiresAfterSchema = z
+    .union(
+        [
+            z.literal("never"),
+            z.object({
+                anchor: z.literal("created_at"),
+                // Zod reports a range error itself, not the union's.
+                seconds: z.coerce
+                    .number()
+                    .int(EXPIRES_AFTER_ERROR)
+                    .min(3600, EXPIRES_AFTER_ERROR)
+                    .max(2592000, EXPIRES_AFTER_ERROR),
+            }),
+        ],
+        { error: EXPIRES_AFTER_ERROR },
+    )
+    .optional()
+    .describe(
+        'Omit to keep the file while it is used: a fetch in its last 15 paid days renews it for 30 days from then. `{ "anchor": "created_at", "seconds": N }` (3600 to 2592000) deletes it N seconds after the upload. `"never"` renews it until you delete it, and needs a secret (sk_) key.',
+    );
+type ExpiresAfter = z.infer<typeof ExpiresAfterSchema>;
+
 const JsonUploadRequestSchema = z.object({
     id: UploadIdSchema,
+    expiresAfter: ExpiresAfterSchema,
     data: z
         .string()
         .min(1)
@@ -291,7 +428,7 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            'Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries.\n\n**Storage is paid in advance.** Files uploaded with your account\'s keys cost half of Cloudflare\'s storage price, 0.0075 pollen per GB-month (files under 128 KiB count as 128 KiB), and show in your usage as model `media`. The key that uploaded a file pays each period up front, the first right after the upload, so a key that can\'t pay gets 402. By default a file stays while it is used: a fetch in its last 15 paid days renews it for 30 days from then. Anyone\'s fetch counts, so give the key a budget or set a time to cap what a popular file costs. `expiresAfter[anchor]=created_at` with `expiresAfter[seconds]` (3600 to 2592000) deletes it that long after the upload. `expiresAfter=never` renews it until you delete it (secret sk_ key only). JSON takes the same as `"never"` or `{ "anchor": "created_at", "seconds": N }`. If the key can\'t pay a renewal, is deleted, or its account is banned, the file gets no more renewals, even after a top-up, and is deleted when its paid time ends. Your secret key deletes any file uploaded with your account\'s keys (DELETE /media/:id). Files uploaded before paid storage stay free: they expire after 30 days, and a GET refreshes them once they are at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag\'s public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.',
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -313,6 +450,23 @@ api.post(
                                 type: "string",
                                 description:
                                     "Comma-separated tags. Tagging publishes the upload to those tags' public galleries.",
+                            },
+                            expiresAfter: {
+                                type: "string",
+                                enum: ["never"],
+                                description:
+                                    "Renews the file until you delete it. Needs a secret (sk_) key.",
+                            },
+                            "expiresAfter[anchor]": {
+                                type: "string",
+                                enum: ["created_at"],
+                                description:
+                                    "With `expiresAfter[seconds]`: delete the file that long after the upload.",
+                            },
+                            "expiresAfter[seconds]": {
+                                type: "integer",
+                                minimum: 3600,
+                                maximum: 2592000,
                             },
                         },
                     },
@@ -339,13 +493,26 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid ID/tags, or custom ID/tags on a key with no user account",
+                    'No/empty file, invalid JSON/base64, invalid ID/tags/expiresAfter, or expiresAfter "never" without a secret key',
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            402: {
+                description:
+                    "The balance or the key's budget can't pay for storing the file",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
             },
             401: {
                 description: "Missing or invalid API key",
+                content: {
+                    "application/json": { schema: resolver(ErrorSchema) },
+                },
+            },
+            403: {
+                description: "API key not attached to a user account",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -386,6 +553,12 @@ api.post(
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
+        if (!hasAccount(authResult)) {
+            return c.json(
+                { error: "This API key is not attached to a user account" },
+                403,
+            );
+        }
 
         const uploadMaxSize =
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -397,6 +570,7 @@ api.post(
         let contentType: string;
         let fileName: string | undefined;
         let requestedId: string | undefined;
+        let expiresAfter: ExpiresAfter;
 
         const requestContentType = c.req.header("content-type") || "";
         const rawTags: string[] = [];
@@ -442,7 +616,14 @@ api.post(
             if (size > uploadMaxSize) {
                 return c.json(fileTooLargeError(uploadMaxSize), 413);
             }
+            const storage = paidStorage(authResult, undefined);
+            if (
+                !(await canPayForStorage(c.env.DB, authResult, storage, size))
+            ) {
+                return c.json(PAYMENT_REQUIRED, 402);
+            }
             try {
+                const start = new Date();
                 const upload = await uploadUnlistedMedia(
                     c.env,
                     c.req.raw.body,
@@ -452,7 +633,16 @@ api.post(
                         size,
                         uploadedBy: authResult.name || "unknown",
                         keyType: authResult.type,
+                        ownerUserId: authResult.userId,
+                        expiresAfter: storage.expiresAfter,
                     },
+                );
+                await startPaidStorage(
+                    c.env.DB,
+                    upload.id,
+                    size,
+                    start,
+                    storage,
                 );
                 return c.json(upload);
             } catch (error) {
@@ -478,6 +668,16 @@ api.post(
                     );
                 }
                 requestedId = parsedId.data;
+                const parsedExpiry = ExpiresAfterSchema.safeParse(
+                    stagedUpload.expiresAfter,
+                );
+                if (!parsedExpiry.success) {
+                    return c.json(
+                        { error: parsedExpiry.error.issues[0].message },
+                        400,
+                    );
+                }
+                expiresAfter = parsedExpiry.data;
                 fileSize = stagedUpload.size;
                 contentType =
                     stagedUpload.contentType ||
@@ -503,6 +703,7 @@ api.post(
                 }
                 const body = parsedBody.data;
                 requestedId = body.id;
+                expiresAfter = body.expiresAfter;
 
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
@@ -555,25 +756,22 @@ api.post(
                 throw error;
             }
 
-            if (authResult.userId === null && tags.length > 0) {
+            // Publishable keys ship inside public clients; anyone holding one
+            // could commit its owner to paying for storage forever.
+            if (expiresAfter === "never" && authResult.type !== "secret") {
                 return c.json(
                     {
-                        error: "publishing (tags) requires a user-owned API key",
+                        error: 'expiresAfter "never" requires a secret (sk_) API key',
                     },
                     400,
                 );
             }
+            const storage = paidStorage(authResult, expiresAfter);
 
             // One id for everything: the R2 storage key, the retrieval id,
             // and (for user uploads) the catalog row id.
             let id: string = crypto.randomUUID();
             if (requestedId !== undefined) {
-                if (authResult.userId === null) {
-                    return c.json(
-                        { error: "Custom IDs require a user-owned API key" },
-                        400,
-                    );
-                }
                 const namespace = bytesToHex(
                     await crypto.subtle.digest(
                         "SHA-256",
@@ -589,11 +787,22 @@ api.post(
                     return c.json({ error: "Media ID already exists" }, 409);
                 }
             }
+            if (
+                !(await canPayForStorage(
+                    c.env.DB,
+                    authResult,
+                    storage,
+                    fileSize,
+                ))
+            ) {
+                return c.json(PAYMENT_REQUIRED, 402);
+            }
             const cacheControl =
                 tags.length > 0 || requestedId !== undefined
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
+            const start = new Date();
             const putOptions: R2PutOptions = {
                 ...(requestedId !== undefined && {
                     onlyIf: new Headers({ "If-None-Match": "*" }),
@@ -607,6 +816,10 @@ api.post(
                     originalName: fileName || "",
                     uploadedBy: authResult.name || "",
                     keyType: authResult.type,
+                    // Lets the owner delete untagged files too.
+                    ownerUserId: authResult.userId,
+                    // Tells GET whether to renew the paid storage.
+                    expiresAfter: storage.expiresAfter,
                 },
             };
             let stored: R2Object | null;
@@ -634,9 +847,7 @@ api.post(
             // rows (untagged uploads stay uncataloged blobs behind their
             // unguessable id). The write is awaited inline (not waitUntil):
             // a D1 failure must surface as a 500, not be silently swallowed.
-            // `tags` non-empty implies a user-attached key (rejected above
-            // otherwise), so ownerUserId is always real here.
-            if (tags.length > 0 && authResult.userId !== null) {
+            if (tags.length > 0) {
                 const db = getDb(c.env.DB);
                 await insertUploadCatalogItem(db, {
                     id,
@@ -647,6 +858,7 @@ api.post(
                     tags,
                 });
             }
+            await startPaidStorage(c.env.DB, id, fileSize, start, storage);
 
             console.log(
                 JSON.stringify({
@@ -665,6 +877,7 @@ api.post(
                 contentType,
                 size: fileSize,
                 ...(tags.length > 0 ? { tags } : {}),
+                ...(expiresAfter !== undefined && { expiresAfter }),
             });
         } catch (error) {
             if (
@@ -694,7 +907,7 @@ api.get(
         tags: ["media.pollinations.ai"],
         summary: "List a public tag gallery",
         description:
-            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems reference storage with a 30-day lifecycle. A GET refreshes the lifecycle once an object is at least 15 days old. An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
+            "List the public gallery for a tag: every published item carrying that tag, any owner, newest first. Tagging an upload is what publishes it, so galleries are fully public — no API key needed. `tag` is required.\n\nItems expire like their uploads (see POST /upload). An expired item keeps its catalog entry, but its url 404s. **Alpha:** this endpoint is new and its API may still change.",
         security: [],
         responses: {
             200: {
@@ -765,7 +978,7 @@ api.delete(
         tags: ["media.pollinations.ai"],
         summary: "Delete media",
         description:
-            "Delete a published media item you own: the file, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged uploads were never published, have no catalog entry, and can't be deleted — they use the same 30-day lifecycle, refreshed by a GET once they are at least 15 days old. **Alpha:** this endpoint is new and its API may still change.",
+            "Delete a file uploaded with any of your account's API keys: the file, its paid storage, its catalog entry, and all its tags are removed, so it disappears from galleries and its URL 404s. Requires your **secret (`sk_`)** API key. Untagged files are cached as immutable, so copies already in browser or other caches can outlive the delete. Untagged files uploaded before owners were recorded (October 2026) can't be deleted; they expire after 30 days unless a GET refreshes them. **Alpha:** this endpoint is new and its API may still change.",
         parameters: [
             {
                 name: "id",
@@ -799,7 +1012,7 @@ api.delete(
                 },
             },
             404: {
-                description: "No published media item with this id",
+                description: "No file with this id and a recorded owner",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -820,7 +1033,7 @@ api.delete(
         if (!auth) {
             return c.json({ error: "Invalid or expired API key" }, 401);
         }
-        if (auth.userId === null) {
+        if (!hasAccount(auth)) {
             return c.json(
                 { error: "This API key is not attached to a user account" },
                 403,
@@ -838,10 +1051,14 @@ api.delete(
 
         const id = c.req.param("id");
         const db = getDb(c.env.DB);
-        // Only cataloged (published) items are deletable: an uncataloged id
-        // has no owner record to authorize against, so it answers 404 just
-        // like an unknown id.
-        const owner = await catalogItemOwner(db, id);
+        // The owner is in the catalog for tagged files and in the file's own
+        // metadata for the rest. Older untagged files record none: like an
+        // unknown id, they answer 404.
+        let owner = await catalogItemOwner(db, id);
+        if (owner === undefined) {
+            const object = await c.env.MEDIA_BUCKET.head(id);
+            owner = object?.customMetadata?.ownerUserId;
+        }
         if (owner === undefined) {
             return c.json({ error: "Media item not found" }, 404);
         }
@@ -849,11 +1066,13 @@ api.delete(
             return c.json({ error: "You do not own this media item" }, 403);
         }
 
-        // Blob first, then catalog rows: if either step fails the item is
-        // still cataloged (owner still resolvable), so the DELETE can simply
-        // be retried — R2 delete is idempotent. The reverse order would
-        // strand an undeletable public blob behind a 404ing retry. In the
-        // brief gap a gallery may list an item whose URL already 404s.
+        // The paid storage first, so no renewal is paid for a deleted file. Then the
+        // blob, then catalog rows: if either step fails the item is still
+        // cataloged (owner still resolvable), so the DELETE can simply be
+        // retried — R2 delete is idempotent. The reverse order would strand
+        // an undeletable public blob behind a 404ing retry. In the brief gap
+        // a gallery may list an item whose URL already 404s.
+        await db.delete(mediaStorage).where(eq(mediaStorage.id, id));
         await c.env.MEDIA_BUCKET.delete(id);
         await deleteCatalogItem(db, id);
 
@@ -877,7 +1096,7 @@ api.on(
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
         description:
-            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
+            "Get a file by its id. Retrieving the body of a file uploaded with an account's key renews it for 30 days when it is in the default mode and in its last 15 paid days; the key that uploaded it pays. Other files have their 30-day retention refreshed once they are at least 15 days old. HEAD requests do neither.",
         security: [],
         responses: {
             200: {

@@ -78,7 +78,7 @@ Defaults: `tongyi-mai/z-image-turbo`, 1024x1024. Without `--output` the file is 
 URL=$(polli upload cat.png)
 polli gen image "make the cat purple" --image "$URL" --output purple.png
 ```
-`polli upload <file>` streams one raw-file request to `media.pollinations.ai` (400 MiB max; 30-day lifecycle, refreshed by GETs once the object is at least 15 days old). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
+`polli upload <file>` streams one raw-file request to `media.pollinations.ai` (400 MiB max; storage paid in advance at 0.0075 pollen per GB-month, and a file stays while it is fetched). Each upload receives a unique id. Human mode: URL on stdout and id/size/contentType on stderr. `--json`: full upload response on stdout. The returned URL is public (no auth to fetch) and works anywhere `--image` is accepted — `gen image`, `gen video`, etc.
 
 ### Generate text
 ```bash

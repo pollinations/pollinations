@@ -385,11 +385,16 @@ describe("gen worker routing", () => {
             "pollinations-api",
             "bring-your-own-pollen",
             "quest-contributor",
+            "pollinations-sdk",
         ]);
         const [polli, apiSkill, byopSkill] = body.skills;
         expect(polli.description).toMatch(/^Generate images/);
         expect(apiSkill.description).toMatch(/without installing/);
         expect(byopSkill.description).toMatch(/Bring Your Own Pollen/);
+        expect(
+            body.skills.find((skill) => skill.name === "pollinations-sdk")
+                ?.description,
+        ).toMatch(/npm package/);
 
         for (const skill of body.skills) {
             expect(skill.type).toBe("skill-md");
@@ -425,6 +430,7 @@ describe("gen worker routing", () => {
         for (const path of [
             "index.json",
             "pollinations-api/SKILL.md",
+            "pollinations-sdk/SKILL.md",
             "bring-your-own-pollen/SKILL.md",
             "quest-contributor/SKILL.md",
         ]) {

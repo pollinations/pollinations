@@ -26,8 +26,8 @@ const PROVIDER_NPM = "@ai-sdk/openai-compatible";
 /**
  * OpenCode's config schema requires `limit.output` alongside `limit.context`
  * and rejects the whole file without it ("Configuration is invalid ... Missing
- * key ...limit.output"). The models API exposes no output cap, so cap at a
- * value safe for every catalog model.
+ * key ...limit.output"). The models API exposes no output cap, so this is a
+ * fallback, not a per-model limit.
  */
 const MAX_OUTPUT_TOKENS = 32768;
 /** The 1.x plugin earlier versions of `on` enabled; cleaned up when found. */
@@ -157,9 +157,20 @@ const legacyKey = (ctx: HarnessContext): string | null => {
     return typeof key === "string" && key.length > 5 ? key : null;
 };
 
+/** Drops the removed plugin's key, keeping its other settings (as main did). */
+const deleteLegacyKey = (ctx: HarnessContext) => {
+    const path = legacyKeyFile(ctx);
+    const config = readJson(path);
+    if (config === null || config.apiKey === undefined) return false;
+    delete config.apiKey;
+    if (Object.keys(config).length === 0) removeIfExists(path);
+    else writeJson(path, config);
+    return true;
+};
+
 const providerBlock = (models: HarnessModel[], apiKey: string) => ({
     npm: PROVIDER_NPM,
-    name: LABEL,
+    name: "Pollinations",
     options: { baseURL: `${BASE_URL}/v1`, apiKey },
     models: Object.fromEntries(
         models.map((model) => [
@@ -193,9 +204,8 @@ const writeConfig = (
     config.model = `${PROVIDER}/${settings.model}`;
     removeLegacyPlugin(config);
     writeJson(path, config);
-    // The 1.x plugin is gone, so its key file is orphaned; the provider block
-    // above now carries the key.
-    removeIfExists(legacyKeyFile(ctx));
+    // The provider block above now carries the key.
+    deleteLegacyKey(ctx);
 };
 
 const stripConfig = (ctx: HarnessContext): boolean => {
@@ -219,10 +229,7 @@ const stripConfig = (ctx: HarnessContext): boolean => {
         if (changed) writeJson(path, config);
     }
 
-    if (readTextIfExists(legacyKeyFile(ctx)) !== null) {
-        removeIfExists(legacyKeyFile(ctx));
-        changed = true;
-    }
+    if (deleteLegacyKey(ctx)) changed = true;
     return changed;
 };
 

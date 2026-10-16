@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { configureOpenCode, disableOpenCode, opencode } from "./opencode.js";
+import { applyWithSnapshot } from "./snapshot.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -62,7 +63,7 @@ describe("opencode harness", () => {
         expect(config.plugin).toBeUndefined();
         expect(config.provider.pollinations).toMatchObject({
             npm: "@ai-sdk/openai-compatible",
-            name: "OpenCode",
+            name: "Pollinations",
             options: {
                 baseURL: "https://gen.pollinations.ai/v1",
                 apiKey: "sk_test_key",
@@ -133,7 +134,10 @@ describe("opencode harness", () => {
         const config = readJsonFile(opencodeFile());
         expect(config.plugin).toEqual(["other-plugin"]);
         expect(config.model).toBe("pollinations/openai");
-        expect(existsSync(legacyKeyFile())).toBe(false);
+        expect(readJsonFile(legacyKeyFile())).toEqual({
+            mode: "quest",
+            lang: "en",
+        });
         expect(result.configured).toBe(true);
     });
 
@@ -215,6 +219,61 @@ describe("opencode harness", () => {
 
         expect(disableOpenCode(ctx).outcome).toBe("restored");
         expect(read(legacyKeyFile())).toBe(legacy);
+    });
+
+    it.each([
+        ["off", false],
+        ["on, then off", true],
+    ])(
+        "restores a snapshot written by the earlier plugin-based CLI (%s)",
+        (_, onAgain) => {
+            mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+            const original = '{"model":"anthropic/claude-sonnet"}\n';
+            writeFileSync(opencodeFile(), original);
+            applyWithSnapshot(
+                ctx,
+                "opencode",
+                [opencodeFile(), legacyKeyFile()],
+                () => {
+                    writeFileSync(
+                        opencodeFile(),
+                        JSON.stringify({
+                            plugin: ["opencode-pollinations-plugin"],
+                            model: "pollinations/enter/openai",
+                        }),
+                    );
+                    mkdirSync(configDir(), { recursive: true });
+                    writeFileSync(legacyKeyFile(), '{"apiKey":"sk_old_key"}');
+                },
+            );
+
+            if (onAgain) configureOpenCode(ctx, settings);
+            expect(disableOpenCode(ctx).outcome).toBe("restored");
+            expect(read(opencodeFile())).toBe(original);
+            expect(existsSync(legacyKeyFile())).toBe(false);
+        },
+    );
+
+    it("strips an earlier plugin setup and its key when no backup exists", () => {
+        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
+        writeFileSync(
+            opencodeFile(),
+            JSON.stringify({
+                plugin: ["other-plugin", "opencode-pollinations-plugin"],
+                model: "pollinations/enter/openai",
+            }),
+        );
+        mkdirSync(configDir(), { recursive: true });
+        writeFileSync(
+            legacyKeyFile(),
+            JSON.stringify({ apiKey: "sk_old_key", mode: "free" }),
+        );
+
+        expect(disableOpenCode(ctx).outcome).toBe("stripped");
+        const config = readJsonFile(opencodeFile());
+        expect(config.plugin).toEqual(["other-plugin"]);
+        expect(config.model).toBeUndefined();
+        expect(readJsonFile(legacyKeyFile())).toEqual({ mode: "free" });
     });
 
     it("only strips the Pollinations entries when the config changed since on", () => {

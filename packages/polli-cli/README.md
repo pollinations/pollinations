@@ -177,9 +177,10 @@ The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). Hermes Agent
 stores its provider and skill under `$HERMES_HOME` (default `~/.hermes`, or
 `%LOCALAPPDATA%\hermes` on Windows) and discovers the live Pollinations models;
-install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode uses
-its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
-their native `models.json` provider support.
+install its hosted MCP servers with `polli mcp install hermes --all`. OpenCode 1.x
+and 2.0 use a native Pollinations provider; add its media tools separately with
+`polli mcp install opencode --all`. OpenClaw uses `openclaw.json`, while Pi and
+Prime Agent use their native `models.json` provider support.
 Pi 0.99+ also supports `polli mcp install pi --all` for native hosted MCP
 servers. Run `/reload` in Pi afterward; remove them with `polli mcp remove pi`.
 Model setup remains compatible with older Pi versions.

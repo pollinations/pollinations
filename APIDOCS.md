@@ -27,11 +27,22 @@ curl https://gen.pollinations.ai/v1/models \
 
 **3. Pick an endpoint** from the [📑 Contents](#-contents) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)
+## Guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Connect User Wallets (BYOP)](https://gen.pollinations.ai/docs#tag/connect-user-wallets) | Let users pay with their own Pollen |
+| [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) | Publish a hosted agent |
+| [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) | Connect your model endpoint |
+| [Sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) | Run code in a virtual machine |
+| [Coding Harnesses](https://gen.pollinations.ai/docs#tag/coding-harnesses) | Connect a coding assistant |
+| [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) | Give agents access to tools |
+| [CLI](https://gen.pollinations.ai/docs#tag/cli) | Use Pollinations from a terminal |
 
 ## 📑 Contents
 
 - [🚀 Getting Started](#-getting-started)
+- [Guides](#guides)
 - [🔐 Authentication](#-authentication)
 - [🔓 Sign in with Pollinations (OAuth 2.1)](#-sign-in-with-pollinations-oauth-21)
 - [🧪 Use any OpenAI SDK](#-use-any-openai-sdk)
@@ -330,7 +341,7 @@ Generate text using OpenAI-compatible Chat Completions and stateless Responses A
 
 ### Responses API
 
-Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.
+Every text model that lists `/v1/chat/completions` in `supported_endpoints` from [`GET /v1/models`](https://gen.pollinations.ai/v1/models) or [`GET /text/models`](https://gen.pollinations.ai/text/models) also lists `/v1/responses`. Models with a Responses upstream (configured built-in providers, community models and endpoint agents registered with a Responses URL, managed prompt agents) call it directly. All other text models, including community models registered with Chat Completions, run each Responses request through the Chat Completions pipeline and translate the answer back, with the same billing, key permissions, safety, rate limits, caching and fallback as Chat Completions.
 
 ```bash
 curl https://gen.pollinations.ai/v1/responses \
@@ -396,13 +407,13 @@ const message = await client.messages.create({
 });
 ```
 
-Requests run as Chat Completions requests: balance checks, key permissions, rate limits, caching and billing are the same. Streaming, tools, images, PDF documents (base64 `document` blocks, sent as Chat `file` parts), system prompts and stop sequences depend on the selected model's capabilities; see [`/text/models`](/text/models). `cache_control` uses the same provider support as Chat Completions (see Prompt caching below); custom cache TTLs are not supported. `thinking` sets `reasoning_effort` (`output_config.effort` for adaptive thinking), and provider reasoning returns as `thinking` blocks. Usage reports `input_tokens`, `output_tokens`, `cache_read_input_tokens` and `cache_creation_input_tokens`; a response without provider usage fails, and a stream ends with an `error` event. Errors use Anthropic's error shape. `/v1/messages/count_tokens`, batches, files, server tools and `x-api-key` authentication are not supported.
+Requests run as Chat Completions requests: balance checks, key permissions, rate limits, caching and billing are the same. Streaming, tools, images, PDF documents (base64 `document` blocks, sent as Chat `file` parts), system prompts and stop sequences depend on the selected model's capabilities; see [`/text/models`](https://gen.pollinations.ai/text/models). `cache_control` uses the same provider support as Chat Completions (see Prompt caching below); custom cache TTLs are not supported. `thinking` sets `reasoning_effort` (`output_config.effort` for adaptive thinking), and provider reasoning returns as `thinking` blocks. Usage reports `input_tokens`, `output_tokens`, `cache_read_input_tokens` and `cache_creation_input_tokens`; a response without provider usage fails, and a stream ends with an `error` event. Errors use Anthropic's error shape. `/v1/messages/count_tokens`, batches, files, server tools and `x-api-key` authentication are not supported.
 
 Claude Code sends `cache_control` automatically. Fireworks-hosted models that reject this field cannot currently be used with Claude Code; see [the compatibility issue](https://github.com/pollinations/pollinations/issues/15682).
 
 ### Media models in conversations
 
-Image, video, audio and 3D models that advertise these endpoints in [`/models`](/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
+Image, video, audio and 3D models that advertise these endpoints in [`/models`](https://gen.pollinations.ai/models) accept a text prompt. Only the last user message is used; history, instructions and text-generation settings are ignored. Its text parts (or a string Responses `input`) form the prompt. Image parts (`image_url` in Chat, `input_image` in Responses, as URLs or data URIs) are the source images of image models and the start frame of video models that list `image` under `input_modalities`, exactly as `/v1/images/edits` does; other models, including 3D, return HTTP 400 for them, and any other attachment type returns HTTP 400. Use the native media endpoints for generation settings.
 
 Base64 PDFs go in a Chat `file` part: `file.file_data` as a `data:application/pdf;base64,...` URI, or raw base64 with `file.mime_type: "application/pdf"`. Claude models on Bedrock, OpenAI models on Azure/OpenAI (including those served through the Responses API) and Gemini models read them; an optional `file.filename` (or `file.file_name`) is passed to OpenAI as the filename. Models without `image` under `input_modalities` return HTTP 400 for file parts, except on OpenRouter, which parses PDFs to text for any model. A `/v1/messages` base64 `document` block takes the same path.
 
@@ -1669,7 +1680,7 @@ remain available. Authentication, key permissions, paid access and manual
 hiding still apply. Owners can manage all their models in My Models.
 
 Time-windowed traffic, latency and fallback breakdowns are served separately by
-`/models/status`, described in [Public Stats](/docs#tag/public-stats).
+`/models/status`, described in [Public Stats](https://gen.pollinations.ai/docs#tag/public-stats).
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -1704,7 +1715,7 @@ Newer Claude and Gemini models may omit sampling controls entirely. On
 Sonnet 4.6, `response_format` supports `json_schema`, not `json_object`.
 Reasoning effort levels and forced-tool restrictions remain model-specific.
 
-## Community Models
+## Community model discovery
 
 Community models and agents use a canonical `community/owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
@@ -1715,7 +1726,7 @@ API key model permissions list model categories and model IDs. A category (`text
 The `source=community` and `source=official` filters are equivalent source filters
 for discovery. Source, access, and status filters combine with AND semantics.
 
-For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.
+For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](https://gen.pollinations.ai/docs#tag/community-models) under Resources.
 
 ## Pollinations-imposed limits
 
@@ -1825,10 +1836,10 @@ Returns available models in the OpenAI-compatible format (`{object: "list", data
 | `data[].input_modalities` | `string`[] | — |
 | `data[].output_modalities` | `string`[] | — |
 | `data[].supported_endpoints` | `string`[] | — |
-| `data[].agent` | `boolean` | — |
-| `data[].base_model` | `string` | — |
+| `data[].agent` | `boolean` | True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models. |
+| `data[].base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `data[].paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `data[].pricing` | `object` | — |
+| `data[].pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `data[].capabilities` | `string`[] | — |
 | `data[].supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `data[].tools` | `boolean` | — |
@@ -1932,10 +1943,10 @@ Returns a single model by ID or alias in the OpenAI-compatible format, resolved 
 | `input_modalities` | `string`[] | — |
 | `output_modalities` | `string`[] | — |
 | `supported_endpoints` | `string`[] | — |
-| `agent` | `boolean` | — |
-| `base_model` | `string` | — |
+| `agent` | `boolean` | True for agents. An agent's charges are the model and tool calls it makes, billed to the caller under those models. |
+| `base_model` | `string` | Model a prompt agent runs on; `pricing` shows its rates. Absent when Gen cannot see which models an agent calls. |
 | `paid_only` * | `boolean` | True when the model needs paid Pollen; Quest Pollen can't pay for it. Same field as on `/models`. |
-| `pricing` | `object` | — |
+| `pricing` | `object` | Pollen rates per billed unit. Paid tool calls an agent makes are billed on top. An agent without `base_model` lists only `currency`: its charges depend on the calls it makes. |
 | `capabilities` | `string`[] | — |
 | `supported_parameters` | `string`[] | Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`. |
 | `tools` | `boolean` | — |
@@ -3188,7 +3199,7 @@ Create and manage managed agents and their callable `community/owner/name` model
 - run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
 ```
 
-See [Publish an Agent](/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
+See [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) for dashboard, CLI, and API examples, or [fork a code agent example](https://github.com/orgs/pollinations/repositories?q=topic%3Apollinations-code-agent-example) to get started.
 
 ### /account/my-models
 

@@ -552,6 +552,26 @@ describe("docs routes", () => {
         expect(html).toContain("#tag/connect-user-wallets");
     });
 
+    it("puts the dashboard, account and help links in the docs drawer", async () => {
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        const html = await response.text();
+        for (const href of [
+            "https://enter.pollinations.ai",
+            "https://enter.pollinations.ai/account",
+            "https://discord.com/channels/885844321461485618/889573359111774329",
+            "https://github.com/pollinations/pollinations/issues",
+        ]) {
+            expect(html).toContain(`href=\\"${href}\\"`);
+        }
+    });
+
     it("serves the guide as Markdown when an agent prefers it", async () => {
         const ctx = createExecutionContext();
         const response = await worker.fetch(

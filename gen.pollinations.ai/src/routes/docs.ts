@@ -22,8 +22,8 @@ import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
+import BRAND_LOCKUP_SVG from "../../../packages/ui/src/brand/lockup-horizontal.svg?raw";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
-import BRAND_MARK_SVG from "../../../packages/ui/src/brand/mark.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
@@ -195,6 +195,43 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
         '<polyline points="3 17 9 11 13 15 21 7" /><polyline points="15 7 21 7 21 13" />',
     ),
 };
+
+// The dashboard's own links, as quiet rows at the foot of the drawer. Icons
+// are packages/ui's AppIcon, AccountIcon, DiscordIcon and BugIcon.
+const DOCS_SIDEBAR_LINKS = [
+    {
+        href: "https://enter.pollinations.ai",
+        label: "Dashboard",
+        icon: docsIcon(
+            '<rect x="2" y="4" width="20" height="14" rx="2" /><path d="M2 20h20" />',
+        ),
+    },
+    {
+        // Signed-out visitors are sent to sign in, then back to their account.
+        href: "https://enter.pollinations.ai/account",
+        label: "Account",
+        icon: docsIcon(
+            '<circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" />',
+        ),
+    },
+    {
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Need help?",
+        icon: `<svg class="ph-doc-icon" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M20.32 4.37A19.8 19.8 0 0 0 15.36 2.83a.07.07 0 0 0-.08.04c-.21.38-.45.88-.62 1.27a18.27 18.27 0 0 0-5.52 0 12.84 12.84 0 0 0-.63-1.27.08.08 0 0 0-.08-.04A19.74 19.74 0 0 0 3.47 4.37a.07.07 0 0 0-.03.03C.31 9.07-.55 13.61-.13 18.1a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6.08 3.07.08.08 0 0 0 .09-.03c.47-.64.88-1.31 1.24-2.02a.08.08 0 0 0-.04-.1 13.08 13.08 0 0 1-1.9-.91.08.08 0 0 1-.01-.13c.13-.1.25-.2.37-.29a.07.07 0 0 1 .08-.01 14.24 14.24 0 0 0 12.38 0 .07.07 0 0 1 .08.01c.12.1.25.2.38.3a.08.08 0 0 1-.01.12 12.22 12.22 0 0 1-1.9.9.08.08 0 0 0-.04.11c.36.7.77 1.38 1.23 2.02a.08.08 0 0 0 .1.03 19.84 19.84 0 0 0 6.08-3.07.08.08 0 0 0 .03-.05c.5-5.2-.84-9.7-3.77-13.71a.06.06 0 0 0-.03-.03ZM8.02 15.37c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.96 2.4-2.16 2.4Zm7.96 0c-1.18 0-2.16-1.08-2.16-2.4 0-1.32.96-2.4 2.16-2.4 1.2 0 2.18 1.09 2.16 2.4 0 1.32-.95 2.4-2.16 2.4Z" /></svg>`,
+    },
+    {
+        href: "https://github.com/pollinations/pollinations/issues",
+        label: "Found a bug?",
+        icon: docsIcon(
+            '<path d="m8 2 1.9 1.9M14.1 3.9 16 2" /><path d="M9 7V6a3 3 0 0 1 6 0v1" /><path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" /><path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />',
+        ),
+    },
+];
+
+const DOCS_SIDEBAR_LINKS_HTML = `<nav class="ph-docs-links" aria-label="Pollinations">${DOCS_SIDEBAR_LINKS.map(
+    ({ href, label, icon }) =>
+        `<a class="ph-docs-link" href="${href}" target="_blank" rel="noopener noreferrer">${icon}<span>${label}</span>${docsIcon('<path d="M7 17 17 7M9 7h8v8" />').replace('class="ph-doc-icon"', 'class="ph-doc-icon ph-docs-link-arrow"')}</a>`,
+).join("")}</nav>`;
 
 const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     Object.entries(DOC_TAG_ICON_HTML).map(([tag, icon]) => [
@@ -397,8 +434,9 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
 function pollinationsDocsHtml(): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
     const sidebarBrand = JSON.stringify(
-        `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span aria-hidden="true">${BRAND_MARK_SVG}</span><span>Docs</span></a>`,
+        `<a href="/docs" class="ph-docs-brand" aria-label="Pollinations Docs"><span class="ph-docs-lockup" aria-hidden="true">${BRAND_LOCKUP_SVG}</span><span class="ph-docs-divider" aria-hidden="true"></span><span class="ph-docs-label">Docs</span></a>`,
     );
+    const sidebarLinks = JSON.stringify(DOCS_SIDEBAR_LINKS_HTML);
     return `<style>${POLLINATIONS_DOCS_CSS}</style>
 <div class="ph-fab-cluster">
   <button class="ph-fab ph-fab-copy" type="button">
@@ -441,6 +479,9 @@ function pollinationsDocsHtml(): string {
     for (var s = 0; s < sidebars.length; s++) {
       if (!sidebars[s].querySelector('.ph-docs-brand')) {
         sidebars[s].insertAdjacentHTML('afterbegin', ${sidebarBrand});
+      }
+      if (!sidebars[s].querySelector('.ph-docs-links')) {
+        sidebars[s].insertAdjacentHTML('beforeend', ${sidebarLinks});
       }
     }
     var nodes = document.querySelectorAll('button, a, [role="button"]');

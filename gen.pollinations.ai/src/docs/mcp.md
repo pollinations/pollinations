@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Openverse | `https://gen.pollinations.ai/mcp/openverse` | Find openly licensed images and audio with creator, source, license, and attribution details | [Source](https://github.com/pollinations/pollinations/tree/main/apps/openverse-mcp) |
 
 Send the key with every request:
 
@@ -157,6 +158,16 @@ path.
   highlights.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
+
+### Openverse MCP
+
+`search_open_media` searches Openverse for images or audio and returns the
+creator, source page, license, attribution, and media URLs. You can filter for
+commercial use or modifications and return up to ten results. Search terms are
+sent to Openverse's public API; no Pollinations credentials are forwarded. This
+tool makes no Pollinations generation calls and adds no Pollen charge.
+Openverse's API is rate-limited. License metadata is not a legal guarantee, so
+check the source page and license terms before reuse.
 
 ### Connectors MCP
 

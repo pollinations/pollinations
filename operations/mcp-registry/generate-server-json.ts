@@ -14,7 +14,8 @@ function main() {
         console.error(
             "Usage: node generate-server-json.ts <output-dir> <version>",
         );
-        process.exit(1);
+        process.exitCode = 1;
+        return;
     }
     mkdirSync(outDir, { recursive: true });
     for (const server of MCP_SERVERS) {

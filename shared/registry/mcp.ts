@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "OPENVERSE_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,18 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "openverse",
+        name: "Openverse",
+        description:
+            "Find openly licensed images and audio with creator, source, license, and attribution details.",
+        binding: "OPENVERSE_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Free search; no additional Pollen charge.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

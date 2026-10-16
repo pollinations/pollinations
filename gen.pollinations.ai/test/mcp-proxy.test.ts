@@ -137,6 +137,17 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "openverse",
+                name: "Openverse",
+                description:
+                    "Find openly licensed images and audio with creator, source, license, and attribution details.",
+                url: "https://gen.pollinations.ai/mcp/openverse",
+                pricing: {
+                    description: "Free search; no additional Pollen charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -464,6 +475,40 @@ test("bills FFmpeg MCP usage when authorized with an ag_ run token", async () =>
     }
     expect(await getUserBalance(drizzle(env.DB), parent.userId)).toEqual({
         tierBalance: 0.75,
+        packBalance: 0,
+    });
+});
+
+test("routes Openverse without an additional Pollen charge", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/openverse",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "openverse proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
         packBalance: 0,
     });
 });

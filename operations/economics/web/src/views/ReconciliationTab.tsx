@@ -14,6 +14,8 @@ import {
     useSortableRows,
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
+import { StatCards } from "../components/StatCards";
+import { dataConfidence } from "../lib/dataConfidence";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtUsd } from "../lib/format";
 import { monthName } from "../lib/months";
@@ -62,6 +64,13 @@ export function ReconciliationTab({
             row.month.startsWith(`${year}-`) &&
             (!page || row.affects.includes(page)),
     );
+    const financial = scoped.filter((row) => row.group === "financial");
+    const validation = scoped.filter((row) => row.group === "validation");
+    const modelDetails = scoped.filter((row) => row.group === "models");
+    const unknownFinancialAmounts = financial.filter(
+        (row) => row.amountUsd == null,
+    ).length;
+    const confidence = dataConfidence(scoped);
     const sectionRows = scoped.filter((row) => row.group === section);
     const visible = sectionRows.filter(
         (row) => !type || row.types.includes(type),
@@ -77,6 +86,36 @@ export function ReconciliationTab({
     ).length;
     return (
         <section className="flex flex-col gap-4">
+            <section aria-label="Reconciliation overview">
+                <StatCards
+                    items={[
+                        {
+                            label: "Data confidence",
+                            value: confidence.status,
+                            detail: `${scoped.length} open checks · ${year}`,
+                            tone: scoped.length ? "warn" : "success",
+                        },
+                        {
+                            label: "Financial gaps",
+                            value: financial.length,
+                            detail: unknownFinancialAmounts
+                                ? `${unknownFinancialAmounts} with unknown amounts`
+                                : "Could change totals",
+                            tone: financial.length ? "warn" : "base",
+                        },
+                        {
+                            label: "Amounts to validate",
+                            value: validation.length,
+                            detail: "Payments, documents and usage matches",
+                        },
+                        {
+                            label: "Model/GPU details",
+                            value: modelDetails.length,
+                            detail: "Allocation only; provider totals unchanged",
+                        },
+                    ]}
+                />
+            </section>
             <fieldset
                 className="flex flex-wrap gap-2"
                 aria-label="Reconciliation sections"

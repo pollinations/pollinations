@@ -179,15 +179,15 @@ const INSIGHT_TABS = [
         note: "Community-model and BYOP economics by creator, with Paid and Quest rewards kept separate.",
         icon: SproutIcon,
     },
-] satisfies readonly DrawerItem<InsightTab>[];
-
-const LEDGER_INSIGHT_TABS = [
     {
         id: "close",
         label: "Reconciliation",
         note: "Missing numbers, account coverage and documents, with affected months and calculations.",
         icon: EyeIcon,
     },
+] satisfies readonly DrawerItem<InsightTab>[];
+
+const LEDGER_INSIGHT_TABS = [
     {
         id: "balances",
         label: "Balances",
@@ -971,9 +971,10 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const showPeriodFilter =
         activeView !== "balances" &&
         activeView !== "runway" &&
-        activeView !== "trends";
+        activeView !== "trends" &&
+        activeView !== "close";
     const showRunwayYearFilter = activeView === "runway";
-    const showTopMonthFilter = showPeriodFilter && activeView !== "close";
+    const showTopMonthFilter = showPeriodFilter;
     const showCategoryFilter = activeView === "op-transactions";
     const hasFilters =
         showPeriodFilter ||

@@ -252,3 +252,53 @@ it("sorts unresolved amounts across issue types and keeps unknowns explicit", ()
     expect(html).toContain("Unknown");
     expect(html).toContain("1 amounts unknown");
 });
+
+it("keeps the overview across issue groups while respecting year and affected page", () => {
+    const html = renderToStaticMarkup(
+        createElement(ReconciliationTab, {
+            issues: [
+                { ...issue, amountUsd: null },
+                {
+                    ...issue,
+                    id: "validation",
+                    group: "validation",
+                    amountUsd: 40,
+                },
+                { ...issue, id: "models", group: "models", amountUsd: 500 },
+                { ...issue, id: "other-page", affects: ["runway"] },
+                { ...issue, id: "other-year", month: "2025-09" },
+            ],
+            year: "2026",
+            initialPage: "inference",
+            onOpen: () => {},
+        }),
+    );
+    const overview = html
+        .split('aria-label="Reconciliation overview"')[1]
+        .split("</section>")[0];
+    expect(overview).toContain("Needs review");
+    expect(overview).toContain("3 open checks");
+    expect(overview).toContain("Financial gaps");
+    expect(overview).toContain("1 with unknown amounts");
+    expect(overview).toContain("Amounts to validate");
+    expect(overview).toContain("Model/GPU details");
+    expect(overview).not.toContain("$");
+    expect(overview).not.toContain("%");
+    expect(html.indexOf('aria-label="Reconciliation overview"')).toBeLessThan(
+        html.indexOf('aria-label="Reconciliation sections"'),
+    );
+});
+
+it("reports no flagged issues without claiming a fully verified close", () => {
+    const html = renderToStaticMarkup(
+        createElement(ReconciliationTab, {
+            issues: [],
+            year: "2026",
+            onOpen: () => {},
+        }),
+    );
+    expect(html).toContain("No flagged issues");
+    expect(html).toContain("0 open checks");
+    expect(html).not.toContain("100%");
+    expect(html).not.toContain("Fully reconciled");
+});

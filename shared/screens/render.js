@@ -17,11 +17,15 @@ import {
     CodeBlock,
     DiscordIcon,
     ExternalLinkButton,
+    Eyebrow,
+    GitHubIcon,
     Heading,
     InlineLink,
-    StableLabel,
+    SparklesIcon,
+    SproutIcon,
     Surface,
     Text,
+    WalletIcon,
 } from "@pollinations/ui";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -42,9 +46,6 @@ const css =
                 ? `url(data:font/woff2;base64,${base64(`${ui}fonts/${font}.woff2`)})`
                 : url,
         );
-
-const clock = (seconds) => `0:${String(seconds).padStart(2, "0")}`;
-const CLOCKS = Array.from({ length: 46 }, (_, seconds) => clock(seconds));
 
 // A footnote line, led by its icon as Enter's are
 const footnote = (Icon, ...children) =>
@@ -119,77 +120,77 @@ const page = h(
         h(
             "div",
             { className: "polli:flex polli:flex-col polli:gap-2" },
-            h(
-                Heading,
-                { as: "h1", size: "title" },
-                "Your next free {{item}} is ready in ",
-                h(
-                    "span",
-                    { "data-clock": "" },
-                    h(StableLabel, { text: "{{clock}}", options: CLOCKS }),
-                ),
-            ),
+            h(Heading, { as: "h1", size: "title" }, "Free limit reached"),
             h(
                 Text,
                 { tone: "soft" },
-                "The Classic API makes 1 free {{item}} every {{every}} seconds. This page reloads by itself when the time is up, or skip the wait:",
+                "1 free {{item}} every {{every}} seconds. Please wait: this page reloads by itself when your next {{item}} is ready.",
             ),
         ),
         // The two ways past the limit, side by side and equally weighted
         h(
             "div",
-            { className: "paths" },
-            path(
-                "Sign in to enter",
-                null,
-                [
+            { className: "polli:flex polli:flex-col polli:gap-3" },
+            h(Eyebrow, null, "Skip the wait"),
+            h(
+                "div",
+                { className: "paths" },
+                path(
+                    "Sign in to Pollinations",
+                    null,
+                    [
+                        h(
+                            Text,
+                            { size: "sm", tone: "soft" },
+                            "Unlimited {{items}}, every model, no waiting.",
+                        ),
+                        footnote(SproutIcon, "Start with free credits."),
+                    ],
+                    // enter's sign-in, which goes on to GitHub at once
                     h(
-                        Text,
-                        { size: "sm", tone: "soft" },
-                        "Unlimited {{items}} with pollen, every model, no waiting.",
+                        ExternalLinkButton,
+                        {
+                            href: "https://enter.pollinations.ai/sign-in?ref=classic",
+                            external: false,
+                            size: "lg",
+                            // Bordered, as enter's own sign-in buttons are
+                            intent: "brand",
+                            icon: h(GitHubIcon, {
+                                className: "polli:size-4 polli:shrink-0",
+                            }),
+                        },
+                        "Continue with GitHub",
                     ),
-                    h(
-                        Text,
-                        { size: "xs", tone: "muted" },
-                        "Sign in with GitHub. Start with free pollen from quests.",
-                    ),
-                ],
-                h(
-                    ExternalLinkButton,
-                    {
-                        href: "https://enter.pollinations.ai/?ref=classic",
-                        external: false,
-                        size: "lg",
-                    },
-                    "Get unlimited {{items}}",
                 ),
-            ),
-            path(
-                "Let your AI agent pay",
-                "x402",
-                [
+                path(
+                    "Let your AI agent pay",
+                    "x402",
+                    [
+                        h(
+                            Text,
+                            { size: "sm", tone: "soft" },
+                            "{{price}} USD per {{item}} with Weft. Paste this into your agent, then ask: “Pay for this {{item}} with Weft.”",
+                        ),
+                        h(CodeBlock, {
+                            code: "set up https://weft.network/setup.md",
+                        }),
+                        footnote(
+                            SparklesIcon,
+                            "New Weft accounts get $3 in free credit once the email is verified.",
+                        ),
+                    ],
                     h(
-                        Text,
-                        { size: "sm", tone: "soft" },
-                        "{{price}} USD per {{item}}, paid over x402 with Weft. Paste this into your agent, then ask it: “Pay for this {{item}} with Weft.”",
+                        ExternalLinkButton,
+                        {
+                            href: "https://weft.network/setup.md",
+                            size: "lg",
+                            showIcon: false,
+                            icon: h(WalletIcon, {
+                                className: "polli:size-4 polli:shrink-0",
+                            }),
+                        },
+                        "Give my agent a wallet",
                     ),
-                    h(CodeBlock, {
-                        code: "set up https://weft.network/setup.md",
-                    }),
-                    h(
-                        Text,
-                        { size: "xs", tone: "muted" },
-                        "New Weft accounts get $3 in free credit once the email is verified.",
-                    ),
-                ],
-                h(
-                    ExternalLinkButton,
-                    {
-                        href: "https://weft.network/setup.md",
-                        size: "lg",
-                        showIcon: false,
-                    },
-                    "Give my agent a wallet",
                 ),
             ),
         ),
@@ -214,17 +215,9 @@ const page = h(
     ),
 );
 
-// The countdown, the reload when it ends, and CodeBlock's copy button
+// The reload when the wait is over, and CodeBlock's copy button
 const script = `
-let wait = {{wait}};
-const label = document.querySelector("[data-clock] > span > span:last-child");
-const tick = setInterval(() => {
-    wait -= 1;
-    if (wait <= 0) {
-        clearInterval(tick);
-        location.reload();
-    } else label.textContent = "0:" + String(wait).padStart(2, "0");
-}, 1000);
+setTimeout(() => location.reload(), {{wait}} * 1000);
 for (const button of document.querySelectorAll("button[aria-label='Copy code']")) {
     button.onclick = () =>
         navigator.clipboard?.writeText(button.parentElement.nextElementSibling.textContent);

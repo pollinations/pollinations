@@ -177,6 +177,29 @@ test("parses the optional quest reference", () => {
     ]);
 });
 
+test("a footer after the quest reference does not swallow it", () => {
+    // #17442: the section used to run to the next heading or the end of the
+    // body, so an appended credit block became part of the value and a valid
+    // number failed numeric validation.
+    const withFooter = (foot) =>
+        parseSubmission(`${BODY}\n\n### Quest\n#15600${foot}`);
+
+    assert.equal(
+        withFooter(
+            "\n\n---\n\n**Made with pollinations.ai** — [Pollinations](https://pollinations.ai) powers all generation.",
+        ).quest,
+        "15600",
+    );
+    assert.deepEqual(
+        validateSubmission(
+            withFooter(
+                "\n\n---\n\n**Made with pollinations.ai** — [Pollinations](https://pollinations.ai) powers all generation.",
+            ),
+        ),
+        [],
+    );
+});
+
 test("builds the canonical catalog app", () => {
     const app = buildApp(parseSubmission(BODY), {
         githubUsername: "example",

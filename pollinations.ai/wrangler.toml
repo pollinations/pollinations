@@ -19,11 +19,6 @@ workers_dev = true
 [env.production]
 
 [[env.production.routes]]
-pattern = "pollinations.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.production.routes]]
 pattern = "pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
@@ -46,16 +41,6 @@ pattern = "playground.pollinations.ai/*"
 zone_name = "pollinations.ai"
 
 [env.staging]
-
-[[env.staging.routes]]
-pattern = "staging.pollinations.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.staging.routes]]
-pattern = "staging.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
 
 [[env.staging.routes]]
 pattern = "staging.pollinations.ai"

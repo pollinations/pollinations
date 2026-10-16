@@ -358,14 +358,14 @@ describe("genericOpenAIClient", () => {
             [{ role: "user", content: "hello" }],
             { model: "provider-model" },
             {
-                endpoint: "https://portkey.myceli.ai/v1/chat/completions",
+                endpoint: "https://portkey.pollinations.ai/v1/chat/completions",
                 fetcher,
             },
         );
 
         expect(fetcher).toHaveBeenCalledOnce();
         expect(fetcher).toHaveBeenCalledWith(
-            "https://portkey.myceli.ai/v1/chat/completions",
+            "https://portkey.pollinations.ai/v1/chat/completions",
             expect.objectContaining({ method: "POST" }),
         );
         expect(globalFetch).not.toHaveBeenCalled();

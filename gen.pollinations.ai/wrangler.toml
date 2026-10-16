@@ -95,11 +95,6 @@ binding = "IMAGES"
 crons = ["*/5 * * * *"]
 
 [[env.production.routes]]
-pattern = "gen.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.production.routes]]
 pattern = "gen.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
@@ -215,11 +210,6 @@ binding = "IMAGES"
 # Renews kept sandboxes (src/routes/e2b.ts).
 [env.staging.triggers]
 crons = ["*/5 * * * *"]
-
-[[env.staging.routes]]
-pattern = "staging.gen.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
 
 [[env.staging.routes]]
 pattern = "staging.gen.pollinations.ai"

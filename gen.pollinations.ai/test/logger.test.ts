@@ -64,7 +64,7 @@ describe.each([
                 return c.text("ok", 201);
             });
             const response = await app.request(
-                "https://internal.example/log?key=test-value&token=test-token&key=second&text=a%20b",
+                "https://gen.pollinations.ai/log?key=test-value&token=test-token&key=second&text=a%20b",
                 {
                     headers: {
                         "x-forwarded-host": "gen.pollinations.ai",
@@ -96,7 +96,7 @@ describe.each([
                     method: "GET",
                     routePath: publicUrl,
                     userAgent: "logger-test",
-                    ipAddress: "192.0.2.1",
+                    ipAddress: "192.0.2.2",
                 });
             }
             if (verbose) {

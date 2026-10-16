@@ -6,8 +6,6 @@
   "install": "npm ci --workspaces=false",
   "deploy": "npm run deploy",
   "verify": [
-    "https://floret.myceli.ai/health",
-    "https://floret.myceli.ai/v1/models",
     "https://floret.pollinations.ai/health",
     "https://floret.pollinations.ai/v1/models"
   ]

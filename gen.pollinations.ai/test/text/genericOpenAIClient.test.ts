@@ -1,13 +1,243 @@
+import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isRetryableFallbackError } from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
+import { resolveModelConfig } from "../../src/text/utils/modelResolver.js";
 
 afterEach(() => {
     vi.restoreAllMocks();
 });
 
 describe("genericOpenAIClient", () => {
+    it.each([false, true])(
+        "normalizes configured Mistral thinking chunks and preserves usage (stream=%s)",
+        async (stream) => {
+            const usage = {
+                prompt_tokens: 2,
+                completion_tokens: 7,
+                total_tokens: 9,
+            };
+            const content = [
+                {
+                    type: "thinking",
+                    thinking: [{ type: "text", text: "Checking." }],
+                    closed: true,
+                },
+                { type: "text", text: "391" },
+            ];
+            const payload = {
+                choices: [
+                    {
+                        [stream ? "delta" : "message"]: {
+                            role: "assistant",
+                            content,
+                        },
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            };
+            const resolved = resolveModelConfig([], {
+                model: "mistralai/mistral-large-4",
+                stream,
+            });
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "17 * 23" }],
+                resolved.options,
+                {
+                    endpoint: "https://api.mistral.ai/v1/chat/completions",
+                    fetcher: async () =>
+                        stream
+                            ? new Response(
+                                  `data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`,
+                              )
+                            : Response.json(payload),
+                },
+            );
+            const result = stream
+                ? JSON.parse(
+                      (await new Response(completion.responseStream).text())
+                          .split("\n")[0]
+                          .slice(6),
+                  )
+                : completion;
+            expect(
+                result.choices[0][stream ? "delta" : "message"],
+            ).toMatchObject({
+                content: "391",
+                reasoning_content: "Checking.",
+            });
+            expect(result.usage).toEqual(usage);
+        },
+    );
+
+    it("translates Mistral request controls while hiding reasoning locally", async () => {
+        const resolved = resolveModelConfig([], {
+            model: "mistralai/mistral-large-4",
+            seed: 42,
+            include_reasoning: false,
+            reasoning: { effort: "high" },
+        });
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "17 * 23" }],
+            resolved.options,
+            {
+                endpoint: "https://api.mistral.ai/v1/chat/completions",
+                fetcher: async (_url, init) => {
+                    const body = JSON.parse(String(init?.body));
+                    expect(body).toMatchObject({
+                        random_seed: 42,
+                        reasoning_effort: "high",
+                    });
+                    expect(body).not.toHaveProperty("seed");
+                    expect(body).not.toHaveProperty("reasoning");
+                    expect(body).not.toHaveProperty("include_reasoning");
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: [
+                                        {
+                                            type: "thinking",
+                                            thinking: [
+                                                {
+                                                    type: "text",
+                                                    text: "Checking.",
+                                                },
+                                            ],
+                                        },
+                                        { type: "text", text: "391" },
+                                    ],
+                                },
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 7,
+                            total_tokens: 9,
+                        },
+                    });
+                },
+            },
+        );
+        expect(completion.choices?.[0].message?.content).toBe("391");
+        expect(completion.choices?.[0].message).not.toHaveProperty(
+            "reasoning_content",
+        );
+        expect(completion.usage?.completion_tokens).toBe(7);
+    });
+
+    it.each([false, true])(
+        "returns reusable assistant messages when optional provider fields are null (tools=%s)",
+        async (tools) => {
+            const message = {
+                role: "assistant",
+                content: tools ? null : "hello",
+                name: null,
+                tool_calls: tools
+                    ? [
+                          {
+                              id: "call_1",
+                              type: "function",
+                              function: {
+                                  name: "get_temperature",
+                                  arguments: '{"city":"Berlin"}',
+                              },
+                          },
+                      ]
+                    : null,
+            };
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () =>
+                        Response.json({
+                            choices: [{ message, finish_reason: "stop" }],
+                            usage: {
+                                prompt_tokens: 2,
+                                completion_tokens: 1,
+                                total_tokens: 3,
+                            },
+                        }),
+                },
+            );
+            const returned = completion.choices?.[0]?.message;
+            expect(
+                CreateChatCompletionRequestSchema.safeParse({
+                    model: "provider-model",
+                    messages: [returned],
+                }).success,
+            ).toBe(true);
+            expect(returned?.content).toBe(message.content);
+            expect(returned).not.toHaveProperty("name");
+            if (tools) expect(returned?.tool_calls).toEqual(message.tool_calls);
+            else expect(returned).not.toHaveProperty("tool_calls");
+        },
+    );
+
+    it.each([
+        [false, { reasoning: { enabled: true, exclude: true } }],
+        [true, { reasoning: { enabled: true, exclude: true } }],
+        [false, { include_reasoning: false }],
+        [true, { include_reasoning: false }],
+    ] as const)(
+        "hides excluded reasoning without changing usage (stream=%s, controls=%j)",
+        async (stream, controls) => {
+            const usage = {
+                prompt_tokens: 2,
+                completion_tokens: 7,
+                total_tokens: 9,
+            };
+            const message = {
+                role: "assistant",
+                content: "answer",
+                reasoning_content: "private",
+                reasoning: "private",
+                reasoning_details: [{ text: "private" }],
+            };
+            const payload = {
+                choices: [
+                    {
+                        index: 0,
+                        [stream ? "delta" : "message"]: message,
+                        finish_reason: "stop",
+                    },
+                ],
+                usage,
+            };
+            const response = stream
+                ? new Response(`id: 1\ndata: ${JSON.stringify(payload)}`)
+                : Response.json(payload);
+            const completion = await genericOpenAIClient(
+                [{ role: "user", content: "hi" }],
+                {
+                    model: "test",
+                    stream,
+                    ...controls,
+                },
+                {
+                    endpoint: "https://provider.test/chat",
+                    fetcher: async () => response,
+                },
+            );
+            const body = stream
+                ? await new Response(completion.responseStream).text()
+                : JSON.stringify(completion);
+            expect(body).toContain("answer");
+            expect(body).not.toContain("private");
+            expect(body).not.toContain('"reasoning_content"');
+            if (stream) {
+                expect(body).toContain("id: 1");
+                expect(body).toContain("[DONE]");
+                expect(body).toContain(JSON.stringify(usage));
+            } else expect(completion.usage).toEqual(usage);
+        },
+    );
+
     it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
         const responseBody = JSON.stringify({
             error: {
@@ -31,39 +261,40 @@ describe("genericOpenAIClient", () => {
         expect(isRetryableFallbackError(error)).toBe(true);
     });
 
-    it.each([
-        200, 429,
-    ])("retains the complete raw provider envelope at HTTP %s", async (status) => {
-        const rawBody = JSON.stringify(
-            {
-                error: {
-                    message: "Provider unavailable",
-                    code: 429,
-                    details: { diagnostic: "inner detail" },
+    it.each([200, 429])(
+        "retains the complete raw provider envelope at HTTP %s",
+        async (status) => {
+            const rawBody = JSON.stringify(
+                {
+                    error: {
+                        message: "Provider unavailable",
+                        code: 429,
+                        details: { diagnostic: "inner detail" },
+                    },
+                    providerTrace: {
+                        token: "provider-test-token",
+                        data: "x".repeat(20000),
+                    },
                 },
-                providerTrace: {
-                    token: "provider-test-token",
-                    data: "x".repeat(20000),
-                },
-            },
-            null,
-            2,
-        );
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(
-            new Response(rawBody, { status }),
-        );
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "test" }],
-                { model: "test-model" },
-                { endpoint: "https://provider.test/chat" },
-            ),
-        ).rejects.toMatchObject({
-            status: 502,
-            upstreamStatus: 429,
-            responseBody: rawBody,
-        });
-    });
+                null,
+                2,
+            );
+            vi.spyOn(globalThis, "fetch").mockResolvedValue(
+                new Response(rawBody, { status }),
+            );
+            await expect(
+                genericOpenAIClient(
+                    [{ role: "user", content: "test" }],
+                    { model: "test-model" },
+                    { endpoint: "https://provider.test/chat" },
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                upstreamStatus: 429,
+                responseBody: rawBody,
+            });
+        },
+    );
 
     it("retains malformed successful response bodies for diagnostics", async () => {
         const rawBody = "<html>upstream gateway failure</html>";
@@ -517,33 +748,36 @@ describe("genericOpenAIClient", () => {
     it.each([
         ["I can't help with that request.", 422],
         ["API key lacks access to this model", 502],
-    ])("distinguishes xAI refusal from account permissions: %s", async (message, status) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json(
-                {
-                    error: {
-                        message: "Provider returned error",
-                        code: 403,
-                        metadata: {
-                            provider_name: "xAI",
-                            raw: JSON.stringify({
-                                code: "permission-denied",
-                                error: message,
-                            }),
+    ])(
+        "distinguishes xAI refusal from account permissions: %s",
+        async (message, status) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json(
+                    {
+                        error: {
+                            message: "Provider returned error",
+                            code: 403,
+                            metadata: {
+                                provider_name: "xAI",
+                                raw: JSON.stringify({
+                                    code: "permission-denied",
+                                    error: message,
+                                }),
+                            },
                         },
                     },
-                },
-                { status: 403 },
-            ),
-        );
-        const error = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model" },
-            { endpoint: "https://portkey.test/chat" },
-        ).catch((error) => error);
-        expect(error).toMatchObject({ status, upstreamStatus: 403 });
-        expect(isRetryableFallbackError(error)).toBe(status >= 500);
-    });
+                    { status: 403 },
+                ),
+            );
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ).catch((error) => error);
+            expect(error).toMatchObject({ status, upstreamStatus: 403 });
+            expect(isRetryableFallbackError(error)).toBe(status >= 500);
+        },
+    );
 
     it("maps unsupported multimodal input errors to a client error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -595,27 +829,27 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 400, upstreamStatus: 500 });
     });
 
-    it.each([
-        "status",
-        "code",
-    ])("maps 429 from an upstream error envelope's %s to 502", async (field) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                error: {
-                    message: "rate limited",
-                    [field]: 429,
-                },
-            }),
-        );
+    it.each(["status", "code"])(
+        "maps 429 from an upstream error envelope's %s to 502",
+        async (field) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({
+                    error: {
+                        message: "rate limited",
+                        [field]: 429,
+                    },
+                }),
+            );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
-    });
+            await expect(
+                genericOpenAIClient(
+                    [{ role: "user", content: "hello" }],
+                    { model: "provider-model" },
+                    { endpoint: "https://portkey.test/chat" },
+                ),
+            ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+        },
+    );
 
     it.each([
         [200, false],
@@ -623,62 +857,67 @@ describe("genericOpenAIClient", () => {
         [400, false],
         [403, false],
         [500, false],
-    ])("returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)", async (status, nested) => {
-        const details = {
-            code: 400,
-            message: "Gemini blocked the request: PROHIBITED_CONTENT",
-            metadata: { error_type: "invalid_request" },
-        };
-        const body = nested
-            ? { choices: [{ finish_reason: "error", error: details }] }
-            : { error: details };
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json(body, { status }),
-        );
-        const error = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model" },
-            { endpoint: "https://portkey.test/chat" },
-        ).catch((error) => error);
-        expect(error).toMatchObject({
-            status: 422,
-            upstreamStatus: status === 200 ? 400 : status,
-            details: status === 200 ? details : body,
-        });
-        expect(isRetryableFallbackError(error)).toBe(false);
-    });
-
-    it.each([
-        401, 402, 403, 429, 503,
-    ])("keeps provider error.code=%s eligible for fallback", async (code) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                error: { code, message: "Provider unavailable" },
-            }),
-        );
-        const error = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model" },
-            { endpoint: "https://portkey.test/chat" },
-        ).catch((error) => error);
-        expect(error).toMatchObject({ upstreamStatus: code });
-        expect(isRetryableFallbackError(error)).toBe(true);
-    });
-
-    it.each([
-        200, 1001,
-    ])("does not use non-error HTTP code %s as the response status", async (code) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: { code, message: "Provider failed" } }),
-        );
-        await expect(
-            genericOpenAIClient(
+    ])(
+        "returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)",
+        async (status, nested) => {
+            const details = {
+                code: 400,
+                message: "Gemini blocked the request: PROHIBITED_CONTENT",
+                metadata: { error_type: "invalid_request" },
+            };
+            const body = nested
+                ? { choices: [{ finish_reason: "error", error: details }] }
+                : { error: details };
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json(body, { status }),
+            );
+            const error = await genericOpenAIClient(
                 [{ role: "user", content: "hello" }],
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({ status: 502 });
-    });
+            ).catch((error) => error);
+            expect(error).toMatchObject({
+                status: 422,
+                upstreamStatus: status === 200 ? 400 : status,
+                details: status === 200 ? details : body,
+            });
+            expect(isRetryableFallbackError(error)).toBe(false);
+        },
+    );
+
+    it.each([401, 402, 403, 429, 503])(
+        "keeps provider error.code=%s eligible for fallback",
+        async (code) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({
+                    error: { code, message: "Provider unavailable" },
+                }),
+            );
+            const error = await genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ).catch((error) => error);
+            expect(error).toMatchObject({ upstreamStatus: code });
+            expect(isRetryableFallbackError(error)).toBe(true);
+        },
+    );
+
+    it.each([200, 1001])(
+        "does not use non-error HTTP code %s as the response status",
+        async (code) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({ error: { code, message: "Provider failed" } }),
+            );
+            await expect(
+                genericOpenAIClient(
+                    [{ role: "user", content: "hello" }],
+                    { model: "provider-model" },
+                    { endpoint: "https://portkey.test/chat" },
+                ),
+            ).rejects.toMatchObject({ status: 502 });
+        },
+    );
 
     it("maps an embedded completion 429 to a retryable upstream error", async () => {
         const details = {
@@ -740,19 +979,22 @@ describe("genericOpenAIClient", () => {
     it.each([
         '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
         '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',
-    ])("maps malformed media in a successful error envelope to 400: %s", async (message) => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: { message } }),
-        );
+    ])(
+        "maps malformed media in a successful error envelope to 400: %s",
+        async (message) => {
+            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+                Response.json({ error: { message } }),
+            );
 
-        await expect(
-            genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ),
-        ).rejects.toMatchObject({ status: 400 });
-    });
+            await expect(
+                genericOpenAIClient(
+                    [{ role: "user", content: "hello" }],
+                    { model: "provider-model" },
+                    { endpoint: "https://portkey.test/chat" },
+                ),
+            ).rejects.toMatchObject({ status: 400 });
+        },
+    );
 
     it("maps invalid upstream JSON to 502 with gateway context", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

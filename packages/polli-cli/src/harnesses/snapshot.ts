@@ -100,7 +100,14 @@ export const applyWithSnapshot = (
     }
 
     for (const path of paths) {
-        snapshot.files[path].afterHash = contentHash(readTextIfExists(path));
+        const file = snapshot.files[path];
+        // Keep the stale hash of a file edited since the last `on`, so `off`
+        // strips our entries instead of restoring the backup over the edit.
+        if (
+            !existing?.complete ||
+            contentHash(rollback[path].before) === file.afterHash
+        )
+            file.afterHash = contentHash(readTextIfExists(path));
     }
     snapshot.complete = true;
     writeSnapshot(ctx, id, paths, snapshot);

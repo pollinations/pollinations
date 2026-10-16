@@ -15,13 +15,12 @@ const logError = debug("pollinations:seedance-2.5:error");
 const MODEL = "bytedance/seedance-2.5";
 const DURATION = 4;
 const ASPECT_RATIOS = ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"] as const;
-type Seedance25AspectRatio = (typeof ASPECT_RATIOS)[number];
 
 interface Seedance25Input {
     prompt: string;
     duration: 4;
     resolution: "480p" | "720p";
-    aspect_ratio: Seedance25AspectRatio;
+    aspect_ratio: string;
     generate_audio: boolean;
     seed?: number;
     image?: string;
@@ -31,19 +30,8 @@ interface Seedance25Input {
     reference_audios?: string[];
 }
 
-function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
-    if (safeParams.aspectRatio) {
-        if (
-            (ASPECT_RATIOS as readonly string[]).includes(
-                safeParams.aspectRatio,
-            )
-        ) {
-            return safeParams.aspectRatio as Seedance25AspectRatio;
-        }
-        throw UpstreamError.fromProvider(400, {
-            message: `aspectRatio "${safeParams.aspectRatio}" is not supported by Seedance 2.5. Supported: ${ASPECT_RATIOS.join(", ")}.`,
-        });
-    }
+function resolveAspectRatio(safeParams: ImageParams): string {
+    if (safeParams.aspectRatio) return safeParams.aspectRatio;
     if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(
         safeParams.width,
@@ -62,12 +50,9 @@ export async function callSeedance25API(
         });
     }
 
-    const resolution = safeParams.resolution ?? "480p";
-    if (resolution !== "480p" && resolution !== "720p") {
-        throw UpstreamError.fromProvider(400, {
-            message: "Seedance 2.5 supports 480p or 720p resolution",
-        });
-    }
+    // params.ts limits resolution to the registry's list (480p, 720p).
+    const resolution = (safeParams.resolution ??
+        "480p") as Seedance25Input["resolution"];
 
     const images = safeParams.image ?? [];
 
@@ -76,7 +61,7 @@ export async function callSeedance25API(
         duration: DURATION,
         resolution,
         aspect_ratio: resolveAspectRatio(safeParams),
-        generate_audio: safeParams.audio,
+        generate_audio: safeParams.audio ?? true,
     };
     if (safeParams.seed !== undefined && safeParams.seed !== -1) {
         input.seed = safeParams.seed;

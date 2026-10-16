@@ -25,6 +25,27 @@ export type UnlistedMediaUploadResult = {
     size: number;
 };
 
+const FILENAME_EXT_PARAM = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;\s]+)/i;
+
+/**
+ * Original filename of a raw upload. Header values cannot carry CJK or emoji
+ * as-is, so clients send the UTF-8 name as an RFC 8187 `filename*` parameter
+ * of `Content-Disposition`. Plain `X-File-Name` stays the fallback.
+ */
+export function rawUploadFileName(headers: Headers): string | undefined {
+    const encoded = headers
+        .get("content-disposition")
+        ?.match(FILENAME_EXT_PARAM)?.[1];
+    if (encoded) {
+        try {
+            return decodeURIComponent(encoded);
+        } catch {
+            // Malformed percent-encoding: use X-File-Name instead.
+        }
+    }
+    return headers.get("x-file-name") ?? undefined;
+}
+
 export async function uploadUnlistedMedia(
     env: MediaStorageEnv,
     body: ReadableStream<Uint8Array>,

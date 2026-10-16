@@ -16,8 +16,9 @@ Provides authentication, payment infrastructure and authorizing API gateway that
 
 ## Local development
 
-1. **SOPS key setup** (one-time): Copy age key to `~/Library/Application Support/sops/age/keys.txt` on macOS
+1. **SOPS key setup** (maintainers, one-time): Copy age key to `~/Library/Application Support/sops/age/keys.txt` on macOS. Without the key, `npm run dev` keeps your `.dev.vars` or creates it from `.dev.vars.example`; for sign-in, add your own [GitHub OAuth app](https://github.com/settings/developers) with the callback `http://localhost:3000/api/auth/callback/github`.
 2. **Optional - Nix**: Install [nix](https://github.com/DeterminateSystems/nix-installer) for reproducible dev environment, then run `nix develop`
 3. Install dependencies: `npm install`
 4. Run migrations: `npm run migrate:development`
 5. Run the dev server: `npm run dev`
+6. **Local Pollen**: after signing in, run `npm run seed:local` in `gen.pollinations.ai` to give every local account Quest Pollen.

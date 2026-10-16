@@ -193,7 +193,7 @@ export const MCP_SERVERS = [
         id: "composio",
         name: "Connectors",
         description:
-            "Read Gmail, search GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
+            "Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio. Each user connects their own accounts when needed.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",
@@ -205,7 +205,7 @@ export const MCP_SERVERS = [
         id: "computer",
         name: "Computer",
         description:
-            "A private persistent computer: files and a bash shell that survive between runs.",
+            "A private persistent computer: files that survive between runs, a bash shell and JavaScript.",
         binding: "COMPUTER_MCP",
         billing: "usage_receipt",
         provider: "cloudflare",

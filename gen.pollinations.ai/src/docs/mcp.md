@@ -15,7 +15,7 @@ then choose a server:
 | Ask Jev | `https://gen.pollinations.ai/mcp/ask-jev` | Evaluate state with typed choice, score, and probability questions | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ask-jev-mcp) |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
-| Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, search GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
 
 Send the key with every request:
@@ -110,7 +110,7 @@ model health, usage, earnings, quests, and API keys.
 
 | Tool | Purpose |
 | --- | --- |
-| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `listModels` | Search and list live models, aliases, capabilities, voices, endpoints, and pricing; narrow with `query`, `capabilities`, `agent`, `community`, `limit` |
 | `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 | `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
 | `generateImage` | Generate or edit images |
@@ -162,8 +162,11 @@ path.
 
 The Connectors MCP uses Composio to discover and run tools in each user's own
 accounts. Enable it in your agent or connect the MCP endpoint, then ask for a
-specific task, such as “Summarize my unread Gmail” or “Find open issues in my
-GitHub repository.”
+specific task, such as “Summarize my unread Gmail”, “Find open issues in my
+GitHub repository” or “Commit this fix to a new branch in my fork.” GitHub
+commits go through Composio's tools, such as `GITHUB_COMMIT_MULTIPLE_FILES`,
+which commits several files at once and can create the branch. `git` in the
+Computer shell can't use the connection.
 
 When an app is not connected, the agent can return a sign-in link. You can also
 [connect apps in your account](https://enter.pollinations.ai/account#connectors).
@@ -194,7 +197,9 @@ private data. [Browse it](https://memory.pollinations.ai).
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate.
+selected model's listed rate. A `tools/call` on a server with its own rate
+needs a positive Pollen balance and returns 402 otherwise; `initialize` and
+`tools/list` stay free.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

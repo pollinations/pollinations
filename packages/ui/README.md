@@ -46,7 +46,8 @@ The root `@pollinations/ui` entry also ships a browser IIFE bundle for
 no-build pages. It exposes SDK-free primitives and compositions on
 `window.PollinationsUI`. Non-root subpaths such as `@pollinations/ui/auth`,
 `@pollinations/ui/wallet`, `@pollinations/ui/gen`, and
-`@pollinations/ui/app-user-menu/sdk` remain ESM/CJS-only.
+`@pollinations/ui/app-user-menu/sdk` are ESM-only. The alpha package ships
+ES modules with shared chunks; it does not include a CommonJS build.
 
 React 19 no longer ships UMD builds, so load React from an ESM CDN first, set
 the globals expected by the IIFE bundle, then load `@pollinations/ui`:
@@ -82,8 +83,9 @@ the globals expected by the IIFE bundle, then load `@pollinations/ui`:
 ```
 
 The browser bundle keeps React and ReactDOM external via those globals, but it
-does bundle the root entry's package dependencies, including Ark UI,
-react-markdown, remark, and rehype.
+does bundle the root entry's package dependencies, including Ark UI. Markdown
+and its react-markdown/remark/rehype dependencies are available only through
+the ESM `@pollinations/ui/markdown` subpath.
 
 React's guidance on loading React 19 without UMD builds:
 https://react.dev/blog/2024/04/25/react-19-upgrade-guide#umd-builds-removed

@@ -40,9 +40,12 @@ interface CloudflareBindings {
     LOG_LEVEL?: "trace" | "debug";
     LOG_FORMAT?: "text" | "json";
     TINYBIRD_INGEST_URL: string;
+    /** Public origin that runs coordinator jobs; unset runs them in the alarm. */
+    GENERATION_EXECUTION_ORIGIN?: string;
     IMAGES?: ImagesBinding;
     PORTKEY_GATEWAY_URL: string;
     AI_GATEWAY_API_KEY?: string;
+    ANTHROPIC_API_KEY?: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
     AWS_REGION: string;
@@ -76,6 +79,7 @@ interface CloudflareBindings {
     GOOGLE_PROJECT_ID: string;
     KLEIN_URL: string;
     MISTRAL_API_KEY: string;
+    NOVITA_API_KEY?: string;
     NOVA_REEL_S3_BUCKET: string;
     OPENAI_API_KEY: string;
     OPENROUTER_API_KEY: string;

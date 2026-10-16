@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "CURRENCY_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,18 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "currency",
+        name: "Currency",
+        description:
+            "Convert currencies and read ECB reference exchange rates, including history.",
+        binding: "CURRENCY_MCP",
+        billing: "downstream",
+        pricing: {
+            description: "Currency lookups are free. No additional MCP fee.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

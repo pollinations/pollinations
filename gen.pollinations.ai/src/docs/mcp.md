@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Currency | `https://gen.pollinations.ai/mcp/currency` | Convert currencies and read ECB reference exchange rates, including history | [Source](https://github.com/pollinations/pollinations/tree/main/apps/currency-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Currency MCP
+
+`currency_convert` converts an amount between two currencies at the ECB reference rate and returns the rate, the converted amount and the date the rate is from. ECB publishes on working days, so a weekend or holiday date resolves to the previous working day. `currency_rates` returns the rates for a base currency (default `EUR`), latest or for one `date`, or a daily time series with `start` and `end` (at most 366 days apart, `symbols` required). `currency_list` returns the supported currency codes and names. Rates start on 1999-01-04. An unknown currency code or a date outside that history comes back as a tool error. Lookups are free and require a Pollinations key. The key is not sent to Frankfurter.
 
 ### Billing and permissions
 

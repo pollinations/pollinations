@@ -1,6 +1,6 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { refreshR2ObjectTtl, rewriteR2Object } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
 
@@ -16,6 +16,8 @@ export type UnlistedMediaUpload = {
     size: number;
     uploadedBy?: string;
     keyType?: string;
+    // The account that may delete the file (DELETE /media/:id).
+    ownerUserId?: string;
 };
 
 export type UnlistedMediaUploadResult = {
@@ -86,6 +88,9 @@ export async function uploadUnlistedMedia(
                     originalName: input.fileName?.slice(0, 253) || "",
                     uploadedBy: input.uploadedBy || "pollinations-service",
                     keyType: input.keyType || "service",
+                    ...(input.ownerUserId && {
+                        ownerUserId: input.ownerUserId,
+                    }),
                 },
             }),
             pipe,
@@ -163,6 +168,19 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
 
     async has(id: string): Promise<boolean> {
         return (await this.env.MEDIA_BUCKET.head(id)) !== null;
+    }
+
+    /** Restarts a kept file's 30 days in R2. False when the file is gone. */
+    async refresh(id: string): Promise<boolean> {
+        const object = await this.env.MEDIA_BUCKET.get(id);
+        if (!object) return false;
+        const stored = await rewriteR2Object(
+            this.env.MEDIA_BUCKET,
+            id,
+            object,
+            object.body,
+        );
+        return stored !== null;
     }
 
     /** Trusted generation write; the caller selects headers safe for public replay. */

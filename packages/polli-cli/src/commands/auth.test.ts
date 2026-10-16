@@ -17,6 +17,55 @@ afterEach(() => {
     setOutputMode("human");
 });
 
+describe("device login expiry", () => {
+    it.each([
+        { expiresIn: 1, polls: [] },
+        { expiresIn: 5, polls: [] },
+        { expiresIn: 11, polls: [5000, 10000] },
+    ])(
+        "stops polling after $expiresIn seconds",
+        async ({ expiresIn, polls }) => {
+            vi.useFakeTimers();
+            vi.setSystemTime(0);
+            vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+            const stderr = vi
+                .spyOn(process.stderr, "write")
+                .mockImplementation(() => true);
+            const polledAt: number[] = [];
+            vi.stubGlobal("fetch", async (target: string) => {
+                if (target.endsWith("/api/device/code")) {
+                    return Response.json({
+                        device_code: "private-device-code",
+                        user_code: "DEMO1234",
+                        verification_uri_complete:
+                            "https://enter.pollinations.ai/device?user_code=DEMO1234",
+                        expires_in: expiresIn,
+                        interval: 5,
+                    });
+                }
+                polledAt.push(Date.now());
+                return Response.json(
+                    { error: "authorization_pending" },
+                    { status: 400 },
+                );
+            });
+
+            const expired = expect(
+                loginWithDeviceFlow({ browser: false }),
+            ).rejects.toThrow(ExitSignal);
+            await vi.runAllTimersAsync();
+            await expired;
+
+            expect(polledAt).toEqual(polls);
+            expect(Date.now()).toBe(expiresIn * 1000);
+            expect(
+                stderr.mock.calls.map(([text]) => String(text)).join(""),
+            ).toContain("Code expired");
+            expect(saveCredentials).not.toHaveBeenCalled();
+        },
+    );
+});
+
 describe("device login output", () => {
     it.each(["human", "json"] as const)(
         "shows consent before polling in %s mode without exposing the device code",

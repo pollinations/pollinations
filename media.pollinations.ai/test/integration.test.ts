@@ -1261,7 +1261,7 @@ describe("media.pollinations.ai", () => {
         expect(upperGallery.items.map((i) => i.url)).toContain(upload.url);
     });
 
-    it("untagged upload is not cataloged: unlisted but retrievable", async () => {
+    it("keeps an untagged upload private but cataloged for its owner", async () => {
         const { status, body } = await uploadViaForm("pk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
@@ -1270,14 +1270,40 @@ describe("media.pollinations.ai", () => {
         const upload = body as UploadResponse;
         expect(upload.tags).toBeUndefined();
 
-        // No catalog row at all — untagged means unpublished, not "cataloged
-        // but hidden".
+        // Untagged means unpublished, but user-owned uploads remain cataloged
+        // for the authenticated private list.
         const db = drizzle(env.DB);
         const rows = await db
             .select({ id: mediaItem.id })
             .from(mediaItem)
             .where(eq(mediaItem.id, upload.id));
-        expect(rows).toHaveLength(0);
+        expect(rows).toHaveLength(1);
+
+        const publishableRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer pk_alice" } },
+        );
+        expect(publishableRes.status).toBe(403);
+
+        const mineRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer sk_alice" } },
+        );
+        expect(mineRes.status).toBe(200);
+        const mine = (await mineRes.json()) as MediaPageResponse;
+        expect(mine.items).toContainEqual(
+            expect.objectContaining({
+                id: upload.id,
+                tags: [],
+            }),
+        );
+
+        const bobRes = await SELF.fetch(
+            "https://media.pollinations.ai/media/mine",
+            { headers: { Authorization: "Bearer sk_bob" } },
+        );
+        const bob = (await bobRes.json()) as MediaPageResponse;
+        expect(bob.items.map((item) => item.id)).not.toContain(upload.id);
 
         const galleryRes = await SELF.fetch(
             "https://media.pollinations.ai/media?tag=some-other-tag",
@@ -1742,7 +1768,7 @@ describe("media.pollinations.ai", () => {
             await getRes.arrayBuffer();
         });
 
-        it("unknown and uncataloged (untagged) ids answer 404", async () => {
+        it("returns 404 for unknown ids and deletes untagged uploads", async () => {
             const unknown = await SELF.fetch(
                 `https://media.pollinations.ai/media/${crypto.randomUUID()}`,
                 {
@@ -1752,8 +1778,8 @@ describe("media.pollinations.ai", () => {
             );
             expect(unknown.status).toBe(404);
 
-            // An untagged upload was never published: no catalog row, no
-            // owner record to authorize a delete against → 404, blob stays.
+            // Untagged uploads are private-list items with a real owner and can
+            // be deleted without ever appearing in a public gallery.
             const { status, body } = await uploadViaForm("pk_alice", {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
@@ -1768,13 +1794,12 @@ describe("media.pollinations.ai", () => {
                     headers: { Authorization: "Bearer sk_alice" },
                 },
             );
-            expect(res.status).toBe(404);
+            expect(res.status).toBe(200);
 
             const getRes = await SELF.fetch(
                 `https://media.pollinations.ai/${upload.id}`,
             );
-            expect(getRes.status).toBe(200);
-            await getRes.arrayBuffer();
+            expect(getRes.status).toBe(404);
         });
     });
 

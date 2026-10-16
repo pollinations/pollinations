@@ -1,8 +1,10 @@
-// Media catalog: D1-backed metadata for published (tagged) media. Blobs stay
-// in R2 — this module only indexes them. Tags are the publish action: only
-// tagged uploads get catalog rows. Writes are awaited inline on the upload
-// path (no waitUntil): a D1 failure surfaces as a 500 rather than silently
-// dropping catalog data.
+// Media catalog: D1-backed metadata for uploaded media. Blobs stay in R2 —
+// this module only indexes them. Tags remain the *publish* action (only
+// tagged items show up in a public gallery), but every user-owned upload gets
+// a catalog row so its owner's private list (GET /media/mine) can include
+// untagged uploads too. Writes are awaited inline on the upload path (no
+// waitUntil): a D1 failure surfaces as a 500 rather than silently dropping
+// catalog data.
 
 import { mediaItem, mediaTag } from "@shared/db/media-catalog.ts";
 import type { SQL } from "drizzle-orm";
@@ -68,32 +70,38 @@ export interface InsertUploadParams {
     appKeyId: string | null;
     contentType: string;
     size: number;
-    // Non-empty: tags are what publish an upload, so an untagged upload
-    // never reaches the catalog at all.
+    // May be empty: tags still control public visibility, but every
+    // user-owned upload gets a catalog row so it shows up in the owner's
+    // private list even untagged.
     tags: string[];
 }
 
 /**
- * Insert a catalog row for a published upload together with its tags. Each
- * upload is its own row (re-uploading the same bytes is a new item, not an
- * upsert). Returns the item id.
+ * Insert a catalog row for a user-owned upload together with its tags (if
+ * any). Each upload is its own row (re-uploading the same bytes is a new
+ * item, not an upsert). Returns the item id.
  */
 export async function insertUploadCatalogItem(
     db: CatalogDb,
     params: InsertUploadParams,
 ): Promise<void> {
-    // One atomic batch: the item row and its tags land together or not at
-    // all — a tagless catalog row would be invisible (galleries are
-    // tag-scoped) yet undeletable by its owner via unpublish.
+    const itemInsert = db.insert(mediaItem).values({
+        id: params.id,
+        ownerUserId: params.ownerUserId,
+        appKeyId: params.appKeyId,
+        contentType: params.contentType,
+        size: params.size,
+        createdAt: new Date(),
+    });
+    // Untagged uploads are still cataloged (so their owner can list them
+    // privately) but have no tag rows. `.batch` rejects an empty
+    // `.values([])`, so only batch in the tag insert when there are tags.
+    if (params.tags.length === 0) {
+        await itemInsert;
+        return;
+    }
     await db.batch([
-        db.insert(mediaItem).values({
-            id: params.id,
-            ownerUserId: params.ownerUserId,
-            appKeyId: params.appKeyId,
-            contentType: params.contentType,
-            size: params.size,
-            createdAt: new Date(),
-        }),
+        itemInsert,
         db.insert(mediaTag).values(
             params.tags.map((tag) => ({
                 itemId: params.id,
@@ -219,6 +227,40 @@ export async function listMedia(
         })
         .from(mediaItem)
         .innerJoin(mediaTag, eq(mediaTag.itemId, mediaItem.id))
+        .where(and(...conditions))
+        .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
+        .limit(params.limit + 1);
+
+    return paginate(rows, params.limit);
+}
+
+/**
+ * List a user's own uploads, tagged or not, newest first. Scoped to the
+ * authenticated owner and never public. Ordering and pagination mirror
+ * listMedia, over the item's own createdAt since an upload is written once
+ * at upload time.
+ */
+export async function listUserMedia(
+    db: CatalogDb,
+    params: {
+        userId: string;
+        limit: number;
+        cursor?: { createdAt: Date; id: string };
+    },
+): Promise<CatalogPage> {
+    const conditions: SQL[] = [eq(mediaItem.ownerUserId, params.userId)];
+    if (params.cursor) {
+        conditions.push(beforeCursor(params.cursor));
+    }
+
+    const rows = await db
+        .select({
+            id: mediaItem.id,
+            contentType: mediaItem.contentType,
+            size: mediaItem.size,
+            createdAt: mediaItem.createdAt,
+        })
+        .from(mediaItem)
         .where(and(...conditions))
         .orderBy(desc(mediaItem.createdAt), desc(mediaItem.id))
         .limit(params.limit + 1);

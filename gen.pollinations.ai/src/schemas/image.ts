@@ -142,23 +142,15 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
 });
 
-const validateDuration = (
-    params: z.infer<typeof GenerateImageRequestQueryParamsBaseSchema>,
-    ctx: z.RefinementCtx,
-) => {
-    if (params.duration !== undefined && params.duration > 30) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["duration"],
-            message: "Duration above 30 seconds is not supported.",
-        });
-    }
-};
-
+// No route-wide duration cap here: the schema's documented 1-120s bound is the
+// shared public limit, and per-model refinements in ImageParamsSchema plus the
+// providers themselves narrow it further (no model supports more than 15s
+// today). A GET-only 30s cap survived the Nova Reel retirement and rejected
+// values the POST routes and the generated OpenAPI documentation accept.
 export const GenerateImageRequestQueryParamsSchema =
-    GenerateImageRequestQueryParamsBaseSchema.superRefine(validateDuration);
+    GenerateImageRequestQueryParamsBaseSchema;
 
 export const GenerateVideoRequestQueryParamsSchema =
     GenerateImageRequestQueryParamsBaseSchema.extend({
         model: modelSchema("google/veo-3.1-fast"),
-    }).superRefine(validateDuration);
+    });

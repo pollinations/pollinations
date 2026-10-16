@@ -144,7 +144,7 @@ const page = h(
                             { size: "sm", tone: "soft" },
                             "Unlimited {{items}}, every model, no waiting.",
                         ),
-                        footnote(SproutIcon, "Start with free pollen."),
+                        footnote(SproutIcon, "Start with free credits."),
                     ],
                     // enter's sign-in, which goes on to GitHub at once
                     h(

@@ -159,7 +159,7 @@ const page = h(
                                 className: "polli:size-4 polli:shrink-0",
                             }),
                         },
-                        "Sign in with GitHub",
+                        "Continue with GitHub",
                     ),
                 ),
                 path(

@@ -193,8 +193,9 @@ export function parseApiError(status, errorText) {
             return `Resource not found. The requested endpoint or model may not exist.`;
         case 429:
             return (
+                errorMessage ||
                 `Rate limited. You're making too many requests. ` +
-                `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
+                    `If using pk_ (publishable) key, consider upgrading to sk_ (secret) key for higher limits.`
             );
         case 500:
             return `Server error: ${errorMessage}. Please try again later.`;

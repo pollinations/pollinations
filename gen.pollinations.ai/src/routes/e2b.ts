@@ -90,6 +90,7 @@ type NewSandbox = {
     templateID?: string;
     timeout?: number;
     metadata?: Record<string, string>;
+    autoPause?: boolean;
     autoResume?: { enabled?: boolean };
     iam?: unknown;
     volumeMounts?: unknown[];
@@ -471,6 +472,10 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                     headers: { "content-type": "application/json" },
                     body: JSON.stringify({
                         ...body,
+                        // A lease that runs out pauses the sandbox, as polli and
+                        // the dashboard ask; E2B's SDKs omit this unless told
+                        // `lifecycle.onTimeout`, and E2B then kills it.
+                        autoPause: body.autoPause ?? true,
                         ...(until && { timeout: KEEP_LEASE_SECONDS }),
                         // Otherwise envd lets anyone who knows the sandbox ID run
                         // commands and read files in it.
@@ -598,16 +603,6 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
                 return response;
             },
         )
-        // Not E2B's: what the dashboard shows before a create, at the rates
-        // callers pay.
-        .get("/pricing", (c) =>
-            c.json({
-                maxRunning: MAX_RUNNING_PER_USER,
-                vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
-                gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
-                templates: TEMPLATE_SIZES,
-            }),
-        )
         // Everything else (templates, snapshots, forks, volumes, secrets,
         // webhooks, ...) stays closed until someone reviews how it is billed.
         .all("*", () => {
@@ -628,7 +623,18 @@ const sandboxApi = (keeper: boolean, ...authenticate: MiddlewareHandler[]) =>
             );
         });
 
-export const e2bRoutes = sandboxApi(false, edgeRateLimit, auth());
+export const e2bRoutes = new Hono<Env>()
+    // Not E2B's: the fixed rates callers pay, public so the docs, the
+    // dashboard and Polli can show prices before anyone signs in.
+    .get("/pricing", (c) =>
+        c.json({
+            maxRunning: MAX_RUNNING_PER_USER,
+            vcpuSecond: VCPU_SECOND * PRICE_MULTIPLIER,
+            gibSecond: GIB_SECOND * PRICE_MULTIPLIER,
+            templates: TEMPLATE_SIZES,
+        }),
+    )
+    .route("/", sandboxApi(false, edgeRateLimit, auth()));
 
 // Read again for every renewal, so deleting the key, letting it expire,
 // removing its machines permission or banning the account ends them. A keep

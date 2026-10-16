@@ -338,17 +338,20 @@ describe("gen worker routing", () => {
         expect(index.headers.get("Content-Type")).toContain("text/plain");
         expect(index.headers.get("X-Robots-Tag")).toBeNull();
         const body = await index.text();
-        expect(body).toContain("/docs/polli-skill.md");
-        expect(body).toContain("/docs/polli-tasks.md");
-        expect(body).toContain("/docs/llm.txt");
-        expect(body).toContain("/docs/llm.txt?section=cli");
-        expect(body).toContain("/docs/llm.txt?section=mcp");
 
         for (const path of [
             "/docs/polli-skill.md",
             "/docs/polli-tasks.md",
             "/docs/llm.txt",
+            "/docs/llm.txt?section=byop",
+            "/docs/llm.txt?section=publish-an-agent",
+            "/docs/llm.txt?section=publish-a-model",
+            "/docs/llm.txt?section=sandboxes",
+            "/docs/llm.txt?section=coding-harnesses",
+            "/docs/llm.txt?section=mcp",
+            "/docs/llm.txt?section=cli",
         ]) {
+            expect(body).toContain(path);
             const response = await fetchWorker(path);
             expect(response.status).toBe(200);
             expect(response.headers.get("Content-Type")).toContain(

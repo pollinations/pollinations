@@ -154,6 +154,8 @@ A model registered with `advertised.streaming: false` is listed in `/models` and
 
 Endpoint agents also select one upstream API and exact URL. Managed prompt agents use Pollinations' Responses runtime and have no publisher-configured endpoint URL. Both kinds of agent use the outer request ID to group child model and tool calls: the outer wrapper is free, and each completed child operation is billed once even if a later step fails.
 
+Gen calls an endpoint agent with a short-lived `ag_` run token (up to 30 minutes) instead of the caller's key. The token carries that key's permissions and budget, so call third-party agents with a key limited to what they need. The agent's server can check the token with `GET /account/key`.
+
 ## Fallbacks and Health
 
 Public and private community models can nominate up to three compatible community fallbacks. Fallbacks are tried in order and must use the same model family. They must not cost more than the primary model; image fallbacks must also match its pricing mode and support image input when the primary model does. A fallback cannot require Paid Pollen unless the primary model does too.

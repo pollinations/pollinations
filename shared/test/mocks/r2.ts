@@ -52,14 +52,15 @@ export function createTestR2Bucket(): TestR2Bucket {
 
             putCount += 1;
             uploadTime += 1;
-            objects.set(key, {
+            const object = {
                 body: new Uint8Array(await new Response(value).arrayBuffer()),
                 httpMetadata,
                 customMetadata: options?.customMetadata,
                 storageClass: options?.storageClass,
                 uploaded: new Date(uploadTime),
-            });
-            return null;
+            };
+            objects.set(key, object);
+            return createR2Object(key, object);
         },
         getObject: (key: string) => objects.get(key),
         get putCount() {

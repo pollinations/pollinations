@@ -9,7 +9,8 @@ Upload files and get back a URL to use with Pollinations models.
 - **Upload** media files via `POST /upload`
 - **Retrieve** media by id via `GET /:id`
 - **Publish** an upload by tagging it — anyone can browse a tag's public gallery via `GET /media?tag=`
-- **Delete** your published items via `DELETE /media/:id`
+- **Keep** a file until you delete it with `expiresAfter=never`
+- **Delete** files uploaded with your account's keys via `DELETE /media/:id`
 - **CORS enabled** for browser uploads
 
 ## 🚀 Quick Start
@@ -48,6 +49,24 @@ curl -X POST https://media.pollinations.ai/upload \
 #   "contentType": "image/jpeg",
 #   "size": 123456
 # }
+```
+
+### Keep a file until you delete it
+
+Files expire after 30 days. Add `expiresAfter=never` to keep one until you
+delete it. It needs your secret (`sk_`) key. The first 30 days are free; after
+that the key that uploaded it pays R2's storage price, 0.015 pollen per
+GB-month (files under 128 KB count as 128 KB), 15 days in advance. The first
+charge comes on day 15, for days 30–45, and shows in your usage as model
+`media`.
+
+```bash
+curl -X POST https://media.pollinations.ai/upload \
+  -H "Authorization: Bearer <your-secret-key>" \
+  -F "file=@image.jpg" \
+  -F "expiresAfter=never"
+
+# Returns the usual fields plus "expiresAfter": "never"
 ```
 
 ### Publish to a tag gallery (alpha)
@@ -92,14 +111,15 @@ curl -I https://media.pollinations.ai/3f9c1e2a-7b4d-4e2f-9a1c-8d6b5e4f3a2b
 Upload a media file. **Requires API key** via `Authorization: Bearer <key>` header or `?key=<key>` query parameter.
 
 **Request:**
-- `Content-Type: multipart/form-data` with `file` field (optional `tags` field: comma-separated)
+- `Content-Type: multipart/form-data` with `file` field (optional `tags` field: comma-separated; optional `expiresAfter` field: `never`)
 - Or JSON with `Content-Type: application/json`:
   ```json
   {
     "data": "base64-encoded-file-data",
     "contentType": "image/jpeg",
     "name": "image.jpg",
-    "tags": ["sunset", "landscape"]
+    "tags": ["sunset", "landscape"],
+    "expiresAfter": "never"
   }
   ```
 
@@ -108,6 +128,10 @@ comma-separated string (or a JSON array in the JSON format), max 8 tags,
 each `lowercase letters, digits, and _.:- (not leading), max 128 chars`.
 Publishing requires a key attached to a user account.
 
+`expiresAfter: "never"` keeps the file until you delete it (see Retention
+Policy). It requires a secret (`sk_`) key attached to a user account. Raw
+uploads can't be kept.
+
 **Response:**
 ```json
 {
@@ -115,14 +139,16 @@ Publishing requires a key attached to a user account.
   "url": "https://media.pollinations.ai/{id}",
   "contentType": "image/jpeg",
   "size": 123456,
-  "tags": ["sunset", "landscape"]
+  "tags": ["sunset", "landscape"],
+  "expiresAfter": "never"
 }
 ```
 
-`tags` is present only when the upload was tagged.
+`tags` is present only when the upload was tagged, `expiresAfter` only when the
+file is kept.
 
 **Errors:**
-- `400` - No file provided, empty file, invalid JSON/base64, or invalid tags
+- `400` - No file provided, empty file, invalid JSON/base64, invalid tags or `expiresAfter`, or `expiresAfter` without a user-owned secret key
 - `413` - File too large (max 400 MiB for multipart/raw uploads; 100 MiB for JSON)
 
 ### `GET /:id`
@@ -165,20 +191,23 @@ owner, newest first. Fully public — no API key.
 
 ### `DELETE /media/:id` (alpha)
 
-Delete a published item you own: removes the file, its catalog entry, and all
-its tags — it disappears from galleries and its URL 404s. **Requires your
-secret (`sk_`) API key**; publishable (`pk_`) keys are rejected since anyone
-can read them out of a public client.
+Delete a file uploaded with any of your account's keys, tagged or not: removes
+the file, its keep, its catalog entry, and all its tags — it disappears from
+galleries and its URL 404s. **Requires your secret (`sk_`) API key**;
+publishable (`pk_`) keys are rejected since anyone can read them out of a
+public client.
 
-Untagged uploads were never published and can't be deleted — they expire on
-their own (see Retention Policy).
+Untagged files are cached as immutable, so copies already in browser or other
+caches can outlive the delete. Untagged files uploaded before owners were
+recorded (October 2026) can't be deleted — they expire on their own (see
+Retention Policy).
 
 **Response:** `{ "deleted": true, "id": "<id>" }`
 
 **Errors:**
 - `401` - Missing or invalid API key
 - `403` - Not a secret key, key has no user account, or you don't own the item
-- `404` - Unknown id, or an untagged (never published) upload
+- `404` - Unknown id, or an older untagged file with no recorded owner
 
 ### `GET /`
 
@@ -226,7 +255,7 @@ npm run deploy:production
 
 - **Max file size:** 400 MiB for streamed multipart and raw uploads; 100 MiB for base64 JSON uploads. Existing FormData clients can use the larger limit without changing their request format. The `pollinations.ai` Cloudflare zone must allow at least 425 MB per request to accept 400 MiB uploads.
 - **Storage:** Cloudflare R2
-- **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old
+- **Default retention:** 30-day lifecycle; a GET refreshes objects once they are at least 15 days old. `expiresAfter=never` keeps a file until you delete it
 
 ## 🆔 Identifiers
 
@@ -237,7 +266,8 @@ Each upload gets a unique id. That single id is the storage key, the retrieval i
 ## 📌 Retention Policy
 
 - **30-day lifecycle:** A GET refreshes an object once it is at least 15 days old, avoiding a storage rewrite on every access. **This applies to published (tagged) items too** — an expired published item keeps its catalog entry in the gallery, but the URL 404s.
-- **Delete (alpha):** Owners can delete their published items via `DELETE /media/:id` (secret key). Untagged uploads can't be deleted — they expire on their own.
+- **Keep:** `expiresAfter=never` keeps a file until you delete it. The first 30 days are free. After that the key that uploaded it pays R2's storage price, 0.015 pollen per GB-month (files under 128 KB count as 128 KB), 15 days in advance, so the first charge comes on day 15. If the key can't pay, is deleted, or its account is banned, the keep ends and the file expires like any other upload, normally 15 to 30 days later. Topping up doesn't restart a keep; upload the file again.
+- **Delete (alpha):** Owners can delete any file uploaded with their account's keys via `DELETE /media/:id` (secret key). Untagged files from before October 2026 can't be deleted — they expire on their own.
 - **Publishing (alpha):** Tag uploads (via the `tags` field) to publish them, then list with `GET /media?tag=`. See the API Reference.
 - **Abuse/copyright:** For takedown requests, contact the Pollinations team.
 

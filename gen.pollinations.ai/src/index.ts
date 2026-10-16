@@ -30,6 +30,7 @@ import {
     GENERATION_HANDOFF_PATH,
     generationHandoffRoutes,
 } from "@/utils/execute-generation.ts";
+import { keepMedia } from "./media-keep.ts";
 import { audioRoutes } from "./routes/audio.ts";
 import {
     buildMergedOpenApiSpec,
@@ -306,6 +307,15 @@ app.onError(handleError);
 
 export default {
     fetch: app.fetch,
-    // The only cron, every 10 minutes (wrangler.toml).
-    scheduled: (_controller, env, ctx) => keepSandboxes(env, ctx),
+    // The only cron, every 5 minutes (wrangler.toml).
+    scheduled: async (_controller, env, ctx) => {
+        // One keeper failing must not cut the other short.
+        const results = await Promise.allSettled([
+            keepSandboxes(env, ctx),
+            keepMedia(env, ctx),
+        ]);
+        for (const result of results) {
+            if (result.status === "rejected") throw result.reason;
+        }
+    },
 } satisfies ExportedHandler<CloudflareBindings>;

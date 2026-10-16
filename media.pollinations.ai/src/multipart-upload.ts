@@ -14,6 +14,7 @@ export type StagedMultipartUpload = UploadBody & {
     contentType: string;
     fileName: string;
     requestedId?: string;
+    expiresAfter?: string;
     rawTags: string[];
 };
 
@@ -125,6 +126,7 @@ export async function stageMultipartUpload(
         throw multipartUploadError(400, "Invalid multipart body");
     }
     let requestedId: string | undefined;
+    let expiresAfter: string | undefined;
     const rawTags: string[] = [];
     let fileSeen = false;
     let fileResult: StagedMultipartUpload | undefined;
@@ -139,6 +141,8 @@ export async function stageMultipartUpload(
             return;
         }
         if (name === "id" && requestedId === undefined) requestedId = value;
+        if (name === "expiresAfter" && expiresAfter === undefined)
+            expiresAfter = value;
         if (name === "tags") rawTags.push(value);
     });
     parser.on("file", (name, file, info) => {
@@ -193,7 +197,7 @@ export async function stageMultipartUpload(
                 "No file provided. Use 'file' field in form-data.",
             );
         }
-        return { ...fileResult, requestedId };
+        return { ...fileResult, requestedId, expiresAfter };
     } catch (error) {
         await fileTask;
         if (fileResult?.temporaryKey) {

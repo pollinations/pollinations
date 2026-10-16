@@ -920,7 +920,7 @@ describe("static provider fallbacks", () => {
                 },
             });
             expect(billing.cost.totalCost).toBeCloseTo(cost, 12);
-            expect(billing.price.totalPrice).toBeCloseTo(0.0004095, 8);
+            expect(billing.price.totalPrice).toBeCloseTo(0.000273, 8);
         },
     );
 

@@ -1188,7 +1188,8 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-11").getTime(),
         // Azure model catalog and retirement schedule (Preview).
         // Provider retires this route on 2026-12-15.
-        priceMultiplier: 0.75,
+        // 0.5x keeps output at the pre-Azure DeepInfra price.
+        priceMultiplier: 0.5,
         paidOnly: false,
         perUserRpm: 60,
         cost: {

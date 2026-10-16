@@ -835,10 +835,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0.0000009,
-      "promptCachedTokens": 0.0000000045,
-      "promptImageTokens": 0.000000225,
-      "promptTextTokens": 0.000000225,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000003,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
     },
   },
   "deepseek/deepseek-v4.1-flash:fireworks": {
@@ -848,9 +848,9 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0.0000009,
-      "promptCachedTokens": 0.0000000045,
-      "promptTextTokens": 0.000000225,
+      "completionTextTokens": 0.0000006,
+      "promptCachedTokens": 0.000000003,
+      "promptTextTokens": 0.00000015,
     },
   },
   "elevenlabs/eleven-flash-v2.5": {

@@ -3,7 +3,7 @@
     "emoji": "🎮",
     "name": "Switchyard",
     "url": "https://saauf.github.io/switchyard",
-    "description": "- Six trolley dilemmas: choose first, compare your action with Jev, then reverse only the outcome-description order. Shows typed choices, per-option probabilities, exact prompts, and a session JSON ex",
+    "description": "Choose first in six trolley dilemmas, compare with Jev, and reverse the description order. Includes free practice, exact prompts, probabilities, and session export.",
     "language": "en",
     "category": "games",
     "platform": "web",

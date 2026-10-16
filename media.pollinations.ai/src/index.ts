@@ -1,5 +1,10 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import {
+    invalidSafeTokens,
+    parseSafeFeatures,
+    SAFETY_HEADER_NAME,
+} from "@shared/schemas/safety.ts";
 import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -9,6 +14,7 @@ import {
     resolver,
     validator,
 } from "hono-openapi";
+import { removeMetadata } from "picscrub";
 import { z } from "zod";
 import type { CatalogItem, CatalogPage } from "./catalog.ts";
 import {
@@ -24,7 +30,6 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
-
 import {
     rawUploadFileName,
     readMedia,
@@ -47,6 +52,18 @@ const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 const MAX_BUFFERED_SIZE = 104857600; // JSON base64 uploads still buffer in memory
+const MAX_PRIVACY_IMAGE_SIZE = 32 * 1024 * 1024;
+
+function isImage(contentType: string): boolean {
+    return contentType.toLowerCase().startsWith("image/");
+}
+
+function stripImageMetadata(bytes: Uint8Array) {
+    return removeMetadata(bytes, {
+        preserveOrientation: true,
+        preserveColorProfile: true,
+    });
+}
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
@@ -291,7 +308,25 @@ api.post(
         tags: ["media.pollinations.ai"],
         summary: "Upload media",
         description:
-            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+            "Upload an image, audio, or video file via multipart/form-data (field `file`), application/json (base64 `data`), or a raw file body with its media MIME type and Content-Length headers. Multipart and raw uploads stream to storage up to 400 MiB; JSON uploads remain limited to 100 MiB because base64 decoding buffers in Worker memory. Raw uploads receive a random, unlisted ID. Returns an id and its retrieval URL. Image metadata is stripped only when requested with `safe=privacy` or the `Pollinations-Safe: privacy` header; `safe=true` also enables privacy. Without it, uploaded bytes are preserved. Privacy processing supports image uploads up to 32 MiB and returns an error for larger or unparseable images. Omit `id` for a new random ID, or supply a case-sensitive ID scoped to your account. Custom IDs require a user-owned API key; the returned id includes an opaque account prefix. Existing files or gallery entries return 409 without being replaced, including on retries. Untagged files cannot be deleted. Files expire after 30 days; GET refreshes retention once a file is at least 15 days old.\n\n**Tags publish.** An optional `tags` field publishes the upload into each tag's public gallery (GET /media?tag=…), where anyone can see it. Untagged uploads stay unlisted, but all retrieval URLs are public. Knowing one custom URL makes other predictable names in that account guessable. **Alpha:** the publish tagging is new and may still change.",
+        parameters: [
+            {
+                in: "query",
+                name: "safe",
+                required: false,
+                schema: { type: "string" },
+                description:
+                    "Comma-separated safety features. `privacy` strips supported image metadata; `true` includes privacy.",
+            },
+            {
+                in: "header",
+                name: SAFETY_HEADER_NAME,
+                required: false,
+                schema: { type: "string" },
+                description:
+                    "Same safety features as the `safe` query parameter.",
+            },
+        ],
         requestBody: {
             content: {
                 "multipart/form-data": {
@@ -331,6 +366,13 @@ api.post(
         responses: {
             200: {
                 description: "Upload successful",
+                headers: {
+                    "X-Safety-Applied": {
+                        description:
+                            "Comma-separated safety features applied to the upload, when any.",
+                        schema: { type: "string" },
+                    },
+                },
                 content: {
                     "application/json": {
                         schema: resolver(UploadResponseSchema),
@@ -339,7 +381,7 @@ api.post(
             },
             400: {
                 description:
-                    "No/empty file, invalid JSON/base64, invalid ID/tags, or custom ID/tags on a key with no user account",
+                    "No/empty file, invalid JSON/base64, invalid safety feature, unparseable image when privacy is requested, invalid ID/tags, or custom ID/tags on a key with no user account",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -358,7 +400,8 @@ api.post(
                 },
             },
             413: {
-                description: "File too large for the selected upload format",
+                description:
+                    "File too large for the selected upload format or privacy image processing limit",
                 content: {
                     "application/json": { schema: resolver(ErrorSchema) },
                 },
@@ -391,7 +434,21 @@ api.post(
             parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
         const jsonMaxSize = Math.min(uploadMaxSize, MAX_BUFFERED_SIZE);
 
-        let fileBuffer: ArrayBuffer | undefined;
+        const safeValue =
+            c.req.query("safe") ?? c.req.header(SAFETY_HEADER_NAME);
+        const invalidTokens = invalidSafeTokens(safeValue);
+        if (invalidTokens.length > 0) {
+            return c.json(
+                {
+                    error: `Unknown safe feature: ${invalidTokens.join(", ")}`,
+                },
+                400,
+            );
+        }
+        const privacyRequested = parseSafeFeatures(safeValue).has("privacy");
+        let privacyApplied = false;
+
+        let fileBuffer: ArrayBuffer | Uint8Array | undefined;
         let stagedUpload: StagedMultipartUpload | undefined;
         let fileSize: number;
         let contentType: string;
@@ -442,6 +499,46 @@ api.post(
             if (size > uploadMaxSize) {
                 return c.json(fileTooLargeError(uploadMaxSize), 413);
             }
+
+            if (privacyRequested && isImage(requestContentType)) {
+                if (size > MAX_PRIVACY_IMAGE_SIZE) {
+                    return c.json(
+                        fileTooLargeError(MAX_PRIVACY_IMAGE_SIZE),
+                        413,
+                    );
+                }
+                let cleaned: Uint8Array;
+                try {
+                    const original = new Uint8Array(
+                        await c.req.raw.arrayBuffer(),
+                    );
+                    cleaned = (await stripImageMetadata(original)).data;
+                } catch {
+                    return c.json(
+                        { error: "Unable to process image metadata" },
+                        400,
+                    );
+                }
+                try {
+                    const upload = await uploadUnlistedMedia(
+                        c.env,
+                        new Blob([cleaned]).stream(),
+                        {
+                            contentType: requestContentType,
+                            fileName: rawUploadFileName(c.req.raw.headers),
+                            size: cleaned.byteLength,
+                            uploadedBy: authResult.name || "unknown",
+                            keyType: authResult.type,
+                        },
+                    );
+                    c.header("X-Safety-Applied", "privacy");
+                    return c.json(upload);
+                } catch (error) {
+                    console.error("Upload error:", error);
+                    return c.json({ error: "Upload failed" }, 500);
+                }
+            }
+
             try {
                 const upload = await uploadUnlistedMedia(
                     c.env,
@@ -507,6 +604,21 @@ api.post(
                 const base64Data = body.data.includes(",")
                     ? body.data.split(",")[1]
                     : body.data;
+                contentType =
+                    body.contentType ||
+                    body.data.match(/^data:(image\/[^;,]+)/i)?.[1] ||
+                    "application/octet-stream";
+                if (
+                    privacyRequested &&
+                    isImage(contentType) &&
+                    base64Data.length >
+                        Math.ceil((MAX_PRIVACY_IMAGE_SIZE * 4) / 3)
+                ) {
+                    return c.json(
+                        fileTooLargeError(MAX_PRIVACY_IMAGE_SIZE),
+                        413,
+                    );
+                }
                 let binaryString: string;
                 try {
                     binaryString = atob(base64Data);
@@ -527,7 +639,6 @@ api.post(
                 }
                 fileSize = fileBuffer.byteLength;
 
-                contentType = body.contentType || "application/octet-stream";
                 fileName = body.name;
 
                 if (body.tags) {
@@ -594,6 +705,43 @@ api.post(
                     ? UNCACHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
+            if (privacyRequested && isImage(contentType)) {
+                if (fileSize > MAX_PRIVACY_IMAGE_SIZE) {
+                    return c.json(
+                        fileTooLargeError(MAX_PRIVACY_IMAGE_SIZE),
+                        413,
+                    );
+                }
+                let original: Uint8Array;
+                if (fileBuffer) {
+                    original = new Uint8Array(fileBuffer);
+                } else if (stagedUpload?.bytes) {
+                    original = stagedUpload.bytes;
+                } else if (stagedUpload?.temporaryKey) {
+                    const temporaryKey = stagedUpload.temporaryKey;
+                    const object = await c.env.MEDIA_BUCKET.get(temporaryKey);
+                    if (!object) throw new Error("Staged upload disappeared");
+                    original = new Uint8Array(await object.arrayBuffer());
+                    await c.env.MEDIA_BUCKET.delete(temporaryKey);
+                    stagedUpload = undefined;
+                } else {
+                    throw new Error("Missing upload bytes");
+                }
+                let cleaned: Uint8Array;
+                try {
+                    cleaned = (await stripImageMetadata(original)).data;
+                } catch {
+                    return c.json(
+                        { error: "Unable to process image metadata" },
+                        400,
+                    );
+                }
+                fileBuffer = cleaned;
+                fileSize = cleaned.byteLength;
+                stagedUpload = undefined;
+                privacyApplied = true;
+            }
+
             const putOptions: R2PutOptions = {
                 ...(requestedId !== undefined && {
                     onlyIf: new Headers({ "If-None-Match": "*" }),
@@ -659,6 +807,7 @@ api.post(
                 }),
             );
 
+            if (privacyApplied) c.header("X-Safety-Applied", "privacy");
             return c.json({
                 id,
                 url: mediaUrl(id),
@@ -981,8 +1130,14 @@ app.use(
             "Authorization",
             "X-File-Name",
             "Content-Disposition",
+            SAFETY_HEADER_NAME,
         ],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
+        exposeHeaders: [
+            "X-Content-Id",
+            "X-Content-Size",
+            "X-Safety-Applied",
+            "Link",
+        ],
     }),
 );
 

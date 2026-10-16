@@ -26,43 +26,72 @@ SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sen
                      then the community post: the same for community models
 
 AFTER THOSE (news-build-index.yml)
-  news_index.py → index.json (Enter /news)
+  news_index.py → data/index.json (Enter /news)
 ```
 
-| Time (UTC) | Posts | Delivery |
+| Time (UTC) | Saved | Delivery |
 |---|---|---|
-| Each production deploy | — | Discord, one post per shipped PR |
-| Daily 06:00 | `daily/<yesterday>/` | X in Buffer for the next Mon–Sat 15:00 |
-| Sunday 06:00 | also `weekly/<sunday>/` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
+| Each production deploy | `posts/discord/prs/` | Discord, one post per shipped PR |
+| Daily 06:00 | `data/summaries/daily/<yesterday>.json`, `posts/x/daily/<yesterday>.json` | X in Buffer for the next Mon–Sat 15:00 |
+| Sunday 06:00 | also `data/summaries/weekly/<sunday>.json` and `posts/<platform>/weekly/<sunday>.json` | X Monday 15:00; LinkedIn and Instagram Sunday 18:00 (Buffer) |
 | Sunday 18:00 | — | Discord, the week |
-| Daily 06:00 | `models/snapshots/<today>.json` when `/models` changed | — |
-| Wednesday 14:00 | `models/`, then `community/` | Discord: the model post with the models role ping, then the community post without one; each saved once sent |
-| 1st 06:00 | also `monthly/<last month>/` | — |
+| Daily 06:00 | `data/models/<today>.json` when `/models` changed | — |
+| Wednesday 14:00 | `posts/discord/models/<wed>.json`, then `posts/discord/community/<wed>.json` | Discord: the model post with the models role ping, then the community post without one; each saved once sent |
+| 1st 06:00 | also `data/summaries/monthly/<last month>.json` and `data/contributors/<last month>.json` | — |
 
 The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when. PRs merged into `master` reach the daily and weekly but get no deploy post: the legacy APIs are not deployed by the Cloudflare workflow.
 
 ### Branch Strategy
 
 - **`main` branch** — source code only.
-- **`news` branch** — all generated content: summaries, posts, picture links, delivery records, the `/models` record, `index.json`. Unprotected (direct commits).
+- **`news` branch** — all generated content, in two halves: `data/` (what we keep and read back) and `posts/` (what each platform received). Unprotected (direct commits).
 
 ---
 
 ## Storage
 
-All generated content lives on the **`news` branch** under `operations/social/news/`. No picture file is stored: see [Pictures](#pictures).
+All generated content lives on the **`news` branch** under `operations/social/news/`, in two halves. No picture file is stored: see [Pictures](#pictures).
 
-### Daily: `daily/YYYY-MM-DD/`
+```
+data/
+  index.json                        Enter /news
+  summaries/daily/YYYY-MM-DD.json
+  summaries/weekly/YYYY-MM-DD.json  the Sunday
+  summaries/monthly/YYYY-MM.json
+  models/YYYY-MM-DD.json            the /models record
+  contributors/YYYY-MM.json         the website's community section
+posts/
+  x/daily/YYYY-MM-DD.json
+  x/daily/delivery.json
+  x/weekly/YYYY-MM-DD.json
+  x/weekly/delivery.json
+  linkedin/weekly/YYYY-MM-DD.json
+  linkedin/weekly/delivery.json
+  instagram/weekly/YYYY-MM-DD.json
+  instagram/weekly/delivery.json
+  discord/weekly/YYYY-MM-DD.json
+  discord/weekly/delivery.json
+  discord/models/YYYY-MM-DD.json
+  discord/models/delivery.json
+  discord/community/YYYY-MM-DD.json
+  discord/community/delivery.json
+  discord/prs/held.json
+  discord/prs/YYYY-MM/delivery.json
+```
 
-- `summary.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) and its `changelog` feed `index.json`
-- `twitter.json` — platform envelope
-- `delivery.json` — written only by `deliver.py`: one entry per post sent
+Each `posts/<platform>/<job>/` folder holds one file per post and its `delivery.json`, written only by `deliver.py`: one entry per post, keyed by its file name.
 
-`changelog` lists every PR of the day, posted or not, that changed the API (`api_changes`) or scheduled a model retirement (`announcements`): what Enter's Changelog reads. A day without `daily`-tier notes writes no post and saves a `summary.json` holding only its `date` and `changelog`, or nothing when that is empty.
+### Summaries: `data/summaries/`
+
+- `daily/YYYY-MM-DD.json` — the day's summary from the `daily`-tier notes, with the numbers of the PRs it covers; its `highlights` (each with a `kind`: `model`, `api`, `app` or `product`) and its `changelog` feed `index.json`
+- `weekly/YYYY-MM-DD.json` — the week's summary. `YYYY-MM-DD` is the Sunday publish date; it covers the previous Sun→Sat window, read from those days' daily summaries and highlights. Saturday's daily is written just before it, in the same run
+- `monthly/YYYY-MM.json` — the month's summary, from its daily summaries
+
+`changelog` lists every PR of the day, posted or not, that changed the API (`api_changes`) or scheduled a model retirement (`announcements`): what Enter's Changelog reads. A day without `daily`-tier notes writes no post and saves a summary holding only its `date` and `changelog`, or nothing when that is empty.
 
 ### PR notes (not saved)
 
-`prs.py` finds the day's merged PRs into `main` or `master` (UTC day) with one GitHub search, reads each PR's Area, Work type and Source from the Dev project, and asks `prompts/pr.md` for the note from the PR's title, description and diff. The diff decides: a claim from the description stays only when the diff supports it. A day can have 80 PRs, too many diffs for one call, so each PR is read on its own; the daily summary is written from the notes, and only the `changelog` is saved.
+`prs.py` finds the day's merged PRs into `main` or `master` (UTC day) with one GitHub search, reads each PR's Area, Work type and Source from the Dev project, and asks `prompts/summaries/pr.md` for the note from the PR's title, description and diff. The diff decides: a claim from the description stays only when the diff supports it. A day can have 80 PRs, too many diffs for one call, so each PR is read on its own; the daily summary is written from the notes, and only the `changelog` is saved.
 
 ```json
 {
@@ -98,41 +127,29 @@ All generated content lives on the **`news` branch** under `operations/social/ne
 
 `publish_tier` is the writer's choice with two label rules on top: `deps` or `chore` with `user_facing: false` → `discord_only`; `feature` → `daily`.
 
-### Weekly: `weekly/YYYY-MM-DD/`
+### The model record: `data/models/`
 
-`YYYY-MM-DD` is the Sunday publish date; the content covers the previous Sun→Sat window, read from those days' daily summaries and highlights. Saturday's daily is written just before it, in the same run.
+`YYYY-MM-DD.json` is the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. An answer in which a category lost more than half its models is refused, so a half-empty `/models` is never announced as mass retirements; `overwrite` records it once a person has checked. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier.
 
-- `summary.json` — the week's summary
-- `twitter.json`, `linkedin.json`, `instagram.json`, `discord.json` — platform envelopes
-- `delivery.json` — written only by `deliver.py`
+### Contributors: `data/contributors/YYYY-MM.json`
 
-### Monthly: `monthly/YYYY-MM/`
+Every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it.
 
-- `summary.json` — the month's summary, from its daily summaries
-- `contributors.json` — every PR merged into `main` or `master` that month, counted per GitHub account (authors and noreply co-authors, by account id); the website's community section reads it
+### Model and community posts: `posts/discord/models/`, `posts/discord/community/`
 
-### Model post: `models/`
+`YYYY-MM-DD.json` is the post as sent, saved only after Discord confirms the send; a week without changes saves nothing. The community writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text. Models and agents are two groups; an agent shows its base model instead of a price or access change, which follow that model.
 
-- `snapshots/YYYY-MM-DD.json` — the record: the whole `/models?reliability=all` catalog (community models the reliability filter hides included), saved by the 06:00 run on each day it changed. Live health stats are no change. A day is recorded only that day and then kept; a rerun on a later day skips it, and `overwrite` replaces a recorded day. An answer in which a category lost more than half its models is refused, so a half-empty `/models` is never announced as mass retirements; `overwrite` records it once a person has checked. Each Wednesday post compares the latest snapshot on its day with the latest one a week earlier
-- `diffs/YYYY-MM-DD.json`, `YYYY-MM-DD/discord.json` — the comparison and the post, saved only after Discord confirms the send; a week without changes saves nothing
-- `YYYY-MM-DD/delivery.json` — written only by `deliver.py`
-- `models.md` — every model post, newest first
+### Deploy posts: `posts/discord/prs/`
 
-### Community post: `community/`
+`YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. A `none` classification records `done` with `skipped: none` and generates no picture or message.
 
-`diffs/`, `YYYY-MM-DD/discord.json` and `delivery.json` as the model post, for the community models in the same record. Its writer reads catalog facts only (id, category, price and its per-image or per-token unit, modalities, capabilities, paid-only), never owner-written text. Models and agents are two groups; an agent shows its base model instead of a price or access change, which follow that model.
-
-### Deploy posts: `discord/YYYY-MM/delivery.json`
-
-One entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. A `none` classification records `done` with `skipped: none` and generates no picture or message.
-
-`discord/held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Successful runs and jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
+`held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Successful runs and jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
 
 ### Platform envelope
 
 ```json
 {
-  "platform": "twitter|linkedin|instagram|discord",
+  "platform": "x|linkedin|instagram|discord",
   "scope": "daily|weekly",
   "date": "YYYY-MM-DD",
   "period_start": "YYYY-MM-DD",
@@ -144,7 +161,7 @@ One entry per PR (`pr-<number>`), in the month it merged: its state and the Disc
 }
 ```
 
-### Enter `/news`: `index.json`
+### Enter `/news`: `data/index.json`
 
 `news_index.py` (workflow `news-build-index.yml`, after every `news-posts.yml` run and at 06:30) writes `index.json` from the files above; Enter's `/news` page reads only this file. It keeps the last 30 days (at least 10 highlights):
 
@@ -173,7 +190,7 @@ Announce a decided retirement with a row in the PR description. Registry comment
 |---|---|---|
 | `news-posts.yml` | 06:00 daily, 18:00 Sunday, 14:00 Wednesday | posts job: `posts.py write` + `save` + push, one post at a time; deliver job: `deliver.py` (only it holds the Buffer and Discord keys) |
 | `news-deploy-posts.yml` | production pushes and successful Cloudflare, website, Applications, E2B and Portkey runs; manual readiness preview by default | `deploy_posts.py` |
-| `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `index.json` |
+| `news-build-index.yml` | after `news-posts.yml`, and 06:30 daily | `news_index.py` → `data/index.json` |
 
 ### Manual runs of `news-posts.yml`
 
@@ -190,12 +207,12 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 | Script | Purpose |
 |---|---|
-| `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/pr.md`), with API changes and announced retirements; the daily keeps only those two in its `changelog` |
+| `prs.py` | The day's merged PRs from GitHub → one note each (`prompts/summaries/pr.md`), with API changes and announced retirements; the daily keeps only those two in its `changelog` |
 | `posts.py` | `write JOB DATE` makes the post files' model calls and pictures into a work folder; `save JOB DATE` turns it into today's files in a `news` checkout. Neither commits |
 | `deliver.py` | `schedule` (Buffer), `send` (Discord; the model and community posts from their work folder), `mark` (a person settles a stuck send) |
-| `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → `prompts/posts/discord-pr.md` → Discord, recorded with `deliver.py` |
-| `contributors.py` | The month's merged PRs per GitHub account, for `monthly/<month>/contributors.json` |
-| `news_index.py` | `index.json`: model news, API changes and daily highlights for Enter `/news` |
+| `deploy_posts.py` | `--production CHECKOUT [--preview]`: held production PRs → affected deployment jobs → `prompts/posts/discord/pr.md` → Discord, recorded with `deliver.py` |
+| `contributors.py` | The month's merged PRs per GitHub account, for `data/contributors/<month>.json` |
+| `news_index.py` | `data/index.json`: model news, API changes and daily highlights for Enter `/news` |
 | `common.py` | Shared: prompt loading and brand injection, the model and picture calls, file builders, note helpers |
 | `test_news.py` | Tests (`python3 -m unittest operations/social/scripts/test_news.py`) |
 
@@ -205,8 +222,8 @@ A preview is the before/after check for any change to a prompt or a script: run 
 
 1. **One run at a time.** `news-posts.yml` and `news-deploy-posts.yml` runs queue; none is cancelled.
 2. **Writing and delivering are separate jobs.** Rerunning a delivery never writes new posts; a failed post never stops the others' delivery.
-3. **Save once.** Each post is one commit to `news`; a saved date (its `summary.json`) is skipped unless `overwrite` is set.
-4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE POST done|failed` (for a deploy post, sets its entry to `done` or removes it).
+3. **Save once.** Each post is one commit to `news`; a saved date (its summary in `data/summaries/`) is skipped unless `overwrite` is set.
+4. **Never twice.** `delivery.json` is written before each send, with the file's sha, so two runs can't both claim a post. Buffer and Discord confirm a send. An unclear result (`attempt`) fails the run until a person checks the channel and runs `deliver.py mark JOB DATE PLATFORM done|failed` (for a deploy post, sets its entry to `done` or removes it).
 5. **Buffer only gets posts scheduled at today's slots;** nothing is posted right away.
 6. **The posts only read the model record:** the 06:00 run saves it, so a failed or repeated post never moves what the next one compares.
 7. **Start dates.** `deliver.py` refuses dates before its `START` (daily 2026-10-12, weekly 2026-10-18, models 2026-10-14, community 2026-10-21); `deploy_posts.py` skips PRs merged before the PR that introduced it (#17666), which were posted when they merged. Older posts went out with the previous senders.
@@ -274,12 +291,24 @@ operations/social/prompts/
     bee.md                  {bee_character}  Polli
     links.md                {links}          links posts may use
     characters-ref.jpg      the character sheet sent with every picture
-  tone/                     one voice per platform: twitter, linkedin, instagram, discord
-  pr.md                     each merged PR: its note
-  posts/                    one file per post: settings between --- lines, then the task
-    discord-pr.md  daily-summary.md  daily-x.md
-    weekly-summary.md  weekly-x.md  weekly-linkedin.md  weekly-instagram.md  weekly-discord.md
-    monthly-summary.md  model-post.md  community-post.md
+  summaries/                the texts every post is written from
+    pr.md                   each merged PR: its note
+    daily.md
+    weekly.md
+    monthly.md
+  posts/                    one folder per platform: its voice, then one file per post
+    x/tone.md
+    x/daily.md
+    x/weekly.md
+    linkedin/tone.md
+    linkedin/weekly.md
+    instagram/tone.md
+    instagram/weekly.md
+    discord/tone.md
+    discord/weekly.md
+    discord/pr.md
+    discord/models.md
+    discord/community.md
 ```
 
-A post file's settings say its `job`, its `tone` (the system prompt; a summary has none and is its own system prompt), its `temperature`, the `file` it is saved as, its `pictures` and the fields its reply must have. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR filled in.
+A post file's settings say its `job`, its `tone` (the platform whose `tone.md` is the system prompt; a summary has none and is its own system prompt), its `temperature`, its `pictures` and the fields its reply must have. A post under `posts/<platform>/` is saved as `posts/<platform>/<job>/<date>.json`. A platform post's task is its text with the summary's recap filled in; the deploy post's task is its text with the PR filled in.

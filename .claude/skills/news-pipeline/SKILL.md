@@ -18,7 +18,7 @@ How it works: `operations/social/PIPELINE.md`. Everything generated lives on the
 - Runs: `gh run list --workflow news-posts.yml` (or `news-deploy-posts.yml`, `news-build-index.yml`); `gh run view <id> --log`.
 - Nothing retries by itself: a failed model, picture, GitHub or Discord call turns the run red. Rerun it, except after an **empty model answer**: our API keeps each answer under its exact request, so the same run asks the same thing and gets the same empty answer back. Write that post by hand (or rerun once its input changes).
 - Failure issues: "Workflow failing: News / Posts — writing", "… — delivery", "… News / Deploy posts". Read every failed run: more than one post can fail in the same run.
-- Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/<daily|weekly|monthly|models|community>/<date>/` — `summary.json`, the post files, `delivery.json`. Deploy posts: `discord/<YYYY-MM>/delivery.json`.
+- Files: `https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/`, in two halves. `data/`: `summaries/<daily|weekly|monthly>/<date>.json`, the `/models` record `models/<date>.json`, `contributors/<month>.json` and `index.json`. `posts/<platform>/<job>/`: one `<date>.json` per post and the folder's `delivery.json`. Deploy posts: `posts/discord/prs/held.json` and `posts/discord/prs/<YYYY-MM>/delivery.json`.
 - Pictures are links, not files: `url` on `media.pollinations.ai`, kept 30 days. Once posted, the picture lives on the platform it went to.
 - `delivery.json` states: `done` (sent, never again), `failed` (nothing sent; the next delivery retries), `attempt` (unknown: the run stays red until a person decides).
 
@@ -38,29 +38,29 @@ gh workflow run news-posts.yml -f job=daily -f date=2026-10-12 -f run=preview
 | Deliver only | `run=deliver`. With `job=daily` or `weekly` it schedules Buffer only; the week's Discord post goes with `job=afternoon`. Not for `models` or `community` (below) |
 | Rewrite a saved date | add `overwrite=true`; its `delivery.json` is kept, so posts already `done` are not sent again, and a saved model or community post is never replaced |
 
-A day is saved once its `summary.json` is; a daily rerun with `overwrite=true` reads that day's PRs from GitHub again. `deliver.py` refuses dates before its `START`; those went out with the previous senders. Download a preview's texts and pictures with `gh run download <id> -n preview`.
+A day is saved once its summary in `data/summaries/daily/` is; a daily rerun with `overwrite=true` reads that day's PRs from GitHub again. `deliver.py` refuses dates before its `START`; those went out with the previous senders. Download a preview's texts and pictures with `gh run download <id> -n preview`.
 
 ## A PR missing or wrong in a daily
 
-- The daily reads every PR merged into `main` or `master` on its day (UTC) and writes about the ones its notes rate `daily`; the notes are not saved. Its `summary.json` lists the PRs it covers.
+- The daily reads every PR merged into `main` or `master` on its day (UTC) and writes about the ones its notes rate `daily`; the notes are not saved. Its summary lists the PRs it covers.
 - To rewrite a day, rerun the daily with `overwrite=true` (preview first). The weekly and monthly read the daily summaries, so rerun them after with `overwrite=true` too if they are already written.
-- To fix only what Enter shows (an API change, a retirement), edit that day's `changelog` in `summary.json` on `news` by hand, keeping its shape, then `gh workflow run news-build-index.yml`.
+- To fix only what Enter shows (an API change, a retirement), edit that day's `changelog` in `data/summaries/daily/<day>.json` on `news` by hand, keeping its shape, then `gh workflow run news-build-index.yml`.
 
 ## A missing deploy post
 
 Production pushes discover new main PRs; successful Cloudflare, website, Applications, E2B and Portkey runs retry them. `discord/held.json` keeps the production scan cursor and pending PRs with their remaining deployment jobs. Each PR waits until every affected service/app has a successful deployment containing its merge commit. A PR with no deployment target can post at promotion. There is no age cutoff.
 
-Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. `none` posts are recorded as `done` with `skipped: none`, without a picture or Discord send. Delivery entries remain `pr-<number>` in `discord/<merge month>/delivery.json`.
+Successful target checks are saved so they do not expire with Actions history. The workflow reads its path rules from the scanned production revision's deployment workflows and reuses application discovery. `none` posts are recorded as `done` with `skipped: none`, without a picture or Discord send. Delivery entries are `pr-<number>` in `posts/discord/prs/<merge month>/delivery.json`.
 
 - Preview readiness first: `gh workflow run news-deploy-posts.yml -f preview=true` (the manual default). It reads live GitHub state but never saves or sends.
 - A red run: rerun it (`gh run rerun <id>`) or `gh workflow run news-deploy-posts.yml -f preview=false`. PRs already `done` are skipped.
 - `attempt`: look in the Discord channel. Found it: set the entry's `state` to `done`. Not there: remove the entry, then rerun.
-- No post at all: check `held.json` and the required deployment jobs, then the delivery record for a `none` skip. PRs merged before #17666 were posted at merge; `master` PRs get no deploy post. Never advance the scan cursor or delete a held PR to clear a failure.
+- No post at all: check `posts/discord/prs/held.json` and the required deployment jobs, then the delivery record for a `none` skip. PRs merged before #17666 were posted at merge; `master` PRs get no deploy post. Never advance the scan cursor or delete a held PR to clear a failure.
 
 ## Settle a stuck send (`attempt`)
 
 1. Look everywhere it could be: in Buffer both the Queue and the Sent tab (a post whose answer was lost may already be published), and the destination itself (X, LinkedIn, Instagram, the Discord channel).
-2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin.json done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
+2. Found it: `GITHUB_TOKEN=$(gh auth token) python operations/social/scripts/deliver.py mark weekly 2026-10-18 linkedin done`. Certainly not sent anywhere: `… failed`, then deliver again. Still unsure: leave it at `attempt`. A Discord post that went out in part can only be marked `done` after the rest is posted by hand.
 
 ## Recover a model or community post
 
@@ -69,7 +69,7 @@ Each is written, sent to Discord and saved in one run; the run saves only if its
 ## Missing from Enter's News page
 
 Check in order:
-1. **Changelog, models:** the `/models` record (`models/snapshots/`) shows the change between two recorded days; it is dated the day the record first saw it. A scheduled retirement needs a `RETIRE` row with an `Effective` date in the PR description; the daily of its merge day keeps it in its `changelog`.
+1. **Changelog, models:** the `/models` record (`data/models/`) shows the change between two recorded days; it is dated the day the record first saw it. A scheduled retirement needs a `RETIRE` row with an `Effective` date in the PR description; the daily of its merge day keeps it in its `changelog`.
 2. **Changelog, API:** only the post-deploy docs PR that regenerates `APIDOCS.md` records API changes, kept in the `changelog` of its merge day's daily.
 3. **Updates:** a daily highlight with `kind: product`. `model` and `api` belong to the Changelog; a PR its note rates other than `daily` never reaches a daily.
 4. **Window:** `index.json` keeps the last 30 days (at least 10 highlights). It is rebuilt after every `news-posts.yml` run and at 06:30; raw GitHub files are cached for about 5 minutes.

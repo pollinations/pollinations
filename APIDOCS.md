@@ -504,7 +504,7 @@ Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `
 
 ### Typed decisions (`typesafe/jev-1.13`)
 
-`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`.
+`typesafe/jev-1.13` (aliases `jev` and `typesafe/jev`) returns calibrated judgments instead of free text. Post `state` and a map of `questions` to `POST /alpha/decisions`; each question is a `choice`, `score`, or `noul`, and each is answered independently under the key you supplied. `model` defaults to `jev`. `POST /v1/systemone`, TypeSafe's own path, takes the same request and returns the same response, so clients that append `/v1/systemone` to a base URL work with `https://gen.pollinations.ai`.
 
 ```json
 {
@@ -738,6 +738,45 @@ Models that support this endpoint list `/alpha/decisions` in `supported_endpoint
 
 ```bash
 curl -X POST "https://gen.pollinations.ai/alpha/decisions" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"state":"My payouts have been failing for 3 days.","questions":{"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}'
+```
+
+---
+
+#### `POST` `/v1/systemone` — Create Decision (System One path)
+
+TypeSafe's System One path for clients that append `/v1/systemone` to a base URL. Same request, response, models, and billing as `POST /alpha/decisions`.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `model` | `string` | Decision model to use. Defaults to `jev`. See the `/models` endpoint for models that list `/alpha/decisions` in `supported_endpoints`. |
+| `state` * | `string` \| `object` \| `any`[] | The facts to decide on. Confidence can stay high when facts are missing, so supply what is relevant rather than everything. |
+| `questions` * | `object` | Questions to answer about the state, keyed by a name you choose. Each question is evaluated independently and answered under the same key. |
+
+<sub>`*` = required field</sub>
+
+📤 **Response** · `200` · `application/json` — Decision answers with token usage
+
+| Field | Type | Description |
+|---|---|---|
+| `id` * | `string` | — |
+| `model` * | `string` | The model that answered. |
+| `provider` * | `string` | Publisher of the model that answered. |
+| `answers` * | `object` | One answer per question, under the same key. |
+| `usage` * | `object` | Token usage for the decision. Jev bills input tokens only. |
+| `usage.input_tokens` * | `number` | — |
+| `usage.output_tokens` * | `number` | — |
+
+<sub>`*` = required field</sub>
+
+💻 **Example**
+
+```bash
+curl -X POST "https://gen.pollinations.ai/v1/systemone" \
   -H "Authorization: Bearer $POLLINATIONS_KEY" \
   -H "Content-Type: application/json" \
   -d '{"state":"My payouts have been failing for 3 days.","questions":{"is_urgent":{"type":"noul","instructions":"Does this convey urgency?"}}}'
@@ -3188,7 +3227,7 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage managed agents and their callable `community/owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
+Create and manage managed agents and their callable `community/owner/name` model listings. Private agents are available to any account with linked GitHub; public listing requires community publisher access. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen. A new agent or a change becomes callable within a minute or two.
 
 - **Prompt agent**: instructions, a base model, and optional MCP servers.
 - **Code agent**: a public GitHub repository with `agent.ts` at its root. Pollinations deploys the current default-branch revision; the repository name becomes the model ID and title. The bundled Vercel AI SDK (`ai`, `@ai-sdk/openai-compatible`) is importable; other dependencies are not installed. The callback receives `model(id)`, `mcp.tools(server)`, `respond(config)`, `pollinations(path, init)`, `mcp.listTools(server)`, and `mcp(server, tool, arguments)`.
@@ -3203,7 +3242,7 @@ See [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) fo
 
 ### /account/my-models
 
-Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; an endpoint without SSE passes with `streaming: false` and is registered with `advertised.streaming: false`, and Gen answers `stream: true` calls to it with the finished answer as one event stream. `/models` discovery is optional.
+Community text, image, video, speech-to-text, and text-to-speech model management. Any authenticated account can list, create, update, delete, and call its private owner-only models. Text providers and endpoint agents declare one `api` (`chat_completions` or `responses`) and its exact `url`. Responses listings support both public text APIs through Gen; Chat Completions listings support Chat Completions only. Managed prompt agents use the local Responses runtime and require no endpoint URL. The text endpoint test checks JSON and streaming usage for the selected API; an endpoint without SSE passes with `streaming: false` and is registered with `advertised.streaming: false`, and Gen answers `stream: true` calls to it with the finished answer as one event stream. `/models` discovery is optional. A new model or a change becomes callable within a minute or two.
 
 Other model families retain `baseUrl`. Image providers expose `/v1/images/generations` and may also expose `/v1/images/edits`; transcription providers expose `/v1/audio/transcriptions`; speech providers expose `/v1/audio/speech` and must return binary audio, which is billed by input character count. Video providers enter an exact endpoint URL that accepts `prompt`, optional `duration`, and optional `image` and `reference_*` URL arrays. Omitted duration uses the provider's default. Return completed MP4 media as `data[].b64_json` or `data[].url`, plus `usage.duration` in generated seconds. Billing uses reported duration, falling back to requested duration when usage is missing; at least one is required. The endpoint test detects image-edit support and selects image pricing: valid OpenAI image token usage enables per-1M-token pricing, otherwise a fixed Pollen price is charged once per successful generated image.
 
@@ -3929,7 +3968,23 @@ curl "https://gen.pollinations.ai/quests/catalog"
 
 ### Jobs
 
-Submit, poll and download asynchronous image, video, audio and 3D jobs.
+Long image, video, audio and 3D generations don't need to hold a connection open. Add `Prefer: respond-async` to a normal media request: an uncached request returns `202 Accepted` right away with a job `id`, a `Location` header and `Retry-After: 5`.
+
+```bash
+job=$(curl -sS "https://gen.pollinations.ai/video/a%20paper%20boat%20on%20a%20river?model=google/veo-3.1-fast" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" \
+  -H "Prefer: respond-async" | jq -r '.id')
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job" -H "Authorization: Bearer $POLLINATIONS_KEY"
+curl -sS "https://gen.pollinations.ai/v1/jobs/$job/result" \
+  -H "Authorization: Bearer $POLLINATIONS_KEY" -o boat.mp4
+```
+
+- Poll `GET /v1/jobs/{id}` until `status` is `succeeded` or `failed`, then download from `result_url`. The result endpoint returns 409 while the job is pending or failed.
+- Only accounts that submitted the job can read it. Anyone else gets 404, as do unknown ids and expired results.
+- Identical requests join one generation and one charge, and polling never charges. Resubmitting after a failure, or after the cached file has expired, starts and bills a new generation.
+- An already cached result may come back directly as HTTP 200, without a job id.
+- Job records expire 24 hours after completion; media files keep their normal cache lifetime.
+- Works on routes that store a media file: `/image`, `/video`, `/3d`, `/audio/{text}`, `/v1/images/*` and `/v1/audio/speech`. Streaming and text requests ignore `Prefer` and stay synchronous.
 
 #### `GET` `/v1/jobs/{id}` — Get Media Job Status
 

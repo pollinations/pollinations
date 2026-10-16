@@ -71,15 +71,17 @@ export const docsCommand = new Command("docs")
                         if (selectedLevel && level > selectedLevel) {
                             headingMatches[headingMatches.length - 1] +=
                                 section;
-                            continue;
+                        } else if (
+                            section
+                                .split("\n")[0]
+                                .toLowerCase()
+                                .includes(needle)
+                        ) {
+                            selectedLevel = level;
+                            headingMatches.push(section);
+                        } else {
+                            selectedLevel = 0;
                         }
-                        selectedLevel = section
-                            .split("\n")[0]
-                            .toLowerCase()
-                            .includes(needle)
-                            ? level
-                            : 0;
-                        if (selectedLevel) headingMatches.push(section);
                     }
                     const matches = headingMatches.length
                         ? headingMatches

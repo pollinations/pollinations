@@ -69,6 +69,52 @@ it("keeps raw Markdown when piped", async () => {
     expect(write.mock.calls[0][0]).toBe(markdown);
 });
 
+it.each(["MCP Servers", "MCP", "Connect a client"])(
+    "keeps subsections once and stops at the next peer for %s",
+    async (endpoint) => {
+        const client = [
+            "### Connect a client",
+            "Use a Streamable HTTP client.",
+            "#### Claude Code MCP",
+            "```bash",
+            "# MCP setup",
+            "claude mcp add --transport http pollinations https://gen.pollinations.ai/mcp/pollinations",
+            "```",
+            "",
+        ].join("\n");
+        const chapter = [
+            "## MCP Servers",
+            "Hosted tools.",
+            "### MCP quick start",
+            "Run polli mcp install claude.",
+            client,
+            "### Permissions",
+            "Provide a Pollinations key.",
+            "",
+        ].join("\n");
+        vi.stubGlobal(
+            "fetch",
+            vi
+                .fn()
+                .mockResolvedValue(
+                    new Response(
+                        `Preamble about MCP.\n## Earlier\nEarlier docs.\n${chapter}## Sandboxes\nUnrelated docs.\n`,
+                    ),
+                ),
+        );
+        const write = vi
+            .spyOn(process.stdout, "write")
+            .mockImplementation(() => true);
+        setOutputMode("json");
+
+        await docsCommand.parseAsync([endpoint], { from: "user" });
+
+        expect(JSON.parse(String(write.mock.calls[0][0])).content).toBe(
+            endpoint === "Connect a client" ? `${client}\n` : chapter,
+        );
+    },
+);
+
 it.each([
     ["/image", "### Image (URL)\nimage example\n"],
     ["/text", "### Text (Python)\ntext example\n"],

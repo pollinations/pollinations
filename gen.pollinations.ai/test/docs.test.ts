@@ -162,6 +162,13 @@ describe("docs routes", () => {
                 "/api/quests/catalog": {
                     get: { tags: ["✨ Quests"], security: [] },
                 },
+                "/x402/keys": {
+                    get: { tags: ["👤 Account"] },
+                },
+                "/x402/keys/{packKey}": {
+                    get: { tags: ["👤 Account"] },
+                    post: { tags: ["👤 Account"] },
+                },
                 "/api/account/quests/rewards": {
                     get: { tags: ["👤 Account"] },
                 },
@@ -261,6 +268,9 @@ describe("docs routes", () => {
         expect(schema.paths["/account/agents"]).toBeDefined();
         expect(schema.paths["/account/agents/{id}"]).toBeDefined();
         expect(schema.paths["/quests/catalog"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys"]).toBeDefined();
+        expect(schema.paths["/api/x402/keys/{packKey}"]).toBeDefined();
+        expect(schema.paths["/x402/keys/{packKey}"]).toBeUndefined();
         expect(schema.paths["/api/account/key"]).toBeUndefined();
         expect(schema.paths["/api/account/profile"]).toBeUndefined();
         expect(schema.paths["/api/account/quests"]).toBeUndefined();
@@ -278,9 +288,13 @@ describe("docs routes", () => {
         const guides = schema["x-tagGroups"].find(
             (group) => group.name === "Guides",
         );
+        const getStarted = schema["x-tagGroups"].find(
+            (group) => group.name === "Get Started",
+        );
         const resources = schema["x-tagGroups"].find(
             (group) => group.name === "Resources",
         );
+        expect(getStarted?.tags).toContain("x402 Prepaid Keys");
         expect(guides?.tags).toContain("Publish a Model");
         expect(guides?.tags).not.toContain("Community Models");
         expect(resources?.tags).toContain("Community Models");
@@ -310,6 +324,9 @@ describe("docs routes", () => {
         ).toContain("polli harness dsh on");
         expect(schema.tags.map((tag) => tag.name)).toContain("MCP Servers");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
+        expect(schema.tags.map((tag) => tag.name)).toContain(
+            "x402 Prepaid Keys",
+        );
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
         expect(schema.tags.map((tag) => tag.name)).not.toContain("🌸 BYOP");
@@ -426,6 +443,28 @@ describe("docs routes", () => {
             schema.paths["/quests/catalog"] as Record<string, unknown>
         )?.get as Record<string, unknown> | undefined;
         expect(questsCatalogGet?.security).toEqual([]);
+
+        const purchase = schema.paths[
+            "/api/x402/keys/{packKey}"
+        ] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+            post: { tags: string[]; security: unknown[] };
+        };
+        expect(purchase.servers).toEqual([
+            { url: "https://enter.pollinations.ai" },
+        ]);
+        for (const operation of [purchase.get, purchase.post]) {
+            expect(operation.tags).toEqual(["x402 Prepaid Keys"]);
+            expect(operation.security).toEqual([]);
+        }
+        const amountList = schema.paths["/api/x402/keys"] as unknown as {
+            servers: { url: string }[];
+            get: { tags: string[]; security: unknown[] };
+        };
+        expect(amountList.servers).toEqual(purchase.servers);
+        expect(amountList.get.tags).toEqual(["x402 Prepaid Keys"]);
+        expect(amountList.get.security).toEqual([]);
 
         vi.mocked(fetch).mockResolvedValue(Response.json(schema));
         await expect(

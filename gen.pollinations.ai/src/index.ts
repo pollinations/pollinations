@@ -168,6 +168,7 @@ function llmsTxt(c: Context<Env>): Response {
 ## Account
 
 - [Create a secret key](https://enter.pollinations.ai/keys): Sign in and manage keys.
+- [Buy a prepaid key with USDC (x402)](${origin}/docs/llm.txt?section=x402): No account or sign-in; pay from $0.01 on Base.
 - [Balance and Pollen](https://enter.pollinations.ai/pollen): Check available credits.
 `,
         {

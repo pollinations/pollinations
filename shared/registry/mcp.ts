@@ -43,6 +43,7 @@ export type McpPricingInfo = {
 export type McpBindingName =
     | "POLLINATIONS_MCP"
     | "ASK_JEV_MCP"
+    | "CATALOG_DIFF_MCP"
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
@@ -124,6 +125,19 @@ export const MCP_SERVERS = [
         pricing: {
             description:
                 "Decision tools use Jev's listed model rate. No additional MCP fee.",
+            rates: [],
+        },
+    },
+    {
+        id: "catalog-diff",
+        name: "Catalog Diff",
+        description:
+            "Snapshot the model catalog and diff two snapshots for changes.",
+        binding: "CATALOG_DIFF_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Catalog tools use the caller's key with no additional MCP fee.",
             rates: [],
         },
     },

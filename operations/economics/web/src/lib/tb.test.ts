@@ -231,6 +231,45 @@ describe("canonicalPollenRows", () => {
         ]);
     });
 
+    it("corrects the confirmed ACE-Step host only within the reviewed month", () => {
+        const source = [
+            pollen("self-hosted", { month: "2026-04", model: "acestep" }),
+            pollen("lambda", { month: "2026-04", model: "acestep" }),
+            pollen("self-hosted", { month: "2026-03", model: "acestep" }),
+            pollen("self-hosted", {
+                month: "2026-04",
+                model: "other-workload",
+            }),
+        ];
+        const before = JSON.stringify(source);
+        const rows = canonicalPollenRows(source);
+        const merged = rows.find(
+            (row) => row.month === "2026-04" && row.vendor === "lambda",
+        );
+        expect(merged).toMatchObject({
+            model: "acestep",
+            price_paid: 6,
+            price_quests: 8,
+            requests_paid: 10,
+            requests_quests: 12,
+        });
+        expect(rows).toContainEqual(
+            expect.objectContaining({
+                month: "2026-03",
+                vendor: "self-hosted",
+                model: "acestep",
+            }),
+        );
+        expect(rows).toContainEqual(
+            expect.objectContaining({
+                month: "2026-04",
+                vendor: "self-hosted",
+                model: "other-workload",
+            }),
+        );
+        expect(JSON.stringify(source)).toBe(before);
+    });
+
     it("removes rows with no values or requests", () => {
         expect(
             canonicalPollenRows([

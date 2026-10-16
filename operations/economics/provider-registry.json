@@ -1,5 +1,5 @@
 {
-  "version": 32,
+  "version": 33,
   "canonicalModelRenames": {
     "claude": [
       {
@@ -1077,6 +1077,14 @@
       "from": "2026-01",
       "until": "2026-04",
       "evidence": "Reviewed routing and Azure Cost Management exports identify gptimage's gpt-image-1-mini deployments on the Myceli Azure subscription during this interval, despite the recorded azure-2 provider tag. This override applies only to gptimage; retain all other Pointsflyer identities. Source amounts remain in the ledgers and private evidence archive."
+    },
+    {
+      "vendor": "self-hosted",
+      "model": "acestep",
+      "to": "lambda",
+      "from": "2026-04",
+      "until": "2026-04",
+      "evidence": "Owner confirmed on 2026-10-16 that ACE-Step always ran on Lambda GPU. The historical Lambda ACE-Step service is documented in operations/infrastructure/gpu/GPU_INSTANCES.md. This rule corrects the April self-hosted tag only; it does not assign a share of the shared GPU bill."
     }
   ],
   "providers": [
@@ -5831,6 +5839,16 @@
       "monthlyReview": false,
       "balanceTracking": false,
       "collectionMethod": null
+    }
+  ],
+  "pollenComputeModeOverrides": [
+    {
+      "vendor": "scaleway",
+      "model": "turbo",
+      "from": "2026-01",
+      "until": "2026-01",
+      "mode": "gpu-capacity",
+      "evidence": "January implementation before removal commit 2c4d429403a30484915ac6177d4b189d0fdd805c: registry provider scaleway; callSelfHostedServer routes turbo to the self-hosted turbo pool; turbo-startup.sh launches image_gen_dmd2 locally. This establishes GPU delivery, not the allocation of L4 resource costs."
     }
   ]
 }

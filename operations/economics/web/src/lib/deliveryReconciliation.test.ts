@@ -95,9 +95,42 @@ describe("shared model identity and delivery reconciliation", () => {
         expect(JSON.stringify(data)).toBe(before);
     });
 
-    it("leaves an unmatched mixed-month workload open instead of guessing from hardware", () => {
+    it("uses reviewed GPU routing without assigning the shared hardware bill", () => {
         const data: Data = {
             opPollen: [usage("mistral"), usage("turbo")],
+            vendorLedger: [
+                cost("mistral-small-3.2-24b", "inference"),
+                cost("l4", "gpu"),
+            ],
+        };
+        const index = computeModeIndex(data);
+        expect(pollenComputeMode(index, "2026-01", "scaleway", "turbo")).toBe(
+            "gpu-capacity",
+        );
+        expect(
+            managedInferenceData(data).opPollen?.map((row) => row.model),
+        ).toEqual(["mistral"]);
+        const gpu = gpuWorkloadRows(data, "2026-01");
+        expect(gpu.find((row) => row.workload === "turbo")?.flags).toContain(
+            "missing GPU cost",
+        );
+        expect(gpu.find((row) => row.workload === "l4")).toMatchObject({
+            totalCostUsd: 40,
+            paidUsd: null,
+            fullCostResultUsd: null,
+            flags: ["missing Pollen"],
+        });
+        expect(pollenComputeMode(index, "2026-02", "scaleway", "turbo")).toBe(
+            "unclassified",
+        );
+        expect(pollenComputeMode(index, "2026-01", "unknown", "turbo")).toBe(
+            "unclassified",
+        );
+    });
+
+    it("leaves an unmatched mixed-month workload open instead of guessing from hardware", () => {
+        const data: Data = {
+            opPollen: [usage("mistral"), usage("unreviewed-workload")],
             vendorLedger: [
                 cost("mistral-small-3.2-24b", "inference"),
                 cost("l4", "gpu"),
@@ -113,7 +146,7 @@ describe("shared model identity and delivery reconciliation", () => {
             (row) => row.messages,
         );
         expect(messages).toContain(
-            "Pollen usage cannot yet be assigned to inference or GPU: turbo.",
+            "Pollen usage cannot yet be assigned to inference or GPU: unreviewed-workload.",
         );
         expect(
             messages.some(

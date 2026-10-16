@@ -109,6 +109,15 @@ export type PollenVendorOverride = {
     evidence: string;
 };
 
+export type PollenComputeModeOverride = {
+    vendor: string;
+    model: string;
+    from: string;
+    until: string;
+    mode: "managed-inference" | "gpu-capacity";
+    evidence: string;
+};
+
 export type CanonicalModelRule = {
     provider?: string;
     from: string;
@@ -122,6 +131,7 @@ type ProviderRegistryFile = {
     version: number;
     canonicalModelRenames: Record<string, CanonicalModelTarget>;
     pollenVendorOverrides: PollenVendorOverride[];
+    pollenComputeModeOverrides: PollenComputeModeOverride[];
     // Pollen model ids that no longer exist in the shared registry but still
     // identify historical costs. Removing a model from the product does not
     // invalidate what it cost.
@@ -145,6 +155,9 @@ export const RETIRED_MODELS: readonly string[] = (
 export const POLLEN_VENDOR_OVERRIDES: readonly PollenVendorOverride[] = (
     registryJson as ProviderRegistryFile
 ).pollenVendorOverrides;
+
+export const POLLEN_COMPUTE_MODE_OVERRIDES: readonly PollenComputeModeOverride[] =
+    (registryJson as ProviderRegistryFile).pollenComputeModeOverrides;
 
 export function pollenVendorOverride(
     month: string,

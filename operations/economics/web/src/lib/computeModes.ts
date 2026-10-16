@@ -1,6 +1,9 @@
 import type { Data, VendorLedgerRow } from "../types";
 import { ledgerModelResolver } from "./modelIdentity";
-import { resolveProvider } from "./providerRegistry";
+import {
+    POLLEN_COMPUTE_MODE_OVERRIDES,
+    resolveProvider,
+} from "./providerRegistry";
 import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
@@ -125,16 +128,27 @@ export function pollenComputeMode(
     model?: string,
 ): ComputeMode {
     const observed = providerMonthComputeMode(index, month, provider);
+    // Reviewed routing can resolve delivery without inventing a GPU cost split.
+    const reviewed = POLLEN_COMPUTE_MODE_OVERRIDES.find(
+        (rule) =>
+            rule.vendor === canonicalVendor(provider) &&
+            rule.model === model &&
+            rule.from <= month &&
+            month <= rule.until,
+    )?.mode;
     if (observed === "mixed" && model !== undefined) {
         return (
             index.modeByModel.get(
                 `${providerMonthKey(month, provider)}|${index.model(month, provider, model)}`,
-            ) ?? "mixed"
+            ) ??
+            reviewed ??
+            "mixed"
         );
     }
     if (observed !== "unclassified") return observed;
     const definition = resolveProvider(provider);
     return (
+        reviewed ??
         definition?.pollenComputeMode ??
         (definition?.category === "compute" &&
         definition.meteringBasis === "direct"

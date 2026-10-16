@@ -1,4 +1,4 @@
-export type RouteMeta = { title: string; description: string };
+type RouteMeta = { title: string; description: string };
 
 export const ROUTE_META: Record<string, RouteMeta> = {
     "/": {

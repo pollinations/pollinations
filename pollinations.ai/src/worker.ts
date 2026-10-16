@@ -6,13 +6,7 @@
  * the publishable BYOP app key (see src/config.ts).
  */
 
-import {
-    getJsonLd,
-    knownPage,
-    NOT_FOUND_META,
-    ROUTE_META,
-    type RouteMeta,
-} from "./routeMeta";
+import { getJsonLd, knownPage, NOT_FOUND_META, ROUTE_META } from "./routeMeta";
 
 /**
  * RFC 8288 Link headers for every page this worker rewrites, so an agent that
@@ -28,15 +22,18 @@ const AGENT_LINKS = [
     '<https://gen.pollinations.ai/.well-known/ai-catalog.json>; rel="describedby"',
 ].join(", ");
 
-/**
- * Markdown for Agents: a page requested with `Accept: text/markdown`. This is a
- * client-rendered SPA, so the only text the worker knows before React runs is
- * the route metadata — that is the representation, plus the entry point to the
- * machine-readable surface. The agent already knows the URL it asked for, so
- * there is no canonical line. https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/
- */
-const markdownPage = (meta: RouteMeta) =>
-    `# ${meta.title}\n\n${meta.description}\n\nAgent entry point: https://gen.pollinations.ai/llms.txt\n`;
+// Only the homepage has a summary; other pages need their full HTML content.
+const HOME_MARKDOWN = `# ${ROUTE_META["/"].title}\n\n${ROUTE_META["/"].description}\n\nAgent entry point: https://gen.pollinations.ai/llms.txt\n`;
+
+function acceptsMarkdown(accept: string): boolean {
+    return accept.split(",").some((range) => {
+        const [type, ...params] = range.trim().toLowerCase().split(";");
+        if (type.trim() !== "text/markdown") return false;
+        const q = params.find((param) => param.trim().startsWith("q="));
+        const quality = q === undefined ? 1 : Number(q.split("=")[1]);
+        return quality > 0 && quality <= 1;
+    });
+}
 
 // Cloudflare Workers types (minimal, avoids conflicts with DOM types)
 interface CfElement {
@@ -96,25 +93,24 @@ export default {
             );
         }
 
-        // Markdown for Agents: a known page asked for with Accept: text/markdown
-        // is served as markdown instead of the client-rendered HTML shell, so an
-        // agent reads it without running React. HTML stays the default without
-        // that header; assets and unknown routes are never negotiated.
         const page = knownPage(url.pathname);
         if (
-            page &&
+            page === "/" &&
             (request.method === "GET" || request.method === "HEAD") &&
-            (request.headers.get("accept") ?? "").includes("text/markdown")
+            acceptsMarkdown(request.headers.get("accept") ?? "")
         ) {
-            return new Response(markdownPage(ROUTE_META[page]), {
-                headers: {
-                    "Content-Type": "text/markdown; charset=utf-8",
-                    Vary: "Accept",
-                    // Cloudflare ignores Vary on cached responses: keep it private.
-                    "Cache-Control": "private, max-age=3600",
-                    Link: AGENT_LINKS,
+            return new Response(
+                request.method === "HEAD" ? null : HOME_MARKDOWN,
+                {
+                    headers: {
+                        "Content-Type": "text/markdown; charset=utf-8",
+                        Vary: "Accept",
+                        // Cloudflare ignores Vary on cached responses: keep it private.
+                        "Cache-Control": "private, max-age=3600",
+                        Link: AGENT_LINKS,
+                    },
                 },
-            });
+            );
         }
 
         // Serve static assets with per-route meta tag rewriting for SEO
@@ -172,8 +168,7 @@ export default {
         }
         if (page) {
             htmlResponse.headers.set("Link", AGENT_LINKS);
-            // The HTML page and its markdown form share this URL.
-            htmlResponse.headers.set("Vary", "Accept");
+            if (page === "/") htmlResponse.headers.append("Vary", "Accept");
         }
         return rewriter.transform(htmlResponse);
     },

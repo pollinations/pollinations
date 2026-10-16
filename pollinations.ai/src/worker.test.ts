@@ -196,12 +196,12 @@ describe("agent discovery", () => {
 });
 
 describe("markdown for agents", () => {
-    test.each(["/", "/apps", "/community", "/play", "/terms"])(
-        "serves %s as markdown when the agent asks for it",
-        async (path) => {
+    test.each(["text/markdown", "text/markdown;q=0.5", "Text/Markdown; q=1"])(
+        "serves the homepage for %s",
+        async (accept) => {
             const response = await worker.fetch(
-                new Request(`https://pollinations.ai${path}`, {
-                    headers: { accept: "text/markdown" },
+                new Request("https://pollinations.ai/", {
+                    headers: { accept },
                 }),
                 { ASSETS: { fetch: async () => htmlAsset() } },
             );
@@ -214,11 +214,49 @@ describe("markdown for agents", () => {
             expect(response.headers.get("Link")).toContain("service-desc");
 
             const body = await response.text();
-            expect(body).toContain(`# ${ROUTE_META[path].title}`);
-            expect(body).toContain(ROUTE_META[path].description);
+            expect(body).toContain(`# ${ROUTE_META["/"].title}`);
+            expect(body).toContain(ROUTE_META["/"].description);
             expect(body).not.toContain("<html");
         },
     );
+
+    test.each([
+        "text/markdown;q=0",
+        "text/markdown;q=0.000, */*;q=1",
+        "text/markdown-other",
+        "text/html",
+    ])("keeps HTML when Markdown is not accepted: %s", async (accept) => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/", { headers: { accept } }),
+            { ASSETS: { fetch: async () => htmlAsset() } },
+        );
+        expect(response.headers.get("content-type")).toContain("text/html");
+    });
+
+    test.each(["/apps", "/community", "/play", "/terms"])(
+        "keeps the complete HTML for %s",
+        async (path) => {
+            const response = await worker.fetch(
+                new Request(`https://pollinations.ai${path}`, {
+                    headers: { accept: "text/markdown" },
+                }),
+                { ASSETS: { fetch: async () => htmlAsset() } },
+            );
+            expect(response.headers.get("content-type")).toContain("text/html");
+        },
+    );
+
+    test("HEAD returns the Markdown headers without a body", async () => {
+        const response = await worker.fetch(
+            new Request("https://pollinations.ai/", {
+                method: "HEAD",
+                headers: { accept: "text/markdown" },
+            }),
+            { ASSETS: { fetch: vi.fn() } },
+        );
+        expect(response.headers.get("content-type")).toContain("text/markdown");
+        expect(await response.text()).toBe("");
+    });
 
     test("keeps HTML as the default without the markdown accept header", async () => {
         const response = await worker.fetch(

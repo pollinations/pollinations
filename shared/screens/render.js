@@ -136,7 +136,7 @@ const page = h(
                 "div",
                 { className: "paths" },
                 path(
-                    "Sign in to enter",
+                    "Sign in to Pollinations",
                     null,
                     [
                         h(

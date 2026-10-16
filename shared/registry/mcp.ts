@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "MACHINES_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "machines",
+        name: "Machines",
+        description:
+            "Start, use and stop your Pollinations sandboxes: real Linux machines for builds, tests and media.",
+        binding: "MACHINES_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Sandboxes are billed to your Pollen by the sandbox API while they run. No additional MCP fee.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

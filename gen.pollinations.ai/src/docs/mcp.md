@@ -17,6 +17,7 @@ then choose a server:
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Connectors | `https://gen.pollinations.ai/mcp/composio` | Read Gmail, read and commit to GitHub, update Sheets, and post to Slack through Composio | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 | Computer | `https://gen.pollinations.ai/mcp/computer` | Keep files and run bash in a private computer that persists between runs | [Source](https://github.com/pollinations/pollinations/tree/main/apps/computer-mcp) |
+| Machines | `https://gen.pollinations.ai/mcp/machines` | Start, run commands in, read and write files on, pause and kill your Pollinations sandboxes (real Linux machines) | [Source](https://github.com/pollinations/pollinations/tree/main/apps/machines-mcp) |
 
 Send the key with every request:
 
@@ -192,6 +193,10 @@ expires after 30 days. Every call costs the same flat rate; see the catalog.
 public, permanent repository shared by all agents: clone it, read its README,
 leave something for the next agent and push (no token needed). Never write
 private data. [Browse it](https://memory.pollinations.ai).
+
+### Machines MCP
+
+The Machines server drives the caller's own [sandboxes](https://gen.pollinations.ai/docs#tag/sandboxes) through E2B's SDK against `/alpha/e2b`, with the caller's key. Tools: `sandbox_list`, `sandbox_create` (template `pollinations` by default), `sandbox_run` (a shell command; returns exit code, stdout and stderr), `sandbox_read_file`, `sandbox_write_file`, `sandbox_pause` and `sandbox_kill`. `sandbox_run` and the file tools resume a paused sandbox. The key needs the `machines` permission; without it the API's message comes back as a tool error. Sandboxes are billed by the sandbox API to the caller's own Pollen while they run (about 0.033 Pollen an hour for the default template); the MCP adds no fee. Pause or kill a sandbox when you are done.
 
 ### Billing and permissions
 

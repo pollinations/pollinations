@@ -424,7 +424,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "deepseek/deepseek-v4.1-flash",
-        config: portkeyConfig["deepseek-ai/DeepSeek-V4.1-Flash"],
+        config: portkeyConfig["DeepSeek-V4.1-Flash"],
         transform: fireworksThinking,
     },
     {

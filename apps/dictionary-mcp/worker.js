@@ -62,7 +62,7 @@ function decodeEntities(value) {
 
 function extractText(html) {
     return html
-        .replace(/<[^>]+>/g, " ")
+        .replace(/<\/?[a-zA-Z][^>]*>/g, " ")
         .replace(/\s+/g, " ")
         .trim();
 }

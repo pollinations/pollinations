@@ -22,6 +22,35 @@ Once signed in, they review the requested access and confirm:
 
 <p align="left"><img src="https://media.pollinations.ai/90c355a1-e7f5-4187-ab78-9b06007bbdd9" alt="Allow this app, signed in: budget, expiry and permissions" width="560"></p>
 
+## 🧩 Drop-in Button (No Build Step)
+
+One script tag adds a Connect button that runs the OAuth code flow below for you:
+
+```html
+<script defer src="https://cdn.jsdelivr.net/npm/@pollinations/ui@0.1.0-alpha.19/dist/connect.js"></script>
+
+<polli-connect app-key="pk_yourkey" budget="10" expiry="7"></polli-connect>
+
+<script>
+  const connect = document.querySelector('polli-connect');
+  connect.addEventListener('change', () => {
+    // connect.apiKey: the user's sk_ key, or null after Disconnect
+  });
+</script>
+```
+
+Add the page URL, without query or fragment, as a Redirect URI on your App Key. Call Pollinations with `connect.apiKey` as in step 3 below.
+
+| Attribute | What it does |
+|-----------|-------------|
+| `app-key` | Your App Key (required) |
+| `budget` | Pollen cap, as `budget` below |
+| `expiry` | Key lifetime in days |
+| `models` | Comma-separated, as `models` below |
+| `permissions` | Comma-separated scopes: `profile`, `usage`, `keys` |
+
+The key stays in `sessionStorage`, so it lasts until the tab closes.
+
 ## Developer Earnings
 
 Developer earnings are opt-in per App Key. When enabled, users pay 25% over base rates. The markup credits to your balance.

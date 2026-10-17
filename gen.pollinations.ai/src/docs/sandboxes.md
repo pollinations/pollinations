@@ -1,12 +1,10 @@
 ## Sandboxes
 
-Run code, development servers and coding agents on a cloud Linux computer, powered by E2B (alpha). Connect through SSH or VS Code and pay with your Pollinations credits.
+Run a cloud Linux computer through Pollinations, powered by E2B (alpha), and pay with credits. See [E2B’s API reference](https://docs.e2b.dev/api-reference/sandboxes/create-sandbox-v2) for request and response details; the Pollinations differences are below.
 
-[Sandboxes API reference](#tag/sandboxes-api) · [CLI reference](#tag/cli)
+### Start with Pollinations
 
-### Create and connect
-
-Create a sandbox from the [dashboard](https://enter.pollinations.ai/sandboxes), or use the CLI below. The CLI needs Node.js 20+ and account credits.
+Create a sandbox in the [dashboard](https://enter.pollinations.ai/sandboxes), or use [polli](#tag/cli) with Node.js 20+:
 
 <p align="left"><img src="https://media.pollinations.ai/7452f81b-4065-4af5-a65b-662c811e7ea2" alt="Sandboxes page on the dashboard" width="560"></p>
 
@@ -17,33 +15,26 @@ polli sandbox create
 ssh <id>.polli
 ```
 
-Replace `<id>` with the ID printed by `create`. For a sandbox created in the dashboard, run `polli sandbox ssh-config` once before connecting. VS Code's Remote-SSH uses the same `<id>.polli` host.
+For dashboard-created sandboxes, run `polli sandbox ssh-config` first. VS Code’s Remote-SSH uses the same host.
 
-Templates include Python, Node.js and coding tools; `pollinations-large` has more CPU and memory. To preview port 3000:
+### Use E2B SDKs or the API
+
+Use a [Pollinations secret key](https://enter.pollinations.ai/keys) with `account:machines` permission:
 
 ```bash
-ssh -L 3000:localhost:3000 <id>.polli
+export E2B_API_URL=https://gen.pollinations.ai/alpha/e2b
+export E2B_API_KEY=sk_...
 ```
 
-Then open `http://localhost:3000` in your browser.
+For REST requests, use this base URL and send the key as `Authorization: Bearer <key>`. Only your own sandboxes are accessible.
 
-### Pause, resume or delete
+Supported operations: create, list, inspect, connect/resume, pause, delete, timeout, per-sandbox metrics, legacy logs and network updates. Prefer v2 for create, list and connect; logs use `/sandboxes/{id}/logs`. Other endpoints and auto-resume, IAM and volume mounts are unavailable.
 
-| Action | Command | What happens |
-| --- | --- | --- |
-| Pause | `polli sandbox pause <id>` | Saves files, memory and processes; stops running. |
-| Resume | `ssh <id>.polli` | Continues where you left off. |
-| Delete | `polli sandbox kill <id>` | Permanently deletes the sandbox and its files. |
+### Credits and runtime
 
-An open SSH or VS Code connection keeps the sandbox running. By default, it pauses after you disconnect, usually within 15–20 minutes (5–10 minutes without SSH connection sharing).
-
-For background work, `polli sandbox timeout <id> 14400` keeps it running for four hours without a connection. It still needs sufficient credits and a valid key with remaining budget. Long-running sandboxes briefly pause and resume once a day, dropping open connections but preserving files, memory and processes.
-
-### Costs and limits
-
-- CPU and memory usage is charged in **credits, prepaid 10 minutes ahead**. See [current rates and template sizes](https://gen.pollinations.ai/alpha/e2b/pricing).
-- Paused sandboxes incur no further charges. **Unused prepaid time is not refunded** when you pause, delete or shorten the timeout; resuming starts a new payment.
-- Creation needs enough account balance and key budget for the first payment. Up to **8 sandboxes** can run per account.
-- Pollinations templates created with `keys` permission receive a dedicated API key. Deletion leaves that key; revoke it from [API Keys](https://enter.pollinations.ai/keys) if no longer needed.
-
-For SSH troubleshooting, custom templates, storage and E2B SDK setup, see the [sandbox reference](#tag/sandboxes-api).
+- Runtime is prepaid in credits. Long-running sandboxes renew in 10-minute windows. See [current rates, template sizes and concurrency limits](https://gen.pollinations.ai/alpha/e2b/pricing).
+- Auto-pause defaults to on. Paused sandboxes incur no further runtime charges; unused prepaid time is not refunded.
+- API timeouts above 600 seconds enable renewal until the requested deadline, subject to credits and key validity. Daily pause/resume preserves files and memory but drops connections.
+- An open SSH connection keeps the sandbox running; after disconnecting, it pauses automatically. For background work, use `polli sandbox timeout <id> <seconds>`; CLI-only `0` means until stopped or credits/key access run out.
+- `polli sandbox pause <id>` preserves state; `polli sandbox kill <id>` deletes the sandbox and its files.
+- Pollinations templates created with `keys` permission receive a dedicated API key. Deleting the sandbox leaves that key; revoke it separately when no longer needed.

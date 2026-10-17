@@ -31,7 +31,6 @@ concurrency:
 
 jobs:
   posts:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write  # the delivery record on the news branch

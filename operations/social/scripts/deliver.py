@@ -4,6 +4,7 @@
     python deliver.py schedule JOB DATE                 # Buffer: X, LinkedIn, Instagram
     python deliver.py send     JOB DATE [--work WORK]   # Discord; WORK for models and community
     python deliver.py mark     JOB DATE PLATFORM done|failed
+    python deliver.py mark     prs MONTH PR done|failed       # a deploy post: its merge month and number
 
 Each posts/<platform>/<job>/ folder on the news branch has a delivery.json with one
 entry per post, keyed by its file name.
@@ -31,6 +32,7 @@ from common import (
     LINKEDIN_MAX_CHARS,
     NEWS_REL_DIR,
     OWNER,
+    POSTS_REL_DIR,
     REPO,
     _github_headers,
     chunk_message,
@@ -444,11 +446,16 @@ def run(command: str, job: str, date: str, work: Path | None = None) -> None:
 
 
 def mark(job: str, date: str, platform: str, state: str) -> None:
-    """A person settles a post: done when they found it, failed to have it sent again."""
-    check_date(job, date)
-    if platform not in platforms(job):
-        sys.exit(f"{job} has no {platform} post")
-    folder, post = record_of(platform, job, date)
+    """A person settles a post: done when they found it, failed to have it sent again.
+    For a deploy post, job is prs, date its PR's merge month and platform the PR number."""
+    if job == "prs":
+        check_date("monthly", date)
+        folder, post = f"{POSTS_REL_DIR}/discord/prs/{date}", f"pr-{platform}"
+    else:
+        check_date(job, date)
+        if platform not in platforms(job):
+            sys.exit(f"{job} has no {platform} post")
+        folder, post = record_of(platform, job, date)
     record, sha = read_record(folder)
     print(f"Replacing {record.get(post)}")
     sent = (record.get(post) or {}).get("discord")
@@ -478,9 +485,9 @@ def main() -> None:
             "--work", type=Path, help="the folder posts.py wrote (models, community)"
         )
     command = commands.add_parser("mark")
-    command.add_argument("job", choices=START)
-    command.add_argument("date")
-    command.add_argument("platform")
+    command.add_argument("job", choices=(*START, "prs"))
+    command.add_argument("date", help="the day, the Sunday, or for prs the merge month (YYYY-MM)")
+    command.add_argument("platform", help="the platform, or for prs the PR number")
     command.add_argument("state", choices=("done", "failed"))
     args = parser.parse_args()
     if args.command == "mark":

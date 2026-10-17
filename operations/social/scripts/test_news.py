@@ -553,6 +553,14 @@ class PostsTest(unittest.TestCase):
         # A post whose text is missing stops the run instead of being saved empty.
         with self.assertRaisesRegex(SystemExit, "missing tweet"):
             self.new("daily", "2026-10-06", overwrite=True, tweet=None)
+        # Rewriting a day that turned quiet removes its old X post, so it can't be sent; the record stays.
+        delivery = self.news / NEWS_REL_DIR / "posts/x/daily/delivery.json"
+        delivery.write_text("{}")
+        self.notes["2026-10-06"] = [{**note(3, "2026-10-06T11:00:00Z", tier="discord_only"), "api_changes": api}]
+        self.assertEqual(self.new("daily", "2026-10-06", overwrite=True)[:2], ([], []))
+        self.assertFalse((self.news / x_file).exists())
+        self.assertEqual(json.loads((self.news / summary_file).read_text())["changelog"][0]["pr_number"], 3)
+        self.assertTrue(delivery.exists())
 
     def test_weekly_with_and_without_the_linkedin_rewrite(self):
         for long_linkedin, temperatures in ((False, [0.3, 0.7, 0.7, 0.7, 0.8]),
@@ -958,6 +966,16 @@ class DeliverTest(unittest.TestCase):
         self.assertEqual(self.calls, [])
         self.assertEqual(self.record("daily", "2026-10-11"), {"x": "attempt"})
 
+    def test_a_stuck_deploy_post_is_settled_with_mark(self):
+        folder = f"{NEWS_REL_DIR}/posts/discord/prs/2026-10"
+        self.store[f"{folder}/delivery.json"] = json.dumps({"pr-7": {"state": "attempt", "run": "r", "at": "t"}}).encode()
+        with patch("sys.argv", ["deliver.py", "mark", "prs", "2026-10", "7", "done"]):
+            deliver.main()
+        self.assertEqual(json.loads(self.store[f"{folder}/delivery.json"])["pr-7"]["state"], "done")
+        with patch("sys.argv", ["deliver.py", "mark", "prs", "2026-13", "7", "done"]), \
+             self.assertRaisesRegex(SystemExit, "is not a month"):
+            deliver.main()
+
     def test_a_half_sent_discord_post_is_finished_by_hand(self):
         self.save("weekly", "2026-10-11", {"discord": {"text": "line\n" * 400}})
         self.broken["https://discord.test/weekly?wait=true"] = [None, (429,)]
@@ -1029,7 +1047,7 @@ class DeliverTest(unittest.TestCase):
                ((1, ("2026-10-20T00:00:00Z",)), (2, ()), (3, ()), (4, ("2026-10-19T10:00:00Z",)),
                 (5, ("2026-10-21T10:00:00Z", "production")))},
             f"actions/workflows/{workflow}/runs": {"workflow_runs": [
-                {"id": 1, "head_sha": "production", "created_at": "2026-10-21T11:00:00Z"}]},
+                {"id": 1, "head_sha": "production", "created_at": "2026-10-21T11:00:00Z", "conclusion": "success"}]},
             "actions/runs/1/jobs": {"jobs": [{"name": "deploy-media", "conclusion": "success"},
                                            {"name": "deploy-gen", "conclusion": "skipped"}]},
             "compare/pr2...production": {"status": "ahead"},
@@ -1049,8 +1067,12 @@ class DeliverTest(unittest.TestCase):
             return json.dumps({"publish_tier": tier, "text": "Faster images", "image_prompt": "bee"})
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
+        def answer(path, **params):
+            if params.get("status") == "success":  # GitHub's filter on the whole run's result
+                return {"workflow_runs": [run for run in api[path]["workflow_runs"] if run["conclusion"] == "success"]}
+            return api[path]
         with patch.dict(os.environ, env), \
-             patch("deploy_posts.github", side_effect=lambda path, **params: api[path]), \
+             patch("deploy_posts.github", side_effect=answer), \
              patch("deploy_posts.write_news", side_effect=write), \
              patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: changes[n]), \
              patch("deploy_posts.call_pollinations_api", side_effect=output), \
@@ -1076,10 +1098,11 @@ class DeliverTest(unittest.TestCase):
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
             self.assertEqual(record["pr-3"]["skipped"], "none")
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
-            # More than 14 days later, Gen succeeds at a descendant SHA.
+            # More than 14 days later, Gen succeeds at a descendant SHA, in a run where Enter failed.
             api[f"actions/workflows/{workflow}/runs"]["workflow_runs"].insert(0,
-                {"id": 2, "head_sha": "later", "created_at": "2026-11-25T11:00:00Z"})
-            api["actions/runs/2/jobs"] = {"jobs": [{"name": "deploy-gen", "conclusion": "success"}]}
+                {"id": 2, "head_sha": "later", "created_at": "2026-11-25T11:00:00Z", "conclusion": "failure"})
+            api["actions/runs/2/jobs"] = {"jobs": [{"name": "deploy-gen", "conclusion": "success"},
+                                                  {"name": "deploy-enter", "conclusion": "failure"}]}
             api["compare/pr2...later"] = {"status": "ahead"}
             # A picture failure keeps the PR held, and the next run retries it.
             with patch("deploy_posts.generate_image", return_value=(None, None)):
@@ -1143,13 +1166,14 @@ class DeploymentReadinessTest(unittest.TestCase):
         runs = {cf: [{"id": 1, "head_sha": "new", "created_at": "2026-10-01T00:00:00Z"}],
                 web: [{"id": 2, "head_sha": "unrelated", "created_at": "2026-10-01T00:00:00Z"}],
                 apps: [{"id": 3, "head_sha": "new", "created_at": "2026-10-01T00:00:00Z"}]}
-        jobs = {1: [{"name": "deploy-gen", "conclusion": "success"}],
+        # Gen deployed although Enter failed in the same run: Gen's success still counts.
+        jobs = {1: [{"name": "deploy-gen", "conclusion": "success"}, {"name": "deploy-enter", "conclusion": "failure"}],
                 2: [{"name": "deploy", "conclusion": "success"}],
                 3: [{"name": "deploy (other)", "conclusion": "success", "steps": [
                     {"name": "Deploy apps/other", "conclusion": "success"}]}]}
         def api(path, **params):
             if path.startswith("actions/workflows/"):
-                self.assertEqual(params["status"], "success")
+                self.assertEqual(params["status"], "completed")  # failed runs too: jobs are judged one by one
                 return {"workflow_runs": runs[path.split("/")[2]]}
             if path.startswith("actions/runs/"):
                 return {"jobs": jobs[int(path.split("/")[2])]}

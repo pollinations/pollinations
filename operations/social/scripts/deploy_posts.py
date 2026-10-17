@@ -147,7 +147,7 @@ def waiting_for(held: dict) -> dict[str, list[str]]:
             continue
         earliest = min(held[number]["merged_at"] for number in pending)
         for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs",
-                         branch="production", status="success"):
+                         branch="production", status="completed"):
             # An older run's commit cannot contain a PR merged later. There is no age limit.
             if run["created_at"] < earliest:
                 break
@@ -258,7 +258,7 @@ def main() -> None:
     save_state(state, sha)
     if problems:
         sys.exit(f"Not posted: {', '.join(problems)}. Failed posts stay held for the next run. "
-                 "For stuck posts, check Discord before settling the delivery record.")
+                 "For a stuck post, check Discord, then run `deliver.py mark prs MONTH PR done|failed`.")
 
 
 if __name__ == "__main__":

@@ -518,6 +518,14 @@ def save(job: str, date: str, news: Path, work: Path, overwrite: bool = False) -
         files = post_files(raw)
     if job == "monthly":  # every month has its counts, even one with nothing to write
         files[f"{CONTRIBUTORS_REL_DIR}/{date}.json"] = json_file(raw["counts"])
+    if job in ("daily", "weekly"):
+        # An overwrite that writes fewer posts (a day that became quiet) must not leave the
+        # old ones for deliver.py to send; their delivery.json is kept.
+        for post in job_posts(job)[1:]:
+            stale = post_path(post["platform"], job, date)
+            if stale not in files and (news / stale).exists():
+                (news / stale).unlink()
+                print(f"  Removed {stale}")
     for path, content in files.items():
         (news / path).parent.mkdir(parents=True, exist_ok=True)
         (news / path).write_bytes(content)

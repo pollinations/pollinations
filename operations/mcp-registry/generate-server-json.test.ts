@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 import { MCP_SERVERS } from "../../shared/registry/mcp.ts";
 import { buildServerEntry } from "../../shared/registry/mcp-server-json.ts";
 
 // Mirrors the registry's actual server.schema.json constraints (checked
-// against the live schema for all six entries — see the PR description).
+// against the live schema for every current entry — see the PR description).
 const NAME_PATTERN = /^[a-zA-Z0-9.-]+\/[a-zA-Z0-9._-]+$/;
 
 test("every hosted server produces a valid, distinct registry entry", () => {
@@ -52,7 +53,9 @@ test("CLI requires an explicit, nonblank version", () => {
         const result = spawnSync(
             process.execPath,
             [
-                new URL("./generate-server-json.ts", import.meta.url).pathname,
+                fileURLToPath(
+                    new URL("./generate-server-json.ts", import.meta.url),
+                ),
                 ...args,
             ],
             { encoding: "utf8" },

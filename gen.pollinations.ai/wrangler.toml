@@ -22,6 +22,7 @@ services = [
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
+    { binding = "OPENVERSE_MCP", service = "openverse-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
@@ -133,6 +134,9 @@ service = "pollinations-composio-mcp"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
 
+[[env.production.services]]
+binding = "OPENVERSE_MCP"
+service = "openverse-mcp"
 [[env.production.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"
@@ -260,6 +264,9 @@ binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp-staging"
 
 [[env.staging.services]]
+binding = "OPENVERSE_MCP"
+service = "openverse-mcp-staging"
+[[env.staging.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp-staging"
 
@@ -365,6 +372,9 @@ service = "pollinations-composio-mcp"
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
 
+[[env.test.services]]
+binding = "OPENVERSE_MCP"
+service = "openverse-mcp"
 [[env.test.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp"

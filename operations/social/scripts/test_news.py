@@ -1087,6 +1087,9 @@ class DeliverTest(unittest.TestCase):
                                            {"name": "deploy-gen", "conclusion": "skipped"}]},
             "compare/pr2...production": {"status": "ahead"},
             "compare/pr3...production": {"status": "ahead"},
+            # Nothing merged into master since the cutover.
+            "branches/master": {"commit": {"sha": "master"}},
+            "commits": [{"sha": "master"}],
         }
         changes = {"1": ("docs", ["README.md"]), "2": ("gen", ["gen.pollinations.ai/src/x.ts"]),
                    "3": ("media", ["media.pollinations.ai/src/x.ts"])}
@@ -1098,8 +1101,7 @@ class DeliverTest(unittest.TestCase):
             response.json = lambda: {"content": {"sha": hashlib.sha1(self.store[path]).hexdigest()}}
             return response
         def output(system, context, *args, **kwargs):
-            tier = "none" if "PR #3:" in context else "daily"
-            return json.dumps({"publish_tier": tier, "text": "Faster images", "image_prompt": "bee"})
+            return json.dumps({"text": "Faster images", "image_prompt": "bee"})
         env = {"GITHUB_REPOSITORY": "pollinations/pollinations", "POLLINATIONS_TOKEN": "test",
                "DISCORD_REALTIME_WEBHOOK_URL": "https://discord.test/realtime"}
         def answer(path, **params):
@@ -1124,14 +1126,14 @@ class DeliverTest(unittest.TestCase):
                 with self.assertRaises(requests.HTTPError):
                     deploy_posts.main()
             self.assertEqual(self.calls, [])
-            # A docs-only promotion can post; media's none-tier PR is recorded without a picture.
+            # A docs-only promotion can post, and every shipped PR gets its own post.
             deploy_posts.main()
             state = json.loads(self.store[deploy_posts.HELD_PATH])
             self.assertEqual(list(state["held"]), ["2"])
-            self.assertEqual(state["production"], "production")
-            self.assertEqual(picture.call_count, 1)
+            self.assertEqual((state["production"], state["master"]), ("production", "master"))
+            self.assertEqual(picture.call_count, 2)
             record = json.loads(self.store[f"{NEWS_REL_DIR}/posts/discord/prs/2026-10/delivery.json"])
-            self.assertEqual(record["pr-3"]["skipped"], "none")
+            self.assertEqual((record["pr-1"]["state"], record["pr-3"]["state"]), ("done", "done"))
             deploy_posts.main()  # no new deploy: Gen stays held, docs are not sent twice
             # More than 14 days later, Gen succeeds at a descendant SHA, in a run where Enter failed.
             api[f"actions/workflows/{workflow}/runs"]["workflow_runs"].insert(0,
@@ -1150,7 +1152,7 @@ class DeliverTest(unittest.TestCase):
             deploy_posts.main()
             self.assertEqual(json.loads(self.store[deploy_posts.HELD_PATH])["held"], {})
         sent = self.sent("https://discord.test/realtime?wait=true")
-        self.assertEqual(len(sent), 2)
+        self.assertEqual(len(sent), 3)
         payload = json.loads(sent[0][2]["payload_json"][1])
         self.assertIn("[PR #1]", payload["content"])
         self.assertEqual((payload["allowed_mentions"], sent[0][2]["files[0]"][1]), ({"parse": []}, b"jpeg"))
@@ -1218,6 +1220,47 @@ class DeploymentReadinessTest(unittest.TestCase):
             runs[web][0]["head_sha"] = "new"
             jobs[3][0]["steps"].append({"name": "Deploy apps/mcp", "conclusion": "success"})
             self.assertEqual(deploy_posts.waiting_for(held)["7"], [])
+
+    def test_master_prs_wait_for_the_legacy_cache_deploy(self):
+        def pr(number, merged_at, base="master"):
+            return {"number": number, "merged_at": merged_at, "merge_commit_sha": f"m{number}", "base": {"ref": base}}
+        api = {
+            "commits": [{"sha": "start"}],  # master's last commit before the cutover
+            "compare/start...master": {"status": "ahead", "commits": [{"sha": "c8"}, {"sha": "c9"}]},
+            "commits/c8/pulls": [pr(8, "2026-10-21T10:00:00Z")],
+            "commits/c9/pulls": [pr(9, "2026-10-21T12:00:00Z")],
+            "pulls/8": pr(8, "2026-10-21T10:00:00Z"), "pulls/9": pr(9, "2026-10-21T12:00:00Z"),
+        }
+        files = {"8": ("", ["text.pollinations.ai/cloudflare-cache/src/index.js"]),
+                 "9": ("", ["shared/messages.js", ".github/workflows/backend-tests.yml"])}
+        cutover = {"merged_at": "2026-10-20T00:00:00Z", "merge_commit_sha": "cutover"}
+        state = {"held": {}}
+        with patch.dict(os.environ, {"GITHUB_REPOSITORY": "pollinations/pollinations", "GITHUB_TOKEN": "test"}), \
+             patch("deploy_posts.github", side_effect=lambda path, **params: api[path]), \
+             patch("deploy_posts.fetch_pr_files", side_effect=lambda repo, n, token: files[n]):
+            deploy_posts.discover(state, "master", "master", "master", "start", cutover, deploy_posts.legacy_targets)
+        legacy = deploy_posts.LEGACY
+        self.assertEqual(state["master"], "master")
+        self.assertEqual({n: pr["required"] for n, pr in state["held"].items()},
+                         {"8": [f"{legacy}:deploy (text)"],
+                          "9": [f"{legacy}:deploy (image)", f"{legacy}:deploy (text)"]})  # shared/ is in both
+        # Each job checks out master when it starts: a deploy started before a merge does not
+        # ship it, and a rollback (no "Deploy master") ships nothing.
+        def job(worker, started, deploy="success"):
+            return {"name": f"deploy ({worker})", "conclusion": "success", "started_at": started,
+                    "steps": [{"name": "Deploy master", "conclusion": deploy}]}
+        runs = [{"id": 2, "head_sha": "main", "created_at": "2026-10-21T13:00:00Z"},
+                {"id": 1, "head_sha": "main", "created_at": "2026-10-21T11:00:00Z"}]
+        jobs = {1: [job("text", "2026-10-21T11:00:05Z"), job("image", "2026-10-21T11:00:05Z")],
+                2: [job("text", "2026-10-21T13:00:05Z", deploy="skipped"), job("image", "2026-10-21T13:00:05Z")]}
+        def runs_api(path, **params):
+            if path.endswith("/runs"):
+                self.assertNotIn("branch", params)  # dispatched from main or production
+                return {"workflow_runs": runs}
+            return {"jobs": jobs[int(path.split("/")[2])]}
+        with patch("deploy_posts.github", side_effect=runs_api):
+            self.assertEqual(deploy_posts.waiting_for(state["held"]),
+                             {"8": [], "9": [f"{legacy}:deploy (text)"]})
 
     def test_runs_and_jobs_are_paginated_without_expiring_held_prs(self):
         workflow = "deploy-cloudflare-production.yml"

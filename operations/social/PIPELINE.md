@@ -4,7 +4,7 @@
 
 ## Context
 
-Each day's merged PRs are read from GitHub once, by the daily post: one **note** per PR, written from its diff and used only during that run. The daily saves its summary and post; the weekly and the monthly read the daily summaries. Scheduled posts are written by `posts.py` from one prompt file per post and delivered by `deliver.py`; each PR a production deploy ships gets its own Discord post from `deploy_posts.py`. Both keep a record so nothing is sent twice.
+Each day's merged PRs are read from GitHub once, by the daily post: one **note** per PR, written from its diff and used only during that run. The daily saves its summary and post; the weekly and the monthly read the daily summaries. Scheduled posts are written by `posts.py` from one prompt file per post and delivered by `deliver.py`; every PR merged into `main` or `master` gets its own Discord post from `deploy_posts.py` once a deploy ships it; production promotions are not posted. Both keep a record so nothing is sent twice.
 
 ---
 
@@ -12,7 +12,7 @@ Each day's merged PRs are read from GitHub once, by the daily post: one **note**
 
 ```
 PRODUCTION PUSH / COMPLETED DEPLOY (news-deploy-posts.yml, all five production workflows)
-  deploy_posts.py: new production PRs → held.json → check affected jobs → one Discord post
+  deploy_posts.py: new production and master PRs → held.json → check affected jobs → one Discord post
                    each, with a picture
 
 SCHEDULED POSTS (news-posts.yml: a posts job writes and saves, a deliver job sends)
@@ -42,7 +42,7 @@ AFTER THOSE (news-build-index.yml)
 | Wednesday 14:00 | `posts/discord/models/<wed>.json`, then `posts/discord/community/<wed>.json` | Discord: the model post with the models role ping, then the community post without one; each saved once sent |
 | 1st 06:00 | also `data/summaries/monthly/<last month>.json` and `data/contributors/<last month>.json` | — |
 
-The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when. PRs merged into `master` reach the daily and weekly but get no deploy post: the legacy APIs are not deployed by the Cloudflare workflow.
+The Saturday daily is written on Sunday and never delivered: the week replaces it. Reddit posting stopped on 2026-10-13 and will start fresh once we know what to post there and when. PRs merged into `master` reach the daily and weekly, and get their deploy post once the legacy cache deploy ships them.
 
 ### Branch Strategy
 
@@ -144,9 +144,9 @@ Every PR merged into `main` or `master` that month, counted per GitHub account (
 
 ### Deploy posts: `posts/discord/prs/`
 
-`YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. A `none` classification records `done` with `skipped: none` and generates no picture or message.
+`YYYY-MM/delivery.json` has one entry per PR (`pr-<number>`), in the month it merged: its state and the Discord message id. The post and its picture are only in Discord. Every shipped PR is posted; production promotions only carry other PRs and are not.
 
-`held.json` saves the production scan cursor and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR; each job counts on its own, so another job failing in the same run doesn't hold the PR back. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Completed runs and their jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
+`held.json` saves the production and master scan cursors and pending PRs before any delivery. Each PR keeps its merge SHA, merge date and remaining targets, with no expiration. The targets come from the scanned production revision: its Cloudflare service filters, the website/E2B/Portkey workflow path lists, and existing application discovery. All required jobs must succeed at commits containing the PR; each job counts on its own, so another job failing in the same run doesn't hold the PR back. Observed successes are removed from the remaining targets and saved, so a later retry does not depend on old Actions records. A skipped service or unrelated manual app deploy cannot release it. Completed runs and their jobs are paginated back to the oldest pending merge as needed. Docs-only promotions have no deployment requirement and can post on the production push. A `master` PR waits for the hand-run `deploy-legacy-caches.yml`: each cache Worker it changes (`text.pollinations.ai/cloudflare-cache/`, `image.pollinations.ai/cloudflare-cache/`, or both for `shared/`) needs a `Deploy master` step that succeeded in a job started after the merge, since each job checks out master as it starts. A master PR that changes neither Worker posts on the next run. Failed or ambiguous sends remain held; the delivery record prevents a retry from sending twice.
 
 ### Platform envelope
 

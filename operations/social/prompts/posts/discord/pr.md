@@ -6,15 +6,13 @@ required: ["text", "image_prompt"]
 ---
 # Discord Post For Each Deployed PR
 
-A production deploy just shipped this pull request. Read it and announce the change.
+A deploy just shipped this pull request. Read it and announce the change.
 
 {pr}
 
 The diff is what the PR does; the title and description are the author's account of it. Keep a claim from the description only when the diff supports it. What Pollinations pays providers (costs, credit fees, margins) is internal, even when the PR says "bills" for it: never mention it. Mention what users pay only when the diff changes the price users are charged.
 
-Return JSON with three fields:
-
-- `publish_tier`: `none`, `discord_only`, or `daily`. Use `none` for test-only PRs, trivial typo/comment edits, changes confined to the social/news pipeline, and changes only to model prices or Quest/Paid eligibility (covered by model news). Use `daily` for user-facing changes, otherwise `discord_only`. For `none`, return empty `text` and `image_prompt`; nothing will be posted or pictured.
+Return JSON with two fields:
 
 - `text`: the announcement, 150-400 characters, hard maximum 400.
   - Start with a one-line summary of what changed, then the key change and at most two supporting details.

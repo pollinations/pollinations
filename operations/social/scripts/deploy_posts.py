@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Post each PR a production deploy shipped to Discord, once.
+"""Post every PR merged into main or master to Discord once it ships, once.
 
     python deploy_posts.py --production CHECKOUT [--preview]
 
-PRs reaching production are saved in posts/discord/prs/held.json with the scan cursor before
-sending. Each stays held until every affected service has successfully deployed a
-commit containing it. A rerun skips sent PRs through the existing delivery record.
-Use --preview to inspect readiness without writing records or sending anything.
+PRs reaching production, and PRs merged into master, are saved in posts/discord/prs/held.json
+with their branch's scan cursor before sending. Each stays held until every affected service
+has successfully deployed it: a production deployment of a commit containing it, or for master
+the legacy cache deployment of each Worker it changes. Production promotions are not posted.
+A rerun skips sent PRs through the existing delivery record. Use --preview to inspect
+readiness without writing records or sending anything.
 """
 
 import argparse
@@ -52,6 +54,8 @@ WORKFLOWS = {
     "deploy-e2b-templates.yml": "build",
     "deploy-portkey-cloudflare.yml": "deploy",
 }
+# Deploys master's two cache Workers when run by hand; each job checks out master as it starts.
+LEGACY = "deploy-legacy-caches.yml"
 PRS_DIR = f"{POSTS_REL_DIR}/discord/prs"
 HELD_PATH = f"{PRS_DIR}/held.json"
 POST = read_post(PROMPTS_DIR / "posts/discord/pr.md")
@@ -113,52 +117,73 @@ process.stdout.write(JSON.stringify(selectChanged(discover('all'), files)));"""
     return sorted(required)
 
 
-def discover(state: dict, head: str, cutover: dict, rules: Path) -> None:
-    """Advance the cursor and hold new PRs atomically; failed sends never lose a PR."""
-    since = state.get("production") or cutover["merge_commit_sha"]
+def legacy_targets(files: list[str]) -> list[str]:
+    """The master cache Workers a PR changes; both bundle shared/."""
+    return [f"{LEGACY}:deploy ({worker})" for worker in ("image", "text")
+            if any(file.startswith((f"{worker}.pollinations.ai/cloudflare-cache/", "shared/")) for file in files)]
+
+
+def discover(state: dict, cursor: str, base: str, head: str, start: str, cutover: dict, targets) -> None:
+    """Advance one branch's cursor and hold its new PRs atomically; failed sends never lose a PR."""
+    since = state.get(cursor) or start
     if not includes(since, head):
-        if not state.get("production"):
+        if not state.get(cursor):
             return  # the cutover is on main but hasn't reached production
-        raise ValueError("Production no longer contains the saved news cursor; inspect the rollback")
+        raise ValueError(f"{cursor} no longer contains the saved news cursor; inspect the rollback")
     commits = pages(f"compare/{since}...{head}", "commits") if since != head else []
     # GitHub links every commit to the PR that brought it, whether it was squashed, rebased or
     # merged; the base check leaves out production promotions.
     numbers = {pr["number"] for commit in commits for pr in github(f"commits/{commit['sha']}/pulls")
-               if pr["base"]["ref"] == "main" and pr["merged_at"]}
+               if pr["base"]["ref"] == base and pr["merged_at"]}
     for number in sorted(numbers):
         pr = github(f"pulls/{number}")
-        if pr["base"]["ref"] != "main" or (pr["merged_at"] or "") < cutover["merged_at"]:
+        if pr["base"]["ref"] != base or (pr["merged_at"] or "") < cutover["merged_at"]:
             continue
         _, files = fetch_pr_files(get_env("GITHUB_REPOSITORY"), str(number), get_env("GITHUB_TOKEN"))
         state["held"][str(number)] = {
-            "merge_sha": pr["merge_commit_sha"], "merged_at": pr["merged_at"],
-            "required": required_targets(files, rules),
+            "merge_sha": pr["merge_commit_sha"], "merged_at": pr["merged_at"], "required": targets(files),
         }
-    state["production"] = head
+    state[cursor] = head
+
+
+def deployed(workflow: str, jobs: list[dict]) -> dict[str, str]:
+    """The targets a run deployed, each with when its job started."""
+    succeeded = [job for job in jobs if job["conclusion"] == "success"]
+    if workflow == LEGACY:
+        # A rollback run deploys an old version: only "Deploy master" ships master.
+        return {f"{workflow}:{job['name']}": job["started_at"] for job in succeeded
+                if any(step["name"] == "Deploy master" and step["conclusion"] == "success"
+                       for step in job.get("steps", []))}
+    targets = {f"{workflow}:{job['name']}": job.get("started_at") for job in succeeded}
+    targets.update({f"{workflow}:{step['name']}": job.get("started_at") for job in succeeded
+                    for step in job.get("steps", []) if step["conclusion"] == "success"
+                    and step["name"].startswith("Deploy ")})
+    return targets
 
 
 def waiting_for(held: dict) -> dict[str, list[str]]:
     """Find successful deployment jobs containing each held PR, without an age cutoff."""
     waiting = {number: set(pr["required"]) for number, pr in held.items()}
-    for workflow in WORKFLOWS:
+    for workflow in [*WORKFLOWS, LEGACY]:
         pending = {number for number, targets in waiting.items()
                    if any(target.startswith(workflow + ":") for target in targets)}
         if not pending:
             continue
         earliest = min(held[number]["merged_at"] for number in pending)
-        for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs",
-                         branch="production", status="completed"):
+        # Production deploys run on production; the legacy one is dispatched from main or production.
+        branch = {} if workflow == LEGACY else {"branch": "production"}
+        for run in pages(f"actions/workflows/{workflow}/runs", "workflow_runs", status="completed", **branch):
             # An older run's commit cannot contain a PR merged later. There is no age limit.
             if run["created_at"] < earliest:
                 break
-            jobs = list(pages(f"actions/runs/{run['id']}/jobs", "jobs", filter="latest"))
-            targets = {f"{workflow}:{job['name']}" for job in jobs if job["conclusion"] == "success"}
-            targets.update(f"{workflow}:{step['name']}" for job in jobs if job["conclusion"] == "success"
-                           for step in job.get("steps", []) if step["conclusion"] == "success"
-                           and step["name"].startswith("Deploy "))
+            targets = deployed(workflow, list(pages(f"actions/runs/{run['id']}/jobs", "jobs", filter="latest")))
             for number in list(pending):
-                if waiting[number] & targets and includes(held[number]["merge_sha"], run["head_sha"]):
-                    waiting[number] -= targets
+                pr = held[number]
+                if workflow == LEGACY:
+                    # Master is checked out when the job starts, so a job started after the merge ships it.
+                    waiting[number] -= {target for target, started in targets.items() if started >= pr["merged_at"]}
+                elif waiting[number] & targets.keys() and includes(pr["merge_sha"], run["head_sha"]):
+                    waiting[number] -= targets.keys()
                 if not any(target.startswith(workflow + ":") for target in waiting[number]):
                     pending.remove(number)
             if not pending:
@@ -208,11 +233,7 @@ def prepare_post(pr: dict, token: str, webhook: str):
         token, temperature=POST["temperature"], response_format={"type": "json_object"},
     )
     output = parse_json_response(reply) if reply else None
-    if not isinstance(output, dict) or output.get("publish_tier") not in ("none", "discord_only", "daily"):
-        raise ValueError("the reply has no valid publish tier")
-    if output["publish_tier"] == "none":
-        return lambda: ("done", {"skipped": "none"})
-    if not all(output.get(key) for key in POST["required"]):
+    if not isinstance(output, dict) or not all(output.get(key) for key in POST["required"]):
         raise ValueError("the reply has no text or picture prompt")
     picture, _ = generate_image(output["image_prompt"], token)
     if not picture:
@@ -232,7 +253,12 @@ def main() -> None:
     content, sha = read_news(HELD_PATH)
     state = json.loads(content) if content else {"held": {}}
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=args.production, text=True).strip()
-    discover(state, head, cutover, args.production)
+    discover(state, "production", "main", head, cutover["merge_commit_sha"], cutover,
+             lambda files: required_targets(files, args.production))
+    master = github("branches/master")["commit"]["sha"]
+    # Master's scan starts at its last commit before the cutover; later merges were never posted.
+    start = state.get("master") or github("commits", sha="master", until=cutover["merged_at"], per_page=1)[0]["sha"]
+    discover(state, "master", "master", master, start, cutover, legacy_targets)
     waiting = waiting_for(state["held"])
     for number, targets in waiting.items():
         print(f"  #{number}: waiting for {', '.join(targets) if targets else 'nothing; ready'}")

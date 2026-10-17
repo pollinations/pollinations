@@ -1,7 +1,8 @@
 name: News / Deploy posts
 
-# Hold each promoted PR until its affected deployment jobs succeed. Docs-only
-# promotions need no deploy. The delivery record prevents duplicate sends.
+# Hold each promoted main PR, and each master PR, until its affected deployment
+# jobs succeed. Docs-only promotions need no deploy. The delivery record
+# prevents duplicate sends.
 on:
   push:
     branches: [production]
@@ -12,8 +13,9 @@ on:
       - 'Deploy / Applications'
       - 'Deploy / E2B templates'
       - 'Deploy / Portkey gateway'
+      - 'Deploy / Legacy Cloudflare caches'
     types: [completed]
-    branches: [production]
+    branches: [production, main]  # the legacy cache deploy is dispatched from main
   workflow_dispatch:
     inputs:
       preview:

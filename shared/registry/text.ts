@@ -1920,7 +1920,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-10-07").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates (prompts up to 100K tokens);
             // 5-minute cache writes.
@@ -2032,7 +2032,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-28").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(2),
@@ -2142,7 +2142,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-22").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         // Anthropic global standard rates; 5-minute cache writes.
         cost: {
             promptTextTokens: perMillion(4),
@@ -2223,7 +2223,7 @@ const TEXT_BASE_SERVICES = {
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
         paidOnly: true,
-        priceMultiplier: 1,
+        priceMultiplier: 0.75,
         cost: {
             // Anthropic global standard rates; 5-minute cache writes.
             promptTextTokens: perMillion(10),

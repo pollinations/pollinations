@@ -35,24 +35,12 @@ Given the canonical daily summaries for one calendar month, identify the few the
       "days": ["2026-08-03", "2026-08-14"],
       "importance": "major"
     }
-  ],
-  "pr_summary": "MONTHLY UPDATES (123 selected PRs):\n- Theme one\n- Theme two"
+  ]
 }
 ```
 
 - `arcs`: 3-5 thematic groups spanning the month.
 - `mood`: Match the actual work. Prefer restrained descriptions such as "productive", "tending the garden", "building foundations", or "shipping month".
 - `theme`: One sentence that frames the month as a whole.
-- `pr_summary`: A compact theme list for the image-prompt generator.
 
 Return ONLY the JSON object. No markdown fences, no explanation.
-
-## Monthly Image Identity
-
-This image is the visual cover for one month in the website build diary.
-
-- Create one calm, cohesive pixel-art scene representing the month's main themes.
-- Use the shared Pollinations visual identity and characters.
-- Prefer one readable focal point over a crowded collage.
-- Avoid dates, statistics, logos, headlines, dashboards, and small text in the image.
-- Keep enough quiet space that the image sits comfortably beside editorial text.

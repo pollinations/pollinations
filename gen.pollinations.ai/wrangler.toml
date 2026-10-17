@@ -23,6 +23,7 @@ services = [
     { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
     { binding = "COMPUTER_MCP", service = "pollinations-computer-mcp" },
     { binding = "MACHINES_MCP", service = "pollinations-machines-mcp" },
+    { binding = "QRCODE_MCP", service = "qrcode-mcp" },
     { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
@@ -132,6 +133,10 @@ service = "pollinations-composio-mcp"
 [[env.production.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
+
+[[env.production.services]]
+binding = "QRCODE_MCP"
+service = "qrcode-mcp"
 
 [[env.production.services]]
 binding = "MACHINES_MCP"
@@ -260,6 +265,10 @@ binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp-staging"
 
 [[env.staging.services]]
+binding = "QRCODE_MCP"
+service = "qrcode-mcp-staging"
+
+[[env.staging.services]]
 binding = "MACHINES_MCP"
 service = "pollinations-machines-mcp-staging"
 
@@ -364,6 +373,10 @@ service = "pollinations-composio-mcp"
 [[env.test.services]]
 binding = "COMPUTER_MCP"
 service = "pollinations-computer-mcp"
+
+[[env.test.services]]
+binding = "QRCODE_MCP"
+service = "qrcode-mcp"
 
 [[env.test.services]]
 binding = "MACHINES_MCP"

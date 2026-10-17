@@ -570,7 +570,6 @@ describe("media.pollinations.ai", () => {
             preserveOrientation: true,
             preserveColorProfile: true,
         });
-        expect(stripped.removedMetadata).toEqual([]);
         expect(stripped.data).not.toEqual(GPS_ORIENTATION_JPEG);
 
         const authorization = `Bearer ${VALID_KEY}`;

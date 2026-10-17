@@ -58,11 +58,14 @@ function isImage(contentType: string): boolean {
     return contentType.toLowerCase().startsWith("image/");
 }
 
-function stripImageMetadata(bytes: Uint8Array) {
-    return removeMetadata(bytes, {
+async function stripImageMetadata(bytes: Uint8Array): Promise<Uint8Array> {
+    // picscrub can report nothing removed while still dropping GPS from a
+    // kept EXIF block, so always use its output.
+    const { data } = await removeMetadata(bytes, {
         preserveOrientation: true,
         preserveColorProfile: true,
     });
+    return data;
 }
 
 interface Env {
@@ -500,6 +503,8 @@ api.post(
                 return c.json(fileTooLargeError(uploadMaxSize), 413);
             }
 
+            let body: ReadableStream<Uint8Array> = c.req.raw.body;
+            let bodySize = size;
             if (privacyRequested && isImage(requestContentType)) {
                 if (size > MAX_PRIVACY_IMAGE_SIZE) {
                     return c.json(
@@ -509,48 +514,29 @@ api.post(
                 }
                 let cleaned: Uint8Array;
                 try {
-                    const original = new Uint8Array(
-                        await c.req.raw.arrayBuffer(),
+                    cleaned = await stripImageMetadata(
+                        new Uint8Array(await c.req.raw.arrayBuffer()),
                     );
-                    cleaned = (await stripImageMetadata(original)).data;
                 } catch {
                     return c.json(
                         { error: "Unable to process image metadata" },
                         400,
                     );
                 }
-                try {
-                    const upload = await uploadUnlistedMedia(
-                        c.env,
-                        new Blob([cleaned]).stream(),
-                        {
-                            contentType: requestContentType,
-                            fileName: rawUploadFileName(c.req.raw.headers),
-                            size: cleaned.byteLength,
-                            uploadedBy: authResult.name || "unknown",
-                            keyType: authResult.type,
-                        },
-                    );
-                    c.header("X-Safety-Applied", "privacy");
-                    return c.json(upload);
-                } catch (error) {
-                    console.error("Upload error:", error);
-                    return c.json({ error: "Upload failed" }, 500);
-                }
+                body = new Blob([cleaned]).stream();
+                bodySize = cleaned.byteLength;
+                privacyApplied = true;
             }
 
             try {
-                const upload = await uploadUnlistedMedia(
-                    c.env,
-                    c.req.raw.body,
-                    {
-                        contentType: requestContentType,
-                        fileName: rawUploadFileName(c.req.raw.headers),
-                        size,
-                        uploadedBy: authResult.name || "unknown",
-                        keyType: authResult.type,
-                    },
-                );
+                const upload = await uploadUnlistedMedia(c.env, body, {
+                    contentType: requestContentType,
+                    fileName: rawUploadFileName(c.req.raw.headers),
+                    size: bodySize,
+                    uploadedBy: authResult.name || "unknown",
+                    keyType: authResult.type,
+                });
+                if (privacyApplied) c.header("X-Safety-Applied", "privacy");
                 return c.json(upload);
             } catch (error) {
                 console.error("Upload error:", error);
@@ -729,7 +715,7 @@ api.post(
                 }
                 let cleaned: Uint8Array;
                 try {
-                    cleaned = (await stripImageMetadata(original)).data;
+                    cleaned = await stripImageMetadata(original);
                 } catch {
                     return c.json(
                         { error: "Unable to process image metadata" },

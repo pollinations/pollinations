@@ -34,6 +34,10 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import { discordConfigFromEnv } from "../services/discord.ts";
+import {
+    type ListedAppRow,
+    selectListedApps,
+} from "../services/listed-apps.ts";
 import { checkQuestsForUser } from "../services/quest-checker.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import {
@@ -760,6 +764,32 @@ async function respondDetailedUsage(
     }
 }
 
+const listedAppSchema = z
+    .object({
+        emoji: z.string(),
+        name: z.string(),
+        web_url: z.string(),
+        screenshot_url: z.string().nullable(),
+        description: z.string(),
+        language: z.string().nullable(),
+        category: z.string(),
+        platform: z.string(),
+        github_username: z.string(),
+        github_repository_url: z.string(),
+        github_repository_stars: z.string(),
+        discord_username: z.string().nullable(),
+        submitted_date: z.string().nullable(),
+        issue_url: z.string().nullable(),
+        approved_date: z.string().nullable(),
+        byop: z.union([z.boolean(), z.number(), z.string()]),
+        requests_24h: z.union([z.number(), z.string()]).nullable(),
+    })
+    .describe("One app listing from the community directory");
+
+const accountAppsResponseSchema = z.object({
+    apps: z.array(listedAppSchema),
+});
+
 // Response schemas for OpenAPI documentation
 const profileResponseSchema = z.object({
     githubUsername: z.string().nullable().describe("GitHub username if linked"),
@@ -1024,6 +1054,64 @@ export const accountRoutes = new Hono<Env>()
                     email: profile.email ?? null,
                 }),
             });
+        },
+    )
+    .get(
+        "/apps",
+        describeRoute({
+            tags: ["👤 Account"],
+            summary: "Get My Apps",
+            description:
+                "Returns the community directory listings owned by the account's linked GitHub account (matched by GitHub user id), newest approval first. Returns an empty list when no GitHub account is linked. The catalog is public, so no extra account permission is needed.",
+            responses: {
+                200: {
+                    description: "Listed apps owned by the account",
+                    content: {
+                        "application/json": {
+                            schema: resolver(accountAppsResponseSchema),
+                        },
+                    },
+                },
+                401: { description: "Unauthorized" },
+            },
+        }),
+        async (c) => {
+            const log = c.get("log").getChild("apps");
+            await c.var.auth.requireAuthorization({
+                message: "Authentication required to view your apps",
+            });
+            const user = c.var.auth.requireUser();
+
+            const db = drizzle(c.env.DB);
+            const [account] = await db
+                .select({ githubId: userTable.githubId })
+                .from(userTable)
+                .where(eq(userTable.id, user.id))
+                .limit(1);
+            const githubUserId =
+                account?.githubId == null ? null : String(account.githubId);
+            if (githubUserId === null) {
+                return c.json({ apps: [] });
+            }
+
+            const tinybirdOrigin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
+            const rows = await fetchTinybirdRows<ListedAppRow>(
+                tinybirdOrigin,
+                "/v0/pipes/app_directory_public.json",
+                requireTinybirdReadToken(c.env),
+                { limit: "5000" },
+            );
+            const apps = selectListedApps(rows, githubUserId);
+            log.info(
+                "MY_APPS: userId={userId} githubId={githubId} directoryRows={rows} listed={listed}",
+                {
+                    userId: user.id,
+                    githubId: githubUserId,
+                    rows: rows.length,
+                    listed: apps.length,
+                },
+            );
+            return c.json({ apps });
         },
     )
     .get(

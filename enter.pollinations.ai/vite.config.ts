@@ -21,7 +21,7 @@ const rootReactDom = fileURLToPath(
 // (content identity). `.env` is gitignored here, so this lives in the config.
 const publicOrigin = (mode: string) =>
     mode === "staging"
-        ? "https://staging.enter.myceli.ai"
+        ? "https://staging.enter.pollinations.ai"
         : "https://enter.pollinations.ai";
 
 export default defineConfig(({ mode }) => ({

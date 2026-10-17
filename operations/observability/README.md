@@ -3,7 +3,6 @@
 Grafana OSS dashboard for Pollinations platform observability.
 
 - **Public URL:** https://observability.pollinations.ai
-- **Myceli origin:** https://observability.myceli.ai
 - **Worker:** `myceli-observability-grafana`
 
 ## Architecture
@@ -135,12 +134,6 @@ curl -s -u admin:$GF_ADMIN_PASSWORD 'http://localhost:3000/api/datasources/uid/P
 ```
 
 ## Troubleshooting
-
-### Public URL redirects to the Myceli origin
-
-Grafana should be configured with
-`GF_SERVER_ROOT_URL=https://observability.pollinations.ai`. If redirects point at
-`observability.myceli.ai`, update the Worker var.
 
 ### Plugin health check failed
 - Verify tokens are correct

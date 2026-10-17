@@ -49,11 +49,6 @@ name = "pollinations-media-prod"
 MAX_FILE_SIZE = "419430400"  # 400 MiB in bytes
 
 [[env.production.routes]]
-pattern = "media.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.production.routes]]
 pattern = "media.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true

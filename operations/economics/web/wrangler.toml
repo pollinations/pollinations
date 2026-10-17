@@ -4,7 +4,6 @@ compatibility_date = "2026-07-15"
 workers_dev = false
 
 routes = [
-    { pattern = "economics.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
     { pattern = "economics.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
 ]
 

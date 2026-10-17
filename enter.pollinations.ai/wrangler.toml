@@ -109,11 +109,6 @@ enabled = true
 head_sampling_rate = 1
 
 [[env.production.routes]]
-pattern = "enter.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.production.routes]]
 pattern = "enter.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
@@ -163,11 +158,6 @@ service = "pollinations-composio-mcp-staging"
 crons = []
 
 [[env.staging.routes]]
-pattern = "staging.enter.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
-
-[[env.staging.routes]]
 pattern = "staging.enter.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
@@ -214,11 +204,6 @@ STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai,x402-holding-staging-20260930@p
 [[env.dev.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
-
-[[env.dev.routes]]
-pattern = "dev.enter.myceli.ai"
-zone_name = "myceli.ai"
-custom_domain = true
 
 [[env.dev.d1_databases]]
 binding = "DB"

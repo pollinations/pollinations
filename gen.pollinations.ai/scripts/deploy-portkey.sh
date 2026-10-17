@@ -14,10 +14,6 @@ PORTKEY_COMMIT="${PORTKEY_COMMIT:-9ffc0ef17e73f5e85258b7decc9b07ffd31f4cba}"  # 
 CLONE_DIR="/tmp/portkey-gateway-$$"
 ENVIRONMENT="${PORTKEY_ENV:-production}"
 PORTKEY_ACCOUNT_ID="${PORTKEY_ACCOUNT_ID:-b6ec751c0862027ba269faf7029b2501}"
-PORTKEY_PRODUCTION_HOST="${PORTKEY_PRODUCTION_HOST:-portkey.myceli.ai}"
-PORTKEY_PRODUCTION_ZONE="${PORTKEY_PRODUCTION_ZONE:-myceli.ai}"
-PORTKEY_PUBLIC_HOST="${PORTKEY_PUBLIC_HOST:-portkey.pollinations.ai}"
-PORTKEY_PUBLIC_ZONE="${PORTKEY_PUBLIC_ZONE:-pollinations.ai}"
 
 echo "🚀 Deploying Portkey Gateway"
 echo "   Commit: $PORTKEY_COMMIT"
@@ -41,7 +37,7 @@ fi
 echo "✓ Verified commit: $ACTUAL_COMMIT"
 
 if [ "$ENVIRONMENT" = "production" ]; then
-    echo "Rewriting production routes to ${PORTKEY_PRODUCTION_HOST} and ${PORTKEY_PUBLIC_HOST}..."
+    echo "Setting the production account..."
     node <<'NODE'
 const fs = require("fs");
 
@@ -54,12 +50,6 @@ if (!/^account_id\s*=/.test(config)) {
         `$1\naccount_id = "${process.env.PORTKEY_ACCOUNT_ID}"`,
     );
 }
-
-config = config.replace(
-    /\{ pattern = "portkey\.pollinations\.ai", custom_domain = true \}/,
-    `{ pattern = "${process.env.PORTKEY_PRODUCTION_HOST}", zone_name = "${process.env.PORTKEY_PRODUCTION_ZONE}", custom_domain = true },
-    { pattern = "${process.env.PORTKEY_PUBLIC_HOST}", zone_name = "${process.env.PORTKEY_PUBLIC_ZONE}", custom_domain = true }`,
-);
 
 fs.writeFileSync(path, config);
 NODE

@@ -62,7 +62,7 @@ test("Applications selects Floret on promotion and manual retry", () => {
     );
 });
 
-test("Floret deploy has local locked Wrangler and verifies both existing domains", () => {
+test("Floret deploy has local locked Wrangler and verifies its public domain", () => {
     const pkg = JSON.parse(read("apps/floret/package.json"));
     const lock = JSON.parse(read("apps/floret/package-lock.json"));
     assert.equal(manifest.install, "npm ci --workspaces=false");
@@ -74,10 +74,10 @@ test("Floret deploy has local locked Wrangler and verifies both existing domains
         pkg.devDependencies.wrangler,
     );
     assert.equal(manifest.subdomain, "floret");
-    for (const domain of ["floret.myceli.ai", "floret.pollinations.ai"]) {
-        assert.ok(manifest.verify.includes(`https://${domain}/health`));
-        assert.ok(manifest.verify.includes(`https://${domain}/v1/models`));
-    }
+    assert.deepEqual(manifest.verify, [
+        "https://floret.pollinations.ai/health",
+        "https://floret.pollinations.ai/v1/models",
+    ]);
 });
 
 test("Floret preserves account and domains while retiring the native shell", () => {

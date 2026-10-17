@@ -1,8 +1,7 @@
 # Economics
 
 Economics is Pollinations' private cash, runway, provider-cost, credit, and unit
-economics app. Its Myceli origin is `economics.myceli.ai`, and it is also
-available at `economics.pollinations.ai` through the same Cloudflare Worker.
+economics app, served at `economics.pollinations.ai` by a Cloudflare Worker.
 
 Run locally from this directory:
 

@@ -1,7 +1,7 @@
 # Economics Web
 
-Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
-by Economics Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
+Economics UI for `economics.pollinations.ai`, backed by Economics Tinybird pipe
+outputs in `enter.pollinations.ai/observability/`.
 The app has three operating views:
 
 - **Insights:** Runway, Close, and Balances.

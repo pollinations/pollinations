@@ -6,7 +6,7 @@ the consent screen mints a budgeted `sk_` which Open WebUI forwards to
 `gen.pollinations.ai` per user (`auth_type: system_oauth`), so every chat is
 paid from the signed-in user's own wallet.
 
-- Public: https://openwebui.pollinations.ai (origin https://openwebui.myceli.ai)
+- Public: https://openwebui.pollinations.ai
 - Staging: https://openwebui-staging.elliot-b6e.workers.dev
 - Login: OAuth 2.1 code + PKCE against the environment's Enter URL. Public
   client, no secret. Discovery is the RFC 8414 document; Pollinations serves no

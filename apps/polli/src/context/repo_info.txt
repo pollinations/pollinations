@@ -69,6 +69,10 @@ Use each agent's returned `supported_endpoints` and `supported_parameters` for A
 SDK: `npm i @pollinations/sdk` → generateImage, generateText, chat, Pollinations client
 MCP: `https://gen.pollinations.ai/mcp/pollinations` → stateless Streamable HTTP tools
 
+## Sandboxes
+
+Linux computers from E2B, paid per second from the wallet while they run (alpha). Before answering about sandbox sizes, prices, pausing, keeping one running, ssh or the E2B SDKs, fetch the current docs: `https://gen.pollinations.ai/docs/llm.txt?section=sandboxes`.
+
 ## Image Params
 
 width, height (default 1024) | seed (-1=random) | model | safe | quality (low|medium|high|hd) | image (ref URL for img2img) | transparent | guidance_scale (1-20)

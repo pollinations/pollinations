@@ -13,6 +13,7 @@ export default defineConfig({
         setupFiles: ["operations/economics/web/src/setupPublicTests.ts"],
         include: [
             "shared/providers.test.ts",
+            "apps/agent-json.test.ts",
             "apps/catgpt/ai.test.js",
             "apps/chat/src/**/*.test.{js,jsx}",
             "operations/economics/web/src/lib/modelReconcile.test.ts",

@@ -60,6 +60,11 @@ describe("GET /api/account/apps", () => {
                 url: expect.stringContaining("app_directory_public.json"),
             }),
         );
+        expect(mocks.tinybird.state.pipeCalls).toContainEqual(
+            expect.objectContaining({
+                url: expect.stringContaining("github_user_id=12345"),
+            }),
+        );
     }, 20_000);
 
     test("returns an empty list without querying the catalog when GitHub is unlinked", async ({

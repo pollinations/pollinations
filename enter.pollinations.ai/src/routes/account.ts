@@ -1090,7 +1090,7 @@ export const accountRoutes = new Hono<Env>()
                 tinybirdOrigin,
                 "/v0/pipes/app_directory_public.json",
                 requireTinybirdReadToken(c.env),
-                { limit: "5000" },
+                { github_user_id: String(user.githubId), limit: "5000" },
             );
             const githubUserId = String(user.githubId);
             const seen = new Set<string>();

@@ -6,6 +6,7 @@ import {
     CloudUploadIcon,
     LockIcon,
     NewspaperIcon,
+    RocketIcon,
     SparkleIcon,
     TerminalIcon,
     TrendUpIcon,
@@ -27,6 +28,7 @@ export const DASHBOARD_NAV_ITEMS = [
         label: "My Models",
         icon: CloudUploadIcon,
     },
+    { id: "my-apps", to: "/my-apps", label: "My Apps", icon: RocketIcon },
     {
         id: "sandboxes",
         to: "/sandboxes",

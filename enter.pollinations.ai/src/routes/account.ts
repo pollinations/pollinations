@@ -47,6 +47,7 @@ import {
 import { captureFromRequest } from "../utils/product-analytics.ts";
 import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
+import { myAppsRoutes } from "./my-apps.ts";
 import { promoCodeRedeemRoutes } from "./promo-codes.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
@@ -969,6 +970,7 @@ export const accountRoutes = new Hono<Env>()
     })
     .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
+    .route("/my-apps", myAppsRoutes)
     .route("/promo-codes", promoCodeRedeemRoutes)
     .get(
         "/profile",

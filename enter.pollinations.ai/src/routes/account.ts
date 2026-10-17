@@ -801,6 +801,8 @@ const accountAppsResponseSchema = z.object({
             category: z.string(),
             platform: z.string(),
             repositoryUrl: z.string().nullable(),
+            repositoryStars: z.number().nullable(),
+            issueUrl: z.string().nullable(),
             approvedDate: z.string().nullable(),
             byop: z.union([z.boolean(), z.number(), z.string()]),
             requests24h: z.union([z.number(), z.string()]).nullable(),
@@ -817,6 +819,8 @@ type ListedAppRow = {
     category: string;
     platform: string;
     github_repository_url: string | null;
+    github_repository_stars: string | null;
+    issue_url: string | null;
     approved_date: string | null;
     byop: boolean | number | string;
     requests_24h: number | string | null;
@@ -1111,6 +1115,17 @@ export const accountRoutes = new Hono<Env>()
                     category: row.category,
                     platform: row.platform,
                     repositoryUrl: row.github_repository_url,
+                    repositoryStars: (() => {
+                        const value = Number.parseInt(
+                            (row.github_repository_stars ?? "").replace(
+                                /^⭐/u,
+                                "",
+                            ),
+                            10,
+                        );
+                        return Number.isFinite(value) ? value : null;
+                    })(),
+                    issueUrl: row.issue_url || null,
                     approvedDate: row.approved_date,
                     byop: row.byop,
                     requests24h: row.requests_24h,

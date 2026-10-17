@@ -20,6 +20,8 @@ describe("GET /api/account/apps", () => {
             category: "build",
             platform: "web",
             github_repository_url: "https://github.com/example/demo",
+            github_repository_stars: "⭐12",
+            issue_url: "https://github.com/example/demo/issues/1",
             approved_date: "2026-10-15",
             byop: true,
             requests_24h: 12,
@@ -37,12 +39,21 @@ describe("GET /api/account/apps", () => {
 
         expect(response.status).toBe(200);
         const body = (await response.json()) as {
-            apps: { name: string; approvedDate: string }[];
+            apps: {
+                name: string;
+                approvedDate: string;
+                repositoryStars: number;
+                issueUrl: string;
+                requests24h: number;
+            }[];
         };
         expect(body.apps).toHaveLength(1);
         expect(body.apps[0]).toMatchObject({
             name: "My demo",
             approvedDate: "2026-10-15",
+            repositoryStars: 12,
+            issueUrl: "https://github.com/example/demo/issues/1",
+            requests24h: 12,
         });
         expect(mocks.tinybird.state.pipeCalls).toContainEqual(
             expect.objectContaining({

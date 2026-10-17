@@ -11,6 +11,8 @@ type ListedApp = {
     category: string;
     platform: string;
     repositoryUrl: string | null;
+    repositoryStars: number | null;
+    issueUrl: string | null;
     approvedDate: string | null;
     byop: boolean | number | string;
     requests24h: number | string | null;
@@ -21,6 +23,14 @@ const APP_SUBMISSION_URL =
 
 function supportsPollen(value: ListedApp["byop"]): boolean {
     return value === true || value === 1 || value === "true";
+}
+
+function formatCount(value: number | string | null): string | null {
+    if (value === null || String(value).trim() === "") return null;
+    const count = Number(value);
+    return Number.isFinite(count) && count >= 0
+        ? new Intl.NumberFormat().format(count)
+        : null;
 }
 
 export function MyApps() {
@@ -118,12 +128,43 @@ export function MyApps() {
                                                 Source repository
                                             </InlineLink>
                                         )}
+                                        {app.issueUrl && (
+                                            <InlineLink href={app.issueUrl}>
+                                                Submission
+                                            </InlineLink>
+                                        )}
                                         {app.approvedDate && (
                                             <span className="text-theme-text-muted">
                                                 Listed {app.approvedDate}
                                             </span>
                                         )}
                                     </div>
+                                    {(app.repositoryStars !== null ||
+                                        (supportsPollen(app.byop) &&
+                                            formatCount(app.requests24h) !==
+                                                null)) && (
+                                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-theme-text-muted">
+                                            {app.repositoryStars !== null && (
+                                                <span>
+                                                    ★{" "}
+                                                    {new Intl.NumberFormat().format(
+                                                        app.repositoryStars,
+                                                    )}{" "}
+                                                    repository stars
+                                                </span>
+                                            )}
+                                            {supportsPollen(app.byop) &&
+                                                formatCount(app.requests24h) !==
+                                                    null && (
+                                                    <span>
+                                                        {formatCount(
+                                                            app.requests24h,
+                                                        )}{" "}
+                                                        requests in 24h
+                                                    </span>
+                                                )}
+                                        </div>
+                                    )}
                                 </div>
                             </Surface>
                         ))}

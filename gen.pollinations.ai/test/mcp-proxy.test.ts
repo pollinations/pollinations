@@ -137,6 +137,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "hackernews",
+                name: "Hacker News",
+                description:
+                    "Read Hacker News stories, comments and search results.",
+                url: "https://gen.pollinations.ai/mcp/hackernews",
+                pricing: {
+                    description:
+                        "Hacker News lookups are free. No additional MCP fee.",
+                    rates: [],
+                },
+            },
         ],
     });
 });
@@ -215,7 +227,45 @@ test("routes Ask Jev with caller authorization without an extra MCP debit", asyn
     });
 });
 
-test.for(["pollinations", "ask-jev"])(
+test("routes Hacker News with caller authorization without an extra MCP debit", async () => {
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 1 },
+    });
+    const payload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+            name: "hn_stories",
+            arguments: { "list": "top", "limit": 3 },
+        },
+    };
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/hackernews",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        pathname: "/",
+        authorization: `Bearer ${key}`,
+        cookie: null,
+        payload,
+    });
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
+        tierBalance: 1,
+        packBalance: 0,
+    });
+});
+
+test.for(["pollinations", "ask-jev", "hackernews"])(
     "requires a Pollinations credential before invoking %s",
     async (serverId) => {
         const response = await SELF.fetch(

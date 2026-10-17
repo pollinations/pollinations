@@ -32,9 +32,6 @@ import {
     visibleModelNews,
 } from "./news-index.ts";
 
-export const NEWS_MORE_URL =
-    "https://github.com/pollinations/pollinations#-latest-news";
-
 /** Rows shown at first and added per "Show older". */
 const PAGE_SIZE = 10;
 

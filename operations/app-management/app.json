@@ -1,5 +1,26 @@
 [
   {
+    "emoji": "💬",
+    "name": "point-zero",
+    "url": "https://point-zero.pages.dev",
+    "description": "Point Zero… where your big ideas begin! A website I developed to simplify access to AI and help students, programmers, and content creators learn, create, and save time 💛 🤖 Chat with free models ava",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "Developer-loqman-ameur",
+    "githubUserId": "184452027",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-10-16",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/17762",
+    "approvedDate": "2026-10-17",
+    "byop": false,
+    "requests24h": 0,
+    "screenshotUrl": "https://media.pollinations.ai/aa625c77-1908-4151-b33d-135b3e445597"
+  },
+  {
     "emoji": "🎮",
     "name": "Trolley Match",
     "url": "https://patbing.github.io/trolley-match",

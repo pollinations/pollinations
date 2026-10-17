@@ -67,6 +67,8 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - ✨ [3D in the SDK](https://www.npmjs.com/package/@pollinations/sdk)
 <!-- news:end -->
 
+[More news on enter.pollinations.ai →](https://enter.pollinations.ai/news)
+
 ---
 
 ## 🌱 Introduction

@@ -137,6 +137,18 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "weather",
+                name: "Weather",
+                description:
+                    "Current conditions, forecasts, and place lookups from Open-Meteo's open API.",
+                url: "https://gen.pollinations.ai/mcp/weather",
+                pricing: {
+                    description:
+                        "Free. Data comes from Open-Meteo's open API; no keys, no Pollinations charge.",
+                    rates: [],
+                },
+            },
         ],
     });
 });

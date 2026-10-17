@@ -46,7 +46,8 @@ export type McpBindingName =
     | "FFMPEG_MCP"
     | "EXA_MCP"
     | "COMPOSIO_MCP"
-    | "COMPUTER_MCP";
+    | "COMPUTER_MCP"
+    | "WEATHER_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -211,6 +212,19 @@ export const MCP_SERVERS = [
         provider: "cloudflare",
         userScoped: true,
         pricing: COMPUTER_MCP_PRICING,
+    },
+    {
+        id: "weather",
+        name: "Weather",
+        description:
+            "Current conditions, forecasts, and place lookups from Open-Meteo's open API.",
+        binding: "WEATHER_MCP",
+        billing: "downstream",
+        pricing: {
+            description:
+                "Free. Data comes from Open-Meteo's open API; no keys, no Pollinations charge.",
+            rates: [],
+        },
     },
 ] as const satisfies readonly McpServerDefinition[];
 

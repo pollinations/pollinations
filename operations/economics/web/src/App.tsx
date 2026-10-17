@@ -1037,13 +1037,17 @@ function Dashboard({ accountUser, planningDocument }: DashboardProps) {
         viewData?.opTransactions,
         selectedYear,
     );
-    const cashDetail = `${selectedYear}: recorded bank money without reconciled evidence. Receipts and payments counted by absolute value in USD. Missing source amounts are not included; see vendor checks.`;
+    const openChecks = reconciliation?.issues.filter((row) =>
+        row.month.startsWith(`${selectedYear}-`),
+    ).length;
+    const cashDetail = `${selectedYear}: ${openChecks ?? "–"} total open checks, including small amounts; known limitations excluded. Recorded bank money without reconciled evidence. Receipts and payments counted by absolute value in USD. Missing source amounts are not included; see vendor checks.`;
     const reconciliationBadge = viewData ? (
         <span
-            className="ml-auto shrink-0 text-xs font-normal text-theme-text-soft"
+            className="ml-auto shrink-0 text-right text-xs font-normal text-theme-text-soft"
             title={cashDetail}
         >
             {unreconciledCash == null ? "–" : fmtUsd(unreconciledCash)}
+            <span className="block">{openChecks ?? "–"} open</span>
             <span className="sr-only">
                 {" "}
                 unreconciled bank money. {cashDetail}

@@ -1,6 +1,6 @@
 name: Repo / Update README
 
-# Each morning: the star history chart and the 12 newest news highlights, in one
+# Each morning: the star history chart and the 12 newest non-app news highlights, in one
 # auto-merged pull request.
 
 on:

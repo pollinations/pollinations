@@ -265,7 +265,9 @@ export async function exchangeDeviceCode(
     c: Context<Env>,
     body: DeviceTokenRequest,
 ) {
-    if (!body.device_code) {
+    // Runtime guard, not just the type: this is exported and shared, and a
+    // non-string device_code would reach Drizzle's eq() as a query param.
+    if (typeof body.device_code !== "string" || !body.device_code) {
         return c.json(
             {
                 error: "invalid_request",
